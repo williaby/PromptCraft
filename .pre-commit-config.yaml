@@ -1,0 +1,43 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+# ===================================================================
+# General Purpose & Standard File Checks
+# ===================================================================
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-json
+    -   id: check-merge-conflict
+    -   id: check-added-large-files
+
+# ===================================================================
+# Code & Markup Formatting (The "Make it Pretty" Pass)
+# ===================================================================
+-   repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+    -   id: prettier
+        # Run prettier on all supported file types
+        # This will format JS, HTML, CSS, JSON, and Markdown
+        types_or: [javascript, css, html, json, markdown]
+
+# ===================================================================
+# Linting & Static Analysis (The "Catch the Bugs" Pass)
+# ===================================================================
+-   repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.13.0
+    hooks:
+    -   id: markdownlint-cli2
+        # Lint all Markdown files for style and consistency
+        name: Lint Markdown files
+
+-   repo: https://github.com/Azure/bicep-pre-commit
+    rev: v0.5.2
+    hooks:
+      # Lint all Bicep files for correctness and best practices
+    - id: bicep-linter
