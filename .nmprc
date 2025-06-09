@@ -1,0 +1,28 @@
+# This file sets default configurations for the npm client when running commands
+# within this project repository.
+
+# ==============================================================================
+# SECURITY SETTINGS
+# ==============================================================================
+
+# Lock the registry to the official public npm registry.
+# This is a critical security measure to prevent "dependency confusion" attacks,
+# where npm could otherwise be tricked into downloading a malicious package from
+# a private source if it has the same name as a public package.
+registry=https://registry.npmjs.org/
+
+# Fail the 'npm audit' command if vulnerabilities of 'high' severity or greater
+# are found. This encourages developers to fix critical vulnerabilities before
+# pushing code.
+audit-level=high
+
+
+# ==============================================================================
+# DEPENDENCY & BUILD SETTINGS
+# ==============================================================================
+
+# By default, when a developer runs 'npm install <package>', this setting ensures
+# that the exact version number is saved to package.json (e.g., "1.2.3")
+# instead of a version range (e.g., "^1.2.3"). This prevents unexpected changes
+# from minor package updates and leads to more deterministic, reproducible builds.
+save-exact=true
