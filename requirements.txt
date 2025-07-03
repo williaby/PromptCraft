@@ -295,9 +295,9 @@ cycler==0.12.1 ; python_version >= "3.11" and python_version < "4.0" \
 distro==1.9.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed \
     --hash=sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2
-fastapi==0.110.3 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:555700b0159379e94fdbfc6bb66a0f1c43f4cf7060f25239af3d84b63a656626 \
-    --hash=sha256:fd7600612f755e4050beb74001310b5a7e1796d149c2ee363124abdfa0289d32
+fastapi==0.115.14; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:6c0c8bf9420bd58f565e585036d971872472b4f7d3f6c73b698e10cffdefb3ca \
+    --hash=sha256:b1de15cdc1c499a4da47914db35d0e4ef8f1ce62b624e94e0e5824421df99739
 ffmpy==0.6.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:332dd93198a162db61e527e866a04578d3713e577bfe68f2ed26ba9d09dbc948 \
     --hash=sha256:c8369bf45f8bd5285ebad94c4a789a79e7af86eded74c1f8c36eccf57aaea58c
