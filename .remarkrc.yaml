@@ -1,0 +1,8 @@
+plugins:
+  - remark-frontmatter     # parse & drop YAML/TOML front-matter
+  - remark-slug            # add id’s to <h*> nodes
+  - remark-autolink-headings
+  -
+    - remark-toc
+    - maxDepth: 4
+      ordered: true

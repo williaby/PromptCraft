@@ -1,0 +1,35 @@
+{
+  "name": "PromptCraft Dev Container",
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [7071, 10000, 10001, 10002],
+  "postCreateCommand": "npm install && pre-commit install",
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {
+      "version": "2.74.0",
+      "installBicep": true
+    },
+    "ghcr.io/devcontainers/features/azurite:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-azurecli",
+        "ms-azuretools.bicep",
+        "ms-python.python",
+        "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "eslint.run": "onSave",
+        "markdownlint.config": ".markdownlint.json"
+      }
+    }
+  }
+}

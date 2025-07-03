@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security checks daily
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  packages: write
+
+jobs:
+  dependency-check:
+    name: Verify Dependencies
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.7.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Verify poetry.lock is up to date
+      run: |
+        poetry lock --check
+    
+    - name: Export requirements with hashes
+      run: |
+        ./scripts/generate_requirements.sh
+    
+    - name: Verify requirements.txt hasn't changed
+      run: |
+        git diff --exit-code requirements*.txt || {
+          echo "::error::requirements files are out of sync. Run ./scripts/generate_requirements.sh and commit the changes."
+          exit 1
+        }
+    
+    - name: Test pip installation with hash verification
+      run: |
+        python -m venv test-env
+        source test-env/bin/activate
+        pip install --require-hashes -r requirements.txt
+        deactivate
+        rm -rf test-env
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    
+    - name: Install dependencies
+      run: poetry install
+    
+    - name: Run safety check
+      run: poetry run safety check --json
+      continue-on-error: true
+    
+    - name: Run bandit
+      run: poetry run bandit -r src -ll -f json -o bandit-report.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          .safety-report.json
+
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    needs: [dependency-check]
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.7.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          venv-${{ runner.os }}-${{ matrix.python-version }}-
+    
+    - name: Install dependencies with hash verification
+      run: |
+        poetry export --format=requirements.txt --with-hashes --output=requirements-ci.txt
+        poetry run pip install --require-hashes -r requirements-ci.txt
+    
+    - name: Run tests
+      run: |
+        poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
+    
+    - name: Run type checking
+      run: |
+        poetry run mypy src
+    
+    - name: Run linting
+      run: |
+        poetry run black . --check
+        poetry run ruff check .
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Generate requirements for Docker
+      run: |
+        pip install poetry
+        ./scripts/generate_requirements.sh
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: promptcraft-hybrid:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          VCS_REF=${{ github.sha }}
