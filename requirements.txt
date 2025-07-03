@@ -1020,10 +1020,10 @@ nvidia-cusparse-cu12==12.5.4.2 ; python_version >= "3.11" and python_version < "
     --hash=sha256:7556d9eca156e18184b94947ade0fba5bb47d69cec46bf8660fd2c71a4b48b73 \
     --hash=sha256:7aa32fa5470cf754f72d1116c7cbc300b4e638d3ae5304cfa4a638a5b87161b1 \
     --hash=sha256:d25b62fb18751758fe3c93a4a08eff08effedfe4edf1c6bb5afd0890fe88f887
-nvidia-cusparselt-cu12==0.6.3 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
-    --hash=sha256:3b325bcbd9b754ba43df5a311488fca11a6b5dc3d11df4d190c000cf1a0765c7 \
-    --hash=sha256:8371549623ba601a06322af2133c4a44350575f5a3108fb75f3ef20b822ad5f1 \
-    --hash=sha256:e5c8a26c36445dd2e6812f1177978a24e2d37cacce7e090f297a688d1ec44f46
+nvidia-cusparselt-cu12==0.7.1; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
+    --hash=sha256:8878dce784d0fac90131b6817b607e803c36e629ba34dc5b433471382196b6a5 \
+    --hash=sha256:f1bb701d6b930d5a7cea44c19ceb973311500847f81b634d802b7b539dc55623 \
+    --hash=sha256:f67fbb5831940ec829c9117b7f33807db9f9678dc2a617fbe781cac17b4e1075
 nvidia-nccl-cu12==2.26.2 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
     --hash=sha256:5c196e95e832ad30fbbb50381eb3cbd1fadd5675e587a548563993609af19522 \
     --hash=sha256:694cf3879a206553cc9d7dbda76b13efaf610fdb70a50cba303de1b0d1530ac6
