@@ -14,15 +14,11 @@ generate_requirements() {
         echo "Generating main requirements..."
         poetry export \
             --format=requirements.txt \
-            --with-hashes \
-            --without-urls \
             --output="$output"
     else
         echo "Generating $group requirements..."
         poetry export \
             --format=requirements.txt \
-            --with-hashes \
-            --without-urls \
             --with="$group" \
             --output="$output"
     fi
@@ -52,8 +48,6 @@ DOCKER_EOF
 # Extract only production dependencies
 poetry export \
     --format=requirements.txt \
-    --without-hashes \
-    --without-urls \
     --output=requirements-temp.txt
 
 # Filter out dev dependencies and add to Docker requirements
