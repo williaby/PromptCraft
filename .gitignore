@@ -41,11 +41,129 @@ package-lock.json
 .env.test.local
 .env.production.local
 
+
+# Python
+# =================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+
+# Backups
+# =================================
+# Repository backup directories
+backup/
+backup_*/
+
+
 # Azure
 # =================================
 # Azure CLI and Bicep
 .azure/
 *.bicepparam
+
+# Temporary/Development Files
+# =================================
+*.tmp
+*.temp
+*~
+.#*
+*.orig
+*.rej
+*_old
+*_OLD
+*conflicted*
+
+# Local Development
+*.env.zen-vm.template
+.mcp.json
+.secrets.baseline
+.dockerignore
+.editorconfig
+.repomixignore
+.yamllint.yml
+
+# Development Tools
+repomix.config.json
+renovate.json
+noxfile.py
+
+# Services
+*.service
+zen-mcp.service
+
+# Monitoring (local only)
+monitoring/
+
+# Claude Code
+.claude/
+
+# Planning Documents (local only)
+docs/planning/
 
 # OS-specific / Editor
 # =================================
@@ -58,6 +176,7 @@ package-lock.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+local.settings.json
 
 # Editor directories and files
 .vscode/*
@@ -71,3 +190,4 @@ Desktop.ini
 *.project
 *.classpath
 *.cproject
+/deployment/exported-template.json

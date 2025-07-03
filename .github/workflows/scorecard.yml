@@ -11,7 +11,7 @@ on:
 
 # Permissions required to run the analysis
 permissions:
-  security-events: write
+  security-events: read
   id-token: write
   contents: read
   issues: read
