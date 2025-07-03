@@ -1,95 +1,164 @@
-# PromptCraft
+---
+title: PromptCraft-Hybrid
+version: 1.0
+status: published
+component: Documentation
+tags: ["readme", "overview", "getting-started", "hybrid-ai", "development"]
+source: "PromptCraft-Hybrid Project"
+purpose: To provide comprehensive overview and quick start guide for the PromptCraft-Hybrid AI development platform.
+---
 
-An enterprise-grade AI assistant built on Microsoft Azure that transforms simple user queries into
-standardized, high-quality, and structured prompts using a Retrieval-Augmented Generation (RAG)
-architecture.
+# PromptCraft-Hybrid
 
-## Overview
+An advanced, hybrid AI platform designed to transform user queries into highly accurate, context-aware, and 
+structured outputs. It integrates on-premise hardware with specialized cloud services to deliver a powerful, 
+cost-effective, and extensible AI development workbench.
 
-The goal of PromptCraft is to solve the problem of inconsistent and ineffective Large Language Model
-(LLM) prompts. By guiding users through the C.R.E.A.T.E. framework and enriching their requests with
-verified information from a custom knowledge base, PromptCraft produces outputs that are more accurate,
-reliable, and auditable.
+## Welcome to the Project!
 
-This system is designed from the ground up to be secure, scalable, and fully automated, leveraging
-best-in-class Azure services and modern DevOps practices.
+This repository contains all the code and documentation for PromptCraft-Hybrid. Our core philosophy is to 
+**configure what is common, build what is unique, and enhance what is ambiguous.**
 
-## Core Features
+### Your Guide to Our Documentation
 
-- **Retrieval-Augmented Generation (RAG)**: Grounds the AI's responses in a secure, version-controlled
-knowledge base, dramatically reducing hallucinations and improving factual accuracy.
-- **Structured Prompt Engineering**: Implements the C.R.E.A.T.E. framework to systematically deconstruct
-and rebuild user requests into detailed, effective prompts.
-- **Secure by Design**: Utilizes Azure Key Vault for secrets management, Private Endpoints for network
-isolation, and Azure Active Directory (AAD) for authentication.
-- **Fully Automated Infrastructure**: All Azure resources are defined using Infrastructure as Code (Bicep)
-and deployed via GitHub Actions, ensuring a repeatable and auditable environment.
-- **CI/CD for Knowledge and Code**: The knowledge base and application code are automatically synchronized
-and deployed via GitHub Actions, enabling seamless updates.
+This README provides a high-level overview. For detailed information, our documentation is centralized in the 
+**Project Hub**. It is the single source of truth for this project.
 
-## Architecture
+**To get started, please visit the [>> PROJECT HUB <<](docs/planning/project-hub.md) to find the document relevant to your role.**
 
-The system is built on a decoupled, serverless architecture using Microsoft Azure services:
+---
 
-- **User Interface**: A static web page built with HTML/CSS/JavaScript, hosted on Azure Static Web Apps,
-providing the chat interface.
-- **Bot and Assistant Layer**:
-  - Azure Bot Service manages the user session and channel communication.
-  - Azure OpenAI Assistants API hosts the core PromptCraft Pro assistant, which handles
-  conversation flow and function calling.
-- **Business Logic**: An Azure Function (Node.js) serves two key purposes:
-  - GenerateDirectLineToken: Acts as a secure token broker, authenticating users via AAD before allowing
-  them to connect to the bot.
-  - GetAnchor: Retrieves specific content from the knowledge base on behalf of the assistant.
-- **Data and Knowledge Layer (RAG)**:
-  - Azure Blob Storage securely stores the version-controlled Markdown knowledge files.
-  - Azure Cognitive Search indexes the knowledge files, using its vector search capabilities
-  to find the most relevant information for the assistant.
-- **Security and Identity**:
-  - Azure Key Vault stores all application secrets (API keys, connection strings).
-  - Azure Active Directory (AAD) secures the token-generation function.
-  - Azure Private Endpoints and VNet ensure backend services are not exposed to the public internet.
+## At a Glance: Core Features & Architecture
 
-## Getting Started
+This project is built on several key concepts and a unique hybrid architecture.
+
+### Core Features
+
+* **Four Progressive Journeys**: A unique user model that guides users from simple prompt enhancement to full, 
+  multi-agent workflow automation.
+* **Dual-Orchestration Model**: We use the best tool for the job. **Zen MCP Server** handles real-time, 
+  user-facing agent orchestration, while **Prefect** manages background, scheduled data workflows like knowledge 
+  ingestion and quality assurance.
+* **HyDE Query Enhancement**: A sophisticated pipeline that analyzes user queries for intent and ambiguity, 
+  generating hypothetical documents to improve retrieval accuracy.
+* **Agent-First Design**: The system's expertise comes from specialized, independent AI agents with their own 
+  dedicated knowledge bases, allowing for scalable, domain-specific intelligence.
+* **Hybrid Infrastructure**: A cost-effective model that leverages external Qdrant on Unraid (192.168.1.16) for 
+  vector search and Ubuntu VM deployment (192.168.1.205) for application services with minimal cloud dependencies.
+* **Cost Control with Free Mode**: New toggle to use only free models (1000 requests/day) in Journey 4, perfect 
+  for development, testing, and cost-conscious usage.
+* **Transparent Pricing**: See exactly which model is being used and its cost in real-time.
+* **Smart Routing**: Automatically selects the best available free model when in Free Mode.
+
+### Technology Stack Overview
+
+| Component                    | Technology          | Purpose                                             |
+| ---------------------------- | ------------------- | --------------------------------------------------- |
+| **Real-Time Orchestration**  | Zen MCP Server      | Coordinates AI agents and tools for user queries.   |
+| **Background Orchestration** | Prefect             | Manages scheduled data & maintenance workflows.     |
+| **Query Intelligence**       | HyDE Engine         | Enhances ambiguous user queries.                    |
+| **RAG Framework**            | LlamaIndex          | Manages data ingestion and retrieval pipelines.     |
+| **Vector Database**          | Qdrant (External)   | High-speed semantic search on Unraid (192.168.1.16) |
+| **UI Framework**             | Gradio              | Rapid development of the user interface.            |
+| **Application Host**         | Ubuntu VM           | Hosts MCP stack on VM (192.168.1.205)               |
+
+> _For a complete breakdown of the architecture and the rationale behind these choices, please see our 
+[**Architecture Decision Record (ADR)**](./docs/planning/ADR.md)._
+
+---
+
+## Quick Start for Developers
+
+This section provides the essential steps to get the project running on your local machine. For detailed 
+explanations, standards, and troubleshooting, please refer to the **Developer Guide & Coding Standards** 
+linked in our Project Hub.
+
+### Claude Code Slash Commands
+
+This project includes custom Claude Code slash commands to automate documentation workflows:
+
+```bash
+# List all available commands
+/project:list-commands
+
+# Validate document compliance
+/project:lint-doc docs/planning/exec.md
+
+# Create new knowledge base files
+/project:create-knowledge-file security oauth2 implementation
+
+# Fix broken internal links
+/project:fix-links docs/planning/project-hub.md
+```
+
+**Commands are stored in** `.claude/commands/` and available when using Claude Code. Type `/` to see all 
+available commands.
 
 ### Prerequisites
 
-- Node.js (LTS version)
-- Azure CLI
-- pre-commit
+* Docker & Docker Compose
+* Poetry for Python dependency management
+* Nox for task automation
+* External Qdrant instance running on Unraid at 192.168.1.16:6333
+* Ubuntu VM at 192.168.1.205 for application deployment
 
 ### Installation and Setup
 
-Clone the repository:
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/williaby/PromptCraft.git
+    cd PromptCraft-Hybrid
+    ```
 
-```bash
-git clone https://github.com/williaby/PromptCraft.git
-```
+2.  **Configure Environment**:
+    * Copy the `.env.example` file to `.env`.
+    * Populate the `.env` file with your Azure, Cloudflare, and other necessary API keys.
+    * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
 
-cd PromptCraft
+3.  **Install Dependencies**:
+    * Use Poetry to install all required Python packages from the `pyproject.toml` file.
+    ```bash
+    poetry install
+    ```
 
-Install dependencies:
-The core application logic resides in an Azure Function.
+4.  **Deploy to Ubuntu VM**:
+    * Deploy application services to Ubuntu VM (excludes Qdrant which runs externally on Unraid).
+    ```bash
+    # On Ubuntu VM (192.168.1.205)
+    make dev
+    # This starts all services except Qdrant (external dependency)
+    ```
 
-### Navigate to the function's source directory
+5.  **Run Tests**:
+    * Use Nox to run the test suite and ensure your environment is set up correctly.
+    ```bash
+    nox -s tests
+    ```
 
-cd src/functions
-npm install
+You are now ready to start development!
 
-Activate pre-commit hooks:
-This will ensure your commits adhere to the project's quality standards.
-pre-commit install
+## Hardware Requirements
 
-For full details on the development workflow and submitting changes, please see our Contributing
-Guidelines.
+### Minimum (Phase 1)
+
+- **RAM**: 36GB minimum
+- **Storage**: 500GB NVMe SSD
+- **CPU**: 8+ cores recommended
+- **Network**: Gigabit LAN
+
+### Recommended (Full Stack)
+
+- **RAM**: 64GB
+- **Storage**: 1TB NVMe SSD
+- **CPU**: 16+ cores
+- **GPU**: Optional for local LLM inference
 
 ## Contributing
 
-Contributions are welcome! Whether it's a bug report, a new feature, or improvements to documentation,
-we value your input. Please read our CONTRIBUTING.md to get started.
-
-This project is governed by our Code of Conduct.
+We welcome contributions! Whether it's a bug report, a new feature, or improvements to our documentation, we 
+value your input. Please read our **[Developer Guide & Coding Standards (CONTRIBUTING.md)](./CONTRIBUTING.md)** 
+to get started.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the **[LICENSE](./LICENSE)** file for details.
