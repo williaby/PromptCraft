@@ -1447,9 +1447,9 @@ python-dotenv==1.1.1 ; python_version >= "3.11" and python_version < "4.0" \
 python-gnupg==0.5.4 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:40ce25cde9df29af91fe931ce9df3ce544e14a37f62b13ca878c897217b2de6c \
     --hash=sha256:f2fdb5fb29615c77c2743e1cb3d9314353a6e87b10c37d238d91ae1c6feae086
-python-multipart==0.0.9 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:03f54688c663f1b7977105f021043b0793151e4cb1c1a9d4a11fc13d622c4026 \
-    --hash=sha256:97ca7b8ea7b05f977dc3849c3ba99d51689822fab725c3703af7c866a0c2b215
+python-multipart==0.0.18; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:7a68db60c8bfb82e460637fa4750727b45af1d5e2ed215593f917f64694d34fe \
+    --hash=sha256:efe91480f485f6a361427a541db4796f9e1591afc0fb8e7a4ba06bfbc6708996
 pytz==2025.2 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3 \
     --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
