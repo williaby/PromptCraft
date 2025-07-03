@@ -1226,12 +1226,10 @@ nvidia-cuda-nvrtc-cu12==12.6.77 ; python_version >= "3.11" and python_version < 
     --hash=sha256:35b0cc6ee3a9636d5409133e79273ce1f3fd087abb0532d2d2e8fff1fe9efc53 \
     --hash=sha256:5847f1d6e5b757f1d2b3991a01082a44aad6f10ab3c5c0213fa3e25bddc25a13 \
     --hash=sha256:f7007dbd914c56bd80ea31bc43e8e149da38f68158f423ba845fc3292684e45a
-nvidia-cuda-runtime-cu12==12.6.77 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
-    --hash=sha256:6116fad3e049e04791c0256a9778c16237837c08b27ed8c8401e2e45de8d60cd \
-    --hash=sha256:86c58044c824bf3c173c49a2dbc7a6c8b53cb4e4dca50068be0bf64e9dab3f7f \
-    --hash=sha256:a84d15d5e1da416dd4774cb42edf5e954a3e60cc945698dc1d5be02321c44dc8 \
-    --hash=sha256:ba3b56a4f896141e25e19ab287cd71e52a6a0f4b29d0d31609f60e3b4d5219b7 \
-    --hash=sha256:d461264ecb429c84c8879a7153499ddc7b19b5f8d84c204307491989a365588e
+nvidia-cuda-runtime-cu12==12.9.79; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
+    --hash=sha256:25bba2dfb01d48a9b59ca474a1ac43c6ebf7011f1b0b8cc44f54eb6ac48a96c3 \
+    --hash=sha256:83469a846206f2a733db0c42e223589ab62fd2fabac4432d2f8802de4bded0a4 \
+    --hash=sha256:8e018af8fa02363876860388bd10ccb89eb9ab8fb0aa749aaf58430a9f7c4891
 nvidia-cudnn-cu12==9.5.1.17 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
     --hash=sha256:30ac3869f6db17d170e0e556dd6cc5eee02647abc31ca856634d5a40f82c15b2 \
     --hash=sha256:9fd4584468533c61873e5fda8ca41bac3a38bcb2d12350830c69b0a96a7e4def \
