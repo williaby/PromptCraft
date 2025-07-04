@@ -1531,9 +1531,9 @@ qdrant-client==1.12.1 ; python_version >= "3.13" and python_version < "4.0" \
 qdrant-client==1.14.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:66faaeae00f9b5326946851fe4ca4ddb1ad226490712e2f05142266f68dfc04d \
     --hash=sha256:bb899e3e065b79c04f5e47053d59176150c0a5dabc09d7f476c8ce8e52f4d281
-redis==5.3.0 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:8d69d2dde11a12dc85d0dbf5c45577a5af048e2456f7077d87ad35c1c81c310e \
-    --hash=sha256:f1deeca1ea2ef25c1e4e46b07f4ea1275140526b1feea4c6459c0ec27a10ef83
+redis==6.2.0; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:c8ddf316ee0aab65f04a11229e94a64b2618451dab7a67cb2f77eb799d872d5e \
+    --hash=sha256:e821f129b75dde6cb99dd35e5c76e8c49512a5a0d8dfdc560b2fbd44b85ca977
 regex==2024.11.6 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:02a02d2bb04fec86ad61f3ea7f49c015a0681bf76abb9857f945d26159d2968c \
     --hash=sha256:02e28184be537f0e75c1f9b2f8847dc51e08e6e171c6bde130b2687e0c33cf60 \
