@@ -3,7 +3,7 @@
 # Regenerate with: ./scripts/generate_requirements.sh
 
 # Core dependencies only - no dev/test packages
-aiofiles==23.2.1 ; python_version >= "3.11" and python_version < "4.0" \
+aiofiles==24.1.0 ; python_version >= "3.11" and python_version < "4.0" \
 anthropic==0.18.1 ; python_version >= "3.11" and python_version < "4.0" \
 azure-core==1.35.0 ; python_version >= "3.11" and python_version < "4.0" \
 azure-identity==1.23.0 ; python_version >= "3.11" and python_version < "4.0" \
