@@ -4,9 +4,9 @@ aiofiles==23.2.1 ; python_version >= "3.11" and python_version < "4.0" \
 annotated-types==0.7.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53 \
     --hash=sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89
-anthropic==0.18.1 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:b85aee64f619ce1b1964ba733a09adc4053e7bc4e6d4186001229ec191099dcf \
-    --hash=sha256:f5d1caafd43f6cc933a79753a93531605095f040a384f6a900c3de9c3fb6694e
+anthropic==0.57.1; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:33afc1f395af207d07ff1bffc0a3d1caac53c371793792569c5d2f09283ea306 \
+    --hash=sha256:7815dd92245a70d21f65f356f33fc80c5072eada87fb49437767ea2918b2c4b0
 anyio==4.9.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:673c0c244e15788651a4ff38710fea9675823028a6f08a5eda409e0c9840a028 \
     --hash=sha256:9f76d541cad6e36af7beb62e978876f3b41e3e04f2c1fbf0884604c0a9c4d93c
