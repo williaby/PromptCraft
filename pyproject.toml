@@ -61,7 +61,7 @@ structlog = "^24.1.0"
 rich = "^14.0.0"
 
 # Security
-cryptography = "^42.0.2"
+cryptography = "^45.0.0"
 pyjwt = {extras = ["crypto"], version = "^2.8.0"}
 python-gnupg = "^0.5.2"
 
