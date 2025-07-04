@@ -69,7 +69,7 @@ python-gnupg = "^0.5.2"
 tenacity = "^8.2.3"
 python-dateutil = "^2.8.2"
 aiofiles = "^24.0.0"
-asyncer = "^0.0.5"
+asyncer = "^0.0.8"
 
 [tool.poetry.group.dev.dependencies]
 # Testing
