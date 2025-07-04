@@ -1023,10 +1023,10 @@ numpy==1.26.4 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:edd8b5fe47dab091176d21bb6de568acdd906d1887a4584a15a9a96a1dca06ef \
     --hash=sha256:f870204a840a60da0b12273ef34f7051e98c3b5961b61b0c2c1be6dfd64fbcd3 \
     --hash=sha256:ffa75af20b44f8dba823498024771d5ac50620e6915abac414251bd971b4529f
-nvidia-cublas-cu12==12.6.4.1 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
-    --hash=sha256:08ed2686e9875d01b58e3cb379c6896df8e76c75e0d4a7f7dace3d7b6d9ef8eb \
-    --hash=sha256:235f728d6e2a409eddf1df58d5b0921cf80cfa9e72b9f2775ccb7b4a87984668 \
-    --hash=sha256:9e4fa264f4d8a4eb0cdbd34beadc029f453b3bafae02401e999cf3d5a5af75f8
+nvidia-cublas-cu12==12.9.1.4; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
+    --hash=sha256:1e5fee10662e6e52bd71dec533fbbd4971bb70a5f24f3bc3793e5c2e9dc640bf \
+    --hash=sha256:453611eb21a7c1f2c2156ed9f3a45b691deda0440ec550860290dc901af5b4c2 \
+    --hash=sha256:7a950dae01add3b415a5a5cdc4ec818fb5858263e9cca59004bb99fdbbd3a5d6
 nvidia-cuda-cupti-cu12==12.6.80 ; python_version >= "3.11" and python_version < "4.0" and platform_system == "Linux" and platform_machine == "x86_64" \
     --hash=sha256:166ee35a3ff1587f2490364f90eeeb8da06cd867bd5b701bf7f9a02b78bc63fc \
     --hash=sha256:358b4a1d35370353d52e12f0a7d1769fc01ff74a191689d3870b2123156184c4 \
