@@ -1,0 +1,124 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "python": {
+    "addManagePyEnvironment": true
+  },
+  "pip_requirements": {
+    "fileMatch": ["(^|/)requirements.*\\.txt$"]
+  },
+  "packageRules": [
+    {
+      "description": "Security-critical packages - immediate individual PRs (ADR-009)",
+      "matchPackagePatterns": [
+        "^cryptography", "^pyjwt", "^passlib", "^bcrypt", "^pyotp",
+        "^fastapi", "^uvicorn", "^gradio", "^pydantic", "^httpx",
+        "^azure-", "^anthropic", "^openai", "^qdrant-client"
+      ],
+      "matchUpdateTypes": ["patch", "minor", "major"],
+      "groupName": null,
+      "automerge": false,
+      "labels": ["security-critical", "automerge", "priority:high"],
+      "prPriority": 10,
+      "schedule": ["at any time"],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "description": "CVE and vulnerability updates - immediate individual PRs (ADR-009)",
+      "vulnerabilityAlerts": true,
+      "osvVulnerabilityAlerts": true,
+      "groupName": null,
+      "automerge": false,
+      "labels": ["vulnerability", "automerge", "priority:critical"],
+      "prPriority": 15,
+      "schedule": ["at any time"],
+      "minimumReleaseAge": "0 days"
+    },
+    {
+      "description": "Monthly batch: routine dependency updates (ADR-009)",
+      "matchUpdateTypes": ["patch", "minor"],
+      "excludePackagePatterns": [
+        "^cryptography", "^pyjwt", "^passlib", "^bcrypt", "^pyotp",
+        "^fastapi", "^uvicorn", "^gradio", "^pydantic", "^httpx",
+        "^azure-", "^anthropic", "^openai", "^qdrant-client"
+      ],
+      "groupName": "routine-updates",
+      "automerge": false,
+      "labels": ["automerge", "batched-updates"],
+      "prPriority": 3,
+      "schedule": ["on the first day of the month"]
+    },
+    {
+      "description": "Major version updates always require manual review",
+      "matchUpdateTypes": ["major"],
+      "excludePackagePatterns": [
+        "^cryptography", "^pyjwt", "^passlib", "^bcrypt", "^pyotp",
+        "^fastapi", "^uvicorn", "^gradio", "^pydantic", "^httpx",
+        "^azure-", "^anthropic", "^openai", "^qdrant-client"
+      ],
+      "groupName": "major-updates",
+      "automerge": false,
+      "labels": ["requires-review", "scope:major"],
+      "reviewers": ["@williaby"],
+      "prPriority": 1,
+      "schedule": ["on the first day of the month"]
+    },
+    {
+      "description": "Development dependencies - monthly batch",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "dev-dependencies",
+      "automerge": false,
+      "labels": ["automerge", "dev-deps", "batched-updates"],
+      "prPriority": 2,
+      "schedule": ["on the first day of the month"]
+    },
+    {
+      "description": "GitHub Actions - pin to commit hashes with monthly updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor", "major"],
+      "groupName": "github-actions",
+      "automerge": false,
+      "labels": ["automerge", "github-actions"],
+      "prPriority": 4,
+      "schedule": ["on the first day of the month"],
+      "pinDigests": true
+    }
+  ],
+  "poetry": {
+    "enabled": true
+  },
+  "postUpdateOptions": [
+    "gomodTidy",
+    "npmDedupe",
+    "yarnDedupeHighest"
+  ],
+  "prConcurrentLimit": 3,
+  "prCreation": "immediate",
+  "rangeStrategy": "bump",
+  "semanticCommits": "enabled",
+  "timezone": "UTC",
+  "schedule": ["after 3am and before 5am every weekday", "every weekend"],
+  "vulnerabilityAlerts": {
+    "labels": ["security", "automerge"],
+    "assignees": ["@williaby"],
+    "prPriority": 10
+  },
+  "osvVulnerabilityAlerts": true,
+  "platformAutomerge": false,
+  "postUpgradeTasks": {
+    "commands": [
+      "poetry lock --no-update",
+      "chmod +x scripts/generate_requirements.sh",
+      "./scripts/generate_requirements.sh || echo 'Requirements generation failed'"
+    ],
+    "fileFilters": ["requirements*.txt", "poetry.lock"],
+    "executionMode": "update"
+  }
+}

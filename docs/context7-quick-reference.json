@@ -1,0 +1,142 @@
+{
+  "context7_package_mappings": {
+    "comment": "Quick reference for Context7 package IDs - bypass resolve-library-id step",
+    "last_updated": "2025-01-04",
+    "verified_packages": {
+      "fastapi": {
+        "context7_id": "/tiangolo/fastapi",
+        "trust_score": 9.9,
+        "status": "verified",
+        "notes": "Official FastAPI documentation"
+      },
+      "uvicorn": {
+        "context7_id": "/encode/uvicorn", 
+        "trust_score": 7.5,
+        "status": "verified",
+        "notes": "ASGI web server"
+      },
+      "gradio": {
+        "context7_id": "/gradio-app/gradio",
+        "trust_score": 9.8,
+        "status": "verified", 
+        "notes": "Official Gradio documentation"
+      },
+      "pandas": {
+        "context7_id": "/pandas-dev/pandas",
+        "trust_score": 9.2,
+        "status": "verified",
+        "notes": "Official Pandas documentation"
+      },
+      "pydantic": {
+        "context7_id": "/pydantic/pydantic",
+        "trust_score": 9.6,
+        "status": "verified",
+        "notes": "Official Pydantic documentation"
+      },
+      "pydantic-settings": {
+        "context7_id": "/pydantic/pydantic-settings",
+        "trust_score": 9.6,
+        "status": "verified",
+        "notes": "Settings management"
+      },
+      "anthropic": {
+        "context7_id": "/anthropics/anthropic-sdk-python",
+        "trust_score": 8.8,
+        "status": "verified",
+        "notes": "Official Python SDK"
+      },
+      "openai": {
+        "context7_id": "/openai/openai-python",
+        "trust_score": 9.1,
+        "status": "verified",
+        "notes": "Official OpenAI Python library"
+      },
+      "tiktoken": {
+        "context7_id": "/openai/tiktoken",
+        "trust_score": 9.1,
+        "status": "verified",
+        "notes": "OpenAI tokenizer"
+      },
+      "pytest": {
+        "context7_id": "/pytest-dev/pytest",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Official pytest documentation"
+      },
+      "pytest-asyncio": {
+        "context7_id": "/pytest-dev/pytest-asyncio",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Async testing support"
+      },
+      "pytest-cov": {
+        "context7_id": "/pytest-dev/pytest-cov",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Coverage plugin"
+      },
+      "pytest-mock": {
+        "context7_id": "/pytest-dev/pytest-mock",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Mock integration"
+      },
+      "pytest-timeout": {
+        "context7_id": "/pytest-dev/pytest-timeout",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Test timeout handling"
+      },
+      "pytest-xdist": {
+        "context7_id": "/pytest-dev/pytest-xdist",
+        "trust_score": 9.5,
+        "status": "verified",
+        "notes": "Distributed testing"
+      }
+    },
+    "pending_verification": {
+      "httpx": "HTTP client library",
+      "numpy": "Numerical computing",
+      "pyyaml": "YAML processing", 
+      "python-multipart": "Multipart form handling",
+      "sentence-transformers": "Embedding generation",
+      "qdrant-client": "Vector database client",
+      "azure-identity": "Azure authentication",
+      "azure-keyvault-secrets": "Key Vault secrets",
+      "azure-storage-blob": "Azure Blob storage",
+      "cryptography": "Core cryptographic operations",
+      "pyjwt": "JWT handling",
+      "python-gnupg": "GPG operations",
+      "black": "Code formatter",
+      "ruff": "Linter",
+      "mypy": "Type checker",
+      "bandit": "Security scanner",
+      "redis": "Caching layer",
+      "prometheus-client": "Metrics collection",
+      "python-dotenv": "Environment config",
+      "structlog": "Structured logging",
+      "rich": "Rich text formatting",
+      "tenacity": "Retry mechanisms",
+      "python-dateutil": "Date utilities",
+      "aiofiles": "Async file operations",
+      "asyncer": "Async utilities",
+      "mcp": "MCP protocol client",
+      "spacy": "NLP processing",
+      "nltk": "Natural language utilities",
+      "detect-secrets": "Security scanning",
+      "sentry-sdk": "Error monitoring",
+      "opentelemetry-api": "Observability tracing"
+    }
+  },
+  "usage_instructions": {
+    "direct_lookup": "Use verified_packages[package_name].context7_id for immediate access",
+    "example": "context7_id = mappings['verified_packages']['fastapi']['context7_id']",
+    "fallback": "If package not in verified_packages, use resolve-library-id first",
+    "update_process": "After verifying new packages, move from pending_verification to verified_packages"
+  },
+  "automation_ready": {
+    "script_integration": "This JSON can be loaded by scripts to auto-generate Context7 calls",
+    "ci_cd_integration": "Use for automated documentation generation in pipelines",
+    "developer_tools": "IDE extensions can use this for auto-completion"
+  }
+}
