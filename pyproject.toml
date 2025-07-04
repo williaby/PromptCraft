@@ -57,7 +57,7 @@ prometheus-client = "^0.20.0"
 python-dotenv = "^1.0.1"
 
 # Logging and monitoring
-structlog = "^24.1.0"
+structlog = "^25.0.0"
 rich = "^13.7.0"
 
 # Security
