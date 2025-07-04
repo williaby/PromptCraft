@@ -179,6 +179,7 @@ All pull requests must pass these automated checks:
 - [ ] **Pytest**: Test suite with >80% coverage
 - [ ] **Bandit**: Security vulnerability scanning
 - [ ] **Pre-commit**: All hooks pass successfully
+- [ ] **What The Diff**: AI-generated PR summary (automatic when enabled)
 
 #### Review Checklist
 
@@ -226,6 +227,52 @@ When creating new agents:
 4. **Create Knowledge Base**: Include comprehensive knowledge files
 5. **Update Registry**: Add agent to src/agents/registry.py
 6. **Configure Qdrant**: Set up vector database collections
+
+### AI-Powered Pull Request Summaries
+
+#### What The Diff Integration
+
+This project uses [What The Diff](https://whatthediff.ai/) to automatically generate AI-powered summaries of pull request changes. This feature helps reviewers quickly understand the scope and intent of your changes.
+
+#### How It Works
+
+- **Automatic Activation**: WTD triggers automatically on PR open, reopen, and synchronize events
+- **Intelligent Filtering**: Excludes generated files (dist/, build/, vendor/), lock files, and images to focus on meaningful code changes
+- **Single Comment**: Creates one summary comment per PR that updates as new commits are added
+- **Bot Exclusion**: Skips PRs created by bots to prevent unnecessary processing
+- **Draft Exclusion**: Ignores draft PRs until they're ready for review
+
+#### What Gets Analyzed
+
+✅ **Included in Analysis**:
+- Source code changes (.py, .js, .ts, .yml, etc.)
+- Configuration files
+- Documentation updates
+- Test files
+- Build scripts
+
+❌ **Excluded from Analysis**:
+- Generated files (dist/, build/, vendor/)
+- Lock files (package-lock.json, poetry.lock)
+- Binary files (images, archives)
+- Large generated assets
+
+#### Cost Optimization
+
+- Uses GPT-3.5-Turbo model for cost efficiency
+- File filtering reduces API usage by ~60-80%
+- Draft PR exclusion prevents premature analysis
+- One comment per PR minimizes redundant processing
+
+#### Understanding AI Summaries
+
+The AI-generated summaries provide:
+- **High-level Overview**: What the PR accomplishes
+- **Key Changes**: Most important modifications
+- **Impact Assessment**: Areas of the codebase affected
+- **Technical Details**: Implementation approach and patterns used
+
+These summaries are meant to supplement, not replace, thorough code review by maintainers.
 
 ### Getting Help
 
