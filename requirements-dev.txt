@@ -2041,9 +2041,9 @@ scipy==1.16.0 ; python_version >= "3.11" and python_version < "4.0" \
 semantic-version==2.10.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c \
     --hash=sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177
-sentence-transformers==2.7.0 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:2f7df99d1c021dded471ed2d079e9d1e4fc8e30ecb06f957be060511b36f24ea \
-    --hash=sha256:6a7276b05a95931581bbfa4ba49d780b2cf6904fa4a171ec7fd66c343f761c98
+sentence-transformers==5.0.0; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:346240f9cc6b01af387393f03e103998190dfb0826a399d0c38a81a05c7a5d76 \
+    --hash=sha256:e5a411845910275fd166bacb01d28b7f79537d3550628ae42309dbdd3d5670d1
 setuptools==80.9.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
     --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
