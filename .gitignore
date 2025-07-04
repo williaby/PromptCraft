@@ -41,6 +41,15 @@ package-lock.json
 .env.test.local
 .env.production.local
 
+# Google Cloud credentials (never commit)
+# =================================
+.gcp/
+secrets/
+**/service-account*.json
+**/gcp-*.json
+.config/gcloud/
+application_default_credentials.json
+
 
 # Python
 # =================================
@@ -109,6 +118,12 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# ruff
+.ruff_cache/
+
+# pytest
+.pytest_cache/
+
 # Pyre type checker
 .pyre/
 
@@ -140,17 +155,7 @@ backup_*/
 
 # Local Development
 *.env.zen-vm.template
-.mcp.json
 .secrets.baseline
-.dockerignore
-.editorconfig
-.repomixignore
-.yamllint.yml
-
-# Development Tools
-repomix.config.json
-renovate.json
-noxfile.py
 
 # Services
 *.service
@@ -159,11 +164,12 @@ zen-mcp.service
 # Monitoring (local only)
 monitoring/
 
-# Claude Code
-.claude/
+# Claude Code (only user-specific data)
+.claude/settings.local.json
+.claude/.DS_Store
 
-# Planning Documents (local only)
-docs/planning/
+# Serena MCP Server (local development data)
+.serena/
 
 # OS-specific / Editor
 # =================================
@@ -191,3 +197,10 @@ local.settings.json
 *.classpath
 *.cproject
 /deployment/exported-template.json
+
+# Temporary Analysis Files
+# =================================
+# Remove these entries if the files should be tracked permanently
+*_ANALYSIS.md
+*_REVIEW.md
+*_PROGRESS.md

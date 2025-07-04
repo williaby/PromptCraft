@@ -2,22 +2,22 @@
 title: Contributing to PromptCraft-Hybrid
 version: 1.0
 status: published
-component: Documentation
-tags: ["contributing", "development", "guidelines", "pull-request", "code-standards"]
+agent_id: create_agent
+tags: ['contributing', 'development', 'guidelines', 'pull_request', 'code_standards']
 source: "PromptCraft-Hybrid Project"
 purpose: To provide comprehensive guidelines for contributing to the PromptCraft-Hybrid project.
 ---
 
 # Contributing to PromptCraft-Hybrid
 
-First off, thank you for considering contributing to PromptCraft-Hybrid! Your help is appreciated. Following these 
-guidelines helps to communicate that you respect the time of the developers managing and developing this open source 
-project. In return, they should reciprocate that respect in addressing your issue, assessing changes, and helping 
+First off, thank you for considering contributing to PromptCraft-Hybrid! Your help is appreciated. Following these
+guidelines helps to communicate that you respect the time of the developers managing and developing this open source
+project. In return, they should reciprocate that respect in addressing your issue, assessing changes, and helping
 you finalize your pull requests.
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the Contributor Covenant Code of Conduct. By 
+This project and everyone participating in it is governed by the Contributor Covenant Code of Conduct. By
 participating, you are expected to uphold this code.
 
 ## Getting Started
@@ -80,7 +80,7 @@ make lint
 All contributions must meet these quality standards:
 
 - **Code Formatting**: Black (line length 88) and Ruff linting
-- **Type Checking**: MyPy with strict configuration  
+- **Type Checking**: MyPy with strict configuration
 - **Test Coverage**: Minimum 80% coverage required
 - **Security**: Bandit security scanning must pass
 - **Documentation**: All public APIs must have docstrings
@@ -138,7 +138,7 @@ git add .
 git commit -m "feat(agents): add security agent for authentication patterns
 
 - Implement SecurityAgent class with OAuth2 capabilities
-- Add knowledge base for security best practices  
+- Add knowledge base for security best practices
 - Include comprehensive test coverage
 - Update agent registry and documentation
 
@@ -242,21 +242,159 @@ When creating new agents:
 - **Discussions**: GitHub Discussions for questions and ideas
 - **Discord**: [Community Server](https://discord.gg/promptcraft) for real-time collaboration
 
-### Security Guidelines
+### Dependency Management
 
-#### Secrets Management
+PromptCraft follows a secure dependency management strategy (ADR-009) that all contributors must understand and follow.
+
+#### Adding New Dependencies
+
+When adding any new package dependency, follow this exact process:
+
+##### 1. Check AssuredOSS Availability
+
+Always check if the package is available in Google's AssuredOSS repository first:
+
+```bash
+# Search for the package in AssuredOSS
+poetry search package-name --source assured-oss
+
+# Check for alternatives if not found
+poetry search alternative-package --source assured-oss
+```
+
+##### 2. Add the Dependency
+
+Use Poetry to add dependencies with appropriate version constraints:
+
+```bash
+# Production dependency
+poetry add "package-name>=1.0.0,<2.0.0"
+
+# Development dependency
+poetry add --group dev "dev-package>=1.0.0"
+
+# Optional dependency
+poetry add --optional "optional-package>=1.0.0"
+```
+
+##### 3. Update Requirements Files
+
+**CRITICAL**: Always regenerate requirements files after any dependency change:
+
+```bash
+# Regenerate with hash verification (default/secure mode)
+./scripts/generate_requirements.sh
+
+# For development/testing only (without hashes)
+./scripts/generate_requirements.sh --without-hashes
+```
+
+##### 4. Commit All Changes
+
+Always commit poetry files AND requirements files together:
+
+```bash
+git add pyproject.toml poetry.lock requirements*.txt
+git commit -m "feat(deps): add package-name for specific functionality
+
+- Add package-name for [specific use case]
+- Updated requirements files with hash verification
+- Verified AssuredOSS compatibility
+
+Closes #issue-number"
+```
+
+#### Security Classification
+
+Understanding package security classification is critical:
+
+**Security-Critical Packages** (immediate individual PRs from Renovate):
+- Authentication/crypto: `cryptography`, `pyjwt`, `passlib`, `bcrypt`, `pyotp`
+- Core frameworks: `fastapi`, `uvicorn`, `gradio`, `pydantic`, `httpx`
+- Azure services: `azure-identity`, `azure-keyvault-secrets`
+- AI/ML core: `anthropic`, `openai`, `qdrant-client`
+
+**Routine Packages** (monthly batched PRs from Renovate):
+- Development tools: `pytest`, `black`, `ruff`, `mypy`
+- Utilities: `python-dateutil`, `tenacity`, `rich`, `structlog`
+- Data processing: `pandas`, `numpy` (unless CVE)
+
+#### Version Constraints Guidelines
+
+**Production Dependencies** (pyproject.toml):
+```toml
+# Use caret ranges for automatic security updates
+fastapi = "^0.110.0"        # Allows 0.110.x and 0.x.y
+cryptography = "^42.0.2"    # Critical security package
+
+# Use explicit ranges for tighter control
+requests = ">=2.31.0,<3.0.0"  # Block major version bumps
+```
+
+**Development Dependencies**:
+```toml
+# More flexible for dev tools
+pytest = "^8.0.0"          # Can update more freely
+black = "^24.0.0"          # Formatting tools
+ruff = "^0.2.0"            # Linting tools
+```
+
+#### Troubleshooting Common Issues
+
+**Hash Verification Failures**:
+```bash
+# Regenerate requirements files
+./scripts/generate_requirements.sh
+
+# Check which source provided the package
+poetry show --source package-name
+```
+
+**Dependency Conflicts**:
+```bash
+# Check dependency tree
+poetry show --tree
+
+# Update conflicting constraints
+poetry add "conflicting-package>=compatible-version"
+```
+
+**CI Pipeline Failures**:
+```bash
+# Verify requirements synchronization
+poetry export --format=requirements.txt --output=test-check.txt
+diff requirements.txt test-check.txt
+rm test-check.txt
+```
+
+#### Pull Request Checklist for Dependencies
+
+When submitting a PR that adds or updates dependencies:
+
+- [ ] **AssuredOSS checked**: Verified package availability in secure repository
+- [ ] **Version constraints**: Used appropriate ranges (not exact pins)
+- [ ] **Requirements updated**: Ran `./scripts/generate_requirements.sh`
+- [ ] **All files committed**: pyproject.toml, poetry.lock, requirements*.txt
+- [ ] **Security classification**: Documented if package is security-critical
+- [ ] **Testing**: Verified application works with new dependencies
+- [ ] **Justification**: Clear explanation of why dependency is needed
+
+#### Security Guidelines
+
+##### Secrets Management
 
 - **Never commit secrets**: Use local encrypted .env files with GPG/SSH keys
 - **Follow ledgerbase pattern**: Reference existing security implementations
 - **Azure Key Vault**: For production secrets management
 - **Environment Variables**: Use UPPER_SNAKE_CASE naming
 
-#### Code Security
+##### Code Security
 
 - **Input Validation**: Always validate user inputs
 - **SQL Injection Prevention**: Use parameterized queries
 - **XSS Protection**: Sanitize outputs appropriately
 - **Authentication**: Follow OAuth2 and JWT best practices
+- **Dependencies**: Prefer AssuredOSS packages for security-critical components
 
 ## Recognition
 

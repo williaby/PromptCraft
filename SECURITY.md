@@ -2,7 +2,8 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities. Which versions are eligible for receiving such patches depends on the CVSS v3.0 Rating:
+We release patches for security vulnerabilities. Which versions are eligible for receiving such patches
+depends on the CVSS v3.0 Rating:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -11,7 +12,9 @@ We release patches for security vulnerabilities. Which versions are eligible for
 
 ## Reporting a Vulnerability
 
-Please report (suspected) security vulnerabilities to **security@promptcraft.io**. You will receive a response from us within 48 hours. If the issue is confirmed, we will release a patch as soon as possible depending on complexity but historically within a few days.
+Please report (suspected) security vulnerabilities to **<security@promptcraft.io>**. You will receive a response
+from us within 48 hours. If the issue is confirmed, we will release a patch as soon as possible depending on
+complexity but historically within a few days.
 
 Please include the following in your report:
 
@@ -26,18 +29,21 @@ Please include the following in your report:
 ## Security Best Practices
 
 ### Dependencies
+
 - All dependencies are locked with specific versions in `poetry.lock`
 - Requirements are exported with cryptographic hashes for pip verification
 - Automated dependency updates via Renovate bot
 - Daily security scanning in CI/CD pipeline
 
 ### Code Security
+
 - All code is scanned with Bandit for common security issues
 - Secrets detection prevents accidental credential commits
 - Type checking with mypy reduces runtime errors
 - Comprehensive test coverage (>80%) for all critical paths
 
 ### Infrastructure
+
 - All containers run as non-root users
 - Minimal base images to reduce attack surface
 - Network isolation between services
@@ -46,6 +52,7 @@ Please include the following in your report:
 ## Security Checklist for Contributors
 
 Before submitting a PR:
+
 - [ ] Run `nox -s security` to check for vulnerabilities
 - [ ] Ensure no secrets are exposed in code or configuration
 - [ ] Verify all user inputs are validated and sanitized

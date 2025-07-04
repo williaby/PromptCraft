@@ -1,0 +1,73 @@
+name: Setup Assured-OSS Authentication
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: 'Python version to use'
+        required: false
+        default: '3.11'
+        type: string
+    secrets:
+      ASSURED_OSS_SERVICE_ACCOUNT:
+        description: 'Google Cloud service account JSON'
+        required: true
+      ASSURED_OSS_PROJECT_ID:
+        description: 'Google Cloud project ID'
+        required: true
+
+jobs:
+  setup-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+          disable-sudo: true
+          allowed-endpoints: >
+            accounts.google.com:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            registry-1.docker.io:443
+            us-python.pkg.dev:443
+            oauth2.googleapis.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
+        with:
+          credentials_json: ${{ secrets.ASSURED_OSS_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7 # v2.1.1
+        with:
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker us-python.pkg.dev --quiet
+
+      - name: Configure Poetry for Assured-OSS
+        run: |
+          # Install Poetry if not already available
+          pip install poetry
+          
+          # Configure Poetry to use Assured-OSS authentication
+          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
+          
+          # Get access token for Assured-OSS
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
+          
+          echo "✅ Poetry configured for Assured-OSS authentication"
+
+      - name: Verify Assured-OSS Access
+        run: |
+          # Test authentication by attempting to fetch package index
+          curl -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+               "https://us-python.pkg.dev/assured-oss/python-packages/simple/" \
+               --fail --silent --show-error
+          echo "✅ Assured-OSS access verified"
