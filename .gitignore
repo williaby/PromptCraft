@@ -204,3 +204,8 @@ local.settings.json
 *_ANALYSIS.md
 *_REVIEW.md
 *_PROGRESS.md
+
+# Development Planning Documents
+# =================================
+# Planning documents, analysis, and temporary development files
+docs/planning/
