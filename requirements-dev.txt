@@ -2180,9 +2180,9 @@ triton==3.3.1 ; python_version >= "3.11" and python_version < "4.0" and platform
 typer==0.16.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:1f79bed11d4d02d4310e3c1b7ba594183bcedb0ac73b27a9e5f28f6fb5b98855 \
     --hash=sha256:af377ffaee1dbe37ae9440cb4e8f11686ea5ce4e9bae01b84ae7c63b87f1dd3b
-types-aiofiles==23.2.0.20240623 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:70597b29fc40c8583b6d755814b2cd5fcdb6785622e82d74ef499f9066316e08 \
-    --hash=sha256:d515b2fa46bf894aff45a364a704f050de3898344fd6c5994d58dc8b59ab71e6
+types-aiofiles==24.1.0.20250606; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:48f9e26d2738a21e0b0f19381f713dcdb852a36727da8414b1ada145d40a18fe \
+    --hash=sha256:e568c53fb9017c80897a9aa15c74bf43b7ee90e412286ec1e0912b6e79301aee
 types-python-dateutil==2.9.0.20250516 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:13e80d6c9c47df23ad773d54b2826bd52dbbb41be87c3f339381c1700ad21ee5 \
     --hash=sha256:2b2b3f57f9c6a61fba26a9c0ffb9ea5681c9b83e69cd897c6b5f668d9c0cab93
