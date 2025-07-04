@@ -9,7 +9,7 @@ This file tests various scenarios to ensure WTD workflow functions correctly:
 """
 
 
-def test_wtd_integration():
+def test_wtd_integration() -> str:
     """Test function to validate WTD can analyze meaningful code changes."""
     return "WTD integration test successful"
 
@@ -39,10 +39,10 @@ def calculate_summary_quality(code_diff: str) -> float:
 class WTDValidationTests:
     """Test class for validating WTD functionality."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_results = []
 
-    def run_workflow_tests(self):
+    def run_workflow_tests(self) -> None:
         """Run tests to validate WTD workflow triggers correctly."""
         test_cases = [
             "PR opened trigger",
@@ -61,7 +61,7 @@ class WTDValidationTests:
                 },
             )
 
-    def validate_file_exclusions(self):
+    def validate_file_exclusions(self) -> dict[str, str | list[str]]:
         """Validate that excluded file types don't trigger analysis."""
         excluded_patterns = ["dist/", "build/", "vendor/", "*.lock", "*.png", "*.jpg"]
 

@@ -54,14 +54,14 @@ jobs:
         run: |
           # Install Poetry if not already available
           pip install poetry
-          
+
           # Configure Poetry to use Assured-OSS authentication
           poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
-          
+
           # Get access token for Assured-OSS
           ACCESS_TOKEN=$(gcloud auth print-access-token)
           poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
-          
+
           echo "✅ Poetry configured for Assured-OSS authentication"
 
       - name: Verify Assured-OSS Access

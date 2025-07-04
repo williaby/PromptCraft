@@ -34,9 +34,26 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
+        with:
+          credentials_json: ${{ secrets.ASSURED_OSS_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7 # v2.1.1
+        with:
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Configure Poetry for Assured-OSS
+        run: |
+          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
+
       - name: Verify poetry.lock is up to date
         run: |
-          poetry lock --check
+          poetry check
 
       - name: Export requirements with hashes
         run: |
@@ -71,6 +88,23 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
+        with:
+          credentials_json: ${{ secrets.ASSURED_OSS_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7 # v2.1.1
+        with:
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Configure Poetry for Assured-OSS
+        run: |
+          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
 
       - name: Install dependencies
         run: poetry install
@@ -114,6 +148,23 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
+        with:
+          credentials_json: ${{ secrets.ASSURED_OSS_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7 # v2.1.1
+        with:
+          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
+
+      - name: Configure Poetry for Assured-OSS
+        run: |
+          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -123,10 +174,8 @@ jobs:
           restore-keys: |
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install dependencies with hash verification
-        run: |
-          poetry export --format=requirements.txt --with-hashes --output=requirements-ci.txt
-          poetry run pip install --require-hashes -r requirements-ci.txt
+      - name: Install dependencies
+        run: poetry install
 
       - name: Run tests
         run: |

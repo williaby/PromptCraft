@@ -4,7 +4,7 @@ complexity: medium
 estimated_time: "10-15 minutes"
 dependencies: ["workflow-scope-analysis"]
 sub_commands: []
-version: "1.0"
+version: "1.1"
 ---
 
 # Workflow Plan Validation
@@ -23,6 +23,24 @@ This command requires completed scope analysis. If not done, run:
 /project:workflow-scope-analysis phase X issue Y
 ```
 
+### Environment Prerequisites Validation
+
+1. **Validate Environment Readiness**:
+   - Run environment validation using setup_validator.py
+   - Ensure all development tools are properly configured
+   - Verify prerequisite issues are completed before planning
+   - Check that environment meets current issue requirements
+
+2. **File Change Logging** (MANDATORY):
+   - Log ALL file changes to `docs/planning/claude-file-change-log.md`
+   - Format: `YYYY-MM-DD HH:MM:SS | CHANGE_TYPE | RELATIVE_FILE_PATH`
+   - Change types: ADDED, MODIFIED, DELETED
+
+```bash
+# Validate environment before planning
+poetry run python src/utils/setup_validator.py --scope planning
+```
+
 ## Instructions
 
 ### Step 1: Create Initial Action Plan
@@ -37,20 +55,35 @@ This command requires completed scope analysis. If not done, run:
    - **Configure Don't Build**: Use Zen MCP Server, Heimdall MCP Server, AssuredOSS packages
    - **Focus on Unique Value**: Build only what's truly unique to PromptCraft
 
-### Step 2: MANDATORY Scope Check
+### Step 2: Dependency Impact Analysis
+
+1. **Analyze Dependencies from Scope Analysis**:
+   - Review what this issue provides to dependent issues
+   - Document what issues depend on this one's completion
+   - Use dependencies to CLARIFY plan boundaries, not expand them
+   - Ensure plan deliverables align with dependency expectations
+
+2. **Plan Consistency with Dependencies**:
+   - Verify plan outputs match what dependent issues expect
+   - Check that prerequisite issues provide what this plan needs
+   - Document any dependency conflicts early in planning
+   - Prevent scope creep through clear dependency analysis
+
+### Step 3: MANDATORY Scope Check
 
 1. **Compare Action Plan Against Acceptance Criteria**:
    - **Remove any items not explicitly required**
    - Flag any plan items that exceed the defined scope
    - **Document why each plan item is necessary for acceptance criteria**
 
-2. **Scope Validation Questions**:
+2. **Enhanced Scope Validation Questions**:
    - Does every action item directly address an acceptance criterion?
    - Are there any "nice to have" items that should be removed?
    - Does the plan stay within the estimated time?
    - Would this plan fully satisfy the acceptance criteria and nothing more?
+   - Do plan deliverables align with dependency analysis without expanding scope?
 
-### Step 3: IT Manager Consultation (Optional)
+### Step 4: IT Manager Consultation (Optional)
 
 For expert mode, use Zen to consult with Gemini in IT manager role:
 - **Lead with the scope boundary document**
@@ -59,7 +92,35 @@ For expert mode, use Zen to consult with Gemini in IT manager role:
 - Present action plan with scope validation
 - Ensure no scope creep in the discussion
 
-### Step 4: Final Scope Validation
+### Step 5: Automated Plan Consistency Checks
+
+1. **Cross-check Plan Against Dependency Analysis**:
+   - Verify each acceptance criterion has corresponding plan items
+   - Check that plan deliverables match dependency expectations
+   - Identify potential overlap with other issues or phases
+   - Validate time estimates against plan complexity
+
+2. **Automated Validation Criteria**:
+   - Clear pass/fail criteria for each plan component
+   - Measurable success indicators for plan items
+   - Dependency alignment verification
+   - Resource availability confirmation
+
+### Step 6: Rollback Procedures
+
+1. **Define Plan Rollback Strategy**:
+   - Document rollback steps for each major plan component
+   - Identify safe rollback points during implementation
+   - Plan for dependency chain impact if rollback needed
+   - Establish rollback criteria and decision points
+
+2. **Rollback Documentation Requirements**:
+   - Clear rollback triggers (when to abort implementation)
+   - Step-by-step rollback procedures
+   - Data preservation requirements during rollback
+   - Communication plan for rollback scenarios
+
+### Step 7: Final Scope Validation
 
 **MANDATORY FINAL CHECK**:
 - Review action plan against original acceptance criteria one more time

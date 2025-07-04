@@ -4,7 +4,7 @@ complexity: medium
 estimated_time: "15-30 minutes"
 dependencies: ["workflow-implementation", "validation-precommit"]
 sub_commands: ["validation-precommit"]
-version: "1.0"
+version: "1.1"
 ---
 
 # Workflow Review Cycle
@@ -20,26 +20,56 @@ Comprehensive testing, validation, and multi-agent review of implemented solutio
 
 This command requires completed implementation. Implementation must pass basic quality gates before review.
 
+### Environment Prerequisites Validation
+
+1. **Validate Review Environment**:
+   - Run environment validation using setup_validator.py
+   - Ensure all testing and validation tools are available
+   - Verify all dependencies are properly installed
+   - Confirm access to external services (Qdrant, Azure AI)
+
+2. **File Change Logging** (MANDATORY):
+   - Log ALL file changes to `docs/planning/claude-file-change-log.md`
+   - Format: `YYYY-MM-DD HH:MM:SS | CHANGE_TYPE | RELATIVE_FILE_PATH`
+   - Change types: ADDED, MODIFIED, DELETED
+
+```bash
+# MANDATORY: Validate environment before review
+poetry run python src/utils/setup_validator.py --scope review
+```
+
 ## Instructions
 
-### Step 1: Pre-commit Validation
+### Step 1: Comprehensive Quality Gate Validation
 
 1. **Run Comprehensive Pre-commit Checks**:
    ```bash
    /project:validation-precommit
    ```
 
-2. **Ensure All Linting Passes**:
-   - Markdown: `markdownlint **/*.md`
-   - YAML: `yamllint **/*.{yml,yaml}`
-   - Python: `poetry run black --check .`
-   - Python: `poetry run ruff check .`
-   - Python: `poetry run mypy src`
+2. **Automated Compliance Checking**:
+   - **File-Type Specific Linting** (mandatory for all modified files):
+     - Markdown: `markdownlint **/*.md`
+     - YAML: `yamllint **/*.{yml,yaml}`
+     - Python: `poetry run black --check .`
+     - Python: `poetry run ruff check .`
+     - Python: `poetry run mypy src`
+   
+   - **Security Compliance**:
+     - Bandit security scan: `poetry run bandit -r src`
+     - Dependency vulnerability check: `poetry run safety check`
+     - GPG and SSH key validation
+   
+   - **Development Standards Compliance**:
+     - Naming conventions validation (snake_case, kebab-case, PascalCase)
+     - Knowledge file structure validation (C.R.E.A.T.E. framework)
+     - Git commit signing verification
 
-3. **Verify Code Quality Standards**:
-   - 80% minimum test coverage
-   - No security vulnerabilities
-   - All naming conventions followed
+3. **Quality Standards Verification**:
+   - **Test Coverage**: 80% minimum coverage validation
+   - **Code Quality**: No critical linting violations
+   - **Security**: Zero high-severity vulnerabilities
+   - **Documentation**: All knowledge files follow style guide
 
 ### Step 2: Issue-Specific Testing
 
@@ -59,34 +89,55 @@ This command requires completed implementation. Implementation must pass basic q
    - Validate multi-agent coordination
    - Check UI/API integration points
 
-### Step 3: Multi-Agent Review
+### Step 3: Enhanced Multi-Agent Review Coordination
 
-1. **OpenAI O3 Testing**:
-   Use Zen to have O3 develop additional test suite:
+1. **Review Criteria Consistency Validation**:
+   Before engaging agents, establish consistent review criteria:
+   - Cross-check acceptance criteria against implementation scope
+   - Verify review criteria align with original issue boundaries
+   - Confirm evaluation standards match project requirements
+   - Document review baseline for agent consistency
+
+2. **Coordinated OpenAI O3 Testing**:
+   Use Zen to have O3 develop additional test suite with specific focus:
    ```
+   Provide O3 with:
+   - Original acceptance criteria document
+   - Implementation scope boundaries 
+   - Current test coverage gaps
+   
    Ask O3 to:
-   - Review the implementation against acceptance criteria
-   - Develop edge case tests
-   - Identify potential failure modes
-   - Suggest additional validation approaches
+   - Review implementation against EXACT acceptance criteria
+   - Develop edge case tests within scope boundaries
+   - Identify potential failure modes for current scope only
+   - Suggest additional validation approaches for defined requirements
+   - Validate no scope creep in implementation
    ```
 
-2. **Gemini Final Review**:
-   Use Zen to have Gemini perform final code review:
+3. **Coordinated Gemini Final Review**:
+   Use Zen to have Gemini perform final code review with consistency:
    ```
+   Provide Gemini with:
+   - Original scope boundary document
+   - O3's testing findings for context
+   - Development standards checklist
+   
    Ask Gemini to:
-   - Assess code quality and architecture
-   - Review security implications
-   - Validate against development standards
-   - Check for potential improvements
+   - Assess code quality and architecture within scope
+   - Review security implications for implemented features only
+   - Validate against development standards consistently
+   - Check for potential improvements within boundaries
+   - Cross-validate with O3 findings for consistency
    ```
 
-3. **Consensus Validation**:
-   Ensure all agents agree the code is implemented correctly:
-   - Compare review findings across agents
-   - Resolve any conflicting recommendations
-   - Document consensus decisions
-   - Identify required changes
+4. **Multi-Agent Consensus Validation**:
+   Ensure coordinated agent agreement with consistency checks:
+   - **Cross-Agent Validation**: Compare review findings for consistency
+   - **Scope Alignment**: Verify all agents evaluated within same boundaries
+   - **Criteria Consistency**: Ensure agents used same evaluation standards
+   - **Conflict Resolution**: Resolve conflicting recommendations systematically
+   - **Consensus Documentation**: Document agreed-upon decisions and rationale
+   - **Change Identification**: Identify required changes with agent consensus
 
 ### Step 4: Final Validation Report
 
@@ -95,17 +146,29 @@ Generate comprehensive validation report:
 ```markdown
 # Implementation Review Report: Phase {X} Issue {Y}
 
+## Environment Validation
+- [ ] Review environment validated
+- [ ] All testing tools available
+- [ ] External service access confirmed
+- [ ] Dependencies properly installed
+
 ## Acceptance Criteria Validation
 - [ ] Criterion 1: [Description] - Status: Pass/Fail
 - [ ] Criterion 2: [Description] - Status: Pass/Fail
 - [ ] Criterion 3: [Description] - Status: Pass/Fail
 
-## Quality Gates
+## Comprehensive Quality Gates
+### Automated Compliance Results
 - [ ] Pre-commit hooks: Pass/Fail
-- [ ] Test coverage ≥80%: Pass/Fail
-- [ ] Security scans: Pass/Fail
-- [ ] Linting compliance: Pass/Fail
-- [ ] Naming conventions: Pass/Fail
+- [ ] File-type specific linting: Pass/Fail
+- [ ] Security compliance: Pass/Fail
+- [ ] Development standards compliance: Pass/Fail
+
+### Quality Standards Verification
+- [ ] Test coverage ≥80%: Pass/Fail - [Actual %]
+- [ ] Code quality: Pass/Fail - [Critical violations: X]
+- [ ] Security: Pass/Fail - [High-severity vulnerabilities: X]
+- [ ] Documentation: Pass/Fail - [Style guide compliance]
 
 ## Test Results
 - **Unit Tests**: [X/Y passed] - [Coverage %]
@@ -113,43 +176,55 @@ Generate comprehensive validation report:
 - **Security Scans**: [No vulnerabilities found / Issues identified]
 - **Performance**: [Within acceptable bounds / Issues noted]
 
-## Multi-Agent Review Summary
-### O3 Testing Results
-- [Key findings and additional tests developed]
-- [Edge cases identified]
-- [Recommendations]
+## Enhanced Multi-Agent Review Summary
+### Review Criteria Consistency
+- [ ] Acceptance criteria alignment verified
+- [ ] Review boundaries consistent across agents
+- [ ] Evaluation standards documented and applied
 
-### Gemini Code Review
-- [Code quality assessment]
-- [Security evaluation]
-- [Improvement suggestions]
+### O3 Testing Results (Coordinated)
+- **Scope Validation**: [Implementation within boundaries: Yes/No]
+- **Key Findings**: [Edge cases and additional tests developed]
+- **Failure Modes**: [Potential issues identified within scope]
+- **Recommendations**: [Validation approaches for defined requirements]
 
-### Consensus Decisions
-- [Agreed-upon changes required]
-- [Accepted implementation decisions]
-- [Future improvement opportunities]
+### Gemini Code Review (Coordinated)
+- **Code Quality**: [Assessment within scope boundaries]
+- **Security Evaluation**: [For implemented features only]
+- **Standards Compliance**: [Development standards validation]
+- **Cross-Validation**: [Consistency with O3 findings]
+
+### Multi-Agent Consensus
+- **Cross-Agent Validation**: [Findings consistency assessment]
+- **Scope Alignment**: [All agents evaluated same boundaries: Yes/No]
+- **Conflict Resolution**: [How disagreements were resolved]
+- **Consensus Decisions**: [Agreed-upon changes and implementation decisions]
 
 ## Final Status
 - [ ] All acceptance criteria met
-- [ ] All quality gates passed
-- [ ] All agents approve implementation
+- [ ] All comprehensive quality gates passed
+- [ ] Multi-agent consensus achieved with consistency
+- [ ] Review criteria consistently applied
 - [ ] Ready for user approval
 
 ## Required Changes (if any)
-- [List specific changes needed before approval]
+- [List specific changes needed before approval with agent consensus]
 
 ## Recommendations for Future
-- [Suggestions for improvement in future iterations]
+- [Suggestions for improvement in future iterations with agent agreement]
 ```
 
-## Completion Criteria
+## Enhanced Completion Criteria
 
 The review cycle is complete when:
-1. **All acceptance criteria** are validated as met
-2. **All quality gates** pass without exceptions
-3. **Multi-agent consensus** is achieved
-4. **No critical issues** remain unresolved
-5. **User approval** is obtained
+1. **Environment validation** passes all prerequisites
+2. **All acceptance criteria** are validated as met with consistency
+3. **All comprehensive quality gates** pass without exceptions
+4. **Automated compliance checking** shows full compliance
+5. **Multi-agent consensus** is achieved with coordinated consistency
+6. **Review criteria consistency** is validated across all agents
+7. **No critical issues** remain unresolved
+8. **User approval** is obtained
 
 ## Error Handling
 

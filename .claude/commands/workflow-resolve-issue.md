@@ -97,6 +97,14 @@ Each workflow component produces specific deliverables:
 - **Scope creep detection**: Automatic boundary validation and user consultation
 - **Quality gate failures**: Clear remediation steps with specific commands
 
+## File Change Logging (MANDATORY)
+
+All workflow components must include file change logging:
+- **Log Location**: `docs/planning/claude-file-change-log.md`
+- **Format**: `YYYY-MM-DD HH:MM:SS | CHANGE_TYPE | RELATIVE_FILE_PATH`
+- **Change Types**: ADDED, MODIFIED, DELETED
+- **Requirement**: Log EVERY file addition, modification, or deletion
+
 ## Development Philosophy Integration
 
 All workflow components follow the project's core principles:

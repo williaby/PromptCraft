@@ -144,7 +144,10 @@ class ClaudeContext7Integration:
         return result
 
     def generate_context7_call(
-        self, package_name: str, topic: str | None = None, tokens: int = 2000,
+        self,
+        package_name: str,
+        topic: str | None = None,
+        tokens: int = 2000,
     ) -> str:
         """Generate a properly formatted Context7 call."""
         validation = self.validate_package(package_name)

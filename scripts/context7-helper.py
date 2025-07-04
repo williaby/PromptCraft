@@ -89,7 +89,10 @@ class Context7Helper:
         return self.mappings.get("pending_verification", {})
 
     def generate_context7_call(
-        self, package_name: str, topic: str = None, tokens: int = 2000,
+        self,
+        package_name: str,
+        topic: str = None,
+        tokens: int = 2000,
     ) -> str:
         """
         Generate a Context7 get-library-docs call.
@@ -116,7 +119,11 @@ tokens: {tokens}"""
         return call
 
     def update_mappings(
-        self, package_name: str, context7_id: str, trust_score: float, notes: str = "",
+        self,
+        package_name: str,
+        context7_id: str,
+        trust_score: float,
+        notes: str = "",
     ):
         """
         Update the mappings file with a new verified package.

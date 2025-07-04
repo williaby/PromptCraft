@@ -1,13 +1,17 @@
-[tool.poetry]
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
 name = "promptcraft-hybrid"
 version = "0.1.0"
 description = "A Zen-powered AI workbench for transforming queries into accurate, context-aware outputs"
-authors = ["PromptCraft Team <team@promptcraft.io>"]
-license = "MIT"
+authors = [
+    {name = "PromptCraft Team", email = "team@promptcraft.io"}
+]
+license = {text = "MIT"}
 readme = "README.md"
-homepage = "https://github.com/williaby/PromptCraft"
-repository = "https://github.com/williaby/PromptCraft"
-documentation = "https://github.com/williaby/PromptCraft/wiki"
+requires-python = ">=3.11,<4.0"
 keywords = ["ai", "prompt-engineering", "mcp", "zen", "orchestration"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -19,6 +23,116 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+dependencies = [
+    # Security-Critical Packages - Patch-level pinning (ADR-009)
+    "gradio>=5.31.0,<6.0.0",
+    "fastapi>=0.115.4,<0.116.0", 
+    "uvicorn[standard]>=0.35.0,<0.36.0",
+    "httpx>=0.28.1,<0.29.0",
+    "pydantic>=2.11.0,<3.0.0",
+    "pydantic-settings>=2.2.1,<3.0.0",
+    
+    # AI/ML service integrations
+    "anthropic>=0.57.0,<0.58.0",
+    "openai>=1.12.0,<1.13.0",
+    "qdrant-client>=1.8.0,<1.9.0",
+    
+    # Azure cloud services
+    "azure-identity>=1.15.0,<1.16.0",
+    "azure-keyvault-secrets>=4.8.0,<4.9.0",
+    "azure-storage-blob>=12.19.0,<12.20.0",
+    
+    # Cryptographic libraries
+    "cryptography>=45.0.0,<46.0.0",
+    "pyjwt[crypto]>=2.8.0,<2.9.0",
+    "python-gnupg>=0.5.2,<0.6.0",
+    
+    # ML/NLP processing
+    "sentence-transformers>=5.0.0,<6.0.0",
+    "tiktoken>=0.9.0,<1.0.0",
+    
+    # Data processing
+    "numpy>=2.0.0,<3.0.0",
+    "pandas>=2.2.0,<3.0.0",
+    "pyyaml>=6.0.1,<7.0.0",
+    "python-multipart>=0.0.18,<1.0.0",
+    
+    # Infrastructure
+    "redis[hiredis]>=6.0.0,<7.0.0",
+    "prometheus-client>=0.20.0,<1.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "structlog>=25.0.0,<26.0.0",
+    "rich>=14.0.0,<15.0.0",
+    "tenacity>=9.0.0,<10.0.0",
+    "python-dateutil>=2.8.2,<3.0.0",
+    "aiofiles>=24.0.0,<25.0.0",
+    "asyncer>=0.0.5,<1.0.0",
+    
+    # MCP architecture dependencies
+    "mcp>=1.0.0,<2.0.0",
+    "spacy>=3.7.0,<4.0.0",
+    "nltk>=3.8.0,<4.0.0",
+    "sentry-sdk>=2.0.0,<3.0.0",
+    "opentelemetry-api>=1.25.0,<2.0.0",
+    "typing-extensions>=4.8.0,<5.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/williaby/PromptCraft"
+Repository = "https://github.com/williaby/PromptCraft"
+Documentation = "https://github.com/williaby/PromptCraft/wiki"
+Issues = "https://github.com/williaby/PromptCraft/issues"
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=8.0.1",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=6.0.0",
+    "pytest-env>=1.1.3",
+    "pytest-mock>=3.12.0",
+    "pytest-timeout>=2.2.0",
+    "pytest-xdist>=3.5.0",
+    "hypothesis>=6.98.9",
+    "faker>=37.0.0",
+
+    # Code quality
+    "black>=25.0.0",
+    "ruff>=0.12.0",
+    "mypy>=1.8.0",
+    "types-pyyaml>=6.0.12.12",
+    "types-python-dateutil>=2.8.19.20240106",
+    "types-aiofiles>=24.0.0",
+
+    # Security scanning
+    "bandit[toml]>=1.7.7",
+    "safety>=3.0.1",
+    "detect-secrets>=1.5.0",
+
+    # Documentation
+    "mkdocs>=1.5.3",
+    "mkdocs-material>=9.5.9",
+    "mkdocstrings[python]>=0.24.0",
+
+    # Development tools
+    "pre-commit>=4.0.0",
+    "nox>=2025.1.0",
+    "ipython>=9.0.0",
+    "ipdb>=0.13.13",
+]
+test = [
+    "pytest-benchmark>=4.0.0",
+    "pytest-memray>=1.5.0",
+]
+
+# Poetry-specific configuration (backward compatibility)
+[tool.poetry]
+name = "promptcraft-hybrid"
+version = "0.1.0"
+description = "A Zen-powered AI workbench for transforming queries into accurate, context-aware outputs"
+authors = ["PromptCraft Team <team@promptcraft.io>"]
+readme = "README.md"
 packages = [{include = "src"}]
 
 [[tool.poetry.source]]
@@ -28,111 +142,10 @@ priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-
-# Security-Critical Packages - Patch-level pinning (ADR-009)
-# Web framework components handling user input and authentication
-gradio = ">=5.31.0,<6.0.0"  # UI framework with user interaction (security update)
-fastapi = ">=0.115.0,<0.116.0"  # Web framework handling HTTP requests
-uvicorn = {extras = ["standard"], version = ">=0.35.0,<0.36.0"}  # ASGI server
-httpx = ">=0.28.0,<0.29.0"  # HTTP client for external API calls
-pydantic = ">=2.11.0,<3.0.0"  # Data validation and input sanitization (MCP compatible)
-pydantic-settings = ">=2.2.1,<3.0.0"  # Settings management
-
-# AI/ML service integrations with API keys
-anthropic = ">=0.57.0,<0.58.0"  # AI service integration
-openai = ">=1.12.0,<1.13.0"  # OpenAI API integration
-qdrant-client = ">=1.8.0,<1.9.0"  # Vector database client
-
-# Azure cloud services with authentication
-azure-identity = ">=1.15.0,<1.16.0"  # Identity and authentication
-azure-keyvault-secrets = ">=4.8.0,<4.9.0"  # Secrets management
-azure-storage-blob = ">=12.19.0,<12.20.0"  # Cloud storage access
-
-# Security-critical cryptographic libraries
-cryptography = ">=45.0.0,<46.0.0"  # Core cryptographic operations (security update)
-pyjwt = {extras = ["crypto"], version = ">=2.8.0,<2.9.0"}  # JWT handling
-python-gnupg = ">=0.5.2,<0.6.0"  # GPG operations for .env encryption
-
-# Core Framework Packages - Minor-level pinning (ADR-009)
-# ML/NLP processing components
-sentence-transformers = ">=5.0.0,<6.0.0"  # Embedding generation
-tiktoken = ">=0.9.0,<1.0.0"  # Token counting utilities
-
-# Data processing utilities
-numpy = ">=2.0.0,<3.0.0"  # Numerical computing
-pandas = ">=2.2.0,<3.0.0"  # Data manipulation
-pyyaml = ">=6.0.1,<7.0.0"  # YAML processing
-python-multipart = ">=0.0.18,<1.0.0"  # Multipart form handling (security update)
-
-# Infrastructure components
-redis = {extras = ["hiredis"], version = ">=6.0.0,<7.0.0"}  # Caching layer
-prometheus-client = ">=0.20.0,<1.0.0"  # Metrics collection
-python-dotenv = ">=1.0.1,<2.0.0"  # Environment configuration
-
-# Logging and monitoring
-structlog = ">=25.0.0,<26.0.0"  # Structured logging
-rich = ">=14.0.0,<15.0.0"  # Rich text formatting
-
-# Utilities
-tenacity = ">=9.0.0,<10.0.0"  # Retry mechanisms
-python-dateutil = ">=2.8.2,<3.0.0"  # Date utilities
-aiofiles = ">=24.0.0,<25.0.0"  # Async file operations
-asyncer = ">=0.0.5,<1.0.0"  # Async utilities
-
-# Missing Critical Dependencies - Added for MCP architecture
-mcp = ">=1.0.0,<2.0.0"  # MCP protocol client for Zen server integration
-spacy = ">=3.7.0,<4.0.0"  # NLP processing for HyDE query enhancement
-nltk = ">=3.8.0,<4.0.0"  # Natural language utilities
-detect-secrets = ">=1.5.0,<2.0.0"  # Security scanning
-sentry-sdk = ">=2.0.0,<3.0.0"  # Error monitoring and alerting
-opentelemetry-api = ">=1.25.0,<2.0.0"  # Observability and tracing
-tomli = "^2.2.1"
+# Dependencies moved to [project.dependencies] for PEP 621 compliance
 
 [tool.poetry.group.dev.dependencies]
-# Testing
-pytest = "^8.0.1"
-pytest-asyncio = "^0.26.0"
-pytest-cov = "^6.0.0"
-pytest-env = "^1.1.3"
-pytest-mock = "^3.12.0"
-pytest-timeout = "^2.2.0"
-pytest-xdist = "^3.5.0"
-hypothesis = "^6.98.9"
-faker = "^37.0.0"
-
-# Code quality
-black = "^25.0.0"
-ruff = "^0.12.0"
-mypy = "^1.8.0"
-types-pyyaml = "^6.0.12.12"
-types-python-dateutil = "^2.8.19.20240106"
-types-aiofiles = "^24.0.0"
-
-# Security scanning
-bandit = {extras = ["toml"], version = "^1.7.7"}
-safety = "^3.0.1"
-
-# Documentation
-mkdocs = "^1.5.3"
-mkdocs-material = "^9.5.9"
-mkdocstrings = {extras = ["python"], version = "^0.24.0"}
-
-# Development tools
-pre-commit = "^4.0.0"
-nox = "^2025.1.0"
-ipython = "^9.0.0"
-ipdb = "^0.13.13"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest-benchmark = "^4.0.0"
-pytest-memray = "^1.5.0"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+# Development dependencies moved to [project.optional-dependencies]
 
 [tool.black]
 line-length = 88
@@ -158,7 +171,7 @@ extend-exclude = '''
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -322,7 +335,7 @@ output = "coverage.xml"
 [tool.bandit]
 targets = ["src"]
 exclude_dirs = ["tests", "scripts"]
-skips = ["B101", "B601"]
+skips = ["B101"]
 
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"]
