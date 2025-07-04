@@ -10,7 +10,7 @@
 - **Real-Time Orchestration**: Zen MCP Server
 - **Background Orchestration**: Prefect
 - **Query Intelligence**: HyDE Engine
-- **RAG Framework**: LlamaIndex  
+- **RAG Framework**: LlamaIndex
 - **Vector Database**: Qdrant (external at 192.168.1.16:6333)
 - **AI Providers**: Anthropic, OpenAI, Azure AI
 

@@ -21,75 +21,92 @@ classifiers = [
 ]
 packages = [{include = "src"}]
 
+[[tool.poetry.source]]
+name = "assured-oss"
+url = "https://us-python.pkg.dev/assured-oss/python-packages/simple/"
+priority = "supplemental"
+
 [tool.poetry.dependencies]
 python = "^3.11"
-# Core web framework
-gradio = "^4.19.2"
-fastapi = "^0.110.0"
-uvicorn = {extras = ["standard"], version = "^0.27.1"}
-httpx = "^0.27.0"
 
-# Data models and validation
-pydantic = "^2.6.1"
-pydantic-settings = "^2.2.1"
+# Security-Critical Packages - Patch-level pinning (ADR-009)
+# Web framework components handling user input and authentication
+gradio = ">=5.31.0,<6.0.0"  # UI framework with user interaction (security update)
+fastapi = ">=0.115.0,<0.116.0"  # Web framework handling HTTP requests
+uvicorn = {extras = ["standard"], version = ">=0.35.0,<0.36.0"}  # ASGI server
+httpx = ">=0.28.0,<0.29.0"  # HTTP client for external API calls
+pydantic = ">=2.11.0,<3.0.0"  # Data validation and input sanitization (MCP compatible)
+pydantic-settings = ">=2.2.1,<3.0.0"  # Settings management
 
-# AI/ML dependencies
-qdrant-client = "^1.8.0"
-sentence-transformers = "^2.5.1"
-anthropic = "^0.18.1"
-openai = "^1.12.0"
-tiktoken = "^0.6.0"
+# AI/ML service integrations with API keys
+anthropic = ">=0.57.0,<0.58.0"  # AI service integration
+openai = ">=1.12.0,<1.13.0"  # OpenAI API integration
+qdrant-client = ">=1.8.0,<1.9.0"  # Vector database client
 
-# Azure integration
-azure-identity = "^1.15.0"
-azure-keyvault-secrets = "^4.8.0"
-azure-storage-blob = "^12.19.0"
+# Azure cloud services with authentication
+azure-identity = ">=1.15.0,<1.16.0"  # Identity and authentication
+azure-keyvault-secrets = ">=4.8.0,<4.9.0"  # Secrets management
+azure-storage-blob = ">=12.19.0,<12.20.0"  # Cloud storage access
 
-# Data processing
-numpy = "^1.26.4"
-pandas = "^2.2.0"
-pyyaml = "^6.0.1"
-python-multipart = "^0.0.9"
+# Security-critical cryptographic libraries
+cryptography = ">=45.0.0,<46.0.0"  # Core cryptographic operations (security update)
+pyjwt = {extras = ["crypto"], version = ">=2.8.0,<2.9.0"}  # JWT handling
+python-gnupg = ">=0.5.2,<0.6.0"  # GPG operations for .env encryption
 
-# Infrastructure
-redis = {extras = ["hiredis"], version = "^5.0.1"}
-prometheus-client = "^0.20.0"
-python-dotenv = "^1.0.1"
+# Core Framework Packages - Minor-level pinning (ADR-009)
+# ML/NLP processing components
+sentence-transformers = ">=5.0.0,<6.0.0"  # Embedding generation
+tiktoken = ">=0.9.0,<1.0.0"  # Token counting utilities
+
+# Data processing utilities
+numpy = ">=2.0.0,<3.0.0"  # Numerical computing
+pandas = ">=2.2.0,<3.0.0"  # Data manipulation
+pyyaml = ">=6.0.1,<7.0.0"  # YAML processing
+python-multipart = ">=0.0.18,<1.0.0"  # Multipart form handling (security update)
+
+# Infrastructure components
+redis = {extras = ["hiredis"], version = ">=6.0.0,<7.0.0"}  # Caching layer
+prometheus-client = ">=0.20.0,<1.0.0"  # Metrics collection
+python-dotenv = ">=1.0.1,<2.0.0"  # Environment configuration
 
 # Logging and monitoring
-structlog = "^24.1.0"
-rich = "^14.0.0"
-
-# Security
-cryptography = "^45.0.0"
-pyjwt = {extras = ["crypto"], version = "^2.8.0"}
-python-gnupg = "^0.5.2"
+structlog = ">=25.0.0,<26.0.0"  # Structured logging
+rich = ">=14.0.0,<15.0.0"  # Rich text formatting
 
 # Utilities
-tenacity = "^8.2.3"
-python-dateutil = "^2.8.2"
-aiofiles = "^24.0.0"
-asyncer = "^0.0.5"
+tenacity = ">=9.0.0,<10.0.0"  # Retry mechanisms
+python-dateutil = ">=2.8.2,<3.0.0"  # Date utilities
+aiofiles = ">=24.0.0,<25.0.0"  # Async file operations
+asyncer = ">=0.0.5,<1.0.0"  # Async utilities
+
+# Missing Critical Dependencies - Added for MCP architecture
+mcp = ">=1.0.0,<2.0.0"  # MCP protocol client for Zen server integration
+spacy = ">=3.7.0,<4.0.0"  # NLP processing for HyDE query enhancement
+nltk = ">=3.8.0,<4.0.0"  # Natural language utilities
+detect-secrets = ">=1.5.0,<2.0.0"  # Security scanning
+sentry-sdk = ">=2.0.0,<3.0.0"  # Error monitoring and alerting
+opentelemetry-api = ">=1.25.0,<2.0.0"  # Observability and tracing
+tomli = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 # Testing
 pytest = "^8.0.1"
-pytest-asyncio = "^0.23.5"
-pytest-cov = "^4.1.0"
+pytest-asyncio = "^0.26.0"
+pytest-cov = "^6.0.0"
 pytest-env = "^1.1.3"
 pytest-mock = "^3.12.0"
 pytest-timeout = "^2.2.0"
 pytest-xdist = "^3.5.0"
 hypothesis = "^6.98.9"
-faker = "^23.2.0"
+faker = "^37.0.0"
 
 # Code quality
-black = "^24.2.0"
-ruff = "^0.2.2"
+black = "^25.0.0"
+ruff = "^0.12.0"
 mypy = "^1.8.0"
 types-pyyaml = "^6.0.12.12"
 types-python-dateutil = "^2.8.19.20240106"
-types-aiofiles = "^23.2.0.20240106"
+types-aiofiles = "^24.0.0"
 
 # Security scanning
 bandit = {extras = ["toml"], version = "^1.7.7"}
@@ -101,9 +118,9 @@ mkdocs-material = "^9.5.9"
 mkdocstrings = {extras = ["python"], version = "^0.24.0"}
 
 # Development tools
-pre-commit = "^3.6.2"
-nox = "^2024.3.2"
-ipython = "^8.21.0"
+pre-commit = "^4.0.0"
+nox = "^2025.1.0"
+ipython = "^9.0.0"
 ipdb = "^0.13.13"
 
 [tool.poetry.group.test]
@@ -226,6 +243,12 @@ module = [
     "qdrant_client.*",
     "redis.*",
     "yaml.*",
+    "gnupg.*",
+    "mcp.*",
+    "spacy.*",
+    "nltk.*",
+    "sentry_sdk.*",
+    "opentelemetry.*",
 ]
 ignore_missing_imports = true
 

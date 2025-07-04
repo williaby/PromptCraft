@@ -18,7 +18,8 @@ docker compose -f docs/planning/docker-compose.yaml up -d
 
 ## Deprecated Azure Deployment
 
-The Azure Bicep templates in `deprecated-azure/` are no longer used as the project has migrated to the Ubuntu VM deployment model. These files are retained for historical reference only.
+The Azure Bicep templates in `deprecated-azure/` are no longer used as the project has migrated to the Ubuntu VM
+deployment model. These files are retained for historical reference only.
 
 **Last Azure deployment**: Never used in production
 **Migration date**: 2025-06-30
