@@ -1689,9 +1689,9 @@ structlog==24.4.0 ; python_version >= "3.11" and python_version < "4.0" \
 sympy==1.14.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517 \
     --hash=sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5
-tenacity==8.5.0 ; python_version >= "3.11" and python_version < "4.0" \
-    --hash=sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78 \
-    --hash=sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687
+tenacity==9.1.2; python_version >= "3.11" and python_version < "4.0" \
+    --hash=sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb \
+    --hash=sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138
 threadpoolctl==3.6.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb \
     --hash=sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e
