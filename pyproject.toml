@@ -102,7 +102,7 @@ mkdocstrings = {extras = ["python"], version = "^0.24.0"}
 
 # Development tools
 pre-commit = "^3.6.2"
-nox = "^2024.3.2"
+nox = "^2025.0.0"
 ipython = "^8.21.0"
 ipdb = "^0.13.13"
 
