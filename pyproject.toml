@@ -53,7 +53,7 @@ python-multipart = "^0.0.9"
 
 # Infrastructure
 redis = {extras = ["hiredis"], version = "^5.0.1"}
-prometheus-client = "^0.20.0"
+prometheus-client = "^0.22.0"
 python-dotenv = "^1.0.1"
 
 # Logging and monitoring
