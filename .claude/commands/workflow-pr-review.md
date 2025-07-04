@@ -172,7 +172,7 @@ Comprehensive GitHub PR review with multi-agent analysis, testing validation, an
 2. **Consensus Evaluation Criteria**:
    - **Code Quality**: Architecture, maintainability, adherence to standards
    - **Security Posture**: Vulnerability assessment, security best practices
-   - **Test Adequacy**: Coverage, edge cases, integration scenarios  
+   - **Test Adequacy**: Coverage, edge cases, integration scenarios
    - **Performance Impact**: Efficiency, scalability, resource usage
    - **Risk Assessment**: Potential failure modes, deployment risks
 
@@ -202,18 +202,18 @@ Generate detailed review report in markdown format:
 
 ## PR Summary
 - **Author**: [Author]
-- **Base Branch**: [branch] → **Head Branch**: [branch]  
+- **Base Branch**: [branch] → **Head Branch**: [branch]
 - **Files Changed**: [count] files, [additions] additions, [deletions] deletions
 - **CI/CD Status**: [status]
 
 ## Quality Gate Results
 ### Automated Compliance
 - [ ] Pre-commit hooks: Pass/Fail
-- [ ] File-specific linting: Pass/Fail  
+- [ ] File-specific linting: Pass/Fail
 - [ ] Security scans: Pass/Fail
 - [ ] Development standards: Pass/Fail
 
-### Test Results  
+### Test Results
 - **Unit Tests**: [X/Y passed] - Coverage: [%]
 - **Integration Tests**: [X/Y passed]
 - **Security Tests**: [results]
@@ -233,7 +233,7 @@ Generate detailed review report in markdown format:
 - **Authentication/Authorization**: [assessment]
 - **Recommendations**: [security improvements]
 
-### Performance Analyst Review (if applicable)  
+### Performance Analyst Review (if applicable)
 - **Performance Impact**: [assessment]
 - **Algorithmic Complexity**: [analysis]
 - **Resource Usage**: [memory/CPU impact]
@@ -250,7 +250,7 @@ Generate detailed review report in markdown format:
 
 ### Agent Agreement Summary:
 - **Claude Opus 4**: [vote and rationale]
-- **O3**: [vote and rationale]  
+- **O3**: [vote and rationale]
 - **DeepSeek V3**: [vote and rationale]
 
 ### Consensus Rationale:
@@ -293,7 +293,7 @@ The PR review is complete when:
 # Full comprehensive review
 /project:workflow-pr-review https://github.com/williaby/PromptCraft/pull/143
 
-# Quick essential review  
+# Quick essential review
 /project:workflow-pr-review https://github.com/williaby/PromptCraft/pull/147 quick
 
 # Security-focused review

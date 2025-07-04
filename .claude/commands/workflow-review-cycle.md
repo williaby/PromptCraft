@@ -54,12 +54,12 @@ poetry run python src/utils/setup_validator.py --scope review
      - Python: `poetry run black --check .`
      - Python: `poetry run ruff check .`
      - Python: `poetry run mypy src`
-   
+
    - **Security Compliance**:
      - Bandit security scan: `poetry run bandit -r src`
      - Dependency vulnerability check: `poetry run safety check`
      - GPG and SSH key validation
-   
+
    - **Development Standards Compliance**:
      - Naming conventions validation (snake_case, kebab-case, PascalCase)
      - Knowledge file structure validation (C.R.E.A.T.E. framework)
@@ -103,9 +103,9 @@ poetry run python src/utils/setup_validator.py --scope review
    ```
    Provide O3 with:
    - Original acceptance criteria document
-   - Implementation scope boundaries 
+   - Implementation scope boundaries
    - Current test coverage gaps
-   
+
    Ask O3 to:
    - Review implementation against EXACT acceptance criteria
    - Develop edge case tests within scope boundaries
@@ -121,7 +121,7 @@ poetry run python src/utils/setup_validator.py --scope review
    - Original scope boundary document
    - O3's testing findings for context
    - Development standards checklist
-   
+
    Ask Gemini to:
    - Assess code quality and architecture within scope
    - Review security implications for implemented features only

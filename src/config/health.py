@@ -63,7 +63,8 @@ class ConfigurationStatusModel(BaseModel):
     )
 
     validation_errors: list[str] = Field(
-        default_factory=list, description="Non-sensitive validation error summaries",
+        default_factory=list,
+        description="Non-sensitive validation error summaries",
     )
 
     secrets_configured: int = Field(

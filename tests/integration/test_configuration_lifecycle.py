@@ -275,7 +275,9 @@ class TestConfigurationLifecycle:
 
         # Create temporary .env file with different values
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".env", delete=False,
+            mode="w",
+            suffix=".env",
+            delete=False,
         ) as tmp_file:
             tmp_file.write("PROMPTCRAFT_API_PORT=3000\n")
             tmp_file.write("PROMPTCRAFT_APP_NAME=File Value\n")
@@ -467,7 +469,9 @@ class TestConfigurationErrorRecovery:
         """Test recovery when .env file loading fails."""
         # Create invalid .env file
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".env", delete=False,
+            mode="w",
+            suffix=".env",
+            delete=False,
         ) as tmp_file:
             tmp_file.write("INVALID LINE WITHOUT EQUALS\n")
             tmp_file.write("PROMPTCRAFT_ENVIRONMENT=dev\n")
@@ -545,7 +549,8 @@ class TestAcceptanceCriteria:
 
                 # Create temporary encrypted file
                 with tempfile.NamedTemporaryFile(
-                    suffix=".gpg", delete=False,
+                    suffix=".gpg",
+                    delete=False,
                 ) as tmp_file:
                     tmp_path = Path(tmp_file.name)
 

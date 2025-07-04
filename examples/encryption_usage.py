@@ -6,7 +6,6 @@ including setting up encrypted environment files and using SecretStr fields.
 """
 
 
-
 # Example of how to set up environment variables with secrets
 def setup_example_environment():
     """Example of setting up environment variables with secrets."""

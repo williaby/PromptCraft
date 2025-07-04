@@ -192,7 +192,9 @@ class TestConfigurationValidationError:
         field_errors = ["Invalid port"]
         suggestions = ["Use port 8000"]
         error = ConfigurationValidationError(
-            "Main error", field_errors=field_errors, suggestions=suggestions,
+            "Main error",
+            field_errors=field_errors,
+            suggestions=suggestions,
         )
 
         error_str = str(error)
@@ -233,7 +235,8 @@ class TestStartupValidation:
         mock_validate_keys.return_value = None
 
         settings = ApplicationSettings(
-            environment="staging", secret_key="test-secret-key",
+            environment="staging",
+            secret_key="test-secret-key",
         )
 
         # Should not raise an error
@@ -245,7 +248,9 @@ class TestStartupValidation:
         mock_validate_keys.return_value = None
 
         settings = ApplicationSettings(
-            environment="dev", debug=True, api_host="localhost",
+            environment="dev",
+            debug=True,
+            api_host="localhost",
         )
 
         # Should not raise an error
@@ -294,7 +299,8 @@ class TestLoggingIntegration:
 
         with caplog.at_level(logging.INFO):
             settings = ApplicationSettings(
-                api_key="secret-api-key-12345", secret_key="super-secret-key",
+                api_key="secret-api-key-12345",
+                secret_key="super-secret-key",
             )
             validate_configuration_on_startup(settings)
 

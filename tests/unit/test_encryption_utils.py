@@ -203,7 +203,10 @@ class TestEncryptedFileOperations:
     @patch("pathlib.Path.read_text")
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_encrypted_env_success(
-        self, mock_decrypt, mock_read_text, mock_exists,
+        self,
+        mock_decrypt,
+        mock_read_text,
+        mock_exists,
     ):
         """Test successful loading of encrypted environment file."""
         # Mock file exists and can be read
@@ -246,7 +249,10 @@ class TestEncryptedFileOperations:
     @patch("pathlib.Path.read_text")
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_encrypted_env_decrypt_error(
-        self, mock_decrypt, mock_read_text, mock_exists,
+        self,
+        mock_decrypt,
+        mock_read_text,
+        mock_exists,
     ):
         """Test loading encrypted environment file with decryption error."""
         mock_exists.return_value = True
@@ -489,7 +495,10 @@ class TestInitializeEncryption:
     @patch("src.utils.encryption.load_encrypted_env")
     @patch("os.environ.setdefault")
     def test_initialize_encryption_success(
-        self, mock_setdefault, mock_load_env, mock_validate,
+        self,
+        mock_setdefault,
+        mock_load_env,
+        mock_validate,
     ):
         """Test successful initialization with encrypted env file."""
         mock_validate.return_value = None  # No exception

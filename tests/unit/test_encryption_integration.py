@@ -122,7 +122,10 @@ class TestEncryptionIntegration:
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
     def test_get_settings_production_warning(
-        self, mock_detect_env, mock_validate_encryption, caplog,
+        self,
+        mock_detect_env,
+        mock_validate_encryption,
+        caplog,
     ):
         """Test that production environment warns when encryption is unavailable."""
         import logging
@@ -147,7 +150,10 @@ class TestEncryptionIntegration:
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
     def test_get_settings_development_info(
-        self, mock_detect_env, mock_validate_encryption, caplog,
+        self,
+        mock_detect_env,
+        mock_validate_encryption,
+        caplog,
     ):
         """Test that development environment shows info when encryption is unavailable."""
         import logging
@@ -170,7 +176,10 @@ class TestEncryptionIntegration:
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
     def test_get_settings_encryption_available_no_log(
-        self, mock_detect_env, mock_validate_encryption, caplog,
+        self,
+        mock_detect_env,
+        mock_validate_encryption,
+        caplog,
     ):
         """Test that no warning is logged when encryption is available."""
         import logging

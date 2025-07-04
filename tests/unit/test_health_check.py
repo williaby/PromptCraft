@@ -278,7 +278,9 @@ class TestConfigurationStatusGeneration:
     @patch("src.config.health.validate_encryption_available")
     @patch("src.config.settings.validate_configuration_on_startup")
     def test_get_configuration_status_healthy(
-        self, mock_validate_startup, mock_validate_encryption,
+        self,
+        mock_validate_startup,
+        mock_validate_encryption,
     ) -> None:
         """Test generating configuration status for healthy configuration."""
         mock_validate_encryption.return_value = True
@@ -312,7 +314,9 @@ class TestConfigurationStatusGeneration:
     @patch("src.config.health.validate_encryption_available")
     @patch("src.config.settings.validate_configuration_on_startup")
     def test_get_configuration_status_validation_failed(
-        self, mock_validate_startup, mock_validate_encryption,
+        self,
+        mock_validate_startup,
+        mock_validate_encryption,
     ) -> None:
         """Test generating configuration status when validation fails."""
         mock_validate_encryption.return_value = False
@@ -345,7 +349,9 @@ class TestConfigurationStatusGeneration:
     @patch("src.config.health.validate_encryption_available")
     @patch("src.config.settings.validate_configuration_on_startup")
     def test_get_configuration_status_unexpected_error(
-        self, mock_validate_startup, mock_validate_encryption,
+        self,
+        mock_validate_startup,
+        mock_validate_encryption,
     ) -> None:
         """Test generating configuration status when unexpected error occurs."""
         mock_validate_encryption.return_value = True
@@ -369,7 +375,9 @@ class TestConfigurationHealthSummary:
     @patch("src.config.settings.get_settings")
     @patch("src.config.health.get_configuration_status")
     def test_get_health_summary_success(
-        self, mock_get_status, mock_get_settings,
+        self,
+        mock_get_status,
+        mock_get_settings,
     ) -> None:
         """Test getting health summary when everything works."""
         mock_settings = ApplicationSettings(environment="dev", version="1.0.0")
@@ -471,7 +479,9 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_settings")
     @patch("src.main.get_configuration_status")
     def test_config_health_endpoint_success(
-        self, mock_get_status, mock_get_settings,
+        self,
+        mock_get_status,
+        mock_get_settings,
     ) -> None:
         """Test /health/config endpoint returns detailed configuration status."""
         mock_settings = ApplicationSettings()

@@ -167,7 +167,8 @@ def run_startup_checks() -> None:
 if __name__ == "__main__":
     # Command-line validation tool
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
     logger.info("Running PromptCraft-Hybrid startup validation...")
