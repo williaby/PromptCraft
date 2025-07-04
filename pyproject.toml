@@ -84,7 +84,7 @@ hypothesis = "^6.98.9"
 faker = "^23.2.0"
 
 # Code quality
-black = "^24.2.0"
+black = "^25.0.0"
 ruff = "^0.2.2"
 mypy = "^1.8.0"
 types-pyyaml = "^6.0.12.12"
