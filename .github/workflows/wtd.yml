@@ -1,0 +1,51 @@
+name: What The Diff - AI PR Summary
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  what-the-diff:
+    # Skip draft PRs and bot-authored PRs
+    if: |
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.user.login, '[bot]') &&
+      github.event.pull_request.user.type != 'Bot'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install What The Diff CLI
+        run: npm install -g @what-the-diff/cli
+
+      - name: Generate PR Summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WTD_OPENAI_API_KEY: ${{ secrets.WTD_OPENAI_API_KEY }}
+        run: |
+          # Configure WTD to use GPT-3.5-Turbo for cost optimization
+          export WTD_MODEL="gpt-3.5-turbo"
+
+          # Configure path exclusions for cost optimization
+          export WTD_IGNORE_PATHS="dist/**,build/**,vendor/**,*.lock,\
+          package-lock.json,poetry.lock,*.png,*.jpg,*.jpeg,*.gif,*.svg,*.ico"
+
+          # Run What The Diff with single comment mode
+          wtd --repo ${{ github.repository }} \
+              --pr ${{ github.event.pull_request.number }} \
+              --update-comment \
+              --comment-tag "wtd-summary"
