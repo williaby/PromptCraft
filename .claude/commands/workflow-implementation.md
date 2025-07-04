@@ -4,7 +4,7 @@ complexity: high
 estimated_time: "Variable based on issue"
 dependencies: ["workflow-plan-validation"]
 sub_commands: ["validation-precommit"]
-version: "1.0"
+version: "1.1"
 ---
 
 # Workflow Implementation
@@ -27,19 +27,45 @@ This command requires approved implementation plan. If not done, run:
 
 ## Instructions
 
-### Step 1: Implementation Setup
+### Step 1: Pre-Implementation Environment Validation
+
+1. **Comprehensive Environment Check**:
+   - Run environment validation using setup_validator.py
+   - Validate all tools needed for specific implementation
+   - Check that planned dependencies are actually available
+   - Verify prerequisite issues are fully completed and deliverables accessible
+   - Fail fast if environment doesn't match plan requirements
+
+```bash
+# MANDATORY: Validate environment before implementation
+poetry run python src/utils/setup_validator.py --scope implementation
+```
+
+### Step 2: Implementation Setup
 
 1. **Load Approved Plan**:
    - Read `/docs/planning/{phase}_{issue}_issue_plan.md`
    - Verify plan is approved and has "status: approved"
+   - Confirm rollback procedures are documented
    - Create todo list from action plan items
 
-2. **Environment Validation**:
+2. **Initialize Progress Tracking**:
+   - Create comprehensive todo list from action plan items using TodoWrite
+   - Structure todos to match acceptance criteria from issue plan
+   - Set up progress milestones aligned with plan timeline
+   - Establish progress reporting checkpoints
+
+3. **Environment Validation**:
    - Ensure GPG and SSH keys are present
    - Validate development environment is ready
    - Check dependencies are met
 
-### Step 2: Implementation Execution
+4. **File Change Logging** (MANDATORY):
+   - Log ALL file changes to `docs/planning/claude-file-change-log.md`
+   - Format: `YYYY-MM-DD HH:MM:SS | CHANGE_TYPE | RELATIVE_FILE_PATH`
+   - Change types: ADDED, MODIFIED, DELETED
+
+### Step 3: Implementation Execution
 
 1. **Use Subagents** for implementation tasks:
    - Delegate complex coding tasks to specialized agents
@@ -64,13 +90,41 @@ This command requires approved implementation plan. If not done, run:
    - Ensure 80% minimum test coverage
    - Create atomic knowledge chunks for documentation
 
-5. **Maintain Progress Tracking**:
+5. **Enhanced Progress Tracking**:
    - Use TodoWrite for all task management
-   - Update progress in real-time
-   - Document blockers and decisions
-   - Keep scope boundaries in mind
+   - Update progress in real-time at each milestone
+   - Mark todos as in_progress before starting, completed immediately after finishing
+   - Document blockers and decisions with timestamps
+   - Track percentage completion against plan timeline
+   - Keep scope boundaries in mind throughout
 
-### Step 3: Continuous Validation
+6. **Enhanced Error Handling and Recovery**:
+   - Reference rollback procedures from the plan validation step
+   - Monitor for common failure patterns (test failures, dependency issues, scope violations)
+   - Apply rollback decision tree (when to rollback vs. continue)
+   - Execute automated rollback procedures when triggered
+   - Include error recovery and retry mechanisms
+
+### Step 4: Automated Testing Integration
+
+1. **Mandatory Test Execution at Milestones**:
+   - Run test suite at each major implementation checkpoint
+   - Execute coverage validation (80% minimum requirement)
+   - Handle test failures with rollback triggers
+   - Validate pre-commit hooks before proceeding
+
+```bash
+# MANDATORY: Test execution at milestones
+make test  # or poetry run pytest -v --cov=src --cov-report=html --cov-report=term-missing
+```
+
+2. **Continuous Test Integration**:
+   - Run relevant tests after each significant change
+   - Validate test coverage hasn't decreased
+   - Check for test failures that might trigger rollback
+   - Ensure all tests pass before marking milestones complete
+
+### Step 5: Continuous Validation
 
 1. **Real-time Quality Checks**:
    - Run linters after each significant change
@@ -136,13 +190,30 @@ poetry run mypy src  # For Python changes
 3. **Test Coverage**: Ensure 80% minimum coverage maintained
 4. **Documentation**: Update knowledge files as needed
 
-## Error Handling
+## Enhanced Error Handling
 
+### Failure Detection Patterns
 - **Plan not approved**: Stop and request user approval first
-- **Environment issues**: Provide specific setup instructions
+- **Environment validation failures**: Provide specific setup instructions and fail fast
+- **Test failures**: Trigger rollback decision tree evaluation
+- **Dependency conflicts**: Document and resolve systematically
 - **Scope creep detected**: Halt and consult with user
 - **Quality gate failures**: Fix issues before proceeding
-- **Dependency conflicts**: Document and resolve systematically
+- **Coverage below 80%**: Stop implementation until coverage restored
+
+### Rollback Decision Tree
+1. **Critical Failures** (security issues, data loss risk): Immediate rollback
+2. **Test Failures** (functionality broken): Evaluate rollback vs. fix
+3. **Quality Issues** (linting, coverage): Fix before proceeding
+4. **Scope Creep** (plan deviation): Rollback to last safe checkpoint
+5. **Dependency Issues** (missing prerequisites): Halt until resolved
+
+### Rollback Execution
+- Execute rollback procedures documented in the plan
+- Restore to safe rollback points identified during planning
+- Preserve data according to rollback requirements
+- Update todo tracking to reflect rollback status
+- Document rollback reason and lessons learned
 
 ## Examples
 

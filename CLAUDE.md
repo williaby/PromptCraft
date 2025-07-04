@@ -628,6 +628,24 @@ def encrypt_env_file(content: str) -> str:
 - **PRs**: Must link to GitHub issue (e.g., "Closes #21")
 - **Size**: Keep PRs under 400 lines when possible
 
+#### File Change Logging (MANDATORY)
+
+**ALL Claude Code instances MUST log file changes to maintain project visibility:**
+
+- **Log Location**: `docs/planning/claude-file-change-log.md`
+- **Log Every Change**: Add entry for EVERY file addition, modification, or deletion
+- **Required Format**: `YYYY-MM-DD HH:MM:SS | CHANGE_TYPE | RELATIVE_FILE_PATH`
+- **Change Types**: `ADDED` (new file), `MODIFIED` (existing file), `DELETED` (removed file)
+
+**Example Logging:**
+```bash
+# Get timestamp and log file changes
+date '+%Y-%m-%d %H:%M:%S' | ADDED | src/new_module.py
+date '+%Y-%m-%d %H:%M:%S' | MODIFIED | CLAUDE.md
+```
+
+**Process**: After every file operation, immediately append to the change log before continuing work.
+
 #### Code Review Checklist
 
 - [ ] **Reuse Check**: Could this use existing code from ledgerbase/FISProject?
@@ -636,6 +654,7 @@ def encrypt_env_file(content: str) -> str:
 - [ ] **Focus**: Does this contribute to unique value (Claude.md generation)?
 - [ ] **Naming**: Do all components follow naming conventions?
 - [ ] **Knowledge Files**: Do they follow the style guide?
+- [ ] **File Changes Logged**: All modifications recorded in change log
 
 ### Current State Awareness
 
