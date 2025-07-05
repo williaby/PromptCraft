@@ -12,7 +12,26 @@ echo "🔍 Environment Debug Info:"
 echo "  Working directory: $(pwd)"
 echo "  Poetry version: $(poetry --version)"
 echo "  Python version: $(python --version)"
+echo "  Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+echo "  Poetry environment: $(poetry env info --path 2>/dev/null || echo 'No poetry env')"
+echo "  Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+echo "  Packages count: $(poetry show 2>/dev/null | wc -l || echo '0')"
 echo "  Poetry config: $(poetry config --list | head -5)"
+echo ""
+
+# Test basic poetry commands before proceeding
+echo "🧪 Testing Poetry commands..."
+if ! poetry check --lock; then
+    echo "❌ Poetry lock check failed!"
+    exit 1
+fi
+
+if ! poetry show --quiet > /dev/null 2>&1; then
+    echo "❌ Poetry show failed - dependencies not properly installed"
+    echo "   Running poetry install..."
+    poetry install
+fi
+echo "✅ Poetry environment validated"
 echo ""
 
 # Parse command line arguments
