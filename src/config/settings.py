@@ -260,7 +260,7 @@ class ApplicationSettings(BaseSettings):
     )
 
     api_host: str = Field(
-        default="0.0.0.0",  # noqa: S104
+        default="0.0.0.0",  # noqa: S104 # nosec B104 # Intentional bind to all interfaces for development
         description="Host address for the API server",
     )
 
@@ -353,7 +353,11 @@ class ApplicationSettings(BaseSettings):
         )
 
         # Allow common special cases
-        if v in ("0.0.0.0", "localhost", "127.0.0.1"):  # noqa: S104
+        if v in (
+            "0.0.0.0",
+            "localhost",
+            "127.0.0.1",
+        ):  # noqa: S104 # nosec B104 # Valid host values
             return v
 
         # Validate IP address format
@@ -565,6 +569,68 @@ def validate_encryption_available() -> bool:
         return False
 
 
+def _log_encryption_status(
+    current_env: str,
+    encryption_available: bool,
+    logger: Any,
+) -> None:
+    """Log encryption status with appropriate levels based on environment.
+
+    Args:
+        current_env: Current environment (dev, staging, prod)
+        encryption_available: Whether encryption is available
+        logger: Logger instance to use
+    """
+    if current_env == "prod" and not encryption_available:
+        logger.warning(
+            "Production environment detected but encryption not available. "
+            "Some features may be limited. Ensure GPG and SSH keys are properly configured.",
+        )
+    elif current_env == "dev" and not encryption_available:
+        logger.info(
+            "Development environment - encryption not required but recommended "
+            "for testing production features.",
+        )
+    elif encryption_available:
+        logger.info("Encryption system is properly configured and available.")
+
+
+def _process_validation_errors(
+    errors: list[Any],  # Pydantic ErrorDetails type
+) -> tuple[list[str], list[str]]:
+    """Process Pydantic validation errors into field errors and suggestions.
+
+    Args:
+        errors: List of Pydantic validation errors (ErrorDetails objects)
+
+    Returns:
+        Tuple of (field_errors, suggestions)
+    """
+    field_errors = []
+    suggestions = []
+
+    for error in errors:
+        field_name = ".".join(str(loc) for loc in error["loc"])
+        error_msg = error["msg"]
+        field_errors.append(f"{field_name}: {error_msg}")
+
+        # Add field-specific suggestions
+        if field_name == "api_port":
+            suggestions.append(
+                "Use a port between 1-65535, common choices: 8000, 3000, 5000",
+            )
+        elif field_name == "environment":
+            suggestions.append(
+                "Set PROMPTCRAFT_ENVIRONMENT to 'dev', 'staging', or 'prod'",
+            )
+        elif field_name == "api_host":
+            suggestions.append(
+                "Use '0.0.0.0', 'localhost', '127.0.0.1', or a valid IP/hostname",
+            )
+
+    return field_errors, suggestions
+
+
 def _mask_secret_value(value: str, show_chars: int = 4) -> str:
     """Mask a secret value for safe logging.
 
@@ -589,10 +655,10 @@ def _log_configuration_status(settings: ApplicationSettings) -> None:
     logger = logging.getLogger(__name__)
 
     # Log basic configuration
-    logger.info(f"Configuration loaded for environment: {settings.environment}")
-    logger.info(f"Application: {settings.app_name} v{settings.version}")
-    logger.info(f"API server: {settings.api_host}:{settings.api_port}")
-    logger.info(f"Debug mode: {settings.debug}")
+    logger.info("Configuration loaded for environment: %s", settings.environment)
+    logger.info("Application: %s v%s", settings.app_name, settings.version)
+    logger.info("API server: %s:%s", settings.api_host, settings.api_port)
+    logger.info("Debug mode: %s", settings.debug)
 
     # Log secret field status (without values)
     secret_fields = {
@@ -616,17 +682,125 @@ def _log_configuration_status(settings: ApplicationSettings) -> None:
             missing_secrets.append(field_name)
 
     if configured_secrets:
-        logger.info(f"Configured secrets: {', '.join(configured_secrets)}")
+        logger.info("Configured secrets: %s", ", ".join(configured_secrets))
 
     if missing_secrets:
         if settings.environment == "prod":
             logger.warning(
-                f"Missing secrets in production: {', '.join(missing_secrets)}",
+                "Missing secrets in production: %s",
+                ", ".join(missing_secrets),
             )
         else:
             logger.debug(
-                f"Optional secrets not configured: {', '.join(missing_secrets)}",
+                "Optional secrets not configured: %s",
+                ", ".join(missing_secrets),
             )
+
+
+def _validate_production_requirements(
+    settings: ApplicationSettings,
+) -> tuple[list[str], list[str]]:
+    """Validate production-specific requirements.
+
+    Returns:
+        Tuple of (validation_errors, suggestions)
+    """
+    validation_errors = []
+    suggestions = []
+
+    if settings.debug:
+        validation_errors.append("Debug mode should be disabled in production")
+        suggestions.append("Set PROMPTCRAFT_DEBUG=false for production deployment")
+
+    # Check for required secrets in production
+    required_secrets_prod = ["secret_key", "jwt_secret_key"]
+    for secret_name in required_secrets_prod:
+        secret_value = getattr(settings, secret_name, None)
+        if not secret_value or not secret_value.get_secret_value().strip():
+            validation_errors.append(
+                f"Required secret '{secret_name}' is missing in production",
+            )
+            suggestions.append(
+                f"Set PROMPTCRAFT_{secret_name.upper()} environment variable",
+            )
+
+    # Validate production-appropriate host binding
+    if settings.api_host in ("127.0.0.1", "localhost"):
+        validation_errors.append(
+            "Production API host should not be localhost/127.0.0.1",
+        )
+        suggestions.append(
+            "Use '0.0.0.0' to bind to all interfaces or specify production host",
+        )
+
+    return validation_errors, suggestions
+
+
+def _validate_staging_requirements(
+    settings: ApplicationSettings,
+) -> tuple[list[str], list[str]]:
+    """Validate staging-specific requirements.
+
+    Returns:
+        Tuple of (validation_errors, suggestions)
+    """
+    validation_errors = []
+    suggestions = []
+
+    if not settings.secret_key or not settings.secret_key.get_secret_value().strip():
+        validation_errors.append(
+            "Secret key should be configured in staging environment",
+        )
+        suggestions.append("Set PROMPTCRAFT_SECRET_KEY for staging testing")
+
+    return validation_errors, suggestions
+
+
+def _validate_general_security(
+    settings: ApplicationSettings,
+) -> tuple[list[str], list[str]]:
+    """Validate general security requirements.
+
+    Returns:
+        Tuple of (validation_errors, suggestions)
+    """
+    validation_errors = []
+    suggestions = []
+
+    # General security validation
+    if settings.api_port in {HTTP_PORT, HTTPS_PORT} and settings.environment != "prod":
+        validation_errors.append(
+            f"Using standard web port {settings.api_port} in {settings.environment} environment",
+        )
+        suggestions.append(
+            "Consider using development ports like 8000, 3000, or 5000",
+        )
+
+    # Validate host/port combination makes sense
+    if (
+        settings.api_host
+        == "0.0.0.0"  # noqa: S104 # nosec B104 # Intentional bind to all interfaces
+        and settings.environment == "dev"
+        and settings.api_port < PRIVILEGED_PORT_THRESHOLD
+    ):
+        validation_errors.append(
+            "Binding to all interfaces with privileged port in development",
+        )
+        suggestions.append("Use 'localhost' host or port >= 1024 for development")
+
+    # Encryption availability check
+    encryption_available = validate_encryption_available()
+    if settings.environment == "prod" and not encryption_available:
+        validation_errors.append("Encryption not available in production environment")
+        suggestions.extend(
+            [
+                "Ensure GPG keys are properly configured",
+                "Verify SSH keys are loaded for signed commits",
+                "Run: poetry run python src/utils/encryption.py",
+            ],
+        )
+
+    return validation_errors, suggestions
 
 
 def validate_configuration_on_startup(settings: ApplicationSettings) -> None:
@@ -649,62 +823,18 @@ def validate_configuration_on_startup(settings: ApplicationSettings) -> None:
 
     # Environment-specific validation
     if settings.environment == "prod":
-        # Production-specific requirements
-        if settings.debug:
-            validation_errors.append("Debug mode should be disabled in production")
-            suggestions.append("Set PROMPTCRAFT_DEBUG=false for production deployment")
-
-        # Check for required secrets in production
-        required_secrets_prod = ["secret_key", "jwt_secret_key"]
-        for secret_name in required_secrets_prod:
-            secret_value = getattr(settings, secret_name, None)
-            if not secret_value or not secret_value.get_secret_value().strip():
-                validation_errors.append(
-                    f"Required secret '{secret_name}' is missing in production",
-                )
-                suggestions.append(
-                    f"Set PROMPTCRAFT_{secret_name.upper()} environment variable",
-                )
-
-        # Validate production-appropriate host binding
-        if settings.api_host in ("127.0.0.1", "localhost"):
-            validation_errors.append(
-                "Production API host should not be localhost/127.0.0.1",
-            )
-            suggestions.append(
-                "Use '0.0.0.0' to bind to all interfaces or specify production host",
-            )
-
+        prod_errors, prod_suggestions = _validate_production_requirements(settings)
+        validation_errors.extend(prod_errors)
+        suggestions.extend(prod_suggestions)
     elif settings.environment == "staging":
-        # Staging-specific validation
-        if (
-            not settings.secret_key
-            or not settings.secret_key.get_secret_value().strip()
-        ):
-            validation_errors.append(
-                "Secret key should be configured in staging environment",
-            )
-            suggestions.append("Set PROMPTCRAFT_SECRET_KEY for staging testing")
+        staging_errors, staging_suggestions = _validate_staging_requirements(settings)
+        validation_errors.extend(staging_errors)
+        suggestions.extend(staging_suggestions)
 
     # General security validation
-    if settings.api_port in {HTTP_PORT, HTTPS_PORT} and settings.environment != "prod":
-        validation_errors.append(
-            f"Using standard web port {settings.api_port} in {settings.environment} environment",
-        )
-        suggestions.append(
-            "Consider using development ports like 8000, 3000, or 5000",
-        )
-
-    # Validate host/port combination makes sense
-    if (
-        settings.api_host == "0.0.0.0"
-        and settings.environment == "dev"
-        and settings.api_port < PRIVILEGED_PORT_THRESHOLD
-    ):
-        validation_errors.append(
-            "Binding to all interfaces with privileged port in development",
-        )
-        suggestions.append("Use 'localhost' host or port >= 1024 for development")
+    security_errors, security_suggestions = _validate_general_security(settings)
+    validation_errors.extend(security_errors)
+    suggestions.extend(security_suggestions)
 
     # Cross-field validation
     if settings.database_url and settings.database_password:
@@ -712,22 +842,11 @@ def validate_configuration_on_startup(settings: ApplicationSettings) -> None:
             "Both database_url and database_password are set. URL typically includes password.",
         )
 
-    # Encryption availability check
-    encryption_available = validate_encryption_available()
-    if settings.environment == "prod" and not encryption_available:
-        validation_errors.append("Encryption not available in production environment")
-        suggestions.extend(
-            [
-                "Ensure GPG keys are properly configured",
-                "Verify SSH keys are loaded for signed commits",
-                "Run: poetry run python src/utils/encryption.py",
-            ],
-        )
-
     # Log validation results
     if validation_errors:
         logger.error(
-            f"Configuration validation failed with {len(validation_errors)} error(s)",
+            "Configuration validation failed with %d error(s)",
+            len(validation_errors),
         )
         raise ConfigurationValidationError(
             f"Configuration validation failed for {settings.environment} environment",
@@ -794,7 +913,7 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
         >>> if settings.database_password:
         ...     print("Database password is configured (value hidden)")
     """
-    global _settings
+    global _settings  # noqa: PLW0603 # Singleton pattern requires global state
     logger = logging.getLogger(__name__)
 
     if _settings is None:
@@ -804,22 +923,11 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
         encryption_available = validate_encryption_available()
         current_env = _detect_environment()
 
-        logger.info(f"Detected environment: {current_env}")
-        logger.info(f"Encryption available: {encryption_available}")
+        logger.info("Detected environment: %s", current_env)
+        logger.info("Encryption available: %s", encryption_available)
 
         # Log encryption status with appropriate levels
-        if current_env == "prod" and not encryption_available:
-            logger.warning(
-                "Production environment detected but encryption not available. "
-                "Some features may be limited. Ensure GPG and SSH keys are properly configured.",
-            )
-        elif current_env == "dev" and not encryption_available:
-            logger.info(
-                "Development environment - encryption not required but recommended "
-                "for testing production features.",
-            )
-        elif encryption_available:
-            logger.info("Encryption system is properly configured and available.")
+        _log_encryption_status(current_env, encryption_available, logger)
 
         try:
             # Load settings with enhanced error handling
@@ -835,27 +943,7 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
 
         except ValidationError as e:
             # Convert Pydantic validation errors to our enhanced format
-            field_errors = []
-            suggestions = []
-
-            for error in e.errors():
-                field_name = ".".join(str(loc) for loc in error["loc"])
-                error_msg = error["msg"]
-                field_errors.append(f"{field_name}: {error_msg}")
-
-                # Add field-specific suggestions
-                if field_name == "api_port":
-                    suggestions.append(
-                        "Use a port between 1-65535, common choices: 8000, 3000, 5000",
-                    )
-                elif field_name == "environment":
-                    suggestions.append(
-                        "Set PROMPTCRAFT_ENVIRONMENT to 'dev', 'staging', or 'prod'",
-                    )
-                elif field_name == "api_host":
-                    suggestions.append(
-                        "Use '0.0.0.0', 'localhost', '127.0.0.1', or a valid IP/hostname",
-                    )
+            field_errors, suggestions = _process_validation_errors(e.errors())
 
             raise ConfigurationValidationError(
                 f"Configuration field validation failed in {current_env} environment",
@@ -863,8 +951,8 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
                 suggestions=suggestions,
             ) from e
 
-        except Exception as e:
-            logger.error(f"Unexpected error during configuration loading: {e}")
+        except (OSError, ValueError, TypeError) as e:
+            logger.error("Unexpected error during configuration loading: %s", e)
             raise ConfigurationValidationError(
                 "Unexpected configuration loading error",
                 field_errors=[str(e)],
@@ -893,7 +981,7 @@ def reload_settings(validate_on_startup: bool = True) -> ApplicationSettings:
     Raises:
         ConfigurationValidationError: If configuration validation fails
     """
-    global _settings
+    global _settings  # noqa: PLW0603 # Singleton pattern requires global state
     logger = logging.getLogger(__name__)
     logger.info("Reloading configuration...")
     _settings = None
