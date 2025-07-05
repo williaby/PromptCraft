@@ -1,6 +1,7 @@
 # Prepare Pull Request
 
-Generate a comprehensive, standardized pull request description and optionally create a draft PR on GitHub from git commits and changes: $ARGUMENTS
+Generate a comprehensive, standardized pull request description and optionally create a draft PR on GitHub from git 
+commits and changes: $ARGUMENTS
 
 ## Analysis Required
 
@@ -16,11 +17,12 @@ Generate a comprehensive, standardized pull request description and optionally c
 ### 1. Parse Command Arguments
 
 Extract options from `$ARGUMENTS`:
+
 - `--branch [name]`: Target branch (default: current branch)
 - `--base [name]`: Base branch for comparison (default: main)
 - `--type [type]`: Change type (feat, fix, docs, style, refactor, perf, test, chore)
 - `--breaking`: Flag for breaking changes
-- `--security`: Flag for security-related changes  
+- `--security`: Flag for security-related changes
 - `--performance`: Flag for performance impacts
 - `--create`: Create draft PR on GitHub after generation
 - `--title [text]`: Custom PR title (auto-generate if not provided)
@@ -36,6 +38,7 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 ```
 
 **Extract from commits**:
+
 - Conventional commit types and scopes (feat, fix, docs, etc.)
 - Breaking change indicators (BREAKING CHANGE:, !)
 - Issue references (#123, closes #456, fixes #789)
@@ -44,6 +47,7 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 - Security-related keywords
 
 **Group commits by**:
+
 - Type (feat, fix, docs, etc.)
 - Scope/component affected
 - Risk level (breaking, security, performance)
@@ -51,6 +55,7 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 ### 3. Change Impact Calculation
 
 **File Statistics**:
+
 - Total files: added, modified, removed
 - Language breakdown from file extensions
 - Test file vs source file ratio
@@ -58,12 +63,14 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 - Documentation file changes
 
 **Size Metrics**:
+
 - Total lines added/removed
 - PR size classification (Small < 100 lines, Medium < 400 lines, Large < 1000 lines, XL > 1000 lines)
 - Token estimation for review tools
 - Complexity score based on file types and change patterns
 
 **Review Tool Compatibility**:
+
 - GitHub Copilot: Max 28 files
 - WhatTheDiff: Max 2500 tokens
 - General review: Optimal < 400 lines
@@ -73,10 +80,12 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 Use the pull request template from `docs/planning/pull-request-template.md` and populate these variables:
 
 **Header Variables**:
+
 - `${pr_emoji}`: Auto-select based on primary change type
 - `${pr_title}`: Generate from commits or use --title argument
 
 **Change Summary Variables**:
+
 - `${files_changed}`: Total file count
 - `${files_added}`, `${files_modified}`, `${files_removed}`: Breakdown counts
 - `${lines_added}`, `${lines_removed}`: Line change counts
@@ -85,6 +94,7 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 - `${review_tools_status}`: Compatibility with review tools
 
 **Content Variables**:
+
 - `${pr_summary}`: Generate comprehensive summary from commit messages and change analysis
 - `${pr_motivation}`: Extract from issue references, commit context, and problem being solved
 - `${changes_added}`: List of new features, files, capabilities
@@ -94,6 +104,7 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 - `${testing_instructions}`: Generate based on test file changes and functionality
 
 **Technical Variables**:
+
 - `${architecture_diagram}`: Generate Mermaid diagram if architectural changes detected
 - `${performance_section}`: Analyze performance implications
 - `${security_section}`: Identify security-related changes
@@ -128,19 +139,23 @@ git cherry-pick ${split1_commits}  # commits for this split
 ```
 
 #### PR 2: ${split2_name} (Priority: ${split2_priority})
-- **Files**: ${split2_files} files (${split2_lines} lines)  
+
+- **Files**: ${split2_files} files (${split2_lines} lines)
 - **Focus**: ${split2_description}
 - **Branch**: `${split2_branch_name}`
 - **Depends on**: PR 1
+
 ```bash
 git checkout -b ${split2_branch_name} ${split1_branch_name}
 git cherry-pick ${split2_commits}  # commits for this split
 ```
 
 ### Merge Strategy
+
 1. Review and merge PR 1 first (${split1_description})
 2. Rebase and merge PR 2 (${split2_description})
 3. ${additional_merge_steps}
+
 ```
 
 ### 6. Security and Performance Analysis
@@ -183,9 +198,10 @@ gh pr create \
 ### 8. Emoji and Type Mapping
 
 **Change Type Emojis**:
+
 - `feat`: ✨ (sparkles)
 - `fix`: 🐛 (bug)
-- `docs`: 📚 (books) 
+- `docs`: 📚 (books)
 - `style`: 💎 (gem)
 - `refactor`: ♻️ (recycle)
 - `perf`: ⚡ (zap)
@@ -195,19 +211,22 @@ gh pr create \
 - `breaking`: 💥 (boom)
 
 **PR Size Labels**:
+
 - Small (< 100 lines): `size/small`
-- Medium (100-400 lines): `size/medium`  
+- Medium (100-400 lines): `size/medium`
 - Large (400-1000 lines): `size/large`
 - XL (> 1000 lines): `size/xl`
 
 ### 9. Co-Author Detection and Attribution
 
 **Identify AI Co-Authors**:
+
 - Claude Code contributions
 - GitHub Copilot contributions
 - Other AI tools mentioned in commits
 
 **Format Attribution**:
+
 ```
 Co-Authored-By: Claude <noreply@anthropic.com>
 Co-Authored-By: GitHub Copilot <noreply@github.com>
@@ -264,7 +283,7 @@ This PR establishes a unified, secure, and validated configuration system that s
 - `docs/configuration-guide.md` - User documentation
 - `examples/config/` - Usage examples and templates
 
-#### 📝 Modified  
+#### 📝 Modified
 - `src/main.py` - Integration with new configuration system
 - `pyproject.toml` - Added configuration dependencies
 - `docker-compose.zen-vm.yaml` - Updated environment variable handling
@@ -282,19 +301,20 @@ graph TD
     B --> C[Environment Config]
     B --> D[Security Config]
     B --> E[Validation Layer]
-    
+
     C --> F[Development]
     C --> G[Staging]
     C --> H[Production]
-    
+
     D --> I[GPG Encryption]
     D --> J[Secret Management]
-    
+
     E --> K[Pydantic Validators]
     E --> L[Type Safety]
 ```
 
 ### 💻 Usage Example
+
 ```python
 from src.config import ConfigManager
 
@@ -315,6 +335,7 @@ else:
 ### 🧪 Testing
 
 #### Test Coverage
+
 - **Unit Tests**: 95% coverage for configuration module
 - **Integration Tests**: End-to-end configuration loading
 - **Security Tests**: GPG encryption/decryption validation
@@ -322,11 +343,13 @@ else:
 #### How to Test
 
 1. **Unit Tests**
+
    ```bash
    poetry run pytest tests/unit/config/ -v --cov=src/config
    ```
 
 2. **Integration Tests**
+
    ```bash
    poetry run pytest tests/integration/test_config_integration.py -v
    ```
@@ -349,7 +372,7 @@ else:
 - **Authentication**: No changes to authentication system
 - **Authorization**: No changes to authorization model
 - **Data Protection**: ✅ GPG encryption for sensitive configuration
-- **Vulnerabilities Addressed**: 
+- **Vulnerabilities Addressed**:
   - Eliminates plaintext secrets in configuration files
   - Adds validation to prevent configuration injection
   - Implements secure defaults for all configuration options
@@ -357,30 +380,35 @@ else:
 ### ✅ PR Checklist
 
 #### Code Quality
+
 - [x] Code follows project style guidelines
 - [x] Self-review completed
 - [x] Comments added for complex logic
 - [x] No debugging code left
 
 #### Testing
+
 - [x] Unit tests added/updated (95% coverage)
-- [x] Integration tests added/updated  
+- [x] Integration tests added/updated
 - [x] All tests passing
 - [x] Test coverage maintained and improved
 
 #### Documentation
+
 - [x] Code comments updated
 - [x] Configuration guide created
 - [x] API documentation updated
 - [x] Examples provided
 
 #### Security
+
 - [x] No secrets/credentials in code
 - [x] Security best practices followed
 - [x] Dependencies scanned for vulnerabilities
 - [x] Input validation implemented
 
 #### Review
+
 - [x] PR is focused and single-purpose
 - [x] Commits are clean and well-described
 - [x] No unrelated changes included
@@ -408,12 +436,14 @@ Blocks: #158 (Production Deployment)
 ### 📝 Notes for Reviewers
 
 **Key Areas to Focus On**:
+
 1. **Security Implementation**: Verify GPG encryption is properly implemented
 2. **Configuration Schema**: Review Pydantic validators for completeness
 3. **Environment Handling**: Test configuration switching between environments
 4. **Integration Points**: Ensure smooth integration with existing codebase
 
 **Testing Suggestions**:
+
 - Run the manual testing steps above
 - Verify GPG key requirements are properly documented
 - Test configuration validation with invalid inputs
@@ -421,6 +451,7 @@ Blocks: #158 (Production Deployment)
 ### 🚀 Next Steps
 
 After this PR is merged:
+
 1. Update deployment scripts to use new configuration system
 2. Migrate existing environment-specific configurations
 3. Implement configuration monitoring and alerting
@@ -429,6 +460,7 @@ After this PR is merged:
 ---
 
 ### 🤖 Generated Information
+
 - **Generated with**: `/project:prepare-pr` command
 - **Timestamp**: 2025-01-20T14:30:00Z
 - **Commit Range**: main..feature/comprehensive-config
@@ -439,21 +471,25 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 Co-Authored-By: GitHub Copilot <noreply@github.com>
 
 ### 📊 Detailed Statistics
+
 <details>
 <summary>Click to expand detailed changes</summary>
 
 **Language Breakdown**:
+
 - Python: +1,200 lines (85%)
 - Markdown: +180 lines (12%)
 - YAML: +45 lines (3%)
 
 **File Type Analysis**:
+
 - Source files: 12 files (+890 lines)
 - Test files: 8 files (+445 lines)
 - Documentation: 2 files (+180 lines)
 - Configuration: 1 file (+45 lines)
 
 **Complexity Metrics**:
+
 - Cyclomatic complexity: Average 3.2 (Good)
 - Test-to-code ratio: 1:2 (Excellent)
 - Documentation coverage: 95% of public APIs
@@ -461,6 +497,7 @@ Co-Authored-By: GitHub Copilot <noreply@github.com>
 </details>
 
 ### 🔍 File Changes
+
 <details>
 <summary>Click to view all changed files</summary>
 
@@ -551,7 +588,9 @@ gh pr create \
   --label "enhancement,configuration,size/large,security" \
   --assignee "@devops-team,@security-team"
 ```
+
 ${endif}
+
 ```
 
 ### 3. PR Splitting Recommendations (if applicable)
@@ -575,34 +614,40 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   git cherry-pick a1b2c3d e4f5g6h i7j8k9l  # core framework commits
   ```
 
-#### PR 2: Environment Management (Priority: High)  
+#### PR 2: Environment Management (Priority: High)
+
 - **Branch**: `feature/config-environments`
 - **Files**: 6 files (389 lines)
 - **Focus**: Environment-specific configuration handling (dev/staging/prod)
 - **Depends on**: PR 1
 - **Commands**:
+
   ```bash
   git checkout -b feature/config-environments feature/config-core
   git cherry-pick m1n2o3p q4r5s6t  # environment handling commits
   ```
 
 #### PR 3: Security Integration (Priority: High)
-- **Branch**: `feature/config-security`  
+
+- **Branch**: `feature/config-security`
 - **Files**: 4 files (267 lines)
 - **Focus**: GPG encryption, secrets management, security validation
 - **Depends on**: PR 1
 - **Commands**:
+
   ```bash
   git checkout -b feature/config-security feature/config-core
   git cherry-pick u7v8w9x y0z1a2b  # security commits
   ```
 
 #### PR 4: Documentation and Examples (Priority: Medium)
-- **Branch**: `feature/config-docs`  
+
+- **Branch**: `feature/config-docs`
 - **Files**: 5 files (344 lines)
 - **Focus**: User documentation, examples, and integration guides
 - **Depends on**: PR 1, PR 2, PR 3
 - **Commands**:
+
   ```bash
   git checkout -b feature/config-docs main
   # Cherry-pick after other PRs are merged
@@ -610,10 +655,12 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   ```
 
 ### Merge Strategy
+
 1. **Review and merge PR 1** (core framework - foundation)
 2. **Parallel review of PR 2 and PR 3** (both depend on PR 1)
 3. **Merge PR 2 and PR 3** (environment and security features)
 4. **Final merge of PR 4** (documentation and examples)
+
 ```
 
 ## Integration with Existing Workflow
