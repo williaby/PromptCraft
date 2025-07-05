@@ -7,6 +7,33 @@
 
 set -e
 
+# Debug information for CI environments
+echo "🔍 Environment Debug Info:"
+echo "  Working directory: $(pwd)"
+echo "  Poetry version: $(poetry --version)"
+echo "  Python version: $(python --version)"
+echo "  Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+echo "  Poetry environment: $(poetry env info --path 2>/dev/null || echo 'No poetry env')"
+echo "  Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+echo "  Packages count: $(poetry show 2>/dev/null | wc -l || echo '0')"
+echo "  Poetry config: $(poetry config --list | head -5)"
+echo ""
+
+# Test basic poetry commands before proceeding
+echo "🧪 Testing Poetry commands..."
+if ! poetry check --lock; then
+    echo "❌ Poetry lock check failed!"
+    exit 1
+fi
+
+if ! poetry show --quiet > /dev/null 2>&1; then
+    echo "❌ Poetry show failed - dependencies not properly installed"
+    echo "   Running poetry install..."
+    poetry install
+fi
+echo "✅ Poetry environment validated"
+echo ""
+
 # Parse command line arguments
 WITHOUT_HASHES=""
 if [[ "$1" == "--without-hashes" ]]; then
@@ -114,7 +141,7 @@ echo "📦 Generating requirements-docker.txt (production only)..."
 poetry export \
     --format=requirements.txt \
     --output=requirements-docker.txt \
-    --only=main
+    --without=dev
 
 # Validate the Docker requirements file
 validate_requirements "requirements-docker.txt" "Docker requirements"
@@ -123,7 +150,7 @@ echo "✅ requirements-docker.txt updated and validated."
 
 # Lockfile consistency check
 echo "🔍 Verifying lockfile consistency..."
-LOCK_DEPS=$(poetry show --no-dev | wc -l)
+LOCK_DEPS=$(poetry show --without=dev | wc -l)
 REQ_DEPS=$(grep -c "==" requirements.txt || echo "0")
 
 if [[ $((LOCK_DEPS - REQ_DEPS)) -gt 5 ]] || [[ $((REQ_DEPS - LOCK_DEPS)) -gt 5 ]]; then
