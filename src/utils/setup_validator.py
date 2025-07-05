@@ -39,6 +39,9 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     """
     errors = []
 
+    # Check Python version
+    if sys.version_info < (3, 11):
+        errors.append("Python 3.11+ required")
     # Check critical modules can be imported
     if gnupg is None:
         errors.append("python-gnupg package not available - required for encryption")
