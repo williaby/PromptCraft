@@ -114,7 +114,7 @@ echo "📦 Generating requirements-docker.txt (production only)..."
 poetry export \
     --format=requirements.txt \
     --output=requirements-docker.txt \
-    --only=main
+    --without=dev
 
 # Validate the Docker requirements file
 validate_requirements "requirements-docker.txt" "Docker requirements"
