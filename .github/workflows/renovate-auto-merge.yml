@@ -75,7 +75,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
         with:
-          version: 1.8.3
+          version: 2.1.2
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -97,7 +97,26 @@ jobs:
           key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          poetry install --no-interaction --no-ansi -vvv || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Lock file status: $(poetry check --lock)"
+            echo "::group::Poetry Configuration"
+            poetry config --list
+            echo "::endgroup::"
+            echo "::group::Poetry Sources"
+            poetry source show
+            echo "::endgroup::"
+            echo "::group::Available space"
+            df -h . | tail -1
+            echo "::endgroup::"
+            echo "::group::Memory usage"
+            free -h
+            echo "::endgroup::"
+            exit 1
+          }
 
       - name: Wait for CI checks to complete
         uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
@@ -162,6 +181,8 @@ jobs:
           fi
 
       - name: Run enhanced security scans
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
         run: |
           # Install security scanners
           pip install pip-audit osv-scanner
@@ -179,7 +200,9 @@ jobs:
 
           # Run existing security tools
           echo "::group::Running Safety"
-          poetry run safety check --json --output=safety-report.json || true
+          echo "$SAFETY_API_KEY" > safety_api_key.txt
+          poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
+          rm safety_api_key.txt  # Clean up credential file
           echo "::endgroup::"
 
           echo "::group::Running Bandit"
