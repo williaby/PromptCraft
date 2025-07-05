@@ -135,10 +135,11 @@ authors = ["PromptCraft Team <team@promptcraft.io>"]
 readme = "README.md"
 packages = [{include = "src"}]
 
-[[tool.poetry.source]]
-name = "assured-oss"
-url = "https://us-python.pkg.dev/assured-oss/python-packages/simple/"
-priority = "supplemental"
+# AssuredOSS source temporarily disabled due to authentication issues
+# [[tool.poetry.source]]
+# name = "assured-oss"
+# url = "https://us-python.pkg.dev/assured-oss/python-packages/simple/"
+# priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = "^3.11"
