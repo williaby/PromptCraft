@@ -720,6 +720,10 @@ When creating or modifying files in `/knowledge/` directory:
 
 # Issue resolution with multi-agent coordination
 /project:workflow-resolve-issue         # Complete issue resolution workflow
+
+# Pull Request workflows with intelligent automation
+/project:workflow-prepare-pr --branch feature/x --base main --create  # Generate PR with GitHub integration
+/project:workflow-pr-review https://github.com/user/repo/pull/123    # Adaptive PR review with multi-agent analysis
 ```
 
 #### Validation & Quality Commands
@@ -766,6 +770,9 @@ When creating or modifying files in `/knowledge/` directory:
 - **Complete Workflow Automation**: From planning to deployment with validation checkpoints
 - **Consensus Building**: Multi-model agreement on implementation decisions
 - **Security-First**: Integrated security scanning and best practices validation
+- **Intelligent PR Management**: Automated PR generation, size analysis, splitting recommendations
+- **Adaptive PR Review**: 5-45 minute reviews that scale based on PR complexity and quality
+- **GitHub Integration**: Direct GitHub CLI integration for seamless PR workflows
 
 **How It Works:**
 
@@ -796,7 +803,13 @@ These commands embody the project's core principles:
 # 3. Comprehensive review with multi-agent validation
 /project:workflow-review-cycle phase 2 issue 5
 
-# 4. Generate documentation
+# 4. Prepare pull request with automated GitHub integration
+/project:workflow-prepare-pr --branch feature/phase2-issue5 --base main --create
+
+# 5. Review pull request with adaptive multi-agent analysis
+/project:workflow-pr-review https://github.com/williaby/PromptCraft/pull/154
+
+# 6. Generate documentation
 /project:creation-planning-doc implementation-summary
 ```
 
@@ -807,6 +820,11 @@ These commands embody the project's core principles:
 - **Complete Validation Reports**: Pass/fail status for all acceptance criteria with actionable recommendations
 - **Integration Testing**: Validates Qdrant, Azure AI, and multi-agent coordination
 - **Security Integration**: Bandit scanning, dependency checks, and best practices validation
+- **Intelligent PR Generation**: Automated PR descriptions with metrics, architecture diagrams, and testing instructions
+- **Adaptive PR Review**: Scales analysis from 5-45 minutes based on PR size and complexity
+- **PR Size Management**: Automatic detection of oversized PRs with intelligent splitting recommendations
+- **GitHub CLI Integration**: Direct PR creation, labeling, reviewer assignment, and issue linking
+- **Review Tool Compatibility**: Validates compatibility with Copilot (28 files), WhatTheDiff (2.5K tokens)
 
 **Development**: See `docs/planning/slash-command-spec.md` for complete standards and catalog
 

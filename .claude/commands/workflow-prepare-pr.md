@@ -1,7 +1,6 @@
 # Prepare Pull Request
 
-Generate a comprehensive, standardized pull request description and optionally create a draft PR on GitHub from git
-commits and changes: $ARGUMENTS
+Generate a comprehensive, standardized pull request description and optionally create a draft PR on GitHub from git commits and changes: $ARGUMENTS
 
 ## Analysis Required
 
@@ -139,23 +138,19 @@ git cherry-pick ${split1_commits}  # commits for this split
 ```
 
 #### PR 2: ${split2_name} (Priority: ${split2_priority})
-
 - **Files**: ${split2_files} files (${split2_lines} lines)
 - **Focus**: ${split2_description}
 - **Branch**: `${split2_branch_name}`
 - **Depends on**: PR 1
-
 ```bash
 git checkout -b ${split2_branch_name} ${split1_branch_name}
 git cherry-pick ${split2_commits}  # commits for this split
 ```
 
 ### Merge Strategy
-
 1. Review and merge PR 1 first (${split1_description})
 2. Rebase and merge PR 2 (${split2_description})
 3. ${additional_merge_steps}
-
 ```
 
 ### 6. Security and Performance Analysis
@@ -301,14 +296,14 @@ graph TD
     B --> C[Environment Config]
     B --> D[Security Config]
     B --> E[Validation Layer]
-
+    
     C --> F[Development]
     C --> G[Staging]
     C --> H[Production]
-
+    
     D --> I[GPG Encryption]
     D --> J[Secret Management]
-
+    
     E --> K[Pydantic Validators]
     E --> L[Type Safety]
 ```
@@ -372,6 +367,7 @@ else:
 - **Authentication**: No changes to authentication system
 - **Authorization**: No changes to authorization model
 - **Data Protection**: ✅ GPG encryption for sensitive configuration
+<<<<<<< HEAD
 - **Vulnerabilities Addressed**:
   - Eliminates plaintext secrets in configuration files
   - Adds validation to prevent configuration injection
@@ -588,9 +584,9 @@ gh pr create \
   --label "enhancement,configuration,size/large,security" \
   --assignee "@devops-team,@security-team"
 ```
+<<<<<<< HEAD
 
 ${endif}
-
 ```
 
 ### 3. PR Splitting Recommendations (if applicable)
@@ -615,7 +611,6 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   ```
 
 #### PR 2: Environment Management (Priority: High)
-
 - **Branch**: `feature/config-environments`
 - **Files**: 6 files (389 lines)
 - **Focus**: Environment-specific configuration handling (dev/staging/prod)
@@ -628,8 +623,8 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   ```
 
 #### PR 3: Security Integration (Priority: High)
-
 - **Branch**: `feature/config-security`
+
 - **Files**: 4 files (267 lines)
 - **Focus**: GPG encryption, secrets management, security validation
 - **Depends on**: PR 1
@@ -641,8 +636,8 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   ```
 
 #### PR 4: Documentation and Examples (Priority: Medium)
-
 - **Branch**: `feature/config-docs`
+
 - **Files**: 5 files (344 lines)
 - **Focus**: User documentation, examples, and integration guides
 - **Depends on**: PR 1, PR 2, PR 3
@@ -691,4 +686,8 @@ This command integrates seamlessly with your current development process:
 - GitHub CLI (`gh`) needed for --create functionality
 - Automatically detects and categorizes different types of changes
 - Creates contextual testing instructions based on actual changes
+<<<<<<< HEAD
 - Supports both manual and automated GitHub integration options
+=======
+- Supports both manual and automated GitHub integration options
+
