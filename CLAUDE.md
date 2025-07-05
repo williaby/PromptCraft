@@ -701,132 +701,49 @@ When creating or modifying files in `/knowledge/` directory:
    - File location matches agent_id
    - Naming conventions compliance
 
-### Claude Code Slash Commands (COMPREHENSIVE WORKFLOW AUTOMATION)
+### Claude Code Slash Commands (AVAILABLE)
 
-**Project-specific slash commands for complete development workflow automation:**
+**Project-specific slash commands for workflow automation:**
 
-#### Core Workflow Commands (Multi-Agent Orchestration)
-
-```bash
-# Complete implementation and validation cycle with multi-agent review
-/project:workflow-review-cycle phase X issue Y        # Full review with O3/Gemini
-/project:workflow-review-cycle quick phase X issue Y  # Essential testing only
-/project:workflow-review-cycle consensus phase X issue Y  # Multi-model consensus
-
-# Comprehensive planning and scope analysis
-/project:workflow-plan-validation        # Validate project plans
-/project:workflow-scope-analysis        # Analyze implementation scope
-/project:workflow-implementation        # Guided implementation workflow
-
-# Issue resolution with multi-agent coordination
-/project:workflow-resolve-issue         # Complete issue resolution workflow
-
-# Pull Request workflows with intelligent automation
-/project:workflow-prepare-pr --branch feature/x --base main --create  # Generate PR with GitHub integration
-/project:workflow-pr-review https://github.com/user/repo/pull/123    # Adaptive PR review with multi-agent analysis
-```
-
-#### Validation & Quality Commands
+#### Core Development Commands
 
 ```bash
-# Pre-commit validation with comprehensive quality gates
-/project:validation-precommit                              # Full pre-commit validation
-/project:validation-frontmatter knowledge/agent/file.md    # YAML front matter validation
-/project:validation-lint-doc docs/planning/file.md         # Document compliance checking
-/project:validation-naming-conventions                     # Naming standards compliance
-/project:validation-agent-structure                        # Agent architecture validation
-/project:validation-knowledge-chunk                        # Knowledge file validation
-/project:validation-standardize-planning-doc               # Planning document standards
+# Essential workflows
+/project:validation-precommit                    # Pre-commit validation
+/project:workflow-review-cycle [phase] [issue]   # Multi-agent testing and review
+/project:workflow-prepare-pr [options]           # Automated PR generation
+/project:workflow-pr-review [pr-url] [mode]      # Adaptive PR review (5-45 minutes)
 ```
 
-#### Creation & Migration Commands
+#### Analysis and Investigation
 
 ```bash
-# Generate properly structured files following project standards
-/project:creation-knowledge-file security authentication best practices  # Knowledge files
-/project:creation-planning-doc                                          # Planning documents
-/project:creation-agent-skeleton                                        # Agent scaffolding
-
-# Migration and modernization utilities
-/project:migration-legacy-knowledge      # Migrate old knowledge files
-/project:migration-knowledge-file       # Update knowledge file format
-/project:migration-qdrant-schema        # Update vector database schema
+# Investigation and analysis workflows
+/project:workflow-investigate [description]      # Multi-step investigation
+/project:workflow-debug [issue_description]      # Systematic debugging
+/project:workflow-analyze [target]               # Comprehensive analysis
+/project:workflow-security-audit [scope]         # Security assessment
 ```
 
-#### Meta & Documentation Commands
+#### Documentation and Quality
 
 ```bash
-# Command system utilities
-/project:meta-list-commands             # List all available commands
-/project:meta-command-help              # Get help for specific commands
-/project:meta-fix-links docs/file.md    # Fix broken internal links
+# Documentation workflows
+/project:lint-doc [file_path]                    # Document validation
+/project:create-knowledge-file [agent] [topic]   # Knowledge base creation
+/project:fix-links [file_path]                   # Link validation
+/project:validate-frontmatter [file_path]        # YAML compliance
 ```
 
-**Key Workflow Features:**
+**Key Features:**
 
-- **Multi-Agent Collaboration**: O3 for testing, Gemini for code review through Zen MCP Server
-- **Comprehensive Quality Gates**: 80% test coverage, security scanning, linting compliance
-- **Automated Validation**: Pre-commit hooks, naming conventions, file structure validation
-- **Complete Workflow Automation**: From planning to deployment with validation checkpoints
-- **Consensus Building**: Multi-model agreement on implementation decisions
-- **Security-First**: Integrated security scanning and best practices validation
-- **Intelligent PR Management**: Automated PR generation, size analysis, splitting recommendations
-- **Adaptive PR Review**: 5-45 minute reviews that scale based on PR complexity and quality
-- **GitHub Integration**: Direct GitHub CLI integration for seamless PR workflows
+- Multi-agent coordination through Zen MCP Server
+- GitHub CLI integration for PR workflows
+- Adaptive analysis scaling (5-45 minutes)
+- Quality gates with early exit for clear cases
+- Security and performance analysis built-in
 
-**How It Works:**
-
-- Commands are **intelligent prompt templates** stored as `.md` files in `.claude/commands/`
-- Available when typing `/` in Claude Code interface
-- Use `$ARGUMENTS` placeholder for dynamic input and context
-- Invoked as `/project:command-name arguments`
-- **Integrate with Zen MCP Server** for multi-agent orchestration
-- **Enforce quality standards** automatically through validation workflows
-
-**Development Philosophy Integration:**
-
-These commands embody the project's core principles:
-
-- **Reuse First**: Standardized workflows prevent rebuilding common patterns
-- **Configure Don't Build**: Use proven templates rather than custom solutions
-- **Focus on Unique Value**: Automate routine tasks to focus on PromptCraft innovation
-
-**Example Workflow:**
-
-```bash
-# 1. Plan and validate scope
-/project:workflow-scope-analysis phase 2 issue 5
-
-# 2. Create structured implementation
-/project:workflow-implementation phase 2 issue 5
-
-# 3. Comprehensive review with multi-agent validation
-/project:workflow-review-cycle phase 2 issue 5
-
-# 4. Prepare pull request with automated GitHub integration
-/project:workflow-prepare-pr --branch feature/phase2-issue5 --base main --create
-
-# 5. Review pull request with adaptive multi-agent analysis
-/project:workflow-pr-review https://github.com/williaby/PromptCraft/pull/154
-
-# 6. Generate documentation
-/project:creation-planning-doc implementation-summary
-```
-
-**Advanced Features:**
-
-- **Quality Gate Enforcement**: Automatic failure on coverage < 80%, security issues, or linting violations
-- **Multi-Agent Consensus**: O3 develops additional tests, Gemini performs code review, consensus validates decisions
-- **Complete Validation Reports**: Pass/fail status for all acceptance criteria with actionable recommendations
-- **Integration Testing**: Validates Qdrant, Azure AI, and multi-agent coordination
-- **Security Integration**: Bandit scanning, dependency checks, and best practices validation
-- **Intelligent PR Generation**: Automated PR descriptions with metrics, architecture diagrams, and testing instructions
-- **Adaptive PR Review**: Scales analysis from 5-45 minutes based on PR size and complexity
-- **PR Size Management**: Automatic detection of oversized PRs with intelligent splitting recommendations
-- **GitHub CLI Integration**: Direct PR creation, labeling, reviewer assignment, and issue linking
-- **Review Tool Compatibility**: Validates compatibility with Copilot (28 files), WhatTheDiff (2.5K tokens)
-
-**Development**: See `docs/planning/slash-command-spec.md` for complete standards and catalog
+**Development**: Complete reference in `docs/planning/development.md`
 
 ### Environment Validation (MANDATORY)
 
