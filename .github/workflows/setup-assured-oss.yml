@@ -60,9 +60,9 @@ jobs:
       - name: Configure Poetry for Assured-OSS
         run: |
 
-          # Configure Poetry sources with explicit priority
-          poetry source add --priority=default pypi
-          poetry source add --priority=supplemental assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
+          # Configure Poetry sources (skip if already exists)
+          poetry source add --priority=default pypi || echo "PyPI source already configured"
+          poetry source add --priority=supplemental assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/ || echo "AssuredOSS source already configured"
 
           # Get access token for Assured-OSS
           ACCESS_TOKEN=$(gcloud auth print-access-token)
