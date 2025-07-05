@@ -2,18 +2,14 @@
 requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
 
-
-# Poetry-specific configuration
-[tool.poetry]
+# Project metadata (PEP 621 standard)
+[project]
 name = "promptcraft-hybrid"
 version = "0.1.0"
 description = "A Zen-powered AI workbench for transforming queries into accurate, context-aware outputs"
-authors = ["PromptCraft Team <team@promptcraft.io>"]
-license = "MIT"
+authors = [{name = "PromptCraft Team", email = "team@promptcraft.io"}]
+license = {text = "MIT"}
 readme = "README.md"
-homepage = "https://github.com/williaby/PromptCraft"
-repository = "https://github.com/williaby/PromptCraft"
-documentation = "https://github.com/williaby/PromptCraft/wiki"
 keywords = ["ai", "prompt-engineering", "mcp", "zen", "orchestration"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -25,6 +21,16 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[project.urls]
+homepage = "https://github.com/williaby/PromptCraft"
+repository = "https://github.com/williaby/PromptCraft"
+documentation = "https://github.com/williaby/PromptCraft/wiki"
+
+# Poetry-specific configuration
+[tool.poetry]
 package-mode = false
 
 [tool.poetry.dependencies]
