@@ -123,7 +123,7 @@ echo "✅ requirements-docker.txt updated and validated."
 
 # Lockfile consistency check
 echo "🔍 Verifying lockfile consistency..."
-LOCK_DEPS=$(poetry show --no-dev | wc -l)
+LOCK_DEPS=$(poetry show --without=dev | wc -l)
 REQ_DEPS=$(grep -c "==" requirements.txt || echo "0")
 
 if [[ $((LOCK_DEPS - REQ_DEPS)) -gt 5 ]] || [[ $((REQ_DEPS - LOCK_DEPS)) -gt 5 ]]; then
