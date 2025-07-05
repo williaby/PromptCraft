@@ -7,6 +7,14 @@
 
 set -e
 
+# Debug information for CI environments
+echo "🔍 Environment Debug Info:"
+echo "  Working directory: $(pwd)"
+echo "  Poetry version: $(poetry --version)"
+echo "  Python version: $(python --version)"
+echo "  Poetry config: $(poetry config --list | head -5)"
+echo ""
+
 # Parse command line arguments
 WITHOUT_HASHES=""
 if [[ "$1" == "--without-hashes" ]]; then
