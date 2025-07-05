@@ -30,7 +30,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.7.1
+          version: 1.8.0
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -71,6 +71,19 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          version: 1.8.0
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >
+            venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
 
       - name: Install dependencies
         run: poetry install
@@ -110,7 +123,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.7.1
+          version: 1.8.0
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -161,7 +174,7 @@ jobs:
 
       - name: Generate requirements for Docker
         run: |
-          pip install poetry
+          pip install poetry==1.8.0
           ./scripts/generate_requirements.sh
 
       - name: Build Docker image
