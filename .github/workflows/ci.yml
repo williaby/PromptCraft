@@ -36,7 +36,7 @@ jobs:
 
       - name: Verify poetry.lock is up to date
         run: |
-          poetry lock --check
+          poetry check --lock
 
       - name: Export requirements with hashes
         run: |
