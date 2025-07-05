@@ -11,7 +11,6 @@ description = "A Zen-powered AI workbench for transforming queries into accurate
 authors = ["PromptCraft Team <team@promptcraft.io>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "src"}]
 homepage = "https://github.com/williaby/PromptCraft"
 repository = "https://github.com/williaby/PromptCraft"
 documentation = "https://github.com/williaby/PromptCraft/wiki"
