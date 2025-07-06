@@ -29,13 +29,13 @@ Extract options from `$ARGUMENTS`:
 
 ### 2. Git Commit Analysis
 
-```bash
+```textbash
 # Get commit range and analyze
 git log --oneline ${base_branch}..${target_branch}
 git diff --stat ${base_branch}..${target_branch}
 git diff --numstat ${base_branch}..${target_branch}
 git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
-```
+```text
 
 **Extract from commits**:
 
@@ -114,7 +114,7 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 
 **When PR exceeds limits, generate splitting suggestions**:
 
-```markdown
+```textmarkdown
 ## ⚠️ PR Size Warning
 
 This PR exceeds recommended size limits for optimal review:
@@ -133,10 +133,10 @@ Based on the changes, we recommend splitting this PR into ${split_count} smaller
 - **Files**: ${split1_files} files (${split1_lines} lines)
 - **Focus**: ${split1_description}
 - **Branch**: `${split1_branch_name}`
-```bash
+```textbash
 git checkout -b ${split1_branch_name}
 git cherry-pick ${split1_commits}  # commits for this split
-```
+```text
 
 #### PR 2: ${split2_name} (Priority: ${split2_priority})
 
@@ -145,10 +145,10 @@ git cherry-pick ${split1_commits}  # commits for this split
 - **Branch**: `${split2_branch_name}`
 - **Depends on**: PR 1
 
-```bash
+```textbash
 git checkout -b ${split2_branch_name} ${split1_branch_name}
 git cherry-pick ${split2_commits}  # commits for this split
-```
+```text
 
 ### Merge Strategy
 
@@ -156,7 +156,7 @@ git cherry-pick ${split2_commits}  # commits for this split
 2. Rebase and merge PR 2 (${split2_description})
 3. ${additional_merge_steps}
 
-```
+```text
 
 ### 6. Security and Performance Analysis
 
@@ -183,7 +183,7 @@ git cherry-pick ${split2_commits}  # commits for this split
 4. Assign suggested reviewers from CODEOWNERS or commit history
 5. Link to related issues from commit messages
 
-```bash
+```textbash
 # Create draft PR command
 gh pr create \
   --title "${generated_title}" \
@@ -193,7 +193,7 @@ gh pr create \
   --draft \
   --label "${change_type},${size_label},${additional_labels}" \
   --assignee "${suggested_reviewers}"
-```
+```text
 
 ### 8. Emoji and Type Mapping
 
@@ -227,10 +227,10 @@ gh pr create \
 
 **Format Attribution**:
 
-```
+```text
 Co-Authored-By: Claude <noreply@anthropic.com>
 Co-Authored-By: GitHub Copilot <noreply@github.com>
-```
+```text
 
 ## Required Output
 
@@ -238,7 +238,7 @@ Co-Authored-By: GitHub Copilot <noreply@github.com>
 
 Provide the complete pull request description with all template variables populated based on the actual PromptCraft PR patterns:
 
-```markdown
+```textmarkdown
 ## ✨ feat(config): Implement comprehensive configuration system
 
 ### 📊 Change Summary
@@ -295,7 +295,7 @@ This PR establishes a unified, secure, and validated configuration system that s
 
 ### 🏗️ Architecture Overview
 
-```mermaid
+```textmermaid
 graph TD
     A[Application] --> B[ConfigManager]
     B --> C[Environment Config]
@@ -311,11 +311,11 @@ graph TD
 
     E --> K[Pydantic Validators]
     E --> L[Type Safety]
-```
+```text
 
 ### 💻 Usage Example
 
-```python
+```textpython
 from src.config import ConfigManager
 
 # Initialize configuration
@@ -330,7 +330,7 @@ if config.validate():
     print("✅ Configuration is valid")
 else:
     print("❌ Configuration errors found")
-```
+```text
 
 ### 🧪 Testing
 
@@ -344,15 +344,15 @@ else:
 
 1. **Unit Tests**
 
-   ```bash
+   ```textbash
    poetry run pytest tests/unit/config/ -v --cov=src/config
-   ```
+   ```text
 
 2. **Integration Tests**
 
-   ```bash
+   ```textbash
    poetry run pytest tests/integration/test_config_integration.py -v
-   ```
+   ```text
 
 3. **Manual Testing Steps**
    - Set up development environment with `.env.example`
@@ -501,7 +501,7 @@ Co-Authored-By: GitHub Copilot <noreply@github.com>
 <details>
 <summary>Click to view all changed files</summary>
 
-```
+```text
 src/config/
 ├── __init__.py          [new]     +45 lines
 ├── base.py              [new]     +120 lines
@@ -532,14 +532,14 @@ Modified files:
 
 Removed files:
 - config.py                        -89 lines
-```
+```text
 
 </details>
-```
+```text
 
 ### 2. Command Execution Summary
 
-```markdown
+```textmarkdown
 # PR Preparation Summary
 
 ## ✅ Analysis Complete
@@ -580,24 +580,24 @@ ${endif}
 
 ${if_no_create_flag}
 **To create the PR manually**:
-```bash
+```textbash
 gh pr create \
   --title "✨ feat(config): Implement comprehensive configuration system" \
   --body-file pr-description.md \
   --draft \
   --label "enhancement,configuration,size/large,security" \
   --assignee "@devops-team,@security-team"
-```
+```text
 
 ${endif}
 
-```
+```text
 
 ### 3. PR Splitting Recommendations (if applicable)
 
 If PR exceeds size limits, provide detailed splitting strategy based on logical module boundaries:
 
-```markdown
+```textmarkdown
 ## 🔀 PR Too Large - Splitting Recommended
 
 Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
@@ -609,10 +609,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Files**: 8 files (456 lines)
 - **Focus**: Base configuration classes, validation framework, and core interfaces
 - **Commands**:
-  ```bash
+  ```textbash
   git checkout -b feature/config-core
   git cherry-pick a1b2c3d e4f5g6h i7j8k9l  # core framework commits
-  ```
+  ```text
 
 #### PR 2: Environment Management (Priority: High)
 
@@ -622,10 +622,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Depends on**: PR 1
 - **Commands**:
 
-  ```bash
+  ```textbash
   git checkout -b feature/config-environments feature/config-core
   git cherry-pick m1n2o3p q4r5s6t  # environment handling commits
-  ```
+  ```text
 
 #### PR 3: Security Integration (Priority: High)
 
@@ -635,10 +635,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Depends on**: PR 1
 - **Commands**:
 
-  ```bash
+  ```textbash
   git checkout -b feature/config-security feature/config-core
   git cherry-pick u7v8w9x y0z1a2b  # security commits
-  ```
+  ```text
 
 #### PR 4: Documentation and Examples (Priority: Medium)
 
@@ -654,14 +654,14 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
   git cherry-pick c3d4e5f g6h7i8j  # documentation commits
   ```
 
-### Merge Strategy
+### Split PR Merge Strategy
 
 1. **Review and merge PR 1** (core framework - foundation)
 2. **Parallel review of PR 2 and PR 3** (both depend on PR 1)
 3. **Merge PR 2 and PR 3** (environment and security features)
 4. **Final merge of PR 4** (documentation and examples)
 
-```
+```text
 
 ## Integration with Existing Workflow
 
