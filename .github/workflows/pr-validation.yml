@@ -41,7 +41,8 @@ jobs:
       - name: Check if poetry.lock changed
         id: poetry-changed
         run: |
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | grep -q "poetry.lock" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | \
+            grep -q "poetry.lock" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
 
       - name: Validate requirements.txt sync
         if: steps.poetry-changed.outputs.changed == 'true'
