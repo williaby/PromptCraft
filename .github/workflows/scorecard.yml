@@ -12,7 +12,7 @@ on:
 # Permissions required to run the analysis
 permissions:
   security-events: read
-  id-token: write
+  id-token: read
   contents: read
   issues: read
   pull-requests: read
