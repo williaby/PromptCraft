@@ -30,13 +30,42 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.7.1
+          version: 2.1.2
           virtualenvs-create: true
           virtualenvs-in-project: true
 
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >
+            venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
+
       - name: Verify poetry.lock is up to date
         run: |
-          poetry lock --check
+          poetry check --lock || {
+            echo "::error::Poetry lock check failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+            echo "Lock file size: $(wc -l poetry.lock 2>/dev/null || echo 'Cannot read')"
+            exit 1
+          }
+
+      - name: Install dependencies for export
+        run: |
+          poetry install || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            echo "Poetry config: $(poetry config --list | head -5)"
+            exit 1
+          }
 
       - name: Export requirements with hashes
         run: |
@@ -71,6 +100,22 @@ jobs:
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >
+            venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
 
       - name: Install dependencies
         run: poetry install
@@ -110,9 +155,12 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.7.1
+          version: 2.1.2
           virtualenvs-create: true
           virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -123,9 +171,28 @@ jobs:
           restore-keys: |
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install dependencies with hash verification
+      - name: Install dependencies for export
         run: |
-          poetry export --format=requirements.txt --with-hashes --output=requirements-ci.txt
+          poetry install --no-interaction --no-ansi || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            exit 1
+          }
+
+      - name: Export and install dependencies with hash verification
+        run: |
+          poetry export --format=requirements.txt --output=requirements-ci.txt || {
+            echo "::error::Poetry export failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+            echo "Dependencies count: $(poetry show 2>/dev/null | wc -l || echo '0')"
+            echo "Available export options:"
+            poetry export --help | grep -E "(format|output|with|without)"
+            exit 1
+          }
           poetry run pip install --require-hashes -r requirements-ci.txt
 
       - name: Run tests
@@ -159,9 +226,34 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export
+
+      - name: Install dependencies for export
+        run: |
+          poetry install || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            echo "Poetry config: $(poetry config --list | head -5)"
+            exit 1
+          }
+
       - name: Generate requirements for Docker
         run: |
-          pip install poetry
           ./scripts/generate_requirements.sh
 
       - name: Build Docker image
