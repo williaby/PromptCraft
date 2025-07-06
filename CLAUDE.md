@@ -174,12 +174,14 @@ python scripts/claude-context7-integration.py check-all-deps
 ```
 
 **Context7 Usage Pattern:**
+
 1. Always check package status first: `validate-package <name>`
 2. For verified packages, use `get-context7-call` to generate the proper call
 3. For unverified packages, follow the recommendations to resolve Context7 ID first
 4. Update `/docs/context7-quick-reference.json` when new packages are verified
 
 **Reference Documentation:**
+
 - **Package Mappings**: `/docs/context7-quick-reference.json` - JSON lookup table for verified Context7 IDs
 - **Comprehensive Guide**: `/docs/context7-package-reference.md` - Detailed documentation with examples and best practices
 - **Integration Helper**: `/scripts/claude-context7-integration.py` - Validation and call generation script
@@ -701,40 +703,47 @@ When creating or modifying files in `/knowledge/` directory:
 
 ### Claude Code Slash Commands (AVAILABLE)
 
-**Project-specific slash commands for documentation workflows:**
+**Project-specific slash commands for workflow automation:**
 
-#### Available Commands in `.claude/commands/documentation/`
+#### Core Development Commands
 
 ```bash
-# Comprehensive document compliance checking
-/project:lint-doc docs/planning/exec.md
-
-# Create new knowledge base files with proper structure
-/project:create-knowledge-file security authentication best practices
-
-# Analyze and fix broken internal links
-/project:fix-links docs/planning/exec.md
-
-# Validate and fix YAML front matter
-/project:validate-frontmatter knowledge/security_agent/auth-guide.md
+# Essential workflows
+/project:validation-precommit                    # Pre-commit validation
+/project:workflow-review-cycle [phase] [issue]   # Multi-agent testing and review
+/project:workflow-prepare-pr [options]           # Automated PR generation
+/project:workflow-pr-review [pr-url] [mode]      # Adaptive PR review (5-45 minutes)
 ```
 
-**How It Works**:
+#### Analysis and Investigation
 
-- Commands are **prompt templates** stored as `.md` files in `.claude/commands/`
-- Available when typing `/` in Claude Code interface
-- Use `$ARGUMENTS` placeholder for dynamic input
-- Invoked as `/project:command-name arguments`
+```bash
+# Investigation and analysis workflows
+/project:workflow-investigate [description]      # Multi-step investigation
+/project:workflow-debug [issue_description]      # Systematic debugging
+/project:workflow-analyze [target]               # Comprehensive analysis
+/project:workflow-security-audit [scope]         # Security assessment
+```
 
-**Key Features**:
+#### Documentation and Quality
 
-- File-type specific validation (knowledge vs planning vs general docs)
-- YAML front matter compliance checking with agent ID consistency
-- Internal link validation with smart suggestions for fixes
-- Heading structure validation (H4+ prohibited for knowledge files)
-- Compliance reporting with actionable TODO generation
+```bash
+# Documentation workflows
+/project:lint-doc [file_path]                    # Document validation
+/project:create-knowledge-file [agent] [topic]   # Knowledge base creation
+/project:fix-links [file_path]                   # Link validation
+/project:validate-frontmatter [file_path]        # YAML compliance
+```
 
-**Development**: See `docs/planning/slash-command-spec.md` for standards and full catalog
+**Key Features:**
+
+- Multi-agent coordination through Zen MCP Server
+- GitHub CLI integration for PR workflows
+- Adaptive analysis scaling (5-45 minutes)
+- Quality gates with early exit for clear cases
+- Security and performance analysis built-in
+
+**Development**: Complete reference in `docs/planning/development.md`
 
 ### Environment Validation (MANDATORY)
 
