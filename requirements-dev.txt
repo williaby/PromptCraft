@@ -65,7 +65,7 @@ authlib==1.6.0 ; python_version >= "3.11" and python_version < "4.0" \
 azure-core==1.35.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:8db78c72868a58f3de8991eb4d22c4d368fae226dac1002998d6c50437e7dad1 \
     --hash=sha256:c0be528489485e9ede59b6971eb63c1eaacf83ef53001bfe3904e475e972be5c
-azure-identity==1.16.1 ; python_version >= "3.11" and python_version < "4.0" \
+azure-identity==1.15.0 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:4c28fc246b7f9265610eb5261d65931183d019a23d4b0e99357facb2e6c227c8 \
     --hash=sha256:a14b1f01c7036f11f148f22cd8c16e05035293d714458d6b44ddf534d93eb912
 azure-keyvault-secrets==4.8.0 ; python_version >= "3.11" and python_version < "4.0" \
@@ -2064,7 +2064,7 @@ pyyaml==6.0.2 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:efdca5630322a10774e8e98e1af481aad470dd62c3170801852d752aa7a783ba \
     --hash=sha256:f753120cb8181e736c57ef7636e83f31b9c0d1722c516f7e86cf15b7aa57ff12 \
     --hash=sha256:ff3824dc5261f50c9b0dfb3be22b4567a6f938ccce4587b38952d85fd9e9afe4
-qdrant-client==1.9.0 ; python_version >= "3.11" and python_version < "4.0" \
+qdrant-client==1.8.2 ; python_version >= "3.11" and python_version < "4.0" \
     --hash=sha256:65078d5328bc0393f42a46a31cd319a989b8285bf3958360acf1dffffdf4cc4e \
     --hash=sha256:ee5341c0486d09e4346b0f5ef7781436e6d8cdbf1d5ecddfde7adb3647d353a8
 redis==6.2.0 ; python_version >= "3.11" and python_version < "4.0" \

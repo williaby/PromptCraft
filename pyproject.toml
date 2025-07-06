@@ -41,10 +41,10 @@ pydantic-settings = ">=2.2.1,<3.0.0"  # Settings management
 # AI/ML service integrations with API keys
 anthropic = ">=0.57.0,<0.58.0"  # AI service integration
 openai = ">=1.12.0,<1.13.0"  # OpenAI API integration
-qdrant-client = ">=1.8.0,<1.9.0"  # Vector database client
+qdrant-client = ">=1.8.0,<2.0.0"  # Vector database client
 
 # Azure cloud services with authentication
-azure-identity = ">=1.15.0,<1.16.0"  # Identity and authentication
+azure-identity = ">=1.15.0,<1.17.0"  # Identity and authentication
 azure-keyvault-secrets = ">=4.8.0,<4.9.0"  # Secrets management
 azure-storage-blob = ">=12.19.0,<12.20.0"  # Cloud storage access
 
