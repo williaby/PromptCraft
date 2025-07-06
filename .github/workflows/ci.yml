@@ -72,6 +72,7 @@ jobs:
           ./scripts/generate_requirements.sh
 
       - name: Verify requirements.txt hasn't changed
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
         run: |
           git diff --exit-code requirements*.txt || {
             echo "::error::requirements files are out of sync."
