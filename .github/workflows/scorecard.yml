@@ -9,26 +9,29 @@ on:
   push:
     branches: [ "main" ]
 
-# Permissions required to run the analysis
-permissions:
-  security-events: read
-  id-token: read
-  contents: read
-  issues: read
-  pull-requests: read
+# Read-all permissions for security analysis
+permissions: read-all
 
 jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      id-token: write
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@v2.12
+        with:
+          egress-policy: audit
+
       - name: "Checkout code"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
 
       - name: "Run analysis"
-        uses: ossf/scorecard-action@v2.3.1
+        uses: ossf/scorecard-action@v2
         with:
           results_file: results.sarif
           results_format: sarif

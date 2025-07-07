@@ -13,31 +13,21 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-try:
-    # Try relative imports first (when imported as module)
-    from .config.health import (
-        ConfigurationStatusModel,
-        get_configuration_health_summary,
-        get_configuration_status,
-    )
-    from .config.settings import (
-        ApplicationSettings,
-        ConfigurationValidationError,
-        get_settings,
-    )
-except ImportError:
-    # Fall back to absolute imports (when run directly)
-    from src.config.health import (
-        ConfigurationStatusModel,
-        get_configuration_health_summary,
-        get_configuration_status,
-    )
-    from src.config.settings import (
-        ApplicationSettings,
-        ConfigurationValidationError,
-        get_settings,
-    )
-
+from src.config.constants import (
+    CORS_ORIGINS_BY_ENVIRONMENT,
+    HEALTH_CHECK_ERROR_LIMIT,
+    HEALTH_CHECK_SUGGESTION_LIMIT,
+)
+from src.config.health import (
+    ConfigurationStatusModel,
+    get_configuration_health_summary,
+    get_configuration_status,
+)
+from src.config.settings import (
+    ApplicationSettings,
+    ConfigurationValidationError,
+    get_settings,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -120,15 +110,9 @@ def create_app() -> FastAPI:
     )
 
     # Add CORS middleware with environment-specific origins
-    allowed_origins = {
-        "dev": ["http://localhost:3000", "http://localhost:5173", "http://localhost:7860"],
-        "staging": ["https://staging.promptcraft.io"],
-        "prod": ["https://promptcraft.io"],
-    }
-
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins.get(settings.environment, ["http://localhost:3000"]),
+        allow_origins=CORS_ORIGINS_BY_ENVIRONMENT.get(settings.environment, CORS_ORIGINS_BY_ENVIRONMENT["dev"]),
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
@@ -176,7 +160,7 @@ async def health_check() -> dict[str, Any]:
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 # Catch-all for unhandled endpoint errors
         logger.error("Health check endpoint failed: %s", e)
         raise HTTPException(
             status_code=500,
@@ -220,8 +204,8 @@ async def configuration_health() -> ConfigurationStatusModel:
         if debug_mode:
             detail = {
                 "error": "Configuration validation failed",
-                "field_errors": e.field_errors[:5],  # Limit errors for response size
-                "suggestions": e.suggestions[:3],  # Limit suggestions for response size
+                "field_errors": e.field_errors[:HEALTH_CHECK_ERROR_LIMIT],
+                "suggestions": e.suggestions[:HEALTH_CHECK_SUGGESTION_LIMIT],
             }
         else:
             detail = {
@@ -230,7 +214,7 @@ async def configuration_health() -> ConfigurationStatusModel:
             }
 
         raise HTTPException(status_code=500, detail=detail) from e
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 # Catch-all for unhandled endpoint errors
         logger.error("Configuration health check failed: %s", e)
         raise HTTPException(
             status_code=500,
@@ -303,6 +287,6 @@ if __name__ == "__main__":
     except (OSError, RuntimeError) as e:
         logger.error("Failed to start development server: %s", e)
         sys.exit(1)
-    except Exception:
+    except Exception:  # Catch-all for startup errors
         logger.exception("Unexpected error starting development server")
         sys.exit(1)

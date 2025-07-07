@@ -20,6 +20,9 @@ from src.utils.encryption import (
     validate_environment_keys,
 )
 
+# Import constants after other imports to avoid circular dependency
+from .constants import SECRET_FIELD_NAMES
+
 # Constants
 MAX_HOSTNAME_LENGTH = 253
 MAX_APP_NAME_LENGTH = 100
@@ -354,10 +357,10 @@ class ApplicationSettings(BaseSettings):
 
         # Allow common special cases
         if v in (
-            "0.0.0.0",
+            "0.0.0.0",  # noqa: S104 # nosec B104 # Valid development host binding
             "localhost",
             "127.0.0.1",
-        ):  # nosec B104 # Valid host values
+        ):
             return v
 
         # Validate IP address format
@@ -514,16 +517,7 @@ class ApplicationSettings(BaseSettings):
 
         return v
 
-    @field_validator(
-        "database_password",
-        "database_url",
-        "api_key",
-        "secret_key",
-        "azure_openai_api_key",
-        "jwt_secret_key",
-        "qdrant_api_key",
-        "encryption_key",
-    )
+    @field_validator(*SECRET_FIELD_NAMES)
     @classmethod
     def validate_secret_not_empty(cls, v: SecretStr | None) -> SecretStr | None:
         """Validate that secret values are not empty strings.
@@ -659,17 +653,8 @@ def _log_configuration_status(settings: ApplicationSettings) -> None:
     logger.info("API server: %s:%s", settings.api_host, settings.api_port)
     logger.info("Debug mode: %s", settings.debug)
 
-    # Log secret field status (without values)
-    secret_fields = {
-        "database_password": settings.database_password,
-        "database_url": settings.database_url,
-        "api_key": settings.api_key,
-        "secret_key": settings.secret_key,
-        "azure_openai_api_key": settings.azure_openai_api_key,
-        "jwt_secret_key": settings.jwt_secret_key,
-        "qdrant_api_key": settings.qdrant_api_key,
-        "encryption_key": settings.encryption_key,
-    }
+    # Log secret field status (without values) using centralized field names
+    secret_fields = {field_name: getattr(settings, field_name) for field_name in SECRET_FIELD_NAMES}
 
     configured_secrets = []
     missing_secrets = []
