@@ -14,6 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, computed_field
 
+from .constants import FILE_PATH_PATTERNS, SECRET_FIELD_NAMES, SENSITIVE_ERROR_PATTERNS
 from .settings import (
     ApplicationSettings,
     ConfigurationValidationError,
@@ -21,6 +22,13 @@ from .settings import (
     validate_encryption_available,
 )
 from .validation import validate_configuration_on_startup
+
+# Compile regex patterns once for better performance
+_COMPILED_SENSITIVE_PATTERNS = [
+    (re.compile(pattern, re.IGNORECASE), replacement) for pattern, replacement in SENSITIVE_ERROR_PATTERNS
+]
+
+_COMPILED_FILE_PATH_PATTERNS = [re.compile(pattern) for pattern in FILE_PATH_PATTERNS]
 
 logger = logging.getLogger(__name__)
 
@@ -108,19 +116,8 @@ def _count_configured_secrets(settings: ApplicationSettings) -> int:
     Returns:
         Number of secret fields that have non-empty values
     """
-    secret_fields = [
-        "database_password",
-        "database_url",
-        "api_key",
-        "secret_key",
-        "azure_openai_api_key",
-        "jwt_secret_key",
-        "qdrant_api_key",
-        "encryption_key",
-    ]
-
     configured_count = 0
-    for field_name in secret_fields:
+    for field_name in SECRET_FIELD_NAMES:
         field_value = getattr(settings, field_name, None)
         if field_value is not None and field_value.get_secret_value().strip():
             configured_count += 1
@@ -166,6 +163,8 @@ def _determine_config_source(settings: ApplicationSettings) -> str:
 def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     """Sanitize validation errors to remove sensitive information.
 
+    Uses pre-compiled regex patterns for optimal performance.
+
     Args:
         errors: List of validation error messages
 
@@ -177,22 +176,21 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     for error in errors:
         sanitized_error = error
 
-        # Replace common sensitive patterns first (before regex substitution)
-        if "password" in error.lower():
-            sanitized_error = "Password configuration issue (details hidden)"
-        elif "api key" in error.lower() or "api_key" in error.lower():
-            sanitized_error = "API key configuration issue (details hidden)"
-        elif "key" in error.lower() and "secret" in error.lower():
-            sanitized_error = "Secret key configuration issue (details hidden)"
-        elif "jwt" in error.lower() and "secret" in error.lower():
-            sanitized_error = "JWT secret configuration issue (details hidden)"
-        elif "/home/" in error or "C:\\" in error or "/Users/" in error:
-            # Remove file paths
-            sanitized_error = "Configuration file path issue (path hidden)"
+        # Check for sensitive patterns using pre-compiled regex patterns
+        for compiled_pattern, replacement in _COMPILED_SENSITIVE_PATTERNS:
+            if compiled_pattern.search(error):
+                sanitized_error = replacement
+                break
         else:
-            # If no pattern match, sanitize quoted values
-            sanitized_error = re.sub(r"'[^']*'", "'***'", sanitized_error)
-            sanitized_error = re.sub(r'"[^"]*"', '"***"', sanitized_error)
+            # Check for file path patterns using pre-compiled patterns
+            for compiled_path_pattern in _COMPILED_FILE_PATH_PATTERNS:
+                if compiled_path_pattern.search(error):
+                    sanitized_error = "Configuration file path issue (path hidden)"
+                    break
+            else:
+                # If no pattern match, sanitize quoted values
+                sanitized_error = re.sub(r"'[^']*'", "'***'", sanitized_error)
+                sanitized_error = re.sub(r'"[^"]*"', '"***"', sanitized_error)
 
         sanitized.append(sanitized_error)
 
