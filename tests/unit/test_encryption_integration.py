@@ -138,14 +138,8 @@ class TestEncryptionIntegration:
             reload_settings()
 
         # Check that warning was logged
-        warning_messages = [
-            record.message
-            for record in caplog.records
-            if record.levelno >= logging.WARNING
-        ]
-        assert any(
-            "production environment detected" in msg.lower() for msg in warning_messages
-        )
+        warning_messages = [record.message for record in caplog.records if record.levelno >= logging.WARNING]
+        assert any("production environment detected" in msg.lower() for msg in warning_messages)
 
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
@@ -166,11 +160,7 @@ class TestEncryptionIntegration:
             reload_settings()
 
         # Check that info was logged
-        info_messages = [
-            record.message
-            for record in caplog.records
-            if record.levelno >= logging.INFO
-        ]
+        info_messages = [record.message for record in caplog.records if record.levelno >= logging.INFO]
         assert any("development environment" in msg.lower() for msg in info_messages)
 
     @patch("src.config.settings.validate_encryption_available")
@@ -192,11 +182,7 @@ class TestEncryptionIntegration:
             reload_settings()
 
             # Should not log any warnings about encryption
-            warning_messages = [
-                record.message
-                for record in caplog.records
-                if record.levelno >= logging.WARNING
-            ]
+            warning_messages = [record.message for record in caplog.records if record.levelno >= logging.WARNING]
             assert not any("encryption" in msg.lower() for msg in warning_messages)
 
     def test_environment_variable_overrides(self):
