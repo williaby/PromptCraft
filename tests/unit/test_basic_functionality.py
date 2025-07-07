@@ -16,10 +16,12 @@ class TestBasicConfiguration:
 
     def test_configuration_status(self):
         """Test configuration status check."""
+        from src.config.health import ConfigurationStatusModel
+
         settings = get_settings()
         status = get_configuration_status(settings)
-        assert isinstance(status, dict)
-        assert "healthy" in status
+        assert isinstance(status, ConfigurationStatusModel)
+        assert hasattr(status, "config_healthy")
 
     def test_configuration_health_summary(self):
         """Test configuration health summary."""
