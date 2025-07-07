@@ -16,7 +16,7 @@ An advanced, hybrid AI platform designed to transform user queries into highly a
 structured outputs. It integrates on-premise hardware with specialized cloud services to deliver a powerful,
 cost-effective, and extensible AI development workbench.
 
-## Welcome to the Project!
+## Welcome to the Project
 
 This repository contains all the code and documentation for PromptCraft-Hybrid. Our core philosophy is to
 **configure what is common, build what is unique, and enhance what is ambiguous.**
@@ -26,7 +26,8 @@ This repository contains all the code and documentation for PromptCraft-Hybrid. 
 This README provides a high-level overview. For detailed information, our documentation is centralized in the
 **Project Hub**. It is the single source of truth for this project.
 
-**To get started, please visit the [>> PROJECT HUB <<](docs/planning/project-hub.md) to find the document relevant to your role.**
+**To get started, please visit the [>> PROJECT HUB <<](docs/planning/project-hub.md) to find the document relevant
+to your role.**
 
 ---
 
@@ -106,36 +107,40 @@ available commands.
 
 ### Installation and Setup
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/williaby/PromptCraft.git
-    cd PromptCraft-Hybrid
-    ```
+1. **Clone the Repository**:
 
-2.  **Configure Environment**:
-    * Copy the `.env.example` file to `.env`.
-    * Populate the `.env` file with your Azure, Cloudflare, and other necessary API keys.
-    * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
+   ```bash
+   git clone https://github.com/williaby/PromptCraft.git
+   cd PromptCraft-Hybrid
+   ```
 
-3.  **Install Dependencies**:
-    * Use Poetry to install all required Python packages from the `pyproject.toml` file.
-    ```bash
-    poetry install
-    ```
+2. **Configure Environment**:
+   * Copy the `.env.example` file to `.env`.
+   * Populate the `.env` file with your Azure, Cloudflare, and other necessary API keys.
+   * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
 
-4.  **Deploy to Ubuntu VM**:
-    * Deploy application services to Ubuntu VM (excludes Qdrant which runs externally on Unraid).
-    ```bash
-    # On Ubuntu VM (192.168.1.205)
-    make dev
-    # This starts all services except Qdrant (external dependency)
-    ```
+3. **Install Dependencies**:
+   * Use Poetry to install all required Python packages from the `pyproject.toml` file.
 
-5.  **Run Tests**:
-    * Use Nox to run the test suite and ensure your environment is set up correctly.
-    ```bash
-    nox -s tests
-    ```
+   ```bash
+   poetry install
+   ```
+
+4. **Deploy to Ubuntu VM**:
+   * Deploy application services to Ubuntu VM (excludes Qdrant which runs externally on Unraid).
+
+   ```bash
+   # On Ubuntu VM (192.168.1.205)
+   make dev
+   # This starts all services except Qdrant (external dependency)
+   ```
+
+5. **Run Tests**:
+   * Use Nox to run the test suite and ensure your environment is set up correctly.
+
+   ```bash
+   nox -s tests
+   ```
 
 You are now ready to start development!
 
@@ -143,17 +148,17 @@ You are now ready to start development!
 
 ### Minimum (Phase 1)
 
-- **RAM**: 36GB minimum
-- **Storage**: 500GB NVMe SSD
-- **CPU**: 8+ cores recommended
-- **Network**: Gigabit LAN
+* **RAM**: 36GB minimum
+* **Storage**: 500GB NVMe SSD
+* **CPU**: 8+ cores recommended
+* **Network**: Gigabit LAN
 
 ### Recommended (Full Stack)
 
-- **RAM**: 64GB
-- **Storage**: 1TB NVMe SSD
-- **CPU**: 16+ cores
-- **GPU**: Optional for local LLM inference
+* **RAM**: 64GB
+* **Storage**: 1TB NVMe SSD
+* **CPU**: 16+ cores
+* **GPU**: Optional for local LLM inference
 
 ## Contributing
 
