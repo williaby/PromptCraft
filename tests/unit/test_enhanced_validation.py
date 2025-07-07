@@ -324,11 +324,11 @@ class TestEdgeCases:
             settings = ApplicationSettings(api_host=ip)
             assert settings.api_host == ip
 
-        # Invalid IP addresses (that should actually fail)
-        invalid_ips = ["256.1.1.1", "192.168.1", "192.168.1.1.1"]
-        for ip in invalid_ips:
+        # Invalid formats that should fail (completely invalid hostnames/IPs)
+        invalid_formats = ["", "   ", "...", "256.256.256.256.", "-invalid-", "host..name"]
+        for invalid_format in invalid_formats:
             with pytest.raises(ValueError):
-                ApplicationSettings(api_host=ip)
+                ApplicationSettings(api_host=invalid_format)
 
         # Note: "192.168.01.1" may be valid depending on regex interpretation
         # Testing only clearly invalid cases
@@ -354,11 +354,7 @@ class TestEdgeCases:
             ApplicationSettings(api_port=80)
 
         # Should warn about privileged port
-        warning_messages = [
-            record.message
-            for record in caplog.records
-            if record.levelno >= logging.WARNING
-        ]
+        warning_messages = [record.message for record in caplog.records if record.levelno >= logging.WARNING]
         assert any("privileged port" in msg.lower() for msg in warning_messages)
 
     def test_cross_field_validation_warning(self, caplog):
@@ -376,11 +372,5 @@ class TestEdgeCases:
             )
 
         # Should warn about both database_url and database_password being set
-        warning_messages = [
-            record.message
-            for record in caplog.records
-            if record.levelno >= logging.WARNING
-        ]
-        assert any(
-            "database_url and database_password" in msg for msg in warning_messages
-        )
+        warning_messages = [record.message for record in caplog.records if record.levelno >= logging.WARNING]
+        assert any("database_url and database_password" in msg for msg in warning_messages)

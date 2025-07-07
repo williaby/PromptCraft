@@ -66,8 +66,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Load and validate configuration on startup
         settings = get_settings(validate_on_startup=True)
         logger.info(
-            f"Application started successfully: {settings.app_name} v{settings.version} "
-            f"({settings.environment})",
+            "Application started successfully: %s v%s (%s)",
+            settings.app_name,
+            settings.version,
+            settings.environment,
         )
 
         # Store settings in app state for access in endpoints
@@ -76,15 +78,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         yield
 
     except ConfigurationValidationError as e:
-        logger.error(f"Configuration validation failed during startup: {e}")
+        logger.error("Configuration validation failed during startup: %s", e)
         # Log detailed errors for debugging
         for error in e.field_errors:
-            logger.error(f"  Configuration error: {error}")
+            logger.error("  Configuration error: %s", error)
         for suggestion in e.suggestions:
-            logger.info(f"  Suggestion: {suggestion}")
+            logger.info("  Suggestion: %s", suggestion)
         raise
     except Exception as e:
-        logger.error(f"Unexpected error during application startup: {e}")
+        logger.error("Unexpected error during application startup: %s", e)
         raise
     finally:
         logger.info("PromptCraft-Hybrid application shutdown complete")
@@ -99,8 +101,12 @@ def create_app() -> FastAPI:
     # Get settings for app metadata
     try:
         settings = get_settings(validate_on_startup=False)
-    except Exception as e:
-        logger.warning(f"Could not load settings for app creation: {e}")
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.warning("Settings format error for app creation: %s", type(e).__name__)
+        # Use defaults if settings unavailable
+        settings = ApplicationSettings()
+    except Exception:
+        logger.exception("Failed to load settings for app creation")
         # Use defaults if settings unavailable
         settings = ApplicationSettings()
 
@@ -113,10 +119,16 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Add CORS middleware
+    # Add CORS middleware with environment-specific origins
+    allowed_origins = {
+        "dev": ["http://localhost:3000", "http://localhost:5173", "http://localhost:7860"],
+        "staging": ["https://staging.promptcraft.io"],
+        "prod": ["https://promptcraft.io"],
+    }
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"] if settings.debug else ["https://promptcraft.io"],
+        allow_origins=allowed_origins.get(settings.environment, ["http://localhost:3000"]),
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
@@ -152,21 +164,20 @@ async def health_check() -> dict[str, Any]:
                 "service": "promptcraft-hybrid",
                 **health_summary,
             }
-        else:
-            logger.warning("Health check failed - configuration unhealthy")
-            raise HTTPException(
-                status_code=503,
-                detail={
-                    "status": "unhealthy",
-                    "service": "promptcraft-hybrid",
-                    **health_summary,
-                },
-            )
+        logger.warning("Health check failed - configuration unhealthy")
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "unhealthy",
+                "service": "promptcraft-hybrid",
+                **health_summary,
+            },
+        )
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
     except Exception as e:
-        logger.error(f"Health check endpoint failed: {e}")
+        logger.error("Health check endpoint failed: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
@@ -174,7 +185,7 @@ async def health_check() -> dict[str, Any]:
                 "service": "promptcraft-hybrid",
                 "error": "Health check failed",
             },
-        )
+        ) from e
 
 
 @app.get("/health/config", response_model=ConfigurationStatusModel)
@@ -196,24 +207,38 @@ async def configuration_health() -> ConfigurationStatusModel:
         settings = get_settings(validate_on_startup=False)
         return get_configuration_status(settings)
     except ConfigurationValidationError as e:
-        logger.error(f"Configuration validation failed in health check: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail={
+        logger.error("Configuration validation failed in health check: %s", e)
+
+        # Try to get settings for debug mode check, fallback to production mode
+        try:
+            settings = get_settings(validate_on_startup=False)
+            debug_mode = settings.debug
+        except Exception:  # noqa: BLE001
+            debug_mode = False
+
+        # Only expose detailed errors in debug mode
+        if debug_mode:
+            detail = {
                 "error": "Configuration validation failed",
                 "field_errors": e.field_errors[:5],  # Limit errors for response size
                 "suggestions": e.suggestions[:3],  # Limit suggestions for response size
-            },
-        )
+            }
+        else:
+            detail = {
+                "error": "Configuration validation failed",
+                "details": "Contact system administrator",
+            }
+
+        raise HTTPException(status_code=500, detail=detail) from e
     except Exception as e:
-        logger.error(f"Configuration health check failed: {e}")
+        logger.error("Configuration health check failed: %s", e)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "Configuration health check failed",
                 "details": "See application logs for more information",
             },
-        )
+        ) from e
 
 
 @app.get("/")
@@ -254,12 +279,16 @@ async def ping() -> dict[str, str]:
 
 if __name__ == "__main__":
     # Development server - not for production use
+    import sys
+
     import uvicorn
 
     try:
         settings = get_settings()
         logger.info(
-            f"Starting development server on {settings.api_host}:{settings.api_port}",
+            "Starting development server on %s:%d",
+            settings.api_host,
+            settings.api_port,
         )
         uvicorn.run(
             "src.main:app",
@@ -269,8 +298,11 @@ if __name__ == "__main__":
             log_level="info" if not settings.debug else "debug",
         )
     except ConfigurationValidationError as e:
-        logger.error(f"Cannot start server due to configuration errors: {e}")
-        exit(1)
-    except Exception as e:
-        logger.error(f"Failed to start development server: {e}")
-        exit(1)
+        logger.error("Cannot start server due to configuration errors: %s", e)
+        sys.exit(1)
+    except (OSError, RuntimeError) as e:
+        logger.error("Failed to start development server: %s", e)
+        sys.exit(1)
+    except Exception:
+        logger.exception("Unexpected error starting development server")
+        sys.exit(1)

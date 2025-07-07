@@ -6,7 +6,10 @@ information through health check endpoints without revealing sensitive data.
 """
 
 import logging
-from datetime import datetime
+import os
+import re
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, computed_field
@@ -14,8 +17,10 @@ from pydantic import BaseModel, Field, computed_field
 from .settings import (
     ApplicationSettings,
     ConfigurationValidationError,
+    get_settings,
     validate_encryption_available,
 )
+from .validation import validate_configuration_on_startup
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +83,7 @@ class ConfigurationStatusModel(BaseModel):
     api_port: int = Field(description="API port number")
 
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When this status was generated (UTC)",
     )
 
@@ -135,20 +140,15 @@ def _determine_config_source(settings: ApplicationSettings) -> str:
     Returns:
         Primary configuration source identifier
     """
-    import os
-
     # Check if key environment variables are set
     env_vars_set = any(
-        os.getenv(f"PROMPTCRAFT_{key.upper()}")
-        for key in ["ENVIRONMENT", "API_HOST", "API_PORT", "DEBUG"]
+        os.getenv(f"PROMPTCRAFT_{key.upper()}") for key in ["ENVIRONMENT", "API_HOST", "API_PORT", "DEBUG"]
     )
 
     if env_vars_set:
         return "env_vars"
 
     # Check if environment-specific .env files likely exist
-    from pathlib import Path
-
     project_root = Path(__file__).parent.parent.parent
     env_files = [
         project_root / f".env.{settings.environment}",
@@ -172,8 +172,6 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     Returns:
         Sanitized error messages safe for health check exposure
     """
-    import re
-
     sanitized = []
 
     for error in errors:
@@ -237,21 +235,22 @@ def get_configuration_status(settings: ApplicationSettings) -> ConfigurationStat
     validation_errors: list[str] = []
 
     try:
-        # Import here to avoid circular imports
-        from .settings import validate_configuration_on_startup
-
         validate_configuration_on_startup(settings)
         logger.debug("Configuration validation passed")
     except ConfigurationValidationError as e:
         validation_status = "failed"
         validation_errors = _sanitize_validation_errors(e.field_errors)
         logger.warning(
-            f"Configuration validation failed: {len(validation_errors)} errors",
+            "Configuration validation failed: %d errors",
+            len(validation_errors),
         )
-    except Exception as e:
+    except (ValueError, TypeError, AttributeError) as e:
         validation_status = "failed"
-        validation_errors = ["Unexpected validation error (details hidden)"]
-        logger.error(f"Unexpected validation error: {e}")
+        validation_errors = ["Configuration format error"]
+        logger.error("Configuration format error: %s", type(e).__name__)
+    except Exception:
+        logger.exception("Unexpected validation error")
+        raise
 
     # Create status model
     status = ConfigurationStatusModel(
@@ -269,8 +268,10 @@ def get_configuration_status(settings: ApplicationSettings) -> ConfigurationStat
     )
 
     logger.debug(
-        f"Configuration status generated: healthy={status.config_healthy}, "
-        f"secrets={secrets_count}, source={config_source}",
+        "Configuration status generated: healthy=%s, secrets=%d, source=%s",
+        status.config_healthy,
+        secrets_count,
+        config_source,
     )
 
     return status
@@ -292,8 +293,6 @@ def get_configuration_health_summary() -> dict[str, Any]:
         ...     print("Configuration is healthy")
     """
     try:
-        from .settings import get_settings
-
         settings = get_settings(validate_on_startup=False)
         status = get_configuration_status(settings)
 
@@ -303,12 +302,19 @@ def get_configuration_health_summary() -> dict[str, Any]:
             "version": status.version,
             "config_loaded": status.config_loaded,
             "encryption_available": status.encryption_enabled,
-            "timestamp": status.timestamp.isoformat() + "Z",
+            "timestamp": status.timestamp.isoformat(),
         }
-    except Exception as e:
-        logger.error(f"Failed to generate configuration health summary: {e}")
+    except (ValueError, TypeError, AttributeError) as e:
+        logger.error("Configuration health summary format error: %s", type(e).__name__)
         return {
             "healthy": False,
             "error": "Configuration health check failed",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception:
+        logger.exception("Failed to generate configuration health summary")
+        return {
+            "healthy": False,
+            "error": "Configuration health check failed",
+            "timestamp": datetime.now(UTC).isoformat(),
         }

@@ -357,7 +357,7 @@ class ApplicationSettings(BaseSettings):
             "0.0.0.0",
             "localhost",
             "127.0.0.1",
-        ):  # noqa: S104 # nosec B104 # Valid host values
+        ):  # nosec B104 # Valid host values
             return v
 
         # Validate IP address format
@@ -588,8 +588,7 @@ def _log_encryption_status(
         )
     elif current_env == "dev" and not encryption_available:
         logger.info(
-            "Development environment - encryption not required but recommended "
-            "for testing production features.",
+            "Development environment - encryption not required but recommended for testing production features.",
         )
     elif encryption_available:
         logger.info("Encryption system is properly configured and available.")
@@ -778,8 +777,7 @@ def _validate_general_security(
 
     # Validate host/port combination makes sense
     if (
-        settings.api_host
-        == "0.0.0.0"  # noqa: S104 # nosec B104 # Intentional bind to all interfaces
+        settings.api_host == "0.0.0.0"  # noqa: S104 # nosec B104 # Intentional bind to all interfaces
         and settings.environment == "dev"
         and settings.api_port < PRIVILEGED_PORT_THRESHOLD
     ):

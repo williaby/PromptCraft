@@ -262,9 +262,7 @@ class TestConfigurationStatusHelpers:
         assert "API key configuration issue (details hidden)" in sanitized
         assert "Configuration file path issue (path hidden)" in sanitized
         assert "Invalid database URL format" in sanitized  # No secrets, preserved
-        assert (
-            "General validation error without secrets" in sanitized
-        )  # No secrets, preserved
+        assert "General validation error without secrets" in sanitized  # No secrets, preserved
 
     def test_sanitize_validation_errors_with_empty_list(self) -> None:
         """Test sanitizing empty error list."""
@@ -347,7 +345,7 @@ class TestConfigurationStatusGeneration:
         assert status.config_healthy is False
 
     @patch("src.config.health.validate_encryption_available")
-    @patch("src.config.settings.validate_configuration_on_startup")
+    @patch("src.config.health.validate_configuration_on_startup")
     def test_get_configuration_status_unexpected_error(
         self,
         mock_validate_startup,
@@ -359,14 +357,11 @@ class TestConfigurationStatusGeneration:
 
         settings = ApplicationSettings()
 
-        status = get_configuration_status(settings)
+        # Now the function should raise the exception instead of handling it
+        import pytest
 
-        assert status.config_loaded is True
-        assert status.validation_status == "failed"
-        assert (
-            "Unexpected validation error (details hidden)" in status.validation_errors
-        )
-        assert status.config_healthy is False
+        with pytest.raises(RuntimeError):
+            get_configuration_status(settings)
 
 
 class TestConfigurationHealthSummary:
@@ -407,7 +402,7 @@ class TestConfigurationHealthSummary:
         assert summary["encryption_available"] is True
         assert "timestamp" in summary
 
-    @patch("src.config.settings.get_settings")
+    @patch("src.config.health.get_settings")
     def test_get_health_summary_failure(self, mock_get_settings) -> None:
         """Test getting health summary when configuration fails."""
         mock_get_settings.side_effect = ConfigurationValidationError("Config failed")
@@ -515,23 +510,61 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_settings")
     def test_config_health_endpoint_validation_error(self, mock_get_settings) -> None:
         """Test /health/config endpoint when configuration validation fails."""
-        mock_get_settings.side_effect = ConfigurationValidationError(
-            "Validation failed",
-            field_errors=[
-                "Error 1",
-                "Error 2",
-                "Error 3",
-                "Error 4",
-                "Error 5",
-                "Error 6",
-            ],
-            suggestions=[
-                "Suggestion 1",
-                "Suggestion 2",
-                "Suggestion 3",
-                "Suggestion 4",
-            ],
-        )
+        # First call in try block raises ConfigurationValidationError
+        # Second call in except block for debug check should succeed with debug=False
+        mock_get_settings.side_effect = [
+            ConfigurationValidationError(
+                "Validation failed",
+                field_errors=[
+                    "Error 1",
+                    "Error 2",
+                    "Error 3",
+                    "Error 4",
+                    "Error 5",
+                    "Error 6",
+                ],
+                suggestions=[
+                    "Suggestion 1",
+                    "Suggestion 2",
+                    "Suggestion 3",
+                    "Suggestion 4",
+                ],
+            ),
+            ApplicationSettings(debug=False),  # Second call succeeds with debug=False
+        ]
+
+        response = self.client.get("/health/config")
+
+        assert response.status_code == 500
+        data = response.json()
+        assert data["detail"]["error"] == "Configuration validation failed"
+        assert data["detail"]["details"] == "Contact system administrator"
+
+    @patch("src.main.get_settings")
+    def test_config_health_endpoint_validation_error_debug_mode(self, mock_get_settings) -> None:
+        """Test /health/config endpoint when configuration validation fails in debug mode."""
+        # First call in try block raises ConfigurationValidationError
+        # Second call in except block for debug check should succeed with debug=True
+        mock_get_settings.side_effect = [
+            ConfigurationValidationError(
+                "Validation failed",
+                field_errors=[
+                    "Error 1",
+                    "Error 2",
+                    "Error 3",
+                    "Error 4",
+                    "Error 5",
+                    "Error 6",
+                ],
+                suggestions=[
+                    "Suggestion 1",
+                    "Suggestion 2",
+                    "Suggestion 3",
+                    "Suggestion 4",
+                ],
+            ),
+            ApplicationSettings(debug=True),  # Second call succeeds with debug=True
+        ]
 
         response = self.client.get("/health/config")
 
@@ -653,23 +686,8 @@ class TestSecurityRequirements:
         assert len(sanitized) == len(sensitive_errors)
 
         # Check that sensitive patterns are replaced
-        assert any(
-            "Password configuration issue (details hidden)" in error
-            for error in sanitized
-        )
-        assert any(
-            "API key configuration issue (details hidden)" in error
-            for error in sanitized
-        )
-        assert any(
-            "Secret key configuration issue (details hidden)" in error
-            for error in sanitized
-        )
-        assert any(
-            "JWT secret configuration issue (details hidden)" in error
-            for error in sanitized
-        )
-        assert any(
-            "Configuration file path issue (path hidden)" in error
-            for error in sanitized
-        )
+        assert any("Password configuration issue (details hidden)" in error for error in sanitized)
+        assert any("API key configuration issue (details hidden)" in error for error in sanitized)
+        assert any("Secret key configuration issue (details hidden)" in error for error in sanitized)
+        assert any("JWT secret configuration issue (details hidden)" in error for error in sanitized)
+        assert any("Configuration file path issue (path hidden)" in error for error in sanitized)
