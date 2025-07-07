@@ -10,6 +10,8 @@ purpose: To provide comprehensive overview and quick start guide for the PromptC
 
 # PromptCraft-Hybrid
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/williaby/PromptCraft/badge)](https://api.securityscorecards.dev/projects/github.com/williaby/PromptCraft)
+
 An advanced, hybrid AI platform designed to transform user queries into highly accurate, context-aware, and
 structured outputs. It integrates on-premise hardware with specialized cloud services to deliver a powerful,
 cost-effective, and extensible AI development workbench.
