@@ -24,6 +24,7 @@ from src.security.audit_logging import (
     AuditLogger,
     audit_logger_instance,
 )
+from src.security.error_handlers import create_secure_error_response, setup_secure_error_handlers
 from src.security.input_validation import (
     SecureEmailField,
     SecurePathField,
@@ -284,13 +285,9 @@ class TestErrorHandlers:
     def test_error_handlers_module_exists(self):
         """Test that error handling module is properly structured."""
         # Test that the function exists and can be imported
-        from src.security.error_handlers import create_secure_error_response
-
         assert callable(create_secure_error_response)
 
         # Test that setup function exists
-        from src.security.error_handlers import setup_secure_error_handlers
-
         assert callable(setup_secure_error_handlers)
 
 

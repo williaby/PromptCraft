@@ -110,8 +110,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "X-Content-Type-Options": "nosniff",
             # Prevent clickjacking
             "X-Frame-Options": "DENY",
-            # XSS protection
-            "X-XSS-Protection": "1; mode=block",
+            # XSS protection (disabled - rely on CSP instead)
+            "X-XSS-Protection": "0",
             # Content Security Policy
             "Content-Security-Policy": self.csp_policy,
             # Referrer policy
@@ -138,6 +138,26 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     This middleware logs all incoming requests with relevant security
     information for monitoring and incident response.
     """
+
+    def _mask_sensitive_headers(self, headers: dict[str, str]) -> dict[str, str]:
+        """Mask sensitive headers to prevent credential leakage in logs.
+
+        Args:
+            headers: Original headers dictionary
+
+        Returns:
+            Headers dictionary with sensitive values masked
+        """
+        sensitive_keys = {"authorization", "cookie", "proxy-authorization", "x-api-key"}
+        masked_headers = {}
+
+        for key, value in headers.items():
+            if key.lower() in sensitive_keys:
+                masked_headers[key] = "***REDACTED***"
+            else:
+                masked_headers[key] = value
+
+        return masked_headers
 
     def __init__(self, app: Any, log_body: bool = False) -> None:
         """Initialize request logging middleware.
@@ -200,7 +220,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 "query": str(request.url.query) if request.url.query else None,
                 "client_ip": client_ip,
                 "user_agent": user_agent,
-                "headers": dict(request.headers),
+                "headers": self._mask_sensitive_headers(dict(request.headers)),
             },
         )
 

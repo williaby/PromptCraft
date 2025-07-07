@@ -269,7 +269,7 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
         try:
             settings = get_settings(validate_on_startup=False)
             debug_mode = settings.debug
-        except Exception:  # noqa: BLE001
+        except Exception:
             debug_mode = False
 
         # Only expose detailed errors in debug mode

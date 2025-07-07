@@ -61,15 +61,16 @@ def create_limiter() -> Limiter:
 
     # Configure storage backend based on environment
     if settings.environment == "prod":
-        # In production, we would use Redis for distributed rate limiting
-        # For now, using in-memory storage with a note for future improvement
-        logger.warning(
-            "Using in-memory rate limiting storage. Consider Redis for production distributed deployments.",
-        )
-        storage_uri = "memory://"
+        # Production: Use Redis for distributed rate limiting
+        redis_host = getattr(settings, "redis_host", "localhost")
+        redis_port = getattr(settings, "redis_port", 6379)
+        redis_db = getattr(settings, "redis_db", 0)
+        storage_uri = f"redis://{redis_host}:{redis_port}/{redis_db}"
+        logger.info("Using Redis storage for production rate limiting: %s", storage_uri)
     else:
         # Development/staging: in-memory storage is fine
         storage_uri = "memory://"
+        logger.info("Using in-memory storage for %s environment", settings.environment)
 
     # Create limiter with custom key function
     limiter = Limiter(

@@ -90,25 +90,24 @@ class SecurePathField(str):
         if not isinstance(value, str):
             value = str(value)
 
-        # Check for directory traversal attempts
-        if ".." in value:
+        # 1. Decode the value first to get the intended path
+        decoded_value = urllib.parse.unquote(value)
+
+        # 2. Run all validations on the decoded path
+        if ".." in decoded_value:
             raise ValueError("Directory traversal not allowed")
 
         # Check for absolute paths
-        if value.startswith("/") or (len(value) > 1 and value[1] == ":"):
+        if decoded_value.startswith("/") or (len(decoded_value) > 1 and decoded_value[1] == ":"):
             raise ValueError("Absolute paths not allowed")
 
-        # Normalize and validate
-        normalized = urllib.parse.unquote(value)
-        if normalized != value:
-            raise ValueError("URL-encoded paths not allowed")
-
-        # Check for suspicious characters
+        # Check for suspicious characters in decoded path
         dangerous_chars = ["\x00", "\r", "\n", "|", "&", ";", "$", "`"]
         for char in dangerous_chars:
-            if char in value:
+            if char in decoded_value:
                 raise ValueError(f"Dangerous character '{char}' not allowed")
 
+        # 3. Return the original validated value, preserving encoding if needed
         return value
 
 
