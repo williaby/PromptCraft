@@ -144,6 +144,12 @@ extend-exclude = '''
 line-length = 120
 target-version = "py312"
 src = ["src", "tests"]
+exclude = [
+    "*.yaml",
+    "*.yml",
+    "docker-compose*.yaml",
+    "docker-compose*.yml",
+]
 
 [tool.ruff.lint]
 select = [
@@ -197,6 +203,8 @@ ignore = [
 "tests/*" = ["S101", "ANN", "ARG", "PLR2004"]
 "scripts/*" = ["T20", "INP001"]
 "noxfile.py" = ["ANN", "D"]
+"*.yaml" = ["ALL"]
+"*.yml" = ["ALL"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
