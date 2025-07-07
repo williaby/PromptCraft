@@ -1,0 +1,164 @@
+services:
+  promptcraft-app:
+    build: .
+    container_name: promptcraft-app
+    ports:
+      - "127.0.0.1:7860:7860"  # Bind to localhost only
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONHASHSEED=random
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT:-6333}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+    env_file:
+      - .env.local
+    volumes:
+      - ./src:/app/src:ro          # Read-only source
+      - ./config:/app/config:ro    # Read-only config
+      - ./knowledge:/app/knowledge:ro
+      - ./logs:/app/logs:rw
+    user: "1000:1000"              # Non-root user
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - promptcraft
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  promptcraft-api:
+    build: .
+    container_name: promptcraft-api
+    command: ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    ports:
+      - "127.0.0.1:8000:8000"     # Bind to localhost only
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONHASHSEED=random
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT:-6333}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+    env_file:
+      - .env.local
+    volumes:
+      - ./src:/app/src:ro          # Read-only source
+      - ./config:/app/config:ro    # Read-only config
+      - ./logs:/app/logs:rw
+    user: "1000:1000"              # Non-root user
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - promptcraft
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: promptcraft-redis
+    # Remove exposed ports - internal only
+    command: redis-server --appendonly yes --appendfsync everysec --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    env_file:
+      - .env.local
+    volumes:
+      - redis-data:/data
+    user: "999:999"               # Redis user
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - promptcraft
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  promptcraft:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24    # Smaller subnet
+
+volumes:
+  redis-data:
+    driver: local
+
+# External Qdrant connection verification
+# Note: External Qdrant server at 192.168.1.16:6333
+# This is accessed directly from containers via environment variables
+# No container definition needed as it's hosted externally

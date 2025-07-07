@@ -77,8 +77,10 @@ class TestRateLimiting:
         request.url.path = "/api/test"
         request.headers = {}
 
-        # Create RateLimitExceeded with correct attributes
-        exc = RateLimitExceeded("60 per minute")
+        # Create a mock RateLimitExceeded exception
+        exc = Mock(spec=RateLimitExceeded)
+        exc.limit = Mock()
+        exc.limit.limit = "60 per minute"
         exc.detail = "60 per minute"
         exc.retry_after = 30
 
