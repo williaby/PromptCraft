@@ -6,6 +6,7 @@ implementing the basic C.R.E.A.T.E. framework API without advanced features.
 
 import logging
 import time
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -25,7 +26,7 @@ settings = get_settings()
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan management.
 
     Args:
@@ -64,7 +65,7 @@ app.add_middleware(
 
 # Middleware for request logging
 @app.middleware("http")
-async def log_requests(request: Request, call_next) -> Any:
+async def log_requests(request: Request, call_next: Callable) -> Any:
     """Log all HTTP requests.
 
     Args:

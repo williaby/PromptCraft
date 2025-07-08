@@ -6,14 +6,12 @@ implementing the basic C.R.E.A.T.E. framework functionality.
 
 import time
 
-from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, status
 
 from src.api.models.create_models_core import (
     CreateRequestModel,
     CreateResponseModel,
     DomainResponseModel,
-    ErrorResponseModel,
     FrameworkInfoResponseModel,
     HealthResponseModel,
 )
@@ -151,48 +149,4 @@ async def get_framework_info() -> FrameworkInfoResponseModel:
     )
 
 
-# Error handlers
-@router.exception_handler(ValidationError)
-async def validation_error_handler(_request: Request, exc: ValidationError) -> JSONResponse:
-    """Handle validation errors.
-
-    Args:
-        request: The request that caused the error.
-        exc: The validation exception.
-
-    Returns:
-        JSONResponse with error details.
-    """
-    error_response = ErrorResponseModel(
-        error="ValidationError",
-        detail=str(exc),
-        timestamp=time.time(),
-        request_id=None,
-    )
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=error_response.model_dump(),
-    )
-
-
-@router.exception_handler(Exception)
-async def general_error_handler(_request: Request, exc: Exception) -> JSONResponse:
-    """Handle general errors.
-
-    Args:
-        request: The request that caused the error.
-        exc: The exception.
-
-    Returns:
-        JSONResponse with error details.
-    """
-    error_response = ErrorResponseModel(
-        error="InternalServerError",
-        detail=f"An unexpected error occurred: {exc}",
-        timestamp=time.time(),
-        request_id=None,
-    )
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump(),
-    )
+# Note: Error handlers should be registered at the app level, not router level

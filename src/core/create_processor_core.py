@@ -174,8 +174,9 @@ class CreateProcessor:
 
         # Extract background information
         background_patterns = [
-            r"(?:background:|context:|given that|considering that) (.*?)(?:\.|$)",
-            r"(?:with expertise in|specializing in) (.*?)(?:\.|,|$)",
+            r"(?:background:|context:)\s*(.*?)(?:\.|$)",
+            r"(?:given that|considering that)\s+(.*?)(?:,|\.)",
+            r"(?:with expertise in|specializing in)\s+(.*?)(?:\.|,|$)",
         ]
 
         for pattern in background_patterns:
@@ -186,8 +187,9 @@ class CreateProcessor:
 
         # Extract goal information
         goal_patterns = [
-            r"(?:goal:|objective:|aim:|purpose:) (.*?)(?:\.|$)",
-            r"(?:i need|i want|help me) (.*?)(?:\.|$)",
+            r"(?:goal:|objective:|aim:|purpose:)\s*(.*?)(?:\.|$)",
+            r"(?:my goal is to|the goal is to)\s+(.*?)(?:\.|$)",
+            r"(?:I need to|we need to)\s+(.*?)(?:\.|$)",
         ]
 
         for pattern in goal_patterns:
@@ -229,8 +231,8 @@ class CreateProcessor:
 
         # Extract deliverable information
         deliverable_patterns = [
-            r"(?:deliverable:|output:|result should be) (.*?)(?:\.|$)",
-            r"(?:format:|in the form of) (.*?)(?:\.|$)",
+            r"(?:deliverable should be|deliverable:|output:|result should be)\s+(.*?)(?:\.|$)",
+            r"(?:format:|in the form of)\s+(.*?)(?:\.|$)",
         ]
 
         for pattern in deliverable_patterns:
@@ -258,14 +260,15 @@ class CreateProcessor:
 
         # Look for example patterns in the prompt
         example_patterns = [
-            r"(?:example:|for example:|e\.g\.:|such as) (.*?)(?:\.|$)",
-            r"(?:like this:|similar to) (.*?)(?:\.|$)",
+            r"(?:example:|for example:|e\.g\.:|such as)\s+(.*?)(?:\.|$)",
+            r"(?:write like this:|like this:|similar to)\s+(.*)",  # Greedy capture for examples
         ]
 
         for pattern in example_patterns:
-            matches = re.findall(pattern, prompt, re.IGNORECASE)
-            for match in matches:
-                examples["patterns"].append(match.strip())
+            match = re.search(pattern, prompt, re.IGNORECASE)
+            if match:
+                captured_text = match.group(1).strip().rstrip(".")
+                examples["patterns"].append(captured_text)
 
         return examples
 
@@ -319,8 +322,7 @@ class CreateProcessor:
 
         # Extract tone indicators
         tone_patterns = [
-            r"(?:tone:|in a|style:) (.*?)(?:\.|,|$)",
-            r"(?:formal|informal|casual|professional|friendly) (.*?)(?:\.|,|$)",
+            r"(?:tone:|in a|style:)\s*(?:formal|informal|casual|professional|friendly)?\s*(.*?)(?:\.|,|$)",
         ]
 
         for pattern in tone_patterns:

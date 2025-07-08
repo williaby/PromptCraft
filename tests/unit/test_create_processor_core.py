@@ -93,7 +93,7 @@ class TestCreateProcessor:
         """Test context extraction with goal information."""
         prompt = "I need to create a comprehensive report on market trends."
         context = self.processor._extract_context(prompt)
-        assert context["goal"] == "to create a comprehensive report on market trends"
+        assert context["goal"] == "create a comprehensive report on market trends"
 
     def test_extract_context_empty_prompt(self):
         """Test context extraction with empty prompt."""
