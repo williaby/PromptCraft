@@ -39,12 +39,22 @@ Analyze and define boundaries for a project issue to prevent scope creep: $ARGUM
    - List what is NOT mentioned in acceptance criteria
    - Identify any ambiguous requirements that need clarification
 
-2. **Create Scope Constraint Document**:
+2. **Track Current Acceptance Criteria Status**:
+   - Mark completed criteria as `[x]` in phase-{X}-issues.md
+   - Update issue status (Open/In Process/Closed) based on completion
+   - Document specific criteria that need attention
+
+3. **Create Scope Constraint Document**:
    ```
    ISSUE SCOPE BOUNDARY:
    ✅ INCLUDED: [List from acceptance criteria]
    ❌ EXCLUDED: [Anything not in acceptance criteria]
    ❓ UNCLEAR: [Items needing clarification]
+
+   ACCEPTANCE CRITERIA STATUS:
+   ✅ COMPLETED: [List completed criteria]
+   🔄 IN PROGRESS: [List partially completed criteria]
+   ❌ PENDING: [List remaining criteria]
    ```
 
 ### Step 3: Contextual Research (Only After Scope Definition)
@@ -82,10 +92,21 @@ Analyze and define boundaries for a project issue to prevent scope creep: $ARGUM
 ❓ **UNCLEAR Requirements**:
 - [Ambiguous item needing clarification]
 
+## Acceptance Criteria Status
+✅ **COMPLETED** ([X/Y] criteria met):
+- [List completed acceptance criteria]
+
+🔄 **IN PROGRESS** ([X/Y] criteria partially met):
+- [List partially completed criteria with status]
+
+❌ **PENDING** ([X/Y] criteria remaining):
+- [List remaining criteria to implement]
+
 ## Dependencies
 - [List from issue]
 
 ## Next Steps
+- Update issue status in phase-{X}-issues.md based on completion
 - Proceed to `/project:workflow-plan-validation` with these boundaries
 - Address unclear requirements before planning
 ```

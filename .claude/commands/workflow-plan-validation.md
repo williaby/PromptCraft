@@ -44,11 +44,18 @@ This command requires completed scope analysis. If not done, run:
    - Flag any plan items that exceed the defined scope
    - **Document why each plan item is necessary for acceptance criteria**
 
-2. **Scope Validation Questions**:
+2. **Track Acceptance Criteria Progress**:
+   - Review current status of each acceptance criterion
+   - Identify which criteria are already completed `[x]`
+   - Plan only for remaining incomplete criteria `[ ]`
+   - Update phase-{X}-issues.md with current progress
+
+3. **Scope Validation Questions**:
    - Does every action item directly address an acceptance criterion?
    - Are there any "nice to have" items that should be removed?
    - Does the plan stay within the estimated time?
    - Would this plan fully satisfy the acceptance criteria and nothing more?
+   - Are we only planning for incomplete criteria?
 
 ### Step 3: IT Manager Consultation (Optional)
 
@@ -88,14 +95,25 @@ purpose: "Implementation plan for resolving Phase {X} Issue {Y}"
 ❌ **EXCLUDED from Issue**: [Items NOT in acceptance criteria]
 🔍 **Scope Validation**: [Confirmation each action item maps to acceptance criteria]
 
+## Current Acceptance Criteria Status
+✅ **COMPLETED** ([X/Y] criteria met):
+- [List completed acceptance criteria - these need NO planning]
+
+🔄 **IN PROGRESS** ([X/Y] criteria partially met):
+- [List partially completed criteria - plan completion only]
+
+❌ **PENDING** ([X/Y] criteria remaining):
+- [List remaining criteria - plan full implementation]
+
 ## Issue Requirements
-[Detailed requirements from analysis]
+[Detailed requirements from analysis - ONLY for incomplete criteria]
 
 ## Action Plan Scope Validation
-- [ ] Every action item addresses a specific acceptance criterion
+- [ ] Every action item addresses a specific INCOMPLETE acceptance criterion
+- [ ] No planning for already completed criteria
 - [ ] No "nice to have" items included
 - [ ] Plan stays within estimated time bounds
-- [ ] Implementation satisfies acceptance criteria completely
+- [ ] Implementation satisfies remaining acceptance criteria completely
 
 ## Action Plan
 [Comprehensive implementation strategy]

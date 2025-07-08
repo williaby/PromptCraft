@@ -46,6 +46,8 @@ This command requires completed implementation. Implementation must pass basic q
 1. **Execute Acceptance Criteria Validation**:
    - Test each acceptance criterion individually
    - Document pass/fail status for each
+   - Mark verified criteria as `[x]` in phase-{X}-issues.md
+   - Update issue status based on completion percentage
    - Verify complete requirement satisfaction
 
 2. **Follow Testing Requirements** from ts-{X}-testing.md:
@@ -96,9 +98,12 @@ Generate comprehensive validation report:
 # Implementation Review Report: Phase {X} Issue {Y}
 
 ## Acceptance Criteria Validation
-- [ ] Criterion 1: [Description] - Status: Pass/Fail
-- [ ] Criterion 2: [Description] - Status: Pass/Fail
-- [ ] Criterion 3: [Description] - Status: Pass/Fail
+- [ ] Criterion 1: [Description] - Status: Pass/Fail - Updated in phase-{X}-issues.md: Yes/No
+- [ ] Criterion 2: [Description] - Status: Pass/Fail - Updated in phase-{X}-issues.md: Yes/No
+- [ ] Criterion 3: [Description] - Status: Pass/Fail - Updated in phase-{X}-issues.md: Yes/No
+
+**Issue Status Update**: [Current Status] → [New Status based on criteria completion]
+**Completion Rate**: [X/Y] criteria met ([percentage]%)
 
 ## Quality Gates
 - [ ] Pre-commit hooks: Pass/Fail
@@ -130,13 +135,20 @@ Generate comprehensive validation report:
 - [Future improvement opportunities]
 
 ## Final Status
-- [ ] All acceptance criteria met
+- [ ] All acceptance criteria met and marked in phase-{X}-issues.md
+- [ ] Issue status updated (Open/In Process/Closed)
 - [ ] All quality gates passed
 - [ ] All agents approve implementation
 - [ ] Ready for user approval
 
+## Issue Status Management
+**Current Issue Status**: [Open/In Process/Closed]
+**Criteria Completion**: [X/Y] completed
+**Recommended Status**: [Open/In Process/Closed] based on completion rate
+
 ## Required Changes (if any)
 - [List specific changes needed before approval]
+- [Criteria that need completion for status change]
 
 ## Recommendations for Future
 - [Suggestions for improvement in future iterations]
@@ -145,11 +157,12 @@ Generate comprehensive validation report:
 ## Completion Criteria
 
 The review cycle is complete when:
-1. **All acceptance criteria** are validated as met
-2. **All quality gates** pass without exceptions
-3. **Multi-agent consensus** is achieved
-4. **No critical issues** remain unresolved
-5. **User approval** is obtained
+1. **All acceptance criteria** are validated as met and marked `[x]` in phase-{X}-issues.md
+2. **Issue status** is updated to reflect current completion state
+3. **All quality gates** pass without exceptions
+4. **Multi-agent consensus** is achieved
+5. **No critical issues** remain unresolved
+6. **User approval** is obtained
 
 ## Error Handling
 
@@ -177,7 +190,8 @@ The review cycle is complete when:
 **CRITICAL**: Report completion status and request final user approval after all validations pass.
 
 Present summary of:
-- ✅ Acceptance criteria met
+- ✅ Acceptance criteria met and updated in phase-{X}-issues.md
+- ✅ Issue status updated appropriately
 - ✅ Quality standards achieved
 - ✅ Multi-agent approval obtained
 - ✅ Implementation ready for deployment

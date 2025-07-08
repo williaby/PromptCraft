@@ -34,7 +34,13 @@ This command requires approved implementation plan. If not done, run:
    - Verify plan is approved and has "status: approved"
    - Create todo list from action plan items
 
-2. **Environment Validation**:
+2. **Review Current Acceptance Criteria Status**:
+   - Check phase-{X}-issues.md for current completion status
+   - Mark already completed criteria as `[x]` - skip these in implementation
+   - Focus only on incomplete criteria `[ ]`
+   - Update issue status based on overall progress
+
+3. **Environment Validation**:
    - Ensure GPG and SSH keys are present
    - Validate development environment is ready
    - Check dependencies are met
@@ -77,7 +83,13 @@ This command requires approved implementation plan. If not done, run:
    - Validate against acceptance criteria continuously
    - Check for scope creep at each milestone
 
-2. **Security Validation**:
+2. **Acceptance Criteria Progress Tracking**:
+   - Mark completed criteria as `[x]` in phase-{X}-issues.md after verification
+   - Update issue status (Open → In Process → Closed) based on completion
+   - Verify each criterion is fully satisfied before marking complete
+   - Document any blockers or partial completion
+
+3. **Security Validation**:
    - Run security scans regularly
    - Validate encrypted storage is working
    - Check for exposed secrets or keys
@@ -106,6 +118,16 @@ This command requires approved implementation plan. If not done, run:
 - [ ] Task 2: [Description] - Status: pending/in_progress/completed
 - [ ] Task 3: [Description] - Status: pending/in_progress/completed
 
+## Acceptance Criteria Progress
+✅ **COMPLETED** ([X/Y] criteria):
+- [List criteria marked as [x] in phase-{X}-issues.md]
+
+🔄 **IN PROGRESS** ([X/Y] criteria):
+- [List criteria being worked on]
+
+❌ **PENDING** ([X/Y] criteria):
+- [List remaining criteria]
+
 ## Blockers and Decisions
 - [Date] [Decision/Blocker]: [Description and resolution]
 
@@ -132,9 +154,11 @@ poetry run mypy src  # For Python changes
 
 ### Before Each Major Milestone
 1. **Acceptance Criteria Check**: Verify progress against original criteria
-2. **Security Scan**: Run Safety and Bandit checks
-3. **Test Coverage**: Ensure 80% minimum coverage maintained
-4. **Documentation**: Update knowledge files as needed
+2. **Update Issue Status**: Mark completed criteria as `[x]` in phase-{X}-issues.md
+3. **Issue Status Management**: Update overall issue status (Open/In Process/Closed)
+4. **Security Scan**: Run Safety and Bandit checks
+5. **Test Coverage**: Ensure 80% minimum coverage maintained
+6. **Documentation**: Update knowledge files as needed
 
 ## Error Handling
 
