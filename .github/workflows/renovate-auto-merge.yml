@@ -79,17 +79,85 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export
+      - name: Install Poetry Export Plugin with retry logic
+        run: |
+          # Robust Poetry plugin installation with comprehensive error handling
+          install_poetry_plugin() {
+            local attempt=1
+            local max_attempts=3
+            local delay=5
+
+            while [ $attempt -le $max_attempts ]; do
+              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
+
+              # Check if plugin is already installed
+              if poetry self show plugins | grep -q "poetry-plugin-export"; then
+                echo "✅ poetry-plugin-export is already installed"
+                poetry self show plugins | grep poetry-plugin-export
+                return 0
+              fi
+
+              # Attempt installation with verbose output
+              if poetry self add poetry-plugin-export --verbose; then
+                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
+                # Verify installation
+                if poetry self show plugins | grep -q "poetry-plugin-export"; then
+                  echo "✅ Plugin installation verified"
+                  return 0
+                else
+                  echo "⚠️  Plugin installation succeeded but verification failed"
+                fi
+              else
+                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
+              fi
+
+              if [ $attempt -lt $max_attempts ]; then
+                echo "⏳ Waiting ${delay}s before retry..."
+                sleep $delay
+                delay=$((delay * 2))  # Exponential backoff
+              fi
+
+              attempt=$((attempt + 1))
+            done
+
+            # Final failure with comprehensive debugging
+            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
+            echo "::group::Debug Information"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Poetry configuration:"
+            poetry config --list | head -10
+            echo "Poetry environment info:"
+            poetry env info 2>/dev/null || echo "No poetry environment found"
+            echo "Available Poetry plugins:"
+            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
+            echo "Network connectivity test:"
+            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
+            echo "Disk space:"
+            df -h . | tail -1
+            echo "Memory usage:"
+            free -h | head -2
+            echo "::endgroup::"
+            return 1
+          }
+
+          # Execute the installation function
+          install_poetry_plugin
 
       - name: Configure Poetry for Assured-OSS
         run: |
           # Configure Poetry repositories
           poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
 
-          # Get access token and configure authentication
-          ACCESS_TOKEN=$(gcloud auth print-access-token)
-          poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
+          # Secure authentication token handling - avoid shell variable exposure
+          echo "🔐 Configuring secure Assured-OSS authentication..."
+          gcloud auth print-access-token | poetry config http-basic.assured-oss oauth2accesstoken --stdin || {
+            echo "::error::Failed to configure Assured-OSS authentication"
+            echo "Attempting alternative secure token configuration..."
+            # Alternative approach using temporary environment variable
+            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
+            unset GOOGLE_ACCESS_TOKEN
+          }
 
           echo "✅ Poetry configured for Assured-OSS authentication"
 
@@ -201,11 +269,18 @@ jobs:
           osv-scanner --format=json --output=osv-report.json .
           echo "::endgroup::"
 
-          # Run existing security tools
+          # Run existing security tools with fallback
           echo "::group::Running Safety"
-          echo "$SAFETY_API_KEY" > safety_api_key.txt
-          poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
-          rm safety_api_key.txt  # Clean up credential file
+          if [ -n "$SAFETY_API_KEY" ]; then
+            echo "🔑 Using Safety CLI with API key for enhanced scanning"
+            echo "$SAFETY_API_KEY" > safety_api_key.txt
+            poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
+            rm safety_api_key.txt  # Clean up credential file
+          else
+            echo "⚠️  SAFETY_API_KEY not set - using rate-limited scanning"
+            echo "To enable enhanced scanning, add SAFETY_API_KEY secret to repository"
+            poetry run safety scan --output safety-report.json || true
+          fi
           echo "::endgroup::"
 
           echo "::group::Running Bandit"
