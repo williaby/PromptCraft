@@ -12,6 +12,7 @@ version: "1.0"
 Create and validate implementation plan against defined scope boundaries: $ARGUMENTS
 
 ## Usage Options
+
 - `phase X issue Y` - Standard planning with validation
 - `quick phase X issue Y` - Essential plan creation only
 - `expert phase X issue Y` - Plan with IT manager consultation
@@ -19,6 +20,7 @@ Create and validate implementation plan against defined scope boundaries: $ARGUM
 ## Prerequisites
 
 This command requires completed scope analysis. If not done, run:
+
 ```bash
 /project:workflow-scope-analysis phase X issue Y
 ```
@@ -53,6 +55,7 @@ This command requires completed scope analysis. If not done, run:
 ### Step 3: IT Manager Consultation (Optional)
 
 For expert mode, use Zen to consult with Gemini in IT manager role:
+
 - **Lead with the scope boundary document**
 - Present ONLY the acceptance criteria requirements
 - Get approval that the scope is correctly understood
@@ -62,6 +65,7 @@ For expert mode, use Zen to consult with Gemini in IT manager role:
 ### Step 4: Final Scope Validation
 
 **MANDATORY FINAL CHECK**:
+
 - Review action plan against original acceptance criteria one more time
 - Remove any items that crept in during consultation
 - Ensure plan addresses all acceptance criteria and nothing more
@@ -137,6 +141,7 @@ purpose: "Implementation plan for resolving Phase {X} Issue {Y}"
 ## Next Steps
 
 After user approval:
+
 - Proceed to `/project:workflow-implementation`
 - Maintain strict adherence to approved plan
 - Use todo tracking for progress monitoring

@@ -12,6 +12,7 @@ version: "1.0"
 Execute approved implementation plan with security and quality standards: $ARGUMENTS
 
 ## Usage Options
+
 - `phase X issue Y` - Standard implementation workflow
 - `quick phase X issue Y` - Essential implementation only
 - `subagent phase X issue Y` - Use specialized subagents for implementation
@@ -19,6 +20,7 @@ Execute approved implementation plan with security and quality standards: $ARGUM
 ## Prerequisites
 
 This command requires approved implementation plan. If not done, run:
+
 ```bash
 /project:workflow-plan-validation phase X issue Y
 ```
@@ -85,12 +87,14 @@ This command requires approved implementation plan. If not done, run:
 ## Implementation Patterns
 
 ### Code Reuse Strategy
+
 1. **Check ledgerbase** for existing patterns
 2. **Review FISProject** for similar implementations
 3. **Use .github** for CI/CD templates
 4. **Leverage PromptCraft** existing components
 
 ### Agent Coordination
+
 ```markdown
 ## Subagent Tasks
 - **Security Agent**: Authentication and authorization
@@ -100,6 +104,7 @@ This command requires approved implementation plan. If not done, run:
 ```
 
 ### Progress Tracking Template
+
 ```markdown
 ## Implementation Progress
 - [ ] Task 1: [Description] - Status: pending/in_progress/completed
@@ -118,6 +123,7 @@ This command requires approved implementation plan. If not done, run:
 ## Quality Gates
 
 ### Before Each Commit
+
 ```bash
 # MANDATORY: Run pre-commit validation
 /project:validation-precommit
@@ -131,6 +137,7 @@ poetry run mypy src  # For Python changes
 ```
 
 ### Before Each Major Milestone
+
 1. **Acceptance Criteria Check**: Verify progress against original criteria
 2. **Security Scan**: Run Safety and Bandit checks
 3. **Test Coverage**: Ensure 80% minimum coverage maintained
@@ -160,6 +167,7 @@ poetry run mypy src  # For Python changes
 ## Next Steps
 
 After implementation completion:
+
 - Proceed to `/project:workflow-review-cycle`
 - Ensure all todo items are marked completed
 - Prepare for comprehensive testing and validation
