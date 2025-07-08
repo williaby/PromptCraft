@@ -1,0 +1,83 @@
+metadata:
+  name: "Business Email Template"
+  description: "Professional business email template for various communication needs"
+  type: "business"
+  version: "1.0"
+  author: "PromptCraft"
+  created_date: "2025-01-01"
+  modified_date: "2025-01-01"
+  tags: ["business", "email", "professional", "communication"]
+
+variables:
+  recipient_name:
+    type: "string"
+    description: "Name of the email recipient"
+    required: true
+  sender_name:
+    type: "string"
+    description: "Name of the email sender"
+    required: true
+  subject:
+    type: "string"
+    description: "Email subject line"
+    required: true
+  purpose:
+    type: "string"
+    description: "Purpose of the email"
+    required: true
+  main_content:
+    type: "string"
+    description: "Main email content"
+    required: true
+  call_to_action:
+    type: "string"
+    description: "Specific action requested"
+    required: false
+  deadline:
+    type: "string"
+    description: "Deadline for response or action"
+    required: false
+  company_name:
+    type: "string"
+    description: "Company name"
+    required: false
+
+structure:
+  sections:
+    - name: "greeting"
+      description: "Professional greeting"
+      template: "Dear {recipient_name},"
+    - name: "opening"
+      description: "Opening statement"
+      template: "I hope this email finds you well."
+    - name: "purpose"
+      description: "Purpose statement"
+      template: "I am writing to {purpose}."
+    - name: "content"
+      description: "Main content"
+      template: "{main_content}"
+    - name: "action"
+      description: "Call to action"
+      template: "Could you please {call_to_action}?"
+    - name: "closing"
+      description: "Professional closing"
+      template: "Thank you for your time and consideration.\n\nBest regards,\n{sender_name}"
+
+examples:
+  - name: "Project Update Request"
+    variables:
+      recipient_name: "John Smith"
+      sender_name: "Sarah Johnson"
+      subject: "Project Status Update Request"
+      purpose: "request an update on the Q1 marketing campaign project"
+      main_content: "As we approach the end of January, I wanted to check in on the progress of our Q1 marketing campaign. The leadership team is eager to understand our current status and any potential challenges we might be facing."
+      call_to_action: "provide a brief status update including completed milestones, current progress, and any support you might need"
+      deadline: "by Friday, January 31st"
+  - name: "Meeting Request"
+    variables:
+      recipient_name: "Maria Rodriguez"
+      sender_name: "David Chen"
+      subject: "Meeting Request - Budget Discussion"
+      purpose: "schedule a meeting to discuss the upcoming budget allocation"
+      main_content: "I would like to schedule a meeting to review the proposed budget for the next quarter. This discussion will help us align our financial planning with the company's strategic objectives."
+      call_to_action: "let me know your availability for a 1-hour meeting next week"

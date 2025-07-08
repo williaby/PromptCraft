@@ -1,0 +1,75 @@
+metadata:
+  name: "Technical Documentation Template"
+  description: "Comprehensive template for technical documentation"
+  type: "technical"
+  version: "1.0"
+  author: "PromptCraft"
+  created_date: "2025-01-01"
+  modified_date: "2025-01-01"
+  tags: ["technical", "documentation", "api", "software"]
+
+variables:
+  project_name:
+    type: "string"
+    description: "Name of the project or system"
+    required: true
+  version:
+    type: "string"
+    description: "Version number"
+    required: true
+  overview:
+    type: "string"
+    description: "Project overview description"
+    required: true
+  installation_steps:
+    type: "string"
+    description: "Installation instructions"
+    required: true
+  usage_examples:
+    type: "string"
+    description: "Usage examples"
+    required: true
+  api_endpoints:
+    type: "string"
+    description: "API endpoints documentation"
+    required: false
+  configuration:
+    type: "string"
+    description: "Configuration options"
+    required: false
+  troubleshooting:
+    type: "string"
+    description: "Common issues and solutions"
+    required: false
+
+structure:
+  sections:
+    - name: "title"
+      description: "Documentation title"
+      template: "# {project_name} Documentation\n\nVersion: {version}"
+    - name: "overview"
+      description: "Project overview"
+      template: "## Overview\n\n{overview}"
+    - name: "installation"
+      description: "Installation instructions"
+      template: "## Installation\n\n{installation_steps}"
+    - name: "usage"
+      description: "Usage examples"
+      template: "## Usage\n\n{usage_examples}"
+    - name: "configuration"
+      description: "Configuration options"
+      template: "## Configuration\n\n{configuration}"
+    - name: "troubleshooting"
+      description: "Troubleshooting guide"
+      template: "## Troubleshooting\n\n{troubleshooting}"
+
+examples:
+  - name: "API Documentation"
+    variables:
+      project_name: "UserAuth API"
+      version: "v2.1.0"
+      overview: "The UserAuth API provides secure authentication and authorization services for web applications. It supports JWT tokens, OAuth 2.0, and multi-factor authentication."
+      installation_steps: "1. Install the package: `npm install userauth-api`\n2. Configure environment variables\n3. Initialize the service in your application"
+      usage_examples: "```javascript\nconst userAuth = require('userauth-api');\n\n// Initialize authentication\nconst auth = new userAuth.AuthService({\n  secret: process.env.JWT_SECRET,\n  expiresIn: '1h'\n});\n\n// Authenticate user\nconst token = await auth.login(username, password);\n```"
+      configuration: "Configure the following environment variables:\n- `JWT_SECRET`: Secret key for JWT tokens\n- `DATABASE_URL`: Database connection string\n- `REDIS_URL`: Redis connection for session storage"
+      troubleshooting: "**Common Issues:**\n\n1. **Authentication fails**: Check that JWT_SECRET is properly set\n2. **Database connection error**: Verify DATABASE_URL format\n3. **Token expiration**: Adjust expiresIn setting in configuration"
