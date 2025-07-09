@@ -2,6 +2,43 @@
 
 This module provides comprehensive error handling for Zen MCP integration,
 using the modular resilience strategies for enhanced maintainability and reusability.
+It implements circuit breaker patterns, retry strategies, and composite resilience
+handling to ensure robust operation in distributed systems.
+
+The module provides:
+- Circuit breaker pattern implementation for fault tolerance
+- Retry strategy with exponential backoff and secure jitter
+- Composite resilience handler for multi-strategy coordination
+- Mock client for testing error handling scenarios
+- High-level integration layer with fallback mechanisms
+
+Architecture:
+    The resilience system follows the Strategy pattern with composable strategies.
+    Each strategy can be used independently or combined through the composite handler.
+    The system integrates with the secure random utilities for cryptographically
+    secure jitter and backoff calculations.
+
+Key Components:
+    - CircuitBreakerStrategy: Implements circuit breaker fault tolerance
+    - RetryStrategy: Provides retry logic with exponential backoff
+    - CompositeResilienceHandler: Coordinates multiple resilience strategies
+    - ZenMCPIntegration: High-level integration with fallback support
+    - Factory functions: Pre-configured integration instances
+
+Dependencies:
+    - asyncio: For asynchronous operation support
+    - time: For timing and delay calculations
+    - src.utils.resilience: For base resilience strategy interfaces
+    - src.utils.logging_mixin: For structured logging support
+    - src.utils.secure_random: For cryptographically secure randomness
+
+Called by:
+    - src.agents.create_agent: For resilient agent execution
+    - src.core.query_counselor: For robust query processing
+    - src.main.py: For FastAPI error handling middleware
+    - Agent implementations: For external service calls
+
+Complexity: O(1) for circuit breaker operations, O(n) for retry attempts where n is max_retries
 """
 
 import asyncio
@@ -68,6 +105,9 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
     ) -> Any:
         """Execute function with circuit breaker protection.
 
+        This method implements the core circuit breaker logic, managing state transitions
+        and failure tracking to provide fault tolerance for external service calls.
+
         Args:
             func: Async function to execute.
             *args: Function arguments.
@@ -79,6 +119,20 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         Raises:
             CircuitBreakerOpenError: If circuit breaker is open.
             ZenMCPError: If function execution fails.
+
+        Time Complexity: O(1) - Constant time state checks and transitions
+        Space Complexity: O(1) - Fixed memory for state tracking
+
+        Called by:
+            - CompositeResilienceHandler.execute_with_protection()
+            - Direct usage in agent implementations
+            - Test scenarios for circuit breaker validation
+
+        Calls:
+            - _should_attempt_reset(): State transition logic
+            - _transition_to_half_open(): State management
+            - _on_success(): Success handling
+            - _on_failure(): Failure handling
         """
         self.log_method_entry("execute", func.__name__, *args, **kwargs)
 
@@ -216,6 +270,9 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
     ) -> Any:
         """Execute function with retry policy.
 
+        This method implements exponential backoff retry logic with secure jitter
+        to provide resilience against transient failures in distributed systems.
+
         Args:
             func: Async function to execute.
             *args: Function arguments.
@@ -226,6 +283,19 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
 
         Raises:
             RetryExhaustedError: If all retries fail.
+
+        Time Complexity: O(n) where n is max_retries (worst case)
+        Space Complexity: O(1) - Fixed memory regardless of retry count
+
+        Called by:
+            - CompositeResilienceHandler.execute_with_protection()
+            - Direct usage in agent implementations
+            - High-level integration layers
+
+        Calls:
+            - _calculate_delay(): Exponential backoff calculation
+            - asyncio.sleep(): Delay between retry attempts
+            - secure_rng.exponential_backoff_jitter(): Secure delay calculation
         """
         self.log_method_entry("execute", func.__name__, *args, **kwargs)
         last_exception = None
