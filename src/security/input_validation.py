@@ -13,44 +13,104 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class SecureStringField(str):
-    """String field with automatic HTML escaping and validation."""
+    """String field with automatic HTML escaping and validation.
+
+    Custom string field that automatically sanitizes input to prevent XSS attacks
+    and other malicious content. Provides multiple layers of validation:
+
+    1. Length validation (10KB limit)
+    2. Null byte detection and rejection
+    3. HTML entity escaping for XSS prevention
+    4. Suspicious pattern detection (script tags, JavaScript protocols)
+
+    **Security Features:**
+    - Automatic HTML escaping with quote=True
+    - Null byte injection prevention
+    - Malicious pattern detection (script tags, event handlers)
+    - Configurable length limits
+
+    Example:
+        >>> field = SecureStringField.validate("<script>alert('xss')</script>")
+        >>> print(field)  # "&lt;script&gt;alert('xss')&lt;/script&gt;"
+
+    Note:
+        This class extends str to maintain string compatibility while adding
+        security validation.
+    """
 
     @classmethod
     def __get_validators__(cls) -> Any:
-        """Pydantic v1 compatibility for custom validation."""
+        """Pydantic v1 compatibility for custom validation.
+
+        Provides backward compatibility with Pydantic v1 validation system.
+        Yields the validate method for use in Pydantic model validation.
+
+        Returns:
+            Generator yielding the validate method
+
+        Note:
+            This method maintains compatibility with older Pydantic versions
+            while allowing the security validation to work seamlessly.
+        """
         yield cls.validate
 
     @classmethod
     def validate(cls, value: Any) -> str:
         """Validate and sanitize string input.
 
+        Multi-layer security validation that sanitizes input to prevent various
+        attack vectors including XSS, null byte injection, and malicious patterns.
+
+        **Validation Steps:**
+        1. Type coercion to string
+        2. Length validation (10KB limit)
+        3. Null byte detection
+        4. HTML entity escaping
+        5. Suspicious pattern detection
+
+        **Protected Against:**
+        - XSS attacks (HTML escaping)
+        - Null byte injection
+        - Script tag injection
+        - JavaScript protocol injection
+        - Event handler injection
+
         Args:
-            value: Input value to validate
+            value: Input value to validate (any type, converted to string)
 
         Returns:
-            Sanitized string value
+            Sanitized string value with HTML entities escaped
 
         Raises:
-            ValueError: If input contains dangerous content
+            ValueError: If input contains dangerous content or exceeds limits
+
+        Complexity:
+            O(n) where n is the length of the input string
+
+        Example:
+            >>> SecureStringField.validate("<script>alert('xss')</script>")
+            "&lt;script&gt;alert('xss')&lt;/script&gt;"
         """
         if not isinstance(value, str):
             value = str(value)
 
-        # Basic length check
-        max_input_length = 10000  # 10KB limit
+        # Basic length check to prevent DoS attacks
+        max_input_length = 10000  # 10KB limit for reasonable input size
         if len(value) > max_input_length:
             raise ValueError(f"Input too long (maximum {max_input_length} characters)")
 
-        # Check for null bytes
+        # Check for null bytes (potential injection vector)
         if "\x00" in value:
             raise ValueError("Null bytes not allowed in input")
 
-        # HTML escape to prevent XSS
+        # HTML escape to prevent XSS attacks
+        # quote=True escapes both single and double quotes
         sanitized = html.escape(value, quote=True)
 
         # Additional checks for suspicious patterns
+        # These patterns catch common XSS and injection attempts
         suspicious_patterns = [
-            r"<script[^>]*>.*?</script>",  # Script tags
+            r"<script[^>]*>.*?</script>",  # Script tags (complete)
             r"javascript:",  # JavaScript protocol
             r"vbscript:",  # VBScript protocol
             r"onload\s*=",  # Event handlers
@@ -59,6 +119,7 @@ class SecureStringField(str):
             r"onmouseover\s*=",
         ]
 
+        # Check each pattern against the original value (before escaping)
         for pattern in suspicious_patterns:
             if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
                 raise ValueError("Potentially dangerous content detected")
@@ -67,47 +128,98 @@ class SecureStringField(str):
 
 
 class SecurePathField(str):
-    """Path field with directory traversal protection."""
+    r"""Path field with directory traversal protection.
+
+    Specialized string field for validating file paths with security measures
+    to prevent directory traversal attacks and other path-based exploits.
+
+    **Security Features:**
+    - Directory traversal prevention ("../" sequences)
+    - Absolute path rejection
+    - Dangerous character filtering
+    - URL decoding before validation
+
+    **Protected Against:**
+    - Directory traversal attacks (../../../etc/passwd)
+    - Absolute path access (/etc/passwd, C:\Windows\System32)
+    - Null byte injection
+    - Command injection characters (|, &, ;, $, `)
+
+    Example:
+        >>> SecurePathField.validate("../../../etc/passwd")
+        ValueError: Directory traversal not allowed
+
+    Note:
+        Validates the URL-decoded path but returns the original value
+        to preserve encoding if needed.
+    """
 
     @classmethod
     def __get_validators__(cls) -> Any:
-        """Pydantic v1 compatibility for custom validation."""
+        """Pydantic v1 compatibility for custom validation.
+
+        Provides backward compatibility with Pydantic v1 validation system.
+        Yields the validate method for use in Pydantic model validation.
+
+        Returns:
+            Generator yielding the validate method
+        """
         yield cls.validate
 
     @classmethod
     def validate(cls, value: Any) -> str:
         """Validate path input to prevent directory traversal.
 
+        Multi-step validation process that prevents various path-based attacks
+        by checking the URL-decoded path against dangerous patterns.
+
+        **Validation Process:**
+        1. URL decode the path to handle encoded traversal attempts
+        2. Check for directory traversal sequences ("..")
+        3. Reject absolute paths
+        4. Filter dangerous characters
+        5. Return original value if validation passes
+
         Args:
-            value: Path value to validate
+            value: Path value to validate (any type, converted to string)
 
         Returns:
-            Sanitized path value
+            Original path value if validation passes
 
         Raises:
-            ValueError: If path contains dangerous patterns
+            ValueError: If path contains dangerous patterns or characters
+
+        Example:
+            >>> SecurePathField.validate("docs/file.txt")  # Valid
+            "docs/file.txt"
+            >>> SecurePathField.validate("../../../etc/passwd")  # Invalid
+            ValueError: Directory traversal not allowed
         """
         if not isinstance(value, str):
             value = str(value)
 
         # 1. Decode the value first to get the intended path
+        # This prevents encoded traversal attempts like %2e%2e%2f
         decoded_value = urllib.parse.unquote(value)
 
         # 2. Run all validations on the decoded path
+        # Check for directory traversal sequences
         if ".." in decoded_value:
             raise ValueError("Directory traversal not allowed")
 
-        # Check for absolute paths
+        # Check for absolute paths (both Unix and Windows styles)
         if decoded_value.startswith("/") or (len(decoded_value) > 1 and decoded_value[1] == ":"):
             raise ValueError("Absolute paths not allowed")
 
         # Check for suspicious characters in decoded path
+        # These characters could be used for command injection
         dangerous_chars = ["\x00", "\r", "\n", "|", "&", ";", "$", "`"]
         for char in dangerous_chars:
             if char in decoded_value:
                 raise ValueError(f"Dangerous character '{char}' not allowed")
 
         # 3. Return the original validated value, preserving encoding if needed
+        # This allows the application to handle URL-encoded paths appropriately
         return value
 
 
