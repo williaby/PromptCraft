@@ -1,0 +1,46 @@
+# Configure diff exclusion for What The Diff cost optimization
+# These patterns mark files that should be excluded from WTD analysis
+
+# Build and distribution directories
+dist/* linguist-generated=true
+build/* linguist-generated=true
+
+# Vendor and dependency files
+vendor/* linguist-vendored=true
+node_modules/* linguist-vendored=true
+
+# Lock files and dependencies
+*.lock linguist-vendored=true
+package-lock.json linguist-vendored=true
+poetry.lock linguist-vendored=true
+requirements*.txt linguist-generated=true
+
+# Python cache and generated files
+**/__pycache__/* linguist-generated=true
+*.pyc linguist-generated=true
+.pytest_cache/* linguist-generated=true
+htmlcov/* linguist-generated=true
+*.egg-info/* linguist-generated=true
+
+# IDE and editor files
+.idea/* linguist-vendored=true
+.vscode/* linguist-vendored=true
+*.swp linguist-vendored=true
+*.swo linguist-vendored=true
+
+# Documentation build outputs
+docs/_build/* linguist-generated=true
+site/* linguist-generated=true
+
+# Test coverage reports
+coverage/* linguist-generated=true
+.coverage linguist-generated=true
+coverage.xml linguist-generated=true
+
+# Binary and media files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
