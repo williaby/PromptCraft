@@ -1,0 +1,39 @@
+# .gitattributes - Configure Git attributes for WTD diff exclusion
+
+# Mark generated files as generated (exclude from diffs)
+dist/* linguist-generated=true
+build/* linguist-generated=true
+htmlcov/* linguist-generated=true
+coverage.xml linguist-generated=true
+coverage.json linguist-generated=true
+.coverage linguist-generated=true
+
+# Mark vendor/dependency files as vendored (exclude from diffs)
+vendor/* linguist-vendored=true
+*.lock linguist-vendored=true
+poetry.lock linguist-vendored=true
+package-lock.json linguist-vendored=true
+yarn.lock linguist-vendored=true
+requirements*.txt linguist-vendored=true
+
+# Mark documentation as documentation
+*.md linguist-documentation=true
+docs/* linguist-documentation=true
+
+# Binary files (images, etc.) - exclude from diffs
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+*.pdf binary
+
+# Configuration files - include in diffs but mark appropriately
+*.yml linguist-language=YAML
+*.yaml linguist-language=YAML
+*.json linguist-language=JSON
+*.toml linguist-language=TOML
+
+# Python files - ensure proper detection
+*.py linguist-language=Python

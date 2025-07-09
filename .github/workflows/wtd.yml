@@ -1,0 +1,53 @@
+name: 📝 What The Diff PR Summary
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths-ignore:
+      - "dist/**"
+      - "build/**"
+      - "vendor/**"
+      - "*.lock"
+      - "*.png"
+      - "*.jpg"
+      - "*.jpeg"
+      - "*.gif"
+      - "*.svg"
+      - "htmlcov/**"
+      - ".coverage"
+      - "coverage.xml"
+      - "coverage.json"
+
+jobs:
+  generate-summary:
+    name: Generate PR Summary
+    runs-on: ubuntu-latest
+    # Skip any PR whose author login ends with "[bot]"
+    if: "!endsWith(github.event.pull_request.user.login, '[bot]')"
+
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2.12
+        with:
+          egress-policy: audit
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install What‑The‑Diff CLI
+        run: |
+          npm install -g @beyondcode/what-the-diff-cli
+
+      - name: Generate PR summary
+        run: |
+          what-the-diff \
+            --github-token ${{ secrets.GITHUB_TOKEN }} \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --pr-number ${{ github.event.pull_request.number }}
