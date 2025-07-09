@@ -1,10 +1,11 @@
-# Prepare Pull Request
+# Prepare Pull Request (Enhanced with Branch Safety)
 
 Generate a comprehensive, standardized pull request description and optionally create a draft PR on GitHub from git
 commits and changes: $ARGUMENTS
 
 ## Analysis Required
 
+0. **Branch Strategy Validation**: Validate current branch strategy and ensure proper targeting
 1. **Git History Analysis**: Analyze commits between base and target branch
 2. **Change Impact Assessment**: Calculate files, lines, and complexity metrics
 3. **PR Template Integration**: Populate variables in pull request template
@@ -14,34 +15,362 @@ commits and changes: $ARGUMENTS
 
 ## Instructions
 
-### 1. Parse Command Arguments
+### 0. Branch Strategy Validation and Safety Checks
 
-Extract options from `$ARGUMENTS`:
+**CRITICAL**: This step runs before any PR preparation to ensure proper branch strategy.
 
-- `--branch [name]`: Target branch (default: current branch)
-- `--base [name]`: Base branch for comparison (default: main)
+```bash
+# Execute branch validation
+current_branch=$(git branch --show-current)
+target_branch="${target_branch:-main}"
+base_branch="${base_branch:-main}"
+
+# Branch validation function
+validate_branch_strategy() {
+    local current="$1"
+    local target="$2"
+    local base="$3"
+
+    echo "🔍 Analyzing branch strategy..."
+    echo "Current branch: $current"
+    echo "Target branch: $target"
+    echo "Base branch: $base"
+
+    # Check if targeting main from non-phase branch
+    if [[ "$target" == "main" ]] && [[ "$current" != "phase-"*"-development" ]]; then
+        echo "⚠️  WARNING: Targeting main branch from non-phase branch!"
+        return 1
+    fi
+
+    # Check if on main branch with changes
+    if [[ "$current" == "main" ]]; then
+        echo "❌ ERROR: Cannot create PR from main branch!"
+        return 2
+    fi
+
+    return 0
+}
+
+# Commit analysis for issue detection
+analyze_commits_for_issue() {
+    local base="$1"
+    local current="$2"
+
+    # Extract issue references from commits
+    local commit_messages=$(git log --oneline "$base..$current" | head -10)
+    local issue_refs=$(echo "$commit_messages" | grep -oE "(issue|Issue) #[0-9]+" | grep -oE "[0-9]+" | sort -u)
+    local create_refs=$(echo "$commit_messages" | grep -iE "(create|c\.r\.e\.a\.t\.e)" | wc -l)
+
+    echo "📋 Commit Analysis Results:"
+    echo "- Issue references found: $issue_refs"
+    echo "- C.R.E.A.T.E. related commits: $create_refs"
+
+    # Return primary issue if detected
+    if [[ -n "$issue_refs" ]]; then
+        echo "$issue_refs" | head -1
+    else
+        echo ""
+    fi
+}
+
+# Change pattern analysis
+analyze_change_patterns() {
+    local base="$1"
+    local current="$2"
+
+    echo "🔍 Analyzing change patterns..."
+
+    # File change analysis
+    local changed_files=$(git diff --name-only "$base..$current")
+    local file_count=$(echo "$changed_files" | wc -l)
+
+    # Pattern detection
+    local security_changes=$(echo "$changed_files" | grep -E "(security|auth|encrypt)" | wc -l)
+    local create_changes=$(echo "$changed_files" | grep -E "(create|core)" | wc -l)
+    local ui_changes=$(echo "$changed_files" | grep -E "(ui|gradio|interface)" | wc -l)
+    local test_changes=$(echo "$changed_files" | grep -E "(test|spec)" | wc -l)
+
+    echo "📊 Change Pattern Analysis:"
+    echo "- Files changed: $file_count"
+    echo "- Security related: $security_changes files"
+    echo "- C.R.E.A.T.E. related: $create_changes files"
+    echo "- UI related: $ui_changes files"
+    echo "- Test related: $test_changes files"
+
+    # Generate recommendations
+    if [[ $security_changes -gt 0 ]]; then
+        echo "🔒 Security-related changes detected"
+        echo "💡 Recommendation: Use issue-9-security-implementation branch"
+    fi
+
+    if [[ $create_changes -gt 0 ]]; then
+        echo "⚡ C.R.E.A.T.E. framework changes detected"
+        echo "💡 Recommendation: Use issue-4-create-framework branch"
+    fi
+
+    if [[ $ui_changes -gt 0 ]]; then
+        echo "🖥️  UI changes detected"
+        echo "💡 Recommendation: Use issue-5-gradio-ui branch"
+    fi
+}
+
+# Intent confirmation for main branch targeting
+handle_main_branch_targeting() {
+    local primary_issue=$(analyze_commits_for_issue "$base_branch" "$current_branch")
+
+    echo ""
+    echo "🎯 BRANCH STRATEGY DECISION REQUIRED"
+    echo "=========================================="
+    echo ""
+    echo "You're about to create a PR targeting 'main' from '$current_branch'."
+    echo ""
+
+    if [[ -n "$primary_issue" ]]; then
+        echo "📋 Detected work on Issue #$primary_issue"
+        echo "📁 Expected branch: issue-$primary_issue-* or phase-1-development"
+        echo ""
+    fi
+
+    echo "Please choose your intent:"
+    echo ""
+    echo "1. 🎯 PHASE COMPLETION - This represents a completed phase (recommended for phase-*-development branches)"
+    echo "2. 🔧 ISSUE WORK - This is work on a specific issue (should target phase branch)"
+    echo "3. 🏗️  FEATURE BRANCH - This is part of larger feature work (needs issue branch)"
+    echo "4. 🚨 HOTFIX - This is an urgent fix that must go directly to main"
+    echo "5. ❌ CANCEL - Let me fix my branch strategy first"
+    echo ""
+
+    read -p "Enter your choice (1-5): " choice
+
+    case $choice in
+        1)
+            echo "✅ Confirmed as phase completion PR"
+            ;;
+        2)
+            suggest_phase_branch_target
+            ;;
+        3)
+            suggest_issue_branch_creation
+            ;;
+        4)
+            echo "⚠️  Hotfix confirmed - proceeding to main"
+            ;;
+        5)
+            echo "✅ Cancelled. Fix your branch strategy and run again."
+            exit 0
+            ;;
+        *)
+            echo "❌ Invalid choice. Please run the command again."
+            exit 1
+            ;;
+    esac
+}
+
+# Suggest phase branch targeting
+suggest_phase_branch_target() {
+    echo ""
+    echo "🎯 PHASE BRANCH TARGETING RECOMMENDED"
+    echo "======================================"
+    echo ""
+    echo "This work should target the phase development branch instead of main."
+    echo ""
+
+    # Auto-detect phase
+    local phase_branch="phase-1-development"
+    if git branch -a | grep -q "origin/$phase_branch"; then
+        echo "✅ Found existing phase branch: $phase_branch"
+    else
+        echo "❌ Phase branch '$phase_branch' not found."
+        echo "🔧 Would you like me to create it? (y/n)"
+        read -p "> " create_phase
+        if [[ "$create_phase" == "y" ]]; then
+            git checkout -b "$phase_branch" main
+            git push -u origin "$phase_branch"
+            echo "✅ Created and pushed $phase_branch"
+        else
+            echo "❌ Cannot proceed without phase branch. Exiting."
+            exit 1
+        fi
+    fi
+
+    echo ""
+    echo "🔄 I'll update the target branch to: $phase_branch"
+    echo "📤 Your PR will target: $phase_branch (instead of main)"
+    echo ""
+
+    # Update global variables
+    target_branch="$phase_branch"
+    base_branch="main"
+
+    echo "✅ Branch strategy updated. Continuing with PR preparation..."
+}
+
+# Suggest issue branch creation
+suggest_issue_branch_creation() {
+    local primary_issue=$(analyze_commits_for_issue "$base_branch" "$current_branch")
+
+    echo ""
+    echo "🏗️  ISSUE BRANCH CREATION RECOMMENDED"
+    echo "===================================="
+    echo ""
+
+    if [[ -n "$primary_issue" ]]; then
+        local suggested_branch="issue-$primary_issue-implementation"
+        echo "📋 Detected Issue #$primary_issue"
+        echo "🌟 Suggested branch name: $suggested_branch"
+    else
+        echo "❓ No clear issue detected. Please specify:"
+        read -p "Enter issue number: " issue_num
+        local suggested_branch="issue-$issue_num-implementation"
+        primary_issue="$issue_num"
+    fi
+
+    echo ""
+    echo "🔧 I can move your changes to the correct branch structure:"
+    echo "1. Create new branch: $suggested_branch"
+    echo "2. Move your commits to this branch"
+    echo "3. Target phase-1-development for the PR"
+    echo ""
+
+    read -p "Proceed with branch reorganization? (y/n): " proceed
+
+    if [[ "$proceed" == "y" ]]; then
+        move_changes_to_issue_branch "$suggested_branch" "$primary_issue"
+    else
+        echo "❌ Cancelled. Please organize your branches manually."
+        exit 1
+    fi
+}
+
+# Move changes to issue branch
+move_changes_to_issue_branch() {
+    local new_branch="$1"
+    local issue_num="$2"
+    local phase_branch="phase-1-development"
+
+    echo ""
+    echo "🔄 MOVING CHANGES TO CORRECT BRANCH"
+    echo "==================================="
+    echo ""
+
+    # Ensure phase branch exists
+    if ! git branch -a | grep -q "$phase_branch"; then
+        echo "🔧 Creating phase branch: $phase_branch"
+        git checkout -b "$phase_branch" main
+        git push -u origin "$phase_branch"
+    fi
+
+    # Create issue branch from phase branch
+    echo "🌟 Creating issue branch: $new_branch"
+    git checkout "$phase_branch"
+    git pull origin "$phase_branch" 2>/dev/null || true
+    git checkout -b "$new_branch"
+
+    # Cherry-pick commits from current branch
+    echo "🍒 Moving commits to issue branch..."
+    local commits=$(git log --oneline "$base_branch..$current_branch" --reverse | cut -d' ' -f1)
+
+    for commit in $commits; do
+        echo "  📝 Moving commit: $commit"
+        git cherry-pick "$commit"
+    done
+
+    # Push new branch
+    git push -u origin "$new_branch"
+
+    # Update global variables
+    target_branch="$phase_branch"
+    base_branch="main"
+
+    echo ""
+    echo "✅ Branch reorganization complete!"
+    echo "📍 Current branch: $new_branch"
+    echo "🎯 PR will target: $phase_branch"
+    echo "📋 Related to Issue #$issue_num"
+}
+
+# Main validation logic
+validate_branch_strategy "$current_branch" "$target_branch" "$base_branch"
+validation_result=$?
+
+case $validation_result in
+    1)
+        echo ""
+        echo "🤔 This looks like it should target a phase branch instead of main."
+        echo "Let me help you determine the correct branch strategy..."
+        analyze_change_patterns "$base_branch" "$current_branch"
+        handle_main_branch_targeting
+        ;;
+    2)
+        echo ""
+        echo "🚨 You're on the main branch with changes. This needs to be fixed."
+        echo "Please create a feature branch and move your changes there."
+        exit 1
+        ;;
+    0)
+        echo "✅ Branch strategy looks good!"
+        ;;
+esac
+```
+
+**Safety Features**:
+
+- ✅ **Main Branch Protection**: Prevents accidental direct commits to main
+- ✅ **Phase Targeting**: Ensures work targets appropriate phase branch
+- ✅ **Issue Detection**: Identifies related issues and suggests proper branches
+- ✅ **Change Analysis**: Analyzes patterns to recommend branch strategy
+- ✅ **Branch Migration**: Automatically moves changes to correct branches
+- ✅ **User Confirmation**: Confirms intent for main branch merges
+
+### 1. Parse Command Arguments (Enhanced)
+
+Extract options from `$ARGUMENTS` with new phase-aware options:
+
+- `--branch [name]`: Target branch (default: auto-detected from validation)
+- `--base [name]`: Base branch for comparison (default: auto-detected)
 - `--type [type]`: Change type (feat, fix, docs, style, refactor, perf, test, chore)
+- `--phase [number]`: Target phase number (auto-detects if not provided)
+- `--issue [number]`: Related issue number from phase-X-issues.md
+- `--phase-merge`: Flag for phase completion PR (targets main)
+- `--force-target`: Override branch validation (use with caution)
+- `--dry-run`: Run validation only, don't create PR
 - `--breaking`: Flag for breaking changes
 - `--security`: Flag for security-related changes
 - `--performance`: Flag for performance impacts
 - `--create`: Create draft PR on GitHub after generation
 - `--title [text]`: Custom PR title (auto-generate if not provided)
+- `--wtd-summary`: Force include What The Diff summary shortcode (even if > 10k chars)
+- `--no-wtd`: Exclude What The Diff summary shortcode (override auto-detection)
 
-### 2. Git Commit Analysis
+### 2. Git Commit Analysis (Phase-Aware)
 
-```textbash
-# Get commit range and analyze
-git log --oneline ${base_branch}..${target_branch}
-git diff --stat ${base_branch}..${target_branch}
+```bash
+# Phase-aware git analysis
+if [[ $base_branch == "main" ]] && [[ $target_branch == phase-*-development ]]; then
+    # Phase completion PR - analyze entire phase
+    git log --oneline main..${target_branch}
+    git diff --stat main..${target_branch}
+    # Include phase-specific metrics
+elif [[ $base_branch == phase-*-development ]]; then
+    # Feature branch targeting phase
+    git log --oneline ${base_branch}..${target_branch}
+    git diff --stat ${base_branch}..${target_branch}
+else
+    # Standard analysis
+    git log --oneline ${base_branch}..${target_branch}
+    git diff --stat ${base_branch}..${target_branch}
+fi
+
 git diff --numstat ${base_branch}..${target_branch}
 git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
-```text
+```
 
 **Extract from commits**:
 
 - Conventional commit types and scopes (feat, fix, docs, etc.)
 - Breaking change indicators (BREAKING CHANGE:, !)
 - Issue references (#123, closes #456, fixes #789)
+- Phase-specific issue references (Issue #4, Issue #9, etc.)
 - Co-authors from commit messages (especially Claude/Copilot)
 - Feature flags or experimental changes
 - Security-related keywords
@@ -51,6 +380,7 @@ git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
 - Type (feat, fix, docs, etc.)
 - Scope/component affected
 - Risk level (breaking, security, performance)
+- Phase relationship (phase completion vs. issue work)
 
 ### 3. Change Impact Calculation
 
@@ -84,6 +414,13 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 - `${pr_emoji}`: Auto-select based on primary change type
 - `${pr_title}`: Generate from commits or use --title argument
 
+**Phase-Specific Variables**:
+
+- `${phase_number}`: Current phase number (1, 2, 3, etc.)
+- `${phase_name}`: Phase name (Foundation & Journey 1, etc.)
+- `${issue_reference}`: Reference to phase-X-issues.md
+- `${phase_context}`: Context about phase relationship
+
 **Change Summary Variables**:
 
 - `${files_changed}`: Total file count
@@ -110,11 +447,57 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 - `${security_section}`: Identify security-related changes
 - `${breaking_changes_section}`: Document breaking changes and migration steps
 
-### 5. Size Analysis and PR Splitting Suggestions
+### 5. Phase-Aware PR Templates
 
-**When PR exceeds limits, generate splitting suggestions**:
+#### Phase Completion PR Template
 
-```textmarkdown
+```markdown
+## 🎯 Phase ${phase_number} Completion: ${phase_name}
+
+### 📊 Phase Summary
+| Metric | Value |
+|--------|-------|
+| **Issues Completed** | ${completed_issues}/${total_issues} |
+| **Files Changed** | ${files_changed} |
+| **Lines Added/Removed** | +${lines_added} / -${lines_removed} |
+| **Test Coverage** | ${coverage_before}% → ${coverage_after}% |
+| **Phase Duration** | ${phase_start} → ${phase_end} |
+
+### ✅ Phase Acceptance Criteria
+${phase_acceptance_criteria_checklist}
+
+### 🔄 Issues Implemented
+${completed_issues_list}
+
+### 🧪 Phase Testing
+${phase_testing_summary}
+
+### 🚀 Version Release
+This PR represents the completion of Phase ${phase_number} and will be tagged as version ${version_number}.
+```
+
+#### Phase Feature PR Template
+
+```markdown
+## ✨ Issue #${issue_number}: ${issue_title}
+
+### 🎯 Phase Context
+- **Phase**: ${phase_number} - ${phase_name}
+- **Issue Reference**: [Issue #${issue_number}](../docs/planning/phase-${phase_number}-issues.md#${issue_number})
+- **Target Branch**: `phase-${phase_number}-development`
+
+### 📊 Change Summary
+${standard_change_summary}
+
+### 🔗 Phase Integration
+This change integrates with phase-${phase_number}-development and will be included in the phase completion PR.
+```
+
+### 6. Size Analysis and PR Splitting Suggestions
+
+**Phase-aware splitting suggestions**:
+
+```markdown
 ## ⚠️ PR Size Warning
 
 This PR exceeds recommended size limits for optimal review:
@@ -125,42 +508,23 @@ This PR exceeds recommended size limits for optimal review:
 | Total Lines | ${current_lines} | 400 (recommended) | ${status_icon} |
 | Diff Tokens | ${current_tokens} | 2,500 (WhatTheDiff) | ${status_icon} |
 
-### 🔀 Suggested PR Split Plan
+### 🔀 Phase-Aware Splitting Strategy
 
-Based on the changes, we recommend splitting this PR into ${split_count} smaller PRs:
+For phase completion PRs:
+1. Split by issue (create separate issue branches)
+2. Target phase-${phase_number}-development
+3. Merge phase branch to main when complete
 
-#### PR 1: ${split1_name} (Priority: ${split1_priority})
-- **Files**: ${split1_files} files (${split1_lines} lines)
-- **Focus**: ${split1_description}
-- **Branch**: `${split1_branch_name}`
-```textbash
-git checkout -b ${split1_branch_name}
-git cherry-pick ${split1_commits}  # commits for this split
-```text
+For issue work:
+1. Split by functionality within the issue
+2. Keep related changes together
+3. Target phase-${phase_number}-development
+```
 
-#### PR 2: ${split2_name} (Priority: ${split2_priority})
-
-- **Files**: ${split2_files} files (${split2_lines} lines)
-- **Focus**: ${split2_description}
-- **Branch**: `${split2_branch_name}`
-- **Depends on**: PR 1
-
-```textbash
-git checkout -b ${split2_branch_name} ${split1_branch_name}
-git cherry-pick ${split2_commits}  # commits for this split
-```text
-
-### Merge Strategy
-
-1. Review and merge PR 1 first (${split1_description})
-2. Rebase and merge PR 2 (${split2_description})
-3. ${additional_merge_steps}
-
-```text
-
-### 6. Security and Performance Analysis
+### 7. Security and Performance Analysis
 
 **Security Analysis**:
+
 - Authentication/authorization changes
 - Credential/secret handling
 - Input validation changes
@@ -168,34 +532,86 @@ git cherry-pick ${split2_commits}  # commits for this split
 - Dependency security updates
 
 **Performance Analysis**:
+
 - Startup time impact
 - Memory usage changes
 - Runtime performance implications
 - Database query optimization
 - Caching strategy updates
 
-### 7. GitHub Integration (if --create flag used)
+### 8. What The Diff Integration Logic
 
-**Draft PR Creation Process**:
+**Character Limit Detection**:
+
+1. Calculate total PR description length (including all template content)
+2. Apply the following logic for WTD shortcode inclusion:
+
+```python
+# Pseudo-code for WTD inclusion logic
+total_chars = len(generated_pr_description)
+
+if args.no_wtd:
+    # User explicitly disabled WTD
+    include_wtd = False
+elif args.wtd_summary:
+    # User explicitly requested WTD (override size limit)
+    include_wtd = True
+elif total_chars > 10000:
+    # Auto-exclude WTD for large PRs to prevent overwhelming descriptions
+    include_wtd = False
+    print("⚠️ PR description exceeds 10,000 characters. WTD summary excluded.")
+    print("   Use --wtd-summary to force inclusion if needed.")
+else:
+    # Default: include WTD for reasonably-sized PRs
+    include_wtd = True
+```
+
+**WTD Shortcode Placement**:
+
+- If `include_wtd == True`: Add `wtd:summary` shortcode after "Notes for Reviewers" section
+- If `include_wtd == False`: Omit the shortcode entirely
+- The shortcode should be on its own line with no surrounding text
+
+**Note**: What The Diff works as a GitHub App, not a GitHub Action. The shortcode `wtd:summary` is processed by the
+app when it's installed on the repository.
+
+### 9. GitHub Integration (if --create flag used)
+
+**Phase-aware Draft PR Creation Process**:
+
 1. Validate GitHub CLI is available (`gh auth status`)
-2. Create draft PR with generated content
-3. Apply appropriate labels based on change types
-4. Assign suggested reviewers from CODEOWNERS or commit history
-5. Link to related issues from commit messages
+2. Apply phase-specific labels based on branch strategy
+3. Create draft PR with generated content
+4. Apply appropriate labels based on change types and phase
+5. Assign suggested reviewers from CODEOWNERS or commit history
+6. Link to related issues from commit messages
 
-```textbash
-# Create draft PR command
-gh pr create \
-  --title "${generated_title}" \
-  --body-file "${temp_pr_description}" \
-  --base "${base_branch}" \
-  --head "${target_branch}" \
-  --draft \
-  --label "${change_type},${size_label},${additional_labels}" \
-  --assignee "${suggested_reviewers}"
-```text
+```bash
+# Create draft PR command with phase awareness
+if [[ $target_branch == "main" ]] && [[ $current_branch == phase-*-development ]]; then
+    # Phase completion PR
+    gh pr create \
+      --title "🎯 Phase ${phase_number} Completion: ${phase_name}" \
+      --body-file "${temp_pr_description}" \
+      --base "main" \
+      --head "${current_branch}" \
+      --draft \
+      --label "phase-completion,${phase_number},${change_type},${size_label}" \
+      --assignee "${suggested_reviewers}"
+else
+    # Standard PR
+    gh pr create \
+      --title "${generated_title}" \
+      --body-file "${temp_pr_description}" \
+      --base "${base_branch}" \
+      --head "${target_branch}" \
+      --draft \
+      --label "phase-${phase_number},${change_type},${size_label},${additional_labels}" \
+      --assignee "${suggested_reviewers}"
+fi
+```
 
-### 8. Emoji and Type Mapping
+### 10. Emoji and Type Mapping
 
 **Change Type Emojis**:
 
@@ -209,6 +625,7 @@ gh pr create \
 - `chore`: 🔧 (wrench)
 - `security`: 🔒 (lock)
 - `breaking`: 💥 (boom)
+- `phase-completion`: 🎯 (target)
 
 **PR Size Labels**:
 
@@ -217,7 +634,7 @@ gh pr create \
 - Large (400-1000 lines): `size/large`
 - XL (> 1000 lines): `size/xl`
 
-### 9. Co-Author Detection and Attribution
+### 11. Co-Author Detection and Attribution
 
 **Identify AI Co-Authors**:
 
@@ -230,449 +647,20 @@ gh pr create \
 ```text
 Co-Authored-By: Claude <noreply@anthropic.com>
 Co-Authored-By: GitHub Copilot <noreply@github.com>
-```text
-
-## Required Output
-
-### 1. Generated PR Description
-
-Provide the complete pull request description with all template variables populated based on the actual PromptCraft PR patterns:
-
-```textmarkdown
-## ✨ feat(config): Implement comprehensive configuration system
-
-### 📊 Change Summary
-| Metric | Value |
-|--------|-------|
-| **Files Changed** | 23 (8 added, 14 modified, 1 removed) |
-| **Lines of Code** | +1,456 / -89 |
-| **Test Coverage** | 78.2% → 85.1% (+6.9% ✅) |
-| **PR Size** | Large |
-| **Review Tools** | ✅ Copilot (23/28 files), ⚠️ WhatTheDiff (2,100/2,500 tokens) |
-
-### 🎯 Summary
-
-Implements a comprehensive configuration management system for PromptCraft-Hybrid, providing:
-
-- **Unified Configuration Interface**: Single source of truth for all application settings
-- **Environment-Specific Configs**: Development, staging, and production configurations
-- **Security-First Design**: Encrypted secrets management with GPG key validation
-- **Validation & Type Safety**: Pydantic-based configuration validation
-- **Documentation Integration**: Comprehensive guides and examples
-
-This addresses issue #145 by providing a robust foundation for managing application configuration across all deployment environments.
-
-### 💡 Motivation
-
-The current configuration approach was fragmented across multiple files and environments, leading to:
-- Inconsistent configuration handling
-- Security vulnerabilities with plaintext secrets
-- Difficult deployment configuration management
-- Lack of validation for configuration values
-
-This PR establishes a unified, secure, and validated configuration system that scales with the project's growth.
-
-### 🔄 Changes Made
-
-#### ✨ Added
-- `src/config/` - Core configuration module with base classes
-- `src/config/environment.py` - Environment-specific configuration management
-- `src/config/security.py` - Encrypted secrets handling with GPG integration
-- `src/config/validation.py` - Pydantic validators for configuration
-- `tests/unit/config/` - Comprehensive test suite (95% coverage)
-- `docs/configuration-guide.md` - User documentation
-- `examples/config/` - Usage examples and templates
-
-#### 📝 Modified
-- `src/main.py` - Integration with new configuration system
-- `pyproject.toml` - Added configuration dependencies
-- `docker-compose.zen-vm.yaml` - Updated environment variable handling
-- `.env.example` - Updated with new configuration options
-- `CLAUDE.md` - Added configuration development guidelines
-
-#### 🗑️ Removed
-- `config.py` - Legacy configuration (deprecated)
-
-### 🏗️ Architecture Overview
-
-```textmermaid
-graph TD
-    A[Application] --> B[ConfigManager]
-    B --> C[Environment Config]
-    B --> D[Security Config]
-    B --> E[Validation Layer]
-
-    C --> F[Development]
-    C --> G[Staging]
-    C --> H[Production]
-
-    D --> I[GPG Encryption]
-    D --> J[Secret Management]
-
-    E --> K[Pydantic Validators]
-    E --> L[Type Safety]
-```text
-
-### 💻 Usage Example
-
-```textpython
-from src.config import ConfigManager
-
-# Initialize configuration
-config = ConfigManager()
-
-# Access environment-specific settings
-database_url = config.database.url
-api_key = config.security.api_key  # Automatically decrypted
-
-# Validate configuration
-if config.validate():
-    print("✅ Configuration is valid")
-else:
-    print("❌ Configuration errors found")
-```text
-
-### 🧪 Testing
-
-#### Test Coverage
-
-- **Unit Tests**: 95% coverage for configuration module
-- **Integration Tests**: End-to-end configuration loading
-- **Security Tests**: GPG encryption/decryption validation
-
-#### How to Test
-
-1. **Unit Tests**
-
-   ```textbash
-   poetry run pytest tests/unit/config/ -v --cov=src/config
-   ```text
-
-2. **Integration Tests**
-
-   ```textbash
-   poetry run pytest tests/integration/test_config_integration.py -v
-   ```text
-
-3. **Manual Testing Steps**
-   - Set up development environment with `.env.example`
-   - Run configuration validation: `poetry run python -m src.config.validate`
-   - Test GPG encryption: `poetry run python examples/config/test_encryption.py`
-   - Verify environment switching between dev/staging/prod
-
-### ⚡ Performance Impact
-
-- **Startup Time**: +0.2s (configuration loading and validation)
-- **Memory Usage**: +15MB (configuration cache and validation schemas)
-- **Runtime Performance**: Negligible (cached configuration access)
-- **Database Queries**: No direct impact
-
-### 🔒 Security Considerations
-
-- **Authentication**: No changes to authentication system
-- **Authorization**: No changes to authorization model
-- **Data Protection**: ✅ GPG encryption for sensitive configuration
-- **Vulnerabilities Addressed**:
-  - Eliminates plaintext secrets in configuration files
-  - Adds validation to prevent configuration injection
-  - Implements secure defaults for all configuration options
-
-### ✅ PR Checklist
-
-#### Code Quality
-
-- [x] Code follows project style guidelines
-- [x] Self-review completed
-- [x] Comments added for complex logic
-- [x] No debugging code left
-
-#### Testing
-
-- [x] Unit tests added/updated (95% coverage)
-- [x] Integration tests added/updated
-- [x] All tests passing
-- [x] Test coverage maintained and improved
-
-#### Documentation
-
-- [x] Code comments updated
-- [x] Configuration guide created
-- [x] API documentation updated
-- [x] Examples provided
-
-#### Security
-
-- [x] No secrets/credentials in code
-- [x] Security best practices followed
-- [x] Dependencies scanned for vulnerabilities
-- [x] Input validation implemented
-
-#### Review
-
-- [x] PR is focused and single-purpose
-- [x] Commits are clean and well-described
-- [x] No unrelated changes included
-- [x] Ready for review
-
-### 🔗 Related Issues
-
-Closes: #145
-Related to: #132 (Environment Management)
-Blocks: #158 (Production Deployment)
-
-### 🏷️ Metadata
-
-**Type**: `feat`
-**Priority**: `high`
-**Risk Level**: `medium`
-**Estimated Review Time**: `60-90 minutes`
-
-### 👥 Suggested Reviewers
-
-- @devops-team (configuration and deployment expertise)
-- @security-team (encryption and secrets management)
-- @backend-team (integration with existing systems)
-
-### 📝 Notes for Reviewers
-
-**Key Areas to Focus On**:
-
-1. **Security Implementation**: Verify GPG encryption is properly implemented
-2. **Configuration Schema**: Review Pydantic validators for completeness
-3. **Environment Handling**: Test configuration switching between environments
-4. **Integration Points**: Ensure smooth integration with existing codebase
-
-**Testing Suggestions**:
-
-- Run the manual testing steps above
-- Verify GPG key requirements are properly documented
-- Test configuration validation with invalid inputs
-
-### 🚀 Next Steps
-
-After this PR is merged:
-
-1. Update deployment scripts to use new configuration system
-2. Migrate existing environment-specific configurations
-3. Implement configuration monitoring and alerting
-4. Create configuration backup and recovery procedures
-
----
-
-### 🤖 Generated Information
-
-- **Generated with**: `/project:prepare-pr` command
-- **Timestamp**: 2025-01-20T14:30:00Z
-- **Commit Range**: main..feature/comprehensive-config
-- **Base Branch**: `main`
-- **Target Branch**: `feature/comprehensive-config`
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-Co-Authored-By: GitHub Copilot <noreply@github.com>
-
-### 📊 Detailed Statistics
-
-<details>
-<summary>Click to expand detailed changes</summary>
-
-**Language Breakdown**:
-
-- Python: +1,200 lines (85%)
-- Markdown: +180 lines (12%)
-- YAML: +45 lines (3%)
-
-**File Type Analysis**:
-
-- Source files: 12 files (+890 lines)
-- Test files: 8 files (+445 lines)
-- Documentation: 2 files (+180 lines)
-- Configuration: 1 file (+45 lines)
-
-**Complexity Metrics**:
-
-- Cyclomatic complexity: Average 3.2 (Good)
-- Test-to-code ratio: 1:2 (Excellent)
-- Documentation coverage: 95% of public APIs
-
-</details>
-
-### 🔍 File Changes
-
-<details>
-<summary>Click to view all changed files</summary>
-
-```text
-src/config/
-├── __init__.py          [new]     +45 lines
-├── base.py              [new]     +120 lines
-├── environment.py       [new]     +185 lines
-├── security.py          [new]     +156 lines
-├── validation.py        [new]     +98 lines
-└── exceptions.py        [new]     +67 lines
-
-tests/unit/config/
-├── test_base.py         [new]     +89 lines
-├── test_environment.py  [new]     +134 lines
-├── test_security.py     [new]     +156 lines
-└── test_validation.py   [new]     +88 lines
-
-docs/
-└── configuration-guide.md [new]   +180 lines
-
-examples/config/
-├── basic_usage.py       [new]     +34 lines
-└── advanced_usage.py    [new]     +67 lines
-
-Modified files:
-- src/main.py                      +23/-5 lines
-- pyproject.toml                   +8/-0 lines
-- docker-compose.zen-vm.yaml       +12/-3 lines
-- .env.example                     +15/-2 lines
-- CLAUDE.md                        +25/-0 lines
-
-Removed files:
-- config.py                        -89 lines
-```text
-
-</details>
-```text
-
-### 2. Command Execution Summary
-
-```textmarkdown
-# PR Preparation Summary
-
-## ✅ Analysis Complete
-- **Commits analyzed**: 15 commits from main..feature/comprehensive-config
-- **Primary type**: feat (73%), test (20%), docs (7%)
-- **Breaking changes**: None detected
-- **Security impact**: High (introduces encrypted configuration management)
-- **Co-authors detected**: Claude, GitHub Copilot
-
-## 📊 Size Analysis
-- **Classification**: Large PR (1,456 lines across 23 files)
-- **Review compatibility**: ✅ Copilot (23/28 files), ⚠️ WhatTheDiff (near 2,500 token limit)
-- **Estimated review time**: 60-90 minutes
-- **Complexity score**: Medium (new module with comprehensive testing)
-
-## 🎯 Key Features Identified
-- Unified configuration management system
-- GPG-encrypted secrets handling
-- Environment-specific configuration support
-- Comprehensive Pydantic validation
-- 95% test coverage
-- Complete documentation and examples
-
-## 🔗 GitHub Integration
-${if_create_flag_used}
-✅ **Draft PR Created Successfully**
-- **URL**: https://github.com/williaby/PromptCraft/pull/153
-- **Status**: Draft (ready for review)
-- **Labels applied**: enhancement, configuration, size/large, security
-- **Reviewers assigned**: @devops-team, @security-team, @backend-team
-
-**Next Steps**:
-1. Review generated description and make adjustments
-2. Add any additional context or screenshots
-3. Convert from draft to ready when satisfied
-4. Request review from assigned team members
-${endif}
-
-${if_no_create_flag}
-**To create the PR manually**:
-```textbash
-gh pr create \
-  --title "✨ feat(config): Implement comprehensive configuration system" \
-  --body-file pr-description.md \
-  --draft \
-  --label "enhancement,configuration,size/large,security" \
-  --assignee "@devops-team,@security-team"
-```text
-
-${endif}
-
-```text
-
-### 3. PR Splitting Recommendations (if applicable)
-
-If PR exceeds size limits, provide detailed splitting strategy based on logical module boundaries:
-
-```textmarkdown
-## 🔀 PR Too Large - Splitting Recommended
-
-Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
-
-### Recommended Split Strategy: by_module
-
-#### PR 1: Core Configuration Framework (Priority: High)
-- **Branch**: `feature/config-core`
-- **Files**: 8 files (456 lines)
-- **Focus**: Base configuration classes, validation framework, and core interfaces
-- **Commands**:
-  ```textbash
-  git checkout -b feature/config-core
-  git cherry-pick a1b2c3d e4f5g6h i7j8k9l  # core framework commits
-  ```text
-
-#### PR 2: Environment Management (Priority: High)
-
-- **Branch**: `feature/config-environments`
-- **Files**: 6 files (389 lines)
-- **Focus**: Environment-specific configuration handling (dev/staging/prod)
-- **Depends on**: PR 1
-- **Commands**:
-
-  ```textbash
-  git checkout -b feature/config-environments feature/config-core
-  git cherry-pick m1n2o3p q4r5s6t  # environment handling commits
-  ```text
-
-#### PR 3: Security Integration (Priority: High)
-
-- **Branch**: `feature/config-security`
-- **Files**: 4 files (267 lines)
-- **Focus**: GPG encryption, secrets management, security validation
-- **Depends on**: PR 1
-- **Commands**:
-
-  ```textbash
-  git checkout -b feature/config-security feature/config-core
-  git cherry-pick u7v8w9x y0z1a2b  # security commits
-  ```text
-
-#### PR 4: Documentation and Examples (Priority: Medium)
-
-- **Branch**: `feature/config-docs`
-- **Files**: 5 files (344 lines)
-- **Focus**: User documentation, examples, and integration guides
-- **Depends on**: PR 1, PR 2, PR 3
-- **Commands**:
-
-  ```bash
-  git checkout -b feature/config-docs main
-  # Cherry-pick after other PRs are merged
-  git cherry-pick c3d4e5f g6h7i8j  # documentation commits
-  ```
-
-### Split PR Merge Strategy
-
-1. **Review and merge PR 1** (core framework - foundation)
-2. **Parallel review of PR 2 and PR 3** (both depend on PR 1)
-3. **Merge PR 2 and PR 3** (environment and security features)
-4. **Final merge of PR 4** (documentation and examples)
-
-```text
+```
 
 ## Integration with Existing Workflow
 
-This command integrates seamlessly with your current development process:
+This enhanced command integrates seamlessly with your phase-based development process:
 
-**Before `/project:prepare-pr`**:
+**Before `/project:workflow-prepare-pr`**:
+
 - Use `/project:workflow-review-cycle` to wrap up issue work
 - Ensure all commits are clean and follow conventional format
 - Complete testing and validation
 
-**After `/project:prepare-pr`**:
+**After `/project:workflow-prepare-pr`**:
+
 - Review generated PR description
 - Use subsequent slash command for PR review
 - Create/update draft PR on GitHub
@@ -680,15 +668,12 @@ This command integrates seamlessly with your current development process:
 
 ## Important Notes
 
-- Follows PromptCraft-Hybrid PR template structure exactly
-- Integrates with existing project development standards from CLAUDE.md
-- Supports AI co-authoring patterns (Claude/Copilot attribution)
-- Handles security, performance, and architectural analysis
-- Provides intelligent PR splitting for maintainable reviews
-- Generates reviewer-friendly content matching actual PR patterns
-- Compatible with your workflow-review-cycle → prepare-pr → review-pr sequence
-- Requires git repository with proper commit history
-- GitHub CLI (`gh`) needed for --create functionality
-- Automatically detects and categorizes different types of changes
-- Creates contextual testing instructions based on actual changes
-- Supports both manual and automated GitHub integration options
+- **Branch Safety First**: Always validates branch strategy before proceeding
+- **Phase-Aware**: Understands your phase-based development approach
+- **Issue Integration**: Connects with phase-X-issues.md structure
+- **Prevents Fragmentation**: Guides toward proper branch consolidation
+- **User-Friendly**: Provides clear guidance and automatic corrections
+- **Flexible**: Supports both phase completion and issue work PRs
+- **GitHub Integration**: Works with existing GitHub CLI and Actions
+- **WTD Integration**: Properly handles What The Diff as a GitHub App
+- **Backwards Compatible**: Maintains existing functionality while adding safety
