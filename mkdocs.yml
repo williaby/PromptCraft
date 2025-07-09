@@ -25,6 +25,7 @@ nav:
   - Configuration: configuration-system-guide.md
   - Security: security-best-practices.md
   - API Reference: api-reference.md
+  - Deployment Strategy: deployment-strategy.md
 
 markdown_extensions:
   - admonition
