@@ -124,7 +124,7 @@ class RetryConfig:
             raise ValueError("exponential_base must be greater than 1")
 
 
-class CompositeResilienceHandler:
+class CompositeResilienceHandler(Generic[T]):
     """Compose multiple resilience strategies for flexible error handling."""
 
     def __init__(

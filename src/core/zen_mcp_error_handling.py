@@ -425,7 +425,7 @@ class ZenMCPIntegration(LoggerMixin):
             }
 
         try:
-            result = await self.resilience_handler.execute_with_protection(
+            result: dict[str, Any] = await self.resilience_handler.execute_with_protection(
                 primary_func,
                 fallback_func,
             )
