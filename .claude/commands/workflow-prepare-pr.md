@@ -313,6 +313,169 @@ case $validation_result in
 esac
 ```
 
+### 1.5. Dependency Validation and Requirements Generation
+
+**CRITICAL**: This step runs before commit analysis to ensure dependency consistency and prevent Docker build failures.
+
+```bash
+# Dependency validation and requirements generation
+validate_and_update_dependencies() {
+    echo ""
+    echo "🔍 DEPENDENCY VALIDATION AND REQUIREMENTS GENERATION"
+    echo "=================================================="
+    echo ""
+
+    # Check if skip-deps flag is set
+    if [[ "$skip_deps" == "true" ]]; then
+        echo "⏭️  Skipping dependency validation (--skip-deps flag set)"
+        return 0
+    fi
+
+    # Check if poetry.lock exists
+    if [[ ! -f "poetry.lock" ]]; then
+        echo "❌ ERROR: poetry.lock not found. Run 'poetry install' first."
+        exit 1
+    fi
+
+    # Check if pyproject.toml has been modified
+    local pyproject_modified=$(git diff --name-only "$base_branch..$current_branch" | grep -c "pyproject.toml" || echo "0")
+
+    if [[ $pyproject_modified -gt 0 ]]; then
+        echo "📦 pyproject.toml modifications detected. Updating dependencies..."
+
+        # Check for dependency conflicts before updating
+        echo "🔍 Checking for dependency conflicts..."
+        if ! poetry check --lock 2>/dev/null; then
+            echo "⚠️  Lock file is inconsistent with pyproject.toml. Regenerating..."
+            poetry lock --no-update
+        fi
+
+        # Install dependencies to ensure environment is consistent
+        echo "📥 Installing dependencies..."
+        poetry install --sync
+
+        # Validate the lock file after installation
+        if ! poetry check --lock; then
+            echo "❌ ERROR: Poetry lock file validation failed after installation"
+            exit 1
+        fi
+
+        echo "✅ Dependencies updated and validated"
+    else
+        echo "📦 No pyproject.toml changes detected. Validating existing dependencies..."
+
+        # Quick validation of existing lock file
+        if ! poetry check --lock; then
+            echo "❌ ERROR: Existing poetry.lock is inconsistent"
+            echo "💡 Run 'poetry lock --no-update' to fix"
+            exit 1
+        fi
+
+        echo "✅ Existing dependencies validated"
+    fi
+
+    # Generate requirements files
+    echo ""
+    echo "📋 Generating requirements files..."
+
+    # Check if generate_requirements.sh exists
+    if [[ ! -f "scripts/generate_requirements.sh" ]]; then
+        echo "❌ ERROR: scripts/generate_requirements.sh not found"
+        exit 1
+    fi
+
+    # Make script executable
+    chmod +x scripts/generate_requirements.sh
+
+    # Run requirements generation
+    if ! ./scripts/generate_requirements.sh; then
+        echo "❌ ERROR: Requirements generation failed"
+        exit 1
+    fi
+
+    # Check if requirements files were generated/updated
+    local req_files=("requirements.txt" "requirements-dev.txt" "requirements-docker.txt")
+    local files_updated=0
+
+    for file in "${req_files[@]}"; do
+        if [[ -f "$file" ]]; then
+            if git diff --quiet "$file" 2>/dev/null; then
+                echo "📄 $file: No changes"
+            else
+                echo "📄 $file: Updated"
+                files_updated=$((files_updated + 1))
+            fi
+        else
+            echo "⚠️  $file: Missing (should be generated)"
+        fi
+    done
+
+    # Stage updated requirements files
+    if [[ $files_updated -gt 0 ]]; then
+        echo ""
+        echo "📤 Staging updated requirements files..."
+        git add requirements*.txt poetry.lock 2>/dev/null || true
+
+        # Commit requirements updates if there are changes
+        if ! git diff --cached --quiet; then
+            echo "💾 Committing requirements updates..."
+            git commit -m "chore(deps): update requirements files from poetry.lock
+
+- Generated requirements.txt, requirements-dev.txt, requirements-docker.txt
+- Ensures Docker build consistency with poetry.lock
+- Maintains hash verification for security
+
+🤖 Generated with Claude Code"
+        fi
+    fi
+
+    echo ""
+    echo "✅ Dependency validation and requirements generation complete"
+    echo "📋 Summary:"
+    echo "  - poetry.lock: Validated and consistent"
+    echo "  - requirements.txt: Generated with hashes"
+    echo "  - requirements-dev.txt: Generated with dev dependencies"
+    echo "  - requirements-docker.txt: Generated for production builds"
+    echo ""
+}
+
+# Security validation for dependencies
+validate_dependency_security() {
+    echo "🔒 Running dependency security checks..."
+
+    # Check for known vulnerabilities using safety
+    if command -v poetry >/dev/null 2>&1; then
+        echo "🛡️  Running Safety check..."
+        if ! poetry run safety check --json > safety_report.json 2>/dev/null; then
+            echo "⚠️  Safety check found potential vulnerabilities"
+            echo "📄 Report saved to safety_report.json"
+
+            # Show critical vulnerabilities
+            if command -v jq >/dev/null 2>&1; then
+                echo "🚨 Critical vulnerabilities found:"
+                jq -r '.[] | select(.severity == "high" or .severity == "critical") |
+                  "  - \(.package): \(.advisory)"' safety_report.json 2>/dev/null ||
+                  echo "  (Could not parse safety report)"
+            fi
+
+            # Don't fail the build for security issues, but warn
+            echo "⚠️  Please review security report before proceeding"
+        else
+            echo "✅ No known vulnerabilities found"
+        fi
+
+        # Clean up report file
+        rm -f safety_report.json
+    fi
+}
+
+# Run dependency validation
+validate_and_update_dependencies
+
+# Run security validation
+validate_dependency_security
+```
+
 **Safety Features**:
 
 - ✅ **Main Branch Protection**: Prevents accidental direct commits to main
@@ -337,10 +500,11 @@ Extract options from `$ARGUMENTS` with new phase-aware options:
 - `--breaking`: Flag for breaking changes
 - `--security`: Flag for security-related changes
 - `--performance`: Flag for performance impacts
-- `--create`: Create draft PR on GitHub after generation
+- `--no-push`: Skip automatic push to GitHub (default: auto-push enabled)
 - `--title [text]`: Custom PR title (auto-generate if not provided)
 - `--wtd-summary`: Force include What The Diff summary shortcode (even if > 10k chars)
 - `--no-wtd`: Exclude What The Diff summary shortcode (override auto-detection)
+- `--skip-deps`: Skip dependency validation and requirements generation
 
 ### 2. Git Commit Analysis (Phase-Aware)
 
@@ -575,40 +739,148 @@ else:
 **Note**: What The Diff works as a GitHub App, not a GitHub Action. The shortcode `wtd:summary` is processed by the
 app when it's installed on the repository.
 
-### 9. GitHub Integration (if --create flag used)
+### 9. GitHub Integration (Automatic Push and PR Creation)
 
 **Phase-aware Draft PR Creation Process**:
 
 1. Validate GitHub CLI is available (`gh auth status`)
-2. Apply phase-specific labels based on branch strategy
-3. Create draft PR with generated content
-4. Apply appropriate labels based on change types and phase
-5. Assign suggested reviewers from CODEOWNERS or commit history
-6. Link to related issues from commit messages
+2. Push current branch to GitHub (unless --no-push flag used)
+3. Apply phase-specific labels based on branch strategy
+4. Create draft PR with generated content
+5. Apply appropriate labels based on change types and phase
+6. Assign suggested reviewers from CODEOWNERS or commit history
+7. Link to related issues from commit messages
 
 ```bash
-# Create draft PR command with phase awareness
-if [[ $target_branch == "main" ]] && [[ $current_branch == phase-*-development ]]; then
-    # Phase completion PR
-    gh pr create \
-      --title "🎯 Phase ${phase_number} Completion: ${phase_name}" \
-      --body-file "${temp_pr_description}" \
-      --base "main" \
-      --head "${current_branch}" \
-      --draft \
-      --label "phase-completion,${phase_number},${change_type},${size_label}" \
-      --assignee "${suggested_reviewers}"
-else
-    # Standard PR
-    gh pr create \
-      --title "${generated_title}" \
-      --body-file "${temp_pr_description}" \
-      --base "${base_branch}" \
-      --head "${target_branch}" \
-      --draft \
-      --label "phase-${phase_number},${change_type},${size_label},${additional_labels}" \
-      --assignee "${suggested_reviewers}"
-fi
+# GitHub Integration with automatic push
+github_integration() {
+    echo ""
+    echo "🚀 GITHUB INTEGRATION"
+    echo "===================="
+    echo ""
+
+    # Check if --no-push flag is set
+    if [[ "$no_push" == "true" ]]; then
+        echo "⏭️  Skipping automatic GitHub push (--no-push flag set)"
+        echo "💡 Don't forget to push manually: git push origin $current_branch"
+        return 0
+    fi
+
+    # Validate GitHub CLI is available
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "❌ ERROR: GitHub CLI (gh) is not installed"
+        echo "💡 Install from: https://cli.github.com/"
+        exit 1
+    fi
+
+    # Check GitHub authentication
+    if ! gh auth status >/dev/null 2>&1; then
+        echo "❌ ERROR: GitHub CLI is not authenticated"
+        echo "💡 Run: gh auth login"
+        exit 1
+    fi
+
+    # Push current branch to GitHub
+    echo "📤 Pushing branch to GitHub..."
+
+    # Check if branch exists on remote
+    if git ls-remote --exit-code --heads origin "$current_branch" >/dev/null 2>&1; then
+        echo "📄 Branch exists on remote. Pushing updates..."
+        git push origin "$current_branch"
+    else
+        echo "🆕 New branch. Pushing with upstream tracking..."
+        git push -u origin "$current_branch"
+    fi
+
+    # Verify push was successful
+    if [[ $? -eq 0 ]]; then
+        echo "✅ Branch successfully pushed to GitHub"
+    else
+        echo "❌ ERROR: Failed to push branch to GitHub"
+        exit 1
+    fi
+
+    # Generate suggested reviewers
+    local suggested_reviewers=""
+    if [[ -f ".github/CODEOWNERS" ]]; then
+        suggested_reviewers=$(grep -E "^\*|^/.*" .github/CODEOWNERS | head -1 |
+          cut -d' ' -f2- | tr -d '@' | tr ' ' ',' | head -c 50)
+    fi
+
+    # Generate additional labels based on change analysis
+    local additional_labels=""
+    if [[ "$breaking_changes" == "true" ]]; then
+        additional_labels="breaking-change,"
+    fi
+    if [[ "$security_changes" == "true" ]]; then
+        additional_labels="${additional_labels}security,"
+    fi
+    if [[ "$performance_changes" == "true" ]]; then
+        additional_labels="${additional_labels}performance,"
+    fi
+
+    # Create PR with generated content
+    echo "📋 Creating draft PR on GitHub..."
+
+    # Write PR description to temporary file
+    local temp_pr_description=$(mktemp)
+    echo "${generated_pr_description}" > "$temp_pr_description"
+
+    # Create draft PR command with phase awareness
+    if [[ $target_branch == "main" ]] && [[ $current_branch == phase-*-development ]]; then
+        # Phase completion PR
+        if gh pr create \
+          --title "🎯 Phase ${phase_number} Completion: ${phase_name}" \
+          --body-file "$temp_pr_description" \
+          --base "main" \
+          --head "$current_branch" \
+          --draft \
+          --label "phase-completion,phase-${phase_number},${change_type},${size_label},${additional_labels%,}" \
+          ${suggested_reviewers:+--assignee "$suggested_reviewers"}; then
+            echo "✅ Phase completion PR created successfully"
+        else
+            echo "❌ ERROR: Failed to create phase completion PR"
+            exit 1
+        fi
+    else
+        # Standard PR
+        if gh pr create \
+          --title "${generated_title}" \
+          --body-file "$temp_pr_description" \
+          --base "$target_branch" \
+          --head "$current_branch" \
+          --draft \
+          --label "phase-${phase_number},${change_type},${size_label},${additional_labels%,}" \
+          ${suggested_reviewers:+--assignee "$suggested_reviewers"}; then
+            echo "✅ Draft PR created successfully"
+        else
+            echo "❌ ERROR: Failed to create draft PR"
+            exit 1
+        fi
+    fi
+
+    # Get PR URL for user
+    local pr_url=$(gh pr view --json url -q .url 2>/dev/null)
+    if [[ -n "$pr_url" ]]; then
+        echo "🔗 PR URL: $pr_url"
+    fi
+
+    # Clean up temporary file
+    rm -f "$temp_pr_description"
+
+    echo ""
+    echo "🎉 PR preparation complete!"
+    echo "✅ Branch pushed to GitHub"
+    echo "✅ Draft PR created"
+    echo "💡 Next steps:"
+    echo "  1. Review the PR description and make any necessary edits"
+    echo "  2. Mark the PR as ready for review when complete"
+    echo "  3. Request reviews from team members"
+    echo ""
+}
+
+# Run GitHub integration
+github_integration
 ```
 
 ### 10. Emoji and Type Mapping
@@ -674,6 +946,9 @@ This enhanced command integrates seamlessly with your phase-based development pr
 - **Prevents Fragmentation**: Guides toward proper branch consolidation
 - **User-Friendly**: Provides clear guidance and automatic corrections
 - **Flexible**: Supports both phase completion and issue work PRs
+- **Automatic Push**: Pushes to GitHub and creates draft PR by default (use --no-push to disable)
+- **Dependency Safety**: Validates poetry.lock and regenerates requirements files automatically
+- **Security Integration**: Runs dependency security checks before PR creation
 - **GitHub Integration**: Works with existing GitHub CLI and Actions
 - **WTD Integration**: Properly handles What The Diff as a GitHub App
 - **Backwards Compatible**: Maintains existing functionality while adding safety
