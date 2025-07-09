@@ -26,16 +26,18 @@ Extract options from `$ARGUMENTS`:
 - `--performance`: Flag for performance impacts
 - `--create`: Create draft PR on GitHub after generation
 - `--title [text]`: Custom PR title (auto-generate if not provided)
+- `--wtd-summary`: Force include WTD summary shortcode even for large PRs
+- `--no-wtd`: Exclude WTD summary shortcode regardless of PR size
 
 ### 2. Git Commit Analysis
 
-```textbash
+```bash
 # Get commit range and analyze
 git log --oneline ${base_branch}..${target_branch}
 git diff --stat ${base_branch}..${target_branch}
 git diff --numstat ${base_branch}..${target_branch}
 git log --pretty=format:"%h %s %an %ae" ${base_branch}..${target_branch}
-```text
+```
 
 **Extract from commits**:
 
@@ -158,9 +160,44 @@ git cherry-pick ${split2_commits}  # commits for this split
 
 ```text
 
-### 6. Security and Performance Analysis
+### 6. WTD Summary Shortcode Logic
+
+**Character Count Calculation**:
+Calculate the total character count of the generated PR description before adding the WTD shortcode.
+
+**Conditional Logic**:
+- If `--no-wtd` flag is present: Do not include WTD shortcode
+- If `--wtd-summary` flag is present: Include `wtd:summary` shortcode regardless of size
+- If neither flag is present:
+  - If PR description > 10,000 characters: Exclude WTD shortcode
+  - If PR description ≤ 10,000 characters: Include `wtd:summary` shortcode
+
+**Implementation**:
+```bash
+# Calculate PR description character count
+pr_description_length=$(echo "$generated_pr_description" | wc -c)
+
+# Determine WTD shortcode inclusion
+include_wtd_shortcode=false
+
+if [[ "$no_wtd" == "true" ]]; then
+    include_wtd_shortcode=false
+elif [[ "$wtd_summary" == "true" ]]; then
+    include_wtd_shortcode=true
+elif [[ $pr_description_length -le 10000 ]]; then
+    include_wtd_shortcode=true
+fi
+
+# Add WTD shortcode if appropriate
+if [[ "$include_wtd_shortcode" == "true" ]]; then
+    generated_pr_description="${generated_pr_description}\n\nwtd:summary"
+fi
+```
+
+### 7. Security and Performance Analysis
 
 **Security Analysis**:
+
 - Authentication/authorization changes
 - Credential/secret handling
 - Input validation changes
@@ -168,22 +205,24 @@ git cherry-pick ${split2_commits}  # commits for this split
 - Dependency security updates
 
 **Performance Analysis**:
+
 - Startup time impact
 - Memory usage changes
 - Runtime performance implications
 - Database query optimization
 - Caching strategy updates
 
-### 7. GitHub Integration (if --create flag used)
+### 8. GitHub Integration (if --create flag used)
 
 **Draft PR Creation Process**:
+
 1. Validate GitHub CLI is available (`gh auth status`)
 2. Create draft PR with generated content
 3. Apply appropriate labels based on change types
 4. Assign suggested reviewers from CODEOWNERS or commit history
 5. Link to related issues from commit messages
 
-```textbash
+```bash
 # Create draft PR command
 gh pr create \
   --title "${generated_title}" \
@@ -193,9 +232,9 @@ gh pr create \
   --draft \
   --label "${change_type},${size_label},${additional_labels}" \
   --assignee "${suggested_reviewers}"
-```text
+```
 
-### 8. Emoji and Type Mapping
+### 9. Emoji and Type Mapping
 
 **Change Type Emojis**:
 
@@ -217,7 +256,7 @@ gh pr create \
 - Large (400-1000 lines): `size/large`
 - XL (> 1000 lines): `size/xl`
 
-### 9. Co-Author Detection and Attribution
+### 10. Co-Author Detection and Attribution
 
 **Identify AI Co-Authors**:
 
@@ -470,6 +509,8 @@ After this PR is merged:
 Co-Authored-By: Claude <noreply@anthropic.com>
 Co-Authored-By: GitHub Copilot <noreply@github.com>
 
+wtd:summary
+
 ### 📊 Detailed Statistics
 
 <details>
@@ -535,7 +576,7 @@ Removed files:
 ```text
 
 </details>
-```text
+```
 
 ### 2. Command Execution Summary
 
@@ -609,10 +650,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Files**: 8 files (456 lines)
 - **Focus**: Base configuration classes, validation framework, and core interfaces
 - **Commands**:
-  ```textbash
+  ```bash
   git checkout -b feature/config-core
   git cherry-pick a1b2c3d e4f5g6h i7j8k9l  # core framework commits
-  ```text
+  ```
 
 #### PR 2: Environment Management (Priority: High)
 
@@ -622,10 +663,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Depends on**: PR 1
 - **Commands**:
 
-  ```textbash
+  ```bash
   git checkout -b feature/config-environments feature/config-core
   git cherry-pick m1n2o3p q4r5s6t  # environment handling commits
-  ```text
+  ```
 
 #### PR 3: Security Integration (Priority: High)
 
@@ -635,10 +676,10 @@ Current PR (1,456 lines, 23 files) exceeds optimal review size for some tools.
 - **Depends on**: PR 1
 - **Commands**:
 
-  ```textbash
+  ```bash
   git checkout -b feature/config-security feature/config-core
   git cherry-pick u7v8w9x y0z1a2b  # security commits
-  ```text
+  ```
 
 #### PR 4: Documentation and Examples (Priority: Medium)
 
@@ -692,3 +733,5 @@ This command integrates seamlessly with your current development process:
 - Automatically detects and categorizes different types of changes
 - Creates contextual testing instructions based on actual changes
 - Supports both manual and automated GitHub integration options
+- Intelligently includes WTD (What The Diff) shortcodes based on PR size and flags
+- Respects 10,000 character threshold for automatic WTD inclusion
