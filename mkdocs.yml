@@ -1,0 +1,41 @@
+site_name: PromptCraft Documentation
+site_description: AI-powered workbench for intelligent prompt orchestration
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: cyan
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+
+plugins:
+  - search
+  - include-markdown
+
+nav:
+  - Home: index.md
+  - Planning: planning/project_hub.md
+  - Architecture: planning/ADR.md
+  - Development: planning/development.md
+  - Phase 1 Issues: planning/phase-1-issues.md
+  - Usage Guide: usage-guide.md
+  - Configuration: configuration-system-guide.md
+  - Security: security-best-practices.md
+  - API Reference: api-reference.md
+  - Deployment Strategy: deployment-strategy.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
