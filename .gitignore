@@ -205,7 +205,13 @@ local.settings.json
 *_REVIEW.md
 *_PROGRESS.md
 
+# Documentation Build
+# =================================
+# MkDocs build output (deployed to GitHub Pages)
+site/
+
 # Planning Documents
 # =================================
 # Planning docs removed from repo but kept locally
 docs/planning/
+/site

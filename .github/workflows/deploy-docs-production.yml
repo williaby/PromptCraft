@@ -1,9 +1,9 @@
-name: Deploy Documentation (Development)
+name: Deploy Documentation (Production)
 
 on:
   push:
     branches:
-      - feature/phase-1-development
+      - main
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
@@ -16,8 +16,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-development"
-  cancel-in-progress: true
+  group: "pages-production"
+  cancel-in-progress: false
 
 jobs:
   build-docs:
@@ -44,9 +44,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: docs-dev-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          key: docs-production-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
-            docs-dev-${{ runner.os }}-
+            docs-production-${{ runner.os }}-
 
       - name: Install documentation dependencies
         run: |
@@ -82,18 +82,17 @@ jobs:
             echo "## Getting Started" >> docs/index.md
             echo "" >> docs/index.md
             echo "- [Project Overview](planning/project_hub.md)" >> docs/index.md
-            echo "- [Four Journeys](planning/four_journeys.md)" >> docs/index.md
             echo "- [Architecture Decision Records](planning/ADR.md)" >> docs/index.md
           fi
 
       - name: Build documentation
         run: |
-          echo "Building development documentation..."
+          echo "Building production documentation..."
           # Remove any conflicting index.html files
           find docs -name "index.html" -delete 2>/dev/null || true
-          # Build with less strict mode for development (allows broken links)
-          mkdocs build --verbose
-          echo "✅ Development documentation built successfully"
+          # Build with strict mode for production
+          mkdocs build --strict --verbose
+          echo "✅ Production documentation built successfully"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -104,7 +103,7 @@ jobs:
     needs: build-docs
     runs-on: ubuntu-latest
     environment:
-      name: development
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
@@ -115,6 +114,5 @@ jobs:
 
       - name: Post deployment validation
         run: |
-          echo "✅ Development documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
-          echo "🚧 This is a development preview - may contain work-in-progress content"
-          echo "Development deployment completed successfully"
+          echo "✅ Production documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
+          echo "Production deployment completed successfully"
