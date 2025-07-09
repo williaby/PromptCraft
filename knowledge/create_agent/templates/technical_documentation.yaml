@@ -68,8 +68,34 @@ examples:
     variables:
       project_name: "UserAuth API"
       version: "v2.1.0"
-      overview: "The UserAuth API provides secure authentication and authorization services for web applications. It supports JWT tokens, OAuth 2.0, and multi-factor authentication."
-      installation_steps: "1. Install the package: `npm install userauth-api`\n2. Configure environment variables\n3. Initialize the service in your application"
-      usage_examples: "```javascript\nconst userAuth = require('userauth-api');\n\n// Initialize authentication\nconst auth = new userAuth.AuthService({\n  secret: process.env.JWT_SECRET,\n  expiresIn: '1h'\n});\n\n// Authenticate user\nconst token = await auth.login(username, password);\n```"
-      configuration: "Configure the following environment variables:\n- `JWT_SECRET`: Secret key for JWT tokens\n- `DATABASE_URL`: Database connection string\n- `REDIS_URL`: Redis connection for session storage"
-      troubleshooting: "**Common Issues:**\n\n1. **Authentication fails**: Check that JWT_SECRET is properly set\n2. **Database connection error**: Verify DATABASE_URL format\n3. **Token expiration**: Adjust expiresIn setting in configuration"
+      overview: >
+        The UserAuth API provides secure authentication and authorization services for web applications.
+        It supports JWT tokens, OAuth 2.0, and multi-factor authentication.
+      installation_steps: >
+        1. Install the package: `npm install userauth-api`
+        2. Configure environment variables
+        3. Initialize the service in your application
+      usage_examples: |
+        ```javascript
+        const userAuth = require('userauth-api');
+
+        // Initialize authentication
+        const auth = new userAuth.AuthService({
+          secret: process.env.JWT_SECRET,
+          expiresIn: '1h'
+        });
+
+        // Authenticate user
+        const token = await auth.login(username, password);
+        ```
+      configuration: |
+        Configure the following environment variables:
+        - `JWT_SECRET`: Secret key for JWT tokens
+        - `DATABASE_URL`: Database connection string
+        - `REDIS_URL`: Redis connection for session storage
+      troubleshooting: |
+        **Common Issues:**
+
+        1. **Authentication fails**: Check that JWT_SECRET is properly set
+        2. **Database connection error**: Verify DATABASE_URL format
+        3. **Token expiration**: Adjust expiresIn setting in configuration

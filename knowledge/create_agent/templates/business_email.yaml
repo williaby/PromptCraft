@@ -70,8 +70,12 @@ examples:
       sender_name: "Sarah Johnson"
       subject: "Project Status Update Request"
       purpose: "request an update on the Q1 marketing campaign project"
-      main_content: "As we approach the end of January, I wanted to check in on the progress of our Q1 marketing campaign. The leadership team is eager to understand our current status and any potential challenges we might be facing."
-      call_to_action: "provide a brief status update including completed milestones, current progress, and any support you might need"
+      main_content: >
+        As we approach the end of January, I wanted to check in on the progress of our Q1 marketing campaign.
+        The leadership team is eager to understand our current status and any potential challenges we might be facing.
+      call_to_action: >
+        provide a brief status update including completed milestones, current progress,
+        and any support you might need
       deadline: "by Friday, January 31st"
   - name: "Meeting Request"
     variables:
@@ -79,5 +83,7 @@ examples:
       sender_name: "David Chen"
       subject: "Meeting Request - Budget Discussion"
       purpose: "schedule a meeting to discuss the upcoming budget allocation"
-      main_content: "I would like to schedule a meeting to review the proposed budget for the next quarter. This discussion will help us align our financial planning with the company's strategic objectives."
+      main_content: >
+        I would like to schedule a meeting to review the proposed budget for the next quarter.
+        This discussion will help us align our financial planning with the company's strategic objectives.
       call_to_action: "let me know your availability for a 1-hour meeting next week"

@@ -5,7 +5,6 @@ implementing basic template loading and validation without advanced features.
 """
 
 import logging
-import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -59,7 +58,7 @@ class TemplateManager:
     functionality for the C.R.E.A.T.E. framework.
     """
 
-    def __init__(self, templates_dir: str = "knowledge/create_agent/templates"):
+    def __init__(self, templates_dir: str = "knowledge/create_agent/templates") -> None:
         """Initialize the template manager.
 
         Args:
@@ -89,7 +88,7 @@ class TemplateManager:
             template_file: Path to the template file.
         """
         try:
-            with open(template_file, "r", encoding="utf-8") as f:
+            with template_file.open(encoding="utf-8") as f:
                 template_data = yaml.safe_load(f)
 
             # Validate template structure
@@ -198,8 +197,8 @@ class TemplateManager:
                         "name": "introduction",
                         "description": "Introduction section",
                         "template": "## Introduction\n\n{content}",
-                    }
-                ]
+                    },
+                ],
             },
             "examples": [
                 {
@@ -208,7 +207,7 @@ class TemplateManager:
                         "title": f"Sample {name}",
                         "content": "Sample content for this template",
                     },
-                }
+                },
             ],
         }
 
@@ -220,7 +219,7 @@ class TemplateProcessor:
     for the C.R.E.A.T.E. framework.
     """
 
-    def __init__(self, template_manager: TemplateManager):
+    def __init__(self, template_manager: TemplateManager) -> None:
         """Initialize the template processor.
 
         Args:
@@ -248,8 +247,7 @@ class TemplateProcessor:
 
         try:
             # Basic variable substitution
-            result = self._substitute_variables(template, variables)
-            return result
+            return self._substitute_variables(template, variables)
         except Exception as e:
             self.logger.error("Template processing failed for %s: %s", name, e)
             raise

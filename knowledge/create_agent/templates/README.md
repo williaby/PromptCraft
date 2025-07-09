@@ -38,9 +38,11 @@ examples:
 ## Available Templates
 
 ### Business Templates
+
 - `business_email.yaml` - Professional business email template
 
 ### Technical Templates
+
 - `technical_documentation.yaml` - Technical documentation template
 
 ## Usage
