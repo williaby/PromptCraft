@@ -1,22 +1,29 @@
 """Zen MCP error handling and resilience system for C.R.E.A.T.E. framework.
 
 This module provides comprehensive error handling for Zen MCP integration,
-including circuit breaker pattern, exponential backoff, and graceful degradation.
+using the modular resilience strategies for enhanced maintainability and reusability.
 """
 
 import asyncio
-import logging
 import time
-from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from src.utils.logging_mixin import LoggerMixin
+from src.utils.resilience import (
+    CircuitBreakerConfig,
+    CircuitBreakerOpenError,
+    CircuitBreakerState,
+    CompositeResilienceHandler,
+    ResilienceError,
+    ResilienceStrategy,
+    RetryConfig,
+    RetryExhaustedError,
+)
+from src.utils.secure_random import SecureRandom, secure_random
 
 
-class ZenMCPError(Exception):
+class ZenMCPError(ResilienceError):
     """Base exception for Zen MCP errors."""
 
 
@@ -32,44 +39,37 @@ class ZenMCPRateLimitError(ZenMCPError):
     """Exception raised for rate limit errors."""
 
 
-class CircuitBreakerState(Enum):
-    """Circuit breaker states for Zen MCP failure handling."""
+class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
+    """Circuit breaker resilience strategy for Zen MCP integration."""
 
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Blocking requests due to failures
-    HALF_OPEN = "half_open"  # Testing if service has recovered
-
-
-@dataclass
-class CircuitBreakerConfig:
-    """Configuration for circuit breaker."""
-
-    failure_threshold: int = 5  # Number of failures before opening
-    recovery_timeout: int = 60  # Seconds before trying half-open
-    success_threshold: int = 3  # Successes needed to close from half-open
-
-
-class CircuitBreaker:
-    """Circuit breaker implementation for Zen MCP failure handling."""
-
-    def __init__(self, config: CircuitBreakerConfig | None = None):
-        """Initialize circuit breaker.
+    def __init__(
+        self,
+        config: CircuitBreakerConfig | None = None,
+        logger_name: str = "zen_mcp.circuit_breaker",
+    ) -> None:
+        """Initialize circuit breaker strategy.
 
         Args:
             config: Circuit breaker configuration.
+            logger_name: Custom logger name.
         """
+        super().__init__(logger_name=logger_name)
         self.config = config or CircuitBreakerConfig()
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = 0
-        self.logger = logger
+        self.last_failure_time = 0.0
 
-    async def call(self, func: Callable, *args, **kwargs) -> Any:
+    async def execute(
+        self,
+        func: Callable[..., Awaitable[Any]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
         """Execute function with circuit breaker protection.
 
         Args:
-            func: Function to execute.
+            func: Async function to execute.
             *args: Function arguments.
             **kwargs: Function keyword arguments.
 
@@ -77,23 +77,60 @@ class CircuitBreaker:
             Function result.
 
         Raises:
-            ZenMCPError: If circuit breaker is open or function fails.
+            CircuitBreakerOpenError: If circuit breaker is open.
+            ZenMCPError: If function execution fails.
         """
+        self.log_method_entry("execute", func.__name__, *args, **kwargs)
+
         if self.state == CircuitBreakerState.OPEN:
             if self._should_attempt_reset():
-                self.state = CircuitBreakerState.HALF_OPEN
-                self.success_count = 0
-                self.logger.info("Circuit breaker entering HALF_OPEN state")
+                self._transition_to_half_open()
             else:
-                raise ZenMCPError("Circuit breaker is OPEN")
+                self.logger.warning("Circuit breaker is OPEN, blocking call")
+                raise CircuitBreakerOpenError("Circuit breaker is OPEN")
 
         try:
             result = await func(*args, **kwargs)
             self._on_success()
+            self.log_method_exit("execute", "success")
             return result
         except Exception as e:
             self._on_failure()
+            self.log_error_with_context(e, {"function": func.__name__}, "execute")
             raise ZenMCPError(f"Function call failed: {e}") from e
+
+    def should_continue(self, exception: Exception, attempt: int) -> bool:
+        """Determine if operation should continue after failure.
+
+        Args:
+            exception: The exception that occurred.
+            attempt: Current attempt number.
+
+        Returns:
+            True if circuit breaker allows continuation.
+        """
+        # Circuit breaker strategy is stateful - parameters not directly used
+        # but kept for interface compliance
+        _ = exception, attempt
+        return self.state != CircuitBreakerState.OPEN
+
+    def get_health_status(self) -> dict[str, Any]:
+        """Get current health status of circuit breaker.
+
+        Returns:
+            Health status information.
+        """
+        return {
+            "healthy": self.state == CircuitBreakerState.CLOSED,
+            "state": self.state.value,
+            "failure_count": self.failure_count,
+            "success_count": self.success_count,
+            "last_failure_time": self.last_failure_time,
+            "time_to_reset": max(
+                0,
+                self.config.recovery_timeout - (time.time() - self.last_failure_time),
+            ),
+        }
 
     def _should_attempt_reset(self) -> bool:
         """Check if circuit breaker should attempt reset.
@@ -101,68 +138,86 @@ class CircuitBreaker:
         Returns:
             True if should attempt reset, False otherwise.
         """
-        return (
-            time.time() - self.last_failure_time
-        ) > self.config.recovery_timeout
+        if self.state != CircuitBreakerState.OPEN:
+            return False
+        return (time.time() - self.last_failure_time) > self.config.recovery_timeout
+
+    def _transition_to_half_open(self) -> None:
+        """Transition circuit breaker to half-open state."""
+        self.log_state_change(
+            self.state.value,
+            CircuitBreakerState.HALF_OPEN.value,
+            "recovery_attempt",
+        )
+        self.state = CircuitBreakerState.HALF_OPEN
+        self.success_count = 0
 
     def _on_success(self) -> None:
         """Handle successful function execution."""
         if self.state == CircuitBreakerState.HALF_OPEN:
             self.success_count += 1
             if self.success_count >= self.config.success_threshold:
+                self.log_state_change(
+                    self.state.value,
+                    CircuitBreakerState.CLOSED.value,
+                    "recovery_complete",
+                )
                 self.state = CircuitBreakerState.CLOSED
                 self.failure_count = 0
-                self.logger.info("Circuit breaker entering CLOSED state")
         elif self.state == CircuitBreakerState.CLOSED:
             self.failure_count = 0
 
     def _on_failure(self) -> None:
-        """Handle failed function execution."""
+        """Handle function execution failure."""
         self.failure_count += 1
         self.last_failure_time = time.time()
 
         if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.OPEN
-            self.logger.warning("Circuit breaker entering OPEN state from HALF_OPEN")
-        elif (
-            self.state == CircuitBreakerState.CLOSED
-            and self.failure_count >= self.config.failure_threshold
-        ):
-            self.state = CircuitBreakerState.OPEN
-            self.logger.warning(
-                "Circuit breaker entering OPEN state after %d failures",
-                self.failure_count,
+            self.log_state_change(
+                self.state.value,
+                CircuitBreakerState.OPEN.value,
+                "recovery_failed",
             )
+            self.state = CircuitBreakerState.OPEN
+        elif self.state == CircuitBreakerState.CLOSED and self.failure_count >= self.config.failure_threshold:
+            self.log_state_change(
+                self.state.value,
+                CircuitBreakerState.OPEN.value,
+                f"threshold_exceeded_{self.failure_count}",
+            )
+            self.state = CircuitBreakerState.OPEN
 
 
-@dataclass
-class RetryConfig:
-    """Configuration for retry policy."""
+class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
+    """Retry resilience strategy with exponential backoff and secure jitter."""
 
-    max_retries: int = 3
-    base_delay: float = 1.0
-    max_delay: float = 60.0
-    exponential_base: float = 2.0
-    jitter: bool = True
-
-
-class RetryPolicy:
-    """Exponential backoff retry policy for Zen MCP operations."""
-
-    def __init__(self, config: RetryConfig | None = None):
-        """Initialize retry policy.
+    def __init__(
+        self,
+        config: RetryConfig | None = None,
+        secure_rng: SecureRandom | None = None,
+        logger_name: str = "zen_mcp.retry",
+    ) -> None:
+        """Initialize retry strategy.
 
         Args:
             config: Retry configuration.
+            secure_rng: Secure random number generator.
+            logger_name: Custom logger name.
         """
+        super().__init__(logger_name=logger_name)
         self.config = config or RetryConfig()
-        self.logger = logger
+        self.secure_rng = secure_rng or secure_random
 
-    async def execute(self, func: Callable, *args, **kwargs) -> Any:
+    async def execute(
+        self,
+        func: Callable[..., Awaitable[Any]],
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
         """Execute function with retry policy.
 
         Args:
-            func: Function to execute.
+            func: Async function to execute.
             *args: Function arguments.
             **kwargs: Function keyword arguments.
 
@@ -170,31 +225,84 @@ class RetryPolicy:
             Function result.
 
         Raises:
-            ZenMCPError: If all retries fail.
+            RetryExhaustedError: If all retries fail.
         """
+        self.log_method_entry("execute", func.__name__, *args, **kwargs)
         last_exception = None
 
         for attempt in range(self.config.max_retries + 1):
             try:
-                return await func(*args, **kwargs)
+                result = await func(*args, **kwargs)
+                if attempt > 0:
+                    self.logger.info("Retry succeeded on attempt %d", attempt + 1)
+                self.log_method_exit("execute", "success")
+                return result
+
             except Exception as e:
                 last_exception = e
+
+                # Check if this exception type is retryable
+                if not any(isinstance(e, exc_type) for exc_type in self.config.retryable_exceptions):
+                    self.logger.warning(
+                        "Non-retryable exception: %s",
+                        type(e).__name__,
+                    )
+                    raise
+
                 if attempt == self.config.max_retries:
                     break
 
                 delay = self._calculate_delay(attempt)
                 self.logger.warning(
-                    "Retry attempt %d failed, retrying in %.2f seconds: %s",
+                    "Retry attempt %d/%d failed, retrying in %.2f seconds: %s",
                     attempt + 1,
+                    self.config.max_retries,
                     delay,
                     e,
                 )
                 await asyncio.sleep(delay)
 
-        raise ZenMCPError(f"All retry attempts failed: {last_exception}") from last_exception
+        if last_exception is not None:
+            self.log_error_with_context(
+                last_exception,
+                {"attempts": self.config.max_retries + 1},
+                "execute",
+            )
+        raise RetryExhaustedError(
+            f"All {self.config.max_retries + 1} retry attempts failed: {last_exception}",
+        ) from last_exception
+
+    def should_continue(self, exception: Exception, attempt: int) -> bool:
+        """Determine if operation should continue after failure.
+
+        Args:
+            exception: The exception that occurred.
+            attempt: Current attempt number.
+
+        Returns:
+            True if should retry, False otherwise.
+        """
+        if attempt >= self.config.max_retries:
+            return False
+
+        return any(isinstance(exception, exc_type) for exc_type in self.config.retryable_exceptions)
+
+    def get_health_status(self) -> dict[str, Any]:
+        """Get current health status of retry strategy.
+
+        Returns:
+            Health status information.
+        """
+        return {
+            "healthy": True,
+            "max_retries": self.config.max_retries,
+            "base_delay": self.config.base_delay,
+            "max_delay": self.config.max_delay,
+            "jitter_enabled": self.config.jitter,
+        }
 
     def _calculate_delay(self, attempt: int) -> float:
-        """Calculate delay for retry attempt.
+        """Calculate delay for retry attempt with secure jitter.
 
         Args:
             attempt: Retry attempt number (0-based).
@@ -202,133 +310,98 @@ class RetryPolicy:
         Returns:
             Delay in seconds.
         """
-        delay = self.config.base_delay * (self.config.exponential_base ** attempt)
-        delay = min(delay, self.config.max_delay)
-
-        if self.config.jitter:
-            import random
-            delay *= random.uniform(0.5, 1.5)
-
-        return delay
+        # Use secure exponential backoff with jitter
+        return self.secure_rng.exponential_backoff_jitter(
+            self.config.base_delay,
+            attempt,
+            self.config.max_delay,
+        )
 
 
-class ZenMCPErrorHandler:
-    """Comprehensive error handler for Zen MCP integration."""
+class MockZenMCPClient(LoggerMixin):
+    """Mock Zen MCP client for testing error handling with secure randomness."""
 
     def __init__(
         self,
-        circuit_breaker: CircuitBreaker | None = None,
-        retry_policy: RetryPolicy | None = None,
-    ):
-        """Initialize error handler.
-
-        Args:
-            circuit_breaker: Circuit breaker instance.
-            retry_policy: Retry policy instance.
-        """
-        self.circuit_breaker = circuit_breaker or CircuitBreaker()
-        self.retry_policy = retry_policy or RetryPolicy()
-        self.logger = logger
-
-    async def execute_with_protection(
-        self,
-        func: Callable,
-        fallback_func: Callable | None = None,
-        *args,
-        **kwargs,
-    ) -> Any:
-        """Execute function with comprehensive error protection.
-
-        Args:
-            func: Primary function to execute.
-            fallback_func: Fallback function if primary fails.
-            *args: Function arguments.
-            **kwargs: Function keyword arguments.
-
-        Returns:
-            Function result.
-
-        Raises:
-            ZenMCPError: If both primary and fallback fail.
-        """
-        try:
-            # Try primary function with circuit breaker and retry
-            return await self.circuit_breaker.call(
-                self.retry_policy.execute, func, *args, **kwargs
-            )
-        except ZenMCPError as e:
-            self.logger.error("Primary function failed: %s", e)
-
-            if fallback_func:
-                try:
-                    self.logger.info("Attempting fallback function")
-                    return await fallback_func(*args, **kwargs)
-                except Exception as fallback_error:
-                    self.logger.error("Fallback function failed: %s", fallback_error)
-                    raise ZenMCPError(
-                        f"Both primary and fallback functions failed: {e}"
-                    ) from fallback_error
-
-            raise
-
-
-# Mock Zen MCP client for testing and development
-class MockZenMCPClient:
-    """Mock Zen MCP client for testing error handling."""
-
-    def __init__(self, failure_rate: float = 0.0):
+        failure_rate: float = 0.0,
+        secure_rng: SecureRandom | None = None,
+        logger_name: str = "zen_mcp.mock_client",
+    ) -> None:
         """Initialize mock client.
 
         Args:
-            failure_rate: Probability of failure (0.0 to 1.0).
+            failure_rate: Probability of simulated failure (0.0-1.0).
+            secure_rng: Secure random number generator.
+            logger_name: Custom logger name.
         """
+        super().__init__(logger_name=logger_name)
+        if not 0.0 <= failure_rate <= 1.0:
+            raise ValueError("failure_rate must be between 0.0 and 1.0")
+
         self.failure_rate = failure_rate
         self.call_count = 0
+        self.secure_rng = secure_rng or secure_random
 
     async def process_prompt(self, prompt: str) -> dict[str, Any]:
-        """Mock prompt processing.
+        """Process prompt with optional failure simulation.
 
         Args:
-            prompt: Input prompt.
+            prompt: Input prompt to process.
 
         Returns:
-            Mock response.
+            Mock response dictionary.
 
         Raises:
-            ZenMCPConnectionError: If simulated failure occurs.
+            ZenMCPConnectionError: If failure is simulated.
         """
         self.call_count += 1
-        
-        import random
-        if random.random() < self.failure_rate:
-            raise ZenMCPConnectionError(f"Simulated failure on call {self.call_count}")
 
-        return {
+        if self.secure_rng.random() < self.failure_rate:
+            error_msg = f"Simulated failure on call {self.call_count}"
+            self.logger.warning("Simulating failure: %s", error_msg)
+            raise ZenMCPConnectionError(error_msg)
+
+        response = {
             "enhanced_prompt": f"Enhanced: {prompt}",
             "metadata": {"call_count": self.call_count},
         }
 
+        self.logger.debug("Mock processing successful: call %d", self.call_count)
+        return response
 
-class ZenMCPIntegration:
-    """Integration layer for Zen MCP with error handling."""
+
+class ZenMCPIntegration(LoggerMixin):
+    """High-level integration layer for Zen MCP with modular resilience."""
 
     def __init__(
         self,
         client: Any | None = None,
-        error_handler: ZenMCPErrorHandler | None = None,
-    ):
+        resilience_handler: CompositeResilienceHandler | None = None,
+        logger_name: str = "zen_mcp.integration",
+    ) -> None:
         """Initialize Zen MCP integration.
 
         Args:
             client: Zen MCP client instance.
-            error_handler: Error handler instance.
+            resilience_handler: Composite resilience handler.
+            logger_name: Custom logger name.
         """
+        super().__init__(logger_name=logger_name)
         self.client = client or MockZenMCPClient()
-        self.error_handler = error_handler or ZenMCPErrorHandler()
-        self.logger = logger
+
+        # Create default resilience handler if none provided
+        if resilience_handler is None:
+            circuit_breaker = CircuitBreakerStrategy()
+            retry_strategy = RetryStrategy()
+            self.resilience_handler = CompositeResilienceHandler(
+                [circuit_breaker, retry_strategy],
+                self.logger,
+            )
+        else:
+            self.resilience_handler = resilience_handler
 
     async def enhance_prompt(self, prompt: str) -> dict[str, Any]:
-        """Enhance prompt using Zen MCP with error handling.
+        """Enhance prompt using Zen MCP with comprehensive error handling.
 
         Args:
             prompt: Input prompt to enhance.
@@ -337,34 +410,140 @@ class ZenMCPIntegration:
             Enhanced prompt response.
 
         Raises:
-            ZenMCPError: If enhancement fails.
+            ZenMCPError: If enhancement fails completely.
         """
+        self.log_method_entry("enhance_prompt", prompt)
+
         async def primary_func() -> dict[str, Any]:
             return await self.client.process_prompt(prompt)
 
         async def fallback_func() -> dict[str, Any]:
-            self.logger.info("Using fallback prompt enhancement")
+            self.logger.info("Using fallback prompt enhancement for: %s", prompt[:50])
             return {
                 "enhanced_prompt": f"[FALLBACK] {prompt}",
                 "metadata": {"fallback": True},
             }
 
-        return await self.error_handler.execute_with_protection(
-            primary_func, fallback_func
-        )
+        try:
+            result = await self.resilience_handler.execute_with_protection(
+                primary_func,
+                fallback_func,
+            )
+            self.log_method_exit("enhance_prompt", "success")
+            return result
+
+        except Exception as e:
+            self.log_error_with_context(e, {"prompt_length": len(prompt)}, "enhance_prompt")
+            raise ZenMCPError(f"Failed to enhance prompt: {e}") from e
 
     def get_circuit_breaker_state(self) -> CircuitBreakerState:
         """Get current circuit breaker state.
 
         Returns:
-            Circuit breaker state.
+            Current circuit breaker state.
         """
-        return self.error_handler.circuit_breaker.state
+        for strategy in self.resilience_handler.strategies:
+            if isinstance(strategy, CircuitBreakerStrategy):
+                return strategy.state
+        return CircuitBreakerState.CLOSED
 
     def get_failure_count(self) -> int:
-        """Get current failure count.
+        """Get current failure count from circuit breaker.
 
         Returns:
             Number of failures.
         """
-        return self.error_handler.circuit_breaker.failure_count
+        for strategy in self.resilience_handler.strategies:
+            if isinstance(strategy, CircuitBreakerStrategy):
+                return strategy.failure_count
+        return 0
+
+    def get_health_status(self) -> dict[str, Any]:
+        """Get comprehensive health status.
+
+        Returns:
+            Health status from all resilience strategies.
+        """
+        return self.resilience_handler.get_health_status()
+
+
+# Factory functions for common configurations
+def create_default_zen_mcp_integration(
+    client: Any | None = None,
+    circuit_breaker_config: CircuitBreakerConfig | None = None,
+    retry_config: RetryConfig | None = None,
+) -> ZenMCPIntegration:
+    """Create Zen MCP integration with default resilience configuration.
+
+    Args:
+        client: Optional Zen MCP client.
+        circuit_breaker_config: Optional circuit breaker configuration.
+        retry_config: Optional retry configuration.
+
+    Returns:
+        Configured ZenMCPIntegration instance.
+    """
+    circuit_breaker = CircuitBreakerStrategy(circuit_breaker_config)
+    retry_strategy = RetryStrategy(retry_config)
+
+    resilience_handler = CompositeResilienceHandler([circuit_breaker, retry_strategy])
+
+    return ZenMCPIntegration(client, resilience_handler)
+
+
+def create_high_availability_zen_mcp_integration(
+    client: Any | None = None,
+) -> ZenMCPIntegration:
+    """Create Zen MCP integration optimized for high availability.
+
+    Args:
+        client: Optional Zen MCP client.
+
+    Returns:
+        High-availability configured ZenMCPIntegration instance.
+    """
+    # More aggressive circuit breaker for faster failure detection
+    circuit_breaker_config = CircuitBreakerConfig(
+        failure_threshold=3,
+        recovery_timeout=30,
+        success_threshold=2,
+    )
+
+    # More retries with longer delays for resilience
+    retry_config = RetryConfig(
+        max_retries=5,
+        base_delay=2.0,
+        max_delay=120.0,
+        exponential_base=1.5,
+    )
+
+    return create_default_zen_mcp_integration(client, circuit_breaker_config, retry_config)
+
+
+def create_fast_fail_zen_mcp_integration(
+    client: Any | None = None,
+) -> ZenMCPIntegration:
+    """Create Zen MCP integration optimized for fast failure detection.
+
+    Args:
+        client: Optional Zen MCP client.
+
+    Returns:
+        Fast-fail configured ZenMCPIntegration instance.
+    """
+    # Quick failure detection
+    circuit_breaker_config = CircuitBreakerConfig(
+        failure_threshold=2,
+        recovery_timeout=15,
+        success_threshold=1,
+    )
+
+    # Minimal retries for fast response
+    retry_config = RetryConfig(
+        max_retries=1,
+        base_delay=0.5,
+        max_delay=10.0,
+        exponential_base=2.0,
+    )
+
+    return create_default_zen_mcp_integration(client, circuit_breaker_config, retry_config)
