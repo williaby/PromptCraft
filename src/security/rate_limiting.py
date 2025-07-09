@@ -2,6 +2,40 @@
 
 This module provides comprehensive rate limiting capabilities to protect
 against abuse and ensure fair resource usage across all API endpoints.
+It implements client identification, storage backends, and custom error
+handling for production-grade rate limiting.
+
+The module provides:
+- Client identification with proxy header support
+- Configurable storage backends (Redis for production, memory for development)
+- Custom rate limit exceeded error handling
+- Predefined rate limits for different endpoint types
+- Utility functions for rate limit configuration
+
+Architecture:
+    The rate limiting system uses slowapi for sliding window rate limiting
+    with configurable storage backends. It supports distributed rate limiting
+    in production environments through Redis storage.
+
+Key Components:
+    - get_client_identifier(): Client IP extraction with proxy support
+    - create_limiter(): Limiter configuration with environment-specific storage
+    - rate_limit_exceeded_handler(): Custom error response handling
+    - RateLimits class: Predefined limits for different endpoint types
+    - setup_rate_limiting(): FastAPI integration configuration
+
+Dependencies:
+    - slowapi: For sliding window rate limiting implementation
+    - fastapi: For HTTP exception handling
+    - src.config.settings: For environment-specific configuration
+    - Redis: For distributed rate limiting storage (production)
+
+Called by:
+    - src/main.py: During FastAPI application initialization
+    - FastAPI decorators: For endpoint-specific rate limiting
+    - Middleware stack: For request processing
+
+Complexity: O(1) for rate limit checks, O(log n) for Redis operations where n is rate limit window size
 """
 
 import logging
@@ -30,6 +64,19 @@ def get_client_identifier(request: Request) -> str:
 
     Returns:
         Client identifier string for rate limiting
+
+    Time Complexity: O(1) - Simple header lookup and string operations
+    Space Complexity: O(1) - Fixed memory for IP address strings
+
+    Called by:
+        - slowapi.Limiter: For client identification during rate limiting
+        - rate_limit_exceeded_handler(): For error logging
+        - Rate limit middleware: During request processing
+
+    Calls:
+        - request.headers.get(): HTTP header retrieval
+        - str.split(): Header parsing for X-Forwarded-For
+        - get_remote_address(): Fallback client IP extraction
     """
     # Check for forwarded headers (common in reverse proxy setups)
     forwarded_for = request.headers.get("x-forwarded-for")
@@ -104,6 +151,19 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
 
     Returns:
         JSON response with rate limit information
+
+    Time Complexity: O(1) - Simple error response generation
+    Space Complexity: O(1) - Fixed memory for error response dictionary
+
+    Called by:
+        - FastAPI exception handler: When RateLimitExceeded is raised
+        - slowapi middleware: During rate limit enforcement
+        - setup_rate_limiting(): Exception handler registration
+
+    Calls:
+        - get_client_identifier(): For client IP extraction
+        - HTTPException(): For structured error response
+        - logger.warning(): For security event logging
     """
     client_ip = get_client_identifier(request)
 

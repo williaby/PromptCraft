@@ -2,6 +2,37 @@
 
 This module provides comprehensive security middleware including headers,
 rate limiting, and request logging for enhanced application security.
+It implements defense-in-depth security patterns with configurable policies
+for different deployment environments.
+
+The module provides:
+- Security headers middleware for web vulnerability protection
+- Request logging middleware for audit trails and monitoring
+- Environment-specific security configurations
+- Sensitive data masking for secure logging
+
+Architecture:
+    The middleware follows the ASGI middleware pattern with proper request/response
+    processing chains. Each middleware layer adds specific security enhancements
+    while maintaining performance and observability.
+
+Key Components:
+    - SecurityHeadersMiddleware: Adds security headers (CSP, HSTS, etc.)
+    - RequestLoggingMiddleware: Provides audit logging with data masking
+    - setup_security_middleware(): Configures middleware stack
+
+Dependencies:
+    - fastapi: For Request/Response handling
+    - starlette: For BaseHTTPMiddleware
+    - src.config.settings: For environment-specific configuration
+    - logging: For structured audit logging
+
+Called by:
+    - src/main.py: During FastAPI application initialization
+    - setup_security_middleware(): For middleware configuration
+    - FastAPI middleware stack: For request processing
+
+Complexity: O(1) for header operations, O(n) for header masking where n is header count
 """
 
 import logging
@@ -76,12 +107,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request and add security headers to response.
 
+        This method implements the core middleware functionality, adding security
+        headers to protect against common web vulnerabilities.
+
         Args:
             request: The incoming request
             call_next: The next middleware/endpoint in the chain
 
         Returns:
             Response with security headers added
+
+        Time Complexity: O(1) - Fixed number of header operations
+        Space Complexity: O(1) - Fixed memory for header dictionary
+
+        Called by:
+            - FastAPI middleware stack during request processing
+            - ASGI application layer
+
+        Calls:
+            - call_next(): Next middleware or endpoint in chain
+            - _get_security_headers(): Security header generation
         """
         # Store request timestamp for error handling
         request.state.timestamp = time.time()
@@ -142,11 +187,25 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     def _mask_sensitive_headers(self, headers: dict[str, str]) -> dict[str, str]:
         """Mask sensitive headers to prevent credential leakage in logs.
 
+        This method implements data masking for security-sensitive headers
+        to ensure credentials and secrets are not exposed in audit logs.
+
         Args:
             headers: Original headers dictionary
 
         Returns:
             Headers dictionary with sensitive values masked
+
+        Time Complexity: O(n) where n is the number of headers
+        Space Complexity: O(n) for the new masked headers dictionary
+
+        Called by:
+            - _log_request(): During request logging
+            - Security audit logging systems
+
+        Calls:
+            - dict.items(): Header iteration
+            - str.lower(): Case-insensitive header matching
         """
         sensitive_keys = {"authorization", "cookie", "proxy-authorization", "x-api-key"}
         masked_headers = {}
