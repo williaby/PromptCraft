@@ -493,7 +493,7 @@ Extract options from `$ARGUMENTS` with new phase-aware options:
 - `--base [name]`: Base branch for comparison (default: auto-detected)
 - `--type [type]`: Change type (feat, fix, docs, style, refactor, perf, test, chore)
 - `--phase [number]`: Target phase number (auto-detects if not provided)
-- `--issue [number]`: Related issue number from phase-X-issues.md
+- `--issue [number]`: Related issue number from phase-X-index.md (references specific category file)
 - `--phase-merge`: Flag for phase completion PR (targets main)
 - `--force-target`: Override branch validation (use with caution)
 - `--dry-run`: Run validation only, don't create PR
@@ -582,7 +582,7 @@ Use the pull request template from `docs/planning/pull-request-template.md` and 
 
 - `${phase_number}`: Current phase number (1, 2, 3, etc.)
 - `${phase_name}`: Phase name (Foundation & Journey 1, etc.)
-- `${issue_reference}`: Reference to phase-X-issues.md
+- `${issue_reference}`: Reference to phase-X-index.md with links to category files
 - `${phase_context}`: Context about phase relationship
 
 **Change Summary Variables**:
@@ -647,7 +647,7 @@ This PR represents the completion of Phase ${phase_number} and will be tagged as
 
 ### 🎯 Phase Context
 - **Phase**: ${phase_number} - ${phase_name}
-- **Issue Reference**: [Issue #${issue_number}](../docs/planning/phase-${phase_number}-issues.md#${issue_number})
+- **Issue Reference**: [Issue #${issue_number}](../docs/planning/phase-${phase_number}-index.md#issue-${issue_number})
 - **Target Branch**: `phase-${phase_number}-development`
 
 ### 📊 Change Summary
@@ -942,7 +942,7 @@ This enhanced command integrates seamlessly with your phase-based development pr
 
 - **Branch Safety First**: Always validates branch strategy before proceeding
 - **Phase-Aware**: Understands your phase-based development approach
-- **Issue Integration**: Connects with phase-X-issues.md structure
+- **Issue Integration**: Connects with phase-X-index.md structure and category files
 - **Prevents Fragmentation**: Guides toward proper branch consolidation
 - **User-Friendly**: Provides clear guidance and automatic corrections
 - **Flexible**: Supports both phase completion and issue work PRs

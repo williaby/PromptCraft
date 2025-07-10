@@ -73,7 +73,7 @@ For expert mode, use Zen to consult with Gemini in IT manager role:
 
 ## Output Format
 
-Generate file: `/docs/planning/{phase}_{issue}_issue_plan.md`
+Generate file: `/docs/planning/issue-plans/phase-{phase}-issue-{issue}-plan.md`
 
 ```markdown
 ---
