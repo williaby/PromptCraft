@@ -236,7 +236,7 @@ Please review this document for potential issues, improvements, and compliance w
 Please provide constructive feedback and recommendations for improvement. Do not rewrite the content - only provide analysis and suggestions.
 ```
 
-**Model Configuration**: Use `deepseek-v3` (DeepSeek Chat V3 free model) for this review to leverage its 685B parameter expertise and large context window (163K tokens).
+**Model Configuration**: Use `--model=[name]` to override default. Defaults to `deepseek-v3` (DeepSeek Chat V3 free model) for cost-effective document review with 685B parameter expertise and large context window (163K tokens). Alternative options: `gemini-free` (1M context), `opus-4` (premium analysis).
 
 ## Required Output Format
 
