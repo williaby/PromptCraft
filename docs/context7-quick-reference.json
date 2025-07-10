@@ -10,7 +10,7 @@
         "notes": "Official FastAPI documentation"
       },
       "uvicorn": {
-        "context7_id": "/encode/uvicorn", 
+        "context7_id": "/encode/uvicorn",
         "trust_score": 7.5,
         "status": "verified",
         "notes": "ASGI web server"
@@ -18,7 +18,7 @@
       "gradio": {
         "context7_id": "/gradio-app/gradio",
         "trust_score": 9.8,
-        "status": "verified", 
+        "status": "verified",
         "notes": "Official Gradio documentation"
       },
       "pandas": {
@@ -97,7 +97,7 @@
     "pending_verification": {
       "httpx": "HTTP client library",
       "numpy": "Numerical computing",
-      "pyyaml": "YAML processing", 
+      "pyyaml": "YAML processing",
       "python-multipart": "Multipart form handling",
       "sentence-transformers": "Embedding generation",
       "qdrant-client": "Vector database client",

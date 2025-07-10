@@ -34,9 +34,7 @@ class ClaudeContext7Integration:
         """Initialize with project configuration."""
         self.project_root = Path(__file__).parent.parent
         self.pyproject_file = self.project_root / "pyproject.toml"
-        self.reference_file = (
-            self.project_root / "docs" / "context7-quick-reference.json"
-        )
+        self.reference_file = self.project_root / "docs" / "context7-quick-reference.json"
 
         # Load configurations
         self.pyproject_deps = self._load_pyproject_dependencies()
@@ -50,20 +48,14 @@ class ClaudeContext7Integration:
                 deps = {}
 
                 # Main dependencies
-                main_deps = (
-                    data.get("tool", {}).get("poetry", {}).get("dependencies", {})
-                )
+                main_deps = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
                 for dep, version in main_deps.items():
                     if dep != "python":  # Skip Python version
                         deps[dep] = version
 
                 # Dev dependencies
                 dev_deps = (
-                    data.get("tool", {})
-                    .get("poetry", {})
-                    .get("group", {})
-                    .get("dev", {})
-                    .get("dependencies", {})
+                    data.get("tool", {}).get("poetry", {}).get("group", {}).get("dev", {}).get("dependencies", {})
                 )
                 for dep, version in dev_deps.items():
                     deps[f"{dep} (dev)"] = version
@@ -105,8 +97,7 @@ class ClaudeContext7Integration:
         base_name = self.get_package_base_name(package_name)
         result = {
             "package": base_name,
-            "in_pyproject": base_name
-            in [self.get_package_base_name(p) for p in self.pyproject_deps.keys()],
+            "in_pyproject": base_name in [self.get_package_base_name(p) for p in self.pyproject_deps.keys()],
             "context7_status": "unknown",
             "context7_id": None,
             "trust_score": None,
@@ -144,7 +135,10 @@ class ClaudeContext7Integration:
         return result
 
     def generate_context7_call(
-        self, package_name: str, topic: str | None = None, tokens: int = 2000,
+        self,
+        package_name: str,
+        topic: str | None = None,
+        tokens: int = 2000,
     ) -> str:
         """Generate a properly formatted Context7 call."""
         validation = self.validate_package(package_name)
@@ -249,21 +243,9 @@ def main():
         print("📦 Dependency Status Report:")
         print("=" * 50)
 
-        verified = [
-            (pkg, info)
-            for pkg, info in results.items()
-            if info["context7_status"] == "verified"
-        ]
-        pending = [
-            (pkg, info)
-            for pkg, info in results.items()
-            if info["context7_status"] == "pending_verification"
-        ]
-        not_mapped = [
-            (pkg, info)
-            for pkg, info in results.items()
-            if info["context7_status"] == "not_mapped"
-        ]
+        verified = [(pkg, info) for pkg, info in results.items() if info["context7_status"] == "verified"]
+        pending = [(pkg, info) for pkg, info in results.items() if info["context7_status"] == "pending_verification"]
+        not_mapped = [(pkg, info) for pkg, info in results.items() if info["context7_status"] == "not_mapped"]
 
         if verified:
             print(f"\n✅ Verified ({len(verified)} packages):")
