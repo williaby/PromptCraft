@@ -28,6 +28,7 @@ from src.config.settings import (
     ConfigurationValidationError,
     get_settings,
 )
+
 # Security imports
 from src.security.audit_logging import AuditEventSeverity, AuditEventType, audit_logger_instance
 from src.security.error_handlers import setup_secure_error_handlers
@@ -230,7 +231,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
-    except Exception as e:  # noqa: BLE001 # Catch-all for unhandled endpoint errors
+    except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Health check endpoint failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -285,7 +286,7 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
             }
 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from e
-    except Exception as e:  # noqa: BLE001 # Catch-all for unhandled endpoint errors
+    except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Configuration health check failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

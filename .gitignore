@@ -214,4 +214,6 @@ site/
 # =================================
 # Planning docs removed from repo but kept locally
 docs/planning/
+docs/zen/
 /site
+.serena/

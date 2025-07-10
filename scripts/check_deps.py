@@ -94,7 +94,8 @@ def check_security() -> bool:
 
 
 def _extract_vulnerabilities(
-    safety_data: dict, vulnerability_details: list[dict[str, str]],
+    safety_data: dict,
+    vulnerability_details: list[dict[str, str]],
 ) -> None:
     """Extract vulnerability details from Safety scan data."""
     for project in safety_data.get("scan_results", {}).get("projects", []):

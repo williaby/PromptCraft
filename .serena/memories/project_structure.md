@@ -1,58 +1,98 @@
-# Project Structure and Architecture
+# Project Structure
 
-## Directory Structure
-```
-PromptCraft/
-├── src/                    # Core application code
-│   ├── agents/            # Multi-agent system framework
-│   │   ├── base_agent.py      # Base agent interface (placeholder)
-│   │   ├── create_agent.py    # Agent factory/creation logic
-│   │   └── registry.py        # Agent registry and discovery
-│   ├── core/              # Core business logic
-│   │   ├── query_counselor.py # Query processing and routing (placeholder)
-│   │   ├── hyde_processor.py  # HyDE-enhanced retrieval (placeholder)
-│   │   └── vector_store.py    # Vector database interface (placeholder)
-│   ├── ui/                # Gradio interface components
-│   ├── ingestion/         # Knowledge processing pipeline
-│   ├── mcp_integration/   # MCP server integration
-│   ├── config/            # Configuration management
-│   └── utils/             # Shared utilities
-│       └── encryption.py      # GPG encryption utilities
-├── knowledge/             # Knowledge base with C.R.E.A.T.E. framework
-│   ├── create/            # Structured knowledge files
-│   └── domain_specific/   # Specialized domain knowledge
-├── tests/
-│   ├── unit/              # Unit tests
-│   ├── integration/       # Integration tests
-│   └── fixtures/          # Test fixtures
-├── docs/                  # Documentation
-├── deployment/            # Infrastructure and deployment
-├── scripts/               # Utility scripts
-└── config/                # Configuration files
+## Source Directory Layout
+
+```text
+src/
+├── agents/          # Multi-agent system framework
+│   ├── base_agent.py      # Base agent interface (placeholder)
+│   ├── create_agent.py    # Agent factory/creation logic
+│   └── registry.py        # Agent registry and discovery
+├── config/          # Configuration management
+│   ├── health.py          # Health check system (COMPLETE)
+│   ├── settings.py        # Pydantic settings with environment loading
+│   └── __init__.py
+├── core/            # Core business logic
+│   ├── query_counselor.py # Query processing and routing (placeholder)
+│   ├── hyde_processor.py  # HyDE-enhanced retrieval (placeholder)
+│   └── vector_store.py    # Vector database interface (placeholder)
+├── ui/              # Gradio interface components
+├── ingestion/       # Knowledge processing pipeline
+├── mcp_integration/ # MCP server integration
+└── utils/           # Shared utilities
+    ├── encryption.py       # GPG encryption utilities
+    └── __init__.py
 ```
 
-## Key Components
+## Knowledge Base Structure
 
-### Multi-Agent System
-- **Base Framework**: `src/agents/base_agent.py` (currently placeholder)
-- **Agent Registry**: `src/agents/registry.py` for discovery and coordination
-- **Specialized Agents**: Coordinated through Zen MCP Server
+```text
+knowledge/           # Knowledge base with C.R.E.A.T.E. framework
+├── create/          # Structured knowledge files
+└── domain_specific/ # Specialized domain knowledge
+```
 
-### Query Processing
-- **HyDE Enhancement**: `src/core/hyde_processor.py` (three-tier analysis, placeholder)
-- **Query Routing**: `src/core/query_counselor.py` (placeholder)
-- **Vector Interface**: `src/core/vector_store.py` (placeholder)
+## Documentation Structure
 
-### Knowledge Management
-- **External Vector DB**: Qdrant at 192.168.1.16:6333
-- **C.R.E.A.T.E. Framework**: Knowledge files with YAML frontmatter
-- **Style Guide**: `docs/style_guide.md` for markdown formatting
-- **Ingestion Pipeline**: Processes various document types
+```text
+docs/
+├── planning/        # Project planning and documentation
+│   ├── project_hub.md     # Central documentation index
+│   ├── phase-1-index.md   # Phase 1 planning document
+│   └── TODO.md           # Technical debt and improvements
+├── style_guide.md   # Knowledge file formatting standards
+└── context7-package-reference.md  # Context7 integration guide
+```
 
-## Development Status
-- **Current Phase**: Early development with many core files as placeholders
-- **Architecture**: Well-defined but implementation pending
-- **Philosophy**: Configuration over custom development, reuse existing tools
-- **Main Entry**: `src/main:app` (FastAPI/Uvicorn)
-- **UI Access**: Gradio at http://192.168.1.205:7860
-- **External Dependencies**: Qdrant vector database on Unraid infrastructure
+## Testing Structure
+
+```text
+tests/
+├── unit/            # Unit tests
+│   ├── config/      # Configuration tests
+│   └── utils/       # Utility tests
+├── integration/     # Integration tests
+└── fixtures/        # Test fixtures
+```
+
+## Configuration Files
+
+- **pyproject.toml**: Primary Python configuration (Poetry, tools, metadata)
+- **noxfile.py**: Automation for testing and quality checks
+- **.pre-commit-config.yaml**: Git hooks for code quality
+- **docker-compose.zen-vm.yaml**: Development environment setup
+- **Dockerfile**: Multi-stage container builds
+
+## Key Files Status
+
+### Completed Components
+- ✅ **src/config/health.py**: Complete health check system
+- ✅ **src/config/settings.py**: Pydantic configuration system
+- ✅ **src/utils/encryption.py**: GPG encryption utilities
+- ✅ **src/main.py**: FastAPI application with health endpoints
+
+### Placeholder Components (Early Development)
+- 📋 **src/agents/**: Multi-agent framework (architecture defined)
+- 📋 **src/core/**: Core business logic (planning phase)
+- 📋 **src/ui/**: Gradio interface (basic structure)
+- 📋 **src/ingestion/**: Knowledge processing pipeline (planned)
+
+## Development Philosophy Integration
+
+### Reuse First
+- CI/CD patterns from ledgerbase repository
+- Documentation templates from FISProject
+- GitHub Actions from .github repository
+- UI components from existing promptcraft_app.py
+
+### Configure Don't Build
+- Zen MCP Server for orchestration
+- Heimdall MCP Server for analysis
+- AssuredOSS packages for security
+- External Qdrant for vector database
+
+### Focus on Unique Value
+- Claude.md generation logic
+- Prompt composition intelligence
+- User preference learning
+- C.R.E.A.T.E. framework implementation

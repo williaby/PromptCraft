@@ -195,7 +195,7 @@ class TestTemplateProcessor:
                         "name": "body",
                         "template": "{content}",
                     },
-                ]
+                ],
             },
             "examples": [],
         }
