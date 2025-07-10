@@ -201,6 +201,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "ANN", "ARG", "PLR2004"]
+"tests/security/test_codeql_validation.py" = ["S105", "S602", "S603", "S608", "S301", "S506", "S324", "S307", "PTH123", "T201", "S101", "ANN", "ARG", "PLR2004"]
 "scripts/*" = ["T20", "INP001"]
 "noxfile.py" = ["ANN", "D"]
 "*.yaml" = ["ALL"]
