@@ -6,8 +6,14 @@ name: "CodeQL Analysis"
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**/*.py'
+      - '.github/workflows/codeql.yml'
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '**/*.py'
+      - '.github/workflows/codeql.yml'
   schedule:
     - cron: '39 16 * * 1' # Runs every Monday at 16:39 UTC
 
@@ -23,19 +29,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Define the language to analyze. Changed from Python to JavaScript for this project.
-        language: [ 'javascript' ]
+        # Define the language to analyze. Python configuration for PromptCraft project.
+        language: [ 'python' ]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --only main
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          # Custom queries can be added here if needed, e.g.,
-          # queries: +security-and-quality
+          queries: security-extended
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
