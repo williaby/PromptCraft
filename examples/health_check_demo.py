@@ -163,9 +163,7 @@ def demonstrate_json_serialization(status: ConfigurationStatusModel) -> None:
             "api_key_value",
         ]
 
-        has_sensitive = any(
-            keyword in json_data.lower() for keyword in sensitive_keywords
-        )
+        has_sensitive = any(keyword in json_data.lower() for keyword in sensitive_keywords)
 
         if has_sensitive:
             console.print(

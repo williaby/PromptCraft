@@ -27,3 +27,23 @@
 - **Code Quality**: black ^24.2.0, ruff ^0.2.2, mypy ^1.8.0
 - **Security**: bandit ^1.7.7, safety ^3.0.1
 - **Automation**: nox ^2024.3.2, pre-commit ^3.6.2
+
+## Infrastructure Architecture
+- **External Qdrant**: 192.168.1.16:6333 (hosted on Unraid)
+- **Ubuntu VM**: 192.168.1.205 (application services)
+- **Gradio UI**: Port 7860 for web interface
+- **Zen MCP Server**: Port 3000 for orchestration
+- **Cloudflare Tunnel**: Secure remote access to development environment
+
+## MCP Server Integration
+- **Zen MCP**: Multi-agent orchestration and workflow management
+- **Heimdall MCP**: Analysis and investigation capabilities
+- **Context7 MCP**: Package documentation and reference materials
+- **AssuredOSS**: Security-focused package management and validation
+
+## Docker Configuration
+- **Multi-stage builds**: Development and production optimized
+- **Security**: Non-root user execution (promptcraft:1000)
+- **Health checks**: Port 7860 with /health endpoint
+- **Environment**: PYTHONDONTWRITEBYTECODE, PYTHONHASHSEED=random
+- **Requirements**: Cryptographic hashes in requirements-docker.txt
