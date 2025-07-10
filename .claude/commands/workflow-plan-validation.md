@@ -56,6 +56,8 @@ This command requires completed scope analysis. If not done, run:
 
 For expert mode, use Zen to consult with Gemini in IT manager role:
 
+<!-- TODO: Fix hardcoded model reference - should use configurable model selection -->
+
 - **Lead with the scope boundary document**
 - Present ONLY the acceptance criteria requirements
 - Get approval that the scope is correctly understood

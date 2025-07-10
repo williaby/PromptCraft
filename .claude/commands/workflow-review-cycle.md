@@ -12,6 +12,7 @@ version: "1.0"
 Comprehensive testing, validation, and multi-agent review of implemented solution: $ARGUMENTS
 
 ## Usage Options
+
 - `phase X issue Y` - Full review cycle with multi-agent validation
 - `quick phase X issue Y` - Essential testing and validation only
 - `consensus phase X issue Y` - Multi-model consensus review
@@ -25,6 +26,7 @@ This command requires completed implementation. Implementation must pass basic q
 ### Step 1: Pre-commit Validation
 
 1. **Run Comprehensive Pre-commit Checks**:
+
    ```bash
    /project:validation-precommit
    ```
@@ -61,9 +63,13 @@ This command requires completed implementation. Implementation must pass basic q
 
 ### Step 3: Multi-Agent Review
 
+<!-- TODO: Fix hardcoded model references - O3 and Gemini should be configurable -->
+<!-- TODO: When using consensus mode, the Zen MCP consensus tool expects exact model names from available models list -->
+
 1. **OpenAI O3 Testing**:
    Use Zen to have O3 develop additional test suite:
-   ```
+
+   ```text
    Ask O3 to:
    - Review the implementation against acceptance criteria
    - Develop edge case tests
@@ -73,7 +79,8 @@ This command requires completed implementation. Implementation must pass basic q
 
 2. **Gemini Final Review**:
    Use Zen to have Gemini perform final code review:
-   ```
+
+   ```text
    Ask Gemini to:
    - Assess code quality and architecture
    - Review security implications
@@ -145,6 +152,7 @@ Generate comprehensive validation report:
 ## Completion Criteria
 
 The review cycle is complete when:
+
 1. **All acceptance criteria** are validated as met
 2. **All quality gates** pass without exceptions
 3. **Multi-agent consensus** is achieved
@@ -177,6 +185,7 @@ The review cycle is complete when:
 **CRITICAL**: Report completion status and request final user approval after all validations pass.
 
 Present summary of:
+
 - ✅ Acceptance criteria met
 - ✅ Quality standards achieved
 - ✅ Multi-agent approval obtained
