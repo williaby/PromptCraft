@@ -32,7 +32,7 @@ This command requires approved implementation plan. If not done, run:
 ### Step 1: Implementation Setup
 
 1. **Load Approved Plan**:
-   - Read `/docs/planning/{phase}_{issue}_issue_plan.md`
+   - Read `/docs/planning/issue-plans/phase-{phase}-issue-{issue}-plan.md`
    - Verify plan is approved and has "status: approved"
    - Create todo list from action plan items
 

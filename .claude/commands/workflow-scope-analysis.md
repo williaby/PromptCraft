@@ -12,6 +12,7 @@ version: "1.0"
 Analyze and define boundaries for a project issue to prevent scope creep: $ARGUMENTS
 
 ## Usage Options
+
 - `phase X issue Y` - Standard analysis (e.g., "phase 1 issue 3")
 - `quick phase X issue Y` - Essential boundary definition only
 - `detailed phase X issue Y` - Comprehensive analysis with validation
@@ -21,7 +22,8 @@ Analyze and define boundaries for a project issue to prevent scope creep: $ARGUM
 ### Step 1: Issue-Specific Analysis
 
 1. **Read ONLY the Issue Definition First**:
-   - `/docs/planning/phase-{X}-issues.md` - Find the SPECIFIC issue requirements
+   - `/docs/planning/phase-{X}-index.md` - Navigate to find the SPECIFIC issue requirements
+   - Follow links to the appropriate category file (foundation, mcp-integration, core-implementation, security-ai)
    - **STOP HERE** - Do not read broader documentation yet
 
 2. **Extract and Isolate Issue Scope**:
@@ -40,7 +42,8 @@ Analyze and define boundaries for a project issue to prevent scope creep: $ARGUM
    - Identify any ambiguous requirements that need clarification
 
 2. **Create Scope Constraint Document**:
-   ```
+
+   ```text
    ISSUE SCOPE BOUNDARY:
    ✅ INCLUDED: [List from acceptance criteria]
    ❌ EXCLUDED: [Anything not in acceptance criteria]
@@ -50,6 +53,7 @@ Analyze and define boundaries for a project issue to prevent scope creep: $ARGUM
 ### Step 3: Contextual Research (Only After Scope Definition)
 
 **ONLY AFTER establishing scope boundaries**, read supporting documentation as needed:
+
 - `/docs/planning/ADR.md` - Read ONLY architectural decisions relevant to your defined scope
 - `/docs/planning/ts-{X}-overview.md` - Read ONLY sections relevant to your defined scope
 - `/docs/planning/ts-{X}-implementation.md` - Read ONLY implementation details for items in scope
