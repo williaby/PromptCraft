@@ -4,6 +4,8 @@
 
 This document outlines the process for overriding security gates in emergency situations. Admin overrides should be used sparingly and only when absolutely necessary.
 
+> **IMPORTANT**: All overrides are time-boxed and require automatic expiration. No override should remain in effect indefinitely.
+
 ## When to Use Admin Override
 
 Admin override should **only** be used in the following emergency situations:
@@ -94,14 +96,42 @@ All overrides are tracked in multiple locations:
 3. **Issue Tracker**: All overrides have tracking issues
 4. **Security Metrics**: Weekly reports include override statistics
 
-## Approval Matrix
+## Emergency Override Types & Time Limits
 
-| Scenario | Required Approver | Maximum Duration |
-|----------|------------------|------------------|
-| Critical hotfix | Engineering Manager | 48 hours |
-| False positive | Security Team Lead | 1 week |
-| Tool malfunction | DevOps Lead | Until fixed |
-| Business continuity | Director level | 72 hours |
+### Break Glass Procedures
+
+For immediate emergency situations requiring instant action:
+
+| Emergency Type | Required Approver | Maximum Duration | Auto-Expiry | Follow-up Required |
+|----------------|------------------|------------------|-------------|-------------------|
+| **Production Down** | Engineering Manager | 2 hours | ✅ Automatic | Within 4 hours |
+| **Critical Security Fix** | Security Team Lead | 4 hours | ✅ Automatic | Within 8 hours |
+| **Revenue Blocking** | Director level | 6 hours | ✅ Automatic | Within 12 hours |
+
+### Standard Override Procedures
+
+For planned overrides with justification:
+
+| Scenario | Required Approver | Maximum Duration | Review Cycle | Extensions |
+|----------|------------------|------------------|--------------|------------|
+| Critical hotfix | Engineering Manager | 48 hours | Daily | 1x (24 hours) |
+| False positive | Security Team Lead | 1 week | Every 2 days | 1x (3 days) |
+| Tool malfunction | DevOps Lead | Until fixed | Weekly | Unlimited with justification |
+| Business continuity | Director level | 72 hours | Every 12 hours | 1x (48 hours) |
+
+### Time-Boxed Override Implementation
+
+All overrides must include automatic expiration:
+
+```bash
+# Emergency override with 2-hour auto-expiry
+git commit -m "EMERGENCY_OVERRIDE: Production payment system down
+
+EXPIRES: $(date -d '+2 hours' -Iseconds)
+APPROVER: @engineering-manager
+AUTO_REVERT: true
+TRACKING: #EMERGENCY-$(date +%Y%m%d-%H%M)"
+```
 
 ## Consequences of Misuse
 
@@ -157,12 +187,124 @@ Ticket: https://github.com/org/repo/issues/502
 Expires: 2024-01-17 (1 week)"
 ```
 
+## Escalation Paths & Emergency Contacts
+
+### 24/7 Emergency Escalation
+
+For production-critical situations requiring immediate override:
+
+1. **Primary**: Engineering Manager on-call rotation
+2. **Secondary**: Director of Engineering
+3. **Executive**: CTO (for revenue-blocking issues)
+
+### Contact Methods
+
+| Urgency | Contact Method | Response SLA |
+|---------|---------------|--------------|
+| **EMERGENCY** | Phone + Slack + Email | 15 minutes |
+| **URGENT** | Slack + Email | 30 minutes |
+| **STANDARD** | Email + GitHub mention | 2 hours |
+
+### Emergency Contact Information
+
+```bash
+# On-call rotation (updated weekly)
+curl -s https://company.pagerduty.com/api/oncalls/engineering
+
+# Emergency contacts
+Emergency Phone: +1-800-ENG-HELP
+Slack: #emergency-engineering
+Email: engineering-emergency@company.com
+```
+
+### Override Monitoring & Alerts
+
+#### Automatic Monitoring
+
+- **Expiry Alerts**: 30-minute warning before override expires
+- **Usage Tracking**: Daily override count reports
+- **Pattern Detection**: Alerts for unusual override patterns
+- **Compliance Monitoring**: Weekly audit reports
+
+#### Manual Review Process
+
+1. **Daily Stand-ups**: Review active overrides
+2. **Weekly Security Review**: Override patterns and trends
+3. **Monthly Audit**: Complete override compliance review
+4. **Quarterly Training**: Override best practices refresh
+
+## Override Automation Scripts
+
+### Emergency Override Helper
+
+```bash
+#!/bin/bash
+# scripts/emergency-override.sh - Guided emergency override process
+
+OVERRIDE_TYPE="$1"
+DURATION="$2"
+JUSTIFICATION="$3"
+
+case "$OVERRIDE_TYPE" in
+  "production-down")
+    MAX_DURATION="2h"
+    REQUIRED_APPROVER="engineering-manager"
+    ;;
+  "security-fix")
+    MAX_DURATION="4h"
+    REQUIRED_APPROVER="security-lead"
+    ;;
+  "revenue-blocking")
+    MAX_DURATION="6h"
+    REQUIRED_APPROVER="director"
+    ;;
+  *)
+    echo "Invalid override type. Use: production-down, security-fix, revenue-blocking"
+    exit 1
+    ;;
+esac
+
+# Validate duration doesn't exceed maximum
+# Generate tracking issue
+# Create override commit with auto-expiry
+# Send notifications
+```
+
+### Override Expiry Monitor
+
+```bash
+#!/bin/bash
+# scripts/monitor-overrides.sh - Check for expiring overrides
+
+# Find commits with EMERGENCY_OVERRIDE or SECURITY_OVERRIDE
+# Parse expiry dates
+# Send alerts for approaching expiries
+# Auto-create follow-up issues
+# Generate compliance reports
+```
+
 ## Questions or Concerns
 
-If you have questions about the override process:
-
+### During Business Hours
 1. Contact the security team: security@company.com
 2. Slack: #security-help
 3. Office hours: Thursdays 2-3 PM
 
+### After Hours Emergency
+1. **EMERGENCY**: Call +1-800-ENG-HELP
+2. **URGENT**: Slack #emergency-engineering
+3. **STANDARD**: Create GitHub issue with `urgent-security` label
+
 Remember: **Security overrides are a last resort.** Always try to fix the underlying issue first.
+
+### Override Decision Tree
+
+```
+Is this a true emergency? 
+├─ NO → Use standard exception process (.github/security-exceptions.yml)
+├─ YES → Is production affected?
+    ├─ YES → Use EMERGENCY_OVERRIDE (2-hour max)
+    ├─ NO → Is revenue at risk?
+        ├─ YES → Use revenue-blocking override (6-hour max)
+        ├─ NO → Use standard override process (48-hour max)
+```
