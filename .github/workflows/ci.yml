@@ -217,6 +217,13 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: Coverage fallback notice
+        if: ${{ env.CODECOV_TOKEN == '' }}
+        run: |
+          echo "⚠️  CODECOV_TOKEN not configured - Codecov upload may have been skipped"
+          echo "Coverage reports available locally in htmlcov/"
+          echo "To enable Codecov upload, add CODECOV_TOKEN secret to repository"
+
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest

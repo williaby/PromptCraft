@@ -1,7 +1,7 @@
 {
   "context7_package_mappings": {
     "comment": "Quick reference for Context7 package IDs - bypass resolve-library-id step",
-    "last_updated": "2025-01-04",
+    "last_updated": "2025-01-11",
     "verified_packages": {
       "fastapi": {
         "context7_id": "/tiangolo/fastapi",
@@ -20,6 +20,60 @@
         "trust_score": 9.8,
         "status": "verified",
         "notes": "Official Gradio documentation"
+      },
+      "httpx": {
+        "context7_id": "/encode/httpx",
+        "trust_score": 7.5,
+        "status": "verified",
+        "notes": "HTTP client library"
+      },
+      "numpy": {
+        "context7_id": "/numpy/numpy",
+        "trust_score": 10.0,
+        "status": "verified",
+        "notes": "Numerical computing"
+      },
+      "pyyaml": {
+        "context7_id": "/yaml/pyyaml",
+        "trust_score": 7.4,
+        "status": "verified",
+        "notes": "YAML processing"
+      },
+      "cryptography": {
+        "context7_id": "/pyca/cryptography",
+        "trust_score": 8.0,
+        "status": "verified",
+        "notes": "Core cryptographic operations"
+      },
+      "redis": {
+        "context7_id": "/redis/redis-py",
+        "trust_score": 9.0,
+        "status": "verified",
+        "notes": "Redis Python client"
+      },
+      "python-dotenv": {
+        "context7_id": "/theskumar/python-dotenv",
+        "trust_score": 8.1,
+        "status": "verified",
+        "notes": "Environment config"
+      },
+      "structlog": {
+        "context7_id": "/hynek/structlog",
+        "trust_score": 9.2,
+        "status": "verified",
+        "notes": "Structured logging"
+      },
+      "rich": {
+        "context7_id": "/textualize/rich",
+        "trust_score": 9.4,
+        "status": "verified",
+        "notes": "Rich text formatting"
+      },
+      "tenacity": {
+        "context7_id": "/jd/tenacity",
+        "trust_score": 9.9,
+        "status": "verified",
+        "notes": "Retry mechanisms"
       },
       "pandas": {
         "context7_id": "/pandas-dev/pandas",
@@ -92,40 +146,111 @@
         "trust_score": 9.5,
         "status": "verified",
         "notes": "Distributed testing"
+      },
+      "python-multipart": {
+        "context7_id": "/kludex/python-multipart",
+        "trust_score": 10.0,
+        "status": "verified",
+        "notes": "Multipart form handling"
+      },
+      "python-dateutil": {
+        "context7_id": "/dateutil/dateutil",
+        "trust_score": 7.0,
+        "status": "verified",
+        "notes": "Date utilities"
+      },
+      "aiofiles": {
+        "context7_id": "/tinche/aiofiles",
+        "trust_score": 9.4,
+        "status": "verified",
+        "notes": "Async file operations"
+      },
+      "sentence-transformers": {
+        "context7_id": "/ukplab/sentence-transformers",
+        "trust_score": 7.8,
+        "status": "verified",
+        "notes": "Embedding generation"
+      },
+      "qdrant-client": {
+        "context7_id": "/qdrant/qdrant-client",
+        "trust_score": 9.8,
+        "status": "verified",
+        "notes": "Vector database client"
+      },
+      "spacy": {
+        "context7_id": "/explosion/spacy",
+        "trust_score": 9.9,
+        "status": "verified",
+        "notes": "NLP processing"
+      },
+      "nltk": {
+        "context7_id": "/nltk/nltk",
+        "trust_score": 6.9,
+        "status": "verified",
+        "notes": "Natural language utilities"
+      },
+      "sentry-sdk": {
+        "context7_id": "/getsentry/sentry-python",
+        "trust_score": 9.0,
+        "status": "verified",
+        "notes": "Error monitoring"
+      },
+      "opentelemetry-api": {
+        "context7_id": "/open-telemetry/opentelemetry-python",
+        "trust_score": 9.3,
+        "status": "verified",
+        "notes": "Observability tracing"
+      },
+      "pyjwt": {
+        "context7_id": "/jpadilla/pyjwt",
+        "trust_score": 9.9,
+        "status": "verified",
+        "notes": "JWT handling"
+      },
+      "prometheus-client": {
+        "context7_id": "/prometheus/client_python",
+        "trust_score": 7.4,
+        "status": "verified",
+        "notes": "Metrics collection"
+      },
+      "detect-secrets": {
+        "context7_id": "/yelp/detect-secrets",
+        "trust_score": 8.2,
+        "status": "verified",
+        "notes": "Security scanning"
+      },
+      "black": {
+        "context7_id": "/psf/black",
+        "trust_score": 7.3,
+        "status": "verified",
+        "notes": "Python code formatter"
+      },
+      "ruff": {
+        "context7_id": "/astral-sh/ruff",
+        "trust_score": 9.4,
+        "status": "verified",
+        "notes": "Fast Python linter and formatter"
+      },
+      "mypy": {
+        "context7_id": "/python/mypy",
+        "trust_score": 8.9,
+        "status": "verified",
+        "notes": "Optional static typing for Python"
+      },
+      "bandit": {
+        "context7_id": "/pycqa/bandit",
+        "trust_score": 8.1,
+        "status": "verified",
+        "notes": "Security issue scanner for Python"
       }
     },
     "pending_verification": {
-      "httpx": "HTTP client library",
-      "numpy": "Numerical computing",
-      "pyyaml": "YAML processing",
-      "python-multipart": "Multipart form handling",
-      "sentence-transformers": "Embedding generation",
-      "qdrant-client": "Vector database client",
       "azure-identity": "Azure authentication",
       "azure-keyvault-secrets": "Key Vault secrets",
       "azure-storage-blob": "Azure Blob storage",
-      "cryptography": "Core cryptographic operations",
-      "pyjwt": "JWT handling",
       "python-gnupg": "GPG operations",
-      "black": "Code formatter",
-      "ruff": "Linter",
-      "mypy": "Type checker",
-      "bandit": "Security scanner",
-      "redis": "Caching layer",
-      "prometheus-client": "Metrics collection",
-      "python-dotenv": "Environment config",
-      "structlog": "Structured logging",
-      "rich": "Rich text formatting",
-      "tenacity": "Retry mechanisms",
-      "python-dateutil": "Date utilities",
-      "aiofiles": "Async file operations",
       "asyncer": "Async utilities",
-      "mcp": "MCP protocol client",
-      "spacy": "NLP processing",
-      "nltk": "Natural language utilities",
-      "detect-secrets": "Security scanning",
-      "sentry-sdk": "Error monitoring",
-      "opentelemetry-api": "Observability tracing"
+      "mcp": "MCP protocol client"
     }
   },
   "usage_instructions": {
