@@ -3,19 +3,21 @@
 ## 🚦 When Your PR is Blocked
 
 ### 1. Identify the Issue
+
 ```bash
 # Check which security scan failed
 gh pr checks [PR-NUMBER]
 
 # Look for failed checks:
 # - CodeQL Analysis
-# - dependency-review  
+# - dependency-review
 # - PR Validation
 ```
 
 ### 2. Fix or Request Exception
 
 #### Option A: Fix the Security Issue (Preferred)
+
 ```bash
 # Address the security finding
 # Update dependencies: poetry update
@@ -24,6 +26,7 @@ gh pr checks [PR-NUMBER]
 ```
 
 #### Option B: Request Exception (False Positives)
+
 ```yaml
 # Add to .github/security-exceptions.yml
 - id: "EX-[INCREMENT]"
@@ -39,6 +42,7 @@ gh pr checks [PR-NUMBER]
 ```
 
 #### Option C: Emergency Override (Production Only)
+
 ```bash
 # Use only for true emergencies
 git commit -m "EMERGENCY_OVERRIDE: [BRIEF_REASON]
@@ -49,8 +53,9 @@ JUSTIFICATION: [DETAILED_REASON]"
 ```
 
 ### 3. Get Help
+
 - **Slack**: #security-help
-- **Email**: security-team@company.com
+- **Email**: <security-team@company.com>
 - **Emergency**: +1-800-SEC-HELP
 
 ---
@@ -58,6 +63,7 @@ JUSTIFICATION: [DETAILED_REASON]"
 ## 🛠️ Common Security Issues & Fixes
 
 ### CodeQL Issues
+
 | Issue | Quick Fix |
 |-------|-----------|
 | SQL Injection | Use parameterized queries |
@@ -66,6 +72,7 @@ JUSTIFICATION: [DETAILED_REASON]"
 | Hardcoded Secrets | Use environment variables |
 
 ### Dependency Issues
+
 | Issue | Quick Fix |
 |-------|-----------|
 | Vulnerable Package | `poetry update [package]` |
@@ -73,11 +80,12 @@ JUSTIFICATION: [DETAILED_REASON]"
 | Outdated Dependencies | `poetry update` |
 
 ### Example Fixes
+
 ```python
 # ❌ SQL Injection Risk
 query = f"SELECT * FROM users WHERE id = {user_id}"
 
-# ✅ Safe Parameterized Query  
+# ✅ Safe Parameterized Query
 query = "SELECT * FROM users WHERE id = %s"
 cursor.execute(query, (user_id,))
 
@@ -113,17 +121,18 @@ return f"<div>Hello {html.escape(user_name)}</div>"
 
 ## 🚨 Emergency Override Decision Tree
 
-```
+```text
 Is this a true emergency?
 ├─ NO → Use exception process
 └─ YES → Is production affected?
     ├─ YES → EMERGENCY_OVERRIDE (2h max)
     └─ NO → Is revenue at risk?
-        ├─ YES → Revenue override (6h max)  
+        ├─ YES → Revenue override (6h max)
         └─ NO → Standard override (48h max)
 ```
 
 ### Emergency Override Types
+
 | Type | Duration | Approver | Use Case |
 |------|----------|----------|----------|
 | Production Down | 2 hours | Engineering Manager | System outage |
@@ -135,16 +144,19 @@ Is this a true emergency?
 ## 📞 Quick Contacts
 
 ### During Business Hours
+
 - **Security Help**: #security-help
-- **General Questions**: security-team@company.com
+- **General Questions**: <security-team@company.com>
 - **Office Hours**: Thursdays 2-3 PM
 
 ### After Hours/Emergency
+
 - **Emergency Phone**: +1-800-SEC-HELP
-- **Urgent Slack**: #emergency-engineering  
-- **Email**: engineering-emergency@company.com
+- **Urgent Slack**: #emergency-engineering
+- **Email**: <engineering-emergency@company.com>
 
 ### Key People
+
 - **Security Lead**: @jane-security
 - **DevOps Lead**: @devops-lead
 - **Engineering Manager**: @eng-manager
@@ -179,18 +191,21 @@ python scripts/security-metrics-simple.py
 ## 💡 Pro Tips
 
 ### Prevent Issues Early
+
 1. **Run security checks locally** before pushing
-2. **Keep dependencies updated** regularly  
+2. **Keep dependencies updated** regularly
 3. **Follow secure coding standards**
 4. **Use IDE security plugins** for real-time feedback
 
 ### Speed Up Resolution
+
 1. **Read the error message** carefully
 2. **Check if it's a known false positive** in exceptions file
 3. **Ask in #security-help** before guessing
 4. **Include context** when requesting help
 
 ### Best Practices
+
 1. **Fix real issues** rather than requesting exceptions
 2. **Be specific** in exception justifications
 3. **Set reasonable expiry dates** for exceptions
