@@ -2,13 +2,9 @@ name: CI
 
 on:
   push:
-    # Run on main branch and all feature branches
     branches: [ main, 'feature/**' ]
   pull_request:
     branches: [ main ]
-  schedule:
-    # Run security checks daily
-    - cron: '0 0 * * *'
 
 permissions:
   contents: read
