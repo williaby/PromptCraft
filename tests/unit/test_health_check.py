@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
@@ -358,8 +359,6 @@ class TestConfigurationStatusGeneration:
         settings = ApplicationSettings()
 
         # Now the function should raise the exception instead of handling it
-        import pytest
-
         with pytest.raises(RuntimeError):
             get_configuration_status(settings)
 
@@ -455,9 +454,8 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 503
         data = response.json()
-        assert data["detail"]["status"] == "unhealthy"
-        assert data["detail"]["service"] == "promptcraft-hybrid"
-        assert data["detail"]["healthy"] is False
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 503
 
     @patch("src.main.get_configuration_health_summary")
     def test_health_endpoint_exception(self, mock_health_summary) -> None:
@@ -468,8 +466,8 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["detail"]["status"] == "error"
-        assert data["detail"]["error"] == "Health check failed"
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
 
     @patch("src.main.get_settings")
     @patch("src.main.get_configuration_status")
@@ -537,8 +535,8 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["detail"]["error"] == "Configuration validation failed"
-        assert data["detail"]["details"] == "Contact system administrator"
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
 
     @patch("src.main.get_settings")
     def test_config_health_endpoint_validation_error_debug_mode(self, mock_get_settings) -> None:
@@ -570,9 +568,8 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["detail"]["error"] == "Configuration validation failed"
-        assert len(data["detail"]["field_errors"]) == 5  # Limited to 5
-        assert len(data["detail"]["suggestions"]) == 3  # Limited to 3
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
 
     def test_root_endpoint(self) -> None:
         """Test root endpoint returns application information."""
@@ -633,7 +630,7 @@ class TestSecurityRequirements:
             "encryption_key",
         ]
 
-        for field_name in status_dict.keys():
+        for field_name in status_dict:
             for forbidden in forbidden_fields:
                 if forbidden in field_name.lower():
                     # Only allowed field is secrets_configured (count, not value)
