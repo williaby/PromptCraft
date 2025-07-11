@@ -3,6 +3,8 @@ name: CI Diagnostic Test
 on:
   push:
     branches: [ 'feature/phase-1-issue-CI-1-fix-ci-test-failures' ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
