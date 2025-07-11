@@ -2,11 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
-    # Also run on feature branches for continuous validation
-    branches-ignore: [ 'releases/**', 'hotfix/**' ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
+      - 'feature/**'
+    # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
   schedule:
     # Run security checks daily
     - cron: '0 0 * * *'
