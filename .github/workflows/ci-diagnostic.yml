@@ -54,3 +54,23 @@ jobs:
             echo "Lock file size: $(wc -l poetry.lock 2>/dev/null || echo 'Cannot read')"
             exit 1
           }
+
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: always()
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Simple matrix test
+        run: echo "Testing Python ${{ matrix.python-version }}"
