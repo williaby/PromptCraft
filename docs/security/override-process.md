@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document outlines the process for overriding security gates in emergency situations. Admin overrides should be used sparingly and only when absolutely necessary.
+This document outlines the process for overriding security gates in emergency situations.
+Admin overrides should be used sparingly and only when absolutely necessary.
 
 > **IMPORTANT**: All overrides are time-boxed and require automatic expiration. No override should remain in effect indefinitely.
 
@@ -286,11 +287,13 @@ esac
 ## Questions or Concerns
 
 ### During Business Hours
-1. Contact the security team: security@company.com
+
+1. Contact the security team: <security@company.com>
 2. Slack: #security-help
 3. Office hours: Thursdays 2-3 PM
 
 ### After Hours Emergency
+
 1. **EMERGENCY**: Call +1-800-ENG-HELP
 2. **URGENT**: Slack #emergency-engineering
 3. **STANDARD**: Create GitHub issue with `urgent-security` label
@@ -299,8 +302,8 @@ Remember: **Security overrides are a last resort.** Always try to fix the underl
 
 ### Override Decision Tree
 
-```
-Is this a true emergency? 
+```text
+Is this a true emergency?
 ├─ NO → Use standard exception process (.github/security-exceptions.yml)
 ├─ YES → Is production affected?
     ├─ YES → Use EMERGENCY_OVERRIDE (2-hour max)

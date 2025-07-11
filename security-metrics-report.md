@@ -1,7 +1,7 @@
 # Security Gate Metrics Report
 
 **Period**: Last 7 days
-**Generated**: 2025-07-11 00:08:46 UTC
+**Generated**: 2025-07-11 00:09:36 UTC
 **Repository**: williaby/PromptCraft
 
 ## Executive Summary
