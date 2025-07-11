@@ -135,7 +135,7 @@ jobs:
           echo "PROMPTCRAFT_REDIS_HOST=localhost" >> $GITHUB_ENV
           echo "PROMPTCRAFT_QDRANT_HOST=localhost" >> $GITHUB_ENV
           echo "PROMPTCRAFT_ENABLE_SERVICE_MOCKING=true" >> $GITHUB_ENV
-          echo "🔧 CI environment configured with service mocking"
+          echo "CI environment configured with service mocking"
 
       - name: Start Redis service for testing
         run: |
@@ -150,7 +150,7 @@ jobs:
 
       - name: Run safety check
         run: |
-          echo "🔒 Running dependency vulnerability scan"
+          echo "Running dependency vulnerability scan"
           poetry run safety check --json || {
             echo "::warning::Safety vulnerability scan found issues"
             echo "This is expected in development - review findings and update dependencies"
@@ -161,7 +161,7 @@ jobs:
 
       - name: Run bandit security scan
         run: |
-          echo "🛡️  Running Bandit security analysis"
+          echo "Running Bandit security analysis"
           poetry run bandit -r src -ll -f json -o bandit-report.json || {
             echo "::warning::Bandit security scan found issues"
             echo "Bandit version: $(poetry run bandit --version)"
@@ -243,7 +243,7 @@ jobs:
 
       - name: Run tests with service mocking
         run: |
-          echo "🧪 Running tests with CI environment configuration"
+          echo "Running tests with CI environment configuration"
           poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing || {
             echo "::error::Test execution failed. Debug info:"
             echo "Python version: $(python --version)"
@@ -277,7 +277,7 @@ jobs:
 
       - name: Run linting
         run: |
-          echo "🔍 Running code formatting and linting checks"
+          echo "Running code formatting and linting checks"
           poetry run black . --check || {
             echo "::error::Black formatting check failed"
             echo "Run 'poetry run black .' to fix formatting"
@@ -288,7 +288,7 @@ jobs:
             echo "Run 'poetry run ruff check --fix .' to fix auto-fixable issues"
             exit 1
           }
-          echo "✅ All linting checks passed"
+          echo "All linting checks passed"
 
       - name: Upload coverage to Codecov
         if: secrets.CODECOV_TOKEN
