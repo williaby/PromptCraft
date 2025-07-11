@@ -16,10 +16,15 @@ permissions:
   issues: write
   packages: write
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-check:
     name: Verify Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -162,6 +167,7 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Security scan should not block CI pipeline
     continue-on-error: true
     steps:
@@ -305,6 +311,7 @@ jobs:
   test:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # Remove hard dependency to prevent cascading failures
     # Tests can run independently of dependency-check
     if: always()
@@ -477,6 +484,7 @@ jobs:
           echo "✅ All linting checks passed"
 
       - name: Upload coverage to Codecov
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -487,6 +495,7 @@ jobs:
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     # Allow Docker build even if security-scan fails (non-critical)
     # Only require test success for Docker build
     needs: [test]

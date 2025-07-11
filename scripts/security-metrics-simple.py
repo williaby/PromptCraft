@@ -2,14 +2,14 @@
 """Simple security metrics collection script for testing purposes."""
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def main() -> None:
     """Generate a basic security metrics report."""
     print("Security Metrics Collection")
     print("=" * 30)
-    print(f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    print(f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print()
 
     # Check for required environment variables
@@ -23,7 +23,7 @@ def main() -> None:
     report = f"""# Security Gate Metrics Report
 
 **Period**: Last 7 days
-**Generated**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Generated**: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
 **Repository**: williaby/PromptCraft
 
 ## Executive Summary
