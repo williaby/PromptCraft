@@ -271,7 +271,7 @@ jobs:
             echo "Python version: $(python --version)"
             echo "Source files count: $(find src -name '*.py' | wc -l)"
             echo "MyPy configuration:"
-            cat pyproject.toml | grep -A 10 "\[tool.mypy\]" || echo "No MyPy config found in pyproject.toml"
+            cat pyproject.toml | grep -A 10 '\[tool.mypy\]' || echo "No MyPy config found in pyproject.toml"
             exit 1
           }
 
