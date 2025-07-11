@@ -482,7 +482,6 @@ jobs:
           echo "✅ All linting checks passed"
 
       - name: Upload coverage to Codecov
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -491,9 +490,8 @@ jobs:
         continue-on-error: true
 
       - name: Coverage fallback notice
-        if: ${{ secrets.CODECOV_TOKEN == '' }}
         run: |
-          echo "⚠️  CODECOV_TOKEN not set - skipping Codecov upload"
+          echo "⚠️  CODECOV_TOKEN not configured - Codecov upload may have been skipped"
           echo "Coverage reports available locally in htmlcov/"
           echo "To enable Codecov upload, add CODECOV_TOKEN secret to repository"
 
