@@ -1,0 +1,219 @@
+name: CI Copy Test
+
+on:
+  push:
+    branches: [ main, 'feature/**' ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  packages: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-check:
+    name: Verify Dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
+
+      - name: Verify poetry.lock is up to date
+        run: |
+          poetry check --lock || {
+            echo "::error::Poetry lock check failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+            echo "Lock file size: $(wc -l poetry.lock 2>/dev/null || echo 'Cannot read')"
+            exit 1
+          }
+
+      - name: Install dependencies for export
+        run: |
+          poetry install || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            echo "Poetry config: $(poetry config --list | head -5)"
+            exit 1
+          }
+
+      - name: Export requirements with hashes
+        run: |
+          ./scripts/generate_requirements.sh || {
+            echo "::error::Requirements generation failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Working directory: $(pwd)"
+            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+            echo "Dependencies count: $(poetry show 2>/dev/null | wc -l || echo 'Failed to list')"
+            exit 1
+          }
+
+      - name: Verify requirements.txt hasn't changed
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git diff --exit-code requirements*.txt || {
+            echo "::error::requirements files are out of sync."
+            echo "Run ./scripts/generate_requirements.sh and commit the changes."
+            exit 1
+          }
+
+      - name: Test pip installation with hash verification
+        run: |
+          python -m venv test-env
+          source test-env/bin/activate
+          pip install --require-hashes -r requirements.txt
+          deactivate
+          rm -rf test-env
+
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Remove hard dependency to prevent cascading failures
+    # Tests can run independently of dependency-check
+    if: always()
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies for export
+        run: |
+          poetry install --no-interaction --no-ansi || {
+            echo "::error::Poetry install failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            exit 1
+          }
+
+      - name: Export and install dependencies with hash verification
+        run: |
+          poetry export --format=requirements.txt --output=requirements-ci.txt || {
+            echo "::error::Poetry export failed. Debug info:"
+            echo "Poetry version: $(poetry --version)"
+            echo "Python version: $(python --version)"
+            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
+            echo "Poetry environment: $(poetry env info --path 2>/dev/null || echo 'No poetry env')"
+            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
+            echo "Dependencies count: $(poetry show 2>/dev/null | wc -l || echo 'Failed to list')"
+            echo "Available export options:"
+            poetry export --help | grep -E "(format|output|with|without)"
+            exit 1
+          }
+          poetry run pip install --require-hashes -r requirements-ci.txt
+
+      - name: Run tests with service mocking
+        run: |
+          echo "Running tests with CI environment configuration"
+          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing || {
+            echo "::error::Test execution failed. Debug info:"
+            echo "Python version: $(python --version)"
+            echo "Pytest version: $(poetry run pytest --version)"
+            echo "Test discovery:"
+            poetry run pytest --collect-only --quiet 2>/dev/null | head -20 || echo "Failed to discover tests"
+            echo "Environment variables:"
+            env | grep -E "(CI_|REDIS_|QDRANT_|ENABLE_)" | sort
+            echo "Service connectivity check:"
+            redis-cli ping 2>/dev/null || echo "Redis not accessible"
+            curl -s http://localhost:6333/health 2>/dev/null || echo "Qdrant not accessible"
+            exit 1
+          }
+        env:
+          CI_ENVIRONMENT: true
+          PROMPTCRAFT_REDIS_HOST: localhost
+          PROMPTCRAFT_QDRANT_HOST: localhost
+          PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
+
+      - name: Run type checking
+        run: |
+          poetry run mypy src || {
+            echo "::error::Type checking failed. Debug info:"
+            echo "MyPy version: $(poetry run mypy --version)"
+            echo "Python version: $(python --version)"
+            echo "Source files count: $(find src -name '*.py' | wc -l)"
+            echo "MyPy configuration:"
+            cat pyproject.toml | grep -A 10 '\[tool.mypy\]' || echo "No MyPy config found in pyproject.toml"
+            exit 1
+          }
+
+      - name: Run linting
+        run: |
+          echo "Running code formatting and linting checks"
+          poetry run black . --check || {
+            echo "::error::Black formatting check failed"
+            echo "Run 'poetry run black .' to fix formatting"
+            exit 1
+          }
+          poetry run ruff check . || {
+            echo "::error::Ruff linting check failed"
+            echo "Run 'poetry run ruff check --fix .' to fix auto-fixable issues"
+            exit 1
+          }
+          echo "All linting checks passed"
+
+      - name: Upload coverage to Codecov
+        if: secrets.CODECOV_TOKEN
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
