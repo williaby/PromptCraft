@@ -1,10 +1,29 @@
 #!/bin/bash
+set -euo pipefail  # Fail on errors, undefined vars, pipe failures
 # Shared model utilities for slash commands
 # Provides model name conversion and configuration management
+
+# Validate model name contains only safe characters
+validate_model_name() {
+    local model="$1"
+    # Ensure model name contains only safe characters: letters, numbers, /, -, :
+    if [[ "$model" =~ ^[a-zA-Z0-9/_:-]+$ ]]; then
+        return 0
+    else
+        echo "⚠️  Invalid model name: $model" >&2
+        return 1
+    fi
+}
 
 # Convert user-friendly model names to proper OpenRouter format
 convert_model_name() {
     local model_name="$1"
+
+    # Validate input first
+    if ! validate_model_name "$model_name"; then
+        echo "deepseek/deepseek-chat-v3-0324:free"  # Safe fallback
+        return 1
+    fi
     case "$model_name" in
         # Anthropic Claude models
         "opus"|"opus-4"|"claude-opus") echo "anthropic/claude-opus-4" ;;
@@ -113,7 +132,10 @@ get_fallback_chain() {
 # Select best available model from a chain
 select_available_model() {
     local model_chain="$1"
-    for model in $model_chain; do
+    local model_array
+    read -ra model_array <<< "$model_chain"
+
+    for model in "${model_array[@]}"; do
         if zen_test_model "$model" 2>/dev/null; then
             echo "$model"
             return 0
@@ -164,19 +186,19 @@ smart_model_select() {
 zen_mcp_call() {
     local model="$1"
     shift
-    local args="$@"
+    local args=("$@")
 
     echo "🤖 Calling $model via Zen MCP..."
 
     # Attempt the call with timeout and error handling
-    if ! timeout 300s zen chat --model="$model" $args; then
+    if ! timeout 300s zen chat --model="$model" "${args[@]}"; then
         echo "⚠️  Call failed for $model, trying fallback..."
 
         # Try a free fallback
         local fallback_model="deepseek/deepseek-chat-v3-0324:free"
         if [[ "$model" != "$fallback_model" ]]; then
             echo "🔄 Retrying with fallback: $fallback_model"
-            timeout 300s zen chat --model="$fallback_model" $args
+            timeout 300s zen chat --model="$fallback_model" "${args[@]}"
         else
             echo "❌ Both primary and fallback models failed"
             return 1
@@ -229,6 +251,7 @@ zen_mcp_consensus() {
 }
 
 # Export functions for use in slash commands
+export -f validate_model_name
 export -f convert_model_name
 export -f get_model_override
 export -f zen_test_model
