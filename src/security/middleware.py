@@ -140,7 +140,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         for header_name, header_value in security_headers.items():
             response.headers[header_name] = header_value
 
-        return response
+        # Cast to Response type for MyPy
+        from typing import cast
+
+        from starlette.responses import Response as StarletteResponse
+
+        return cast(StarletteResponse, response)
 
     def _get_security_headers(self) -> dict[str, str]:
         """Get security headers based on environment.
@@ -255,7 +260,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Add timing header
         response.headers["X-Process-Time"] = str(process_time)
 
-        return response
+        # Cast to Response type for MyPy
+        from typing import cast
+
+        from starlette.responses import Response as StarletteResponse
+
+        return cast(StarletteResponse, response)
 
     def _log_request(self, request: Request) -> None:
         """Log incoming request details for security monitoring.
