@@ -207,13 +207,15 @@ jobs:
           echo "All linting checks passed"
 
       - name: Upload coverage to Codecov
-        if: secrets.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }}
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-docker:
     name: Build Docker Image
