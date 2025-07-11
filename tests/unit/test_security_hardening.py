@@ -20,7 +20,8 @@ from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 
 from src.config.health import get_configuration_health_summary
-from src.main import app
+from src.config.settings import ApplicationSettings, ConfigurationValidationError, get_settings
+from src.main import app, create_app, lifespan
 from src.security.audit_logging import (
     AuditEvent,
     AuditEventSeverity,
@@ -827,7 +828,6 @@ class TestMiddlewareExtended:
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
 
-
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
 
@@ -873,7 +873,6 @@ class TestMiddlewareExtended:
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "staging"
-
 
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
@@ -1024,7 +1023,6 @@ class TestConfigurationCoverage:
 
     def test_settings_access_in_handlers(self):
         """Test settings access patterns used in handlers."""
-        from src.config.settings import get_settings
 
         # Test settings access (as used in error handlers and middleware)
         settings = get_settings(validate_on_startup=False)
@@ -1075,8 +1073,6 @@ class TestMainErrorHandling:
     @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error(self):
         """Test lifespan handling of configuration validation errors."""
-        from src.config.settings import ConfigurationValidationError
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1096,7 +1092,6 @@ class TestMainErrorHandling:
     @pytest.mark.asyncio
     async def test_lifespan_unexpected_error(self):
         """Test lifespan handling of unexpected errors."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1111,7 +1106,6 @@ class TestMainErrorHandling:
 
     def test_create_app_settings_format_error(self):
         """Test create_app handling of settings format errors."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_get_settings:
             # Mock format error (ValueError, TypeError, AttributeError)
@@ -1124,7 +1118,6 @@ class TestMainErrorHandling:
 
     def test_create_app_general_exception(self):
         """Test create_app handling of general exceptions."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_get_settings:
             # Mock general exception
@@ -1183,8 +1176,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
-
+    
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = True
@@ -1212,8 +1204,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
-
+    
             # First call raises validation error, second call returns production settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = False
@@ -1241,8 +1232,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
-
+    
             # First call fails with validation error
             # Second call (for debug check) also fails
             mock_get_settings.side_effect = [
@@ -1668,7 +1658,6 @@ class TestLifespanCoverage:
     @pytest.mark.asyncio
     async def test_lifespan_successful_startup_shutdown(self):
         """Test successful lifespan startup and shutdown cycle."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1695,8 +1684,6 @@ class TestLifespanCoverage:
     @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error_with_audit(self):
         """Test lifespan configuration error handling with audit logging."""
-        from src.config.settings import ConfigurationValidationError
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1726,7 +1713,6 @@ class TestLifespanCoverage:
     @pytest.mark.asyncio
     async def test_lifespan_unexpected_error_with_audit(self):
         """Test lifespan unexpected error handling with audit logging."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1833,7 +1819,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_with_type_error(self):
         """Test create_app handling TypeError in settings."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_settings:
             mock_settings.side_effect = TypeError("Type error in settings")
@@ -1844,7 +1829,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_with_attribute_error(self):
         """Test create_app handling AttributeError in settings."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_settings:
             mock_settings.side_effect = AttributeError("Missing attribute in settings")
@@ -1855,7 +1839,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_cors_configuration_environments(self):
         """Test CORS configuration for different environments."""
-        from src.main import create_app
 
         environments = ["dev", "staging", "prod", "test"]
 
@@ -1986,8 +1969,7 @@ class TestCoverageImprovements:
         # Test health endpoint when configuration validation has extensive errors
         with patch("src.main.get_configuration_health_summary") as mock_health:
             with patch("src.main.get_settings") as mock_settings:
-                from src.config.settings import ConfigurationValidationError
-
+        
                 # Mock extensive validation errors
                 extensive_errors = [f"Error {i}" for i in range(20)]
                 extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
