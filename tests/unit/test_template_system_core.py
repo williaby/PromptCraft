@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from src.core.template_system_core import (
     TemplateManager,
@@ -286,7 +287,7 @@ class TestTemplateSchema:
             # Missing required fields
         }
 
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError):
             TemplateSchema(**data)
 
     def test_schema_with_defaults(self):

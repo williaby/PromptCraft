@@ -139,9 +139,8 @@ class TestEnvironmentValidation:
 
         # In test environment, should generally pass
         if not success:
-            # Log errors for debugging
-            for error in errors:
-                print(f"System requirement error: {error}")
+            # Log errors for debugging (errors available in 'errors' list)
+            pass
 
 
 class TestEdgeCases:

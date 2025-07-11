@@ -19,6 +19,7 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 
+from src.config.health import get_configuration_health_summary
 from src.main import app
 from src.security.audit_logging import (
     AuditEvent,
@@ -80,7 +81,7 @@ class TestRateLimiting:
             result = get_client_identifier(request)
             assert result == "127.0.0.1"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_rate_limit_exceeded_handler(self):
         """Test rate limit exceeded handler response."""
         request = Mock(spec=Request)
@@ -266,7 +267,7 @@ class TestSecurityHeaders:
         middleware = SecurityHeadersMiddleware(app_mock)
         assert middleware.csp_policy is not None
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_security_headers_added(self):
         """Test that security headers are added to responses."""
         with TestClient(app) as client:
@@ -540,7 +541,7 @@ class TestSecurityCompliance:
 class TestSecurityErrorHandlers:
     """Extended tests for secure error handling."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_development(self):
         """Test secure error response in development mode."""
         from unittest.mock import patch
@@ -567,7 +568,7 @@ class TestSecurityErrorHandlers:
             assert "debug" in content
             assert "error_type" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_production(self):
         """Test secure error response in production mode."""
         from unittest.mock import patch
@@ -600,7 +601,7 @@ class TestSecurityErrorHandlers:
             assert "Internal error details" not in content
             assert "Internal server error" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_http_exception_handler(self):
         """Test HTTP exception handler."""
         request = Mock(spec=Request)
@@ -613,7 +614,7 @@ class TestSecurityErrorHandlers:
         response = await http_exception_handler(request, exc)
         assert response.status_code == 404
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_development(self):
         """Test validation exception handler in development."""
         from unittest.mock import patch
@@ -640,7 +641,7 @@ class TestSecurityErrorHandlers:
             content = response.body.decode()
             assert "validation_errors" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_production(self):
         """Test validation exception handler in production."""
         from unittest.mock import patch
@@ -662,7 +663,7 @@ class TestSecurityErrorHandlers:
             assert "Invalid request data" in content
             assert "validation_errors" not in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_general_exception_handler(self):
         """Test general exception handler."""
         request = Mock(spec=Request)
@@ -1089,7 +1090,7 @@ class TestConfigurationCoverage:
 class TestMainErrorHandling:
     """Test error handling paths in main.py."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error(self):
         """Test lifespan handling of configuration validation errors."""
         from src.config.settings import ConfigurationValidationError
@@ -1110,7 +1111,7 @@ class TestMainErrorHandling:
                 async with lifespan(test_app):
                     pass
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error(self):
         """Test lifespan handling of unexpected errors."""
         from src.main import lifespan
@@ -1152,7 +1153,7 @@ class TestMainErrorHandling:
             assert app is not None
             assert app.title == "PromptCraft-Hybrid"  # Default from ApplicationSettings
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_unhealthy_configuration(self):
         """Test health check when configuration is unhealthy."""
         client = TestClient(app)
@@ -1175,7 +1176,7 @@ class TestMainErrorHandling:
             assert "status" in data["debug"]["error_message"]
             assert "unhealthy" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_exception_handling(self):
         """Test health check exception handling."""
         client = TestClient(app)
@@ -1194,7 +1195,7 @@ class TestMainErrorHandling:
             assert "status" in data["debug"]["error_message"]
             assert "error" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_debug_mode(self):
         """Test configuration health endpoint with validation error in debug mode."""
         client = TestClient(app)
@@ -1223,7 +1224,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_production_mode(self):
         """Test configuration health endpoint with validation error in production mode."""
         client = TestClient(app)
@@ -1252,7 +1253,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_debug_mode_exception(self):
         """Test configuration health when debug mode check fails."""
         client = TestClient(app)
@@ -1280,7 +1281,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_general_exception(self):
         """Test configuration health endpoint with general exception."""
         client = TestClient(app)
@@ -1298,7 +1299,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration health check failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_root_endpoint_fallback(self):
         """Test root endpoint fallback when settings not in app state."""
         client = TestClient(app)
@@ -1682,7 +1683,7 @@ class TestRateLimitingEdgeCases:
 class TestLifespanCoverage:
     """Test lifespan function coverage for startup and shutdown scenarios."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_successful_startup_shutdown(self):
         """Test successful lifespan startup and shutdown cycle."""
         from src.main import lifespan
@@ -1709,7 +1710,7 @@ class TestLifespanCoverage:
                 # Verify audit events were logged
                 assert mock_logger.log_security_event.call_count >= 2  # Startup and shutdown
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error_with_audit(self):
         """Test lifespan configuration error handling with audit logging."""
         from src.config.settings import ConfigurationValidationError
@@ -1740,7 +1741,7 @@ class TestLifespanCoverage:
                 ]
                 assert len(validation_calls) > 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error_with_audit(self):
         """Test lifespan unexpected error handling with audit logging."""
         from src.main import lifespan
@@ -1821,14 +1822,15 @@ class TestMainScriptExecution:
                     exec(compile(open("src/main.py").read(), "src/main.py", "exec"))
                 except SystemExit:
                     pass  # Expected due to configuration error
-                except Exception:
-                    pass  # Other exceptions are fine for this test
+                except Exception as e:
+                    # Log exception for debugging if needed
+                    print(f"Caught exception during test: {e}")
 
     def test_main_script_os_error(self):
         """Test main script handling of OS errors."""
 
         with patch("src.main.get_settings") as mock_settings:
-            with patch("sys.exit") as mock_exit:
+            with patch("sys.exit"):
                 with patch("uvicorn.run") as mock_uvicorn:
                     # Mock settings to pass validation
                     mock_settings_obj = Mock()
@@ -2072,8 +2074,6 @@ class TestConfigurationModuleCoverage:
 
     def test_health_configuration_error_scenarios(self):
         """Test configuration health error scenarios."""
-        from src.config.health import get_configuration_health_summary
-
         with patch("src.config.health.get_settings") as mock_get_settings:
             # Test configuration error handling
             mock_get_settings.side_effect = Exception("Configuration error")
@@ -2134,23 +2134,15 @@ class TestUtilsModuleCoverage:
             assert True
         except Exception:
             # Other exceptions should not occur
-            assert False, "Unexpected exception in key validation"
+            pytest.fail("Unexpected exception in key validation")
 
     def test_encryption_ssh_key_validation(self):
         """Test SSH key validation through environment validation."""
         from src.utils.encryption import EncryptionError, validate_environment_keys
 
         # Test that function exists and validates SSH properly
-        try:
+        with pytest.raises(EncryptionError, match="SSH|signing|GPG"):
             validate_environment_keys()
-            # If we reach here, validation passed (including SSH)
-            assert True
-        except EncryptionError as e:
-            # Expected in test environment - ensure SSH is mentioned in error
-            assert "SSH" in str(e) or "signing" in str(e) or "GPG" in str(e)
-        except Exception:
-            # Other exceptions should not occur
-            assert False, "Unexpected exception in SSH validation"
 
 
 class TestAdditionalSecurityCoverage:
