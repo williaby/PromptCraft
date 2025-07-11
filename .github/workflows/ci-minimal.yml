@@ -1,0 +1,13 @@
+name: CI Minimal Test
+
+on:
+  push:
+    branches: [ 'feature/phase-1-issue-CI-1-fix-ci-test-failures' ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: echo "Hello World"
