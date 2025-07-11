@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Configuration
-REPO_OWNER="${GITHUB_REPOSITORY_OWNER:-promptcraft-hybrid}"
+REPO_OWNER="${GITHUB_REPOSITORY_OWNER:-williaby}"
 REPO_NAME="${GITHUB_REPOSITORY_NAME:-PromptCraft}"
 BRANCH="${BRANCH:-main}"
 ENFORCE_ADMINS="${ENFORCE_ADMINS:-false}"
@@ -80,7 +80,6 @@ configure_protection() {
     },
     "enforce_admins": ${ENFORCE_ADMINS},
     "required_pull_request_reviews": {
-        "dismissal_restrictions": {},
         "dismiss_stale_reviews": true,
         "require_code_owner_reviews": true,
         "required_approving_review_count": 1,
