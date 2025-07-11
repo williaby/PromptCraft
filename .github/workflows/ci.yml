@@ -499,7 +499,7 @@ jobs:
     # Allow Docker build even if security-scan fails (non-critical)
     # Only require test success for Docker build
     needs: [test]
-    if: github.event_name == 'push' && always()
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
