@@ -38,6 +38,7 @@ from src.security.error_handlers import (
 )
 from src.security.input_validation import (
     SecureEmailField,
+    SecureFileUpload,
     SecurePathField,
     SecureQueryParams,
     SecureStringField,
@@ -47,8 +48,10 @@ from src.security.input_validation import (
 from src.security.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from src.security.rate_limiting import (
     RateLimits,
+    create_limiter,
     get_client_identifier,
     get_rate_limit_for_endpoint,
+    rate_limit,
     rate_limit_exceeded_handler,
 )
 
@@ -544,7 +547,6 @@ class TestSecurityErrorHandlers:
     @pytest.mark.asyncio
     async def test_create_secure_error_response_development(self):
         """Test secure error response in development mode."""
-        from unittest.mock import patch
 
         # Mock request
         request = Mock(spec=Request)
@@ -571,7 +573,6 @@ class TestSecurityErrorHandlers:
     @pytest.mark.asyncio
     async def test_create_secure_error_response_production(self):
         """Test secure error response in production mode."""
-        from unittest.mock import patch
 
         # Mock request
         request = Mock(spec=Request)
@@ -617,7 +618,6 @@ class TestSecurityErrorHandlers:
     @pytest.mark.asyncio
     async def test_validation_exception_handler_development(self):
         """Test validation exception handler in development."""
-        from unittest.mock import patch
 
         request = Mock(spec=Request)
         request.url.path = "/api/test"
@@ -644,7 +644,6 @@ class TestSecurityErrorHandlers:
     @pytest.mark.asyncio
     async def test_validation_exception_handler_production(self):
         """Test validation exception handler in production."""
-        from unittest.mock import patch
 
         request = Mock(spec=Request)
         request.url.path = "/api/test"
@@ -690,7 +689,6 @@ class TestSecurityErrorHandlers:
 
     def test_setup_secure_error_handlers(self):
         """Test error handler setup."""
-        from fastapi import FastAPI
 
         app_mock = Mock(spec=FastAPI)
 
@@ -705,7 +703,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_model(self):
         """Test SecureFileUpload model validation."""
-        from src.security.input_validation import SecureFileUpload
 
         # Test valid file upload
         valid_data = {
@@ -717,7 +714,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_dangerous_filename(self):
         """Test rejection of dangerous filenames."""
-        from src.security.input_validation import SecureFileUpload
 
         dangerous_filenames = ["script.exe", "malware.bat", "virus.js", "backdoor.php", "shell.sh", "exploit.py"]
 
@@ -727,7 +723,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_invalid_filename_chars(self):
         """Test rejection of invalid filename characters."""
-        from src.security.input_validation import SecureFileUpload
 
         invalid_filenames = [
             "file with spaces.txt",  # Spaces not allowed
@@ -737,12 +732,11 @@ class TestInputValidationExtended:
         ]
 
         for filename in invalid_filenames:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="filename|invalid"):
                 SecureFileUpload(filename=filename, content_type="text/plain")
 
     def test_secure_file_upload_invalid_content_type(self):
         """Test rejection of invalid content types."""
-        from src.security.input_validation import SecureFileUpload
 
         invalid_types = [
             "application/x-executable",
@@ -753,7 +747,7 @@ class TestInputValidationExtended:
         ]
 
         for content_type in invalid_types:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="content_type|invalid"):
                 SecureFileUpload(filename="test.txt", content_type=content_type)
 
     def test_secure_string_field_validators_direct(self):
@@ -796,16 +790,12 @@ class TestRateLimitingExtended:
 
     def test_create_limiter_production_environment(self):
         """Test limiter creation in production environment."""
-        from unittest.mock import patch
 
         with patch("src.security.rate_limiting.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
             mock_settings.return_value.redis_host = "redis.example.com"
             mock_settings.return_value.redis_port = 6379
             mock_settings.return_value.redis_db = 1
-
-            # Import after patching
-            from src.security.rate_limiting import create_limiter
 
             limiter = create_limiter()
             assert limiter is not None
@@ -823,7 +813,6 @@ class TestRateLimitingExtended:
 
     def test_rate_limit_decorator_function(self):
         """Test rate limit decorator creation."""
-        from src.security.rate_limiting import rate_limit
 
         decorator = rate_limit("30/minute")
         assert callable(decorator)
@@ -834,12 +823,10 @@ class TestMiddlewareExtended:
 
     def test_security_headers_middleware_production_csp(self):
         """Test CSP policy in production environment."""
-        from unittest.mock import patch
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
 
-            from src.security.middleware import SecurityHeadersMiddleware
 
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
@@ -850,7 +837,6 @@ class TestMiddlewareExtended:
 
     def test_request_logging_middleware_slow_request(self):
         """Test logging of slow requests."""
-        from unittest.mock import patch
 
         app_mock = Mock()
         middleware = RequestLoggingMiddleware(app_mock)
@@ -884,12 +870,10 @@ class TestMiddlewareExtended:
 
     def test_security_headers_staging_environment(self):
         """Test security headers in staging environment."""
-        from unittest.mock import patch
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "staging"
 
-            from src.security.middleware import SecurityHeadersMiddleware
 
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
@@ -1050,7 +1034,6 @@ class TestConfigurationCoverage:
 
     def test_rate_limiting_redis_configuration(self):
         """Test Redis configuration for rate limiting."""
-        from unittest.mock import patch
 
         from src.security.rate_limiting import create_limiter
 
@@ -1073,7 +1056,6 @@ class TestConfigurationCoverage:
 
     def test_middleware_environment_detection(self):
         """Test middleware environment detection."""
-        from unittest.mock import patch
 
         from src.security.middleware import SecurityHeadersMiddleware
 
@@ -2169,8 +2151,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_middleware_environment_variations(self):
         """Test middleware with different environment configurations."""
-        from src.security.middleware import SecurityHeadersMiddleware
-
         environments = ["dev", "staging", "prod", "test"]
 
         for env in environments:
@@ -2190,11 +2170,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_input_validation_comprehensive_edge_cases(self):
         """Test comprehensive edge cases for input validation."""
-        from src.security.input_validation import (
-            SecureEmailField,
-            SecurePathField,
-            SecureStringField,
-        )
 
         # Test various input types
         test_cases = [
@@ -2236,8 +2211,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_audit_logging_comprehensive_scenarios(self):
         """Test comprehensive audit logging scenarios."""
-        from src.security.audit_logging import AuditEvent, AuditEventSeverity, AuditEventType, AuditLogger
-
         # Test all event types
         event_types = [
             AuditEventType.AUTH_LOGIN_SUCCESS,
