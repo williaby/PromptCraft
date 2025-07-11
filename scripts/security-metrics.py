@@ -2,11 +2,13 @@
 """
 Security Gate Metrics Collection and Reporting
 
-This script collects metrics about security gate effectiveness, including:
+This script collects comprehensive metrics about security gate effectiveness, including:
 - Security scan pass/fail rates
-- Exception usage
-- Admin override frequency
-- PR blocking statistics
+- Exception usage and false positive tracking
+- Admin override frequency and patterns
+- PR blocking statistics and developer impact
+- Performance metrics and workflow disruption analysis
+- Trend analysis and recommendations
 """
 
 import json
@@ -30,7 +32,7 @@ class SecurityMetricsCollector:
             print("Error: GITHUB_TOKEN environment variable not set")
             sys.exit(1)
 
-        self.repo = os.environ.get("GITHUB_REPOSITORY", "promptcraft-hybrid/PromptCraft")
+        self.repo = os.environ.get("GITHUB_REPOSITORY", "williaby/PromptCraft")
         self.headers = {"Authorization": f"token {self.token}", "Accept": "application/vnd.github.v3+json"}
         self.base_url = "https://api.github.com"
 
@@ -104,6 +106,144 @@ class SecurityMetricsCollector:
 
         return override_count
 
+    def _analyze_false_positives(self, since: datetime) -> dict[str, Any]:
+        """Analyze false positive patterns from exceptions and overrides."""
+        false_positive_metrics = {
+            "total_false_positives": 0,
+            "by_tool": defaultdict(int),
+            "by_rule": defaultdict(int),
+            "resolution_time": [],
+            "patterns": []
+        }
+        
+        # Analyze exceptions marked as false positives
+        exceptions = self._load_exceptions()
+        for exception in exceptions:
+            if exception.get("type") == "false-positive":
+                approved_date = exception.get("approved_date")
+                if approved_date and datetime.fromisoformat(approved_date) > since:
+                    false_positive_metrics["total_false_positives"] += 1
+                    false_positive_metrics["by_tool"][exception.get("tool", "unknown")] += 1
+                    false_positive_metrics["by_rule"][exception.get("rule", "unknown")] += 1
+        
+        # Analyze override commits for false positive mentions
+        override_count = 0
+        page = 1
+        
+        while True:
+            params = {"since": since.isoformat(), "per_page": 100, "page": page}
+            commits = self._make_request(f"/repos/{self.repo}/commits", params)
+            
+            if not commits:
+                break
+                
+            for commit in commits:
+                message = commit.get("commit", {}).get("message", "")
+                if "false positive" in message.lower() or "SECURITY_OVERRIDE" in message:
+                    false_positive_metrics["total_false_positives"] += 1
+                    # Extract tool and rule information from commit message if possible
+                    
+            page += 1
+            
+        return false_positive_metrics
+
+    def _analyze_developer_impact(self, prs: list[dict[str, Any]]) -> dict[str, Any]:
+        """Analyze developer workflow impact from security gates."""
+        impact_metrics = {
+            "average_pr_duration": 0,
+            "blocked_pr_duration": 0,
+            "security_fix_time": [],
+            "developer_friction_score": 0,
+            "workflow_disruption": {
+                "minor": 0,  # <2 hours
+                "moderate": 0,  # 2-24 hours
+                "severe": 0  # >24 hours
+            }
+        }
+        
+        pr_durations = []
+        blocked_pr_durations = []
+        
+        for pr in prs:
+            if pr.get("created_at") and pr.get("merged_at"):
+                created = datetime.fromisoformat(pr["created_at"].replace("Z", "+00:00"))
+                merged = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
+                duration_hours = (merged - created).total_seconds() / 3600
+                pr_durations.append(duration_hours)
+                
+                # Check if PR was blocked by security gates
+                if self._was_pr_blocked_by_security(pr):
+                    blocked_pr_durations.append(duration_hours)
+                    
+                    # Categorize disruption level
+                    if duration_hours < 2:
+                        impact_metrics["workflow_disruption"]["minor"] += 1
+                    elif duration_hours < 24:
+                        impact_metrics["workflow_disruption"]["moderate"] += 1
+                    else:
+                        impact_metrics["workflow_disruption"]["severe"] += 1
+        
+        if pr_durations:
+            impact_metrics["average_pr_duration"] = sum(pr_durations) / len(pr_durations)
+            
+        if blocked_pr_durations:
+            impact_metrics["blocked_pr_duration"] = sum(blocked_pr_durations) / len(blocked_pr_durations)
+            impact_metrics["developer_friction_score"] = len(blocked_pr_durations) / len(prs) * 100
+            
+        return impact_metrics
+
+    def _was_pr_blocked_by_security(self, pr: dict[str, Any]) -> bool:
+        """Check if a PR was blocked by security gates."""
+        # Check for security-gate-blocked label
+        labels = [label.get("name", "") for label in pr.get("labels", [])]
+        if "security-gate-blocked" in labels:
+            return True
+            
+        # Check comments for security gate mentions
+        try:
+            comments = self._make_request(f"/repos/{self.repo}/issues/{pr['number']}/comments")
+            for comment in comments:
+                if "Security Gate Blocked" in comment.get("body", ""):
+                    return True
+        except:
+            pass
+            
+        return False
+
+    def _calculate_trend_analysis(self, current_metrics: dict, historical_data: list) -> dict[str, Any]:
+        """Calculate trends and provide recommendations."""
+        trends = {
+            "false_positive_trend": "stable",
+            "override_trend": "stable", 
+            "developer_impact_trend": "stable",
+            "recommendations": []
+        }
+        
+        if not historical_data:
+            return trends
+            
+        # Compare with historical averages
+        historical_avg_fp = sum(m.get("false_positives", 0) for m in historical_data) / len(historical_data)
+        historical_avg_overrides = sum(m.get("admin_overrides", 0) for m in historical_data) / len(historical_data)
+        
+        current_fp = current_metrics.get("false_positive_metrics", {}).get("total_false_positives", 0)
+        current_overrides = current_metrics.get("admin_overrides", 0)
+        
+        # Trend analysis
+        if current_fp > historical_avg_fp * 1.2:
+            trends["false_positive_trend"] = "increasing"
+            trends["recommendations"].append("Consider tuning security scan rules to reduce false positives")
+        elif current_fp < historical_avg_fp * 0.8:
+            trends["false_positive_trend"] = "decreasing"
+            
+        if current_overrides > historical_avg_overrides * 1.5:
+            trends["override_trend"] = "increasing"
+            trends["recommendations"].append("Review override usage patterns and provide additional training")
+        elif current_overrides < historical_avg_overrides * 0.5:
+            trends["override_trend"] = "decreasing"
+            
+        return trends
+
     def collect_metrics(self, days: int = 7) -> dict[str, Any]:
         """Collect security metrics for the past N days."""
         since = datetime.now() - timedelta(days=days)
@@ -164,7 +304,39 @@ class SecurityMetricsCollector:
         print("Counting admin overrides...")
         metrics["admin_overrides"] = self._count_admin_overrides(since)
 
+        # Analyze false positives
+        print("Analyzing false positive patterns...")
+        metrics["false_positive_metrics"] = self._analyze_false_positives(since)
+
+        # Analyze developer impact
+        print("Analyzing developer workflow impact...")
+        metrics["developer_impact"] = self._analyze_developer_impact(prs)
+
+        # Load historical data for trend analysis
+        print("Calculating trends and recommendations...")
+        historical_data = self._load_historical_metrics()
+        metrics["trend_analysis"] = self._calculate_trend_analysis(metrics, historical_data)
+
         return metrics
+
+    def _load_historical_metrics(self) -> list[dict]:
+        """Load historical metrics for trend analysis."""
+        metrics_dir = Path("security-metrics")
+        if not metrics_dir.exists():
+            return []
+            
+        historical_files = sorted(metrics_dir.glob("metrics-*.json"))[-30:]  # Last 30 reports
+        historical_data = []
+        
+        for file_path in historical_files:
+            try:
+                with open(file_path) as f:
+                    data = json.load(f)
+                    historical_data.append(data)
+            except Exception:
+                continue
+                
+        return historical_data
 
     def generate_report(self, metrics: dict[str, Any]) -> str:
         """Generate a markdown report from collected metrics."""
@@ -249,18 +421,120 @@ class SecurityMetricsCollector:
         if metrics["admin_overrides"] == 0 and metrics["exceptions_used"] < 3:
             report += "✅ **Low Bypass Rate**: Teams are successfully working within security constraints.\n\n"
 
+        # Add new sections for enhanced metrics
+        report += self._generate_false_positive_section(metrics)
+        report += self._generate_developer_impact_section(metrics)
+        report += self._generate_trend_analysis_section(metrics)
+
         report += """## Next Steps
 
 1. Review any admin overrides for compliance
 2. Update expired security exceptions
 3. Address high-failure security tools
 4. Schedule security training if needed
+5. Monitor false positive trends for rule tuning opportunities
+6. Review developer impact metrics for workflow optimization
 
 ---
-*This report was automatically generated by the security metrics collection system.*
+*This report was automatically generated by the enhanced security metrics collection system.*
 """
 
         return report
+
+    def _generate_false_positive_section(self, metrics: dict[str, Any]) -> str:
+        """Generate false positive analysis section."""
+        fp_metrics = metrics.get("false_positive_metrics", {})
+        
+        section = f"""
+## False Positive Analysis
+
+### Summary
+- **Total False Positives**: {fp_metrics.get('total_false_positives', 0)}
+- **False Positive Rate**: {(fp_metrics.get('total_false_positives', 0) / max(metrics.get('total_prs', 1), 1) * 100):.1f}% of PRs affected
+
+### By Security Tool
+"""
+        
+        by_tool = fp_metrics.get("by_tool", {})
+        if by_tool:
+            for tool, count in sorted(by_tool.items(), key=lambda x: x[1], reverse=True):
+                section += f"- **{tool}**: {count} false positives\n"
+        else:
+            section += "- No false positives detected in this period\n"
+            
+        section += """
+### Recommendations
+"""
+        
+        if fp_metrics.get('total_false_positives', 0) > metrics.get('total_prs', 0) * 0.1:
+            section += "⚠️ **High False Positive Rate**: Consider tuning security scan rules\n"
+        else:
+            section += "✅ **Acceptable False Positive Rate**: Security tools are well-tuned\n"
+            
+        return section
+
+    def _generate_developer_impact_section(self, metrics: dict[str, Any]) -> str:
+        """Generate developer impact analysis section."""
+        impact = metrics.get("developer_impact", {})
+        
+        section = f"""
+## Developer Workflow Impact
+
+### PR Processing Times
+- **Average PR Duration**: {impact.get('average_pr_duration', 0):.1f} hours
+- **Security-Blocked PR Duration**: {impact.get('blocked_pr_duration', 0):.1f} hours
+- **Developer Friction Score**: {impact.get('developer_friction_score', 0):.1f}%
+
+### Workflow Disruption Analysis
+"""
+        
+        disruption = impact.get("workflow_disruption", {})
+        total_disruptions = sum(disruption.values())
+        
+        if total_disruptions > 0:
+            section += f"- **Minor Disruptions** (<2h): {disruption.get('minor', 0)} ({disruption.get('minor', 0)/total_disruptions*100:.1f}%)\n"
+            section += f"- **Moderate Disruptions** (2-24h): {disruption.get('moderate', 0)} ({disruption.get('moderate', 0)/total_disruptions*100:.1f}%)\n"
+            section += f"- **Severe Disruptions** (>24h): {disruption.get('severe', 0)} ({disruption.get('severe', 0)/total_disruptions*100:.1f}%)\n"
+        else:
+            section += "- No significant workflow disruptions detected\n"
+            
+        section += """
+### Impact Assessment
+"""
+        
+        if impact.get('developer_friction_score', 0) > 20:
+            section += "⚠️ **High Developer Friction**: Consider process improvements\n"
+        elif impact.get('developer_friction_score', 0) > 10:
+            section += "🔸 **Moderate Developer Friction**: Monitor for trends\n"
+        else:
+            section += "✅ **Low Developer Friction**: Security gates integrate well with workflow\n"
+            
+        return section
+
+    def _generate_trend_analysis_section(self, metrics: dict[str, Any]) -> str:
+        """Generate trend analysis and recommendations section."""
+        trends = metrics.get("trend_analysis", {})
+        
+        section = f"""
+## Trend Analysis & Strategic Recommendations
+
+### Trend Summary
+- **False Positive Trend**: {trends.get('false_positive_trend', 'unknown').title()}
+- **Override Usage Trend**: {trends.get('override_trend', 'unknown').title()}
+- **Developer Impact Trend**: {trends.get('developer_impact_trend', 'unknown').title()}
+
+### Strategic Recommendations
+"""
+        
+        recommendations = trends.get("recommendations", [])
+        if recommendations:
+            for rec in recommendations:
+                section += f"- {rec}\n"
+        else:
+            section += "- Current security gate configuration appears optimal\n"
+            section += "- Continue monitoring for emerging patterns\n"
+            
+        return section
 
     def save_metrics(self, metrics: dict[str, Any], output_dir: str = "security-metrics"):
         """Save metrics data for historical tracking."""
