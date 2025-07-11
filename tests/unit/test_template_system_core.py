@@ -52,7 +52,7 @@ class TestTemplateManager:
         }
 
         template_file = self.templates_dir / "test.yaml"
-        with open(template_file, "w") as f:
+        with template_file.open("w") as f:
             yaml.dump(template_data, f)
 
         manager = TemplateManager(str(self.templates_dir))
@@ -62,7 +62,7 @@ class TestTemplateManager:
     def test_load_invalid_yaml(self):
         """Test loading invalid YAML file."""
         template_file = self.templates_dir / "invalid.yaml"
-        with open(template_file, "w") as f:
+        with template_file.open("w") as f:
             f.write("invalid: yaml: content: [")
 
         with patch.object(TemplateManager, "_load_template") as mock_load:
@@ -80,7 +80,7 @@ class TestTemplateManager:
         }
 
         template_file = self.templates_dir / "test.yaml"
-        with open(template_file, "w") as f:
+        with template_file.open("w") as f:
             yaml.dump(template_data, f)
 
         manager = TemplateManager(str(self.templates_dir))
@@ -105,7 +105,7 @@ class TestTemplateManager:
             }
 
             template_file = self.templates_dir / f"test{i}.yaml"
-            with open(template_file, "w") as f:
+            with template_file.open("w") as f:
                 yaml.dump(template_data, f)
 
         manager = TemplateManager(str(self.templates_dir))
@@ -128,7 +128,7 @@ class TestTemplateManager:
             }
 
             template_file = self.templates_dir / f"test{i}.yaml"
-            with open(template_file, "w") as f:
+            with template_file.open("w") as f:
                 yaml.dump(template_data, f)
 
         manager = TemplateManager(str(self.templates_dir))
@@ -202,7 +202,7 @@ class TestTemplateProcessor:
         }
 
         template_file = self.templates_dir / "test.yaml"
-        with open(template_file, "w") as f:
+        with template_file.open("w") as f:
             yaml.dump(template_data, f)
 
         self.manager = TemplateManager(str(self.templates_dir))
