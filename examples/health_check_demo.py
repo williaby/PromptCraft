@@ -13,6 +13,7 @@ import asyncio
 import json
 
 import httpx
+from pydantic import SecretStr
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -25,6 +26,9 @@ from src.config import (
     get_configuration_status,
     get_settings,
 )
+
+# HTTP status codes
+HTTP_OK = 200
 
 console = Console()
 
@@ -224,7 +228,7 @@ async def demonstrate_http_endpoints() -> None:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{base_url}/ping", timeout=2.0)
-            if response.status_code == 200:
+            if response.status_code == HTTP_OK:
                 console.print(
                     "✅ [bold green]Live server detected! Testing real endpoints...[/bold green]",
                 )
@@ -249,7 +253,7 @@ async def demonstrate_http_endpoints() -> None:
 
     except (httpx.ConnectError, httpx.TimeoutException):
         console.print(
-            "ℹ️  [dim]No live server detected. Start with 'poetry run python src/main.py' to test live endpoints.[/dim]",
+            "i [dim]No live server detected. Start with 'poetry run python src/main.py' to test live endpoints.[/dim]",
         )
 
 
@@ -259,8 +263,6 @@ def demonstrate_security_features() -> None:
 
     try:
         # Create settings with sensitive data
-        from pydantic import SecretStr
-
         settings = ApplicationSettings(
             database_password=SecretStr("super_secret_db_password"),
             api_key=SecretStr("sk-1234567890abcdef"),
