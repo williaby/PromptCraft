@@ -124,7 +124,7 @@ class SecureStringField(str):
             if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
                 raise ValueError("Potentially dangerous content detected")
 
-        return sanitized
+        return str(sanitized)
 
 
 class SecurePathField(str):
@@ -220,7 +220,7 @@ class SecurePathField(str):
 
         # 3. Return the original validated value, preserving encoding if needed
         # This allows the application to handle URL-encoded paths appropriately
-        return value
+        return str(value)
 
 
 class SecureEmailField(str):
@@ -262,7 +262,7 @@ class SecureEmailField(str):
         if len(local) > max_local_length:
             raise ValueError("Email local part too long")
 
-        return value.lower()  # Normalize to lowercase
+        return str(value).lower()  # Normalize to lowercase
 
 
 class BaseSecureModel(BaseModel):

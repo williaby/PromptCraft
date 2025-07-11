@@ -268,18 +268,18 @@ class AuditEvent:
 
         # Add request information if available
         if self.request:
-            event_data.update(
-                {
-                    "request": {
-                        "method": self.request.method,
-                        "path": self.request.url.path,
-                        "query_params": dict(self.request.query_params),
-                        "client_ip": self._get_client_ip(self.request),
-                        "user_agent": self.request.headers.get("user-agent", "unknown"),
-                        "referer": self.request.headers.get("referer"),
-                    },
-                },
-            )
+            # Add request information - cast to Any to avoid type issues
+            from typing import cast
+
+            request_data = {
+                "method": self.request.method,
+                "path": self.request.url.path,
+                "query_params": dict(self.request.query_params) if self.request.query_params else {},
+                "client_ip": self._get_client_ip(self.request),
+                "user_agent": self.request.headers.get("user-agent", "unknown"),
+                "referer": self.request.headers.get("referer"),
+            }
+            event_data["request"] = cast(Any, request_data)
 
         # Add user information
         if self.user_id:
@@ -294,7 +294,7 @@ class AuditEvent:
 
         # Add additional context data
         if self.additional_data:
-            event_data["additional_data"] = self.additional_data
+            event_data["additional_data"] = dict(self.additional_data)  # type: ignore[assignment]
 
         return event_data
 

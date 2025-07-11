@@ -81,7 +81,7 @@ class PerformanceMonitor:
         timestamp = metric.timestamp or time.time()
 
         if metric.metric_type == MetricType.COUNTER:
-            self.counters[metric.name] += metric.value
+            self.counters[metric.name] += int(metric.value)
         elif metric.metric_type == MetricType.GAUGE:
             self.gauges[metric.name] = metric.value
         elif metric.metric_type == MetricType.HISTOGRAM:
@@ -327,7 +327,7 @@ class PerformanceTracker:
         self.start_time = time.time()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit context manager."""
         if self.start_time is not None:
             duration = time.time() - self.start_time

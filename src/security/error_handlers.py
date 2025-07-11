@@ -48,6 +48,7 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
 
 from src.config.settings import get_settings
 
@@ -59,7 +60,7 @@ def create_secure_error_response(
     error: Exception,
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
     detail: str = "Internal server error",
-) -> JSONResponse:
+) -> Response:
     """Create a secure error response that prevents information disclosure.
 
     Core security function that sanitizes error responses to prevent sensitive
@@ -141,7 +142,7 @@ def create_secure_error_response(
     )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> Response:
     """Handle HTTP exceptions with secure error responses.
 
     FastAPI exception handler for HTTPException instances. Routes all HTTP
@@ -173,7 +174,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 async def starlette_http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
-) -> JSONResponse:
+) -> Response:
     """Handle Starlette HTTP exceptions with secure error responses.
 
     Starlette-level exception handler that catches HTTP exceptions from the
@@ -205,7 +206,7 @@ async def starlette_http_exception_handler(
 async def validation_exception_handler(
     request: Request,
     exc: RequestValidationError,
-) -> JSONResponse:
+) -> Response:
     """Handle request validation errors with secure responses.
 
     Specialized handler for Pydantic request validation errors. Provides
@@ -281,7 +282,7 @@ async def validation_exception_handler(
     )
 
 
-async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+async def general_exception_handler(request: Request, exc: Exception) -> Response:
     """Handle all other exceptions with secure error responses.
 
     Ultimate catch-all handler that prevents any stack traces from leaking
@@ -345,11 +346,14 @@ def setup_secure_error_handlers(app: FastAPI) -> None:
     Note:
         Must be called before application startup to ensure security coverage.
     """
-    # Register exception handlers
-    app.add_exception_handler(HTTPException, http_exception_handler)
-    app.add_exception_handler(StarletteHTTPException, starlette_http_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, general_exception_handler)
+    # Register exception handlers with proper type casting
+    from collections.abc import Callable
+    from typing import cast
+
+    app.add_exception_handler(HTTPException, cast(Callable, http_exception_handler))
+    app.add_exception_handler(StarletteHTTPException, cast(Callable, starlette_http_exception_handler))
+    app.add_exception_handler(RequestValidationError, cast(Callable, validation_exception_handler))
+    app.add_exception_handler(Exception, cast(Callable, general_exception_handler))
 
     logger.info("Secure error handlers configured for application")
 
