@@ -105,6 +105,32 @@ Follow the Git workflow defined in development guidelines:
 - **Bug Fixes**: `bugfix/<issue-number>`
 - **Hot Fixes**: `hotfix/<issue-number>`
 
+#### CI Workflow Triggers
+
+**IMPORTANT**: Our CI workflow has been optimized to run only on specific branches to manage resources efficiently:
+
+**Triggers Included:**
+
+- **Push to `main`**: All production deployments
+- **Push to `feature/**`**: All feature branch development
+- **Pull Requests to `main`**: All PRs for review
+- **Scheduled runs**: Daily security scans
+
+**Branches NOT Triggering CI:**
+
+- `hotfix/**` branches (unless specifically needed)
+- `releases/**` branches (handled separately)
+- Other custom branch patterns
+
+**Resource Management Features:**
+
+- **Concurrency Control**: Only one CI run per branch/PR prevents resource waste
+- **Automatic Cancellation**: New pushes cancel previous runs for the same branch
+- **Job Timeouts**: All jobs have timeouts to prevent hung workflows
+- **Conditional Steps**: Some steps only run when secrets/tokens are available
+
+If you need CI to run on other branch patterns, discuss with maintainers first.
+
 ### Submitting Changes
 
 #### Create a New Branch
@@ -146,6 +172,7 @@ Closes #123"
 ```
 
 **Commit Message Format**:
+
 - `feat(scope): description` - New features
 - `fix(scope): description` - Bug fixes
 - `docs(scope): description` - Documentation changes
@@ -309,12 +336,14 @@ Closes #issue-number"
 Understanding package security classification is critical:
 
 **Security-Critical Packages** (immediate individual PRs from Renovate):
+
 - Authentication/crypto: `cryptography`, `pyjwt`, `passlib`, `bcrypt`, `pyotp`
 - Core frameworks: `fastapi`, `uvicorn`, `gradio`, `pydantic`, `httpx`
 - Azure services: `azure-identity`, `azure-keyvault-secrets`
 - AI/ML core: `anthropic`, `openai`, `qdrant-client`
 
 **Routine Packages** (monthly batched PRs from Renovate):
+
 - Development tools: `pytest`, `black`, `ruff`, `mypy`
 - Utilities: `python-dateutil`, `tenacity`, `rich`, `structlog`
 - Data processing: `pandas`, `numpy` (unless CVE)
@@ -322,6 +351,7 @@ Understanding package security classification is critical:
 #### Version Constraints Guidelines
 
 **Production Dependencies** (pyproject.toml):
+
 ```toml
 # Use caret ranges for automatic security updates
 fastapi = "^0.110.0"        # Allows 0.110.x and 0.x.y
@@ -332,6 +362,7 @@ requests = ">=2.31.0,<3.0.0"  # Block major version bumps
 ```
 
 **Development Dependencies**:
+
 ```toml
 # More flexible for dev tools
 pytest = "^8.0.0"          # Can update more freely
@@ -342,6 +373,7 @@ ruff = "^0.2.0"            # Linting tools
 #### Troubleshooting Common Issues
 
 **Hash Verification Failures**:
+
 ```bash
 # Regenerate requirements files
 ./scripts/generate_requirements.sh
@@ -351,6 +383,7 @@ poetry show --source package-name
 ```
 
 **Dependency Conflicts**:
+
 ```bash
 # Check dependency tree
 poetry show --tree
@@ -360,6 +393,7 @@ poetry add "conflicting-package>=compatible-version"
 ```
 
 **CI Pipeline Failures**:
+
 ```bash
 # Verify requirements synchronization
 poetry export --format=requirements.txt --output=test-check.txt
