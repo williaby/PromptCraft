@@ -2,7 +2,9 @@ name: PR Validation
 
 on:
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - feature/phase-1-development
 
 permissions:
   contents: read
@@ -12,7 +14,7 @@ jobs:
   validate-requirements:
     name: Validate Requirements Sync
     runs-on: ubuntu-latest
-    if: github.event.pull_request.base.ref == 'main'
+    if: github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'feature/phase-1-development'
 
     steps:
       - uses: actions/checkout@v4
