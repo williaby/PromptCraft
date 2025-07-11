@@ -2,11 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
-    # Also run on feature branches for continuous validation
-    branches-ignore: [ 'releases/**', 'hotfix/**' ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
+      - 'feature/**'
+    # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
   schedule:
     # Run security checks daily
     - cron: '0 0 * * *'
@@ -478,7 +482,6 @@ jobs:
           echo "✅ All linting checks passed"
 
       - name: Upload coverage to Codecov
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -487,9 +490,8 @@ jobs:
         continue-on-error: true
 
       - name: Coverage fallback notice
-        if: ${{ secrets.CODECOV_TOKEN == '' }}
         run: |
-          echo "⚠️  CODECOV_TOKEN not set - skipping Codecov upload"
+          echo "⚠️  CODECOV_TOKEN not configured - Codecov upload may have been skipped"
           echo "Coverage reports available locally in htmlcov/"
           echo "To enable Codecov upload, add CODECOV_TOKEN secret to repository"
 
