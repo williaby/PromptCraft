@@ -5,18 +5,19 @@ This example demonstrates how to use the encryption features in practice,
 including setting up encrypted environment files and using SecretStr fields.
 """
 
+import logging
+
 
 # Example of how to set up environment variables with secrets
-def setup_example_environment():
+def setup_example_environment() -> dict[str, str]:
     """Example of setting up environment variables with secrets."""
-
     # Example environment variables (these would normally be in .env files)
-    example_env_vars = {
+    return {
         # Basic application config (non-sensitive)
         "PROMPTCRAFT_APP_NAME": "PromptCraft-Production",
         "PROMPTCRAFT_ENVIRONMENT": "prod",
         "PROMPTCRAFT_DEBUG": "false",
-        "PROMPTCRAFT_API_HOST": "0.0.0.0",
+        "PROMPTCRAFT_API_HOST": "127.0.0.1",  # Use localhost instead of 0.0.0.0
         "PROMPTCRAFT_API_PORT": "8000",
         # Sensitive configuration (should be in encrypted files)
         "PROMPTCRAFT_DATABASE_PASSWORD": "super-secret-db-password-123",
@@ -29,11 +30,10 @@ def setup_example_environment():
         "PROMPTCRAFT_ENCRYPTION_KEY": "encryption-key-for-data-at-rest",
     }
 
-    return example_env_vars
 
-
-def create_example_env_files():
+def create_example_env_files() -> None:
     """Create example .env files showing the structure."""
+    logger = logging.getLogger(__name__)
 
     # Base .env file (non-sensitive settings)
     base_env_content = """# Base Environment Configuration
@@ -46,7 +46,7 @@ PROMPTCRAFT_VERSION=0.1.0
 PROMPTCRAFT_DEBUG=false
 
 # API Server Configuration
-PROMPTCRAFT_API_HOST=0.0.0.0
+PROMPTCRAFT_API_HOST=127.0.0.1
 PROMPTCRAFT_API_PORT=8000
 """
 
@@ -73,50 +73,54 @@ PROMPTCRAFT_QDRANT_API_KEY=qdrant-vector-db-api-key
 PROMPTCRAFT_ENCRYPTION_KEY=encryption-key-for-data-at-rest
 """
 
-    print("Example .env file structure:")
-    print("=" * 50)
-    print()
-    print("📁 .env (base, non-sensitive)")
-    print("-" * 30)
-    print(base_env_content)
+    logger.info("Example .env file structure:")
+    logger.info("=" * 50)
+    logger.info("")
+    logger.info("📁 .env (base, non-sensitive)")
+    logger.info("-" * 30)
+    logger.info(base_env_content)
 
-    print("📁 .env.prod.gpg (production, encrypted)")
-    print("-" * 40)
-    print("# This would be encrypted content:")
-    print(prod_env_content)
+    logger.info("📁 .env.prod.gpg (production, encrypted)")
+    logger.info("-" * 40)
+    logger.info("# This would be encrypted content:")
+    logger.info(prod_env_content)
 
 
-def demonstrate_settings_usage():
+def demonstrate_settings_usage() -> None:
     """Demonstrate how to use the settings in application code."""
+    logger = logging.getLogger(__name__)
 
-    print("💻 Application Usage Examples")
-    print("=" * 50)
+    logger.info("💻 Application Usage Examples")
+    logger.info("=" * 50)
 
     # This would normally import from the actual module
     example_code = """
 from src.config.settings import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Get application settings
 settings = get_settings()
 
 # Basic configuration (safe to log)
-print(f"Running {settings.app_name} v{settings.version}")
-print(f"Environment: {settings.environment}")
-print(f"Debug mode: {settings.debug}")
-print(f"API server: {settings.api_host}:{settings.api_port}")
+logger.info("Running %s v%s", settings.app_name, settings.version)
+logger.info("Environment: %s", settings.environment)
+logger.info("Debug mode: %s", settings.debug)
+logger.info("API server: %s:%s", settings.api_host, settings.api_port)
 
 # Using secret values (never logged directly)
 if settings.database_password:
     # Use the secret value for database connection
     db_password = settings.database_password.get_secret_value()
     # Connect to database using db_password
-    print("Database password available (value hidden)")
+    logger.info("Database password available (value hidden)")
 
 if settings.api_key:
     # Use API key for external service calls
     api_key = settings.api_key.get_secret_value()
     # Make API calls using api_key
-    print("API key available (value hidden)")
+    logger.info("API key available (value hidden)")
 
 # Configuration validation
 if settings.environment == "prod":
@@ -130,18 +134,19 @@ if settings.environment == "prod":
     if not all(required_secrets):
         raise ValueError("Missing required secrets in production environment")
 
-    print("✓ All required production secrets are configured")
+    logger.info("✓ All required production secrets are configured")
 """
 
-    print("Example application code:")
-    print(example_code)
+    logger.info("Example application code:")
+    logger.info(example_code)
 
 
-def demonstrate_encryption_workflow():
+def demonstrate_encryption_workflow() -> None:
     """Demonstrate the encryption workflow for production deployment."""
+    logger = logging.getLogger(__name__)
 
-    print("🔐 Encryption Workflow for Production")
-    print("=" * 50)
+    logger.info("🔐 Encryption Workflow for Production")
+    logger.info("=" * 50)
 
     workflow_steps = [
         "1. Create .env.prod file with sensitive values",
@@ -153,24 +158,25 @@ def demonstrate_encryption_workflow():
         "7. Application automatically decrypts and loads secrets",
     ]
 
-    print("Production deployment workflow:")
+    logger.info("Production deployment workflow:")
     for step in workflow_steps:
-        print(f"  {step}")
+        logger.info("  %s", step)
 
-    print()
-    print("Security benefits:")
-    print("  ✓ Secrets are encrypted at rest")
-    print("  ✓ Only authorized users can decrypt")
-    print("  ✓ Safe to store in version control (encrypted)")
-    print("  ✓ Audit trail of who can access secrets")
-    print("  ✓ Development works without encryption setup")
+    logger.info("")
+    logger.info("Security benefits:")
+    logger.info("  ✓ Secrets are encrypted at rest")
+    logger.info("  ✓ Only authorized users can decrypt")
+    logger.info("  ✓ Safe to store in version control (encrypted)")
+    logger.info("  ✓ Audit trail of who can access secrets")
+    logger.info("  ✓ Development works without encryption setup")
 
 
-def demonstrate_development_setup():
+def demonstrate_development_setup() -> None:
     """Demonstrate development environment setup."""
+    logger = logging.getLogger(__name__)
 
-    print("🛠️  Development Environment Setup")
-    print("=" * 50)
+    logger.info("🛠️  Development Environment Setup")
+    logger.info("=" * 50)
 
     dev_steps = [
         "1. Create .env.dev file with development values",
@@ -179,43 +185,47 @@ def demonstrate_development_setup():
         "4. Override specific values with environment variables as needed",
     ]
 
-    print("Development setup steps:")
+    logger.info("Development setup steps:")
     for step in dev_steps:
-        print(f"  {step}")
+        logger.info("  %s", step)
 
-    print()
-    print("Development benefits:")
-    print("  ✓ No encryption setup required for basic development")
-    print("  ✓ Easy to override values for testing")
-    print("  ✓ Clear separation of dev/staging/prod configurations")
-    print("  ✓ Can test encryption features when needed")
+    logger.info("")
+    logger.info("Development benefits:")
+    logger.info("  ✓ No encryption setup required for basic development")
+    logger.info("  ✓ Easy to override values for testing")
+    logger.info("  ✓ Clear separation of dev/staging/prod configurations")
+    logger.info("  ✓ Can test encryption features when needed")
 
 
 if __name__ == "__main__":
-    print("🎯 PromptCraft Encryption Integration Usage Examples")
-    print("=" * 60)
-    print()
+    # Set up logging for the example
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logger = logging.getLogger(__name__)
+
+    logger.info("🎯 PromptCraft Encryption Integration Usage Examples")
+    logger.info("=" * 60)
+    logger.info("")
 
     try:
         create_example_env_files()
-        print()
+        logger.info("")
         demonstrate_settings_usage()
-        print()
+        logger.info("")
         demonstrate_encryption_workflow()
-        print()
+        logger.info("")
         demonstrate_development_setup()
 
-        print()
-        print("🎉 Encryption integration is ready for use!")
-        print()
-        print("Next steps:")
-        print("  1. Set up GPG keys for encryption (production)")
-        print("  2. Create environment-specific .env files")
-        print("  3. Encrypt sensitive .env files with GPG")
-        print("  4. Update application code to use get_settings()")
+        logger.info("")
+        logger.info("🎉 Encryption integration is ready for use!")
+        logger.info("")
+        logger.info("Next steps:")
+        logger.info("  1. Set up GPG keys for encryption (production)")
+        logger.info("  2. Create environment-specific .env files")
+        logger.info("  3. Encrypt sensitive .env files with GPG")
+        logger.info("  4. Update application code to use get_settings()")
 
     except Exception as e:
-        print(f"❌ Example failed: {e}")
+        logger.error("❌ Example failed: %s", e)
         import traceback
 
         traceback.print_exc()

@@ -28,7 +28,7 @@ from typing import Any
 
 # Try to import structlog, fall back to standard logging if not available
 try:
-    import structlog  # type: ignore[import-not-found]
+    import structlog
 
     logger = structlog.get_logger(__name__)
 except ImportError:

@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   validate-requirements:
-    name: Validate Requirements Sync
+    name: PR Validation
     runs-on: ubuntu-latest
     if: github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'feature/phase-1-development'
 

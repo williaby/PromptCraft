@@ -43,7 +43,7 @@ Complexity: O(1) for event creation and logging, O(n) for header processing wher
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from fastapi import Request, status
@@ -97,8 +97,8 @@ class AuditEventType(str, Enum):
     AUTH_LOGIN_SUCCESS = "auth.login.success"
     AUTH_LOGIN_FAILURE = "auth.login.failure"
     AUTH_LOGOUT = "auth.logout"
-    AUTH_TOKEN_CREATED = "auth.token.created"  # nosec B105  # Not a password - audit event type
-    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_CREATED = "auth.token.created"  # noqa: S105  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # noqa: S105  # nosec B105  # Not a password - audit event type
 
     # Authorization events
     AUTHZ_ACCESS_GRANTED = "authz.access.granted"
@@ -268,18 +268,16 @@ class AuditEvent:
 
         # Add request information if available
         if self.request:
-            event_data.update(
-                {
-                    "request": {
-                        "method": self.request.method,
-                        "path": self.request.url.path,
-                        "query_params": dict(self.request.query_params),
-                        "client_ip": self._get_client_ip(self.request),
-                        "user_agent": self.request.headers.get("user-agent", "unknown"),
-                        "referer": self.request.headers.get("referer"),
-                    },
-                },
-            )
+            # Add request information - cast to Any to avoid type issues
+            request_data = {
+                "method": self.request.method,
+                "path": self.request.url.path,
+                "query_params": dict(self.request.query_params) if self.request.query_params else {},
+                "client_ip": self._get_client_ip(self.request),
+                "user_agent": self.request.headers.get("user-agent", "unknown"),
+                "referer": self.request.headers.get("referer"),
+            }
+            event_data["request"] = cast(Any, request_data)
 
         # Add user information
         if self.user_id:
@@ -294,7 +292,7 @@ class AuditEvent:
 
         # Add additional context data
         if self.additional_data:
-            event_data["additional_data"] = self.additional_data
+            event_data["additional_data"] = dict(self.additional_data)  # type: ignore[assignment]
 
         return event_data
 

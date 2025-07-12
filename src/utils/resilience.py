@@ -16,7 +16,7 @@ from typing import Any, Generic, TypeVar
 T = TypeVar("T")
 
 
-class ResilienceStrategy(ABC, Generic[T]):
+class ResilienceStrategy(ABC, Generic[T]):  # noqa: UP046
     """Abstract base class for all resilience strategies."""
 
     @abstractmethod
@@ -124,7 +124,7 @@ class RetryConfig:
             raise ValueError("exponential_base must be greater than 1")
 
 
-class CompositeResilienceHandler(Generic[T]):
+class CompositeResilienceHandler(Generic[T]):  # noqa: UP046
     """Compose multiple resilience strategies for flexible error handling."""
 
     def __init__(

@@ -247,7 +247,7 @@ def secure_uniform(low: float, high: float) -> float:
     return secure_random.uniform(low, high)
 
 
-def secure_choice(sequence: Sequence[T]) -> T:
+def secure_choice(sequence: Sequence[T]) -> T:  # noqa: UP047
     """Choose secure random element using global instance.
 
     Args:
