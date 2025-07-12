@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore[import-not-found]
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.utils.encryption import (
     EncryptionError,
