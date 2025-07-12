@@ -46,7 +46,7 @@ class TestEnhancedValidation:
     def test_host_validation_detailed_errors(self):
         """Test enhanced host validation with detailed error messages."""
         # Test empty host
-        with pytest.raises(ValueError, match="Host cannot be empty") as exc_info:
+        with pytest.raises(ValueError, match="API host cannot be empty") as exc_info:
             ApplicationSettings(api_host="")
 
         error_msg = str(exc_info.value)
