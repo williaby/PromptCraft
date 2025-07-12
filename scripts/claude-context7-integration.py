@@ -30,7 +30,7 @@ except ImportError:
 class ClaudeContext7Integration:
     """Integration helper for Claude Code to use Context7 with proper package names."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with project configuration."""
         self.project_root = Path(__file__).parent.parent
         self.pyproject_file = self.project_root / "pyproject.toml"
@@ -43,7 +43,7 @@ class ClaudeContext7Integration:
     def _load_pyproject_dependencies(self) -> dict[str, str]:
         """Load dependencies from pyproject.toml."""
         try:
-            with open(self.pyproject_file, "rb") as f:
+            with self.pyproject_file.open("rb") as f:
                 data = tomllib.load(f)
                 deps = {}
 
@@ -68,7 +68,7 @@ class ClaudeContext7Integration:
     def _load_context7_mappings(self) -> dict[str, Any]:
         """Load Context7 package mappings."""
         try:
-            with open(self.reference_file) as f:
+            with self.reference_file.open() as f:
                 data = json.load(f)
                 return data.get("context7_package_mappings", {})
         except Exception as e:
@@ -208,16 +208,16 @@ libraryName: "{base_name}"
 3. Update docs/context7-quick-reference.json with the verified mapping"""
 
 
-def main():
+def main() -> None:  # noqa: PLR0912
     """Command-line interface for Claude Code integration."""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2:  # noqa: PLR2004
         print(__doc__)
         return
 
     integration = ClaudeContext7Integration()
     command = sys.argv[1]
 
-    if command == "validate-package" and len(sys.argv) >= 3:
+    if command == "validate-package" and len(sys.argv) >= 3:  # noqa: PLR2004
         package_name = sys.argv[2]
         result = integration.validate_package(package_name)
 
@@ -229,10 +229,10 @@ def main():
             print(f"Trust Score: {result['trust_score']}")
         print(f"Recommendation: {result['recommendation']}")
 
-    elif command == "get-context7-call" and len(sys.argv) >= 3:
+    elif command == "get-context7-call" and len(sys.argv) >= 3:  # noqa: PLR2004
         package_name = sys.argv[2]
-        topic = sys.argv[3] if len(sys.argv) >= 4 else None
-        tokens = int(sys.argv[4]) if len(sys.argv) >= 5 else 2000
+        topic = sys.argv[3] if len(sys.argv) >= 4 else None  # noqa: PLR2004
+        tokens = int(sys.argv[4]) if len(sys.argv) >= 5 else 2000  # noqa: PLR2004
 
         call = integration.generate_context7_call(package_name, topic, tokens)
         print(call)
@@ -256,19 +256,19 @@ def main():
 
         if pending:
             print(f"\n🔍 Pending Verification ({len(pending)} packages):")
-            for pkg, info in sorted(pending):
+            for pkg, _info in sorted(pending):
                 print(f"  {pkg}")
 
         if not_mapped:
             print(f"\n❓ Not Mapped ({len(not_mapped)} packages):")
-            for pkg, info in sorted(not_mapped):
+            for pkg, _info in sorted(not_mapped):
                 print(f"  {pkg}")
 
         print(
             f"\nSummary: {len(verified)} verified, {len(pending)} pending, {len(not_mapped)} unmapped",
         )
 
-    elif command == "claude-help" and len(sys.argv) >= 3:
+    elif command == "claude-help" and len(sys.argv) >= 3:  # noqa: PLR2004
         package_name = sys.argv[2]
         suggestions = integration.get_suggestions_for_claude(package_name)
         print(suggestions)
