@@ -43,7 +43,7 @@ Complexity: O(1) for event creation and logging, O(n) for header processing wher
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from fastapi import Request, status
@@ -269,8 +269,6 @@ class AuditEvent:
         # Add request information if available
         if self.request:
             # Add request information - cast to Any to avoid type issues
-            from typing import cast
-
             request_data = {
                 "method": self.request.method,
                 "path": self.request.url.path,
