@@ -144,7 +144,7 @@ jobs:
             .safety-report.json
 
   test:
-    name: Test Python ${{ matrix.python-version }}
+    name: CI / TestExpected
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: always()
