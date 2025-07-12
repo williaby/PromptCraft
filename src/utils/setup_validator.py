@@ -39,12 +39,12 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Python version check removed - project requires 3.11+ which is enforced by pyproject.toml
-    # Check critical modules can be imported
+    # Python version check
+    if sys.version_info < (3, 11):  # noqa: UP036
+        errors.append(f"Python 3.11+ required, found {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}")
+
     if gnupg is None:
         errors.append("python-gnupg package not available - required for encryption")
-
-    # Note: pydantic check removed as it's always available in this environment
 
     return len(errors) == 0, errors
 
