@@ -70,7 +70,7 @@ class TestConfigurationStatusModel:
             validation_status="passed",
             validation_errors=[],
             secrets_configured=5,
-            api_host="0.0.0.0",
+            api_host="0.0.0.0",  # noqa: S104
             api_port=80,
         )
 
@@ -606,7 +606,7 @@ class TestSecurityRequirements:
             validation_status="passed",
             validation_errors=[],
             secrets_configured=5,
-            api_host="0.0.0.0",
+            api_host="0.0.0.0",  # noqa: S104
             api_port=443,
         )
 
