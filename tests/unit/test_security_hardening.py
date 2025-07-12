@@ -9,6 +9,7 @@ This module tests all implemented security features including:
 - Authentication protection
 """
 
+import asyncio
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -19,7 +20,7 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 
-from src.config.health import get_configuration_health_summary
+from src.config.health import ConfigurationStatusModel, get_configuration_health_summary
 from src.config.settings import ApplicationSettings, ConfigurationValidationError, get_settings
 from src.main import app, create_app, lifespan
 from src.security.audit_logging import (
@@ -44,6 +45,7 @@ from src.security.input_validation import (
     SecureQueryParams,
     SecureStringField,
     SecureTextInput,
+    create_input_sanitizer,
     sanitize_dict_values,
 )
 from src.security.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
@@ -55,6 +57,7 @@ from src.security.rate_limiting import (
     rate_limit,
     rate_limit_exceeded_handler,
 )
+from src.utils.encryption import EncryptionError, GPGError, validate_environment_keys
 
 
 class TestRateLimiting:
@@ -1033,8 +1036,6 @@ class TestConfigurationCoverage:
     def test_rate_limiting_redis_configuration(self):
         """Test Redis configuration for rate limiting."""
 
-        from src.security.rate_limiting import create_limiter
-
         with patch("src.security.rate_limiting.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
             mock_settings.return_value.redis_host = "redis.example.com"
@@ -1046,7 +1047,6 @@ class TestConfigurationCoverage:
 
     def test_audit_logging_configuration(self):
         """Test audit logging configuration."""
-        from src.security.audit_logging import AuditLogger
 
         logger = AuditLogger()
         assert logger.settings is not None
@@ -1176,7 +1176,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-    
+
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = True
@@ -1204,7 +1204,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-    
+
             # First call raises validation error, second call returns production settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = False
@@ -1232,7 +1232,7 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-    
+
             # First call fails with validation error
             # Second call (for debug check) also fails
             mock_get_settings.side_effect = [
@@ -1295,40 +1295,6 @@ class TestMainErrorHandling:
                 app.state = original_state
 
 
-class TestMainEndpoints:
-    """Test main application endpoints for coverage."""
-
-    def test_root_endpoint_fallback(self):
-        """Test root endpoint fallback when settings not in app state."""
-        client = TestClient(app)
-
-        # Temporarily remove settings from app state to test fallback
-        original_settings = getattr(app.state, "settings", None)
-        if hasattr(app.state, "settings"):
-            delattr(app.state, "settings")
-
-        try:
-            response = client.get("/")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["service"] == "PromptCraft-Hybrid"
-            assert data["version"] == "unknown"
-            assert data["environment"] == "unknown"
-            assert data["status"] == "running"
-        finally:
-            # Restore original settings
-            if original_settings:
-                app.state.settings = original_settings
-
-    def test_ping_endpoint(self):
-        """Test ping endpoint for coverage."""
-        client = TestClient(app)
-
-        response = client.get("/ping")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["message"] == "pong"
-
 
 class TestInputValidationEdgeCases:
     """Test additional input validation edge cases."""
@@ -1353,7 +1319,7 @@ class TestInputValidationEdgeCases:
         assert result == valid_email
 
         # Invalid email should raise validation error
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid email format"):
             SecureEmailField.validate("invalid-email")
 
     def test_secure_path_field_traversal_protection(self):
@@ -1644,8 +1610,6 @@ class TestRateLimitingEdgeCases:
 
         with patch("src.security.rate_limiting.get_client_identifier", return_value="192.168.1.100"):
             with pytest.raises(HTTPException) as exc_info:
-                import asyncio
-
                 asyncio.run(rate_limit_exceeded_handler(request, exc))
 
             # Verify the HTTPException details
@@ -1687,28 +1651,27 @@ class TestLifespanCoverage:
 
         test_app = FastAPI()
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.audit_logger_instance") as mock_logger:
-                # Mock configuration validation error
-                mock_get_settings.side_effect = ConfigurationValidationError(
-                    "Invalid configuration",
-                    field_errors=["Missing API key", "Invalid port"],
-                    suggestions=["Set API_KEY", "Use valid port number"],
-                )
+        with patch("src.main.get_settings") as mock_get_settings, patch("src.main.audit_logger_instance") as mock_logger:
+            # Mock configuration validation error
+            mock_get_settings.side_effect = ConfigurationValidationError(
+                "Invalid configuration",
+                field_errors=["Missing API key", "Invalid port"],
+                suggestions=["Set API_KEY", "Use valid port number"],
+            )
 
-                with pytest.raises(ConfigurationValidationError):
-                    async with lifespan(test_app):
-                        pass
+            with pytest.raises(ConfigurationValidationError):
+                async with lifespan(test_app):
+                    pass
 
-                # Verify error was logged as security event
-                mock_logger.log_security_event.assert_called()
+            # Verify error was logged as security event
+            mock_logger.log_security_event.assert_called()
 
-                # Check specific call for validation failure
-                calls = mock_logger.log_security_event.call_args_list
-                validation_calls = [
-                    call for call in calls if len(call[0]) > 1 and "validation failed" in call[0][1].lower()
-                ]
-                assert len(validation_calls) > 0
+            # Check specific call for validation failure
+            calls = mock_logger.log_security_event.call_args_list
+            validation_calls = [
+                call for call in calls if len(call[0]) > 1 and "validation failed" in call[0][1].lower()
+            ]
+            assert len(validation_calls) > 0
 
     @pytest.mark.asyncio
     async def test_lifespan_unexpected_error_with_audit(self):
@@ -1716,24 +1679,23 @@ class TestLifespanCoverage:
 
         test_app = FastAPI()
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.audit_logger_instance") as mock_logger:
-                # Mock unexpected runtime error
-                mock_get_settings.side_effect = RuntimeError("Database connection failed")
+        with patch("src.main.get_settings") as mock_get_settings, patch("src.main.audit_logger_instance") as mock_logger:
+            # Mock unexpected runtime error
+            mock_get_settings.side_effect = RuntimeError("Database connection failed")
 
-                with pytest.raises(RuntimeError):
-                    async with lifespan(test_app):
-                        pass
+            with pytest.raises(RuntimeError):
+                async with lifespan(test_app):
+                    pass
 
-                # Verify error was logged as critical security event
-                mock_logger.log_security_event.assert_called()
+            # Verify error was logged as critical security event
+            mock_logger.log_security_event.assert_called()
 
-                # Check for startup failure logging
-                calls = mock_logger.log_security_event.call_args_list
-                startup_failure_calls = [
-                    call for call in calls if len(call[0]) > 1 and "startup failed" in call[0][1].lower()
-                ]
-                assert len(startup_failure_calls) > 0
+            # Check for startup failure logging
+            calls = mock_logger.log_security_event.call_args_list
+            startup_failure_calls = [
+                call for call in calls if len(call[0]) > 1 and "startup failed" in call[0][1].lower()
+            ]
+            assert len(startup_failure_calls) > 0
 
 
 class TestMainApplicationEndpoints:
@@ -1969,7 +1931,7 @@ class TestCoverageImprovements:
         # Test health endpoint when configuration validation has extensive errors
         with patch("src.main.get_configuration_health_summary") as mock_health:
             with patch("src.main.get_settings") as mock_settings:
-        
+
                 # Mock extensive validation errors
                 extensive_errors = [f"Error {i}" for i in range(20)]
                 extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
@@ -2048,7 +2010,6 @@ class TestConfigurationModuleCoverage:
 
     def test_settings_module_edge_cases(self):
         """Test settings module edge cases to improve coverage."""
-        from src.config.settings import ApplicationSettings
 
         # Test default ApplicationSettings creation
         settings = ApplicationSettings()

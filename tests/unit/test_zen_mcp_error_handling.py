@@ -43,7 +43,7 @@ class TestCircuitBreakerStrategy:
         )
         self.circuit_breaker = CircuitBreakerStrategy(self.config)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_circuit_breaker_closed_state(self):
         """Test circuit breaker in closed state."""
 
@@ -54,7 +54,7 @@ class TestCircuitBreakerStrategy:
         assert result == "success"
         assert self.circuit_breaker.state == CircuitBreakerState.CLOSED
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_circuit_breaker_opens_on_failures(self):
         """Test circuit breaker opens after threshold failures."""
 
@@ -68,7 +68,7 @@ class TestCircuitBreakerStrategy:
 
         assert self.circuit_breaker.state == CircuitBreakerState.OPEN
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_circuit_breaker_open_state_blocks_calls(self):
         """Test circuit breaker blocks calls when open."""
         # Force circuit breaker to open state with recent failure
@@ -81,7 +81,7 @@ class TestCircuitBreakerStrategy:
         with pytest.raises(CircuitBreakerOpenError, match="Circuit breaker is OPEN"):
             await self.circuit_breaker.execute(success_func)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_circuit_breaker_half_open_recovery(self):
         """Test circuit breaker half-open recovery."""
         # Force circuit breaker to half-open state
@@ -98,7 +98,7 @@ class TestCircuitBreakerStrategy:
 
         assert self.circuit_breaker.state == CircuitBreakerState.CLOSED
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_circuit_breaker_half_open_failure_reopens(self):
         """Test circuit breaker reopens on failure in half-open state."""
         self.circuit_breaker.state = CircuitBreakerState.HALF_OPEN
@@ -142,7 +142,7 @@ class TestRetryStrategy:
         self.config = RetryConfig(max_retries=3, base_delay=0.01, jitter=False)
         self.retry_strategy = RetryStrategy(self.config)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_retry_strategy_success_on_first_try(self):
         """Test retry strategy with immediate success."""
 
@@ -152,7 +152,7 @@ class TestRetryStrategy:
         result = await self.retry_strategy.execute(success_func)
         assert result == "success"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_retry_strategy_success_after_retries(self):
         """Test retry strategy with success after retries."""
         call_count = 0
@@ -168,7 +168,7 @@ class TestRetryStrategy:
         assert result == "success"
         assert call_count == 3
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_retry_strategy_all_retries_fail(self):
         """Test retry strategy when all retries fail."""
 
@@ -204,7 +204,7 @@ class TestRetryStrategy:
         assert "base_delay" in status
         assert "max_delay" in status
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_retry_strategy_non_retryable_exception(self):
         """Test retry strategy with non-retryable exception."""
         config = RetryConfig(
@@ -232,7 +232,7 @@ class TestCompositeResilienceHandler:
             [self.circuit_breaker, self.retry_strategy],
         )
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_handler_primary_success(self):
         """Test handler with primary function success."""
 
@@ -242,7 +242,7 @@ class TestCompositeResilienceHandler:
         result = await self.handler.execute_with_protection(success_func)
         assert result == "success"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_handler_fallback_success(self):
         """Test handler with fallback function success."""
 
@@ -263,7 +263,7 @@ class TestCompositeResilienceHandler:
         result = await handler.execute_with_protection(failure_func, fallback_func)
         assert result == "fallback_success"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_handler_fallback_failure(self):
         """Test handler when both primary and fallback fail."""
 
@@ -302,7 +302,7 @@ class TestMockZenMCPClient:
         self.mock_rng = MagicMock()
         self.client = MockZenMCPClient(failure_rate=0.0, secure_rng=self.mock_rng)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_mock_client_success(self):
         """Test mock client successful operation."""
         self.mock_rng.random.return_value = 0.9  # > failure_rate, so success
@@ -311,7 +311,7 @@ class TestMockZenMCPClient:
         assert result["enhanced_prompt"] == "Enhanced: test prompt"
         assert result["metadata"]["call_count"] == 1
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_mock_client_failure(self):
         """Test mock client failure simulation."""
         client = MockZenMCPClient(failure_rate=1.0, secure_rng=self.mock_rng)
@@ -320,7 +320,7 @@ class TestMockZenMCPClient:
         with pytest.raises(ZenMCPConnectionError):
             await client.process_prompt("test prompt")
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_mock_client_call_count(self):
         """Test mock client call counting."""
         self.mock_rng.random.return_value = 0.9  # Success
@@ -348,7 +348,7 @@ class TestZenMCPIntegration:
         self.client = MockZenMCPClient(failure_rate=0.0, secure_rng=self.mock_rng)
         self.integration = ZenMCPIntegration(self.client)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_integration_enhance_prompt_success(self):
         """Test integration prompt enhancement success."""
         self.mock_rng.random.return_value = 0.9  # Success
@@ -357,7 +357,7 @@ class TestZenMCPIntegration:
         assert "enhanced_prompt" in result
         assert "metadata" in result
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_integration_enhance_prompt_fallback(self):
         """Test integration prompt enhancement with fallback."""
         # Use client with 100% failure rate

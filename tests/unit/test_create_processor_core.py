@@ -235,7 +235,7 @@ class TestCreateProcessor:
         assert "## Request" not in enhanced_prompt
         assert "## Examples" not in enhanced_prompt
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_success(self):
         """Test successful prompt processing."""
         prompt = "You are a data scientist. Help me analyze customer churn data."
@@ -250,7 +250,7 @@ class TestCreateProcessor:
         assert response.framework_components is not None
         assert response.metadata["domain"] == "business"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_validation_error(self):
         """Test prompt processing with validation error."""
         response = await self.processor.process_prompt("", "general")
@@ -261,7 +261,7 @@ class TestCreateProcessor:
         assert response.enhanced_prompt == ""
         assert "Input prompt must be a non-empty string" in response.errors[0]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_no_domain(self):
         """Test prompt processing without domain specification."""
         prompt = "Help me write a letter"
@@ -272,7 +272,7 @@ class TestCreateProcessor:
         assert response.success is True
         assert response.metadata["domain"] == "general"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_processing_time(self):
         """Test that processing time is recorded correctly."""
         prompt = "Create a business plan for a startup"
@@ -282,7 +282,7 @@ class TestCreateProcessor:
         assert response.processing_time > 0
         assert response.processing_time < 5  # Should be fast for core implementation
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_metadata_complete(self):
         """Test that response metadata is complete."""
         prompt = "Write a technical specification"
@@ -296,7 +296,7 @@ class TestCreateProcessor:
         assert response.metadata["original_prompt_length"] == len(prompt)
         assert response.metadata["enhanced_prompt_length"] == len(response.enhanced_prompt)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_logging(self):
         """Test that processing generates appropriate log messages."""
         prompt = "Help me write documentation"
@@ -307,7 +307,7 @@ class TestCreateProcessor:
             assert response.success is True
             mock_log.assert_called()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_process_prompt_error_logging(self):
         """Test that processing errors are logged appropriately."""
         with patch.object(self.processor.logger, "error") as mock_log:
