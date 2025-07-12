@@ -27,7 +27,7 @@ class TestEnhancedValidation:
     def test_port_validation_detailed_errors(self):
         """Test enhanced port validation with detailed error messages."""
         # Test port too low
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Port 0 is outside valid range") as exc_info:
             ApplicationSettings(api_port=0)
 
         error_msg = str(exc_info.value)
@@ -36,7 +36,7 @@ class TestEnhancedValidation:
         assert "Common choices: 8000" in error_msg
 
         # Test port too high
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Port 70000 is outside valid range") as exc_info:
             ApplicationSettings(api_port=70000)
 
         error_msg = str(exc_info.value)
@@ -46,7 +46,7 @@ class TestEnhancedValidation:
     def test_host_validation_detailed_errors(self):
         """Test enhanced host validation with detailed error messages."""
         # Test empty host
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Host cannot be empty") as exc_info:
             ApplicationSettings(api_host="")
 
         error_msg = str(exc_info.value)

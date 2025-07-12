@@ -3,6 +3,7 @@
 
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 
 
 def main() -> None:
@@ -54,8 +55,6 @@ Security gates are working as expected with good pass rates and no bypasses.
 
     # Save report
     output_file = "security-metrics-report.md"
-    from pathlib import Path
-
     Path(output_file).write_text(report, encoding="utf-8")
 
     print(f"Report saved to: {output_file}")
