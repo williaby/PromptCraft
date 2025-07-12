@@ -148,6 +148,69 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
+
+      - name: Install dependencies for export
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Install mypy type stubs
+        run: poetry run mypy --install-types --non-interactive
+
+      - name: Export and install dependencies with hash verification
+        run: |
+          poetry export --format=requirements.txt --output=requirements-ci.txt
+          poetry run pip install --require-hashes -r requirements-ci.txt
+
+      - name: Run tests with service mocking
+        run: |
+          echo "Running tests with CI environment configuration"
+          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
+        env:
+          CI_ENVIRONMENT: true
+          PROMPTCRAFT_REDIS_HOST: localhost
+          PROMPTCRAFT_QDRANT_HOST: localhost
+          PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
+
+      - name: Run type checking
+        run: poetry run mypy src
+
+      - name: Run linting
+        run: |
+          echo "Running code formatting and linting checks"
+          poetry run black . --check
+          poetry run ruff check .
+          echo "All linting checks passed"
+
+  test-matrix:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: always()
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
