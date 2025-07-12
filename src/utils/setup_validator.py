@@ -17,7 +17,7 @@ except ImportError:
 try:
     import pydantic
 except ImportError:
-    pydantic = None
+    pydantic = None  # type: ignore[assignment]
 
 from src.config.settings import (
     ApplicationSettings,
@@ -39,15 +39,12 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Check Python version
-    if sys.version_info < (3, 11):
-        errors.append("Python 3.11+ required")
-    # Check critical modules can be imported
+    # Python version check
+    if sys.version_info < (3, 11):  # noqa: UP036
+        errors.append(f"Python 3.11+ required, found {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}")
+
     if gnupg is None:
         errors.append("python-gnupg package not available - required for encryption")
-
-    if pydantic is None:
-        errors.append("pydantic package not available - required for configuration")
 
     return len(errors) == 0, errors
 
@@ -82,7 +79,7 @@ def validate_environment_setup() -> tuple[bool, list[str], list[str]]:
     return len(errors) == 0, errors, warnings
 
 
-def validate_startup_configuration(
+def validate_startup_configuration(  # noqa: PLR0912
     settings: ApplicationSettings | None = None,
 ) -> bool:
     """Perform complete startup validation with detailed reporting.

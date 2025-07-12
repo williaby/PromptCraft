@@ -2,14 +2,15 @@
 """Simple security metrics collection script for testing purposes."""
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 
 
 def main() -> None:
     """Generate a basic security metrics report."""
     print("Security Metrics Collection")
     print("=" * 30)
-    print(f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    print(f"Generated: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}")
     print()
 
     # Check for required environment variables
@@ -23,7 +24,7 @@ def main() -> None:
     report = f"""# Security Gate Metrics Report
 
 **Period**: Last 7 days
-**Generated**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Generated**: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
 **Repository**: williaby/PromptCraft
 
 ## Executive Summary
@@ -54,8 +55,6 @@ Security gates are working as expected with good pass rates and no bypasses.
 
     # Save report
     output_file = "security-metrics-report.md"
-    from pathlib import Path
-
     Path(output_file).write_text(report, encoding="utf-8")
 
     print(f"Report saved to: {output_file}")

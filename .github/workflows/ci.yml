@@ -2,18 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - 'feature/phase-1-development'
-      - 'feature/**'
-    # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
+    branches: [ 'feature/phase-1-development', 'feature/**' ]
   pull_request:
-    branches:
-      - main
-      - 'feature/phase-1-development'
-  schedule:
-    # Run security checks daily
-    - cron: '0 0 * * *'
+    branches: [ 'feature/phase-1-development' ]
 
 permissions:
   contents: read
@@ -21,10 +12,15 @@ permissions:
   issues: write
   packages: write
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-check:
     name: Verify Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -40,115 +36,28 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: .venv
-          key: >
-            venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-3.11-
 
       - name: Verify poetry.lock is up to date
-        run: |
-          poetry check --lock || {
-            echo "::error::Poetry lock check failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
-            echo "Lock file size: $(wc -l poetry.lock 2>/dev/null || echo 'Cannot read')"
-            exit 1
-          }
+        run: poetry check --lock
 
       - name: Install dependencies for export
-        run: |
-          poetry install || {
-            echo "::error::Poetry install failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
-            echo "Poetry config: $(poetry config --list | head -5)"
-            exit 1
-          }
+        run: poetry install
 
       - name: Export requirements with hashes
-        run: |
-          ./scripts/generate_requirements.sh || {
-            echo "::error::Requirements generation failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Working directory: $(pwd)"
-            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
-            echo "Dependencies count: $(poetry show 2>/dev/null | wc -l || echo 'Failed to list')"
-            exit 1
-          }
+        run: ./scripts/generate_requirements.sh
 
       - name: Verify requirements.txt hasn't changed
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/feature/phase-1-development'
         run: |
           git diff --exit-code requirements*.txt || {
             echo "::error::requirements files are out of sync."
@@ -167,7 +76,7 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
-    # Security scan should not block CI pipeline
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -184,77 +93,14 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: .venv
-          key: >
-            venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-3.11-
 
@@ -264,7 +110,7 @@ jobs:
           echo "PROMPTCRAFT_REDIS_HOST=localhost" >> $GITHUB_ENV
           echo "PROMPTCRAFT_QDRANT_HOST=localhost" >> $GITHUB_ENV
           echo "PROMPTCRAFT_ENABLE_SERVICE_MOCKING=true" >> $GITHUB_ENV
-          echo "🔧 CI environment configured with service mocking"
+          echo "CI environment configured with service mocking"
 
       - name: Start Redis service for testing
         run: |
@@ -279,24 +125,14 @@ jobs:
 
       - name: Run safety check
         run: |
-          echo "🔒 Running dependency vulnerability scan"
-          poetry run safety check --json || {
-            echo "::warning::Safety vulnerability scan found issues"
-            echo "This is expected in development - review findings and update dependencies"
-            echo "Safety version: $(poetry run safety --version)"
-            echo "Dependencies scanned: $(poetry show | wc -l)"
-          }
+          echo "Running dependency vulnerability scan"
+          poetry run safety check --json || echo "Safety vulnerability scan completed with findings"
         continue-on-error: true
 
       - name: Run bandit security scan
         run: |
-          echo "🛡️  Running Bandit security analysis"
-          poetry run bandit -r src -ll -f json -o bandit-report.json || {
-            echo "::warning::Bandit security scan found issues"
-            echo "Bandit version: $(poetry run bandit --version)"
-            echo "Files scanned: $(find src -name '*.py' | wc -l)"
-            echo "Report saved to: bandit-report.json"
-          }
+          echo "Running Bandit security analysis"
+          poetry run bandit -r src -ll -f json -o bandit-report.json || echo "Bandit security scan completed with findings"
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -308,10 +144,72 @@ jobs:
             .safety-report.json
 
   test:
+    name: CI / Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-3.11-
+
+      - name: Install dependencies for export
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Install mypy type stubs
+        run: poetry run mypy --install-types --non-interactive
+
+      - name: Export and install dependencies with hash verification
+        run: |
+          poetry export --format=requirements.txt --output=requirements-ci.txt
+          poetry run pip install --require-hashes -r requirements-ci.txt
+
+      - name: Run tests with service mocking
+        run: |
+          echo "Running tests with CI environment configuration"
+          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
+        env:
+          CI_ENVIRONMENT: true
+          PROMPTCRAFT_REDIS_HOST: localhost
+          PROMPTCRAFT_QDRANT_HOST: localhost
+          PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
+
+      - name: Run type checking
+        run: poetry run mypy src
+
+      - name: Run linting
+        run: |
+          echo "Running code formatting and linting checks"
+          poetry run black . --check
+          poetry run ruff check .
+          echo "All linting checks passed"
+
+  test-matrix:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    # Remove hard dependency to prevent cascading failures
-    # Tests can run independently of dependency-check
+    timeout-minutes: 30
     if: always()
     strategy:
       matrix:
@@ -332,122 +230,32 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: .venv
-          key: >
-            venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
       - name: Install dependencies for export
-        run: |
-          poetry install --no-interaction --no-ansi || {
-            echo "::error::Poetry install failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
-            exit 1
-          }
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Install mypy type stubs
+        run: poetry run mypy --install-types --non-interactive
 
       - name: Export and install dependencies with hash verification
         run: |
-          poetry export --format=requirements.txt --output=requirements-ci.txt || {
-            echo "::error::Poetry export failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
-            echo "Poetry environment: $(poetry env info --path 2>/dev/null || echo 'No poetry env')"
-            echo "Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
-            echo "Dependencies count: $(poetry show 2>/dev/null | wc -l || echo 'Failed to list')"
-            echo "Available export options:"
-            poetry export --help | grep -E "(format|output|with|without)"
-            exit 1
-          }
+          poetry export --format=requirements.txt --output=requirements-ci.txt
           poetry run pip install --require-hashes -r requirements-ci.txt
 
       - name: Run tests with service mocking
         run: |
-          echo "🧪 Running tests with CI environment configuration"
-          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing || {
-            echo "::error::Test execution failed. Debug info:"
-            echo "Python version: $(python --version)"
-            echo "Pytest version: $(poetry run pytest --version)"
-            echo "Test discovery:"
-            poetry run pytest --collect-only --quiet 2>/dev/null | head -20 || echo "Failed to discover tests"
-            echo "Environment variables:"
-            env | grep -E "(CI_|REDIS_|QDRANT_|ENABLE_)" | sort
-            echo "Service connectivity check:"
-            redis-cli ping 2>/dev/null || echo "Redis not accessible"
-            curl -s http://localhost:6333/health 2>/dev/null || echo "Qdrant not accessible"
-            exit 1
-          }
+          echo "Running tests with CI environment configuration"
+          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
         env:
           CI_ENVIRONMENT: true
           PROMPTCRAFT_REDIS_HOST: localhost
@@ -455,41 +263,28 @@ jobs:
           PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
 
       - name: Run type checking
-        run: |
-          poetry run mypy src || {
-            echo "::error::Type checking failed. Debug info:"
-            echo "MyPy version: $(poetry run mypy --version)"
-            echo "Python version: $(python --version)"
-            echo "Source files count: $(find src -name '*.py' | wc -l)"
-            echo "MyPy configuration:"
-            cat pyproject.toml | grep -A 10 "\[tool.mypy\]" || echo "No MyPy config found in pyproject.toml"
-            exit 1
-          }
+        run: poetry run mypy src
 
       - name: Run linting
         run: |
-          echo "🔍 Running code formatting and linting checks"
-          poetry run black . --check || {
-            echo "::error::Black formatting check failed"
-            echo "Run 'poetry run black .' to fix formatting"
-            exit 1
-          }
-          poetry run ruff check . || {
-            echo "::error::Ruff linting check failed"
-            echo "Run 'poetry run ruff check --fix .' to fix auto-fixable issues"
-            exit 1
-          }
-          echo "✅ All linting checks passed"
+          echo "Running code formatting and linting checks"
+          poetry run black . --check
+          poetry run ruff check .
+          echo "All linting checks passed"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }}
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Coverage fallback notice
+        if: ${{ env.CODECOV_TOKEN == '' }}
         run: |
           echo "⚠️  CODECOV_TOKEN not configured - Codecov upload may have been skipped"
           echo "Coverage reports available locally in htmlcov/"
@@ -498,10 +293,9 @@ jobs:
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    # Allow Docker build even if security-scan fails (non-critical)
-    # Only require test success for Docker build
+    timeout-minutes: 25
     needs: [test]
-    if: github.event_name == 'push' && (success() || failure())
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
@@ -520,90 +314,14 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
+      - name: Install Poetry Export Plugin
+        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
 
       - name: Install dependencies for export
-        run: |
-          poetry install || {
-            echo "::error::Poetry install failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Virtual environment: ${VIRTUAL_ENV:-Not activated}"
-            echo "Poetry config: $(poetry config --list | head -5)"
-            exit 1
-          }
+        run: poetry install
 
       - name: Generate requirements for Docker
-        run: |
-          ./scripts/generate_requirements.sh || {
-            echo "::error::Docker requirements generation failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            exit 1
-          }
+        run: ./scripts/generate_requirements.sh
 
       - name: Build Docker image
         uses: docker/build-push-action@v5

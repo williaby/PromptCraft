@@ -5,7 +5,9 @@ and SLA compliance tracking for the C.R.E.A.T.E. framework.
 """
 
 import asyncio
+import contextlib
 import logging
+import sys
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
@@ -59,7 +61,7 @@ class PerformanceMetrics:
 class PerformanceMonitor:
     """Core performance monitoring system."""
 
-    def __init__(self, max_samples: int = 1000):
+    def __init__(self, max_samples: int = 1000) -> None:
         """Initialize performance monitor.
 
         Args:
@@ -81,7 +83,7 @@ class PerformanceMonitor:
         timestamp = metric.timestamp or time.time()
 
         if metric.metric_type == MetricType.COUNTER:
-            self.counters[metric.name] += metric.value
+            self.counters[metric.name] += int(metric.value)
         elif metric.metric_type == MetricType.GAUGE:
             self.gauges[metric.name] = metric.value
         elif metric.metric_type == MetricType.HISTOGRAM:
@@ -192,9 +194,9 @@ class PerformanceMonitor:
             "counters": dict(self.counters),
             "gauges": dict(self.gauges),
             "histograms": {
-                name: self.get_histogram_stats(name) for name in self.metrics.keys() if not name.endswith("_history")
+                name: self.get_histogram_stats(name) for name in self.metrics if not name.endswith("_history")
             },
-            "timers": {name: self.get_timer_stats(name) for name in self.timers.keys()},
+            "timers": {name: self.get_timer_stats(name) for name in self.timers},
         }
 
     def reset_metrics(self) -> None:
@@ -209,7 +211,7 @@ class PerformanceMonitor:
 class SLAMonitor:
     """SLA compliance monitoring system."""
 
-    def __init__(self, sla_targets: dict[str, float] | None = None):
+    def __init__(self, sla_targets: dict[str, float] | None = None) -> None:
         """Initialize SLA monitor.
 
         Args:
@@ -309,7 +311,7 @@ class SLAMonitor:
 class PerformanceTracker:
     """Context manager for tracking performance of operations."""
 
-    def __init__(self, monitor: PerformanceMonitor, operation_name: str, labels: dict[str, str] | None = None):
+    def __init__(self, monitor: PerformanceMonitor, operation_name: str, labels: dict[str, str] | None = None) -> None:
         """Initialize performance tracker.
 
         Args:
@@ -327,7 +329,7 @@ class PerformanceTracker:
         self.start_time = time.time()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit context manager."""
         if self.start_time is not None:
             duration = time.time() - self.start_time
@@ -366,7 +368,7 @@ class PerformanceTracker:
 class SystemResourceMonitor:
     """Monitor system resource usage."""
 
-    def __init__(self, monitor: PerformanceMonitor):
+    def __init__(self, monitor: PerformanceMonitor) -> None:
         """Initialize system resource monitor.
 
         Args:
@@ -398,10 +400,8 @@ class SystemResourceMonitor:
         self._monitoring = False
         if self._monitor_task:
             self._monitor_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._monitor_task
-            except asyncio.CancelledError:
-                pass
 
         self.logger.info("Stopped system resource monitoring")
 
@@ -426,8 +426,6 @@ class SystemResourceMonitor:
         timestamp = time.time()
 
         # Memory usage (simplified - in real implementation would use psutil)
-        import sys
-
         memory_usage = sys.getsizeof(self.monitor.metrics) / 1024 / 1024  # MB
 
         memory_metric = MetricData(

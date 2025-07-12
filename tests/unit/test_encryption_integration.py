@@ -4,6 +4,7 @@ This module tests the encryption functionality added to the configuration system
 including SecretStr handling, encrypted file loading, and graceful degradation.
 """
 
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -128,8 +129,6 @@ class TestEncryptionIntegration:
         caplog,
     ):
         """Test that production environment warns when encryption is unavailable."""
-        import logging
-
         mock_detect_env.return_value = "prod"
         mock_validate_encryption.return_value = False
 
@@ -150,8 +149,6 @@ class TestEncryptionIntegration:
         caplog,
     ):
         """Test that development environment shows info when encryption is unavailable."""
-        import logging
-
         mock_detect_env.return_value = "dev"
         mock_validate_encryption.return_value = False
 
@@ -172,8 +169,6 @@ class TestEncryptionIntegration:
         caplog,
     ):
         """Test that no warning is logged when encryption is available."""
-        import logging
-
         mock_detect_env.return_value = "prod"
         mock_validate_encryption.return_value = True
 
