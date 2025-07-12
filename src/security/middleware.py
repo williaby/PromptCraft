@@ -38,10 +38,11 @@ Complexity: O(1) for header operations, O(n) for header masking where n is heade
 import logging
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response as StarletteResponse
 
 from src.config.settings import get_settings
 
@@ -141,10 +142,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers[header_name] = header_value
 
         # Cast to Response type for MyPy
-        from typing import cast
-
-        from starlette.responses import Response as StarletteResponse
-
         return cast(StarletteResponse, response)
 
     def _get_security_headers(self) -> dict[str, str]:
@@ -261,10 +258,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Process-Time"] = str(process_time)
 
         # Cast to Response type for MyPy
-        from typing import cast
-
-        from starlette.responses import Response as StarletteResponse
-
         return cast(StarletteResponse, response)
 
     def _log_request(self, request: Request) -> None:

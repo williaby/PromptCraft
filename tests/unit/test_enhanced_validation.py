@@ -55,7 +55,7 @@ class TestEnhancedValidation:
         assert "'localhost'" in error_msg
 
         # Test invalid host format
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid API host format") as exc_info:
             ApplicationSettings(api_host="invalid@host!")
 
         error_msg = str(exc_info.value)
@@ -79,7 +79,7 @@ class TestEnhancedValidation:
             assert settings.version == version
 
         # Invalid versions should fail with helpful messages
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid version format") as exc_info:
             ApplicationSettings(version="invalid-version")
 
         error_msg = str(exc_info.value)
@@ -90,7 +90,7 @@ class TestEnhancedValidation:
     def test_app_name_validation_enhanced(self):
         """Test enhanced application name validation."""
         # Test empty name
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Application name cannot be empty") as exc_info:
             ApplicationSettings(app_name="")
 
         error_msg = str(exc_info.value)
@@ -299,7 +299,7 @@ class TestLoggingIntegration:
 
         with caplog.at_level(logging.INFO):
             settings = ApplicationSettings(
-                api_key="secret-api-key-12345",  # noqa: S106
+                api_key="secret-api-key-12345",
                 secret_key="super-secret-key",  # noqa: S106
             )
             validate_configuration_on_startup(settings)

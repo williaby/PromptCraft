@@ -97,8 +97,8 @@ class AuditEventType(str, Enum):
     AUTH_LOGIN_SUCCESS = "auth.login.success"
     AUTH_LOGIN_FAILURE = "auth.login.failure"
     AUTH_LOGOUT = "auth.logout"
-    AUTH_TOKEN_CREATED = "auth.token.created"  # nosec B105  # Not a password - audit event type
-    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_CREATED = "auth.token.created"  # noqa: S105  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # noqa: S105  # nosec B105  # Not a password - audit event type
 
     # Authorization events
     AUTHZ_ACCESS_GRANTED = "authz.access.granted"

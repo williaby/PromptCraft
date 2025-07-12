@@ -42,7 +42,8 @@ Complexity: O(1) for error response generation, O(n) for validation error proces
 
 import logging
 import traceback
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -347,9 +348,6 @@ def setup_secure_error_handlers(app: FastAPI) -> None:
         Must be called before application startup to ensure security coverage.
     """
     # Register exception handlers with proper type casting
-    from collections.abc import Callable
-    from typing import cast
-
     app.add_exception_handler(HTTPException, cast(Callable, http_exception_handler))
     app.add_exception_handler(StarletteHTTPException, cast(Callable, starlette_http_exception_handler))
     app.add_exception_handler(RequestValidationError, cast(Callable, validation_exception_handler))
