@@ -29,6 +29,12 @@ from src.security.audit_logging import (
     AuditEventType,
     AuditLogger,
     audit_logger_instance,
+    log_api_request,
+    log_authentication_failure,
+    log_authentication_success,
+    log_error_handler_triggered,
+    log_rate_limit_exceeded,
+    log_validation_failure,
 )
 from src.security.error_handlers import (
     create_secure_error_response,
@@ -1055,8 +1061,6 @@ class TestConfigurationCoverage:
     def test_middleware_environment_detection(self):
         """Test middleware environment detection."""
 
-        from src.security.middleware import SecurityHeadersMiddleware
-
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "dev"
 
@@ -1593,7 +1597,6 @@ class TestRateLimitingEdgeCases:
 
     def test_rate_limit_handler_details(self):
         """Test rate limit handler with detailed exception information."""
-        from src.security.rate_limiting import rate_limit_exceeded_handler
 
         request = Mock(spec=Request)
         request.method = "POST"
@@ -1737,43 +1740,40 @@ class TestMainScriptExecution:
     def test_main_script_configuration_error(self):
         """Test main script handling of configuration errors."""
 
-        from src.main import ConfigurationValidationError
+        with patch("src.main.get_settings") as mock_settings, patch("sys.exit"):
+            mock_settings.side_effect = ConfigurationValidationError(
+                "Configuration error",
+                field_errors=["Invalid setting"],
+                suggestions=["Fix setting"],
+            )
 
-        with patch("src.main.get_settings") as mock_settings:
-            with patch("sys.exit") as mock_exit:
-                mock_settings.side_effect = ConfigurationValidationError(
-                    "Configuration error",
-                    field_errors=["Invalid setting"],
-                    suggestions=["Fix setting"],
-                )
-
-                # Simulate running main script
-                try:
-                    exec(compile(open("src/main.py").read(), "src/main.py", "exec"))
-                except SystemExit:
-                    pass  # Expected due to configuration error
-                except Exception as e:
-                    # Log exception for debugging if needed
-                    print(f"Caught exception during test: {e}")
+            # Simulate running main script
+            try:
+                main_path = Path("src/main.py")
+                with main_path.open() as f:
+                    exec(compile(f.read(), "src/main.py", "exec"))  # noqa: S102
+            except SystemExit:
+                pass  # Expected due to configuration error
+            except Exception as e:
+                # Expected - configuration errors should be handled gracefully
+                print(f"Expected configuration error: {e}")  # noqa: T201
 
     def test_main_script_os_error(self):
         """Test main script handling of OS errors."""
 
-        with patch("src.main.get_settings") as mock_settings:
-            with patch("sys.exit"):
-                with patch("uvicorn.run") as mock_uvicorn:
-                    # Mock settings to pass validation
-                    mock_settings_obj = Mock()
-                    mock_settings_obj.api_host = "localhost"
-                    mock_settings_obj.api_port = 8000
-                    mock_settings_obj.debug = False
-                    mock_settings.return_value = mock_settings_obj
+        with patch("src.main.get_settings") as mock_settings, patch("sys.exit"), patch("uvicorn.run") as mock_uvicorn:
+            # Mock settings to pass validation
+            mock_settings_obj = Mock()
+            mock_settings_obj.api_host = "localhost"
+            mock_settings_obj.api_port = 8000
+            mock_settings_obj.debug = False
+            mock_settings.return_value = mock_settings_obj
 
-                    # Mock uvicorn to raise OSError
-                    mock_uvicorn.side_effect = OSError("Port already in use")
+            # Mock uvicorn to raise OSError
+            mock_uvicorn.side_effect = OSError("Port already in use")
 
-                    # This test verifies the error handling path exists
-                    # (Can't easily test the actual if __name__ == "__main__" block)
+            # This test verifies the error handling path exists
+            # (Can't easily test the actual if __name__ == "__main__" block)
 
 
 class TestCreateAppEdgeCases:
@@ -1823,7 +1823,6 @@ class TestCoverageImprovements:
 
     def test_additional_input_validation_coverage(self):
         """Test additional input validation paths."""
-        from src.security.input_validation import create_input_sanitizer
 
         sanitizers = create_input_sanitizer()
         assert "string" in sanitizers
@@ -1831,8 +1830,6 @@ class TestCoverageImprovements:
         assert "email" in sanitizers
 
         # Test using different sanitizer types
-        from src.security.input_validation import sanitize_dict_values
-
         test_data = {"safe": "normal text", "number": 123}
 
         # Test with path sanitizer
@@ -1846,14 +1843,6 @@ class TestCoverageImprovements:
 
     def test_audit_logging_convenience_functions_coverage(self):
         """Test convenience functions in audit logging."""
-        from src.security.audit_logging import (
-            log_api_request,
-            log_authentication_failure,
-            log_authentication_success,
-            log_error_handler_triggered,
-            log_rate_limit_exceeded,
-            log_validation_failure,
-        )
 
         request = Mock(spec=Request)
         request.method = "POST"
@@ -1880,7 +1869,6 @@ class TestCoverageImprovements:
 
     def test_error_handlers_no_headers_branch(self):
         """Test create_secure_http_exception with None headers to hit missing branch."""
-        from src.security.error_handlers import create_secure_http_exception
 
         # Test with None headers (missing branch coverage)
         exception = create_secure_http_exception(400, "Bad request", headers=None)
@@ -1898,7 +1886,6 @@ class TestCoverageImprovements:
 
     def test_input_validation_missing_branches(self):
         """Test missing branches in input validation module."""
-        from src.security.input_validation import SecureEmailField, SecurePathField, SecureQueryParams
 
         # Test line 91: non-string value conversion in SecurePathField
         # This tests the type conversion branch where value is not a string
@@ -1929,63 +1916,57 @@ class TestCoverageImprovements:
         client = TestClient(app)
 
         # Test health endpoint when configuration validation has extensive errors
-        with patch("src.main.get_configuration_health_summary") as mock_health:
-            with patch("src.main.get_settings") as mock_settings:
+        with patch("src.main.get_configuration_health_summary"), patch("src.main.get_settings") as mock_settings:
+            # Mock extensive validation errors
+            extensive_errors = [f"Error {i}" for i in range(20)]
+            extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
 
-                # Mock extensive validation errors
-                extensive_errors = [f"Error {i}" for i in range(20)]
-                extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
+            mock_settings.side_effect = [
+                ConfigurationValidationError(
+                    "Extensive validation failure",
+                    field_errors=extensive_errors,
+                    suggestions=extensive_suggestions,
+                ),
+                Mock(debug=True),  # For debug mode check
+            ]
 
-                mock_settings.side_effect = [
-                    ConfigurationValidationError(
-                        "Extensive validation failure",
-                        field_errors=extensive_errors,
-                        suggestions=extensive_suggestions,
-                    ),
-                    Mock(debug=True),  # For debug mode check
-                ]
-
-                response = client.get("/health/config")
-                assert response.status_code == 500
-                # Verify error handling works with extensive error lists
+            response = client.get("/health/config")
+            assert response.status_code == 500
+            # Verify error handling works with extensive error lists
 
     def test_configuration_health_endpoint_normal_execution(self):
         """Test normal execution path of configuration health endpoint."""
         client = TestClient(app)
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.get_configuration_status") as mock_get_config_status:
-                from src.config.health import ConfigurationStatusModel
+        with patch("src.main.get_settings") as mock_get_settings, patch("src.main.get_configuration_status") as mock_get_config_status:
+            # Mock normal settings
+            mock_settings = Mock()
+            mock_get_settings.return_value = mock_settings
 
-                # Mock normal settings
-                mock_settings = Mock()
-                mock_get_settings.return_value = mock_settings
+            # Mock normal config status with proper model
+            mock_config_status = ConfigurationStatusModel(
+                environment="test",
+                version="1.0.0",
+                debug=False,
+                config_loaded=True,
+                encryption_enabled=True,
+                config_source="env_vars",
+                validation_status="passed",
+                secrets_configured=2,
+                api_host="127.0.0.1",
+                api_port=7860,
+            )
+            mock_get_config_status.return_value = mock_config_status
 
-                # Mock normal config status with proper model
-                mock_config_status = ConfigurationStatusModel(
-                    environment="test",
-                    version="1.0.0",
-                    debug=False,
-                    config_loaded=True,
-                    encryption_enabled=True,
-                    config_source="env_vars",
-                    validation_status="passed",
-                    secrets_configured=2,
-                    api_host="127.0.0.1",
-                    api_port=7860,
-                )
-                mock_get_config_status.return_value = mock_config_status
-
-                response = client.get("/health/config")
-                assert response.status_code == 200
-                # This tests the normal execution path (line 264)
+            response = client.get("/health/config")
+            assert response.status_code == 200
+            # This tests the normal execution path (line 264)
 
     def test_search_endpoint_with_depends_query_params(self):
         """Test search endpoint if it properly used Depends for query params."""
         # This endpoint currently has an implementation issue - it expects JSON body
         # but should use Depends(SecureQueryParams) for query parameters
         # This test covers the return statement (line 384) when it works
-        from src.security.input_validation import SecureQueryParams
 
         # Test the model validation directly
         params = SecureQueryParams(search="test", page=1, limit=10, sort="name:asc")
@@ -2018,7 +1999,6 @@ class TestConfigurationModuleCoverage:
 
     def test_settings_validation_comprehensive(self):
         """Test comprehensive settings validation scenarios."""
-        from src.config.settings import ConfigurationValidationError, get_settings
 
         # Test settings with validation enabled
         with patch.dict("os.environ", {"APP_NAME": "TestApp", "ENVIRONMENT": "test"}):
@@ -2036,7 +2016,6 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_module_basic_imports(self):
         """Test basic imports and functions from encryption module."""
-        from src.utils.encryption import EncryptionError, GPGError, validate_environment_keys
 
         # Test that exception classes are defined
         assert issubclass(EncryptionError, Exception)
@@ -2047,7 +2026,6 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_gpg_key_validation(self):
         """Test GPG key validation functions."""
-        from src.utils.encryption import EncryptionError, validate_environment_keys
 
         # Test that function exists and can be called
         try:
@@ -2063,7 +2041,6 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_ssh_key_validation(self):
         """Test SSH key validation through environment validation."""
-        from src.utils.encryption import EncryptionError, validate_environment_keys
 
         # Test that function exists and validates SSH properly
         with pytest.raises(EncryptionError, match="SSH|signing|GPG"):
@@ -2075,7 +2052,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_rate_limiting_environment_specific_creation(self):
         """Test rate limiting with different environments."""
-        from src.security.rate_limiting import create_limiter
 
         # Test with different environment settings
         environments = ["dev", "staging", "prod", "test"]
