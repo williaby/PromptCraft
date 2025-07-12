@@ -350,7 +350,7 @@ class TestSystemResourceMonitor:
         self.monitor = PerformanceMonitor()
         self.resource_monitor = SystemResourceMonitor(self.monitor)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_start_stop_monitoring(self):
         """Test starting and stopping resource monitoring."""
         # Start monitoring
@@ -366,7 +366,7 @@ class TestSystemResourceMonitor:
         memory_usage = self.monitor.get_gauge("memory_usage_mb")
         assert memory_usage >= 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_monitoring_already_started(self):
         """Test starting monitoring when already started."""
         await self.resource_monitor.start_monitoring(interval=0.1)
@@ -376,7 +376,7 @@ class TestSystemResourceMonitor:
 
         await self.resource_monitor.stop_monitoring()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_stopping_not_started_monitoring(self):
         """Test stopping monitoring when not started."""
         # Should not cause issues
