@@ -2041,10 +2041,15 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_ssh_key_validation(self):
         """Test SSH key validation through environment validation."""
-
-        # Test that function exists and validates SSH properly
-        with pytest.raises(EncryptionError, match="SSH|signing|GPG"):
-            validate_environment_keys()
+        
+        # Mock subprocess to simulate missing SSH keys
+        with patch("subprocess.run") as mock_run:
+            # Simulate ssh-add -l returning error (no keys loaded)
+            mock_run.return_value = Mock(returncode=1, stdout="", stderr="")
+            
+            # Test that function validates SSH properly
+            with pytest.raises(EncryptionError, match="No SSH keys loaded"):
+                validate_environment_keys()
 
 
 class TestAdditionalSecurityCoverage:
