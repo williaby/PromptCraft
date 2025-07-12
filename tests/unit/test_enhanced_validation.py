@@ -99,7 +99,7 @@ class TestEnhancedValidation:
 
         # Test name too long
         long_name = "x" * 101
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="too long") as exc_info:
             ApplicationSettings(app_name=long_name)
 
         error_msg = str(exc_info.value)
@@ -107,7 +107,7 @@ class TestEnhancedValidation:
         assert "Maximum length is 100" in error_msg
 
         # Test invalid characters
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid application name") as exc_info:
             ApplicationSettings(app_name="app@name!")
 
         error_msg = str(exc_info.value)
@@ -117,7 +117,7 @@ class TestEnhancedValidation:
     def test_secret_field_validation_detailed(self):
         """Test enhanced secret field validation with field-specific guidance."""
         # Test database password
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(database_password="")
 
         error_msg = str(exc_info.value)
@@ -125,7 +125,7 @@ class TestEnhancedValidation:
         assert "Secret values cannot be empty strings" in error_msg
 
         # Test API key
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(api_key="")
 
         error_msg = str(exc_info.value)
@@ -133,7 +133,7 @@ class TestEnhancedValidation:
         assert "Secret values cannot be empty strings" in error_msg
 
         # Test secret key validation
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(secret_key="")
 
         error_msg = str(exc_info.value)
@@ -236,7 +236,7 @@ class TestStartupValidation:
 
         settings = ApplicationSettings(
             environment="staging",
-            secret_key="test-secret-key",
+            secret_key="test-secret-key",  # noqa: S106
         )
 
         # Should not raise an error
@@ -299,8 +299,8 @@ class TestLoggingIntegration:
 
         with caplog.at_level(logging.INFO):
             settings = ApplicationSettings(
-                api_key="secret-api-key-12345",
-                secret_key="super-secret-key",
+                api_key="secret-api-key-12345",  # noqa: S106
+                secret_key="super-secret-key",  # noqa: S106
             )
             validate_configuration_on_startup(settings)
 
@@ -327,7 +327,7 @@ class TestEdgeCases:
         # Invalid formats that should fail (completely invalid hostnames/IPs)
         invalid_formats = ["", "   ", "...", "256.256.256.256.", "-invalid-", "host..name"]
         for invalid_format in invalid_formats:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid|cannot be empty"):
                 ApplicationSettings(api_host=invalid_format)
 
         # Note: "192.168.01.1" may be valid depending on regex interpretation
@@ -342,7 +342,7 @@ class TestEdgeCases:
             assert settings.api_host == hostname
 
         # Invalid hostnames (too long subdomain)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid"):
             ApplicationSettings(api_host="a" * 64 + ".example.com")
 
     @patch("src.config.settings.validate_environment_keys")
@@ -362,12 +362,12 @@ class TestEdgeCases:
         with caplog.at_level(logging.WARNING):
             ApplicationSettings(
                 database_url="postgresql://user:pass@host/db",
-                database_password="separate-password",
+                database_password="separate-password",  # noqa: S106
             )
             validate_configuration_on_startup(
                 ApplicationSettings(
                     database_url="postgresql://user:pass@host/db",
-                    database_password="separate-password",
+                    database_password="separate-password",  # noqa: S106
                 ),
             )
 
