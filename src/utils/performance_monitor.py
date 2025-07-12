@@ -192,9 +192,9 @@ class PerformanceMonitor:
             "counters": dict(self.counters),
             "gauges": dict(self.gauges),
             "histograms": {
-                name: self.get_histogram_stats(name) for name in self.metrics.keys() if not name.endswith("_history")
+                name: self.get_histogram_stats(name) for name in self.metrics if not name.endswith("_history")
             },
-            "timers": {name: self.get_timer_stats(name) for name in self.timers.keys()},
+            "timers": {name: self.get_timer_stats(name) for name in self.timers},
         }
 
     def reset_metrics(self) -> None:
