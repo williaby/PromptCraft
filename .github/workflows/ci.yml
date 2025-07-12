@@ -181,6 +181,9 @@ jobs:
       - name: Install dependencies for export
         run: poetry install --no-interaction --no-ansi
 
+      - name: Install mypy type stubs
+        run: poetry run mypy --install-types --non-interactive
+
       - name: Export and install dependencies with hash verification
         run: |
           poetry export --format=requirements.txt --output=requirements-ci.txt
