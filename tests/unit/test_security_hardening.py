@@ -2041,12 +2041,26 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_ssh_key_validation(self):
         """Test SSH key validation through environment validation."""
-        
-        # Mock subprocess to simulate missing SSH keys
-        with patch("subprocess.run") as mock_run:
-            # Simulate ssh-add -l returning error (no keys loaded)
-            mock_run.return_value = Mock(returncode=1, stdout="", stderr="")
-            
+
+        # Mock both GPG and subprocess to reach SSH validation
+        with patch("gnupg.GPG") as mock_gpg_class, patch("subprocess.run") as mock_run:
+            # Mock GPG to return at least one secret key (pass GPG validation)
+            mock_gpg = Mock()
+            mock_gpg.list_keys.return_value = [{"keyid": "test-key-id"}]  # Non-empty list
+            mock_gpg_class.return_value = mock_gpg
+
+            # Configure subprocess calls
+            def subprocess_side_effect(cmd, **kwargs):
+                if cmd[0] == "ssh-add":
+                    # Simulate ssh-add -l returning error (no keys loaded)
+                    return Mock(returncode=1, stdout="", stderr="")
+                if cmd[0] == "git":
+                    # Simulate git config returning success
+                    return Mock(returncode=0, stdout="test-signing-key\n", stderr="")
+                return Mock(returncode=0, stdout="", stderr="")
+
+            mock_run.side_effect = subprocess_side_effect
+
             # Test that function validates SSH properly
             with pytest.raises(EncryptionError, match="No SSH keys loaded"):
                 validate_environment_keys()
