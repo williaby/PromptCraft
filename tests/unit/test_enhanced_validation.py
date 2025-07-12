@@ -264,7 +264,7 @@ class TestStartupValidation:
         if not success:
             # Log errors for debugging
             for error in errors:
-                print(f"System validation error: {error}")
+                print(f"System validation error: {error}")  # noqa: T201
 
         # At minimum, Python version should be OK since tests are running
         assert success or any("Python" in error for error in errors)
@@ -281,7 +281,7 @@ class TestLoggingIntegration:
         mock_validate_keys.return_value = None
 
         with caplog.at_level(logging.INFO):
-            settings = reload_settings()
+            _ = reload_settings()
 
         # Check that important information is logged
         log_messages = [record.message for record in caplog.records]

@@ -97,7 +97,7 @@ class ClaudeContext7Integration:
         base_name = self.get_package_base_name(package_name)
         result = {
             "package": base_name,
-            "in_pyproject": base_name in [self.get_package_base_name(p) for p in self.pyproject_deps.keys()],
+            "in_pyproject": base_name in [self.get_package_base_name(p) for p in self.pyproject_deps],
             "context7_status": "unknown",
             "context7_id": None,
             "trust_score": None,
@@ -162,7 +162,7 @@ class ClaudeContext7Integration:
         """Check all pyproject.toml dependencies against Context7 mappings."""
         results = {}
 
-        for dep_spec in self.pyproject_deps.keys():
+        for dep_spec in self.pyproject_deps:
             base_name = self.get_package_base_name(dep_spec)
             results[base_name] = self.validate_package(base_name)
 
