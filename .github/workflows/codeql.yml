@@ -1,7 +1,7 @@
 # .github/workflows/codeql.yml
 # This workflow uses GitHub's CodeQL to find security vulnerabilities in the codebase.
 
-name: "CodeQL Analysis"
+name: "CodeQL AnalysisExpected"
 
 on:
   push:
