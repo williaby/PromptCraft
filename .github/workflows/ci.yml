@@ -37,7 +37,13 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+        run: |
+          for i in 1 2 3; do
+            poetry self add poetry-plugin-export && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done || echo "Plugin installation failed after retries, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -51,7 +57,13 @@ jobs:
         run: poetry check --lock
 
       - name: Install dependencies for export
-        run: poetry install
+        run: |
+          for i in 1 2 3; do
+            poetry install && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Export requirements with hashes
         run: ./scripts/generate_requirements.sh
@@ -69,7 +81,12 @@ jobs:
         run: |
           python -m venv test-env
           source test-env/bin/activate
-          pip install --require-hashes -r requirements.txt
+          for i in 1 2 3; do
+            pip install --no-cache-dir --require-hashes -r requirements.txt && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
           deactivate
           rm -rf test-env
 
@@ -94,7 +111,13 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+        run: |
+          for i in 1 2 3; do
+            poetry self add poetry-plugin-export && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done || echo "Plugin installation failed after retries, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -114,14 +137,24 @@ jobs:
 
       - name: Start Redis service for testing
         run: |
-          sudo apt-get update
-          sudo apt-get install -y redis-server
+          for i in 1 2 3; do
+            sudo apt-get update && sudo apt-get install -y redis-server && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done
           sudo systemctl start redis-server
           redis-cli ping || echo "Redis not started - will use mocking"
         continue-on-error: true
 
       - name: Install dependencies
-        run: poetry install
+        run: |
+          for i in 1 2 3; do
+            poetry install && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Run safety check
         run: |
@@ -165,7 +198,13 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+        run: |
+          for i in 1 2 3; do
+            poetry self add poetry-plugin-export && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done || echo "Plugin installation failed after retries, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -176,15 +215,32 @@ jobs:
             venv-${{ runner.os }}-3.11-
 
       - name: Install dependencies for export
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          for i in 1 2 3; do
+            poetry install && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Install mypy type stubs
-        run: poetry run mypy --install-types --non-interactive
+        run: |
+          for i in 1 2 3; do
+            poetry run mypy --install-types --non-interactive && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done
 
       - name: Export and install dependencies with hash verification
         run: |
           poetry export --format=requirements.txt --output=requirements-ci.txt
-          poetry run pip install --require-hashes -r requirements-ci.txt
+          for i in 1 2 3; do
+            poetry run pip install --no-cache-dir --require-hashes -r requirements-ci.txt && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Run tests with service mocking
         run: |
@@ -231,7 +287,13 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+        run: |
+          for i in 1 2 3; do
+            poetry self add poetry-plugin-export && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done || echo "Plugin installation failed after retries, continuing..."
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -242,15 +304,32 @@ jobs:
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
       - name: Install dependencies for export
-        run: poetry install --no-interaction --no-ansi
+        run: |
+          for i in 1 2 3; do
+            poetry install && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Install mypy type stubs
-        run: poetry run mypy --install-types --non-interactive
+        run: |
+          for i in 1 2 3; do
+            poetry run mypy --install-types --non-interactive && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done
 
       - name: Export and install dependencies with hash verification
         run: |
           poetry export --format=requirements.txt --output=requirements-ci.txt
-          poetry run pip install --require-hashes -r requirements-ci.txt
+          for i in 1 2 3; do
+            poetry run pip install --no-cache-dir --require-hashes -r requirements-ci.txt && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Run tests with service mocking
         run: |
@@ -315,10 +394,22 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install Poetry Export Plugin
-        run: poetry self add poetry-plugin-export || echo "Plugin installation failed, continuing..."
+        run: |
+          for i in 1 2 3; do
+            poetry self add poetry-plugin-export && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            }
+          done || echo "Plugin installation failed after retries, continuing..."
 
       - name: Install dependencies for export
-        run: poetry install
+        run: |
+          for i in 1 2 3; do
+            poetry install && break || {
+              echo "Attempt $i failed, retrying..."
+              sleep 10
+            }
+          done
 
       - name: Generate requirements for Docker
         run: ./scripts/generate_requirements.sh
