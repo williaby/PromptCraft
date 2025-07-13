@@ -25,6 +25,7 @@ def validate_configuration_on_startup(settings: "ApplicationSettings") -> None:
     Raises:
         ConfigurationValidationError: If validation fails
     """
-    # This is currently a placeholder - the actual validation
-    # logic should be implemented here to avoid circular imports
-    logger.info("Configuration validation completed successfully for %s", type(settings).__name__)
+    # Import the actual validation function locally to avoid circular imports
+    from .settings import validate_configuration_on_startup as _validate
+
+    return _validate(settings)
