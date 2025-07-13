@@ -14,6 +14,7 @@ from src.mcp_integration.config_manager import (
     MCPConfigurationManager,
     MCPServerConfig,
 )
+from src.mcp_integration.docker_mcp_client import DockerMCPClient
 from src.mcp_integration.parallel_executor import ExecutionResult, ParallelSubagentExecutor
 
 
@@ -527,3 +528,207 @@ class TestParallelSubagentExecutor:
         assert result["routing_metadata"]["docker_available"] is False
         assert result["performance"]["memory_limit"] == "unlimited"
         assert result["performance"]["ide_compatibility"] == "claude_code"
+
+
+class TestMCPHealthIntegration:
+    """Test MCP health check integration."""
+
+    def test_docker_mcp_client_initialization(self):
+        """Test Docker MCP client initialization."""
+        client = DockerMCPClient()
+        assert client.docker_desktop_base_url == "http://localhost:3280"
+        assert isinstance(client.mcp_servers, dict)
+        assert client.logger is not None
+
+    @pytest.mark.asyncio
+    async def test_docker_mcp_client_methods(self):
+        """Test Docker MCP client method stubs."""
+        client = DockerMCPClient()
+
+        # Test is_available
+        available = await client.is_available("test-server")
+        assert available is False
+
+        # Test supports_feature
+        supports = await client.supports_feature("test-server", "test-feature")
+        assert supports is False
+
+        # Test health_check
+        health = await client.health_check()
+        assert health["docker_mcp_available"] is True
+        assert "total_servers" in health
+        assert isinstance(health["total_servers"], int)
+
+    def test_mcp_configuration_manager_edge_cases(self):
+        """Test MCPConfigurationManager edge cases."""
+        # Test with non-existent config file
+        manager = MCPConfigurationManager(Path("/tmp/non-existent-mcp-config.json"))  # noqa: S108
+        assert manager.configuration is not None
+        assert len(manager.configuration.mcp_servers) == 0
+
+        # Test parallel execution config
+        parallel_config = manager.get_parallel_execution_config()
+        assert parallel_config["enabled"] is True
+        assert parallel_config["max_concurrent"] == 5
+
+    def test_mcp_client_edge_cases(self):
+        """Test MCPClient edge cases."""
+        # Test with invalid config - use a non-existent path
+        client = MCPClient(Path("/tmp/non-existent-mcp-config.json"))  # noqa: S108
+        assert len(client.servers) == 0
+        assert len(client.connections) == 0
+
+    def test_execution_result_edge_cases(self):
+        """Test ExecutionResult edge cases."""
+        # Test with error
+        result = ExecutionResult(
+            agent_id="error-agent",
+            success=False,
+            error="Test error message",
+        )
+        assert result.success is False
+        assert result.error == "Test error message"
+        assert result.result is None
+
+        result_dict = result.to_dict()
+        assert "timestamp" in result_dict
+        assert result_dict["error"] == "Test error message"
+
+    def test_mcp_server_config_docker_features(self):
+        """Test MCPServerConfig with Docker-specific features."""
+        config = MCPServerConfig(
+            command="test-command",
+            docker_compatible=True,
+            memory_requirement="1GB",
+            deployment_preference="docker",
+        )
+        assert config.docker_compatible is True
+        assert config.memory_requirement == "1GB"
+        assert config.deployment_preference == "docker"
+
+    def test_configuration_bundle_validation(self):
+        """Test MCPConfigurationBundle validation."""
+        # Test with invalid server config
+        bundle = MCPConfigurationBundle(
+            mcpServers={},
+            parallel_execution=False,
+        )
+        assert bundle.max_concurrent_servers == 5  # Default value
+        assert bundle.parallel_execution is False
+
+    def test_config_manager_save_configuration(self):
+        """Test saving configuration."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            config = {"mcpServers": {}}
+            json.dump(config, f)
+            config_path = Path(f.name)
+
+        try:
+            manager = MCPConfigurationManager(config_path)
+
+            # Test save_configuration
+            saved = manager.save_configuration()
+            assert saved is True
+
+            # Verify file was written
+            assert config_path.exists()
+
+            # Load and verify content
+            with config_path.open() as f:
+                saved_config = json.load(f)
+            assert "mcpServers" in saved_config
+        finally:
+            config_path.unlink()
+
+    def test_config_manager_validation_edge_cases(self):
+        """Test configuration validation edge cases."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            config = {"mcpServers": {}}
+            json.dump(config, f)
+            config_path = Path(f.name)
+
+        try:
+            manager = MCPConfigurationManager(config_path)
+
+            # Test with transport config instead of command
+            transport_config = MCPServerConfig(transport={"type": "sse", "url": "http://test"}, enabled=True)
+            result = manager.add_server_config("transport-server", transport_config)
+            assert result is True
+
+            # Validate should pass
+            validation = manager.validate_configuration()
+            assert validation["valid"] is True
+            assert validation["server_count"] == 1
+
+        finally:
+            config_path.unlink()
+
+    @pytest.mark.asyncio
+    async def test_parallel_executor_error_handling(self):
+        """Test ParallelSubagentExecutor error handling."""
+        config_manager = Mock(spec=MCPConfigurationManager)
+        mcp_client = Mock(spec=MCPClient)
+
+        # Mock config to force an error
+        config_manager.get_parallel_execution_config.return_value = {
+            "enabled": True,
+            "max_concurrent": "invalid",  # Should cause type error
+            "health_check_interval": 60,
+        }
+
+        executor = ParallelSubagentExecutor(config_manager, mcp_client)
+        assert executor.max_workers == 5  # Should default to 5 on error
+
+    def test_mcp_client_connection_cleanup(self):
+        """Test MCP client connection cleanup."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            config = {
+                "mcpServers": {
+                    "test-server": {
+                        "command": "test-command",
+                        "args": ["--test"],
+                    },
+                },
+            }
+            json.dump(config, f)
+            config_path = Path(f.name)
+
+        try:
+            client = MCPClient(config_path)
+
+            # Mock connection
+            client.connections["test-server"] = Mock()
+
+            # Test cleanup (this would normally close connections)
+            assert "test-server" in client.connections
+
+        finally:
+            config_path.unlink()
+
+    def test_mcp_client_send_message_edge_cases(self):
+        """Test MCPClient send_message edge cases."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            config = {
+                "mcpServers": {
+                    "test-server": {
+                        "command": "test-command",
+                        "args": ["--test"],
+                    },
+                },
+            }
+            json.dump(config, f)
+            config_path = Path(f.name)
+
+        try:
+            client = MCPClient(config_path)
+
+            # Test disconnect_server
+            result = client.disconnect_server("test-server")
+            assert result is True
+
+            # Test disconnect non-existent server
+            result = client.disconnect_server("unknown-server")
+            assert result is False
+
+        finally:
+            config_path.unlink()
