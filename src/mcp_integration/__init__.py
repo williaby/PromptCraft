@@ -7,9 +7,11 @@ The primary integration is with the Zen MCP Server for agent coordination and ma
 
 Key Integrations:
     - Zen MCP Server: Agent orchestration and multi-agent coordination
+    - Docker MCP Toolkit: Universal IDE access with ≤2GB memory servers
     - External MCP services: Additional protocol-compliant services
     - Protocol handling: MCP message serialization and deserialization
     - Connection management: Persistent connections and reconnection logic
+    - Smart routing: Automatic fallback between Docker and self-hosted deployments
 
 Architecture:
     The MCP integration layer acts as a bridge between PromptCraft's internal
@@ -20,6 +22,9 @@ Architecture:
     - Error handling and resilience patterns
     - Message routing and transformation
     - Authentication and security for external connections
+    - Smart routing between Docker MCP Toolkit and self-hosted deployments
+    - Capability mapping and feature detection for optimal client selection
+    - Graceful fallback mechanisms for enhanced reliability
 
 Zen MCP Server Integration:
     The Zen MCP Server provides sophisticated agent orchestration capabilities:
@@ -51,3 +56,15 @@ Called by:
 Time Complexity: O(1) for connection management, O(n) for message processing
 Space Complexity: O(k) where k is the number of active MCP connections
 """
+
+from .client import MCPClient
+from .config_manager import MCPConfigurationManager
+from .docker_mcp_client import DockerMCPClient
+from .parallel_executor import ParallelSubagentExecutor
+
+__all__ = [
+    "DockerMCPClient",
+    "MCPClient",
+    "MCPConfigurationManager",
+    "ParallelSubagentExecutor",
+]
