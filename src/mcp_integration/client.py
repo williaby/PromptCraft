@@ -71,7 +71,7 @@ class MCPClient(LoggerMixin):
             self.logger.error(f"Failed to connect to server {server_name}: {e}")
             return False
 
-    async def disconnect_server(self, server_name: str) -> bool:
+    def disconnect_server(self, server_name: str) -> bool:
         """Disconnect from a specific MCP server.
 
         Args:

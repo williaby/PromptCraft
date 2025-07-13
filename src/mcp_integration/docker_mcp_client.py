@@ -28,6 +28,8 @@ class DockerMCPClient(LoggerMixin):
     def __init__(self) -> None:
         """Initialize Docker MCP client."""
         super().__init__()
+        self.docker_desktop_base_url = "http://localhost:3280"
+        self.mcp_servers: dict[str, dict[str, Any]] = {}
         self.docker_servers: dict[str, dict[str, Any]] = {}
         self.authenticated_services: dict[str, bool] = {}
         self._discover_docker_servers()

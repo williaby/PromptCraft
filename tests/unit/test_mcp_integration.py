@@ -722,9 +722,9 @@ class TestMCPHealthIntegration:
         try:
             client = MCPClient(config_path)
 
-            # Test disconnect_server
+            # Test disconnect_server on non-connected server
             result = client.disconnect_server("test-server")
-            assert result is True
+            assert result is False  # Can't disconnect what isn't connected
 
             # Test disconnect non-existent server
             result = client.disconnect_server("unknown-server")
