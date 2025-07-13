@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from pydantic import ValidationError
 
 from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.config_manager import (
@@ -149,7 +150,7 @@ class TestMCPConfigurationManager:
 
     def test_server_config_invalid(self):
         """Test invalid server configuration."""
-        with pytest.raises(ValueError, match="Either command or transport must be specified"):
+        with pytest.raises(ValidationError, match="Either 'command' or 'transport' must be specified"):
             # Neither command nor transport specified - this should fail validation
             MCPServerConfig()
 
