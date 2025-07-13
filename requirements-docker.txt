@@ -1213,6 +1213,9 @@ structlog==25.4.0 ; python_version >= "3.11" and python_version < "3.13" \
 tenacity==9.0.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:807f37ca97d62aa361264d497b0e31e92b8027044942bfa756160d908320d73b \
     --hash=sha256:93de0c98785b27fcf659856aa9f54bfbd399e29969b0621bc7f762bd441b4539
+toml==0.10.2 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b \
+    --hash=sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f
 tomlkit==0.13.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:430cf247ee57df2b94ee3fbe588e71d362a941ebb545dec29b53961d61add2a1 \
     --hash=sha256:c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0

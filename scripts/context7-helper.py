@@ -21,7 +21,7 @@ from typing import Any
 class Context7Helper:
     """Helper class for Context7 package ID management."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         """Initialize with the quick reference mappings."""
         self.reference_file = Path(__file__).parent.parent / "docs" / "context7-quick-reference.json"
         self.mappings = self._load_mappings()
@@ -29,7 +29,7 @@ class Context7Helper:
     def _load_mappings(self) -> dict[str, Any]:
         """Load the Context7 package mappings from JSON file."""
         try:
-            with self.reference_file.open() as f:
+            with open(self.reference_file) as f:
                 data = json.load(f)
                 return data.get("context7_package_mappings", {})
         except FileNotFoundError:
@@ -89,7 +89,7 @@ class Context7Helper:
     def generate_context7_call(
         self,
         package_name: str,
-        topic: str | None = None,
+        topic: str = None,
         tokens: int = 2000,
     ) -> str:
         """
@@ -122,7 +122,7 @@ tokens: {tokens}"""
         context7_id: str,
         trust_score: float,
         notes: str = "",
-    ) -> None:
+    ):
         """
         Update the mappings file with a new verified package.
 
@@ -147,23 +147,23 @@ tokens: {tokens}"""
         }
 
         # Save back to file
-        with self.reference_file.open("w") as f:
+        with open(self.reference_file, "w") as f:
             data = {"context7_package_mappings": self.mappings}
             json.dump(data, f, indent=2)
 
         print(f"Updated {package_name} -> {context7_id} (trust: {trust_score})")
 
 
-def main() -> None:  # noqa: PLR0912
+def main():
     """Command-line interface for Context7 helper."""
-    if len(sys.argv) < 2:  # noqa: PLR2004
+    if len(sys.argv) < 2:
         print(__doc__)
         return
 
     helper = Context7Helper()
     command = sys.argv[1]
 
-    if command == "get-id" and len(sys.argv) >= 3:  # noqa: PLR2004
+    if command == "get-id" and len(sys.argv) >= 3:
         package_name = sys.argv[2]
         context7_id = helper.get_context7_id(package_name)
         if context7_id:
@@ -175,7 +175,7 @@ def main() -> None:  # noqa: PLR0912
             else:
                 print("  -> Use resolve-library-id to find the correct Context7 ID")
 
-    elif command == "verify-package" and len(sys.argv) >= 3:  # noqa: PLR2004
+    elif command == "verify-package" and len(sys.argv) >= 3:
         package_name = sys.argv[2]
         if helper.is_verified(package_name):
             info = helper.get_package_info(package_name)
@@ -200,10 +200,10 @@ def main() -> None:  # noqa: PLR0912
         for pkg, desc in sorted(pending.items()):
             print(f"  {pkg:<20} - {desc}")
 
-    elif command == "generate-call" and len(sys.argv) >= 3:  # noqa: PLR2004
+    elif command == "generate-call" and len(sys.argv) >= 3:
         package_name = sys.argv[2]
-        topic = sys.argv[3] if len(sys.argv) >= 4 else None  # noqa: PLR2004
-        tokens = int(sys.argv[4]) if len(sys.argv) >= 5 else 2000  # noqa: PLR2004
+        topic = sys.argv[3] if len(sys.argv) >= 4 else None
+        tokens = int(sys.argv[4]) if len(sys.argv) >= 5 else 2000
 
         call = helper.generate_context7_call(package_name, topic, tokens)
         print(call)
