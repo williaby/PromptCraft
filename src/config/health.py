@@ -23,6 +23,15 @@ from .settings import (
 )
 from .validation import validate_configuration_on_startup
 
+# Conditional import for MCP integration to avoid circular imports
+try:
+    from src.mcp_integration import MCPClient, MCPConfigurationManager, ParallelSubagentExecutor
+except ImportError:
+    # MCP integration may not be available during early bootstrap
+    MCPClient = None  # type: ignore[misc,assignment]
+    MCPConfigurationManager = None  # type: ignore[misc,assignment]
+    ParallelSubagentExecutor = None  # type: ignore[misc,assignment]
+
 # Compile regex patterns once for better performance
 _COMPILED_SENSITIVE_PATTERNS = [
     (re.compile(pattern, re.IGNORECASE), replacement) for pattern, replacement in SENSITIVE_ERROR_PATTERNS
@@ -314,5 +323,56 @@ def get_configuration_health_summary() -> dict[str, Any]:
         return {
             "healthy": False,
             "error": "Configuration health check failed",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+
+async def get_mcp_configuration_health() -> dict[str, Any]:
+    """Get MCP configuration health status.
+
+    Returns:
+        Dictionary with MCP configuration health information
+    """
+    try:
+        # Check if MCP components are available
+        if MCPClient is None or MCPConfigurationManager is None or ParallelSubagentExecutor is None:
+            raise ImportError("MCP integration components not available")
+
+        # Initialize MCP components
+        config_manager = MCPConfigurationManager()
+        mcp_client = MCPClient()
+        parallel_executor = ParallelSubagentExecutor(config_manager, mcp_client)
+
+        # Get health status from all components
+        config_health = config_manager.get_health_status()
+        client_health = await mcp_client.health_check()
+        executor_health = await parallel_executor.health_check()
+
+        overall_healthy = (
+            config_health.get("configuration_valid", False)
+            and client_health.get("overall_status") == "healthy"
+            and executor_health.get("status") == "healthy"
+        )
+
+        return {
+            "healthy": overall_healthy,
+            "mcp_configuration": config_health,
+            "mcp_client": client_health,
+            "parallel_executor": executor_health,
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+
+    except ImportError as e:
+        logger.warning("MCP integration not available: %s", e)
+        return {
+            "healthy": False,
+            "error": "MCP integration not available",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except Exception as e:
+        logger.error("MCP configuration health check failed: %s", e)
+        return {
+            "healthy": False,
+            "error": f"MCP health check failed: {e}",
             "timestamp": datetime.now(UTC).isoformat(),
         }
