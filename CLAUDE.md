@@ -303,7 +303,7 @@ tests/
 
 **Development Tools:**
 
-- Black (line length 88) for code formatting
+- Black (line length 120) for code formatting
 - Ruff for comprehensive linting with extensive rule set (E, W, F, I, C, B, UP, N, YTT, ANN, S, etc.)
 - MyPy for type checking with strict configuration
 - Pytest with coverage reporting (80% minimum, HTML and XML reports)
@@ -313,7 +313,7 @@ tests/
 
 **File-Specific Linting (MANDATORY COMPLIANCE):**
 
-- **Python**: `pyproject.toml` (PRIMARY - Black 88 chars, Ruff, MyPy, Bandit B101/B601 excluded)
+- **Python**: `pyproject.toml` (PRIMARY - Black 120 chars, Ruff, MyPy, Bandit B101/B601 excluded)
 - **Markdown**: `.markdownlint.json` (120 char line length, consistent list style, 2-space indent)
 - **YAML**: `.yamllint.yml` (aligned with pyproject.toml excludes, 120 chars, 2-space indent)
 - **JSON**: Built-in formatting validation via pre-commit hooks
@@ -534,7 +534,7 @@ def encrypt_env_file(content: str) -> str:
 
 **IMPORTANT**: All linting configurations must align with existing `pyproject.toml` settings:
 
-- **Python line length**: 88 characters (Black/Ruff in pyproject.toml)
+- **Python line length**: 120 characters (Black/Ruff in pyproject.toml)
 - **Python target versions**: 3.11, 3.12 (pyproject.toml)
 - **Exclude patterns**: Must match Black's extend-exclude in pyproject.toml
 - **Bandit exclusions**: B101, B601 (as configured in pyproject.toml)
@@ -565,7 +565,7 @@ def encrypt_env_file(content: str) -> str:
 - **Configuration**: `pyproject.toml` (PRIMARY configuration - DO NOT OVERRIDE)
 - **Commands**: `black --check .`, `ruff check .`, `mypy src`
 - **Requirements**:
-  - 88 character line length (Black/Ruff)
+  - 120 character line length (Black/Ruff)
   - Target Python 3.11, 3.12
   - Comprehensive Ruff rule compliance (E, W, F, I, C, B, UP, N, YTT, ANN, S, etc.)
   - Bandit security scanning (excludes B101, B601)
@@ -703,49 +703,6 @@ When creating or modifying files in `/knowledge/` directory:
 
 ### Claude Code Slash Commands (COMPREHENSIVE WORKFLOW AUTOMATION)
 
-<<<<<<< HEAD
-**Project-specific slash commands for workflow automation:**
-
-#### Core Development Commands
-
-```bash
-# Essential workflows
-/project:validation-precommit                    # Pre-commit validation
-/project:workflow-review-cycle [phase] [issue]   # Multi-agent testing and review
-/project:workflow-prepare-pr [options]           # Automated PR generation
-/project:workflow-pr-review [pr-url] [mode]      # Adaptive PR review (5-45 minutes)
-```
-
-#### Analysis and Investigation
-
-```bash
-# Investigation and analysis workflows
-/project:workflow-investigate [description]      # Multi-step investigation
-/project:workflow-debug [issue_description]      # Systematic debugging
-/project:workflow-analyze [target]               # Comprehensive analysis
-/project:workflow-security-audit [scope]         # Security assessment
-```
-
-#### Documentation and Quality
-
-```bash
-# Documentation workflows
-/project:lint-doc [file_path]                    # Document validation
-/project:create-knowledge-file [agent] [topic]   # Knowledge base creation
-/project:fix-links [file_path]                   # Link validation
-/project:validate-frontmatter [file_path]        # YAML compliance
-```
-
-**Key Features:**
-
-- Multi-agent coordination through Zen MCP Server
-- GitHub CLI integration for PR workflows
-- Adaptive analysis scaling (5-45 minutes)
-- Quality gates with early exit for clear cases
-- Security and performance analysis built-in
-
-**Development**: Complete reference in `docs/planning/development.md`
-=======
 **Project-specific slash commands for complete development workflow automation:**
 
 #### Core Workflow Commands (Multi-Agent Orchestration)
