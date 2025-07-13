@@ -2,13 +2,16 @@
 
 ## Overview
 
-This document provides a comprehensive reference for using package names with the Context7 MCP server. Context7 requires specific package identifiers to fetch documentation, and this guide helps identify the correct names for our project dependencies.
+This document provides a comprehensive reference for using package names with the Context7 MCP server. Context7 requires
+specific package identifiers to fetch documentation, and this guide helps identify the correct names for our project
+dependencies.
 
 ## Package Name Format
 
 Context7 uses the format: `/org/project` or `/org/project/version`
 
 Examples:
+
 - `/tiangolo/fastapi` - FastAPI web framework
 - `/pandas-dev/pandas` - Pandas data analysis library
 - `/anthropics/anthropic-sdk-python` - Anthropic Python SDK
@@ -25,7 +28,8 @@ When multiple packages match your search, prioritize by:
 ## Workflow
 
 1. **Search for Package**:
-   ```
+
+   ```bash
    mcp__context7-sse__resolve-library-id
    libraryName: "package_name"
    ```
@@ -36,7 +40,8 @@ When multiple packages match your search, prioritize by:
    - Note the Context7-compatible library ID
 
 3. **Fetch Documentation**:
-   ```
+
+   ```bash
    mcp__context7-sse__get-library-docs
    context7CompatibleLibraryID: "/org/project"
    topic: "specific_topic" (optional)
@@ -48,6 +53,7 @@ When multiple packages match your search, prioritize by:
 Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verification):
 
 ### Web Framework & Server
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | fastapi ✅ | `/tiangolo/fastapi` | 9.9 | Official FastAPI documentation |
@@ -56,6 +62,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | httpx 🔍 | *Need to verify* | - | HTTP client library |
 
 ### Data Processing & Validation
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | pandas ✅ | `/pandas-dev/pandas` | 9.2 | Official Pandas documentation |
@@ -66,6 +73,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | python-multipart 🔍 | *Need to verify* | - | Multipart form handling |
 
 ### AI/ML Libraries
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | anthropic ✅ | `/anthropics/anthropic-sdk-python` | 8.8 | Official Python SDK |
@@ -75,6 +83,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | qdrant-client 🔍 | *Need to verify* | - | Vector database client |
 
 ### Azure Cloud Services
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | azure-identity 🔍 | *Need to verify* | - | Azure authentication |
@@ -82,6 +91,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | azure-storage-blob 🔍 | *Need to verify* | - | Azure Blob storage |
 
 ### Security & Crypto
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | cryptography 🔍 | *Need to verify* | - | Core cryptographic operations |
@@ -89,6 +99,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | python-gnupg 🔍 | *Need to verify* | - | GPG operations |
 
 ### Development & Testing Tools
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | pytest ✅ | `/pytest-dev/pytest` | 9.5 | Official pytest documentation |
@@ -103,6 +114,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | bandit 🔍 | *Need to verify* | - | Security scanner |
 
 ### Infrastructure & Utilities
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | redis 🔍 | *Need to verify* | - | Caching layer |
@@ -116,6 +128,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 | asyncer 🔍 | *Need to verify* | - | Async utilities |
 
 ### New Dependencies (Added in Latest Update)
+
 | Package | Context7 ID | Trust Score | Notes |
 |---------|-------------|-------------|-------|
 | mcp 🔍 | *Need to verify* | - | MCP protocol client |
@@ -128,6 +141,7 @@ Based on our pyproject.toml dependencies (✅ = verified, 🔍 = needs verificat
 ## Usage Examples
 
 ### Getting Started Documentation
+
 ```bash
 # FastAPI basic setup
 mcp__context7-sse__get-library-docs
@@ -137,6 +151,7 @@ tokens: 2000
 ```
 
 ### Specific Feature Documentation
+
 ```bash
 # Pandas data manipulation
 mcp__context7-sse__get-library-docs
@@ -146,6 +161,7 @@ tokens: 3000
 ```
 
 ### API Reference
+
 ```bash
 # Anthropic API usage
 mcp__context7-sse__get-library-docs
@@ -171,6 +187,7 @@ tokens: 1500
 ## Troubleshooting
 
 If a package isn't found:
+
 1. Try variations of the name (with/without python suffix)
 2. Search for the organization name
 3. Check if it's part of a larger ecosystem
@@ -179,6 +196,7 @@ If a package isn't found:
 ## TODO: Complete Package Mapping
 
 The following packages from our pyproject.toml still need verification:
+
 - [ ] gradio
 - [ ] uvicorn
 - [ ] httpx
@@ -208,9 +226,10 @@ The following packages from our pyproject.toml still need verification:
 ## Maintenance
 
 This document should be updated whenever:
+
 - New dependencies are added to pyproject.toml
 - Package IDs change or become deprecated
 - Better alternatives are discovered
 - Trust scores significantly change
 
-*Last updated: $(date)*
+**Last updated**: $(date)
