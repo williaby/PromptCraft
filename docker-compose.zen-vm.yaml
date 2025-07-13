@@ -159,6 +159,6 @@ volumes:
     driver: local
 
 # External Qdrant connection verification
-# Note: External Qdrant server at 192.168.1.16:6333
+# Note: External Qdrant server configured via QDRANT_HOST environment variable
 # This is accessed directly from containers via environment variables
 # No container definition needed as it's hosted externally

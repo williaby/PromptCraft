@@ -3,6 +3,8 @@
 This module defines the main FastAPI application with health check endpoints
 and configuration status monitoring. It serves as the primary entry point
 for the application with comprehensive security hardening.
+
+Note: Security configuration uses environment variables for flexible deployment.
 """
 
 import logging

@@ -79,7 +79,7 @@ make lint
 
 All contributions must meet these quality standards:
 
-- **Code Formatting**: Black (line length 88) and Ruff linting
+- **Code Formatting**: Black (line length 120) and Ruff linting
 - **Type Checking**: MyPy with strict configuration
 - **Test Coverage**: Minimum 80% coverage required
 - **Security**: Bandit security scanning must pass

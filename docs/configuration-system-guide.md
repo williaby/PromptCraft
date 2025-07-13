@@ -83,7 +83,7 @@ All secret settings use `SecretStr` for secure handling:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `qdrant_host` | `str` | "192.168.1.16" | Qdrant vector database host |
+| `qdrant_host` | `str` | "localhost" | Qdrant vector database host (use QDRANT_HOST env var) |
 | `qdrant_port` | `int` | 6333 | Qdrant vector database port |
 | `zen_mcp_host` | `str` | "localhost" | Zen MCP server host |
 | `zen_mcp_port` | `int` | 3000 | Zen MCP server port |
