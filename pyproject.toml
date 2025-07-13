@@ -207,6 +207,7 @@ ignore = [
 "scripts/*" = ["T20", "INP001", "ANN", "PLR0912", "PLR2004", "PTH123", "SIM118", "RUF013", "B007", "PLC0415"]
 "noxfile.py" = ["ANN", "D"]
 "src/config/validation.py" = ["PLC0415"]  # Allow local imports to avoid circular dependencies
+"src/mcp_integration/*" = ["G004"]  # Allow f-strings in logging for structured logging
 "src/utils/resilience.py" = ["UP046"]  # Generic class syntax for Python 3.11 compatibility
 "src/utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility
 "*.yaml" = ["ALL"]

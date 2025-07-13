@@ -24,6 +24,7 @@ from src.config.health import (
     ConfigurationStatusModel,
     get_configuration_health_summary,
     get_configuration_status,
+    get_mcp_configuration_health,
 )
 from src.config.settings import (
     ApplicationSettings,
@@ -295,6 +296,65 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
             detail={
                 "error": "Configuration health check failed",
                 "details": "See application logs for more information",
+            },
+        ) from e
+
+
+@app.get("/health/mcp", response_model=dict[str, Any])
+@rate_limit(RateLimits.HEALTH_CHECK)
+async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    """MCP configuration and parallel execution health check endpoint.
+
+    This endpoint provides health status for MCP server configuration,
+    client connections, and parallel subagent execution capabilities.
+    Designed for monitoring MCP integration health and performance.
+
+    Returns:
+        MCP integration health status information
+
+    Raises:
+        HTTPException: If MCP health check fails
+    """
+    try:
+        mcp_health = await get_mcp_configuration_health()
+
+        if mcp_health["healthy"]:
+            return {
+                "status": "healthy",
+                "service": "mcp-integration",
+                **mcp_health,
+            }
+
+        logger.warning("MCP health check failed - integration unhealthy")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "unhealthy",
+                "service": "mcp-integration",
+                **mcp_health,
+            },
+        )
+    except ImportError as e:
+        logger.warning("MCP integration not available")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "unavailable",
+                "service": "mcp-integration",
+                "error": "MCP integration not available",
+            },
+        ) from e
+    except HTTPException:
+        # Re-raise HTTPExceptions to preserve status codes
+        raise
+    except Exception as e:
+        logger.error("MCP health check endpoint failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "status": "error",
+                "service": "mcp-integration",
+                "error": "MCP health check failed",
             },
         ) from e
 
