@@ -50,6 +50,7 @@ cryptography = "^45.0.0"
 pyjwt = {version = "^2.10.1", extras = ["crypto"]}
 python-gnupg = "^0.5.2"
 pyyaml = "^6.0.2"
+toml = "^0.10.2"
 python-multipart = "^0.0.18"
 redis = {extras = ["hiredis"], version = "^6.0.0"}
 prometheus-client = "^0.20.0"
