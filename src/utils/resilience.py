@@ -16,7 +16,7 @@ from typing import Any, Generic, TypeVar
 T = TypeVar("T")
 
 
-class ResilienceStrategy(ABC, Generic[T]):
+class ResilienceStrategy(Generic[T], ABC):
     """Abstract base class for all resilience strategies."""
 
     @abstractmethod
