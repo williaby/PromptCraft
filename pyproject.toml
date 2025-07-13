@@ -198,8 +198,6 @@ ignore = [
     "S101",    # use of assert detected
     "PLR0913", # too many arguments
     "BLE001",  # blind exception catching (needed for generic error handlers)
-    "UP046",   # Generic class uses Generic subclass instead of type parameters
-    "UP047",   # Generic function should use type parameters
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -208,6 +206,8 @@ ignore = [
 "scripts/*" = ["T20", "INP001"]
 "noxfile.py" = ["ANN", "D"]
 "src/config/validation.py" = ["PLC0415"]  # Allow local imports to avoid circular dependencies
+"src/utils/resilience.py" = ["UP046"]  # Generic class syntax for Python 3.11 compatibility
+"src/utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility
 "*.yaml" = ["ALL"]
 "*.yml" = ["ALL"]
 
