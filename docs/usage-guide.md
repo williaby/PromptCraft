@@ -95,7 +95,7 @@ PROMPTCRAFT_ENVIRONMENT=prod PROMPTCRAFT_DEBUG=false poetry run python src/main.
 |---------|------|---------|-------------|
 | `azure_openai_api_key` | SecretStr | None | Azure OpenAI API key |
 | `azure_openai_endpoint` | HttpUrl | None | Azure OpenAI endpoint |
-| `qdrant_host` | str | "192.168.1.16" | Qdrant vector DB host |
+| `qdrant_host` | str | `${QDRANT_HOST:-localhost}` | Qdrant vector DB host (use QDRANT_HOST env var) |
 | `qdrant_port` | int | 6333 | Qdrant vector DB port |
 | `qdrant_api_key` | SecretStr | None | Qdrant API key |
 
