@@ -198,6 +198,8 @@ ignore = [
     "S101",    # use of assert detected
     "PLR0913", # too many arguments
     "BLE001",  # blind exception catching (needed for generic error handlers)
+    "UP046",   # Generic class uses Generic subclass instead of type parameters
+    "UP047",   # Generic function should use type parameters
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -205,6 +207,7 @@ ignore = [
 "tests/security/test_codeql_validation.py" = ["S105", "S602", "S603", "S608", "S301", "S506", "S324", "S307", "PTH123", "T201", "S101", "ANN", "ARG", "PLR2004"]
 "scripts/*" = ["T20", "INP001"]
 "noxfile.py" = ["ANN", "D"]
+"src/config/validation.py" = ["PLC0415"]  # Allow local imports to avoid circular dependencies
 "*.yaml" = ["ALL"]
 "*.yml" = ["ALL"]
 
