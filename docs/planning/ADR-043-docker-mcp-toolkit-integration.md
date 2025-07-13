@@ -18,11 +18,15 @@ related_issues: ["#NEW-1", "#25", "#26"]
 
 ## Context
 
-During Phase 1 Issue NEW-1 implementation for parallel subagent execution, we discovered Docker's release of the [MCP Toolkit](https://docs.docker.com/ai/mcp-catalog-and-toolkit/toolkit/) which provides universal IDE access to MCP servers through Docker Desktop. This creates an opportunity to enable broader IDE compatibility while maintaining our self-hosted deployment strategy for resource-intensive operations.
+During Phase 1 Issue NEW-1 implementation for parallel subagent execution, we discovered Docker's release of the
+[MCP Toolkit](https://docs.docker.com/ai/mcp-catalog-and-toolkit/toolkit/) which provides universal IDE access to MCP
+servers through Docker Desktop. This creates an opportunity to enable broader IDE compatibility while maintaining our
+self-hosted deployment strategy for resource-intensive operations.
 
 ### Problem Statement
 
-Our original architecture assumed all MCP servers would be self-hosted, limiting IDE compatibility to Claude Code. The Docker MCP Toolkit enables:
+Our original architecture assumed all MCP servers would be self-hosted, limiting IDE compatibility to Claude Code.
+The Docker MCP Toolkit enables:
 
 - **Universal IDE Access**: Any IDE can access MCP servers through Docker Desktop interface
 - **Resource Optimization**: Servers with ≤2GB memory requirements can be deployed via Docker
@@ -32,6 +36,7 @@ Our original architecture assumed all MCP servers would be self-hosted, limiting
 ### Strategic Alignment
 
 This integration aligns with our core architectural principles:
+
 - **Configure Don't Build**: Leverage Docker's proven MCP deployment infrastructure
 - **Reuse First**: Use Docker MCP Toolkit instead of building universal IDE compatibility
 - **Focus on Unique Value**: Enable broader IDE usage while maintaining specialized capabilities
@@ -40,7 +45,8 @@ This integration aligns with our core architectural principles:
 
 ### **Core Decision: Dual Deployment Strategy with Smart Routing**
 
-Implement intelligent routing between Docker MCP Toolkit (≤2GB servers) and self-hosted deployment (>2GB servers) to optimize for both universal IDE access and performance.
+Implement intelligent routing between Docker MCP Toolkit (≤2GB servers) and self-hosted deployment (>2GB servers) to
+optimize for both universal IDE access and performance.
 
 ### **Smart Routing Decision Matrix**
 
@@ -135,21 +141,25 @@ graph TB
 ## Benefits Realized
 
 ### **Universal IDE Compatibility**
+
 - Docker-deployed servers accessible from any IDE (VS Code, IntelliJ, etc.)
 - Automatic discovery through Docker Desktop interface
 - OAuth authentication handled seamlessly
 
 ### **Resource Optimization**
+
 - Basic operations (file access, simple search) offloaded to Docker containers
 - Self-hosted resources reserved for complex analysis and orchestration
 - Reduced memory pressure on primary infrastructure
 
 ### **Graceful Degradation**
+
 - Automatic fallback to self-hosted when Docker lacks required features
 - Transparent operation - users unaware of routing decisions
 - Configuration-driven preferences with intelligent defaults
 
 ### **Operational Benefits**
+
 - Simplified deployment for basic MCP servers
 - Reduced dependency management for containerized servers
 - Enhanced monitoring through dual health check systems
@@ -181,6 +191,7 @@ async def _select_optimal_client(self, server_name: str, tool_name: str) -> tupl
 ### **Configuration Integration**
 
 Extended MCPConfigurationManager to handle Docker-specific settings:
+
 - Docker compatibility flags
 - Memory requirement specifications
 - Feature availability mapping
@@ -189,6 +200,7 @@ Extended MCPConfigurationManager to handle Docker-specific settings:
 ### **Health Check Enhancement**
 
 Integrated Docker MCP status into system health monitoring:
+
 - Docker Desktop availability
 - Server discovery status
 - Authentication state
@@ -223,34 +235,41 @@ Integrated Docker MCP status into system health monitoring:
 ## Alternatives Considered
 
 ### **Docker-Only Deployment**
+
 - **Rejected**: Memory limitations (≤2GB) insufficient for Zen MCP Server and complex operations
 - **Issue**: Would limit system capabilities and performance
 
 ### **Self-Hosted Only**
+
 - **Rejected**: Limits IDE compatibility to Claude Code only
 - **Issue**: Reduces adoption potential and user experience
 
 ### **Manual Configuration**
+
 - **Rejected**: Requires users to understand deployment trade-offs
 - **Issue**: Poor user experience and potential for misconfiguration
 
 ### **Separate MCP Stacks**
+
 - **Rejected**: Would require users to choose deployment strategy upfront
 - **Issue**: Loss of transparent operation and intelligent optimization
 
 ## Success Metrics
 
 ### **Performance Metrics**
+
 - Smart routing decision time: <10ms average
 - Fallback scenarios: <5% of total operations
 - System reliability: 99.9% availability maintained
 
 ### **User Experience Metrics**
+
 - IDE compatibility: Support for 5+ major IDEs through Docker
 - Authentication friction: Zero manual OAuth configuration required
 - Feature parity: 100% operation success rate through smart routing
 
 ### **Operational Metrics**
+
 - Resource utilization: 30% reduction in self-hosted memory usage for basic operations
 - Deployment simplicity: 50% reduction in MCP server setup complexity
 - Health check coverage: 100% monitoring for both deployment strategies
@@ -258,11 +277,13 @@ Integrated Docker MCP status into system health monitoring:
 ## Integration with Existing ADRs
 
 ### **Relationship to ADR-042 (Dual-Orchestration Boundaries)**
+
 - Complementary: ADR-042 covers Zen/Prefect boundaries, ADR-043 covers Docker/self-hosted routing
 - No conflicts: Both decisions operate at different architectural layers
 - Synergy: Combined approach optimizes both orchestration and deployment strategies
 
 ### **Alignment with Main ADR Principles**
+
 - **Configure Don't Build**: ✅ Leverages Docker MCP Toolkit infrastructure
 - **Reuse First**: ✅ Uses proven Docker Desktop integration patterns
 - **Focus on Unique Value**: ✅ Enables broader IDE usage while maintaining specialized capabilities
@@ -270,12 +291,14 @@ Integrated Docker MCP status into system health monitoring:
 ## Future Considerations
 
 ### **Evolution Path**
+
 - **Phase 1**: Basic Docker integration with smart routing (completed)
 - **Phase 2**: Enhanced feature detection and configuration
 - **Phase 3**: Dynamic load balancing between deployment strategies
 - **Phase 4**: Machine learning-based routing optimization
 
 ### **Monitoring and Optimization**
+
 - Track routing decisions and performance impacts
 - Optimize routing algorithm based on usage patterns
 - Expand Docker MCP Toolkit integration as new servers become available
@@ -284,6 +307,7 @@ Integrated Docker MCP status into system health monitoring:
 ## Implementation Status
 
 ### **Completed Components**
+
 - ✅ DockerMCPClient implementation
 - ✅ Smart routing in ParallelSubagentExecutor
 - ✅ Enhanced MCPServerConfig schema
@@ -292,6 +316,7 @@ Integrated Docker MCP status into system health monitoring:
 - ✅ Configuration validation
 
 ### **Integration Points**
+
 - `src/mcp_integration/docker_mcp_client.py`: Docker Desktop integration
 - `src/mcp_integration/parallel_executor.py`: Smart routing logic
 - `src/mcp_integration/config_manager.py`: Enhanced configuration schema
@@ -301,4 +326,5 @@ Integrated Docker MCP status into system health monitoring:
 
 **Decision Approval**: Accepted and implemented
 
-*This ADR documents a strategic architectural shift that enhances IDE compatibility while maintaining performance optimization through intelligent routing between Docker MCP Toolkit and self-hosted deployments.*
+*This ADR documents a strategic architectural shift that enhances IDE compatibility while maintaining performance
+optimization through intelligent routing between Docker MCP Toolkit and self-hosted deployments.*
