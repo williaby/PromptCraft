@@ -46,5 +46,5 @@ security:
     trusted_proxies:
       - "127.0.0.1"
       - "::1"
-      - "192.168.1.205"
-      - "192.168.1.16"
+      # Add specific IPs via environment variables:
+      # PROMPTCRAFT_TRUSTED_PROXY_1, PROMPTCRAFT_TRUSTED_PROXY_2, etc.
