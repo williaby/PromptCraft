@@ -12,7 +12,7 @@
     "lint:md:fix": "npx markdownlint-cli2 \"**/*.md\" --ignore node_modules --ignore webapp --fix",
     "lint:md:standard": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore webapp",
     "lint:md:standard:fix": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore webapp --fix"
-},
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/williaby/PromptCraft.git"
@@ -26,5 +26,6 @@
   "homepage": "https://github.com/williaby/PromptCraft#readme",
   "devDependencies": {
     "markdownlint-cli": "^0.45.0"
-  }
+  },
+  "packageManager": "npm@11.4.2+sha512.f90c1ec8b207b625d6edb6693aef23dacb39c38e4217fe8c46a973f119cab392ac0de23fe3f07e583188dae9fd9108b3845ad6f525b598742bd060ebad60bff3"
 }
