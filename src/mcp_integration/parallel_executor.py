@@ -224,13 +224,13 @@ class ParallelSubagentExecutor(LoggerMixin):
     async def _execute_pipeline(self, tasks: list[dict[str, Any]], timeout: int) -> dict[str, Any]:
         """Execute subagents in pipeline mode where output feeds into next."""
         results = []
-        current_input = None
+        current_input: Any | None = None
         task_timeout = timeout // len(tasks)
 
         for i, task in enumerate(tasks):
             # Pass output from previous task as input to current task
             if i > 0 and current_input is not None:
-                task["input_from_previous"] = current_input  # type: ignore[unreachable]
+                task["input_from_previous"] = current_input
 
             result = self._execute_single_subagent(task, task_timeout)
             results.append(result.to_dict())
