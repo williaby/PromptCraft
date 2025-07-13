@@ -19,39 +19,33 @@ repos:
       - id: fix-byte-order-marker
       - id: mixed-line-ending
 
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
+  - repo: local
     hooks:
       - id: black
-        language_version: python3.11
+        name: black
+        entry: poetry run black
+        language: system
+        types: [python]
         args: [--line-length=120]
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.12.3
-    hooks:
       - id: ruff
+        name: ruff
+        entry: poetry run ruff check
+        language: system
+        types: [python]
         args: [--fix, --exit-non-zero-on-fix, --line-length=120]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
-    hooks:
       - id: mypy
-        additional_dependencies: [
-          types-pyyaml,
-          types-python-dateutil,
-          types-aiofiles,
-          pydantic,
-          pydantic-settings
-        ]
+        name: mypy
+        entry: poetry run mypy
+        language: system
+        types: [python]
         args: [--config-file=pyproject.toml]
         exclude: ^tests/
-
-  - repo: https://github.com/pycqa/bandit
-    rev: '1.7.7'
-    hooks:
       - id: bandit
+        name: bandit
+        entry: poetry run bandit
+        language: system
+        types: [python]
         args: ['-c', 'pyproject.toml']
-        additional_dependencies: ['bandit[toml]']
 
   - repo: https://github.com/python-poetry/poetry
     rev: '2.1.2'

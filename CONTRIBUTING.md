@@ -62,28 +62,37 @@ nox -s tests
 
 #### Set Up Development Environment
 
-Follow the comprehensive setup process:
+Follow the comprehensive setup process for CI-aligned local development:
 
 ```bash
 # Complete development setup (includes all dependencies and hooks)
 make setup
 
-# Verify environment is ready
+# Copy environment template for local development
+cp .env.template .env
+
+# Start local development services (Redis, etc.)
+docker-compose up -d
+
+# Verify environment is ready and matches CI
 make test
 make lint
 ```
+
+**Environment Alignment**: The local development environment is configured to exactly match the CI pipeline, eliminating "works on my machine" issues. The `.env` file configures service mocking and debugging options for local development.
 
 ### Development Standards
 
 #### Code Quality Requirements
 
-All contributions must meet these quality standards:
+All contributions must meet these quality standards (identical to CI pipeline):
 
-- **Code Formatting**: Black (line length 88) and Ruff linting
-- **Type Checking**: MyPy with strict configuration
+- **Code Formatting**: Black (line length 120) and Ruff linting with exact CI versions
+- **Type Checking**: MyPy with strict configuration targeting Python 3.11+
 - **Test Coverage**: Minimum 80% coverage required
 - **Security**: Bandit security scanning must pass
 - **Documentation**: All public APIs must have docstrings
+- **Tool Versions**: Pre-commit hooks use identical versions as CI via Poetry
 
 #### Naming Conventions
 
@@ -147,12 +156,21 @@ git checkout -b feature/123-add-new-agent
 2. Ensure your changes follow the project naming conventions
 3. Add or update tests for your changes
 4. Update documentation as needed
-5. Run quality checks locally:
+5. Run quality checks locally (matching CI environment):
 
 ```bash
-make lint      # Run all linting checks
-make test      # Run test suite with coverage
+# Verify tool versions match CI exactly
+poetry run black --version
+poetry run ruff --version
+poetry run mypy --version
+
+# Run quality checks that match CI pipeline
+make lint      # Run all linting checks with exact CI tool versions
+make test      # Run test suite with coverage (uses service mocking)
 make security  # Run security scans
+
+# Optional: Run tests in Docker environment that exactly matches CI
+docker-compose run --rm test
 ```
 
 #### Commit Your Changes
@@ -429,6 +447,77 @@ When submitting a PR that adds or updates dependencies:
 - **XSS Protection**: Sanitize outputs appropriately
 - **Authentication**: Follow OAuth2 and JWT best practices
 - **Dependencies**: Prefer AssuredOSS packages for security-critical components
+
+## Troubleshooting CI Alignment Issues
+
+### Local vs CI Environment Differences
+
+**Tool Version Mismatches**:
+```bash
+# Verify your local tools match CI exactly
+poetry run black --version    # Should match CI
+poetry run ruff --version     # Should match CI
+poetry run mypy --version     # Should match CI
+
+# If versions don't match, reinstall dependencies
+poetry install --sync
+```
+
+**Service Mocking Issues**:
+```bash
+# Ensure environment variables are set correctly
+cat .env | grep PROMPTCRAFT_ENABLE_SERVICE_MOCKING
+# Should show: PROMPTCRAFT_ENABLE_SERVICE_MOCKING=true
+
+# Restart Docker services if mocking fails
+docker-compose down
+docker-compose up -d
+
+# Verify Redis is accessible
+redis-cli ping  # Should return PONG
+```
+
+**Coverage Reporting Differences**:
+```bash
+# Run tests exactly as CI does
+poetry run pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
+
+# Check for differences in test discovery
+poetry run pytest --collect-only | grep "test session starts"
+```
+
+**Pre-commit Hook Failures**:
+```bash
+# Reinstall pre-commit hooks with new configuration
+pre-commit uninstall
+pre-commit install
+
+# Run all hooks manually to test
+pre-commit run --all-files
+```
+
+### Docker Environment Issues
+
+**Container Build Failures**:
+```bash
+# Rebuild containers with fresh dependencies
+docker-compose build --no-cache
+
+# Check for port conflicts
+docker ps  # Verify no conflicts on ports 8000, 6379
+```
+
+**Volume Mount Issues**:
+```bash
+# Verify file permissions
+ls -la .env
+# Should be readable by your user
+
+# Fix Docker volume permissions if needed
+docker-compose down
+docker volume rm promptcraft_redis-dev-data
+docker-compose up -d
+```
 
 ## Recognition
 
