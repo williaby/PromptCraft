@@ -140,11 +140,22 @@ class ConfigurationValidator:
 
         content = ci_path.read_text()
 
-        # Check if CI uses explicit line length arguments
-        if "--line-length" in content or "line-length" in content:
+        # Check if CI uses explicit line length arguments with more specific regex
+        import re
+
+        # Look for explicit line-length arguments in tool commands
+        line_length_patterns = [
+            r"--line-length[=\s]+\d+",  # black --line-length=120
+            r"--line-length[=\s]+\d+",  # ruff --line-length 120
+            r"args:\s*\[.*--line-length[=\s]+\d+.*\]",  # pre-commit args
+        ]
+
+        has_explicit_config = any(re.search(pattern, content) for pattern in line_length_patterns)
+
+        if has_explicit_config:
             self.info.append("CI: ✅ Uses explicit line length configuration")
         else:
-            self.warnings.append("CI: No explicit line length configuration found")
+            self.warnings.append("CI: No explicit line length configuration found in tool commands")
 
         # Check for Black and Ruff usage
         if "black" in content and "ruff" in content:
@@ -164,9 +175,20 @@ class ConfigurationValidator:
 
             if "tool" in pyproject_data:
                 if "black" in pyproject_data["tool"]:
-                    configs["pyproject.toml (Black)"] = pyproject_data["tool"]["black"].get("line-length", 88)
+                    black_config = pyproject_data["tool"]["black"]
+                    if "line-length" not in black_config:
+                        self.warnings.append(
+                            "pyproject.toml (Black): Using default line-length (88), explicit configuration recommended",
+                        )
+                    configs["pyproject.toml (Black)"] = black_config.get("line-length", 88)
+
                 if "ruff" in pyproject_data["tool"]:
-                    configs["pyproject.toml (Ruff)"] = pyproject_data["tool"]["ruff"].get("line-length", 88)
+                    ruff_config = pyproject_data["tool"]["ruff"]
+                    if "line-length" not in ruff_config:
+                        self.warnings.append(
+                            "pyproject.toml (Ruff): Using default line-length (88), explicit configuration recommended",
+                        )
+                    configs["pyproject.toml (Ruff)"] = ruff_config.get("line-length", 88)
         except Exception as e:
             self.warnings.append(f"Could not read pyproject.toml: {e}")
 
@@ -177,7 +199,12 @@ class ConfigurationValidator:
                 markdownlint_data = json.load(f)
 
             if "MD013" in markdownlint_data:
-                configs[".markdownlint.json"] = markdownlint_data["MD013"].get("line_length", 80)
+                md013_config = markdownlint_data["MD013"]
+                if "line_length" not in md013_config:
+                    self.warnings.append(
+                        ".markdownlint.json (MD013): Using default line_length (80), explicit configuration recommended",
+                    )
+                configs[".markdownlint.json"] = md013_config.get("line_length", 80)
         except Exception as e:
             self.warnings.append(f"Could not read .markdownlint.json: {e}")
 
@@ -188,7 +215,12 @@ class ConfigurationValidator:
                 yamllint_data = yaml.safe_load(f)
 
             if "rules" in yamllint_data and "line-length" in yamllint_data["rules"]:
-                configs[".yamllint.yml"] = yamllint_data["rules"]["line-length"].get("max", 80)
+                line_length_config = yamllint_data["rules"]["line-length"]
+                if "max" not in line_length_config:
+                    self.warnings.append(
+                        ".yamllint.yml (line-length): Using default max (80), explicit configuration recommended",
+                    )
+                configs[".yamllint.yml"] = line_length_config.get("max", 80)
         except Exception as e:
             self.warnings.append(f"Could not read .yamllint.yml: {e}")
 
