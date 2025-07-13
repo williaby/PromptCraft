@@ -25,7 +25,7 @@ def validate_configuration_on_startup(settings: "ApplicationSettings") -> None:
     Raises:
         ConfigurationValidationError: If validation fails
     """
-    # Import here to avoid circular dependency at module level
-    from .settings import validate_configuration_on_startup as _validate  # noqa: PLC0415
+    # Import the actual validation function locally to avoid circular imports
+    from .settings import validate_configuration_on_startup as _validate
 
     return _validate(settings)
