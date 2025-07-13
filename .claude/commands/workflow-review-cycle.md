@@ -4,7 +4,12 @@ complexity: medium
 estimated_time: "15-30 minutes"
 dependencies: ["workflow-implementation", "validation-precommit"]
 sub_commands: ["validation-precommit"]
-version: "1.0"
+version: "1.1"
+models_required: ["testing", "review", "consensus"]
+model_preferences:
+  testing: ["o3", "o3-mini", "microsoft/phi-4-reasoning:free"]
+  review: ["anthropic/claude-opus-4", "anthropic/claude-sonnet-4", "google/gemini-2.5-pro"]
+  consensus: ["deepseek/deepseek-chat-v3-0324:free", "google/gemini-2.0-flash-exp:free"]
 ---
 
 # Workflow Review Cycle
@@ -15,12 +20,64 @@ Comprehensive testing, validation, and multi-agent review of implemented solutio
 - `phase X issue Y` - Full review cycle with multi-agent validation
 - `quick phase X issue Y` - Essential testing and validation only
 - `consensus phase X issue Y` - Multi-model consensus review
+- `--model=[name]` - Override default model for all roles
+- `--testing-model=[name]` - Specific model for testing development
+- `--review-model=[name]` - Specific model for code review
+- `--consensus-model=[name]` - Specific model for consensus validation
+
+**Automatic Branch Detection**: Works on current issue branch or detects from phase/issue arguments.
 
 ## Prerequisites
 
 This command requires completed implementation. Implementation must pass basic quality gates before review.
 
 ## Instructions
+
+### Step 0: Model Configuration
+
+1. **Parse Arguments and Configure Models**:
+   ```bash
+   # Parse model overrides using shared function
+   source .claude/commands/shared/model_utils.sh
+
+   PHASE=$(echo "$ARGUMENTS" | grep -oP "phase\s+\K\d+" || echo "1")
+   ISSUE=$(echo "$ARGUMENTS" | grep -oP "issue\s+\K\d+" || echo "")
+   MODE=$(echo "$ARGUMENTS" | grep -oP "^(quick|consensus)" || echo "standard")
+
+   # Configure models with fallback chains
+   TESTING_MODEL=$(get_model_override "testing" "$ARGUMENTS" "o3")
+   REVIEW_MODEL=$(get_model_override "review" "$ARGUMENTS" "anthropic/claude-opus-4")
+   CONSENSUS_MODEL=$(get_model_override "consensus" "$ARGUMENTS" "deepseek/deepseek-chat-v3-0324:free")
+
+   # Add free model support for premium workflows
+   if [[ ! "$TESTING_MODEL" =~ ":free" ]] && [[ "$MODE" != "quick" ]]; then
+       TESTING_SUPPORT_MODEL="microsoft/phi-4-reasoning:free"
+   fi
+   if [[ ! "$REVIEW_MODEL" =~ ":free" ]] && [[ "$MODE" != "quick" ]]; then
+       REVIEW_SUPPORT_MODEL="google/gemini-2.0-flash-exp:free"
+   fi
+   ```
+
+2. **Model Availability Validation**:
+   ```bash
+   # Test model availability with graceful fallbacks
+   AVAILABLE_MODELS=()
+   for model in "$TESTING_MODEL" "$REVIEW_MODEL" "$CONSENSUS_MODEL"; do
+       if zen_test_model "$model" 2>/dev/null; then
+           AVAILABLE_MODELS+=("$model")
+       else
+           echo "⚠️  Model $model unavailable, using fallback"
+       fi
+   done
+
+   # Ensure minimum functionality
+   if [[ ${#AVAILABLE_MODELS[@]} -eq 0 ]]; then
+       echo "🔄 No preferred models available, using free fallbacks"
+       TESTING_MODEL="microsoft/phi-4-reasoning:free"
+       REVIEW_MODEL="deepseek/deepseek-chat-v3-0324:free"
+       CONSENSUS_MODEL="google/gemini-2.0-flash-exp:free"
+   fi
+   ```
 
 ### Step 1: Pre-commit Validation
 
@@ -61,29 +118,73 @@ This command requires completed implementation. Implementation must pass basic q
 
 ### Step 3: Multi-Agent Review
 
-1. **OpenAI O3 Testing**:
-   Use Zen to have O3 develop additional test suite:
-   ```
-   Ask O3 to:
-   - Review the implementation against acceptance criteria
-   - Develop edge case tests
-   - Identify potential failure modes
-   - Suggest additional validation approaches
+1. **Testing Strategy Development**:
+   Use Zen MCP Server with configured testing model:
+   ```bash
+   echo "🧪 Testing Strategy using: $TESTING_MODEL"
+   zen_mcp_call "$TESTING_MODEL" \
+       --role "Testing Strategist and Quality Engineer" \
+       --context "Implementation validation and edge case testing" \
+       --request "Review implementation against acceptance criteria and develop comprehensive test strategy" \
+       --tasks "
+         - Review the implementation against acceptance criteria
+         - Develop edge case tests
+         - Identify potential failure modes
+         - Suggest additional validation approaches"
+
+   # Free model support for additional test ideas
+   if [[ -n "$TESTING_SUPPORT_MODEL" ]]; then
+       echo "💡 Additional testing insights using: $TESTING_SUPPORT_MODEL"
+       zen_mcp_call "$TESTING_SUPPORT_MODEL" \
+           --role "Test Case Generator" \
+           --request "Generate additional edge cases and boundary condition tests"
+   fi
    ```
 
-2. **Gemini Final Review**:
-   Use Zen to have Gemini perform final code review:
-   ```
-   Ask Gemini to:
-   - Assess code quality and architecture
-   - Review security implications
-   - Validate against development standards
-   - Check for potential improvements
+2. **Code Quality Review**:
+   Use Zen MCP Server with configured review model:
+   ```bash
+   echo "🔍 Code Review using: $REVIEW_MODEL"
+   zen_mcp_call "$REVIEW_MODEL" \
+       --role "Senior Code Reviewer and Architect" \
+       --context "Code quality, security, and architecture assessment" \
+       --request "Perform comprehensive code review with focus on quality and security" \
+       --tasks "
+         - Assess code quality and architecture
+         - Review security implications
+         - Validate against development standards
+         - Check for potential improvements"
+
+   # Free model support for quick validation
+   if [[ -n "$REVIEW_SUPPORT_MODEL" ]]; then
+       echo "✅ Quick validation using: $REVIEW_SUPPORT_MODEL"
+       zen_mcp_call "$REVIEW_SUPPORT_MODEL" \
+           --role "Code Validator" \
+           --request "Quick validation check - identify obvious issues or concerns"
+   fi
    ```
 
 3. **Consensus Validation**:
-   Ensure all agents agree the code is implemented correctly:
-   - Compare review findings across agents
+   Use Zen MCP Server consensus tool for multi-model agreement:
+   ```bash
+   echo "🤝 Building consensus using: $CONSENSUS_MODEL"
+
+   if [[ "$MODE" == "consensus" ]]; then
+       # Use Zen consensus tool with multiple models
+       zen_mcp_consensus \
+           --models "$TESTING_MODEL,$REVIEW_MODEL,$CONSENSUS_MODEL" \
+           --topic "Implementation quality and completeness assessment" \
+           --request "Evaluate if implementation meets all acceptance criteria"
+   else
+       # Standard consensus validation
+       zen_mcp_call "$CONSENSUS_MODEL" \
+           --role "Technical Consensus Builder" \
+           --request "Synthesize review findings and identify any conflicts or required changes"
+   fi
+   ```
+
+   **Key Validation Points:**
+   - Compare review findings across all models
    - Resolve any conflicting recommendations
    - Document consensus decisions
    - Identify required changes
@@ -114,15 +215,23 @@ Generate comprehensive validation report:
 - **Performance**: [Within acceptable bounds / Issues noted]
 
 ## Multi-Agent Review Summary
-### O3 Testing Results
+### Testing Strategy Results (${TESTING_MODEL})
 - [Key findings and additional tests developed]
 - [Edge cases identified]
 - [Recommendations]
+${TESTING_SUPPORT_MODEL:+
+### Additional Testing Insights (${TESTING_SUPPORT_MODEL})
+- [Additional test cases and boundary conditions]
+}
 
-### Gemini Code Review
+### Code Quality Review (${REVIEW_MODEL})
 - [Code quality assessment]
 - [Security evaluation]
 - [Improvement suggestions]
+${REVIEW_SUPPORT_MODEL:+
+### Quick Validation Check (${REVIEW_SUPPORT_MODEL})
+- [Obvious issues or validation points]
+}
 
 ### Consensus Decisions
 - [Agreed-upon changes required]
@@ -162,7 +271,7 @@ The review cycle is complete when:
 ## Examples
 
 ```bash
-# Full review cycle
+# Full review cycle with auto-detected models
 /project:workflow-review-cycle phase 1 issue 3
 
 # Quick validation only
@@ -170,7 +279,30 @@ The review cycle is complete when:
 
 # Multi-model consensus review
 /project:workflow-review-cycle consensus phase 1 issue 1
+
+# Override specific models
+/project:workflow-review-cycle phase 3 issue 5 --testing-model=o3 --review-model=opus-4
+
+# Use free models for cost-effective review
+/project:workflow-review-cycle phase 2 issue 4 --model=deepseek --testing-model=phi-4
+
+# Premium models with free support
+/project:workflow-review-cycle consensus phase 1 issue 8 --review-model=sonnet --testing-model=o3-mini
 ```
+
+## Model Roles and Recommendations
+
+**Testing Strategy Models:**
+- **Premium**: `o3`, `o3-mini` (advanced reasoning for edge cases)
+- **Free Alternative**: `phi-4-reasoning`, `deepseek-r1`, `mai-ds` (good logical thinking)
+
+**Code Review Models:**
+- **Premium**: `opus-4`, `sonnet-4`, `gemini-pro` (comprehensive analysis)
+- **Free Alternative**: `deepseek-v3`, `gemini-free` (solid code review)
+
+**Consensus Models:**
+- **Free First**: `deepseek-v3`, `gemini-free` (cost-effective synthesis)
+- **Premium Backup**: `sonnet-4`, `gemini-flash` (complex decisions)
 
 ## Final User Approval
 

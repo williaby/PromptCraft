@@ -27,7 +27,7 @@ class TestEnhancedValidation:
     def test_port_validation_detailed_errors(self):
         """Test enhanced port validation with detailed error messages."""
         # Test port too low
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Port 0 is outside valid range") as exc_info:
             ApplicationSettings(api_port=0)
 
         error_msg = str(exc_info.value)
@@ -36,7 +36,7 @@ class TestEnhancedValidation:
         assert "Common choices: 8000" in error_msg
 
         # Test port too high
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Port 70000 is outside valid range") as exc_info:
             ApplicationSettings(api_port=70000)
 
         error_msg = str(exc_info.value)
@@ -46,7 +46,7 @@ class TestEnhancedValidation:
     def test_host_validation_detailed_errors(self):
         """Test enhanced host validation with detailed error messages."""
         # Test empty host
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="API host cannot be empty") as exc_info:
             ApplicationSettings(api_host="")
 
         error_msg = str(exc_info.value)
@@ -55,7 +55,7 @@ class TestEnhancedValidation:
         assert "'localhost'" in error_msg
 
         # Test invalid host format
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid API host format") as exc_info:
             ApplicationSettings(api_host="invalid@host!")
 
         error_msg = str(exc_info.value)
@@ -79,7 +79,7 @@ class TestEnhancedValidation:
             assert settings.version == version
 
         # Invalid versions should fail with helpful messages
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid version format") as exc_info:
             ApplicationSettings(version="invalid-version")
 
         error_msg = str(exc_info.value)
@@ -90,7 +90,7 @@ class TestEnhancedValidation:
     def test_app_name_validation_enhanced(self):
         """Test enhanced application name validation."""
         # Test empty name
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Application name cannot be empty") as exc_info:
             ApplicationSettings(app_name="")
 
         error_msg = str(exc_info.value)
@@ -99,7 +99,7 @@ class TestEnhancedValidation:
 
         # Test name too long
         long_name = "x" * 101
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="too long") as exc_info:
             ApplicationSettings(app_name=long_name)
 
         error_msg = str(exc_info.value)
@@ -107,7 +107,7 @@ class TestEnhancedValidation:
         assert "Maximum length is 100" in error_msg
 
         # Test invalid characters
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Invalid application name") as exc_info:
             ApplicationSettings(app_name="app@name!")
 
         error_msg = str(exc_info.value)
@@ -117,7 +117,7 @@ class TestEnhancedValidation:
     def test_secret_field_validation_detailed(self):
         """Test enhanced secret field validation with field-specific guidance."""
         # Test database password
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(database_password="")
 
         error_msg = str(exc_info.value)
@@ -125,7 +125,7 @@ class TestEnhancedValidation:
         assert "Secret values cannot be empty strings" in error_msg
 
         # Test API key
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(api_key="")
 
         error_msg = str(exc_info.value)
@@ -133,7 +133,7 @@ class TestEnhancedValidation:
         assert "Secret values cannot be empty strings" in error_msg
 
         # Test secret key validation
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Secret values cannot be empty") as exc_info:
             ApplicationSettings(secret_key="")
 
         error_msg = str(exc_info.value)
@@ -236,7 +236,7 @@ class TestStartupValidation:
 
         settings = ApplicationSettings(
             environment="staging",
-            secret_key="test-secret-key",
+            secret_key="test-secret-key",  # noqa: S106
         )
 
         # Should not raise an error
@@ -264,7 +264,7 @@ class TestStartupValidation:
         if not success:
             # Log errors for debugging
             for error in errors:
-                print(f"System validation error: {error}")
+                print(f"System validation error: {error}")  # noqa: T201
 
         # At minimum, Python version should be OK since tests are running
         assert success or any("Python" in error for error in errors)
@@ -281,7 +281,7 @@ class TestLoggingIntegration:
         mock_validate_keys.return_value = None
 
         with caplog.at_level(logging.INFO):
-            settings = reload_settings()
+            _ = reload_settings()
 
         # Check that important information is logged
         log_messages = [record.message for record in caplog.records]
@@ -300,7 +300,7 @@ class TestLoggingIntegration:
         with caplog.at_level(logging.INFO):
             settings = ApplicationSettings(
                 api_key="secret-api-key-12345",
-                secret_key="super-secret-key",
+                secret_key="super-secret-key",  # noqa: S106
             )
             validate_configuration_on_startup(settings)
 
@@ -327,7 +327,7 @@ class TestEdgeCases:
         # Invalid formats that should fail (completely invalid hostnames/IPs)
         invalid_formats = ["", "   ", "...", "256.256.256.256.", "-invalid-", "host..name"]
         for invalid_format in invalid_formats:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="Invalid|cannot be empty"):
                 ApplicationSettings(api_host=invalid_format)
 
         # Note: "192.168.01.1" may be valid depending on regex interpretation
@@ -342,7 +342,7 @@ class TestEdgeCases:
             assert settings.api_host == hostname
 
         # Invalid hostnames (too long subdomain)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid"):
             ApplicationSettings(api_host="a" * 64 + ".example.com")
 
     @patch("src.config.settings.validate_environment_keys")
@@ -362,12 +362,12 @@ class TestEdgeCases:
         with caplog.at_level(logging.WARNING):
             ApplicationSettings(
                 database_url="postgresql://user:pass@host/db",
-                database_password="separate-password",
+                database_password="separate-password",  # noqa: S106
             )
             validate_configuration_on_startup(
                 ApplicationSettings(
                     database_url="postgresql://user:pass@host/db",
-                    database_password="separate-password",
+                    database_password="separate-password",  # noqa: S106
                 ),
             )
 

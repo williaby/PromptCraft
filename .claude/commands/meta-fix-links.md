@@ -27,7 +27,8 @@ Based on project structure, watch for these common broken link patterns:
 - `./PROJECT_HUB.md` → should be `./project_hub.md`
 - `./CONTRIBUTING.md` → should be `../../CONTRIBUTING.md` or `../PC_Contributing.md`
 - `./docs/PC_ADR.md` → should be `./ADR.md` (from planning directory)
-- `./issues` → should be `./pc_milestones_issues.md`
+- `./issues` → should be `./phase-X-index.md` (depending on context)
+- `./phase-X-issues.md` → should be `./phase-X-index.md` with appropriate category links
 - Links to moved planning documents in `/docs/planning/`
 
 ## Required Output

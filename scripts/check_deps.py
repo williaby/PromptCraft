@@ -8,7 +8,7 @@ from pathlib import Path
 
 def run_command(cmd: list[str]) -> tuple[int, str, str]:
     """Run a command and return exit code, stdout, stderr."""
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: S603
         cmd,
         capture_output=True,
         text=True,

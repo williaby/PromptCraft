@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
+from src.core.create_processor_core import ValidationError
 from src.main_core import app
 
 
@@ -88,8 +89,6 @@ class TestCreateRouter:
     @patch("src.api.routers.create_core.processor.process_prompt")
     def test_process_prompt_validation_error(self, mock_process_prompt):
         """Test POST /api/v1/create/ with validation error."""
-        from src.core.create_processor_core import ValidationError
-
         # Setup mock to raise ValidationError
         mock_process_prompt.side_effect = ValidationError("Input prompt must be a non-empty string")
 

@@ -9,6 +9,7 @@ This module tests all implemented security features including:
 - Authentication protection
 """
 
+import asyncio
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -19,13 +20,21 @@ from fastapi.responses import Response
 from fastapi.testclient import TestClient
 from slowapi.errors import RateLimitExceeded
 
-from src.main import app
+from src.config.health import ConfigurationStatusModel, get_configuration_health_summary
+from src.config.settings import ApplicationSettings, ConfigurationValidationError, get_settings
+from src.main import app, create_app, lifespan
 from src.security.audit_logging import (
     AuditEvent,
     AuditEventSeverity,
     AuditEventType,
     AuditLogger,
     audit_logger_instance,
+    log_api_request,
+    log_authentication_failure,
+    log_authentication_success,
+    log_error_handler_triggered,
+    log_rate_limit_exceeded,
+    log_validation_failure,
 )
 from src.security.error_handlers import (
     create_secure_error_response,
@@ -37,19 +46,24 @@ from src.security.error_handlers import (
 )
 from src.security.input_validation import (
     SecureEmailField,
+    SecureFileUpload,
     SecurePathField,
     SecureQueryParams,
     SecureStringField,
     SecureTextInput,
+    create_input_sanitizer,
     sanitize_dict_values,
 )
 from src.security.middleware import RequestLoggingMiddleware, SecurityHeadersMiddleware
 from src.security.rate_limiting import (
     RateLimits,
+    create_limiter,
     get_client_identifier,
     get_rate_limit_for_endpoint,
+    rate_limit,
     rate_limit_exceeded_handler,
 )
+from src.utils.encryption import EncryptionError, GPGError, validate_environment_keys
 
 
 class TestRateLimiting:
@@ -80,7 +94,7 @@ class TestRateLimiting:
             result = get_client_identifier(request)
             assert result == "127.0.0.1"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_rate_limit_exceeded_handler(self):
         """Test rate limit exceeded handler response."""
         request = Mock(spec=Request)
@@ -266,7 +280,7 @@ class TestSecurityHeaders:
         middleware = SecurityHeadersMiddleware(app_mock)
         assert middleware.csp_policy is not None
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_security_headers_added(self):
         """Test that security headers are added to responses."""
         with TestClient(app) as client:
@@ -540,10 +554,9 @@ class TestSecurityCompliance:
 class TestSecurityErrorHandlers:
     """Extended tests for secure error handling."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_development(self):
         """Test secure error response in development mode."""
-        from unittest.mock import patch
 
         # Mock request
         request = Mock(spec=Request)
@@ -567,10 +580,9 @@ class TestSecurityErrorHandlers:
             assert "debug" in content
             assert "error_type" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_production(self):
         """Test secure error response in production mode."""
-        from unittest.mock import patch
 
         # Mock request
         request = Mock(spec=Request)
@@ -600,7 +612,7 @@ class TestSecurityErrorHandlers:
             assert "Internal error details" not in content
             assert "Internal server error" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_http_exception_handler(self):
         """Test HTTP exception handler."""
         request = Mock(spec=Request)
@@ -613,10 +625,9 @@ class TestSecurityErrorHandlers:
         response = await http_exception_handler(request, exc)
         assert response.status_code == 404
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_development(self):
         """Test validation exception handler in development."""
-        from unittest.mock import patch
 
         request = Mock(spec=Request)
         request.url.path = "/api/test"
@@ -640,10 +651,9 @@ class TestSecurityErrorHandlers:
             content = response.body.decode()
             assert "validation_errors" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_production(self):
         """Test validation exception handler in production."""
-        from unittest.mock import patch
 
         request = Mock(spec=Request)
         request.url.path = "/api/test"
@@ -662,7 +672,7 @@ class TestSecurityErrorHandlers:
             assert "Invalid request data" in content
             assert "validation_errors" not in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_general_exception_handler(self):
         """Test general exception handler."""
         request = Mock(spec=Request)
@@ -689,7 +699,6 @@ class TestSecurityErrorHandlers:
 
     def test_setup_secure_error_handlers(self):
         """Test error handler setup."""
-        from fastapi import FastAPI
 
         app_mock = Mock(spec=FastAPI)
 
@@ -704,7 +713,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_model(self):
         """Test SecureFileUpload model validation."""
-        from src.security.input_validation import SecureFileUpload
 
         # Test valid file upload
         valid_data = {
@@ -716,7 +724,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_dangerous_filename(self):
         """Test rejection of dangerous filenames."""
-        from src.security.input_validation import SecureFileUpload
 
         dangerous_filenames = ["script.exe", "malware.bat", "virus.js", "backdoor.php", "shell.sh", "exploit.py"]
 
@@ -726,7 +733,6 @@ class TestInputValidationExtended:
 
     def test_secure_file_upload_invalid_filename_chars(self):
         """Test rejection of invalid filename characters."""
-        from src.security.input_validation import SecureFileUpload
 
         invalid_filenames = [
             "file with spaces.txt",  # Spaces not allowed
@@ -736,12 +742,11 @@ class TestInputValidationExtended:
         ]
 
         for filename in invalid_filenames:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="filename|invalid"):
                 SecureFileUpload(filename=filename, content_type="text/plain")
 
     def test_secure_file_upload_invalid_content_type(self):
         """Test rejection of invalid content types."""
-        from src.security.input_validation import SecureFileUpload
 
         invalid_types = [
             "application/x-executable",
@@ -752,7 +757,7 @@ class TestInputValidationExtended:
         ]
 
         for content_type in invalid_types:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="content_type|invalid"):
                 SecureFileUpload(filename="test.txt", content_type=content_type)
 
     def test_secure_string_field_validators_direct(self):
@@ -795,16 +800,12 @@ class TestRateLimitingExtended:
 
     def test_create_limiter_production_environment(self):
         """Test limiter creation in production environment."""
-        from unittest.mock import patch
 
         with patch("src.security.rate_limiting.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
             mock_settings.return_value.redis_host = "redis.example.com"
             mock_settings.return_value.redis_port = 6379
             mock_settings.return_value.redis_db = 1
-
-            # Import after patching
-            from src.security.rate_limiting import create_limiter
 
             limiter = create_limiter()
             assert limiter is not None
@@ -822,7 +823,6 @@ class TestRateLimitingExtended:
 
     def test_rate_limit_decorator_function(self):
         """Test rate limit decorator creation."""
-        from src.security.rate_limiting import rate_limit
 
         decorator = rate_limit("30/minute")
         assert callable(decorator)
@@ -833,12 +833,9 @@ class TestMiddlewareExtended:
 
     def test_security_headers_middleware_production_csp(self):
         """Test CSP policy in production environment."""
-        from unittest.mock import patch
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
-
-            from src.security.middleware import SecurityHeadersMiddleware
 
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
@@ -849,7 +846,6 @@ class TestMiddlewareExtended:
 
     def test_request_logging_middleware_slow_request(self):
         """Test logging of slow requests."""
-        from unittest.mock import patch
 
         app_mock = Mock()
         middleware = RequestLoggingMiddleware(app_mock)
@@ -883,12 +879,9 @@ class TestMiddlewareExtended:
 
     def test_security_headers_staging_environment(self):
         """Test security headers in staging environment."""
-        from unittest.mock import patch
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "staging"
-
-            from src.security.middleware import SecurityHeadersMiddleware
 
             app_mock = Mock()
             middleware = SecurityHeadersMiddleware(app_mock)
@@ -1039,7 +1032,6 @@ class TestConfigurationCoverage:
 
     def test_settings_access_in_handlers(self):
         """Test settings access patterns used in handlers."""
-        from src.config.settings import get_settings
 
         # Test settings access (as used in error handlers and middleware)
         settings = get_settings(validate_on_startup=False)
@@ -1049,9 +1041,6 @@ class TestConfigurationCoverage:
 
     def test_rate_limiting_redis_configuration(self):
         """Test Redis configuration for rate limiting."""
-        from unittest.mock import patch
-
-        from src.security.rate_limiting import create_limiter
 
         with patch("src.security.rate_limiting.get_settings") as mock_settings:
             mock_settings.return_value.environment = "prod"
@@ -1064,7 +1053,6 @@ class TestConfigurationCoverage:
 
     def test_audit_logging_configuration(self):
         """Test audit logging configuration."""
-        from src.security.audit_logging import AuditLogger
 
         logger = AuditLogger()
         assert logger.settings is not None
@@ -1072,9 +1060,6 @@ class TestConfigurationCoverage:
 
     def test_middleware_environment_detection(self):
         """Test middleware environment detection."""
-        from unittest.mock import patch
-
-        from src.security.middleware import SecurityHeadersMiddleware
 
         with patch("src.security.middleware.get_settings") as mock_settings:
             mock_settings.return_value.environment = "dev"
@@ -1089,11 +1074,9 @@ class TestConfigurationCoverage:
 class TestMainErrorHandling:
     """Test error handling paths in main.py."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error(self):
         """Test lifespan handling of configuration validation errors."""
-        from src.config.settings import ConfigurationValidationError
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1110,10 +1093,9 @@ class TestMainErrorHandling:
                 async with lifespan(test_app):
                     pass
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error(self):
         """Test lifespan handling of unexpected errors."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1128,7 +1110,6 @@ class TestMainErrorHandling:
 
     def test_create_app_settings_format_error(self):
         """Test create_app handling of settings format errors."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_get_settings:
             # Mock format error (ValueError, TypeError, AttributeError)
@@ -1141,7 +1122,6 @@ class TestMainErrorHandling:
 
     def test_create_app_general_exception(self):
         """Test create_app handling of general exceptions."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_get_settings:
             # Mock general exception
@@ -1152,7 +1132,7 @@ class TestMainErrorHandling:
             assert app is not None
             assert app.title == "PromptCraft-Hybrid"  # Default from ApplicationSettings
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_unhealthy_configuration(self):
         """Test health check when configuration is unhealthy."""
         client = TestClient(app)
@@ -1175,7 +1155,7 @@ class TestMainErrorHandling:
             assert "status" in data["debug"]["error_message"]
             assert "unhealthy" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_exception_handling(self):
         """Test health check exception handling."""
         client = TestClient(app)
@@ -1194,13 +1174,12 @@ class TestMainErrorHandling:
             assert "status" in data["debug"]["error_message"]
             assert "error" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_debug_mode(self):
         """Test configuration health endpoint with validation error in debug mode."""
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
 
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
@@ -1223,13 +1202,12 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_production_mode(self):
         """Test configuration health endpoint with validation error in production mode."""
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
 
             # First call raises validation error, second call returns production settings
             mock_debug_settings = Mock()
@@ -1252,13 +1230,12 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_debug_mode_exception(self):
         """Test configuration health when debug mode check fails."""
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-            from src.config.settings import ConfigurationValidationError
 
             # First call fails with validation error
             # Second call (for debug check) also fails
@@ -1280,7 +1257,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration validation failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_general_exception(self):
         """Test configuration health endpoint with general exception."""
         client = TestClient(app)
@@ -1298,7 +1275,7 @@ class TestMainErrorHandling:
             # The original detail is in debug.error_message
             assert "Configuration health check failed" in data["debug"]["error_message"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_root_endpoint_fallback(self):
         """Test root endpoint fallback when settings not in app state."""
         client = TestClient(app)
@@ -1320,41 +1297,6 @@ class TestMainErrorHandling:
             # Restore original state
             if original_state:
                 app.state = original_state
-
-
-class TestMainEndpoints:
-    """Test main application endpoints for coverage."""
-
-    def test_root_endpoint_fallback(self):
-        """Test root endpoint fallback when settings not in app state."""
-        client = TestClient(app)
-
-        # Temporarily remove settings from app state to test fallback
-        original_settings = getattr(app.state, "settings", None)
-        if hasattr(app.state, "settings"):
-            delattr(app.state, "settings")
-
-        try:
-            response = client.get("/")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["service"] == "PromptCraft-Hybrid"
-            assert data["version"] == "unknown"
-            assert data["environment"] == "unknown"
-            assert data["status"] == "running"
-        finally:
-            # Restore original settings
-            if original_settings:
-                app.state.settings = original_settings
-
-    def test_ping_endpoint(self):
-        """Test ping endpoint for coverage."""
-        client = TestClient(app)
-
-        response = client.get("/ping")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["message"] == "pong"
 
 
 class TestInputValidationEdgeCases:
@@ -1380,7 +1322,7 @@ class TestInputValidationEdgeCases:
         assert result == valid_email
 
         # Invalid email should raise validation error
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid email format"):
             SecureEmailField.validate("invalid-email")
 
     def test_secure_path_field_traversal_protection(self):
@@ -1654,7 +1596,6 @@ class TestRateLimitingEdgeCases:
 
     def test_rate_limit_handler_details(self):
         """Test rate limit handler with detailed exception information."""
-        from src.security.rate_limiting import rate_limit_exceeded_handler
 
         request = Mock(spec=Request)
         request.method = "POST"
@@ -1671,8 +1612,6 @@ class TestRateLimitingEdgeCases:
 
         with patch("src.security.rate_limiting.get_client_identifier", return_value="192.168.1.100"):
             with pytest.raises(HTTPException) as exc_info:
-                import asyncio
-
                 asyncio.run(rate_limit_exceeded_handler(request, exc))
 
             # Verify the HTTPException details
@@ -1682,10 +1621,9 @@ class TestRateLimitingEdgeCases:
 class TestLifespanCoverage:
     """Test lifespan function coverage for startup and shutdown scenarios."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_successful_startup_shutdown(self):
         """Test successful lifespan startup and shutdown cycle."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
@@ -1709,62 +1647,63 @@ class TestLifespanCoverage:
                 # Verify audit events were logged
                 assert mock_logger.log_security_event.call_count >= 2  # Startup and shutdown
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error_with_audit(self):
         """Test lifespan configuration error handling with audit logging."""
-        from src.config.settings import ConfigurationValidationError
-        from src.main import lifespan
 
         test_app = FastAPI()
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.audit_logger_instance") as mock_logger:
-                # Mock configuration validation error
-                mock_get_settings.side_effect = ConfigurationValidationError(
-                    "Invalid configuration",
-                    field_errors=["Missing API key", "Invalid port"],
-                    suggestions=["Set API_KEY", "Use valid port number"],
-                )
+        with (
+            patch("src.main.get_settings") as mock_get_settings,
+            patch("src.main.audit_logger_instance") as mock_logger,
+        ):
+            # Mock configuration validation error
+            mock_get_settings.side_effect = ConfigurationValidationError(
+                "Invalid configuration",
+                field_errors=["Missing API key", "Invalid port"],
+                suggestions=["Set API_KEY", "Use valid port number"],
+            )
 
-                with pytest.raises(ConfigurationValidationError):
-                    async with lifespan(test_app):
-                        pass
+            with pytest.raises(ConfigurationValidationError):
+                async with lifespan(test_app):
+                    pass
 
-                # Verify error was logged as security event
-                mock_logger.log_security_event.assert_called()
+            # Verify error was logged as security event
+            mock_logger.log_security_event.assert_called()
 
-                # Check specific call for validation failure
-                calls = mock_logger.log_security_event.call_args_list
-                validation_calls = [
-                    call for call in calls if len(call[0]) > 1 and "validation failed" in call[0][1].lower()
-                ]
-                assert len(validation_calls) > 0
+            # Check specific call for validation failure
+            calls = mock_logger.log_security_event.call_args_list
+            validation_calls = [
+                call for call in calls if len(call[0]) > 1 and "validation failed" in call[0][1].lower()
+            ]
+            assert len(validation_calls) > 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error_with_audit(self):
         """Test lifespan unexpected error handling with audit logging."""
-        from src.main import lifespan
 
         test_app = FastAPI()
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.audit_logger_instance") as mock_logger:
-                # Mock unexpected runtime error
-                mock_get_settings.side_effect = RuntimeError("Database connection failed")
+        with (
+            patch("src.main.get_settings") as mock_get_settings,
+            patch("src.main.audit_logger_instance") as mock_logger,
+        ):
+            # Mock unexpected runtime error
+            mock_get_settings.side_effect = RuntimeError("Database connection failed")
 
-                with pytest.raises(RuntimeError):
-                    async with lifespan(test_app):
-                        pass
+            with pytest.raises(RuntimeError):
+                async with lifespan(test_app):
+                    pass
 
-                # Verify error was logged as critical security event
-                mock_logger.log_security_event.assert_called()
+            # Verify error was logged as critical security event
+            mock_logger.log_security_event.assert_called()
 
-                # Check for startup failure logging
-                calls = mock_logger.log_security_event.call_args_list
-                startup_failure_calls = [
-                    call for call in calls if len(call[0]) > 1 and "startup failed" in call[0][1].lower()
-                ]
-                assert len(startup_failure_calls) > 0
+            # Check for startup failure logging
+            calls = mock_logger.log_security_event.call_args_list
+            startup_failure_calls = [
+                call for call in calls if len(call[0]) > 1 and "startup failed" in call[0][1].lower()
+            ]
+            assert len(startup_failure_calls) > 0
 
 
 class TestMainApplicationEndpoints:
@@ -1806,42 +1745,40 @@ class TestMainScriptExecution:
     def test_main_script_configuration_error(self):
         """Test main script handling of configuration errors."""
 
-        from src.main import ConfigurationValidationError
+        with patch("src.main.get_settings") as mock_settings, patch("sys.exit"):
+            mock_settings.side_effect = ConfigurationValidationError(
+                "Configuration error",
+                field_errors=["Invalid setting"],
+                suggestions=["Fix setting"],
+            )
 
-        with patch("src.main.get_settings") as mock_settings:
-            with patch("sys.exit") as mock_exit:
-                mock_settings.side_effect = ConfigurationValidationError(
-                    "Configuration error",
-                    field_errors=["Invalid setting"],
-                    suggestions=["Fix setting"],
-                )
-
-                # Simulate running main script
-                try:
-                    exec(compile(open("src/main.py").read(), "src/main.py", "exec"))
-                except SystemExit:
-                    pass  # Expected due to configuration error
-                except Exception:
-                    pass  # Other exceptions are fine for this test
+            # Simulate running main script
+            try:
+                main_path = Path("src/main.py")
+                with main_path.open() as f:
+                    exec(compile(f.read(), "src/main.py", "exec"))  # noqa: S102
+            except SystemExit:
+                pass  # Expected due to configuration error
+            except Exception as e:
+                # Expected - configuration errors should be handled gracefully
+                print(f"Expected configuration error: {e}")  # noqa: T201
 
     def test_main_script_os_error(self):
         """Test main script handling of OS errors."""
 
-        with patch("src.main.get_settings") as mock_settings:
-            with patch("sys.exit") as mock_exit:
-                with patch("uvicorn.run") as mock_uvicorn:
-                    # Mock settings to pass validation
-                    mock_settings_obj = Mock()
-                    mock_settings_obj.api_host = "localhost"
-                    mock_settings_obj.api_port = 8000
-                    mock_settings_obj.debug = False
-                    mock_settings.return_value = mock_settings_obj
+        with patch("src.main.get_settings") as mock_settings, patch("sys.exit"), patch("uvicorn.run") as mock_uvicorn:
+            # Mock settings to pass validation
+            mock_settings_obj = Mock()
+            mock_settings_obj.api_host = "localhost"
+            mock_settings_obj.api_port = 8000
+            mock_settings_obj.debug = False
+            mock_settings.return_value = mock_settings_obj
 
-                    # Mock uvicorn to raise OSError
-                    mock_uvicorn.side_effect = OSError("Port already in use")
+            # Mock uvicorn to raise OSError
+            mock_uvicorn.side_effect = OSError("Port already in use")
 
-                    # This test verifies the error handling path exists
-                    # (Can't easily test the actual if __name__ == "__main__" block)
+            # This test verifies the error handling path exists
+            # (Can't easily test the actual if __name__ == "__main__" block)
 
 
 class TestCreateAppEdgeCases:
@@ -1849,7 +1786,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_with_type_error(self):
         """Test create_app handling TypeError in settings."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_settings:
             mock_settings.side_effect = TypeError("Type error in settings")
@@ -1860,7 +1796,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_with_attribute_error(self):
         """Test create_app handling AttributeError in settings."""
-        from src.main import create_app
 
         with patch("src.main.get_settings") as mock_settings:
             mock_settings.side_effect = AttributeError("Missing attribute in settings")
@@ -1871,7 +1806,6 @@ class TestCreateAppEdgeCases:
 
     def test_create_app_cors_configuration_environments(self):
         """Test CORS configuration for different environments."""
-        from src.main import create_app
 
         environments = ["dev", "staging", "prod", "test"]
 
@@ -1894,7 +1828,6 @@ class TestCoverageImprovements:
 
     def test_additional_input_validation_coverage(self):
         """Test additional input validation paths."""
-        from src.security.input_validation import create_input_sanitizer
 
         sanitizers = create_input_sanitizer()
         assert "string" in sanitizers
@@ -1902,8 +1835,6 @@ class TestCoverageImprovements:
         assert "email" in sanitizers
 
         # Test using different sanitizer types
-        from src.security.input_validation import sanitize_dict_values
-
         test_data = {"safe": "normal text", "number": 123}
 
         # Test with path sanitizer
@@ -1917,14 +1848,6 @@ class TestCoverageImprovements:
 
     def test_audit_logging_convenience_functions_coverage(self):
         """Test convenience functions in audit logging."""
-        from src.security.audit_logging import (
-            log_api_request,
-            log_authentication_failure,
-            log_authentication_success,
-            log_error_handler_triggered,
-            log_rate_limit_exceeded,
-            log_validation_failure,
-        )
 
         request = Mock(spec=Request)
         request.method = "POST"
@@ -1951,7 +1874,6 @@ class TestCoverageImprovements:
 
     def test_error_handlers_no_headers_branch(self):
         """Test create_secure_http_exception with None headers to hit missing branch."""
-        from src.security.error_handlers import create_secure_http_exception
 
         # Test with None headers (missing branch coverage)
         exception = create_secure_http_exception(400, "Bad request", headers=None)
@@ -1969,7 +1891,6 @@ class TestCoverageImprovements:
 
     def test_input_validation_missing_branches(self):
         """Test missing branches in input validation module."""
-        from src.security.input_validation import SecureEmailField, SecurePathField, SecureQueryParams
 
         # Test line 91: non-string value conversion in SecurePathField
         # This tests the type conversion branch where value is not a string
@@ -2000,64 +1921,60 @@ class TestCoverageImprovements:
         client = TestClient(app)
 
         # Test health endpoint when configuration validation has extensive errors
-        with patch("src.main.get_configuration_health_summary") as mock_health:
-            with patch("src.main.get_settings") as mock_settings:
-                from src.config.settings import ConfigurationValidationError
+        with patch("src.main.get_configuration_health_summary"), patch("src.main.get_settings") as mock_settings:
+            # Mock extensive validation errors
+            extensive_errors = [f"Error {i}" for i in range(20)]
+            extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
 
-                # Mock extensive validation errors
-                extensive_errors = [f"Error {i}" for i in range(20)]
-                extensive_suggestions = [f"Suggestion {i}" for i in range(15)]
+            mock_settings.side_effect = [
+                ConfigurationValidationError(
+                    "Extensive validation failure",
+                    field_errors=extensive_errors,
+                    suggestions=extensive_suggestions,
+                ),
+                Mock(debug=True),  # For debug mode check
+            ]
 
-                mock_settings.side_effect = [
-                    ConfigurationValidationError(
-                        "Extensive validation failure",
-                        field_errors=extensive_errors,
-                        suggestions=extensive_suggestions,
-                    ),
-                    Mock(debug=True),  # For debug mode check
-                ]
-
-                response = client.get("/health/config")
-                assert response.status_code == 500
-                # Verify error handling works with extensive error lists
+            response = client.get("/health/config")
+            assert response.status_code == 500
+            # Verify error handling works with extensive error lists
 
     def test_configuration_health_endpoint_normal_execution(self):
         """Test normal execution path of configuration health endpoint."""
         client = TestClient(app)
 
-        with patch("src.main.get_settings") as mock_get_settings:
-            with patch("src.main.get_configuration_status") as mock_get_config_status:
-                from src.config.health import ConfigurationStatusModel
+        with (
+            patch("src.main.get_settings") as mock_get_settings,
+            patch("src.main.get_configuration_status") as mock_get_config_status,
+        ):
+            # Mock normal settings
+            mock_settings = Mock()
+            mock_get_settings.return_value = mock_settings
 
-                # Mock normal settings
-                mock_settings = Mock()
-                mock_get_settings.return_value = mock_settings
+            # Mock normal config status with proper model
+            mock_config_status = ConfigurationStatusModel(
+                environment="test",
+                version="1.0.0",
+                debug=False,
+                config_loaded=True,
+                encryption_enabled=True,
+                config_source="env_vars",
+                validation_status="passed",
+                secrets_configured=2,
+                api_host="127.0.0.1",
+                api_port=7860,
+            )
+            mock_get_config_status.return_value = mock_config_status
 
-                # Mock normal config status with proper model
-                mock_config_status = ConfigurationStatusModel(
-                    environment="test",
-                    version="1.0.0",
-                    debug=False,
-                    config_loaded=True,
-                    encryption_enabled=True,
-                    config_source="env_vars",
-                    validation_status="passed",
-                    secrets_configured=2,
-                    api_host="127.0.0.1",
-                    api_port=7860,
-                )
-                mock_get_config_status.return_value = mock_config_status
-
-                response = client.get("/health/config")
-                assert response.status_code == 200
-                # This tests the normal execution path (line 264)
+            response = client.get("/health/config")
+            assert response.status_code == 200
+            # This tests the normal execution path (line 264)
 
     def test_search_endpoint_with_depends_query_params(self):
         """Test search endpoint if it properly used Depends for query params."""
         # This endpoint currently has an implementation issue - it expects JSON body
         # but should use Depends(SecureQueryParams) for query parameters
         # This test covers the return statement (line 384) when it works
-        from src.security.input_validation import SecureQueryParams
 
         # Test the model validation directly
         params = SecureQueryParams(search="test", page=1, limit=10, sort="name:asc")
@@ -2072,8 +1989,6 @@ class TestConfigurationModuleCoverage:
 
     def test_health_configuration_error_scenarios(self):
         """Test configuration health error scenarios."""
-        from src.config.health import get_configuration_health_summary
-
         with patch("src.config.health.get_settings") as mock_get_settings:
             # Test configuration error handling
             mock_get_settings.side_effect = Exception("Configuration error")
@@ -2084,7 +1999,6 @@ class TestConfigurationModuleCoverage:
 
     def test_settings_module_edge_cases(self):
         """Test settings module edge cases to improve coverage."""
-        from src.config.settings import ApplicationSettings
 
         # Test default ApplicationSettings creation
         settings = ApplicationSettings()
@@ -2093,7 +2007,6 @@ class TestConfigurationModuleCoverage:
 
     def test_settings_validation_comprehensive(self):
         """Test comprehensive settings validation scenarios."""
-        from src.config.settings import ConfigurationValidationError, get_settings
 
         # Test settings with validation enabled
         with patch.dict("os.environ", {"APP_NAME": "TestApp", "ENVIRONMENT": "test"}):
@@ -2111,7 +2024,6 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_module_basic_imports(self):
         """Test basic imports and functions from encryption module."""
-        from src.utils.encryption import EncryptionError, GPGError, validate_environment_keys
 
         # Test that exception classes are defined
         assert issubclass(EncryptionError, Exception)
@@ -2122,7 +2034,6 @@ class TestUtilsModuleCoverage:
 
     def test_encryption_gpg_key_validation(self):
         """Test GPG key validation functions."""
-        from src.utils.encryption import EncryptionError, validate_environment_keys
 
         # Test that function exists and can be called
         try:
@@ -2134,23 +2045,33 @@ class TestUtilsModuleCoverage:
             assert True
         except Exception:
             # Other exceptions should not occur
-            assert False, "Unexpected exception in key validation"
+            pytest.fail("Unexpected exception in key validation")
 
     def test_encryption_ssh_key_validation(self):
         """Test SSH key validation through environment validation."""
-        from src.utils.encryption import EncryptionError, validate_environment_keys
 
-        # Test that function exists and validates SSH properly
-        try:
-            validate_environment_keys()
-            # If we reach here, validation passed (including SSH)
-            assert True
-        except EncryptionError as e:
-            # Expected in test environment - ensure SSH is mentioned in error
-            assert "SSH" in str(e) or "signing" in str(e) or "GPG" in str(e)
-        except Exception:
-            # Other exceptions should not occur
-            assert False, "Unexpected exception in SSH validation"
+        # Mock both GPG and subprocess to reach SSH validation
+        with patch("gnupg.GPG") as mock_gpg_class, patch("subprocess.run") as mock_run:
+            # Mock GPG to return at least one secret key (pass GPG validation)
+            mock_gpg = Mock()
+            mock_gpg.list_keys.return_value = [{"keyid": "test-key-id"}]  # Non-empty list
+            mock_gpg_class.return_value = mock_gpg
+
+            # Configure subprocess calls
+            def subprocess_side_effect(cmd, **kwargs):
+                if cmd[0] == "ssh-add":
+                    # Simulate ssh-add -l returning error (no keys loaded)
+                    return Mock(returncode=1, stdout="", stderr="")
+                if cmd[0] == "git":
+                    # Simulate git config returning success
+                    return Mock(returncode=0, stdout="test-signing-key\n", stderr="")
+                return Mock(returncode=0, stdout="", stderr="")
+
+            mock_run.side_effect = subprocess_side_effect
+
+            # Test that function validates SSH properly
+            with pytest.raises(EncryptionError, match="No SSH keys loaded"):
+                validate_environment_keys()
 
 
 class TestAdditionalSecurityCoverage:
@@ -2158,7 +2079,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_rate_limiting_environment_specific_creation(self):
         """Test rate limiting with different environments."""
-        from src.security.rate_limiting import create_limiter
 
         # Test with different environment settings
         environments = ["dev", "staging", "prod", "test"]
@@ -2177,8 +2097,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_middleware_environment_variations(self):
         """Test middleware with different environment configurations."""
-        from src.security.middleware import SecurityHeadersMiddleware
-
         environments = ["dev", "staging", "prod", "test"]
 
         for env in environments:
@@ -2198,11 +2116,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_input_validation_comprehensive_edge_cases(self):
         """Test comprehensive edge cases for input validation."""
-        from src.security.input_validation import (
-            SecureEmailField,
-            SecurePathField,
-            SecureStringField,
-        )
 
         # Test various input types
         test_cases = [
@@ -2244,8 +2157,6 @@ class TestAdditionalSecurityCoverage:
 
     def test_audit_logging_comprehensive_scenarios(self):
         """Test comprehensive audit logging scenarios."""
-        from src.security.audit_logging import AuditEvent, AuditEventSeverity, AuditEventType, AuditLogger
-
         # Test all event types
         event_types = [
             AuditEventType.AUTH_LOGIN_SUCCESS,

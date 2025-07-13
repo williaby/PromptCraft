@@ -40,7 +40,8 @@ repos:
           types-pyyaml,
           types-python-dateutil,
           types-aiofiles,
-          pydantic
+          pydantic,
+          pydantic-settings
         ]
         args: [--config-file=pyproject.toml]
         exclude: ^tests/

@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
-from src.main import app, create_app
+from src.main import app, create_app, lifespan
 
 
 class TestAppCreation:
@@ -178,8 +178,6 @@ class TestLifespanEvents:
         mock_get_settings.return_value = mock_settings
 
         # Test the lifespan context manager directly
-        from src.main import lifespan
-
         mock_app = MagicMock()
         mock_app.state = MagicMock()
 
@@ -197,8 +195,6 @@ class TestLifespanEvents:
             suggestions=["Fix 1", "Fix 2"],
         )
 
-        from src.main import lifespan
-
         mock_app = MagicMock()
 
         # Should raise ConfigurationValidationError
@@ -210,8 +206,6 @@ class TestLifespanEvents:
     async def test_lifespan_unexpected_error(self, mock_get_settings) -> None:
         """Test startup with unexpected error."""
         mock_get_settings.side_effect = RuntimeError("Unexpected error")
-
-        from src.main import lifespan
 
         mock_app = MagicMock()
 
@@ -243,7 +237,7 @@ class TestMainScriptExecution:
 
     def test_os_error_handling(self) -> None:
         """Test that OS errors are properly raised."""
-        with pytest.raises(OSError):
+        with pytest.raises(OSError, match="Failed to start server"):
             raise OSError("Failed to start server")
 
     def test_runtime_error_handling(self) -> None:

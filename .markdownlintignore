@@ -1,3 +1,5 @@
 node_modules/**
 webapp/**
 dist/**
+docs/security/codeql-historical-gap-analysis.md
+docs/security/codeql-python-scanning-guide.md
