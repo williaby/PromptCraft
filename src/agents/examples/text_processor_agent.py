@@ -465,7 +465,7 @@ class TextProcessorAgent(BaseAgent):
             List of dictionaries with word and frequency
         """
         # Simple word frequency counting
-        word_freq = {}
+        word_freq: dict[str, int] = {}
         for word in words:
             word_lower = word.lower().strip(".,!?;:")
             if len(word_lower) > 2:  # Skip short words

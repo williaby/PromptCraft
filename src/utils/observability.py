@@ -29,7 +29,7 @@ try:
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
     OPENTELEMETRY_AVAILABLE = False
-    trace = None
+    trace = None  # type: ignore[assignment]
 
 
 class StructuredLogger:
@@ -79,25 +79,25 @@ class StructuredLogger:
 
         return context
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log info message with structured context."""
         context = self._get_context()
         context.update(kwargs)
         self.logger.info(message, extra={"structured_data": context})
 
-    def error(self, message: str, **kwargs):
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log error message with structured context."""
         context = self._get_context()
         context.update(kwargs)
         self.logger.error(message, extra={"structured_data": context})
 
-    def warning(self, message: str, **kwargs):
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log warning message with structured context."""
         context = self._get_context()
         context.update(kwargs)
         self.logger.warning(message, extra={"structured_data": context})
 
-    def debug(self, message: str, **kwargs):
+    def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message with structured context."""
         context = self._get_context()
         context.update(kwargs)
@@ -107,7 +107,7 @@ class StructuredLogger:
 class StructuredFormatter(logging.Formatter):
     """JSON formatter for structured logging."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_entry = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -139,13 +139,13 @@ class OpenTelemetryInstrumentor:
             service_name: Name of the service for tracing
         """
         self.service_name = service_name
-        self.tracer = None
+        self.tracer: Any = None
         self.initialized = False
 
         if OPENTELEMETRY_AVAILABLE:
             self._setup_tracing()
 
-    def _setup_tracing(self):
+    def _setup_tracing(self) -> None:
         """Setup OpenTelemetry tracing."""
         if not OPENTELEMETRY_AVAILABLE:
             return
@@ -177,7 +177,7 @@ class OpenTelemetryInstrumentor:
 
         self.initialized = True
 
-    def start_span(self, name: str, attributes: dict[str, Any] | None = None):
+    def start_span(self, name: str, attributes: dict[str, Any] | None = None) -> Any:
         """Start a new span.
 
         Args:
@@ -199,7 +199,7 @@ class OpenTelemetryInstrumentor:
         return span
 
     @contextmanager
-    def trace_operation(self, operation_name: str, **attributes):
+    def trace_operation(self, operation_name: str, **attributes: Any) -> Any:
         """Context manager for tracing operations.
 
         Args:
@@ -226,26 +226,26 @@ class OpenTelemetryInstrumentor:
 class NoOpSpan:
     """No-op span for when OpenTelemetry is not available."""
 
-    def __enter__(self):
+    def __enter__(self) -> "NoOpSpan":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         pass
 
-    def set_attribute(self, key: str, value: Any):
+    def set_attribute(self, key: str, value: Any) -> None:
         pass
 
-    def set_status(self, status):
+    def set_status(self, status: Any) -> None:
         pass
 
-    def record_exception(self, exception: Exception):
+    def record_exception(self, exception: Exception) -> None:
         pass
 
 
 class AgentMetrics:
     """Agent system metrics collection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize metrics collection."""
         self.metrics = {
             "agent_executions_total": 0,
@@ -259,21 +259,25 @@ class AgentMetrics:
         }
         self._lock = threading.Lock()
 
-    def increment_counter(self, metric_name: str, value: int = 1):
+    def increment_counter(self, metric_name: str, value: int = 1) -> None:
         """Increment a counter metric."""
         with self._lock:
             if metric_name in self.metrics:
-                self.metrics[metric_name] += value
+                current_value = self.metrics[metric_name]
+                if isinstance(current_value, int):
+                    self.metrics[metric_name] = current_value + value
 
-    def record_duration(self, metric_name: str, duration: float):
+    def record_duration(self, metric_name: str, duration: float) -> None:
         """Record a duration metric."""
         with self._lock:
-            if metric_name in self.metrics and isinstance(self.metrics[metric_name], list):
-                self.metrics[metric_name].append(duration)
+            if metric_name in self.metrics:
+                metric_value = self.metrics[metric_name]
+                if isinstance(metric_value, list):
+                    metric_value.append(duration)
 
-                # Keep only last 1000 measurements
-                if len(self.metrics[metric_name]) > 1000:
-                    self.metrics[metric_name] = self.metrics[metric_name][-1000:]
+                    # Keep only last 1000 measurements
+                    if len(metric_value) > 1000:
+                        self.metrics[metric_name] = metric_value[-1000:]
 
     def get_metrics(self) -> dict[str, Any]:
         """Get current metrics snapshot."""
@@ -281,8 +285,9 @@ class AgentMetrics:
             snapshot = self.metrics.copy()
 
             # Calculate duration statistics
-            durations = snapshot.get("agent_execution_duration_seconds", [])
-            if durations:
+            durations_value = snapshot.get("agent_execution_duration_seconds", [])
+            if isinstance(durations_value, list) and durations_value:
+                durations = durations_value  # type: list[float]
                 snapshot["agent_execution_duration_stats"] = {
                     "count": len(durations),
                     "avg": sum(durations) / len(durations),
@@ -294,7 +299,7 @@ class AgentMetrics:
 
             return snapshot
 
-    def _percentile(self, values: list, percentile: float) -> float:
+    def _percentile(self, values: list[float], percentile: float) -> float:
         """Calculate percentile of values."""
         if not values:
             return 0.0
@@ -310,7 +315,7 @@ _observability_instrumentor = None
 _metrics_collector = None
 
 
-def get_instrumentor() -> OpenTelemetryInstrumentor:
+def get_instrumentor() -> "OpenTelemetryInstrumentor":
     """Get global OpenTelemetry instrumentor."""
     global _observability_instrumentor
     if _observability_instrumentor is None:
@@ -318,7 +323,7 @@ def get_instrumentor() -> OpenTelemetryInstrumentor:
     return _observability_instrumentor
 
 
-def get_metrics_collector() -> AgentMetrics:
+def get_metrics_collector() -> "AgentMetrics":
     """Get global metrics collector."""
     global _metrics_collector
     if _metrics_collector is None:
@@ -326,7 +331,7 @@ def get_metrics_collector() -> AgentMetrics:
     return _metrics_collector
 
 
-def trace_agent_operation(operation_name: str):
+def trace_agent_operation(operation_name: str) -> Callable:
     """Decorator for tracing agent operations.
 
     Args:
@@ -335,7 +340,7 @@ def trace_agent_operation(operation_name: str):
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             instrumentor = get_instrumentor()
             metrics = get_metrics_collector()
 
@@ -385,7 +390,7 @@ def trace_agent_operation(operation_name: str):
                         span.set_attribute("duration_seconds", duration)
 
         @functools.wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             instrumentor = get_instrumentor()
             metrics = get_metrics_collector()
 
@@ -451,7 +456,7 @@ def create_structured_logger(name: str, correlation_id: str | None = None) -> St
     return StructuredLogger(name, correlation_id)
 
 
-def log_agent_event(event_type: str, agent_id: str, message: str, level: str = "info", **additional_data):
+def log_agent_event(event_type: str, agent_id: str, message: str, level: str = "info", **additional_data: Any) -> None:
     """Log an agent system event with structured data.
 
     Args:

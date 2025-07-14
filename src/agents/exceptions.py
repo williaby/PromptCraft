@@ -350,7 +350,7 @@ def create_agent_error(
     context: dict[str, Any] | None = None,
     agent_id: str | None = None,
     request_id: str | None = None,
-) -> AgentError:
+) -> "AgentError":
     """
     Factory function to create agent errors based on error type.
 
@@ -388,13 +388,13 @@ def create_agent_error(
 
     # Handle timeout error special case (different signature)
     if error_type == "timeout":
-        return error_class(
+        return error_class(  # type: ignore[no-any-return]
             message=message,
             agent_id=agent_id,
             request_id=request_id,
         )
 
-    return error_class(
+    return error_class(  # type: ignore[no-any-return]
         message=message,
         error_code=error_code,
         context=context,
@@ -407,7 +407,7 @@ def handle_agent_error(
     error: Exception,
     agent_id: str | None = None,
     request_id: str | None = None,
-) -> AgentError:
+) -> "AgentError":
     """
     Convert generic exceptions to AgentError instances.
 

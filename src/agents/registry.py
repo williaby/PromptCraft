@@ -81,7 +81,7 @@ class AgentRegistry:
         ```
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the agent registry."""
         self._registry: dict[str, type] = {}
         self._instances: dict[str, Any] = {}
@@ -384,7 +384,7 @@ class AgentRegistry:
 
         return matching_agents
 
-    def find_agents_by_type(self, input_type: str, output_type: str = None) -> list[str]:
+    def find_agents_by_type(self, input_type: str, output_type: str | None = None) -> list[str]:
         """
         Find agents by input/output type capability.
 
@@ -469,7 +469,7 @@ class AgentRegistry:
         """Get the number of registered agents."""
         return len(self._registry)
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         """Iterate over registered agent IDs."""
         return iter(self._registry.keys())
 
