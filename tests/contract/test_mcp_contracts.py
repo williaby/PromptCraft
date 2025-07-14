@@ -2,11 +2,19 @@
 
 This module defines consumer-side contract tests for MCP (Model Context Protocol) integrations
 to ensure API compatibility between PromptCraft and external MCP servers.
+
+Note: Currently using Pact Python v2 API. When v3 becomes stable, migrate to pact.v3 imports.
+See: https://github.com/pact-foundation/pact-python/issues/396
 """
 
+import warnings
 from typing import Any
 
 import pytest
+
+# Suppress PendingDeprecationWarning from Pact Python v2->v3 transition
+# TODO: Migrate to pact.v3 API when it becomes stable and fully documented
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning, module="pact")
 
 # Import Pact for contract testing
 try:
@@ -373,10 +381,7 @@ class TestMockMCPContracts:
                 return False
 
             # Status validation
-            if response["status"] not in ["success", "error"]:
-                return False
-
-            return True
+            return response["status"] in ["success", "error"]
 
         # Test valid contract
         valid_request = {"query": "test query", "context": "test context"}
@@ -403,10 +408,7 @@ class TestMockMCPContracts:
             if response["status"] != "error":
                 return False
 
-            if not isinstance(response["code"], int):
-                return False
-
-            return True
+            return isinstance(response["code"], int)
 
         # Test valid error response
         valid_error = {"error": "validation_error", "message": "Invalid input", "status": "error", "code": 400}
