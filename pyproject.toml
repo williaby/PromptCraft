@@ -283,6 +283,7 @@ filterwarnings = [
     "error",
     "ignore::UserWarning",
     "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",  # Suppress Pact Python v2->v3 migration warnings globally
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
