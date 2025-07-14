@@ -10,7 +10,7 @@ import asyncio
 import pytest
 
 from src.agents.base_agent import BaseAgent
-from src.agents.exceptions import AgentConfigurationError, AgentTimeoutError
+from src.agents.exceptions import AgentConfigurationError, AgentExecutionError, AgentTimeoutError
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
 from src.utils.observability import log_agent_event
@@ -224,7 +224,7 @@ class TestFinal80Push:
 
         # Test failed execution (increments failure metrics)
         agent_input = AgentInput(content="failure test", context={"fail": True})
-        with pytest.raises(ValueError, match="Simulated failure"):
+        with pytest.raises(AgentExecutionError, match="Simulated failure"):
             await agent.process(agent_input)
 
     def test_agent_input_content_validation_edge_cases(self):

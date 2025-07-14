@@ -295,6 +295,7 @@ markers = [
     "performance: marks tests as performance tests",
     "security: marks tests as security tests",
     "stress: marks tests as stress tests",
+    "contract: marks tests as contract tests (require external services)",
 ]
 
 [tool.coverage.run]
