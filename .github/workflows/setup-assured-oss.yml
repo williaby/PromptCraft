@@ -110,7 +110,8 @@ jobs:
             echo "Available Poetry plugins:"
             poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
             echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
+            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
+              echo "Network connectivity issues detected"
             echo "Disk space:"
             df -h . | tail -1
             echo "Memory usage:"
@@ -127,7 +128,9 @@ jobs:
 
           # Configure Poetry sources (skip if already exists)
           poetry source add --priority=default pypi || echo "PyPI source already configured"
-          poetry source add --priority=supplemental assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/ || echo "AssuredOSS source already configured"
+          poetry source add --priority=supplemental assured-oss \
+            https://us-python.pkg.dev/assured-oss/python-packages/simple/ || \
+            echo "AssuredOSS source already configured"
 
           # Secure authentication token handling - avoid shell variable exposure
           echo "🔐 Configuring secure Assured-OSS authentication..."
@@ -135,7 +138,8 @@ jobs:
             echo "::error::Failed to configure Assured-OSS authentication"
             echo "Attempting alternative secure token configuration..."
             # Alternative approach using temporary environment variable
-            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
+            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) \
+              poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
             unset GOOGLE_ACCESS_TOKEN
           }
 

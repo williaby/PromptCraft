@@ -345,17 +345,17 @@ validate_and_update_dependencies() {
 
         # Check for dependency conflicts before updating
         echo "🔍 Checking for dependency conflicts..."
-        if ! poetry check --lock 2>/dev/null; then
+        if ! poetry check 2>/dev/null; then
             echo "⚠️  Lock file is inconsistent with pyproject.toml. Regenerating..."
-            poetry lock --no-update
+            poetry lock
         fi
 
         # Install dependencies to ensure environment is consistent
         echo "📥 Installing dependencies..."
-        poetry install --sync
+        poetry install
 
         # Validate the lock file after installation
-        if ! poetry check --lock; then
+        if ! poetry check; then
             echo "❌ ERROR: Poetry lock file validation failed after installation"
             exit 1
         fi
@@ -365,9 +365,9 @@ validate_and_update_dependencies() {
         echo "📦 No pyproject.toml changes detected. Validating existing dependencies..."
 
         # Quick validation of existing lock file
-        if ! poetry check --lock; then
+        if ! poetry check; then
             echo "❌ ERROR: Existing poetry.lock is inconsistent"
-            echo "💡 Run 'poetry lock --no-update' to fix"
+            echo "💡 Run 'poetry lock' to fix"
             exit 1
         fi
 

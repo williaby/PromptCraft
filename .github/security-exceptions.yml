@@ -28,21 +28,21 @@ exceptions:
     approved_date: "2024-01-10"
     pr_reference: "#000"
 
-  # Real exceptions should be added below this line
-  # Format:
-  # - id: "EX-XXX" (increment XXX for each new exception)
-  # - type: "false-positive" | "accepted-risk" | "pending-fix"
-  # - tool: Name of the security scanning tool
-  # - rule: Specific rule or CVE that triggered
-  # - file: Path to the affected file
-  # - line: Line number (if applicable)
-  # - justification: Detailed explanation of why this is an exception
-  # - risk_accepted: true/false
-  # - expires: YYYY-MM-DD (exceptions should be time-limited)
-  # - approved_by: GitHub username of approver
-  # - approved_date: YYYY-MM-DD
-  # - pr_reference: Link to the PR where this was discussed
-  # - mitigation: (optional) For accepted-risk type, describe mitigation
+    # Real exceptions should be added below this line
+    # Format:
+    # - id: "EX-XXX" (increment XXX for each new exception)
+    # - type: "false-positive" | "accepted-risk" | "pending-fix"
+    # - tool: Name of the security scanning tool
+    # - rule: Specific rule or CVE that triggered
+    # - file: Path to the affected file
+    # - line: Line number (if applicable)
+    # - justification: Detailed explanation of why this is an exception
+    # - risk_accepted: true/false
+    # - expires: YYYY-MM-DD (exceptions should be time-limited)
+    # - approved_by: GitHub username of approver
+    # - approved_date: YYYY-MM-DD
+    # - pr_reference: Link to the PR where this was discussed
+    # - mitigation: (optional) For accepted-risk type, describe mitigation
 
 # Process for adding new exceptions:
 # 1. Create a PR that adds the exception to this file
@@ -55,6 +55,6 @@ exceptions:
 # Exceptions past their expiry date will trigger warnings
 # Either extend the expiry with justification or fix the underlying issue
 
-archived_exceptions:
-  # Move expired or resolved exceptions here for historical record
-  # This helps track patterns and prevent regression
+# Move expired or resolved exceptions here for historical record
+# This helps track patterns and prevent regression
+archived_exceptions: []

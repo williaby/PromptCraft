@@ -19,26 +19,32 @@ Move knowledge files between agents with proper metadata updates and cross-refer
 ## Migration Process
 
 ### 1. Pre-Migration Validation
+
 **Source File Checks**:
+
 - File exists and is readable
 - Has proper YAML front matter
 - Follows knowledge base standards
 - Content is complete and published
 
 **Target Agent Checks**:
+
 - Agent directory exists: `/knowledge/{target_agent}/`
 - Agent is registered in system
 - Content domain alignment with agent expertise
 - No filename conflicts in destination
 
 **Content Relevance Assessment**:
+
 - Does content align with target agent's domain?
 - Are there overlapping capabilities?
 - Will migration improve content discoverability?
 - Should content be split or merged with existing files?
 
 ### 2. Metadata Transformation
+
 **YAML Front Matter Updates**:
+
 ```yaml
 # Before Migration
 ---
@@ -64,45 +70,56 @@ migration_date: 2024-01-15     # ← TRACKING
 ```
 
 **Required Updates**:
+
 - `agent_id`: Change to target agent
 - `version`: Increment to reflect migration
 - `tags`: Enhance with target agent's taxonomy
 - Add migration tracking metadata
 
 ### 3. File System Operations
+
 **Path Changes**:
+
 - Source: `/knowledge/{source_agent}/{filename}.md`
 - Target: `/knowledge/{target_agent}/{filename}.md`
 
 **Conflict Resolution**:
+
 - If target file exists, propose merge or rename
 - Check for similar content that could be consolidated
 - Preserve version history and authorship
 
 ### 4. Cross-Reference Updates
+
 **Internal Repository Links**:
+
 - Find all markdown files linking to the source file
 - Update relative and absolute paths
 - Verify link validity after migration
 
 **Registry Updates**:
+
 - Update agent capability listings
 - Modify knowledge base indexes
 - Update any automated navigation files
 
 **Documentation Updates**:
+
 - Update README files in both source and target directories
 - Modify any knowledge base catalogs or indexes
 - Update related planning documents
 
 ### 5. Content Integration
+
 **Target Agent Integration**:
+
 - Review existing knowledge in target agent
 - Identify potential consolidation opportunities
 - Ensure content doesn't duplicate existing knowledge
 - Update agent overview to reflect new capabilities
 
 **Source Agent Cleanup**:
+
 - Remove file from source location
 - Update source agent capability listings
 - Add migration note to source agent documentation
@@ -111,20 +128,25 @@ migration_date: 2024-01-15     # ← TRACKING
 ## Advanced Migration Scenarios
 
 ### Bulk File Migration
+
 When migrating multiple related files:
+
 ```bash
 # Example: Moving all authentication-related files
 /project:migrate-knowledge-file knowledge/create_agent/auth-*.md security_agent
 ```
 
 **Batch Operations**:
+
 - Analyze content relationships
 - Maintain logical groupings
 - Update cross-references between migrated files
 - Preserve content hierarchy and organization
 
 ### Content Splitting
+
 When file contains content for multiple agents:
+
 ```markdown
 # Original file: knowledge/create_agent/security-and-prompting.md
 
@@ -134,19 +156,23 @@ When file contains content for multiple agents:
 ```
 
 **Splitting Process**:
+
 1. Identify content boundaries by domain
 2. Create new files for each domain
 3. Update cross-references between split files
 4. Maintain content relationships and flow
 
 ### Content Merging
+
 When migrating into existing related content:
+
 ```markdown
 # Merge auth-guide.md into existing security-best-practices.md
 # Preserve both content streams while eliminating duplication
 ```
 
 **Merging Strategy**:
+
 1. Analyze content overlap and gaps
 2. Integrate unique content from source
 3. Resolve conflicting recommendations
@@ -155,6 +181,7 @@ When migrating into existing related content:
 ## Required Output Format
 
 ### Migration Report
+
 ```markdown
 # Knowledge File Migration Report
 
@@ -211,7 +238,8 @@ mv knowledge/security_agent/auth-guide.md knowledge/create_agent/auth-guide.md
 ```
 
 **Backup Location**: `.migration-backups/2024-01-15/auth-guide.md.backup`
-```
+
+```text
 
 ### Conflict Resolution
 When conflicts occur, provide resolution options:
@@ -242,6 +270,7 @@ Both files cover OAuth2 implementation patterns.
 ## Validation Checklist
 
 ### Pre-Migration
+
 - [ ] Source file exists and is valid
 - [ ] Target agent directory exists
 - [ ] Content relevance confirmed
@@ -249,6 +278,7 @@ Both files cover OAuth2 implementation patterns.
 - [ ] Backup strategy in place
 
 ### During Migration
+
 - [ ] Metadata properly updated
 - [ ] File operations successful
 - [ ] Cross-references identified and updated
@@ -256,6 +286,7 @@ Both files cover OAuth2 implementation patterns.
 - [ ] Version tracking maintained
 
 ### Post-Migration
+
 - [ ] Target file is valid and accessible
 - [ ] All links resolve correctly
 - [ ] No broken references remain

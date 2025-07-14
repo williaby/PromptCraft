@@ -6,7 +6,7 @@ following the pattern established in ledgerbase for secure .env file handling.
 """
 
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 from pathlib import Path
 

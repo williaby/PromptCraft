@@ -93,7 +93,7 @@ done
 
 #### Staged Deployment by Repository Type
 
-**Week 7-8: Library and Tool Repositories**
+### Week 7-8: Library and Tool Repositories
 
 ```bash
 # Lower risk, fewer dependencies
@@ -102,7 +102,7 @@ for repo in $(gh repo list --topic library --json name -q '.[].name'); do
 done
 ```
 
-**Week 9-10: Service and Application Repositories**
+### Week 9-10: Service and Application Repositories
 
 ```bash
 # Medium risk, customer-facing but with rollback capability
@@ -111,7 +111,7 @@ for repo in $(gh repo list --topic service --json name -q '.[].name'); do
 done
 ```
 
-**Week 11-12: Critical Infrastructure Repositories**
+### Week 11-12: Critical Infrastructure Repositories
 
 ```bash
 # Highest risk, most important for business continuity
@@ -321,4 +321,5 @@ python scripts/security-metrics.py --days 30 --output monthly-security-trends.md
 4. **1 hour**: Create incident report and tracking issue
 5. **24 hours**: Complete root cause analysis and prevention plan
 
-Remember: **The goal is security improvement, not developer obstruction.** Adjust the rollout pace based on feedback and metrics to ensure successful adoption.
+Remember: **The goal is security improvement, not developer obstruction.** Adjust the rollout pace based on feedback
+and metrics to ensure successful adoption.

@@ -22,7 +22,7 @@ Example:
 
     @agent_registry.register("my_agent")
     class MyAgent(BaseAgent):
-        def __init__(self, config: Dict[str, Any]):
+        def __init__(self, config: dict[str, Any]):
             super().__init__(config)
 
         async def execute(self, agent_input: AgentInput) -> AgentOutput:

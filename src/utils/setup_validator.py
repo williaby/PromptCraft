@@ -35,7 +35,7 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     """Validate system-level requirements for the application.
 
     Returns:
-        Tuple of (success: bool, errors: List[str])
+        Tuple of (success: bool, errors: list[str])
     """
     errors = []
 
@@ -53,7 +53,7 @@ def validate_environment_setup() -> tuple[bool, list[str], list[str]]:
     """Validate environment setup including keys and secrets.
 
     Returns:
-        Tuple of (success: bool, errors: List[str], warnings: List[str])
+        Tuple of (success: bool, errors: list[str], warnings: list[str])
     """
     errors = []
     warnings = []
