@@ -242,7 +242,7 @@ class TestAgentPerformanceMonitoring:
 
         try:
             start_time = time.time()
-            with pytest.raises(Exception, match="Simulated agent failure"):
+            with pytest.raises(Exception, match="Simulated execution failure"):
                 loop.run_until_complete(failing_agent.process(agent_input))
             end_time = time.time()
 

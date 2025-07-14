@@ -7,6 +7,7 @@ the testing guide requirements.
 """
 
 import asyncio
+import time
 from typing import Any
 
 import pytest
@@ -14,9 +15,9 @@ import pytest
 from src.agents.base_agent import BaseAgent
 from src.agents.exceptions import (
     AgentConfigurationError,
+    AgentExecutionError,
     AgentRegistrationError,
     AgentTimeoutError,
-    AgentValidationError,
 )
 from src.agents.models import AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry, agent_registry
@@ -316,7 +317,7 @@ class TestAgentLifecycleIntegration:
         # Test execution error
         error_input = AgentInput(content="Test error handling", context={"operation": "error"})
 
-        with pytest.raises(AgentValidationError) as excinfo:
+        with pytest.raises(AgentExecutionError) as excinfo:
             await agent.process(error_input)
 
         assert "Simulated processing error" in str(excinfo.value)
@@ -415,8 +416,6 @@ class TestAgentLifecycleIntegration:
 
         # Test processing time accuracy
         agent_input = AgentInput(content="Performance test")
-
-        import time
 
         start_time = time.time()
         result = await agent.process(agent_input)
