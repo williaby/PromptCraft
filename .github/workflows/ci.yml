@@ -260,7 +260,8 @@ jobs:
             --cov-report=xml \
             --cov-report=term-missing \
             --junitxml=junit.xml \
-            -o junit_family=legacy
+            -o junit_family=xunit2 \
+            --tb=short
         env:
           CI_ENVIRONMENT: true
           PROMPTCRAFT_REDIS_HOST: localhost
@@ -378,7 +379,8 @@ jobs:
             --cov-report=xml \
             --cov-report=term-missing \
             --junitxml=junit.xml \
-            -o junit_family=legacy
+            -o junit_family=xunit2 \
+            --tb=short
         env:
           CI_ENVIRONMENT: true
           PROMPTCRAFT_REDIS_HOST: localhost

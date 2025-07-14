@@ -276,7 +276,8 @@ addopts = """
 --cov-report=html
 --cov-report=xml
 --junitxml=junit.xml
--o junit_family=legacy
+-o junit_family=xunit2
+--tb=short
 --cov-fail-under=80
 """
 testpaths = ["tests"]
