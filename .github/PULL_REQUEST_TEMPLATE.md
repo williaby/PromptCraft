@@ -12,8 +12,6 @@
 ## Description
 <!-- Provide a brief description of the changes -->
 
-**WTD:** <!-- What This Does - Brief 1-2 sentence summary of what this PR accomplishes -->
-
 ## Testing
 <!-- Describe the tests that you ran to verify your changes -->
 - [ ] Tests pass locally with `poetry run pytest`
