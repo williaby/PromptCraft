@@ -1,325 +1,525 @@
-# PromptCraft Configuration System Usage Guide
+# PromptCraft Configuration System Guide
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Quick Start](#quick-start)
-3. [Configuration Options](#configuration-options)
-4. [Environment Management](#environment-management)
-5. [Security Best Practices](#security-best-practices)
-6. [Health Monitoring](#health-monitoring)
-7. [Common Patterns](#common-patterns)
-8. [Troubleshooting](#troubleshooting)
+## Overview
 
-## Introduction
-
-The PromptCraft Configuration System provides a comprehensive, secure, and flexible approach to managing application configuration across different environments. Built on top of Pydantic for type safety and validation, it includes features for encrypted secrets, health monitoring, and environment-specific settings.
-
-### Key Features
-- **Type-safe configuration** with Pydantic models
-- **Environment-specific settings** (dev, staging, prod)
-- **Encrypted secrets management** with GPG
-- **Health check endpoints** for operational monitoring
-- **Validation with helpful error messages**
-- **Hierarchical configuration loading**
+The PromptCraft configuration system provides a robust, secure, and environment-aware approach to application configuration. Built on Pydantic for type safety and validation, it supports encrypted secrets, environment-specific settings, and comprehensive health monitoring.
 
 ## Quick Start
-
-### Installation
-
-The configuration system is included with PromptCraft. Ensure you have the dependencies installed:
-
-```bash
-poetry install
-```
 
 ### Basic Usage
 
 ```python
-from src.config import get_settings
+from src.config.settings import get_settings
 
-# Get the application settings
+# Get application settings
 settings = get_settings()
 
 # Access configuration values
-print(f"App: {settings.app_name} v{settings.version}")
+print(f"Running on {settings.api_host}:{settings.api_port}")
 print(f"Environment: {settings.environment}")
-print(f"API: http://{settings.api_host}:{settings.api_port}")
+print(f"Debug mode: {settings.debug}")
 ```
 
-### Running the Application
+### Environment Variables
+
+Set configuration via environment variables with `PROMPTCRAFT_` prefix:
 
 ```bash
-# Development mode
-poetry run python src/main.py
-
-# Production mode with environment variables
-PROMPTCRAFT_ENVIRONMENT=prod PROMPTCRAFT_DEBUG=false poetry run python src/main.py
+export PROMPTCRAFT_ENVIRONMENT=prod
+export PROMPTCRAFT_API_HOST=0.0.0.0
+export PROMPTCRAFT_API_PORT=80
+export PROMPTCRAFT_DEBUG=false
+export PROMPTCRAFT_SECRET_KEY=your-secret-key-here
 ```
 
-## Configuration Options
+### Environment Files
+
+Create `.env` files for each environment:
+
+```bash
+# .env.dev
+PROMPTCRAFT_ENVIRONMENT=dev
+PROMPTCRAFT_DEBUG=true
+PROMPTCRAFT_API_HOST=localhost
+PROMPTCRAFT_API_PORT=8000
+
+# .env.prod
+PROMPTCRAFT_ENVIRONMENT=prod
+PROMPTCRAFT_DEBUG=false
+PROMPTCRAFT_API_HOST=0.0.0.0
+PROMPTCRAFT_API_PORT=80
+PROMPTCRAFT_SECRET_KEY=production-secret-key
+```
+
+## Configuration Schema
 
 ### Core Settings
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `app_name` | str | "PromptCraft-Hybrid" | Application name |
-| `version` | str | "0.1.0" | Application version |
-| `environment` | Literal["dev", "staging", "prod"] | "dev" | Deployment environment |
-| `debug` | bool | True | Debug mode flag |
-| `api_host` | str | "0.0.0.0" | API server host |
-| `api_port` | int | 8000 | API server port |
+| `app_name` | `str` | "PromptCraft-Hybrid" | Application name |
+| `version` | `str` | "0.1.0" | Application version |
+| `environment` | `str` | "dev" | Environment (dev/staging/prod) |
+| `debug` | `bool` | `True` | Debug mode flag |
+| `api_host` | `str` | "0.0.0.0" | API server host |
+| `api_port` | `int` | 8000 | API server port |
 
-### Database Settings
+### Secret Settings
 
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `database_url` | SecretStr | None | PostgreSQL connection URL |
-| `database_password` | SecretStr | None | Database password |
-| `db_pool_size` | int | 10 | Connection pool size |
-| `db_max_overflow` | int | 20 | Maximum overflow connections |
-| `db_echo` | bool | False | Echo SQL statements |
+All secret settings use `SecretStr` for secure handling:
 
-### Security Settings
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `secret_key` | SecretStr | None | Application secret key |
-| `api_key` | SecretStr | None | API authentication key |
-| `jwt_secret_key` | SecretStr | None | JWT signing key |
-| `encryption_key` | SecretStr | None | Data encryption key |
-| `allowed_origins` | list[str] | ["*"] (dev only) | CORS allowed origins |
+| Setting | Type | Required | Description |
+|---------|------|----------|-------------|
+| `database_password` | `SecretStr` | Optional | Database password |
+| `database_url` | `SecretStr` | Optional | Complete database URL |
+| `api_key` | `SecretStr` | Optional | External API key |
+| `secret_key` | `SecretStr` | Prod/Staging | Application secret key |
+| `azure_openai_api_key` | `SecretStr` | Optional | Azure OpenAI API key |
+| `jwt_secret_key` | `SecretStr` | Production | JWT signing key |
+| `qdrant_api_key` | `SecretStr` | Optional | Qdrant vector DB API key |
+| `encryption_key` | `SecretStr` | Optional | Encryption key |
 
 ### External Service Settings
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `azure_openai_api_key` | SecretStr | None | Azure OpenAI API key |
-| `azure_openai_endpoint` | HttpUrl | None | Azure OpenAI endpoint |
-| `qdrant_host` | str | "localhost" | Qdrant vector DB host (use QDRANT_HOST env var) |
-| `qdrant_port` | int | 6333 | Qdrant vector DB port |
-| `qdrant_api_key` | SecretStr | None | Qdrant API key |
+| `qdrant_host` | `str` | `${QDRANT_HOST:-localhost}` | Qdrant vector database host (use QDRANT_HOST env var) |
+| `qdrant_port` | `int` | 6333 | Qdrant vector database port |
+| `zen_mcp_host` | `str` | "localhost" | Zen MCP server host |
+| `zen_mcp_port` | `int` | 3000 | Zen MCP server port |
 
-## Environment Management
+## Environment-Specific Configuration
 
-### Configuration Hierarchy
+### Development Environment
 
-Configuration is loaded with the following precedence (highest to lowest):
-
-1. **Environment Variables** - `PROMPTCRAFT_` prefix
-2. **Environment-specific .env file** - `.env.{environment}`
-3. **Base .env file** - `.env`
-4. **Pydantic field defaults**
-
-### Environment Files
-
-Create environment-specific configuration files:
-
-#### `.env.dev`
-```bash
-PROMPTCRAFT_ENVIRONMENT=dev
-PROMPTCRAFT_DEBUG=true
-PROMPTCRAFT_API_HOST=localhost
-PROMPTCRAFT_API_PORT=7860
-PROMPTCRAFT_DB_ECHO=true
-```
-
-#### `.env.staging`
-```bash
-PROMPTCRAFT_ENVIRONMENT=staging
-PROMPTCRAFT_DEBUG=false
-PROMPTCRAFT_API_HOST=0.0.0.0
-PROMPTCRAFT_API_PORT=8000
-PROMPTCRAFT_ALLOWED_ORIGINS=["https://staging.promptcraft.io"]
-```
-
-#### `.env.prod`
-```bash
-PROMPTCRAFT_ENVIRONMENT=prod
-PROMPTCRAFT_DEBUG=false
-PROMPTCRAFT_API_HOST=0.0.0.0
-PROMPTCRAFT_API_PORT=80
-PROMPTCRAFT_ALLOWED_ORIGINS=["https://promptcraft.io"]
-```
-
-### Using Encrypted Files
-
-For production environments, use encrypted configuration files:
-
-```bash
-# Encrypt a configuration file
-gpg --encrypt --recipient your-key-id .env.prod
-# Creates .env.prod.gpg
-
-# The system automatically decrypts when loading
-PROMPTCRAFT_ENVIRONMENT=prod poetry run python src/main.py
-```
-
-## Security Best Practices
-
-### 1. Never Commit Secrets
-
-Use `.gitignore` to exclude sensitive files:
-```
-.env
-.env.*
-!.env.*.gpg
-```
-
-### 2. Use SecretStr for Sensitive Values
-
-All sensitive configuration values use Pydantic's `SecretStr`:
-```python
-# Correct - value is protected
-api_key: SecretStr = Field(default=None)
-
-# Accessing the value
-if settings.api_key:
-    actual_value = settings.api_key.get_secret_value()
-```
-
-### 3. Validate Production Configuration
+- **Validation**: Lenient, allows debug mode and localhost
+- **Required Secrets**: None
+- **Default Values**: Optimized for local development
 
 ```python
-# The system automatically validates:
-# - Debug mode is off in production
-# - Required secrets are configured
-# - Security settings are appropriate
+# Development configuration example
+settings = ApplicationSettings(
+    environment="dev",
+    debug=True,
+    api_host="localhost",
+    api_port=8000
+)
 ```
 
-### 4. Use Health Checks
+### Staging Environment
 
-Monitor configuration status without exposing secrets:
-```bash
-curl http://localhost:8000/health
-curl http://localhost:8000/health/config
+- **Validation**: Moderate, requires some secrets
+- **Required Secrets**: `secret_key`
+- **Security**: Encryption recommended but not required
+
+```python
+# Staging configuration example
+settings = ApplicationSettings(
+    environment="staging",
+    debug=False,
+    api_host="staging.example.com",
+    api_port=443,
+    secret_key="staging-secret-key"
+)
+```
+
+### Production Environment
+
+- **Validation**: Strict, enforces security best practices
+- **Required Secrets**: `secret_key`, `jwt_secret_key`
+- **Security**: Encryption required, no debug mode, proper hosts
+
+```python
+# Production configuration example
+settings = ApplicationSettings(
+    environment="prod",
+    debug=False,
+    api_host="0.0.0.0",
+    api_port=80,
+    secret_key="production-secret-key-32-chars",
+    jwt_secret_key="jwt-production-secret-key"
+)
+```
+
+## Encrypted Configuration
+
+### Setup Encryption
+
+1. **Generate GPG Key**:
+   ```bash
+   gpg --full-generate-key
+   # Follow prompts to create key
+   ```
+
+2. **Configure SSH Key**:
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ssh-add ~/.ssh/id_ed25519
+   ```
+
+3. **Validate Keys**:
+   ```python
+   from src.config.settings import validate_encryption_available
+
+   if validate_encryption_available():
+       print("Encryption is ready!")
+   else:
+       print("Encryption setup required")
+   ```
+
+### Create Encrypted Environment File
+
+```python
+from src.utils.encryption import encrypt_env_file
+
+# Prepare environment content
+env_content = """
+PROMPTCRAFT_SECRET_KEY=super-secret-production-key
+PROMPTCRAFT_JWT_SECRET_KEY=jwt-secret-for-production
+PROMPTCRAFT_API_KEY=external-api-key-value
+PROMPTCRAFT_DATABASE_PASSWORD=secure-database-password
+"""
+
+# Encrypt for production use
+encrypted_content = encrypt_env_file(
+    content=env_content,
+    recipient="your-email@example.com"
+)
+
+# Save to encrypted file
+with open(".env.prod.gpg", "w") as f:
+    f.write(encrypted_content)
+```
+
+### Load Encrypted Configuration
+
+```python
+from src.config.settings import get_settings
+import os
+
+# Point to encrypted file
+os.environ["PROMPTCRAFT_ENCRYPTED_ENV_FILE"] = "/path/to/.env.prod.gpg"
+
+# Load settings (automatically decrypts)
+settings = get_settings()
+```
+
+## Validation and Error Handling
+
+### Field Validation
+
+The configuration system provides detailed validation with helpful error messages:
+
+```python
+from src.config.settings import ApplicationSettings
+from pydantic import ValidationError
+
+try:
+    settings = ApplicationSettings(
+        api_port=99999,  # Invalid port
+        api_host="",     # Empty host
+        version="invalid" # Invalid version format
+    )
+except ValidationError as e:
+    for error in e.errors():
+        print(f"Field: {error['loc'][0]}")
+        print(f"Error: {error['msg']}")
+        print(f"Value: {error['input']}")
+```
+
+### Environment-Specific Validation
+
+```python
+from src.config.settings import validate_configuration_on_startup, ConfigurationValidationError
+
+try:
+    settings = ApplicationSettings(environment="prod", debug=True)
+    validate_configuration_on_startup(settings)
+except ConfigurationValidationError as e:
+    print(f"Configuration Error: {e}")
+    print("Field Errors:")
+    for error in e.field_errors:
+        print(f"  • {error}")
+    print("Suggestions:
+    for suggestion in e.suggestions:
+        print(f"  • {suggestion}")
+```
+
+### Custom Validation Errors
+
+```python
+from src.config.settings import ConfigurationValidationError
+
+# Create detailed error with suggestions
+error = ConfigurationValidationError(
+    "Configuration validation failed",
+    field_errors=[
+        "API port must be between 1-65535",
+        "Secret key is required in production"
+    ],
+    suggestions=[
+        "Set PROMPTCRAFT_API_PORT=8000",
+        "Set PROMPTCRAFT_SECRET_KEY environment variable"
+    ]
+)
+raise error
 ```
 
 ## Health Monitoring
 
-### Available Endpoints
+### Health Check Endpoints
 
-#### `/health` - Simple Health Check
+The configuration system provides health check endpoints for monitoring:
+
+```bash
+# Basic health check
+curl http://localhost:8000/health
+
+# Detailed configuration health
+curl http://localhost:8000/health/config
+```
+
+### Health Check Response Format
+
 ```json
 {
   "status": "healthy",
   "service": "promptcraft-hybrid",
+  "environment": "prod",
+  "version": "1.0.0",
   "healthy": true,
-  "environment": "dev",
-  "version": "0.1.0"
+  "config_loaded": true,
+  "encryption_available": true,
+  "timestamp": "2024-01-01T00:00:00Z"
 }
 ```
 
-#### `/health/config` - Detailed Configuration Status
+### Configuration Status Details
+
 ```json
 {
   "environment": "prod",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "debug": false,
   "config_loaded": true,
   "encryption_enabled": true,
-  "config_source": "env_files",
+  "config_source": "env_vars",
   "validation_status": "passed",
   "secrets_configured": 5,
-  "config_healthy": true
+  "api_host": "0.0.0.0",
+  "api_port": 80,
+  "config_healthy": true,
+  "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
-### Integration with Monitoring
+### Programmatic Health Checks
 
 ```python
-# Example: Prometheus health check
-@app.get("/metrics")
-async def metrics():
-    status = get_configuration_status(settings)
-    return {
-        "config_healthy": int(status.config_healthy),
-        "secrets_configured": status.secrets_configured,
-        "encryption_enabled": int(status.encryption_enabled)
-    }
-```
+from src.config.health import get_configuration_status, get_configuration_health_summary
 
-## Common Patterns
-
-### Conditional Configuration
-
-```python
+# Get detailed status
 settings = get_settings()
+status = get_configuration_status(settings)
 
-if settings.environment == "dev":
-    # Development-specific behavior
-    logging.getLogger().setLevel(logging.DEBUG)
-elif settings.environment == "prod":
-    # Production-specific behavior
-    configure_monitoring()
+print(f"Config Health: {status.config_healthy}")
+print(f"Secrets Configured: {status.secrets_configured}")
+print(f"Validation Status: {status.validation_status}")
+
+# Get health summary
+summary = get_configuration_health_summary()
+if summary["healthy"]:
+    print("All systems operational")
+else:
+    print(f"Health issue: {summary.get('error', 'Unknown')}")
 ```
 
-### Feature Flags
+## Security Best Practices
+
+### Secret Management
+
+1. **Never commit secrets to version control**
+2. **Use encrypted .env files for production**
+3. **Rotate secrets regularly**
+4. **Use environment variables in CI/CD**
+5. **Validate encryption keys are available**
+
+### Environment Security
 
 ```python
-# In settings
-enable_new_feature: bool = Field(default=False)
+# Validate security configuration
+def validate_production_security(settings):
+    errors = []
 
-# In application
-if settings.enable_new_feature:
-    activate_new_feature()
+    if settings.environment == "prod":
+        if settings.debug:
+            errors.append("Debug mode must be disabled in production")
+
+        if not settings.secret_key:
+            errors.append("Secret key is required in production")
+
+        if settings.api_host in ("localhost", "127.0.0.1"):
+            errors.append("Production should not use localhost")
+
+    if errors:
+        raise ConfigurationValidationError(
+            "Security validation failed",
+            field_errors=errors
+        )
 ```
 
-### Dynamic Reload
+### Logging Security
+
+The configuration system ensures sensitive values are never logged:
 
 ```python
-# For testing or runtime updates
-from src.config import reload_settings
+# Secrets are automatically masked in logs and string representations
+settings = ApplicationSettings(secret_key="super-secret-value")
 
-# Change environment variable
-os.environ["PROMPTCRAFT_DEBUG"] = "false"
+# This will NOT expose the secret value
+print(str(settings))  # Shows SecretStr('**********')
 
-# Reload configuration
-settings = reload_settings()
+# Access secret value only when needed
+secret_value = settings.secret_key.get_secret_value()
 ```
+
+## Migration Guide
+
+### From Environment Variables Only
+
+If you're currently using basic environment variables:
+
+```python
+# Before
+import os
+API_HOST = os.getenv("API_HOST", "localhost")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+
+# After
+from src.config.settings import get_settings
+settings = get_settings()
+API_HOST = settings.api_host
+API_PORT = settings.api_port
+```
+
+### From Config Files
+
+If you're using YAML/JSON config files:
+
+```python
+# Before
+import yaml
+with open("config.yaml") as f:
+    config = yaml.safe_load(f)
+
+# After - Convert to environment variables or .env file
+# Create .env file with PROMPTCRAFT_ prefixes
+# Use the new configuration system
+```
+
+### Adding New Configuration Fields
+
+1. **Add field to ApplicationSettings**:
+   ```python
+   class ApplicationSettings(BaseSettings):
+       # Existing fields...
+       new_feature_enabled: bool = Field(default=False, description="Enable new feature")
+   ```
+
+2. **Add validation if needed**:
+   ```python
+   @field_validator("new_feature_enabled")
+   @classmethod
+   def validate_new_feature(cls, v: bool) -> bool:
+       # Add custom validation logic
+       return v
+   ```
+
+3. **Update environment variables**:
+   ```bash
+   export PROMPTCRAFT_NEW_FEATURE_ENABLED=true
+   ```
+
+4. **Update documentation and tests**
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. Configuration Validation Errors
-```
-ConfigurationValidationError: Debug mode should be disabled in production
-```
-**Solution**: Set `PROMPTCRAFT_DEBUG=false` for production
+#### 1. Encryption Not Available
 
-#### 2. Missing Required Secrets
-```
-ConfigurationValidationError: Database URL is required in production
-```
-**Solution**: Configure required secrets in environment or .env file
+**Error**: "Production environment detected but encryption not available"
 
-#### 3. Encryption Not Available
-```
-Warning: Encryption system not available
-```
-**Solution**: Install cryptography package: `pip install cryptography`
+**Solutions**:
+- Install GPG: `sudo apt install gnupg` (Linux) or `brew install gnupg` (macOS)
+- Generate GPG key: `gpg --full-generate-key`
+- Verify key: `gpg --list-secret-keys`
 
-### Debug Configuration Loading
+#### 2. Configuration Validation Failed
+
+**Error**: "Configuration validation failed for prod environment"
+
+**Solutions**:
+- Check required secrets are set
+- Verify environment-specific requirements
+- Review validation error messages for specific issues
+
+#### 3. File Not Found Errors
+
+**Error**: "Encrypted file not found"
+
+**Solutions**:
+- Verify file path is correct
+- Check file permissions
+- Ensure file exists and is readable
+
+#### 4. Port Already in Use
+
+**Error**: "Port 8000 is already in use"
+
+**Solutions**:
+- Change port: `export PROMPTCRAFT_API_PORT=8001`
+- Find process using port: `lsof -i :8000`
+- Kill process or use different port
+
+### Debug Configuration Issues
 
 ```python
-# Enable debug logging
+from src.config.settings import get_settings, validate_configuration_on_startup
 import logging
+
+# Enable debug logging
 logging.basicConfig(level=logging.DEBUG)
 
-# Load settings with verbose output
-settings = get_settings()
+try:
+    settings = get_settings()
+    validate_configuration_on_startup(settings)
+    print("Configuration is valid!")
+except Exception as e:
+    print(f"Configuration error: {e}")
+
+    # Check specific areas
+    print(f"Environment: {settings.environment}")
+    print(f"Debug mode: {settings.debug}")
+    print(f"API endpoint: {settings.api_host}:{settings.api_port}")
 ```
 
-### Verify Configuration
+### Environment-Specific Debugging
 
 ```python
-# Check configuration status
-from src.config import get_configuration_status
+from src.config.health import get_configuration_status
 
+settings = get_settings()
 status = get_configuration_status(settings)
-print(f"Config healthy: {status.config_healthy}")
-print(f"Validation: {status.validation_status}")
-print(f"Source: {status.config_source}")
+
+print(f"Config source: {status.config_source}")
+print(f"Encryption enabled: {status.encryption_enabled}")
+print(f"Secrets configured: {status.secrets_configured}")
+
+if not status.config_healthy:
+    print("Validation errors:")
+    for error in status.validation_errors:
+        print(f"  • {error}")
 ```
 
 ## Next Steps

@@ -83,7 +83,7 @@ All secret settings use `SecretStr` for secure handling:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `qdrant_host` | `str` | "localhost" | Qdrant vector database host (use QDRANT_HOST env var) |
+| `qdrant_host` | `str` | `${QDRANT_HOST:-localhost}` | Qdrant vector database host (use QDRANT_HOST env var) |
 | `qdrant_port` | `int` | 6333 | Qdrant vector database port |
 | `zen_mcp_host` | `str` | "localhost" | Zen MCP server host |
 | `zen_mcp_port` | `int` | 3000 | Zen MCP server port |
@@ -305,7 +305,6 @@ curl http://localhost:8000/health/config
   "encryption_enabled": true,
   "config_source": "env_vars",
   "validation_status": "passed",
-  "validation_errors": [],
   "secrets_configured": 5,
   "api_host": "0.0.0.0",
   "api_port": 80,
@@ -508,7 +507,6 @@ except Exception as e:
 ### Environment-Specific Debugging
 
 ```python
-# Check what configuration source is being used
 from src.config.health import get_configuration_status
 
 settings = get_settings()
@@ -524,166 +522,9 @@ if not status.config_healthy:
         print(f"  • {error}")
 ```
 
-## Advanced Usage
+## Next Steps
 
-### Custom Configuration Loading
-
-```python
-from src.config.settings import ApplicationSettings
-
-# Load from specific file
-settings = ApplicationSettings(_env_file=".env.custom")
-
-# Load with specific prefix
-settings = ApplicationSettings(_env_prefix="MYAPP_")
-
-# Override specific values
-settings = ApplicationSettings(
-    environment="staging",
-    debug=False,
-    api_port=9000
-)
-```
-
-### Configuration Inheritance
-
-```python
-# Base configuration
-base_config = {
-    "app_name": "PromptCraft",
-    "version": "1.0.0"
-}
-
-# Environment-specific overrides
-dev_overrides = {
-    "debug": True,
-    "api_host": "localhost"
-}
-
-prod_overrides = {
-    "debug": False,
-    "api_host": "0.0.0.0"
-}
-
-# Combine configurations
-if environment == "dev":
-    config = {**base_config, **dev_overrides}
-else:
-    config = {**base_config, **prod_overrides}
-
-settings = ApplicationSettings(**config)
-```
-
-### Dynamic Configuration Updates
-
-```python
-from src.config.settings import reload_settings
-
-# Reload configuration from environment
-new_settings = reload_settings()
-
-# This is useful for configuration changes without restart
-# Note: Some changes may require application restart
-```
-
-## Testing Configuration
-
-### Unit Testing
-
-```python
-import pytest
-from unittest.mock import patch
-from src.config.settings import ApplicationSettings
-
-def test_development_configuration():
-    """Test development environment configuration."""
-    settings = ApplicationSettings(
-        environment="dev",
-        debug=True,
-        api_host="localhost",
-        api_port=3000
-    )
-
-    assert settings.environment == "dev"
-    assert settings.debug is True
-    assert settings.api_host == "localhost"
-    assert settings.api_port == 3000
-
-@patch.dict("os.environ", {
-    "PROMPTCRAFT_ENVIRONMENT": "test",
-    "PROMPTCRAFT_API_PORT": "9999"
-})
-def test_environment_variable_override():
-    """Test environment variable precedence."""
-    settings = ApplicationSettings()
-
-    assert settings.environment == "test"
-    assert settings.api_port == 9999
-```
-
-### Integration Testing
-
-```python
-def test_configuration_lifecycle():
-    """Test complete configuration lifecycle."""
-    # Set environment variables
-    os.environ["PROMPTCRAFT_ENVIRONMENT"] = "staging"
-    os.environ["PROMPTCRAFT_SECRET_KEY"] = "test-secret"
-
-    try:
-        # Load settings
-        settings = reload_settings()
-
-        # Validate configuration
-        validate_configuration_on_startup(settings)
-
-        # Check health status
-        status = get_configuration_status(settings)
-        assert status.config_healthy
-
-    finally:
-        # Clean up
-        os.environ.pop("PROMPTCRAFT_ENVIRONMENT", None)
-        os.environ.pop("PROMPTCRAFT_SECRET_KEY", None)
-        reload_settings()
-```
-
-### Testing Encrypted Configuration
-
-```python
-@patch("src.utils.encryption.load_encrypted_env")
-def test_encrypted_configuration_loading(mock_load_encrypted):
-    """Test loading encrypted configuration."""
-    # Mock encrypted content
-    mock_load_encrypted.return_value = {
-        "PROMPTCRAFT_SECRET_KEY": "encrypted-secret",
-        "PROMPTCRAFT_API_KEY": "encrypted-api-key"
-    }
-
-    # Test configuration loading
-    settings = reload_settings()
-
-    assert settings.secret_key is not None
-    assert settings.api_key is not None
-```
-
-## API Reference
-
-See the module docstrings and type hints in the source code for complete API documentation:
-
-- `src.config.settings` - Main configuration module
-- `src.config.health` - Health check functionality
-- `src.utils.encryption` - Encryption utilities
-- `src.utils.setup_validator` - System validation
-
-## Contributing
-
-When adding new configuration options:
-
-1. Add the field to `ApplicationSettings` class
-2. Include proper type hints and default values
-3. Add field validation if needed
-4. Update environment-specific validation
-5. Add comprehensive tests
-6. Update this documentation
-7. Consider security implications for sensitive fields
+- Review [Security Best Practices](./security-best-practices.md)
+- Explore [Configuration System Guide](./configuration-system-guide.md)
+- Run examples: `poetry run python examples/config_demo.py`
+- Test health checks: `poetry run python examples/health_check_demo.py`
