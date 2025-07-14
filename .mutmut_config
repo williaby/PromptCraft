@@ -1,0 +1,30 @@
+# Mutmut configuration for PromptCraft
+# See: https://mutmut.readthedocs.io/en/latest/
+
+[mutmut]
+# Paths to mutate (critical modules only)
+paths_to_mutate = src/core/,src/agents/,src/config/,src/utils/
+
+# Paths to exclude from mutation
+paths_to_exclude = src/__pycache__/,src/ui/,src/ingestion/,src/mcp_integration/
+
+# Test command to run
+test_command = pytest tests/unit/ -x --disable-warnings
+
+# Test timeout in seconds
+test_timeout = 60
+
+# Number of mutations to run in parallel
+processes = auto
+
+# Cache directory
+cache_dir = .mutmut-cache
+
+# Mutation operators to use
+# operators = all
+
+# Skip equivalent mutants
+skip_equivalent_operators = True
+
+# Mutation score threshold (percentage)
+# fail_under = 80

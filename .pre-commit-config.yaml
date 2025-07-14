@@ -39,7 +39,7 @@ repos:
         language: system
         types: [python]
         args: [--config-file=pyproject.toml]
-        exclude: ^tests/
+        exclude: ^(tests/|scripts/|examples/|noxfile\.py)
       - id: bandit
         name: bandit
         entry: poetry run bandit
@@ -57,7 +57,7 @@ repos:
     rev: v0.39.0
     hooks:
       - id: markdownlint
-        args: ['--config', '.markdownlint.json']
+        args: ['--config', '.markdownlint.json', '--ignore-path', '.markdownlintignore']
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1

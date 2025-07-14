@@ -1,0 +1,257 @@
+{
+  "schedules": {
+    "comprehensive": {
+      "description": "Full comprehensive testing with all components",
+      "cron": "0 2 * * *",
+      "timezone": "UTC",
+      "enabled": true,
+      "test_level": "comprehensive",
+      "components": [
+        "unit_tests",
+        "integration_tests",
+        "contract_tests",
+        "edge_case_tests",
+        "security_scans",
+        "code_quality"
+      ],
+      "notifications": {
+        "on_failure": true,
+        "on_success": false,
+        "channels": ["github_issues"]
+      }
+    },
+    "security": {
+      "description": "Security-focused scanning and validation",
+      "cron": "0 6,18 * * *",
+      "timezone": "UTC",
+      "enabled": true,
+      "test_level": "security",
+      "components": [
+        "security_scans",
+        "dast_scanning",
+        "vulnerability_scanning"
+      ],
+      "notifications": {
+        "on_failure": true,
+        "on_success": false,
+        "channels": ["github_issues", "security_team"]
+      }
+    },
+    "performance": {
+      "description": "Performance baseline and trend analysis",
+      "cron": "0 4 * * 0",
+      "timezone": "UTC",
+      "enabled": true,
+      "test_level": "performance",
+      "components": [
+        "performance_tests",
+        "load_testing",
+        "baseline_comparison",
+        "trend_analysis"
+      ],
+      "notifications": {
+        "on_failure": true,
+        "on_success": false,
+        "channels": ["github_issues"]
+      }
+    },
+    "dependencies": {
+      "description": "Dependency management and security updates",
+      "cron": "0 6 * * 1",
+      "timezone": "UTC",
+      "enabled": true,
+      "test_level": "standard",
+      "components": [
+        "dependency_updates",
+        "vulnerability_scanning",
+        "license_compliance"
+      ],
+      "notifications": {
+        "on_failure": true,
+        "on_success": true,
+        "channels": ["github_issues", "pull_requests"]
+      }
+    },
+    "mutation": {
+      "description": "Mutation testing for test quality validation",
+      "cron": "0 4 * * 0",
+      "timezone": "UTC",
+      "enabled": false,
+      "test_level": "mutation",
+      "components": [
+        "mutation_testing",
+        "test_quality_analysis"
+      ],
+      "notifications": {
+        "on_failure": true,
+        "on_success": false,
+        "channels": ["github_issues"]
+      }
+    }
+  },
+  "test_components": {
+    "unit_tests": {
+      "command": "poetry run nox -s tests_unit",
+      "timeout_minutes": 30,
+      "retry_count": 2,
+      "critical": true
+    },
+    "integration_tests": {
+      "command": "poetry run nox -s tests_integration",
+      "timeout_minutes": 45,
+      "retry_count": 1,
+      "critical": true
+    },
+    "contract_tests": {
+      "command": "poetry run nox -s contract_testing",
+      "timeout_minutes": 20,
+      "retry_count": 2,
+      "critical": false
+    },
+    "edge_case_tests": {
+      "command": "poetry run pytest tests/unit/test_edge_cases_parametrized.py -v",
+      "timeout_minutes": 25,
+      "retry_count": 1,
+      "critical": true
+    },
+    "security_scans": {
+      "command": "poetry run nox -s security",
+      "timeout_minutes": 30,
+      "retry_count": 0,
+      "critical": true
+    },
+    "dast_scanning": {
+      "command": "poetry run nox -s dast_scanning",
+      "timeout_minutes": 60,
+      "retry_count": 1,
+      "critical": true,
+      "requires_app": true
+    },
+    "performance_tests": {
+      "command": "poetry run nox -s performance_testing",
+      "timeout_minutes": 60,
+      "retry_count": 1,
+      "critical": false,
+      "requires_app": true
+    },
+    "mutation_testing": {
+      "command": "poetry run nox -s mutation_testing",
+      "timeout_minutes": 120,
+      "retry_count": 0,
+      "critical": false
+    },
+    "code_quality": {
+      "command": "poetry run nox -s lint type_check",
+      "timeout_minutes": 15,
+      "retry_count": 1,
+      "critical": true
+    },
+    "dependency_updates": {
+      "command": "poetry show --outdated",
+      "timeout_minutes": 10,
+      "retry_count": 2,
+      "critical": false
+    },
+    "vulnerability_scanning": {
+      "command": "poetry run safety check",
+      "timeout_minutes": 15,
+      "retry_count": 2,
+      "critical": true
+    },
+    "license_compliance": {
+      "command": "pip-licenses --format=json",
+      "timeout_minutes": 10,
+      "retry_count": 1,
+      "critical": false
+    },
+    "load_testing": {
+      "command": "poetry run locust --headless -u 10 -r 2 -t 300s --host=http://localhost:7860",
+      "timeout_minutes": 15,
+      "retry_count": 1,
+      "critical": false,
+      "requires_app": true
+    },
+    "baseline_comparison": {
+      "command": "python scripts/performance-baseline.py",
+      "timeout_minutes": 10,
+      "retry_count": 1,
+      "critical": false
+    },
+    "trend_analysis": {
+      "command": "python scripts/trend-analysis.py",
+      "timeout_minutes": 10,
+      "retry_count": 1,
+      "critical": false
+    },
+    "test_quality_analysis": {
+      "command": "poetry run mutmut show",
+      "timeout_minutes": 10,
+      "retry_count": 1,
+      "critical": false
+    }
+  },
+  "notification_channels": {
+    "github_issues": {
+      "type": "github_issue",
+      "enabled": true,
+      "config": {
+        "labels": ["testing-failure", "scheduled", "automated"],
+        "assignees": [],
+        "create_on_failure": true,
+        "create_on_success": false
+      }
+    },
+    "security_team": {
+      "type": "github_issue",
+      "enabled": true,
+      "config": {
+        "labels": ["security", "vulnerability", "high-priority"],
+        "assignees": [],
+        "create_on_failure": true,
+        "create_on_success": false
+      }
+    },
+    "pull_requests": {
+      "type": "pull_request",
+      "enabled": true,
+      "config": {
+        "auto_create": true,
+        "draft": false,
+        "labels": ["dependencies", "automated"]
+      }
+    }
+  },
+  "thresholds": {
+    "test_coverage": {
+      "unit_minimum": 85.0,
+      "integration_minimum": 70.0,
+      "total_minimum": 80.0
+    },
+    "performance": {
+      "max_response_time_p95": 2.0,
+      "min_requests_per_second": 1.0,
+      "max_regression_percent": 10.0
+    },
+    "security": {
+      "max_high_severity": 0,
+      "max_medium_severity": 5,
+      "max_vulnerabilities": 0
+    },
+    "code_quality": {
+      "max_complexity_average": 6.0,
+      "max_complexity_max": 10.0,
+      "max_maintainability_violations": 0
+    }
+  },
+  "global_settings": {
+    "max_parallel_jobs": 3,
+    "retry_on_infrastructure_failure": true,
+    "cleanup_artifacts_after_days": 30,
+    "send_success_notifications": false,
+    "timezone": "UTC",
+    "environment": {
+      "PYTHON_VERSION": "3.11",
+      "POETRY_VERSION": "1.7.1"
+    }
+  }
+}
