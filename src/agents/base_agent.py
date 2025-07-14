@@ -169,7 +169,7 @@ class BaseAgent(ABC):
         try:
             # Perform common initialization
             self.structured_logger.info(
-                f"Initializing agent '{self.agent_id}'",
+                "Initializing agent",
                 agent_id=self.agent_id,
                 event_type="agent_initialization_start",
             )
@@ -201,7 +201,7 @@ class BaseAgent(ABC):
                 error_message=str(e),
             )
 
-            raise error
+            raise error from e
 
     def _validate_configuration(self) -> None:
         """
@@ -291,19 +291,18 @@ class BaseAgent(ABC):
 
         try:
             # Execute with timeout
-            result = await asyncio.wait_for(self.execute(agent_input), timeout=timeout)
-            return result
+            return await asyncio.wait_for(self.execute(agent_input), timeout=timeout)
 
-        except TimeoutError:
+        except TimeoutError as timeout_err:
             raise AgentTimeoutError(
                 message=f"Agent execution timed out after {timeout} seconds",
                 timeout=timeout,
                 agent_id=self.agent_id,
                 request_id=agent_input.request_id,
-            )
+            ) from timeout_err
         except Exception as e:
             error = handle_agent_error(e, agent_id=self.agent_id, request_id=agent_input.request_id)
-            raise error
+            raise error from e
 
     @trace_agent_operation("agent_process")
     async def process(self, agent_input: AgentInput) -> AgentOutput:
@@ -335,7 +334,7 @@ class BaseAgent(ABC):
         try:
             # Log processing start with structured data
             self.structured_logger.info(
-                f"Processing request {agent_input.request_id}",
+                "Processing request",
                 request_id=agent_input.request_id,
                 agent_id=self.agent_id,
                 event_type="agent_processing_start",
@@ -410,7 +409,7 @@ class BaseAgent(ABC):
                 error_message=str(e),
             )
 
-            raise error
+            raise error from e
 
     @abstractmethod
     async def execute(self, agent_input: AgentInput) -> AgentOutput:

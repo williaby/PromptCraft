@@ -165,8 +165,9 @@ class OpenTelemetryInstrumentor:
             )
             span_processor = BatchSpanProcessor(jaeger_exporter)
             tracer_provider.add_span_processor(span_processor)
-        except Exception:
+        except Exception:  # nosec B110 - Jaeger is optional dependency
             # Jaeger not available, continue without it
+            # This is expected when Jaeger is not configured and is not an error
             pass
 
         # Get tracer

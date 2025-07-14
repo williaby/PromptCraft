@@ -129,7 +129,7 @@ class TextProcessorAgent(BaseAgent):
 
         super().__init__(config)
 
-        self.logger.info(f"TextProcessorAgent initialized with config: {self.config}")
+        self.logger.info("TextProcessorAgent initialized", extra={"config": self.config})
 
     def _validate_configuration(self) -> None:
         """
@@ -254,14 +254,14 @@ class TextProcessorAgent(BaseAgent):
 
         except Exception as e:
             # Convert any unexpected errors to AgentExecutionError
-            if not isinstance(e, (AgentValidationError, AgentExecutionError)):
+            if not isinstance(e, AgentValidationError | AgentExecutionError):
                 raise AgentExecutionError(
                     message=f"Text processing failed: {e!s}",
                     error_code="PROCESSING_FAILED",
                     context={"error": str(e), "error_type": type(e).__name__},
                     agent_id=self.agent_id,
                     request_id=agent_input.request_id,
-                )
+                ) from e
             raise
 
     def _validate_input(self, agent_input: AgentInput) -> None:

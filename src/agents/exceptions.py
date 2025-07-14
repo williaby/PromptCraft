@@ -103,8 +103,14 @@ class AgentError(Exception):
         # Log the error for debugging
         logger = logging.getLogger(__name__)
         logger.error(
-            f"AgentError: {error_code} - {message}",
-            extra={"error_code": error_code, "agent_id": agent_id, "request_id": request_id, "context": context},
+            "AgentError occurred",
+            extra={
+                "error_code": error_code,
+                "agent_id": agent_id,
+                "request_id": request_id,
+                "context": context,
+                "message": message,
+            },
         )
 
     def __str__(self) -> str:

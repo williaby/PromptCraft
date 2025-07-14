@@ -165,7 +165,7 @@ class AgentRegistry:
 
         # Log successful registration
         self.logger.info(
-            f"Registered agent '{agent_id}' with class '{agent_class.__name__}'",
+            "Registered agent with class",
             extra={"agent_id": agent_id, "agent_class": agent_class.__name__},
         )
 
@@ -284,7 +284,7 @@ class AgentRegistry:
                 error_code="INSTANTIATION_FAILED",
                 context={"agent_id": agent_id, "agent_class": agent_class.__name__, "config": config, "error": str(e)},
                 agent_id=agent_id,
-            )
+            ) from e
 
     def get_cached_agent(self, agent_id: str, config: dict[str, Any]) -> Any:
         """
@@ -437,7 +437,7 @@ class AgentRegistry:
         if agent_id in self._config:
             del self._config[agent_id]
 
-        self.logger.info(f"Unregistered agent '{agent_id}'", extra={"agent_id": agent_id})
+        self.logger.info("Unregistered agent", extra={"agent_id": agent_id})
 
     def clear(self) -> None:
         """Clear all registrations."""
