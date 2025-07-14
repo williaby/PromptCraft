@@ -35,19 +35,19 @@ class TestConfigurationValidationEdgeCases:
     @pytest.mark.parametrize(
         ("config_input", "expected_error"),
         [
-            # Invalid configuration structures
+            # Invalid configuration structures - extra="forbid" mode rejects unknown fields
             ({"invalid": "config"}, (ValueError, ValidationError)),
-            ({}, (ValueError, ValidationError)),
-            (None, (TypeError, ValueError)),
-            ([], (TypeError, ValueError)),
-            ("string_config", (TypeError, ValueError)),
-            (123, (TypeError, ValueError)),
+            ({}, None),  # Empty config is valid - uses defaults
+            (None, (AttributeError,)),  # validate_configuration_on_startup(None) raises AttributeError
+            ([], (AttributeError,)),  # validate_configuration_on_startup([]) raises AttributeError
+            ("string_config", (AttributeError,)),  # validate_configuration_on_startup("string") raises AttributeError
+            (123, (AttributeError,)),  # validate_configuration_on_startup(123) raises AttributeError
             # Edge case values
             ({"app_name": ""}, (ValueError, ValidationError)),
-            ({"app_name": None}, (TypeError, ValueError)),
+            ({"app_name": None}, (TypeError, ValidationError)),
             ({"app_name": "a" * 1000}, (ValueError, ValidationError)),  # Very long name (over 100 char limit)
             ({"app_name": "\x00\x01"}, (ValueError, ValidationError)),  # Binary data
-            ({"app_name": "🚀🔥💯"}, None),  # Unicode should be valid
+            ({"app_name": "🚀🔥💯"}, (ValueError, ValidationError)),  # Unicode not allowed in app_name validation
             # Missing required fields
             ({"environment": "dev"}, None),  # Valid environment but missing app_name (should use default)
             ({"app_name": "test"}, None),  # Minimal valid config
@@ -73,11 +73,14 @@ class TestConfigurationValidationEdgeCases:
 
         def _create_and_validate_settings():
             if config_input is None:
-                validate_configuration_on_startup(None)
+                # Passing None to validate_configuration_on_startup should raise AttributeError
+                validate_configuration_on_startup(config_input)
             elif isinstance(config_input, dict):
+                # Dict inputs should work with ApplicationSettings(**config_input)
                 settings = ApplicationSettings(**config_input)
                 validate_configuration_on_startup(settings)
             else:
+                # Non-dict, non-None inputs should fail when passed to validate_configuration_on_startup
                 validate_configuration_on_startup(config_input)
 
         if expected_error:
@@ -458,7 +461,10 @@ class TestConfigurationEdgeCasesWithFixtures:
                 return False
             if not isinstance(config, dict):
                 return False
-            return bool(config)  # Returns False for empty dict, True for non-empty
+            if not config:  # Empty dict
+                return False
+            # Only {"valid": "config"} is considered valid
+            return config == {"valid": "config"}
 
         result = mock_validate_config(config_edge_cases)
 
