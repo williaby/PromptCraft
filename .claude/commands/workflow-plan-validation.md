@@ -39,6 +39,7 @@ This command requires completed scope analysis. If not done, run:
 ### Step 0: Automatic Setup
 
 1. **Parse Arguments and Detect Phase/Issue**:
+
    ```bash
    # Extract phase and issue from $ARGUMENTS
    PHASE=$(echo "$ARGUMENTS" | grep -oP "phase\s+\K\d+" || echo "1")
@@ -52,6 +53,7 @@ This command requires completed scope analysis. If not done, run:
    ```
 
 2. **Auto-Create Issue Branch** (if not on appropriate branch):
+
    ```bash
    CURRENT_BRANCH=$(git branch --show-current)
    EXPECTED_PHASE_BRANCH="feature/phase-${PHASE}-development"
@@ -59,7 +61,8 @@ This command requires completed scope analysis. If not done, run:
 
    if [[ ! "$CURRENT_BRANCH" =~ $ISSUE_PATTERN ]]; then
        # Generate issue description from scope analysis or user input
-       ISSUE_DESC=$(echo "$ARGUMENTS" | sed 's/phase [0-9]* issue [0-9]*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | tr ' ' '-')
+       ISSUE_DESC=$(echo "$ARGUMENTS" | sed 's/phase [0-9]* issue [0-9]*//' | sed 's/^[[:space:]]*//'
+       | sed 's/[[:space:]]*$//' | tr ' ' '-')
        NEW_BRANCH="feature/phase-${PHASE}-issue-${ISSUE}-${ISSUE_DESC}"
 
        echo "🔄 Creating issue branch: $NEW_BRANCH"
@@ -69,6 +72,7 @@ This command requires completed scope analysis. If not done, run:
    ```
 
 3. **Configure Models with Smart Conversion**:
+
    ```bash
    # Convert user-friendly names to proper model names
    convert_model_name() {
@@ -84,7 +88,7 @@ This command requires completed scope analysis. If not done, run:
            "gemini-free"|"gemini-2.0-flash") echo "google/gemini-2.0-flash-exp:free" ;;
            "deepseek"|"deepseek-v3") echo "deepseek/deepseek-chat-v3-0324:free" ;;
            "deepseek-r1") echo "deepseek/deepseek-r1-0528:free" ;;
-           *) echo "$1" ;;  # Return as-is if already properly formatted
+           *) echo "$1" ;;
        esac
    }
 
@@ -154,7 +158,8 @@ if [[ "$MODE" == "expert" ]]; then
 fi
 ```
 
-**Key Requirements:**
+**Key Requirements**:
+
 - **Lead with the scope boundary document**
 - Present ONLY the acceptance criteria requirements
 - Get approval that the scope is correctly understood
@@ -243,7 +248,6 @@ purpose: "Implementation plan for resolving Phase {X} Issue {Y}"
 
 ## Model Conversion Reference
 
-**User-Friendly Names → Proper Model Names:**
 - `opus`, `opus-4`, `claude-opus` → `anthropic/claude-opus-4`
 - `sonnet`, `sonnet-4`, `claude-sonnet` → `anthropic/claude-sonnet-4`
 - `o3`, `openai-o3` → `openai/o3`

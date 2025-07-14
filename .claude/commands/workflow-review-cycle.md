@@ -17,6 +17,7 @@ model_preferences:
 Comprehensive testing, validation, and multi-agent review of implemented solution: $ARGUMENTS
 
 ## Usage Options
+
 - `phase X issue Y` - Full review cycle with multi-agent validation
 - `quick phase X issue Y` - Essential testing and validation only
 - `consensus phase X issue Y` - Multi-model consensus review
@@ -36,6 +37,7 @@ This command requires completed implementation. Implementation must pass basic q
 ### Step 0: Model Configuration
 
 1. **Parse Arguments and Configure Models**:
+
    ```bash
    # Parse model overrides using shared function
    source .claude/commands/shared/model_utils.sh
@@ -59,6 +61,7 @@ This command requires completed implementation. Implementation must pass basic q
    ```
 
 2. **Model Availability Validation**:
+
    ```bash
    # Test model availability with graceful fallbacks
    AVAILABLE_MODELS=()
@@ -82,6 +85,7 @@ This command requires completed implementation. Implementation must pass basic q
 ### Step 1: Pre-commit Validation
 
 1. **Run Comprehensive Pre-commit Checks**:
+
    ```bash
    /project:validation-precommit
    ```
@@ -119,7 +123,7 @@ This command requires completed implementation. Implementation must pass basic q
 ### Step 3: Multi-Agent Review
 
 1. **Testing Strategy Development**:
-   Use Zen MCP Server with configured testing model:
+
    ```bash
    echo "🧪 Testing Strategy using: $TESTING_MODEL"
    zen_mcp_call "$TESTING_MODEL" \
@@ -142,7 +146,7 @@ This command requires completed implementation. Implementation must pass basic q
    ```
 
 2. **Code Quality Review**:
-   Use Zen MCP Server with configured review model:
+
    ```bash
    echo "🔍 Code Review using: $REVIEW_MODEL"
    zen_mcp_call "$REVIEW_MODEL" \
@@ -165,7 +169,7 @@ This command requires completed implementation. Implementation must pass basic q
    ```
 
 3. **Consensus Validation**:
-   Use Zen MCP Server consensus tool for multi-model agreement:
+
    ```bash
    echo "🤝 Building consensus using: $CONSENSUS_MODEL"
 
@@ -190,8 +194,6 @@ This command requires completed implementation. Implementation must pass basic q
    - Identify required changes
 
 ### Step 4: Final Validation Report
-
-Generate comprehensive validation report:
 
 ```markdown
 # Implementation Review Report: Phase {X} Issue {Y}
@@ -254,6 +256,7 @@ ${REVIEW_SUPPORT_MODEL:+
 ## Completion Criteria
 
 The review cycle is complete when:
+
 1. **All acceptance criteria** are validated as met
 2. **All quality gates** pass without exceptions
 3. **Multi-agent consensus** is achieved
@@ -292,15 +295,12 @@ The review cycle is complete when:
 
 ## Model Roles and Recommendations
 
-**Testing Strategy Models:**
 - **Premium**: `o3`, `o3-mini` (advanced reasoning for edge cases)
 - **Free Alternative**: `phi-4-reasoning`, `deepseek-r1`, `mai-ds` (good logical thinking)
 
-**Code Review Models:**
 - **Premium**: `opus-4`, `sonnet-4`, `gemini-pro` (comprehensive analysis)
 - **Free Alternative**: `deepseek-v3`, `gemini-free` (solid code review)
 
-**Consensus Models:**
 - **Free First**: `deepseek-v3`, `gemini-free` (cost-effective synthesis)
 - **Premium Backup**: `sonnet-4`, `gemini-flash` (complex decisions)
 
@@ -309,6 +309,7 @@ The review cycle is complete when:
 **CRITICAL**: Report completion status and request final user approval after all validations pass.
 
 Present summary of:
+
 - ✅ Acceptance criteria met
 - ✅ Quality standards achieved
 - ✅ Multi-agent approval obtained
