@@ -8,6 +8,7 @@ support for multiple test types, component-based analysis, and quality gates.
 ## Key Features
 
 ### Flags and Components
+
 - **unit**: Unit tests with 85% target coverage
 - **integration**: Integration tests with 75% target coverage
 - **performance**: Performance test coverage (optional)
@@ -15,6 +16,7 @@ support for multiple test types, component-based analysis, and quality gates.
 - **mutation**: Mutation test coverage validation
 
 ### Component Management
+
 - **core**: Core business logic (`src/core/`)
 - **agents**: Agent system (`src/agents/`)
 - **config**: Configuration management (`src/config/`)
@@ -74,6 +76,7 @@ Status: ✅ Valid
 ## Exclusions
 
 The following paths are excluded from coverage reporting:
+
 - Test directories (`tests/`)
 - Documentation (`docs/`)
 - Configuration files (`*.yaml`, `*.toml`)

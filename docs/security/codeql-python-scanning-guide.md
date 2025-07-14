@@ -15,7 +15,8 @@ purpose: "Complete guide for CodeQL Python security scanning configuration and p
 
 ## Overview
 
-CodeQL is GitHub's semantic code analysis engine that finds security vulnerabilities in Python code. This guide covers the complete setup, configuration, and operational procedures for Python security scanning in the PromptCraft project.
+CodeQL is GitHub's semantic code analysis engine that finds security vulnerabilities in Python code. This guide covers the
+complete setup, configuration, and operational procedures for Python security scanning in the PromptCraft project.
 
 ## Configuration
 
@@ -85,11 +86,13 @@ jobs:
 ### Key Configuration Elements
 
 #### 1. Language Configuration
+
 ```yaml
 language: [ 'python' ]  # Scans Python files only
 ```
 
 #### 2. Python Environment Setup
+
 ```yaml
 - name: Setup Python
   uses: actions/setup-python@v4
@@ -104,11 +107,13 @@ language: [ 'python' ]  # Scans Python files only
 ```
 
 #### 3. Security Query Configuration
+
 ```yaml
 queries: security-extended  # Built-in Python security patterns
 ```
 
 #### 4. Path-Based Triggers
+
 ```yaml
 paths:
   - '**/*.py'  # Trigger on Python file changes
@@ -122,6 +127,7 @@ paths:
 CodeQL's `security-extended` query suite detects the following Python security vulnerabilities:
 
 #### 1. SQL Injection
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def get_user(user_input):
@@ -135,6 +141,7 @@ def get_user_safe(user_input):
 ```
 
 #### 2. Command Injection
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def run_command(user_input):
@@ -147,6 +154,7 @@ def run_command_safe(user_input):
 ```
 
 #### 3. Path Traversal
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def read_file(filename):
@@ -162,6 +170,7 @@ def read_file_safe(filename):
 ```
 
 #### 4. Hardcoded Secrets
+
 ```python
 # VULNERABLE - CodeQL will detect these
 API_KEY = "sk-1234567890abcdef"  # Hardcoded API key
@@ -174,6 +183,7 @@ PASSWORD = config.get("password")  # Configuration system
 ```
 
 #### 5. Insecure Deserialization
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def load_data(data):
@@ -185,6 +195,7 @@ def load_data_safe(data):
 ```
 
 #### 6. Weak Cryptography
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def hash_password(password):
@@ -196,6 +207,7 @@ def hash_password_safe(password):
 ```
 
 #### 7. Code Injection
+
 ```python
 # VULNERABLE - CodeQL will detect this
 def execute_code(user_code):
@@ -212,6 +224,7 @@ def execute_code_safe(user_code):
 ### 1. Monitoring Security Alerts
 
 #### Accessing CodeQL Results
+
 ```bash
 # View security alerts via GitHub CLI
 gh api repos/{owner}/{repo}/code-scanning/alerts
@@ -221,6 +234,7 @@ gh api repos/{owner}/{repo}/code-scanning/alerts
 ```
 
 #### Alert Severity Levels
+
 - **Critical**: Immediate security risk requiring urgent attention
 - **High**: Significant security vulnerability
 - **Medium**: Moderate security concern
@@ -229,12 +243,14 @@ gh api repos/{owner}/{repo}/code-scanning/alerts
 ### 2. Alert Triage Process
 
 #### Step 1: Alert Review
+
 1. **Assess Severity**: Review the vulnerability type and impact
 2. **Verify Finding**: Confirm the vulnerability is real (not false positive)
 3. **Check Exploitability**: Determine if the vulnerability is exploitable
 4. **Assess Business Impact**: Evaluate potential impact on PromptCraft
 
 #### Step 2: Response Actions
+
 ```python
 # Example alert response workflow
 class SecurityAlertResponse:
@@ -269,6 +285,7 @@ class SecurityAlertResponse:
 ### 3. False Positive Management
 
 #### Common False Positives
+
 1. **Test Files**: Security test files with intentional vulnerabilities
 2. **Configuration Examples**: Example code in documentation
 3. **Development Tools**: Scripts for development/testing only
@@ -276,12 +293,14 @@ class SecurityAlertResponse:
 #### Suppression Methods
 
 ##### Method 1: Code Comments
+
 ```python
 # Suppress false positive with nosec comment
 password = "test123"  # nosec - test password for unit tests only
 ```
 
 ##### Method 2: Configuration File
+
 ```yaml
 # .codeql/config.yml
 queries:
@@ -296,6 +315,7 @@ query-filters:
 ```
 
 ##### Method 3: GitHub Alert Dismissal
+
 ```bash
 # Dismiss false positive via GitHub CLI
 gh api repos/{owner}/{repo}/code-scanning/alerts/{alert_id} \
@@ -307,6 +327,7 @@ gh api repos/{owner}/{repo}/code-scanning/alerts/{alert_id} \
 ### 4. Custom Query Development
 
 #### Creating Custom Queries (Advanced)
+
 ```ql
 /**
  * @name PromptCraft specific security pattern
@@ -332,11 +353,13 @@ select call, "Potential code injection in prompt processing"
 #### 1. Scan Failures
 
 **Issue**: CodeQL analysis fails to complete
-```
+
+```text
 Error: CodeQL database creation failed
 ```
 
 **Solutions**:
+
 ```yaml
 # Add debugging to workflow
 - name: Debug Python Environment
@@ -358,11 +381,13 @@ Error: CodeQL database creation failed
 #### 2. Dependency Resolution Issues
 
 **Issue**: Poetry installation fails during analysis
-```
+
+```text
 Error: Could not install dependencies
 ```
 
 **Solutions**:
+
 ```yaml
 # Use specific Poetry version
 - name: Install Poetry
@@ -381,11 +406,13 @@ Error: Could not install dependencies
 #### 3. Database Rebuild Issues
 
 **Issue**: CodeQL database takes too long to rebuild
-```
+
+```text
 Warning: CodeQL database creation exceeded time limit
 ```
 
 **Solutions**:
+
 ```yaml
 # Optimize for faster builds
 - name: Initialize CodeQL
@@ -402,6 +429,7 @@ Warning: CodeQL database creation exceeded time limit
 **Issue**: Scans not triggering on Python file changes
 
 **Solutions**:
+
 ```yaml
 # Debug path matching
 on:
@@ -416,6 +444,7 @@ on:
 ### Performance Optimization
 
 #### 1. Scan Duration Optimization
+
 ```yaml
 # Optimize scan performance
 - name: Initialize CodeQL
@@ -432,11 +461,13 @@ on:
 ```
 
 #### 2. Resource Usage
+
 - **Average scan time**: 5-10 minutes for PromptCraft codebase
 - **RAM usage**: 2-4 GB during analysis
 - **Storage**: ~500 MB for CodeQL database
 
 #### 3. Scheduling Optimization
+
 ```yaml
 # Optimize scheduling for resource usage
 schedule:
@@ -446,7 +477,9 @@ schedule:
 ## Integration with Security Workflow
 
 ### 1. Security Gates (Issue #120)
+
 Once Issue #120 is implemented, CodeQL will be a blocking requirement:
+
 ```yaml
 # Branch protection rule (future)
 required_status_checks:
@@ -456,6 +489,7 @@ required_status_checks:
 ```
 
 ### 2. Security Dashboard Integration
+
 ```python
 # Integration with security monitoring
 class CodeQLMonitoring:
@@ -488,6 +522,7 @@ class CodeQLMonitoring:
 ```
 
 ### 3. Compliance Reporting
+
 ```python
 # Generate compliance reports
 def generate_security_compliance_report(repo_name, period_days=30):
@@ -512,18 +547,21 @@ def generate_security_compliance_report(repo_name, period_days=30):
 ### Regular Maintenance Tasks
 
 #### Monthly Tasks
+
 - [ ] Review and address open security alerts
 - [ ] Update CodeQL queries to latest version
 - [ ] Verify scan performance and duration
 - [ ] Review false positive suppressions
 
 #### Quarterly Tasks
+
 - [ ] Audit CodeQL configuration for optimization
 - [ ] Review and update custom queries
 - [ ] Validate integration with security workflow
 - [ ] Update documentation and procedures
 
 #### Annual Tasks
+
 - [ ] Complete security review of CodeQL setup
 - [ ] Evaluate new CodeQL features and queries
 - [ ] Update team training on security scanning
@@ -532,6 +570,7 @@ def generate_security_compliance_report(repo_name, period_days=30):
 ### Version Updates
 
 #### CodeQL Action Updates
+
 ```yaml
 # Keep CodeQL actions updated
 - name: Initialize CodeQL
@@ -542,6 +581,7 @@ def generate_security_compliance_report(repo_name, period_days=30):
 ```
 
 #### Python Version Updates
+
 ```yaml
 # Update Python version as needed
 - name: Setup Python
@@ -555,18 +595,21 @@ def generate_security_compliance_report(repo_name, period_days=30):
 ### Critical Vulnerability Response
 
 #### Immediate Actions (0-4 hours)
+
 1. **Assess Impact**: Determine if vulnerability is exploitable
 2. **Temporary Mitigation**: Implement quick fixes if possible
 3. **Alert Team**: Notify security team and stakeholders
 4. **Block Deployment**: Prevent vulnerable code from reaching production
 
 #### Short-term Actions (4-24 hours)
+
 1. **Develop Fix**: Create proper fix for vulnerability
 2. **Test Fix**: Validate fix doesn't break functionality
 3. **Emergency Deployment**: Deploy fix to production if critical
 4. **Monitor**: Watch for exploitation attempts
 
 #### Medium-term Actions (1-7 days)
+
 1. **Root Cause Analysis**: Understand how vulnerability was introduced
 2. **Process Improvement**: Update development practices
 3. **Additional Testing**: Comprehensive security testing

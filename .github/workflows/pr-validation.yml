@@ -14,7 +14,9 @@ jobs:
   validate-requirements:
     name: PR Validation
     runs-on: ubuntu-latest
-    if: github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'feature/phase-1-development'
+    if: |
+      github.event.pull_request.base.ref == 'main' ||
+      github.event.pull_request.base.ref == 'feature/phase-1-development'
 
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +89,8 @@ jobs:
             echo "Available Poetry plugins:"
             poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
             echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
+            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
+              echo "Network connectivity issues detected"
             echo "Disk space:"
             df -h . | tail -1
             echo "Memory usage:"

@@ -11,6 +11,9 @@ purpose: To provide comprehensive overview and quick start guide for the PromptC
 # PromptCraft-Hybrid
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/williaby/PromptCraft/badge)](https://api.securityscorecards.dev/projects/github.com/williaby/PromptCraft)
+[![CodeQL](https://github.com/williaby/PromptCraft/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/williaby/PromptCraft/actions/workflows/codeql.yml)
+[![Dependency Review](https://github.com/williaby/PromptCraft/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/williaby/PromptCraft/actions/workflows/dependency-review.yml)
+[![CI (Safety & Bandit)](https://github.com/williaby/PromptCraft/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/williaby/PromptCraft/actions/workflows/ci.yml)
 
 An advanced, hybrid AI platform designed to transform user queries into highly accurate, context-aware, and
 structured outputs. It integrates on-premise hardware with specialized cloud services to deliver a powerful,

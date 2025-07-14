@@ -437,7 +437,7 @@ Create `.vscode/settings.json`:
 - Include edge cases and boundary conditions
 - Document why coverage gaps exist
 
-### Performance Testing
+### Performance Testing Best Practices
 
 - Establish baseline performance metrics
 - Test under realistic load conditions
@@ -447,4 +447,5 @@ Create `.vscode/settings.json`:
 
 ---
 
-For additional help or questions about the testing infrastructure, please refer to the project documentation or contact the development team.
+For additional help or questions about the testing infrastructure, please refer to the project documentation or
+contact the development team.

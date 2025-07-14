@@ -3,12 +3,14 @@
 ## Essential Commands
 
 ### Setup
+
 ```bash
 poetry install --with dev
 poetry run pre-commit install
 ```
 
 ### Basic Testing
+
 ```bash
 # Run all tests
 poetry run nox
@@ -21,6 +23,7 @@ poetry run pytest tests/unit/ --cov=src --cov-report=html
 ```
 
 ### Code Quality
+
 ```bash
 # Linting and formatting
 poetry run nox -s lint
@@ -33,6 +36,7 @@ poetry run nox -s pre_commit
 ```
 
 ### Security
+
 ```bash
 # Security scans
 poetry run nox -s security
@@ -43,6 +47,7 @@ poetry run safety check
 ```
 
 ### Performance
+
 ```bash
 # Start app and run performance tests
 poetry run python -m src.main &
@@ -50,6 +55,7 @@ poetry run nox -s performance_testing
 ```
 
 ### Quality Gates
+
 ```bash
 # Comprehensive validation
 python scripts/quality-gates.py
