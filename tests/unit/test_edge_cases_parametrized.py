@@ -5,6 +5,9 @@ using pytest parametrization for comprehensive boundary condition coverage.
 """
 
 import json
+import threading
+import time
+from queue import Queue
 from typing import Any
 
 import pytest
@@ -22,15 +25,15 @@ except ImportError:
                 setattr(self, key, value)
 
     def validate_configuration_on_startup(settings):
-        if not hasattr(settings, "name"):
-            raise ValueError("Missing required 'name' field")
+        if not hasattr(settings, "app_name"):
+            raise ValueError("Missing required 'app_name' field")
 
 
 class TestConfigurationValidationEdgeCases:
     """Test configuration validation with comprehensive edge cases."""
 
     @pytest.mark.parametrize(
-        "config_input,expected_error",
+        ("config_input", "expected_error"),
         [
             # Invalid configuration structures
             ({"invalid": "config"}, (ValueError, ValidationError)),
@@ -40,14 +43,14 @@ class TestConfigurationValidationEdgeCases:
             ("string_config", (TypeError, ValueError)),
             (123, (TypeError, ValueError)),
             # Edge case values
-            ({"name": ""}, (ValueError, ValidationError)),
-            ({"name": None}, (TypeError, ValueError)),
-            ({"name": "a" * 10000}, (ValueError, ValidationError)),  # Very long name
-            ({"name": "\x00\x01"}, (ValueError, ValidationError)),  # Binary data
-            ({"name": "🚀🔥💯"}, None),  # Unicode should be valid
+            ({"app_name": ""}, (ValueError, ValidationError)),
+            ({"app_name": None}, (TypeError, ValueError)),
+            ({"app_name": "a" * 1000}, (ValueError, ValidationError)),  # Very long name (over 100 char limit)
+            ({"app_name": "\x00\x01"}, (ValueError, ValidationError)),  # Binary data
+            ({"app_name": "🚀🔥💯"}, None),  # Unicode should be valid
             # Missing required fields
-            ({"environment": "test"}, (ValueError, ValidationError)),  # Missing name
-            ({"name": "test"}, None),  # Minimal valid config
+            ({"environment": "dev"}, None),  # Valid environment but missing app_name (should use default)
+            ({"app_name": "test"}, None),  # Minimal valid config
         ],
         ids=[
             "invalid-config",
@@ -67,18 +70,23 @@ class TestConfigurationValidationEdgeCases:
     )
     def test_configuration_validation_edge_cases(self, config_input: Any, expected_error: tuple | None) -> None:
         """Test configuration validation with various edge cases."""
+
+        def _create_and_validate_settings():
+            if config_input is None:
+                validate_configuration_on_startup(None)
+            elif isinstance(config_input, dict):
+                settings = ApplicationSettings(**config_input)
+                validate_configuration_on_startup(settings)
+            else:
+                validate_configuration_on_startup(config_input)
+
         if expected_error:
             with pytest.raises(expected_error):
-                if config_input is None:
-                    validate_configuration_on_startup(None)
-                else:
-                    settings = ApplicationSettings(**config_input) if isinstance(config_input, dict) else config_input
-                    validate_configuration_on_startup(settings)
+                _create_and_validate_settings()
         else:
             # Should not raise an exception
             try:
-                settings = ApplicationSettings(**config_input) if isinstance(config_input, dict) else config_input
-                validate_configuration_on_startup(settings)
+                _create_and_validate_settings()
             except Exception as e:
                 pytest.fail(f"Unexpected exception raised: {e}")
 
@@ -146,7 +154,7 @@ class TestQueryProcessingEdgeCases:
     """Test query processing with edge cases."""
 
     @pytest.mark.parametrize(
-        "query_input,context,expected_behavior",
+        ("query_input", "context", "expected_behavior"),
         [
             # Query variations
             ("", "context", "handle_empty_query"),
@@ -216,7 +224,7 @@ class TestErrorHandlingEdgeCases:
     """Test error handling with various failure scenarios."""
 
     @pytest.mark.parametrize(
-        "error_type,error_message,expected_handling",
+        ("error_type", "error_message", "expected_handling"),
         [
             (ConnectionError, "Network unreachable", "network_error"),
             (TimeoutError, "Request timeout", "timeout_error"),
@@ -257,7 +265,10 @@ class TestErrorHandlingEdgeCases:
             return {"error_type": error_category, "message": str(error), "handled": True}
 
         # Simulate the error
-        test_error = error_type(error_message)
+        if error_type == json.JSONDecodeError:
+            test_error = json.JSONDecodeError(error_message, doc="", pos=0)
+        else:
+            test_error = error_type(error_message)
         result = mock_handle_error(test_error)
 
         # Validate error handling
@@ -287,8 +298,6 @@ class TestPerformanceBoundaryConditions:
 
         # Mock processing function
         def mock_process_data(data: list[str]) -> dict[str, Any]:
-            import time
-
             # Simulate processing time proportional to data size
             time.sleep(len(data) * 0.0001)  # 0.1ms per item
             return {"processed_count": len(data), "status": "success"}
@@ -317,7 +326,7 @@ class TestSecurityEdgeCases:
     """Test security-related edge cases."""
 
     @pytest.mark.parametrize(
-        "input_data,security_concern",
+        ("input_data", "security_concern"),
         [
             # Injection attempts
             ("'; DROP TABLE users; --", "sql_injection"),
@@ -402,10 +411,6 @@ class TestConcurrencyEdgeCases:
     @pytest.mark.parametrize("concurrent_requests", [1, 5, 10, 50], ids=["single", "few", "medium", "many"])
     def test_concurrent_processing(self, concurrent_requests: int) -> None:
         """Test concurrent request processing."""
-        import threading
-        import time
-        from queue import Queue
-
         results = Queue()
 
         def mock_process_request(request_id: int) -> None:
@@ -453,9 +458,7 @@ class TestConfigurationEdgeCasesWithFixtures:
                 return False
             if not isinstance(config, dict):
                 return False
-            if not config:  # Empty dict
-                return False
-            return True
+            return bool(config)  # Returns False for empty dict, True for non-empty
 
         result = mock_validate_config(config_edge_cases)
 
