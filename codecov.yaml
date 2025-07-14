@@ -3,14 +3,14 @@
 # Validation: https://codecov.io/validate
 
 codecov:
-  token: CODECOV_TOKEN
+  # Token is provided via CODECOV_TOKEN environment variable in GitHub Actions
   ci:
     - github
   branch: main
   max_report_age: "12h"
   notify:
-    after_n_builds: 2
-    wait_for_ci: true
+    after_n_builds: 1  # Reduced from 2 to 1 for faster PR feedback
+    wait_for_ci: false  # Don't wait for all CI to complete before posting
 
 coverage:
   precision: 2
