@@ -2,7 +2,9 @@
 
 ## Overview
 
-The PromptCraft configuration system provides a robust, secure, and environment-aware approach to application configuration. Built on Pydantic for type safety and validation, it supports encrypted secrets, environment-specific settings, and comprehensive health monitoring.
+The PromptCraft configuration system provides a robust, secure, and environment-aware approach
+to application configuration. Built on Pydantic for type safety and validation, it supports
+encrypted secrets, environment-specific settings, and comprehensive health monitoring.
 
 ## Quick Start
 
@@ -146,18 +148,21 @@ settings = ApplicationSettings(
 ### Setup Encryption
 
 1. **Generate GPG Key**:
+
    ```bash
    gpg --full-generate-key
    # Follow prompts to create key
    ```
 
 2. **Configure SSH Key**:
+
    ```bash
    ssh-keygen -t ed25519 -C "your_email@example.com"
    ssh-add ~/.ssh/id_ed25519
    ```
 
 3. **Validate Keys**:
+
    ```python
    from src.config.settings import validate_encryption_available
 
@@ -420,6 +425,7 @@ with open("config.yaml") as f:
 ### Adding New Configuration Fields
 
 1. **Add field to ApplicationSettings**:
+
    ```python
    class ApplicationSettings(BaseSettings):
        # Existing fields...
@@ -427,6 +433,7 @@ with open("config.yaml") as f:
    ```
 
 2. **Add validation if needed**:
+
    ```python
    @field_validator("new_feature_enabled")
    @classmethod
@@ -436,6 +443,7 @@ with open("config.yaml") as f:
    ```
 
 3. **Update environment variables**:
+
    ```bash
    export PROMPTCRAFT_NEW_FEATURE_ENABLED=true
    ```
@@ -451,6 +459,7 @@ with open("config.yaml") as f:
 **Error**: "Production environment detected but encryption not available"
 
 **Solutions**:
+
 - Install GPG: `sudo apt install gnupg` (Linux) or `brew install gnupg` (macOS)
 - Generate GPG key: `gpg --full-generate-key`
 - Verify key: `gpg --list-secret-keys`
@@ -460,6 +469,7 @@ with open("config.yaml") as f:
 **Error**: "Configuration validation failed for prod environment"
 
 **Solutions**:
+
 - Check required secrets are set
 - Verify environment-specific requirements
 - Review validation error messages for specific issues
@@ -469,6 +479,7 @@ with open("config.yaml") as f:
 **Error**: "Encrypted file not found"
 
 **Solutions**:
+
 - Verify file path is correct
 - Check file permissions
 - Ensure file exists and is readable
@@ -478,6 +489,7 @@ with open("config.yaml") as f:
 **Error**: "Port 8000 is already in use"
 
 **Solutions**:
+
 - Change port: `export PROMPTCRAFT_API_PORT=8001`
 - Find process using port: `lsof -i :8000`
 - Kill process or use different port

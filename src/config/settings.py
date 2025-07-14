@@ -316,6 +316,16 @@ class ApplicationSettings(BaseSettings):
         description="Encryption key for data at rest (sensitive - never logged)",
     )
 
+    # Network Security
+    trusted_proxy_1: str | None = Field(
+        default=None,
+        description="IP address of the first trusted proxy server",
+    )
+    trusted_proxy_2: str | None = Field(
+        default=None,
+        description="IP address of the second trusted proxy server",
+    )
+
     model_config = SettingsConfigDict(
         extra="forbid",  # Prevent unknown settings
         case_sensitive=False,
