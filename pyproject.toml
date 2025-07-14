@@ -91,6 +91,9 @@ nox = ">=2025.1.0"
 ipython = ">=9.0.0"
 ipdb = ">=0.13.13"
 toml = "^0.10.2"
+mutmut = "^3.3.0"
+pact-python = "^2.3.1"
+locust = "^2.0.0"
 
 [tool.poetry.group.azure.dependencies]
 azure-identity = "^1.15.0"
