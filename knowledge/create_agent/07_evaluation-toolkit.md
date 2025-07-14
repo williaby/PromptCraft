@@ -174,8 +174,14 @@ self-evaluation process.
 
 ### [](#-126-e6-overall-fitness-and-final-review)# 1.2.6. E.6 Overall Fitness and Final Review
 
-* **`ANCHOR-QR-8` E.6 Text:** `E.6 Overall Fitness and Final Review: Before concluding, perform a final check that the entire response holistically addresses all aspects of the R-block, is coherent, and meets the overall quality standards implied by the C.R.E.A.T.E. framework. If significant concerns remain after all checks, prepend the response with [OverallQualityConcern].`
-* **Purpose:** This serves as a final, holistic self-review by the downstream LLM. It checks if the output, as a whole, is fit for purpose, comprehensively addresses the user's core request (R-block), maintains internal coherence, and generally meets the high-quality standards expected from a C.R.E.A.T.E.-structured prompt.
+* **`ANCHOR-QR-8` E.6 Text:** `E.6 Overall Fitness and Final Review: Before concluding, perform a
+  final check that the entire response holistically addresses all aspects of the R-block, is
+  coherent, and meets the overall quality standards implied by the C.R.E.A.T.E. framework. If
+  significant concerns remain after all checks, prepend the response with [OverallQualityConcern].`
+* **Purpose:** This serves as a final, holistic self-review by the downstream LLM. It checks if the
+  output, as a whole, is fit for purpose, comprehensively addresses the user's core request
+  (R-block), maintains internal coherence, and generally meets the high-quality standards expected
+  from a C.R.E.A.T.E.-structured prompt.
 
 ## [](#-13-the-standard-evaluation-footer-user-interaction)# 1.3. The Standard Evaluation Footer (User Interaction)
 
@@ -187,21 +193,37 @@ Evaluation Footer:
 **Other changes?** (add / delete / tweak any C-R-E-A.T.E block before we finalise)
 ```
 
-It's important to note that while this footer is part of the verbatim `ANCHOR-QR-8` copied into the E-block of the generated prompt, its interactive function (`OK?`, `Other changes?`) is primarily for the user's interaction *with PromptCraft Pro itself*, after PromptCraft Pro has generated the full C.R.E.A.T.E. prompt. PromptCraft Pro presents this Tier and Rigor feedback to the user. Its inclusion in `ANCHOR-QR-8` ensures the template is complete.
+It's important to note that while this footer is part of the verbatim `ANCHOR-QR-8` copied into the
+E-block of the generated prompt, its interactive function (`OK?`, `Other changes?`) is primarily for
+the user's interaction *with PromptCraft Pro itself*, after PromptCraft Pro has generated the full
+C.R.E.A.T.E. prompt. PromptCraft Pro presents this Tier and Rigor feedback to the user. Its
+inclusion in `ANCHOR-QR-8` ensures the template is complete.
 
 ***
 
 ## [](#2-augmenting-evaluation-rigor-levels-and-advanced-techniques)2. Augmenting Evaluation: Rigor Levels and Advanced Techniques
 
-Beyond the standard `ANCHOR-QR-8` protocol, PromptCraft Pro can instruct the downstream LLM to apply more sophisticated evaluation and reasoning strategies. This is primarily controlled by **Rigor Levels** (defined in `ANCHOR-QR-10`) and the selection of specific **Advanced Evaluation and Reasoning Techniques** (from `ANCHOR-QR-11`).
+Beyond the standard `ANCHOR-QR-8` protocol, PromptCraft Pro can instruct the downstream LLM to apply
+more sophisticated evaluation and reasoning strategies. This is primarily controlled by **Rigor
+Levels** (defined in `ANCHOR-QR-10`) and the selection of specific **Advanced Evaluation and
+Reasoning Techniques** (from `ANCHOR-QR-11`).
 
 ## [](#-21-understanding-rigor-levels-anchor-qr-10)# 2.1. Understanding Rigor Levels (ANCHOR-QR-10)
 
-PromptCraft Pro utilizes a system of Rigor Levels to modulate the depth and intensity of the evaluation and reasoning processes undertaken by the downstream LLM. These levels are defined in `ANCHOR-QR-10` of `00 Quick-Reference.md`:
+PromptCraft Pro utilizes a system of Rigor Levels to modulate the depth and intensity of the
+evaluation and reasoning processes undertaken by the downstream LLM. These levels are defined in
+`ANCHOR-QR-10` of `00 Quick-Reference.md`:
 
-* **Level 1: Basic (Default):** Employs the standard `ANCHOR-QR-8` evaluation protocol and core reasoning directives (e.g., CoT/ToT, `[ExpertJudgment]` tagging). This is the baseline for all prompts.
-* **Level 2: Intermediate:** Includes all Basic Level features, plus PromptCraft Pro will select 1-2 appropriate Advanced Techniques from `ANCHOR-QR-11` (e.g., Enhanced Reflection Loop Controls, Prompt Interrogation Chains) based on the task's nature and complexity.
-* **Level 3: Advanced:** Encompasses all Intermediate Level features, with PromptCraft Pro selecting an additional 1-2 Advanced Techniques from `ANCHOR-QR-11`, prioritizing those that offer maximum robustness for critical tasks (e.g., Self-Consistency Sampling/CISC, Robust UQ with Numerical Scoring).
+* **Level 1: Basic (Default):** Employs the standard `ANCHOR-QR-8` evaluation protocol and core
+  reasoning directives (e.g., CoT/ToT, `[ExpertJudgment]` tagging). This is the baseline for all
+  prompts.
+* **Level 2: Intermediate:** Includes all Basic Level features, plus PromptCraft Pro will select 1-2
+  appropriate Advanced Techniques from `ANCHOR-QR-11` (e.g., Enhanced Reflection Loop Controls,
+  Prompt Interrogation Chains) based on the task's nature and complexity.
+* **Level 3: Advanced:** Encompasses all Intermediate Level features, with PromptCraft Pro selecting
+  an additional 1-2 Advanced Techniques from `ANCHOR-QR-11`, prioritizing those that offer maximum
+  robustness for critical tasks (e.g., Self-Consistency Sampling/CISC, Robust UQ with Numerical
+  Scoring).
 
 PromptCraft Pro determines the applicable Rigor Level based on defaults tied to the request's
 Tier, explicit user specification, or inferred needs from the request's complexity. Users can
@@ -209,50 +231,89 @@ typically override the suggested Rigor Level.
 
 ## [](#-22-overview-of-advanced-evaluation-and-reasoning-techniques-anchor-qr-11)# 2.2. Overview of Advanced Evaluation and Reasoning Techniques (ANCHOR-QR-11)
 
-`ANCHOR-QR-11` in `00 Quick-Reference.md` is a library of instructions for advanced methods. When selected by PromptCraft Pro, these instructions are added to the C.R.E.A.T.E. prompt (usually the A-block, or to guide E-block execution) to direct the downstream LLM. Key techniques include:
+`ANCHOR-QR-11` in `00 Quick-Reference.md` is a library of instructions for advanced methods. When
+selected by PromptCraft Pro, these instructions are added to the C.R.E.A.T.E. prompt (usually the
+A-block, or to guide E-block execution) to direct the downstream LLM. Key techniques include:
 
 ### [](#-221-enhanced-reflection-loop-controls-anchor-qr-11-1)# 2.2.1. Enhanced Reflection Loop Controls (ANCHOR-QR-11 #1)
 
-* **Purpose:** This technique makes the standard E.1 Reflection Loop in `ANCHOR-QR-8` more powerful and adaptive. It allows for multiple controlled iterations, directs the LLM to use specific critique focus areas (which PromptCraft Pro can suggest based on the R-block's goal, e.g., focusing on 'logical coherence' for an analysis task), and implements "Refresh" (re-approach problem) or "Revert" (to a better prior version) strategies to overcome stubborn errors or counter "drift" where revisions degrade quality.
+* **Purpose:** This technique makes the standard E.1 Reflection Loop in `ANCHOR-QR-8` more powerful
+  and adaptive. It allows for multiple controlled iterations, directs the LLM to use specific
+  critique focus areas (which PromptCraft Pro can suggest based on the R-block's goal, e.g.,
+  focusing on 'logical coherence' for an analysis task), and implements "Refresh" (re-approach
+  problem) or "Revert" (to a better prior version) strategies to overcome stubborn errors or
+  counter "drift" where revisions degrade quality.
 
 ### [](#-222-self-consistency-sampling--cisc-anchor-qr-11-2)# 2.2.2. Self-Consistency Sampling / CISC (ANCHOR-QR-11 #2)
 
-* **Purpose:** For tasks requiring high accuracy in reasoning (e.g., math, logic, code generation), this instructs the LLM to internally generate multiple diverse reasoning paths to a solution. The final answer is then determined by a majority vote among these paths (Self-Consistency) or, if the LLM can provide confidence scores for each path, by a confidence-weighted majority vote (CISC). This significantly improves the robustness and reliability of the answer.
+* **Purpose:** For tasks requiring high accuracy in reasoning (e.g., math, logic, code generation),
+  this instructs the LLM to internally generate multiple diverse reasoning paths to a solution. The
+  final answer is then determined by a majority vote among these paths (Self-Consistency) or, if
+  the LLM can provide confidence scores for each path, by a confidence-weighted majority vote
+  (CISC). This significantly improves the robustness and reliability of the answer.
 
 ### [](#-223-prompt-interrogation-chains-anchor-qr-11-3)# 2.2.3. Prompt Interrogation Chains (ANCHOR-QR-11 #3)
 
-* **Purpose:** Targeted at complex or ambiguous requests, this technique instructs the LLM to first engage in an internal self-questioning process. It generates and answers its own pertinent auxiliary questions to clarify ambiguities, decompose the problem, or explore different facets of the request, aiming for a high degree of confidence (e.g., 95%) before formulating the final, more comprehensive response.
+* **Purpose:** Targeted at complex or ambiguous requests, this technique instructs the LLM to first
+  engage in an internal self-questioning process. It generates and answers its own pertinent
+  auxiliary questions to clarify ambiguities, decompose the problem, or explore different facets of
+  the request, aiming for a high degree of confidence (e.g., 95%) before formulating the final,
+  more comprehensive response.
 
 ### [](#-224-advanced-error-forecasting-anchor-qr-11-4)# 2.2.4. Advanced Error Forecasting (ANCHOR-QR-11 #4)
 
-* **Purpose:** This makes the LLM's self-critique more proactive by requiring it to assess its draft output against a predefined list of potential error types (e.g., factual uncertainty, logical flaw, information gap, potential bias, outdated information) and to flag relevant parts of the text with specific tags like `[ErrorForecast:FactualUncertainty]`.
+* **Purpose:** This makes the LLM's self-critique more proactive by requiring it to assess its draft
+  output against a predefined list of potential error types (e.g., factual uncertainty, logical
+  flaw, information gap, potential bias, outdated information) and to flag relevant parts of the
+  text with specific tags like `[ErrorForecast:FactualUncertainty]`.
 
 ### [](#-225-robust-uncertainty-quantification-uq---numerical-scoring-anchor-qr-11-5)# 2.2.5. Robust Uncertainty Quantification (UQ) - Numerical Scoring (ANCHOR-QR-11 #5)
 
-* **Purpose:** Moves beyond qualitative hedging by instructing the LLM to provide explicit numerical confidence scores (e.g., `[Confidence: XX/100]`) for its key factual claims or conclusions. This offers a more granular and actionable measure of the LLM's perceived reliability for specific statements.
+* **Purpose:** Moves beyond qualitative hedging by instructing the LLM to provide explicit numerical
+  confidence scores (e.g., `[Confidence: XX/100]`) for its key factual claims or conclusions. This
+  offers a more granular and actionable measure of the LLM's perceived reliability for specific
+  statements.
 
 ### [](#-226-adversarial-robustness-self-checks-anchor-qr-11-6)# 2.2.6. Adversarial Robustness Self-Checks (ANCHOR-QR-11 #6)
 
-* **Purpose:** This guides the LLM to perform internal "stress tests." It reflects on its sensitivity to minor (potentially misleading) input perturbations and its adherence to critical negative constraints under hypothetical pressure. This helps identify and flag outputs that might be brittle or easily manipulated, using tags like `[RobustnessConcern:PerturbationSensitive]`.
+* **Purpose:** This guides the LLM to perform internal "stress tests." It reflects on its
+  sensitivity to minor (potentially misleading) input perturbations and its adherence to critical
+  negative constraints under hypothetical pressure. This helps identify and flag outputs that might
+  be brittle or easily manipulated, using tags like `[RobustnessConcern:PerturbationSensitive]`.
 
 ### [](#-227-enhanced-self-judgment-comparativescored-anchor-qr-11-7)# 2.2.7. Enhanced Self-Judgment (Comparative/Scored) (ANCHOR-QR-11 #7)
 
-* **Purpose:** This technique modifies the LLM's iterative E.1 reflection pass to employ more sophisticated self-judgment. Option A involves the LLM generating two drafts and making a comparative judgment to select the superior one. Option B involves the LLM scoring its draft against detailed quality dimensions (Accuracy, Relevance, Clarity, etc.) to guide targeted revisions.
+* **Purpose:** This technique modifies the LLM's iterative E.1 reflection pass to employ more
+  sophisticated self-judgment. Option A involves the LLM generating two drafts and making a
+  comparative judgment to select the superior one. Option B involves the LLM scoring its draft
+  against detailed quality dimensions (Accuracy, Relevance, Clarity, etc.) to guide targeted
+  revisions.
 
 ### [](#-228-stepwise-natural-language-self-critique-anchor-qr-11-8)# 2.2.8. Stepwise Natural Language Self-Critique (ANCHOR-QR-11 #8)
 
-* **Purpose:** Particularly useful for tasks requiring transparent, multi-step reasoning (e.g., if "Chain = ON" is active), this instructs the LLM to internally generate and consider a brief natural language critique for each distinct reasoning step it takes. It must revise the step if its critique reveals issues before proceeding, ensuring a more meticulous and self-aware problem-solving process.
+* **Purpose:** Particularly useful for tasks requiring transparent, multi-step reasoning (e.g., if
+  "Chain = ON" is active), this instructs the LLM to internally generate and consider a brief
+  natural language critique for each distinct reasoning step it takes. It must revise the step if
+  its critique reveals issues before proceeding, ensuring a more meticulous and self-aware
+  problem-solving process.
 
 ## [](#-23-how-promptcraft-pro-selects-and-applies-advanced-techniques)# 2.3. How PromptCraft Pro Selects and Applies Advanced Techniques
 
-PromptCraft Pro determines which techniques from `ANCHOR-QR-11` to incorporate into the generated C.R.E.A.T.E. prompt based on:
+PromptCraft Pro determines which techniques from `ANCHOR-QR-11` to incorporate into the generated
+C.R.E.A.T.E. prompt based on:
 
-* The **Rigor Level** (`ANCHOR-QR-10`) set for the task (either by default based on Tier, or by user specification).
+* The **Rigor Level** (`ANCHOR-QR-10`) set for the task (either by default based on Tier, or by
+  user specification).
 * **Explicit user requests** for particular advanced methodologies.
-* **Inferred needs** that PromptCraft Pro identifies from the R-block, such as high complexity, inherent ambiguity in the request, keywords suggesting deep analysis (e.g., "analyze," "solve," "evaluate critically"), or the domain of the task.
-* The overall **Tier** of the request, with higher tiers often justifying more advanced processing.
+* **Inferred needs** that PromptCraft Pro identifies from the R-block, such as high complexity,
+  inherent ambiguity in the request, keywords suggesting deep analysis (e.g., "analyze," "solve,"
+  "evaluate critically"), or the domain of the task.
+* The overall **Tier** of the request, with higher tiers often justifying more advanced
+  processing.
 
-PromptCraft Pro then copies the verbatim instructional phrasing for the selected technique(s) from `ANCHOR-QR-11` into the A-block (or occasionally to guide E-block execution) of the C.R.E.A.T.E. prompt it builds.
+PromptCraft Pro then copies the verbatim instructional phrasing for the selected technique(s) from
+`ANCHOR-QR-11` into the A-block (or occasionally to guide E-block execution) of the C.R.E.A.T.E.
+prompt it builds.
 
 ***
 
@@ -261,41 +322,41 @@ PromptCraft Pro then copies the verbatim instructional phrasing for the selected
 ## [](#-31-purpose-of-prompt-specific-checks)# 3.1. Purpose of Prompt-Specific Checks
 
 While `ANCHOR-QR-8` provides a robust and comprehensive standard evaluation protocol for the
-downstream LLM, many C.R.E.A.T.E. prompts will have unique requirements, constraints, or
-desired output characteristics that benefit from additional, tailored verification steps.
-PromptCraft Pro should append such relevant checks to the E-block after the standard `ANCHOR-QR-8`
-content.
+downstream LLM, many C.R.E.A.T.E. prompts will have unique requirements, constraints, or desired
+output characteristics that benefit from additional, tailored verification steps. PromptCraft Pro
+should append such relevant checks to the E-block after the standard `ANCHOR-QR-8` content.
 
 ## [](#-32-guidance-on-crafting-prompt-specific-checks-referencing-anchor-qr-12)# 3.2. Guidance on Crafting Prompt-Specific Checks (referencing ANCHOR-QR-12)
 
-`ANCHOR-QR-12` in `00 Quick-Reference.md` offers extensive guidance and a rich set of examples
-for prompt-specific checks. These examples illustrate how to instruct the downstream LLM to verify:
+`ANCHOR-QR-12` in `00 Quick-Reference.md` offers extensive guidance and a rich set of examples for
+prompt-specific checks. These examples illustrate how to instruct the downstream LLM to verify:
 
 * Numerical logic and calculations.
 * Adherence to word counts for specific Tiers.
 * Exactness of URLs or other critical data points.
 * Correct application of `[ExpertJudgment]` tagging.
-* Crucially, confirmation that any Advanced Techniques from `ANCHOR-QR-11` that were invoked
-  via the A-block were indeed applied and that their characteristic outputs or tags (e.g., `[ErrorForecast:...]` tags, `[Confidence: XX/100]` scores, `[RobustnessConcern:...]` flags)
-  are present and correctly used.
+* Crucially, confirmation that any Advanced Techniques from `ANCHOR-QR-11` that were invoked via
+  the A-block were indeed applied and that their characteristic outputs or tags (e.g.,
+  `[ErrorForecast:...]` tags, `[Confidence: XX/100]` scores, `[RobustnessConcern:...]` flags) are
+  present and correctly used.
 
-Users should refer to `ANCHOR-QR-12` for constructing effective custom checks when designing
-prompts with PromptCraft Pro or when reviewing prompts generated by it.
+Users should refer to `ANCHOR-QR-12` for constructing effective custom checks when designing prompts
+with PromptCraft Pro or when reviewing prompts generated by it.
 
 ## [](#-33-stylistic-and-readability-metrics-as-prompt-specific-checks)# 3.3. Stylistic and Readability Metrics as Prompt-Specific Checks
 
 The primary stylistic requirements for the downstream LLM's output are defined by the seven
-stylometry lines injected from `ANCHOR-QR-7` into the T-block. Adherence to these is then
-verified by the downstream LLM as part of `ANCHOR-QR-8`'s E.5 "Style, Safety and Constraint Pass."
+stylometry lines injected from `ANCHOR-QR-7` into the T-block. Adherence to these is then verified
+by the downstream LLM as part of `ANCHOR-QR-8`'s E.5 "Style, Safety and Constraint Pass."
 
-However, if additional, highly specific readability metrics (such as a target Flesch-Kincaid
-Grade Level or a Flesch Reading Ease score, as were detailed in previous versions of this
-toolkit) are deemed critical for a particular output, PromptCraft Pro should be instructed to
-add these as prompt-specific checks for the downstream LLM to perform and verify.
-`ANCHOR-QR-12` provides a suitable place to list examples of how such checks can be formulated
-(e.g., "\* Verify Flesch Reading Ease score is between 50-60."). The downstream LLM would
-address any failures to meet these specific metrics during its E.1 Reflection Loop or flag them
-as per E.5 or E.6 of `ANCHOR-QR-8`.
+However, if additional, highly specific readability metrics (such as a target Flesch-Kincaid Grade
+Level or a Flesch Reading Ease score, as were detailed in previous versions of this toolkit) are
+deemed critical for a particular output, PromptCraft Pro should be instructed to add these as
+prompt-specific checks for the downstream LLM to perform and verify. `ANCHOR-QR-12` provides a
+suitable place to list examples of how such checks can be formulated (e.g., "\* Verify Flesch
+Reading Ease score is between 50-60."). The downstream LLM would address any failures to meet
+these specific metrics during its E.1 Reflection Loop or flag them as per E.5 or E.6 of
+`ANCHOR-QR-8`.
 
 ***
 
@@ -307,36 +368,39 @@ Despite the sophisticated multi-layered built-in evaluation protocols (`ANCHOR-Q
 powerful advanced techniques (`ANCHOR-QR-11`), and customizable prompt-specific checks
 (`ANCHOR-QR-12`) that PromptCraft Pro embeds in C.R.E.A.T.E. prompts, **human review remains an
 indispensable final step for any high-stakes or critical outputs.** LLMs are advanced tools,
-capable of remarkable feats, but they are not infallible and do not possess true understanding
-or consciousness. Expert human oversight is essential to:
+capable of remarkable feats, but they are not infallible and do not possess true understanding or
+consciousness. Expert human oversight is essential to:
 
-* Verify nuanced factual accuracy and contextual appropriateness beyond the scope of automated checks.
+* Verify nuanced factual accuracy and contextual appropriateness beyond the scope of automated
+  checks.
 * Assess strategic alignment with overarching goals.
 * Catch subtle biases or logical inconsistencies that automated systems might miss.
-* Ensure overall fitness for purpose before an LLM-generated output is relied upon, published,
-  or disseminated, particularly in professional, legal, fiscal, or policy contexts.
+* Ensure overall fitness for purpose before an LLM-generated output is relied upon, published, or
+  disseminated, particularly in professional, legal, fiscal, or policy contexts.
 
-The comprehensive automated evaluation framework designed into PromptCraft Pro aims to make
-this human review process significantly more efficient and targeted by proactively identifying,
-flagging, and often correcting many potential issues *before* the output reaches the human reviewer.
+The comprehensive automated evaluation framework designed into PromptCraft Pro aims to make this
+human review process significantly more efficient and targeted by proactively identifying, flagging,
+and often correcting many potential issues *before* the output reaches the human reviewer.
 
 ## [](#-42-key-areas-for-human-review-hallucination-and-quality-checklist)# 4.2. Key Areas for Human Review (Hallucination and Quality Checklist)
 
-This checklist provides a systematic guide for human reviewers to validate the LLM's output.
-The automated evaluation layers (`ANCHOR-QR-8`, `ANCHOR-QR-11`, `ANCHOR-QR-12`, `ANCHOR-QR-13`) are designed to proactively address many of these items, but final human verification is paramount:
+This checklist provides a systematic guide for human reviewers to validate the LLM's output. The
+automated evaluation layers (`ANCHOR-QR-8`, `ANCHOR-QR-11`, `ANCHOR-QR-12`, `ANCHOR-QR-13`) are
+designed to proactively address many of these items, but final human verification is paramount:
 
 * **\[v] Factual Veracity and Hallucinations:** Are all factual claims accurate and genuinely
-  supported by specified sources or correctly tagged (e.g., `[ExpertJudgment]`, `[Confidence:Low]`)? Confirm absence of fabricated details.
-* **\[v] Citation Accuracy and Relevance:** Are citations correctly formatted (per T-block) and
-  do they truly support the specific claims made? Verify links if applicable.
-* **\[v] Data Recency:** If current information was crucial, is the data up-to-date
-  (check `web.search_query` ecency if used)?
-* **\[v] Logical Coherence and Reasoning:** Is the reasoning sound, consistent, and free of gaps
-  or fallacies? If "Chain = ON" or Stepwise NL Self-Critique (ANCHOR-QR-11 #8) was used, is the
+  supported by specified sources or correctly tagged (e.g., `[ExpertJudgment]`, `[Confidence:Low]`)?
+  Confirm absence of fabricated details.
+* **\[v] Citation Accuracy and Relevance:** Are citations correctly formatted (per T-block) and do
+  they truly support the specific claims made? Verify links if applicable.
+* **\[v] Data Recency:** If current information was crucial, is the data up-to-date (check
+  `web.search_query` recency if used)?
+* **\[v] Logical Coherence and Reasoning:** Is the reasoning sound, consistent, and free of gaps or
+  fallacies? If "Chain = ON" or Stepwise NL Self-Critique (ANCHOR-QR-11 #8) was used, is the
   step-by-step flow clear and valid?
-* **\[v] Format and Style Compliance:** Does the output meticulously adhere to all T-block requirements
-  (including the 7 stylometry lines from `ANCHOR-QR-7`) and any specified structural formatting
-  (headings, lists, etc.)?
+* **\[v] Format and Style Compliance:** Does the output meticulously adhere to all T-block
+  requirements (including the 7 stylometry lines from `ANCHOR-QR-7`) and any specified structural
+  formatting (headings, lists, etc.)?
 * **\[v] Constraint Adherence:** Were all negative constraints (e.g., "Do not discuss...") and
   safety guardrails (e.g., PII avoidance) strictly followed? Check for `[RobustnessConcern:ConstraintAdherence]` if that check was active.
 * **\[v] Completeness and Request Fulfillment:** Does the output fully address all components
@@ -364,37 +428,58 @@ for transparency.
 
 ### [](#-511-addressing-hallucinations)# 5.1.1. Addressing Hallucinations
 
-* **Primary Mitigation:** PromptCraft Pro instructs downstream LLMs to perform rigorous multi-step internal verification via `ANCHOR-QR-8` (specifically E.3 Chain-of-Verification, E.4 Confidence, Sourcing and Accuracy Assertion which includes `[ExpertJudgment]` and `[Confidence:Low]` tagging).
-* **Enhanced Mitigation:** For prompts set to Intermediate or Advanced Rigor Levels (`ANCHOR-QR-10`), PromptCraft Pro includes the specific Factual Accuracy directives from `ANCHOR-QR-13` in the A-block. Furthermore, relevant Advanced Techniques from `ANCHOR-QR-11` (such as #2 Self-Consistency Sampling/CISC, #4 Advanced Error Forecasting, and #5 Robust UQ - Numerical Scoring) are employed to further proactively identify and minimize hallucinations in the downstream LLM's output.
+* **Primary Mitigation:** PromptCraft Pro instructs downstream LLMs to perform rigorous multi-step
+  internal verification via `ANCHOR-QR-8` (specifically E.3 Chain-of-Verification, E.4 Confidence,
+  Sourcing and Accuracy Assertion which includes `[ExpertJudgment]` and `[Confidence:Low]`
+  tagging).
+* **Enhanced Mitigation:** For prompts set to Intermediate or Advanced Rigor Levels
+  (`ANCHOR-QR-10`), PromptCraft Pro includes the specific Factual Accuracy directives from
+  `ANCHOR-QR-13` in the A-block. Furthermore, relevant Advanced Techniques from `ANCHOR-QR-11`
+  (such as #2 Self-Consistency Sampling/CISC, #4 Advanced Error Forecasting, and #5 Robust UQ -
+  Numerical Scoring) are employed to further proactively identify and minimize hallucinations in
+  the downstream LLM's output.
 
 ### [](#-512-mitigating-bias)# 5.1.2. Mitigating Bias
 
-* **Primary Mitigation:** For C.R.E.A.T.E. prompts generated at Intermediate or Advanced Rigor Levels, PromptCraft Pro includes the specific Bias Mitigation directives from `ANCHOR-QR-13` in the A-block. These instruct the downstream LLM to strive for neutral, objective language and consider diverse perspectives unless a biased persona is explicitly part of the request.
-* **Supporting Checks:** The standard E-block (`ANCHOR-QR-8` E.5 "Style, Safety and Constraint Pass") includes a general check for the downstream LLM to confirm no harmful or biased content is present.
+* **Primary Mitigation:** For C.R.E.A.T.E. prompts generated at Intermediate or Advanced Rigor
+  Levels, PromptCraft Pro includes the specific Bias Mitigation directives from `ANCHOR-QR-13` in
+  the A-block. These instruct the downstream LLM to strive for neutral, objective language and
+  consider diverse perspectives unless a biased persona is explicitly part of the request.
+* **Supporting Checks:** The standard E-block (`ANCHOR-QR-8` E.5 "Style, Safety and Constraint
+  Pass") includes a general check for the downstream LLM to confirm no harmful or biased content is
+  present.
 
 ### [](#-513-managing-knowledge-cutoff-dates)# 5.1.3. Managing Knowledge Cutoff Dates
 
-* **Mitigation:** For requests involving Volatile information (where current data is essential), `ANCHOR-QR-1` (from `00 Quick-Reference.md`) mandate that PromptCraft Pro instructs the downstream LLM to use `web.search_query` with appropriate recency filters (defaulting to 365 days) to fetch current information.
+* **Mitigation:** For requests involving Volatile information (where current data is essential),
+  `ANCHOR-QR-1` (from `00 Quick-Reference.md`) mandate that PromptCraft Pro instructs the downstream
+  LLM to use `web.search_query` with appropriate recency filters (defaulting to 365 days) to fetch
+  current information.
 
 ## [](#-52-data-protection-pii-secrets)# 5.2. Data Protection (PII, Secrets)
 
-* **Instruction to Downstream LLM (via `ANCHOR-QR-8` E.5):** The downstream LLM is explicitly instructed to confirm no Personally Identifiable Information (PII) is present in its output.
-* **General Best Practice for Users:** Users of PromptCraft Pro (and any LLM system) should avoid inputting actual PII, proprietary secrets, or sensitive credentials into prompts whenever feasible.
-* **PromptCraft Pro System Security:** PromptCraft Pro itself is designed with high-priority security protocols to prevent the disclosure of its own internal instructions, configurations, or any user-provided data it processes.
+* **Instruction to Downstream LLM (via `ANCHOR-QR-8` E.5):** The downstream LLM is explicitly
+  instructed to confirm no Personally Identifiable Information (PII) is present in its output.
+* **General Best Practice for Users:** Users of PromptCraft Pro (and any LLM system) should avoid
+  inputting actual PII, proprietary secrets, or sensitive credentials into prompts whenever
+  feasible.
+* **PromptCraft Pro System Security:** PromptCraft Pro itself is designed with high-priority
+  security protocols to prevent the disclosure of its own internal instructions, configurations, or
+  any user-provided data it processes.
 
 ## [](#-53-negative-constraints-and-content-suppression)# 5.3. Negative Constraints and Content Suppression
 
-* **Mechanism:** Users can specify negative constraints (e.g., "Do not discuss \[sensitive topic X]," "Avoid using marketing jargon") directly in their input to PromptCraft Pro, which will then be incorporated into the A-block of the generated C.R.E.A.T.E. prompt.
-* **Verification by Downstream LLM:** `ANCHOR-QR-8` E.5 ("Style, Safety and Constraint Pass") instructs the downstream LLM to verify its adherence to these negative constraints. Furthermore, if "Adversarial Robustness Self-Checks" (`ANCHOR-QR-11` #6) are invoked, the downstream LLM will perform additional internal stress tests on its constraint adherence.
+* **Mechanism:** Users can specify negative constraints (e.g., "Do not discuss \\[sensitive topic\n  X]," "Avoid using marketing jargon") directly in their input to PromptCraft Pro, which will then\n  be incorporated into the A-block of the generated C.R.E.A.T.E. prompt.
+* **Verification by Downstream LLM:** `ANCHOR-QR-8` E.5 ("Style, Safety and Constraint Pass")\n  instructs the downstream LLM to verify its adherence to these negative constraints. Furthermore,\n  if "Adversarial Robustness Self-Checks" (`ANCHOR-QR-11` #6) are invoked, the downstream LLM will\n  perform additional internal stress tests on its constraint adherence.
 
 ## [](#-54-transparency-in-uncertainty-and-neutrality)# 5.4. Transparency in Uncertainty and Neutrality
 
-PromptCraft Pro emphasizes generating prompts that instruct downstream LLMs to be transparent about uncertainty and strive for neutrality:
+PromptCraft Pro emphasizes generating prompts that instruct downstream LLMs to be transparent about\nuncertainty and strive for neutrality:
 
-* **Uncertainty Tagging (`ANCHOR-QR-8` E.4):** The standard E-block mandates tagging inferences with `[ExpertJudgment]` and flagging claims where confidence is low with tags like `[Confidence:Low]` or `[DataUnavailableOrUnverified]`.
-* **Numerical Uncertainty Quantification (`ANCHOR-QR-11` #5):** If this advanced technique is selected, the downstream LLM is instructed to provide explicit `[Confidence: XX/100]` scores.
-* **Error Forecasting (`ANCHOR-QR-11` #4):** This technique has the LLM proactively flag potential errors with specific tags like `[ErrorForecast:FactualUncertainty]`.
-* **Neutrality Directives (`ANCHOR-QR-13`):** For Intermediate/Advanced Rigor, the downstream LLM is instructed to actively strive for neutral, objective language and to consider diverse perspectives, mitigating unintentional bias.
+* **Uncertainty Tagging (`ANCHOR-QR-8` E.4):** The standard E-block mandates tagging inferences\n  with `[ExpertJudgment]` and flagging claims where confidence is low with tags like\n  `[Confidence:Low]` or `[DataUnavailableOrUnverified]`.
+* **Numerical Uncertainty Quantification (`ANCHOR-QR-11` #5):** If this advanced technique is\n  selected, the downstream LLM is instructed to provide explicit `[Confidence: XX/100]` scores.
+* **Error Forecasting (`ANCHOR-QR-11` #4):** This technique has the LLM proactively flag potential\n  errors with specific tags like `[ErrorForecast:FactualUncertainty]`.
+* **Neutrality Directives (`ANCHOR-QR-13`):** For Intermediate/Advanced Rigor, the downstream LLM\n  is instructed to actively strive for neutral, objective language and to consider diverse\n  perspectives, mitigating unintentional bias.
 
 ***
 
@@ -418,13 +503,29 @@ Goal/Intent) components of the C.R.E.A.T.E. framework.
 
 * **Be Measurable and Specific:** Where possible, define criteria that are objective and measurable.
   * *Instead of:* "The summary should be good."
-  * *Prefer:* "Success = The summary is between 350-400 words (Tier 3), accurately captures the 3 main findings
-    of the source report, and is written in a C-Suite Neutral tone."
+  * *Prefer:* "Success = The summary is between 350-400 words (Tier 3), accurately captures the 3
+    main findings of the source report, and is written in a C-Suite Neutral tone."
 * **Examples of Success Criteria:**
-  * **For a Legal Memo:** “Success = 1) IRAC structure is correctly and fully applied to all distinct issues; 2) All legal assertions and rule statements cite primary sources in precise Bluebook format; 3) The conclusion directly and unambiguously answers each Issue identified.”
-  * **For a Python Script Generation:** “Success = 1) The generated Python 3.11 code runs without errors using standard libraries only; 2) It correctly processes the provided sample input CSV file and produces an output JSON matching the specified schema; 3) The code is well-commented and adheres to PEP 8 style guidelines.”
-  * **For a Policy Brief:** “Success = 1) The brief is no more than 1500 words (Tier 5); 2) It clearly presents three distinct policy options, each with a balanced discussion of 2-3 pros and 2-3 cons based on provided evidence; 3) The language used is suitable for non-technical legislative aides (Plain-Language tone).”
-* **Prioritize:** If you have numerous potential criteria, identify the 2-3 most critical (must-have) versus desirable (nice-to-have). This helps focus both the prompt engineering and the evaluation.
-* **Inform PromptCraft Pro Input:** Use your defined success criteria to double-check that your initial request to PromptCraft Pro is complete. If a success criterion depends on information or an instruction not present in your input, PromptCraft Pro cannot ensure the generated C.R.E.A.T.E. prompt will ask the downstream LLM to achieve it. Ensure your R-block (core task), A-block considerations (e.g., specific data to include), and T-block preferences (format, style) collectively support your success criteria.
+  * **For a Legal Memo:** "Success = 1) IRAC structure is correctly and fully applied to all
+    distinct issues; 2) All legal assertions and rule statements cite primary sources in precise
+    Bluebook format; 3) The conclusion directly and unambiguously answers each Issue identified."
+  * **For a Python Script Generation:** "Success = 1) The generated Python 3.11 code runs without
+    errors using standard libraries only; 2) It correctly processes the provided sample input CSV
+    file and produces an output JSON matching the specified schema; 3) The code is well-commented
+    and adheres to PEP 8 style guidelines."
+  * **For a Policy Brief:** "Success = 1) The brief is no more than 1500 words (Tier 5); 2) It
+    clearly presents three distinct policy options, each with a balanced discussion of 2-3 pros and
+    2-3 cons based on provided evidence; 3) The language used is suitable for non-technical
+    legislative aides (Plain-Language tone)."
+* **Prioritize:** If you have numerous potential criteria, identify the 2-3 most critical
+  (must-have) versus desirable (nice-to-have). This helps focus both the prompt engineering and the
+  evaluation.
+* **Inform PromptCraft Pro Input:** Use your defined success criteria to double-check that your
+  initial request to PromptCraft Pro is complete. If a success criterion depends on information or
+  an instruction not present in your input, PromptCraft Pro cannot ensure the generated C.R.E.A.T.E.
+  prompt will ask the downstream LLM to achieve it. Ensure your R-block (core task), A-block
+  considerations (e.g., specific data to include), and T-block preferences (format, style)
+  collectively support your success criteria.
 
-By defining success criteria upfront, you transform evaluation from a subjective assessment into a more objective verification process, leading to more consistently useful and reliable outputs.
+By defining success criteria upfront, you transform evaluation from a subjective assessment into a
+more objective verification process, leading to more consistently useful and reliable outputs.

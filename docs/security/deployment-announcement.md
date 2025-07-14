@@ -138,7 +138,8 @@ TRACKING: #EMERGENCY-$(date +%Y%m%d-%H%M)"
 
 #### Q: What if my PR is blocked?
 
-**A**: First, try to fix the security issue. If it's a false positive, use the exception process. For urgent issues, emergency override is available.
+**A**: First, try to fix the security issue. If it's a false positive, use the exception process. For urgent issues,
+emergency override is available.
 
 #### Q: How long do exceptions take to approve?
 
@@ -199,4 +200,5 @@ We're committed to making this transition smooth. Please share feedback:
 
 Questions? Join the **Security Gates Workshop** on [TRAINING_DATE] or reach out in #security-help.
 
-*This deployment represents a significant step forward in our security maturity. Together, we're building more secure and reliable systems.*
+*This deployment represents a significant step forward in our security maturity. Together, we're building more secure
+and reliable systems.*

@@ -42,7 +42,8 @@ jobs:
 
             1. **Review the failure**: [View workflow run](${workflow_url})
             2. **Fix the issues**: Address the security findings in your code
-            3. **Request exception** (if false positive): See the [Security Exception Process](https://github.com/${repository}/blob/main/docs/security/override-process.md)
+            3. **Request exception** (if false positive): See the
+              [Security Exception Process](https://github.com/${repository}/blob/main/docs/security/override-process.md)
 
             ### Common Solutions
 

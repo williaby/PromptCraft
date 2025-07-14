@@ -4,11 +4,27 @@ Welcome to PromptCraft - AI-powered workbench for prompt orchestration.
 
 ## Getting Started
 
-- [Project Overview](planning/project_hub.md)
-- [Four Journeys](planning/four-journeys.md)
-- [Architecture Decision Records](planning/ADR.md)
-- [Development Guidelines](planning/development.md)
-- [Phase 1 Issues](planning/phase-1-issues.md)
+- [Usage Guide](usage-guide.md) - Learn the four journeys and core features
+- [Configuration System](configuration-system-guide.md) - Environment setup and configuration
+- [API Reference](api-reference.md) - Core functions and programmatic usage
+
+## Development & Security
+
+- [Security Best Practices](security-best-practices.md) - Security guidelines and best practices
+- [Testing Guide](testing/quick-reference.md) - Testing frameworks and execution
+- [Local Execution Guide](testing/local-execution-guide.md) - Local development setup
+
+## Integration & Tools
+
+- [Context7 Package Reference](context7-package-reference.md) - MCP server integration
+- [CodeCov Integration](codecov-integration.md) - Code coverage reporting
+- [Migration Guide](migration-guide.md) - Migration procedures and updates
+
+## Security Documentation
+
+- [Security Gates Guide](security/security-gates-guide.md) - Security validation pipeline
+- [CodeQL Python Scanning](security/codeql-python-scanning-guide.md) - Static analysis setup
+- [Deployment Strategy](deployment-strategy.md) - Secure deployment practices
 
 ## Project Overview
 

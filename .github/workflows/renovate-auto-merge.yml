@@ -132,7 +132,8 @@ jobs:
             echo "Available Poetry plugins:"
             poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
             echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || echo "Network connectivity issues detected"
+            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
+              echo "Network connectivity issues detected"
             echo "Disk space:"
             df -h . | tail -1
             echo "Memory usage:"
@@ -155,7 +156,8 @@ jobs:
             echo "::error::Failed to configure Assured-OSS authentication"
             echo "Attempting alternative secure token configuration..."
             # Alternative approach using temporary environment variable
-            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
+            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) \
+              poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
             unset GOOGLE_ACCESS_TOKEN
           }
 
@@ -334,7 +336,8 @@ jobs:
           fi
 
       - name: Generate SLSA Provenance
-        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
+        uses: >-
+          slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563
         with:
           base64-subjects: |
             $(sha256sum requirements*.txt sbom.json | base64 -w0)

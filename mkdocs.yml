@@ -17,15 +17,37 @@ plugins:
 
 nav:
   - Home: index.md
-  - Planning: planning/project_hub.md
-  - Architecture: planning/ADR.md
-  - Development: planning/development.md
-  - Phase 1 Issues: planning/phase-1-issues.md
-  - Usage Guide: usage-guide.md
-  - Configuration: configuration-system-guide.md
-  - Security: security-best-practices.md
-  - API Reference: api-reference.md
-  - Deployment Strategy: deployment-strategy.md
+  - Getting Started:
+      - Usage Guide: usage-guide.md
+      - Configuration: configuration-system-guide.md
+      - Four Journeys: planning/four-journeys.md
+  - Planning:
+      - Project Hub: planning/project_hub.md
+      - Development Guidelines: planning/development.md
+      - Architecture: planning/ADR.md
+      - Phase 1 Issues: planning/phase-1-issues.md
+      - Milestones: planning/milestones.md
+      - MVP Definition: planning/mvp-definition.md
+  - Documentation:
+      - Style Guide: style_guide.md
+      - Knowledge Style Guide: planning/knowledge_style_guide.md
+      - Contributing: planning/contributing.md
+      - Migration Guide: migration-guide.md
+      - CHANGELOG: CHANGELOG.md
+  - Security:
+      - Security Best Practices: security-best-practices.md
+      - Security Gates Guide: security/security-gates-guide.md
+      - CodeQL Guide: security/codeql-python-scanning-guide.md
+  - Testing:
+      - Local Execution Guide: testing/local-execution-guide.md
+      - Quick Reference: testing/quick-reference.md
+  - Deployment:
+      - Deployment Strategy: deployment-strategy.md
+      - Codecov Integration: codecov-integration.md
+  - Technical Reference:
+      - API Reference: api-reference.md
+      - Context7 Package Reference: context7-package-reference.md
+      - Zen Documentation: zen/README.md
 
 markdown_extensions:
   - admonition

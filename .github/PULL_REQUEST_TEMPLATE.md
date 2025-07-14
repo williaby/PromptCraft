@@ -26,6 +26,7 @@
 <!-- Brief description of dependency changes -->
 
 ### Security Assessment
+
 - [ ] No known vulnerabilities in updated dependencies
 - [ ] All dependencies scanned with pip-audit and OSV scanner
 - [ ] Requirements.txt updated with cryptographic hashes
@@ -65,19 +66,23 @@
 ## For Reviewers
 
 ### Security Review (Required for major updates)
+
 - [ ] Dependencies reviewed for known vulnerabilities
 - [ ] License compatibility verified
 - [ ] No suspicious packages or maintainers
 - [ ] Update aligns with security policies
 
 ### Auto-merge Validation
+
 ✅ **This PR will auto-merge if:**
+
 - All status checks pass
 - Has `automerge` label
 - Created by renovate[bot]
 - Not a draft PR
 
 🔍 **Manual review required if:**
+
 - Major version updates
 - Has `requires-review` label
 - Security concerns identified

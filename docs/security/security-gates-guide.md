@@ -2,7 +2,8 @@
 
 ## Overview
 
-All pull requests to the main branch now require passing security scans before merging. This guide helps you understand and work with the security gates effectively.
+All pull requests to the main branch now require passing security scans before merging. This guide helps you
+understand and work with the security gates effectively.
 
 ## What Are Security Gates?
 
