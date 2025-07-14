@@ -2,9 +2,18 @@ name: CI
 
 on:
   push:
-    branches: [ 'feature/phase-1-development', 'feature/**' ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
+      - 'feature/**'
+    # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
   pull_request:
-    branches: [ 'feature/phase-1-development' ]
+    branches:
+      - main
+      - 'feature/phase-1-development'
+  schedule:
+    # Run security checks daily
+    - cron: '0 0 * * *'
 
 permissions:
   contents: read
