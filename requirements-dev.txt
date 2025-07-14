@@ -2044,7 +2044,7 @@ python-socketio==5.13.0 ; python_version >= "3.11" and python_version < "3.13" \
 pytz==2025.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3 \
     --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
-pywin32==310 ; python_version >= "3.11" and python_version < "3.13" and (sys_platform == "win32" or platform_system == "Windows") \
+pywin32==310 ; python_version >= "3.11" and python_version < "3.13" and (platform_system == "Windows" or sys_platform == "win32") \
     --hash=sha256:0867beb8addefa2e3979d4084352e4ac6e991ca45373390775f7084cc0209b9c \
     --hash=sha256:126298077a9d7c95c53823934f000599f66ec9296b09167810eb24875f32689c \
     --hash=sha256:19ec5fc9b1d51c4350be7bb00760ffce46e6c95eaf2f0b2f1150657b1a43c582 \

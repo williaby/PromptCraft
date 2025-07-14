@@ -238,7 +238,7 @@ strict_equality = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["tests.*", "scripts.*"]
+module = ["tests.*", "scripts.*", "examples.*", "noxfile"]
 ignore_errors = true
 
 [[tool.mypy.overrides]]
