@@ -275,6 +275,8 @@ addopts = """
 --cov-report=term-missing:skip-covered
 --cov-report=html
 --cov-report=xml
+--junitxml=junit.xml
+-o junit_family=legacy
 --cov-fail-under=80
 """
 testpaths = ["tests"]
