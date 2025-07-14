@@ -6,7 +6,7 @@ on:
       - main
       - 'feature/phase-1-development'
       - 'feature/**'
-    # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
+      # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
   pull_request:
     branches:
       - main
@@ -174,7 +174,8 @@ jobs:
       - name: Run bandit security scan
         run: |
           echo "Running Bandit security analysis"
-          poetry run bandit -r src -ll -f json -o bandit-report.json || echo "Bandit security scan completed with findings"
+          poetry run bandit -r src -ll -f json -o bandit-report.json || \
+            echo "Bandit security scan completed with findings"
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -270,6 +271,24 @@ jobs:
           poetry run black . --check
           poetry run ruff check .
           echo "All linting checks passed"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Coverage fallback notice
+        if: ${{ env.CODECOV_TOKEN == '' }}
+        run: |
+          echo "⚠️  CODECOV_TOKEN not configured - Codecov upload may have been skipped"
+          echo "Coverage reports available locally in htmlcov/"
+          echo "To enable Codecov upload, add CODECOV_TOKEN secret to repository"
 
   test-matrix:
     name: Test Python ${{ matrix.python-version }}

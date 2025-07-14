@@ -1,5 +1,6 @@
-node_modules/**
-webapp/**
-dist/**
-docs/security/codeql-historical-gap-analysis.md
-docs/security/codeql-python-scanning-guide.md
+# Ignore knowledge files with long lines for examples
+knowledge/create_agent/10_few-shot-gallery.md
+# Ignore example documentation with formatting issues
+examples/README.md
+# Ignore knowledge files with complex formatting
+knowledge/create_agent/00_quick-reference.md

@@ -1,0 +1,210 @@
+# Codecov Configuration for PromptCraft-Hybrid
+# See: https://docs.codecov.com/docs/codecov-yaml
+# Validation: https://codecov.io/validate
+
+codecov:
+  # Token is provided via CODECOV_TOKEN environment variable in GitHub Actions
+  ci:
+    - github
+  branch: main
+  max_report_age: "12h"
+  notify:
+    after_n_builds: 1  # Reduced from 2 to 1 for faster PR feedback
+    wait_for_ci: false  # Don't wait for all CI to complete before posting
+
+coverage:
+  precision: 2
+  round: down
+  range: 70...95
+
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 5%
+        if_not_found: success
+        only_pulls: false
+        flags:
+          - unit
+          - integration
+      unit:
+        target: 85%
+        threshold: 5%
+        flags:
+          - unit
+      integration:
+        target: 75%
+        threshold: 5%
+        flags:
+          - integration
+
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        if_not_found: success
+        only_pulls: true
+
+  ignore:
+    - "tests/"
+    - "scripts/"
+    - "docs/"
+    - "htmlcov/"
+    - "*.html"
+    - "*.js"
+    - "*.css"
+    - "*/__pycache__/"
+    - "*/migrations/"
+    - "*/vendor/"
+    - "*/node_modules/"
+    - "noxfile.py"
+    - ".github/"
+    - "docker/"
+    - "*.yaml"
+    - "*.yml"
+    - "*.toml"
+    - "*.cfg"
+    - "*.ini"
+    - "Dockerfile*"
+    - ".env*"
+    - "requirements*.txt"
+    - "pyproject.toml"
+
+# Component definitions for different parts of the codebase
+component_management:
+  individual_components:
+    - component_id: core
+      name: "Core Business Logic"
+      paths:
+        - src/core/
+      flag_regexes:
+        - unit
+        - integration
+
+    - component_id: agents
+      name: "Agent System"
+      paths:
+        - src/agents/
+      flag_regexes:
+        - unit
+
+    - component_id: config
+      name: "Configuration Management"
+      paths:
+        - src/config/
+      flag_regexes:
+        - unit
+
+    - component_id: utils
+      name: "Utility Modules"
+      paths:
+        - src/utils/
+      flag_regexes:
+        - unit
+
+    - component_id: ui
+      name: "User Interface"
+      paths:
+        - src/ui/
+      flag_regexes:
+        - integration
+
+    - component_id: mcp_integration
+      name: "MCP Integration"
+      paths:
+        - src/mcp_integration/
+      flag_regexes:
+        - unit
+        - integration
+
+    - component_id: ingestion
+      name: "Knowledge Ingestion"
+      paths:
+        - src/ingestion/
+      flag_regexes:
+        - unit
+
+# Flag definitions for different test types
+flags:
+  unit:
+    paths:
+      - src/core/
+      - src/agents/
+      - src/config/
+      - src/utils/
+      - src/mcp_integration/
+      - src/ingestion/
+    carryforward: true
+    carryforward_mode: all
+
+  integration:
+    paths:
+      - src/core/
+      - src/ui/
+      - src/mcp_integration/
+    carryforward: true
+    carryforward_mode: all
+
+  performance:
+    paths:
+      - src/core/
+      - src/agents/
+      - src/mcp_integration/
+    carryforward: false
+
+  contract:
+    paths:
+      - src/mcp_integration/
+    carryforward: false
+
+  mutation:
+    paths:
+      - src/core/
+      - src/agents/
+      - src/config/
+    carryforward: false
+
+# Parser configurations for Python coverage reports
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: false
+      macro: false
+
+  javascript:
+    enable_partials: false
+
+# Comment configuration for PR updates
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  branches:
+    - main
+    - develop
+    - "feature/*"
+
+# Pull request settings (commented - not supported in current Codecov API)
+# pull_request_only_files:
+#   - "*.md"
+#   - "docs/"
+#   - ".github/"
+
+# Notification settings
+github_checks:
+  annotations: true
+
+fixes:
+  - "src/::src/"
+  - "tests/::tests/"
+
+# Profiling settings for enterprise features
+profiling:
+  critical_files_paths:
+    - src/core/
+    - src/agents/
+    - src/config/

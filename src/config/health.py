@@ -8,7 +8,15 @@ information through health check endpoints without revealing sensitive data.
 import logging
 import os
 import re
-from datetime import UTC, datetime
+import sys
+from datetime import datetime
+
+if sys.version_info >= (3, 11):
+    from datetime import UTC
+else:
+    from datetime import timezone
+
+    UTC = timezone.utc
 from pathlib import Path
 from typing import Any
 
