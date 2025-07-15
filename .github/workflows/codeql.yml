@@ -32,11 +32,7 @@ jobs:
       actions: read
       contents: read
 
-    strategy:
-      fail-fast: false
-      matrix:
-        # Define the language to analyze. Python configuration for PromptCraft project.
-        language: [ 'python' ]
+    # No matrix needed for single language analysis
 
     steps:
       - name: Checkout repository
@@ -55,7 +51,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: ${{ matrix.language }}
+          languages: python
           queries: security-extended
 
       - name: Perform CodeQL Analysis

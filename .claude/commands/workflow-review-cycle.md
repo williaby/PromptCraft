@@ -82,23 +82,126 @@ This command requires completed implementation. Implementation must pass basic q
    fi
    ```
 
-### Step 1: Pre-commit Validation
+### Step 0: Branch State Validation and Synchronization
 
-1. **Run Comprehensive Pre-commit Checks**:
+**CRITICAL**: Ensure branch is properly synchronized before review.
+
+```bash
+# Branch synchronization and conflict prevention
+synchronize_branches() {
+    local current_branch=$(git branch --show-current)
+    local phase_branch="phase-1-development"  # TODO: Make dynamic based on context
+
+    echo "🔄 Synchronizing branches..."
+
+    # Fetch latest changes
+    git fetch origin
+
+    # Check for conflicts with phase branch
+    echo "🔍 Checking for potential conflicts..."
+    if ! git merge-tree $(git merge-base HEAD origin/$phase_branch) HEAD origin/$phase_branch | grep -q "<<<"; then
+        echo "✅ No conflicts detected with $phase_branch"
+    else
+        echo "⚠️  Potential conflicts detected with $phase_branch"
+        echo "💡 Resolve conflicts before proceeding with review"
+        exit 1
+    fi
+
+    # Ensure local branch is up to date with remote
+    if git status | grep -q "behind"; then
+        echo "🔄 Pulling latest changes..."
+        git pull origin "$current_branch"
+    fi
+
+    # Push any unpushed commits
+    if git status | grep -q "ahead"; then
+        echo "📤 Pushing local commits..."
+        git push origin "$current_branch"
+    fi
+
+    echo "✅ Branch synchronization complete"
+}
+
+synchronize_branches
+```
+
+### Step 1: Comprehensive Pre-commit Validation
+
+1. **Enhanced Pre-commit Checks with Immediate Fixes**:
 
    ```bash
-   /project:validation-precommit
+   # Comprehensive validation with auto-fix capabilities
+   enhanced_precommit_validation() {
+       echo "🔍 Running enhanced pre-commit validation..."
+
+       # 1. Dependency validation and auto-update
+       echo "📦 Validating dependencies..."
+       if ! poetry check; then
+           echo "🔄 Auto-fixing poetry.lock..."
+           poetry lock
+           ./scripts/generate_requirements.sh
+           git add poetry.lock requirements*.txt
+           git commit -m "chore(deps): auto-update dependencies for review"
+       fi
+
+       # 2. Code formatting auto-fix
+       echo "🎨 Auto-formatting code..."
+       poetry run black .
+       git add -A
+       if ! git diff --cached --quiet; then
+           git commit -m "style: auto-format code for review"
+       fi
+
+       # 3. Run all pre-commit hooks
+       echo "🪝 Running pre-commit hooks..."
+       if ! poetry run pre-commit run --all-files; then
+           echo "❌ Pre-commit hooks failed - manual fixes required"
+           exit 1
+       fi
+
+       # 4. Final quality validation
+       echo "✅ Running final quality checks..."
+       markdownlint **/*.md || echo "⚠️  Markdown issues need manual review"
+       yamllint **/*.{yml,yaml} || echo "⚠️  YAML issues need manual review"
+       poetry run ruff check . || exit 1
+       poetry run mypy src || exit 1
+
+       echo "✅ All pre-commit validation passed"
+   }
+
+   enhanced_precommit_validation
    ```
 
-2. **Ensure All Linting Passes**:
-   - Markdown: `markdownlint **/*.md`
-   - YAML: `yamllint **/*.{yml,yaml}`
-   - Python: `poetry run black --check .`
-   - Python: `poetry run ruff check .`
-   - Python: `poetry run mypy src`
+2. **Test Coverage Enforcement**:
+
+   ```bash
+   # Ensure test coverage before review
+   enforce_test_coverage() {
+       echo "📊 Enforcing test coverage requirements..."
+
+       COVERAGE=$(poetry run pytest --cov=src --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+
+       if [[ $COVERAGE -lt 80 ]]; then
+           echo "❌ Test coverage below 80%: ${COVERAGE}%"
+           echo "🧪 Generating additional tests..."
+
+           # Use AI to suggest additional tests
+           zen_mcp_call "microsoft/phi-4-reasoning:free" \
+               --role "Test Generator" \
+               --request "Generate additional unit tests to improve coverage above 80%"
+
+           echo "💡 Add the suggested tests and re-run review"
+           exit 1
+       fi
+
+       echo "✅ Test coverage: ${COVERAGE}%"
+   }
+
+   enforce_test_coverage
+   ```
 
 3. **Verify Code Quality Standards**:
-   - 80% minimum test coverage
+   - 80% minimum test coverage (enforced above)
    - No security vulnerabilities
    - All naming conventions followed
 
@@ -251,6 +354,53 @@ ${REVIEW_SUPPORT_MODEL:+
 
 ## Recommendations for Future
 - [Suggestions for improvement in future iterations]
+```
+
+### Step 5: Post-Review Branch Management
+
+**CRITICAL**: Proper branch management after successful review.
+
+```bash
+# Post-review branch management
+post_review_branch_management() {
+    local current_branch=$(git branch --show-current)
+    local phase_branch="phase-1-development"  # TODO: Make dynamic
+
+    echo "🌿 Managing post-review branch state..."
+
+    # Ensure all changes are committed
+    if ! git diff --quiet; then
+        echo "⚠️  Uncommitted changes detected"
+        git add -A
+        git commit -m "chore: final changes after review"
+    fi
+
+    # Push final state
+    git push origin "$current_branch"
+
+    # Prepare merge information
+    echo "🔄 Branch ready for merge to $phase_branch"
+    echo "📋 Merge checklist:"
+    echo "  ✅ All quality gates passed"
+    echo "  ✅ Multi-agent review complete"
+    echo "  ✅ Test coverage ≥80%"
+    echo "  ✅ No conflicts with target branch"
+    echo "  ✅ Branch synchronized with remote"
+
+    # Offer to create merge commit template
+    echo ""
+    echo "💡 Ready to merge? Run:"
+    echo "   git checkout $phase_branch"
+    echo "   git pull origin $phase_branch"
+    echo "   git merge --no-ff $current_branch"
+    echo "   git push origin $phase_branch"
+    echo ""
+    echo "🗑️  After merge, cleanup with:"
+    echo "   git branch -d $current_branch"
+    echo "   git push origin --delete $current_branch"
+}
+
+post_review_branch_management
 ```
 
 ## Completion Criteria
