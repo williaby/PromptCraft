@@ -139,14 +139,22 @@ class LRUCache:
             "evictions": self.stats["evictions"],
         }
 
+    @property
+    def size(self) -> int:
+        """Get current cache size."""
+        return len(self.cache)
+
 
 class PerformanceMonitor:
     """Performance monitoring and alerting system."""
 
-    def __init__(self) -> None:
+    def __init__(self, max_operations: int | None = None) -> None:
         self.metrics: list[PerformanceMetrics] = []
         self.alerts: list[str] = []
         self.logger = logging.getLogger(__name__)
+        self.max_operations = max_operations
+        self.operation_count = 0
+        self.error_count = 0
 
     def start_operation(self, operation_name: str) -> PerformanceMetrics:
         """Start tracking an operation."""
@@ -166,6 +174,10 @@ class PerformanceMonitor:
         metric.error_occurred = error_occurred
 
         self.metrics.append(metric)
+        self.operation_count += 1
+
+        if error_occurred:
+            self.error_count += 1
 
         # Check for performance issues
         if metric.is_slow():
@@ -434,6 +446,7 @@ class PerformanceOptimizer:
         self.connection_pool = ConnectionPool(max_connections=20)
         self.batcher = AsyncBatcher(batch_size=25, max_wait_time=0.05)
         self.logger = logging.getLogger(__name__)
+        self.query_cache = _query_cache  # Reference to the global query cache
 
     async def optimize_query_processing(self, query: str) -> dict[str, Any]:
         """Optimize query processing with caching and batching."""
@@ -468,3 +481,24 @@ class PerformanceOptimizer:
             "connection_pool_size": self.connection_pool.active_connections,
             "batcher_pending": len(self.batcher.pending_operations),
         }
+
+    async def warm_up_caches(self) -> None:
+        """Warm up caches with common queries and operations."""
+        self.logger.info("Warming up performance caches...")
+
+        # Pre-populate query cache with common queries
+        common_queries = [
+            "help",
+            "create prompt",
+            "analyze code",
+            "documentation",
+            "security best practices",
+        ]
+
+        for query in common_queries:
+            try:
+                await self.optimize_query_processing(query)
+            except Exception as e:
+                self.logger.warning("Failed to warm up cache for query '%s': %s", query, e)
+
+        self.logger.info("Cache warm-up completed")

@@ -527,7 +527,7 @@ class QueryCounselor:
             },
         )
 
-    async def process_query(self, query: str) -> FinalResponse:
+    async def process_query(self, query: str) -> QueryResponse:
         """
         Main entry point for query processing.
 
@@ -538,7 +538,7 @@ class QueryCounselor:
             query: User query string
 
         Returns:
-            FinalResponse: Processed query response
+            QueryResponse: Processed query response
         """
         start_time = time.time()
 
@@ -561,21 +561,27 @@ class QueryCounselor:
 
             # Update processing time
             total_processing_time = time.time() - start_time
-            final_response.processing_time = total_processing_time
 
-            return final_response
+            # Convert FinalResponse to QueryResponse
+            return QueryResponse(
+                response=final_response.content,
+                agents_used=final_response.agents_used,
+                processing_time=total_processing_time,
+                success=final_response.confidence > 0.0,
+                confidence=final_response.confidence,
+                metadata=final_response.metadata,
+            )
 
         except Exception as e:
             processing_time = time.time() - start_time
             self.logger.error("Query processing failed: %s", str(e))
 
-            return FinalResponse(
-                content=f"Query processing failed: {e!s}",
-                sources=[],
-                confidence=0.0,
-                processing_time=processing_time,
-                query_type=QueryType.GENERAL_QUERY,
+            return QueryResponse(
+                response=f"Query processing failed: {e!s}",
                 agents_used=[],
+                processing_time=processing_time,
+                success=False,
+                confidence=0.0,
                 metadata={
                     "error": True,
                     "error_message": str(e),
@@ -583,7 +589,7 @@ class QueryCounselor:
                 },
             )
 
-    async def process_query_with_hyde(self, query: str) -> FinalResponse:
+    async def process_query_with_hyde(self, query: str) -> QueryResponse:
         """
         Complete query processing pipeline with HyDE enhancement integration.
 
@@ -696,20 +702,27 @@ class QueryCounselor:
                 enhanced_query.processing_strategy if enhanced_query else "direct",
             )
 
-            return enhanced_final_response
+            # Convert FinalResponse to QueryResponse
+            return QueryResponse(
+                response=enhanced_final_response.content,
+                agents_used=enhanced_final_response.agents_used,
+                processing_time=enhanced_final_response.processing_time,
+                success=enhanced_final_response.confidence > 0.0,
+                confidence=enhanced_final_response.confidence,
+                metadata=enhanced_final_response.metadata,
+            )
 
         except Exception as e:
             processing_time = time.time() - start_time
             self.logger.error("Enhanced query processing failed: %s", str(e))
 
             # Return error response with diagnostic information
-            return FinalResponse(
-                content=f"Query processing failed: {e!s}",
-                sources=[],
-                confidence=0.0,
-                processing_time=processing_time,
-                query_type=QueryType.GENERAL_QUERY,
+            return QueryResponse(
+                response=f"Query processing failed: {e!s}",
                 agents_used=[],
+                processing_time=processing_time,
+                success=False,
+                confidence=0.0,
                 metadata={
                     "error": True,
                     "error_message": str(e),

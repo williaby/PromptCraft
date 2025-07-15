@@ -16,7 +16,7 @@ import pytest
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))
 
-from src.core.hyde_processor import HydeProcessor, QueryAnalysis, SpecificityLevel
+from src.core.hyde_processor import HydeProcessor, QueryAnalysis, RankedResults, SpecificityLevel
 from src.core.query_counselor import (
     AgentSelection,
     QueryCounselor,
@@ -26,8 +26,9 @@ from src.core.query_counselor import (
     WorkflowResult,
     WorkflowStep,
 )
-from src.core.vector_store import SearchResult, VectorStore
+from src.core.vector_store import VectorStore
 from src.mcp_integration.mcp_client import MCPClient
+from src.mcp_integration.mcp_client import Response as MCPResponse
 
 
 class TestQueryCounselor:
@@ -43,6 +44,22 @@ class TestQueryCounselor:
             return_value=["create_agent", "security_agent", "performance_agent"],
         )
         mock_client.is_connected = Mock(return_value=True)
+        mock_client.validate_query = AsyncMock(
+            return_value={"is_valid": True, "sanitized_query": "test query", "potential_issues": []},
+        )
+
+        mock_client.orchestrate_agents = AsyncMock(
+            return_value=[
+                MCPResponse(
+                    agent_id="create_agent",
+                    content="Response content",
+                    confidence=0.85,
+                    processing_time=0.3,
+                    success=True,
+                    metadata={"source": "test"},
+                ),
+            ],
+        )
         return mock_client
 
     @pytest.fixture
@@ -197,6 +214,7 @@ class TestQueryCounselor:
             original_query="How to protect against SQL injection?",
             query_type=QueryType.SECURITY,
             confidence=0.9,
+            complexity="medium",
             keywords=["sql", "injection", "security", "protection"],
             context_requirements=["database", "web"],
         )
@@ -214,6 +232,7 @@ class TestQueryCounselor:
             original_query="How to optimize database queries?",
             query_type=QueryType.PERFORMANCE,
             confidence=0.85,
+            complexity="medium",
             keywords=["optimize", "database", "performance", "queries"],
             context_requirements=["database", "sql"],
         )
@@ -233,6 +252,7 @@ class TestQueryCounselor:
             original_query="How to implement authentication?",
             query_type=QueryType.IMPLEMENTATION,
             confidence=0.8,
+            complexity="medium",
             keywords=["authentication", "implement"],
             context_requirements=["python"],
         )
@@ -259,6 +279,7 @@ class TestQueryCounselor:
             original_query="How to implement authentication?",
             query_type=QueryType.IMPLEMENTATION,
             confidence=0.8,
+            complexity="medium",
             keywords=["authentication", "implement"],
             context_requirements=["python"],
         )
@@ -309,6 +330,7 @@ class TestQueryCounselor:
             original_query="How to implement secure and fast authentication?",
             query_type=QueryType.IMPLEMENTATION,
             confidence=0.9,
+            complexity="medium",
             keywords=["authentication", "secure", "fast", "implement"],
             context_requirements=["python", "web"],
         )
@@ -318,6 +340,7 @@ class TestQueryCounselor:
             secondary_agents=["performance_agent"],
             reasoning="Requires implementation, security, and performance knowledge",
             confidence=0.9,
+            complexity="medium",
         )
 
         result = await query_counselor.orchestrate_workflow(intent, agent_selection)
@@ -349,6 +372,7 @@ class TestQueryCounselor:
             original_query="Test query",
             query_type=QueryType.IMPLEMENTATION,
             confidence=0.8,
+            complexity="simple",
             keywords=["test"],
             context_requirements=[],
         )
@@ -398,12 +422,12 @@ class TestQueryCounselor:
         response = await query_counselor.synthesize_response(workflow_result)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
-        assert len(response.content) > 0
+        assert response.response is not None
+        assert len(response.response) > 0
         assert 0.0 <= response.confidence <= 1.0
         assert len(response.agents_used) > 0
         assert response.processing_time > 0.0
-        assert len(response.sources) >= 0
+        assert len(response.metadata) >= 0
 
     @pytest.mark.asyncio
     async def test_synthesize_response_empty_workflow(self, query_counselor):
@@ -413,7 +437,7 @@ class TestQueryCounselor:
         response = await query_counselor.synthesize_response(workflow_result)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
+        assert response.response is not None
         assert response.confidence < 0.5
         assert len(response.agents_used) == 0
         assert response.processing_time >= 0.0
@@ -432,8 +456,8 @@ class TestQueryCounselor:
         response = await query_counselor.process_query(query)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
-        assert len(response.content) > 0
+        assert response.response is not None
+        assert len(response.response) > 0
         assert response.confidence > 0.0
         assert len(response.agents_used) > 0
         assert response.processing_time > 0.0
@@ -451,7 +475,7 @@ class TestQueryCounselor:
             response = await query_counselor.process_query(query)
 
             assert isinstance(response, QueryResponse)
-            assert response.content is not None
+            assert response.response is not None
             assert response.confidence > 0.0
             assert len(response.agents_used) > 0
             assert response.processing_time > 0.0
@@ -462,24 +486,23 @@ class TestQueryCounselor:
         """Test query processing with HyDE integration."""
         # Mock HyDE processor response
         mock_hyde_processor.three_tier_analysis.return_value = QueryAnalysis(
-            original_query="How to implement authentication?",
+            original_query="How to implement secure user authentication in Python web applications with detailed analysis of best practices and security considerations?",
             specificity_score=75,
             specificity_level=SpecificityLevel.MEDIUM,
-            enhanced_query="How to implement secure user authentication in Python web applications?",
+            enhanced_query="How to implement secure user authentication in Python web applications with detailed analysis of best practices and security considerations?",
             processing_strategy="enhanced",
             confidence=0.85,
+            reasoning="Query demonstrates good specificity with clear domain and requirements",
+            guiding_questions=[],
+            processing_time=0.1,
         )
 
-        mock_hyde_processor.process_query.return_value = SearchResult(
-            results=[
-                {
-                    "content": "Authentication implementation guide...",
-                    "score": 0.92,
-                    "metadata": {"source": "auth_guide.md"},
-                },
-            ],
-            total_results=1,
+        mock_hyde_processor.process_query.return_value = RankedResults(
+            results=[],
+            total_found=1,
             processing_time=0.3,
+            ranking_method="similarity",
+            hyde_enhanced=True,
         )
 
         # Mock MCP client response
@@ -489,11 +512,11 @@ class TestQueryCounselor:
             "sources": ["auth_guide.md"],
         }
 
-        query = "How to implement authentication?"
+        query = "How to implement secure user authentication in Python web applications with detailed analysis of best practices and security considerations?"
         response = await query_counselor.process_query_with_hyde(query)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
+        assert response.response is not None
         assert response.confidence > 0.0
         assert len(response.agents_used) > 0
         assert response.processing_time > 0.0
@@ -522,10 +545,12 @@ class TestQueryCounselor:
                 confidence=0.8,
             )
 
-            mock_hyde_processor.process_query.return_value = SearchResult(
-                results=[{"content": "Test content", "score": 0.8}],
-                total_results=1,
+            mock_hyde_processor.process_query.return_value = RankedResults(
+                results=[],
+                total_found=1,
                 processing_time=0.2,
+                ranking_method="similarity",
+                hyde_enhanced=True,
             )
 
             mock_mcp_client.call_agent.return_value = {
@@ -537,7 +562,7 @@ class TestQueryCounselor:
             response = await query_counselor.process_query_with_hyde("Test query")
 
             assert isinstance(response, QueryResponse)
-            assert response.content is not None
+            assert response.response is not None
             assert response.confidence > 0.0
 
     # Test error handling
@@ -550,7 +575,7 @@ class TestQueryCounselor:
         response = await query_counselor.process_query(query)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
+        assert response.response is not None
         assert response.confidence < 0.5  # Should have low confidence due to failure
         assert response.processing_time > 0.0
 
@@ -571,7 +596,7 @@ class TestQueryCounselor:
         response = await query_counselor.process_query_with_hyde(query)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
+        assert response.response is not None
         assert response.confidence > 0.0
 
     # Test performance with decorators
@@ -609,7 +634,7 @@ class TestQueryCounselor:
         assert len(responses) == len(queries)
         for response in responses:
             assert isinstance(response, QueryResponse)
-            assert response.content is not None
+            assert response.response is not None
             assert response.confidence > 0.0
 
     # Test edge cases
@@ -638,7 +663,7 @@ class TestQueryCounselor:
         response = await query_counselor.process_query(very_long_query)
 
         assert isinstance(response, QueryResponse)
-        assert response.content is not None
+        assert response.response is not None
         assert response.confidence > 0.0
 
     # Test configuration and initialization variations
