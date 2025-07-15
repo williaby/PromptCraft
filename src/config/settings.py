@@ -316,6 +316,64 @@ class ApplicationSettings(BaseSettings):
         description="Encryption key for data at rest (sensitive - never logged)",
     )
 
+    # MCP (Model Context Protocol) Configuration
+    mcp_server_url: str = Field(
+        default="http://localhost:3000",
+        description="Zen MCP Server endpoint URL",
+    )
+
+    mcp_api_key: SecretStr | None = Field(
+        default=None,
+        description="MCP server API key for authentication (sensitive - never logged)",
+    )
+
+    mcp_timeout: float = Field(
+        default=30.0,
+        description="MCP request timeout in seconds",
+    )
+
+    mcp_max_retries: int = Field(
+        default=3,
+        description="Maximum number of MCP request retries",
+    )
+
+    mcp_enabled: bool = Field(
+        default=True,
+        description="Whether MCP integration is enabled",
+    )
+
+    # Qdrant Vector Database Configuration
+    qdrant_host: str = Field(
+        default="192.168.1.16",
+        description="Qdrant vector database host address",
+    )
+
+    qdrant_port: int = Field(
+        default=6333,
+        description="Qdrant vector database port number",
+    )
+
+    qdrant_timeout: float = Field(
+        default=30.0,
+        description="Qdrant request timeout in seconds",
+    )
+
+    qdrant_enabled: bool = Field(
+        default=True,
+        description="Whether Qdrant vector database integration is enabled",
+    )
+
+    # Vector Store Configuration
+    vector_store_type: str = Field(
+        default="auto",
+        description="Vector store type: 'auto', 'qdrant', or 'mock'",
+    )
+
+    vector_dimensions: int = Field(
+        default=384,
+        description="Default vector embedding dimensions",
+    )
+
     # Network Security
     trusted_proxy_1: str | None = Field(
         default=None,

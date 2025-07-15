@@ -1,0 +1,656 @@
+"""
+Comprehensive unit tests for QueryCounselor class.
+
+This module provides comprehensive unit test coverage for the QueryCounselor
+class and its methods, including intent analysis, agent selection, workflow
+orchestration, and HyDE integration.
+"""
+
+import asyncio
+import os
+import sys
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+
+# Add src to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+
+from src.core.hyde_processor import HydeProcessor, QueryAnalysis, SpecificityLevel
+from src.core.query_counselor import (
+    AgentSelection,
+    QueryCounselor,
+    QueryIntent,
+    QueryResponse,
+    QueryType,
+    WorkflowResult,
+    WorkflowStep,
+)
+from src.core.vector_store import SearchResult, VectorStore
+from src.mcp_integration.mcp_client import MCPClient
+
+
+class TestQueryCounselor:
+    """Test suite for QueryCounselor class."""
+
+    @pytest.fixture
+    def mock_mcp_client(self):
+        """Create mock MCP client."""
+        mock_client = Mock(spec=MCPClient)
+        mock_client.initialize = AsyncMock()
+        mock_client.call_agent = AsyncMock()
+        mock_client.get_available_agents = AsyncMock(
+            return_value=["create_agent", "security_agent", "performance_agent"],
+        )
+        mock_client.is_connected = Mock(return_value=True)
+        return mock_client
+
+    @pytest.fixture
+    def mock_vector_store(self):
+        """Create mock vector store."""
+        mock_store = Mock(spec=VectorStore)
+        mock_store.search = AsyncMock()
+        mock_store.health_check = AsyncMock(return_value=True)
+        return mock_store
+
+    @pytest.fixture
+    def mock_hyde_processor(self, mock_vector_store):
+        """Create mock HyDE processor."""
+        mock_processor = Mock(spec=HydeProcessor)
+        mock_processor.three_tier_analysis = AsyncMock()
+        mock_processor.process_query = AsyncMock()
+        mock_processor.vector_store = mock_vector_store
+        return mock_processor
+
+    @pytest.fixture
+    def query_counselor(self, mock_mcp_client, mock_hyde_processor):
+        """Create QueryCounselor instance with mocked dependencies."""
+        return QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
+
+    @pytest.fixture
+    def sample_queries(self):
+        """Sample queries for testing."""
+        return [
+            "How to implement user authentication in Python?",
+            "What are the best practices for API security?",
+            "Explain database optimization techniques",
+            "How to handle errors in async Python code?",
+            "What are microservices and when to use them?",
+            "Implement caching strategies for web applications",
+            "How to secure API endpoints against attacks?",
+            "Design patterns for scalable applications",
+            "Performance monitoring best practices",
+            "Container orchestration with Kubernetes",
+        ]
+
+    # Test QueryCounselor initialization
+    def test_query_counselor_initialization(self, query_counselor):
+        """Test QueryCounselor initialization."""
+        assert query_counselor is not None
+        assert hasattr(query_counselor, "mcp_client")
+        assert hasattr(query_counselor, "hyde_processor")
+        assert hasattr(query_counselor, "confidence_threshold")
+        assert query_counselor.confidence_threshold == 0.7
+
+    def test_query_counselor_initialization_with_custom_threshold(self, mock_mcp_client, mock_hyde_processor):
+        """Test QueryCounselor initialization with custom confidence threshold."""
+        custom_threshold = 0.8
+        counselor = QueryCounselor(
+            mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor, confidence_threshold=custom_threshold,
+        )
+        assert counselor.confidence_threshold == custom_threshold
+
+    # Test analyze_intent method
+    @pytest.mark.asyncio
+    async def test_analyze_intent_basic(self, query_counselor):
+        """Test basic intent analysis."""
+        query = "How to implement authentication in Python?"
+
+        intent = await query_counselor.analyze_intent(query)
+
+        assert isinstance(intent, QueryIntent)
+        assert intent.original_query == query
+        assert isinstance(intent.query_type, QueryType)
+        assert 0.0 <= intent.confidence <= 1.0
+        assert len(intent.keywords) > 0
+        assert len(intent.context_requirements) >= 0
+
+    @pytest.mark.asyncio
+    async def test_analyze_intent_different_query_types(self, query_counselor, sample_queries):
+        """Test intent analysis with different query types."""
+        for query in sample_queries[:5]:  # Test first 5 queries
+            intent = await query_counselor.analyze_intent(query)
+
+            assert isinstance(intent, QueryIntent)
+            assert intent.original_query == query
+            assert isinstance(intent.query_type, QueryType)
+            assert 0.0 <= intent.confidence <= 1.0
+            assert len(intent.keywords) > 0
+
+    @pytest.mark.asyncio
+    async def test_analyze_intent_empty_query(self, query_counselor):
+        """Test intent analysis with empty query."""
+        intent = await query_counselor.analyze_intent("")
+
+        assert isinstance(intent, QueryIntent)
+        assert intent.original_query == ""
+        assert intent.query_type == QueryType.UNKNOWN
+        assert intent.confidence < 0.5
+
+    @pytest.mark.asyncio
+    async def test_analyze_intent_very_short_query(self, query_counselor):
+        """Test intent analysis with very short query."""
+        intent = await query_counselor.analyze_intent("help")
+
+        assert isinstance(intent, QueryIntent)
+        assert intent.original_query == "help"
+        assert isinstance(intent.query_type, QueryType)
+        assert intent.confidence >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_analyze_intent_long_query(self, query_counselor):
+        """Test intent analysis with long, complex query."""
+        long_query = (
+            "I need to implement a comprehensive authentication system for a web application "
+            "that includes user registration, login, logout, password reset, two-factor "
+            "authentication, session management, and integration with OAuth providers like "
+            "Google and GitHub. The system should be secure, scalable, and follow best "
+            "practices for web security including protection against common attacks like "
+            "SQL injection, XSS, and CSRF."
+        )
+
+        intent = await query_counselor.analyze_intent(long_query)
+
+        assert isinstance(intent, QueryIntent)
+        assert intent.original_query == long_query
+        assert isinstance(intent.query_type, QueryType)
+        assert intent.confidence >= 0.5  # Should be confident with detailed query
+        assert len(intent.keywords) > 5  # Should extract multiple keywords
+
+    # Test select_agents method
+    @pytest.mark.asyncio
+    async def test_select_agents_basic(self, query_counselor):
+        """Test basic agent selection."""
+        intent = QueryIntent(
+            original_query="How to implement authentication?",
+            query_type=QueryType.IMPLEMENTATION,
+            confidence=0.8,
+            keywords=["authentication", "implement", "security"],
+            context_requirements=["python", "web"],
+        )
+
+        selection = await query_counselor.select_agents(intent)
+
+        assert isinstance(selection, AgentSelection)
+        assert len(selection.primary_agents) > 0
+        assert len(selection.secondary_agents) >= 0
+        assert selection.reasoning is not None
+        assert selection.confidence > 0.0
+
+    @pytest.mark.asyncio
+    async def test_select_agents_security_query(self, query_counselor):
+        """Test agent selection for security-related query."""
+        intent = QueryIntent(
+            original_query="How to protect against SQL injection?",
+            query_type=QueryType.SECURITY,
+            confidence=0.9,
+            keywords=["sql", "injection", "security", "protection"],
+            context_requirements=["database", "web"],
+        )
+
+        selection = await query_counselor.select_agents(intent)
+
+        assert isinstance(selection, AgentSelection)
+        assert "security_agent" in selection.primary_agents
+        assert selection.confidence > 0.7
+
+    @pytest.mark.asyncio
+    async def test_select_agents_performance_query(self, query_counselor):
+        """Test agent selection for performance-related query."""
+        intent = QueryIntent(
+            original_query="How to optimize database queries?",
+            query_type=QueryType.PERFORMANCE,
+            confidence=0.85,
+            keywords=["optimize", "database", "performance", "queries"],
+            context_requirements=["database", "sql"],
+        )
+
+        selection = await query_counselor.select_agents(intent)
+
+        assert isinstance(selection, AgentSelection)
+        assert "performance_agent" in selection.primary_agents
+        assert selection.confidence > 0.7
+
+    @pytest.mark.asyncio
+    async def test_select_agents_mcp_client_failure(self, query_counselor, mock_mcp_client):
+        """Test agent selection when MCP client fails."""
+        mock_mcp_client.get_available_agents.side_effect = Exception("MCP connection failed")
+
+        intent = QueryIntent(
+            original_query="How to implement authentication?",
+            query_type=QueryType.IMPLEMENTATION,
+            confidence=0.8,
+            keywords=["authentication", "implement"],
+            context_requirements=["python"],
+        )
+
+        selection = await query_counselor.select_agents(intent)
+
+        # Should fall back to default agents
+        assert isinstance(selection, AgentSelection)
+        assert "create_agent" in selection.primary_agents
+        assert selection.confidence > 0.0
+
+    # Test orchestrate_workflow method
+    @pytest.mark.asyncio
+    async def test_orchestrate_workflow_basic(self, query_counselor, mock_mcp_client):
+        """Test basic workflow orchestration."""
+        # Mock MCP client responses
+        mock_mcp_client.call_agent.return_value = {
+            "content": "Here's how to implement authentication...",
+            "confidence": 0.85,
+            "sources": ["auth_best_practices.md"],
+        }
+
+        intent = QueryIntent(
+            original_query="How to implement authentication?",
+            query_type=QueryType.IMPLEMENTATION,
+            confidence=0.8,
+            keywords=["authentication", "implement"],
+            context_requirements=["python"],
+        )
+
+        agent_selection = AgentSelection(
+            primary_agents=["create_agent", "security_agent"],
+            secondary_agents=["performance_agent"],
+            reasoning="Authentication requires security and implementation knowledge",
+            confidence=0.85,
+        )
+
+        result = await query_counselor.orchestrate_workflow(intent, agent_selection)
+
+        assert isinstance(result, WorkflowResult)
+        assert len(result.steps) > 0
+        assert result.final_response is not None
+        assert result.success is True
+        assert result.total_time > 0.0
+
+    @pytest.mark.asyncio
+    async def test_orchestrate_workflow_with_multiple_agents(self, query_counselor, mock_mcp_client):
+        """Test workflow orchestration with multiple agents."""
+
+        # Mock different responses from different agents
+        def mock_agent_call(agent_name, query, context=None):
+            responses = {
+                "create_agent": {
+                    "content": "Implementation approach for authentication...",
+                    "confidence": 0.8,
+                    "sources": ["implementation_guide.md"],
+                },
+                "security_agent": {
+                    "content": "Security considerations for authentication...",
+                    "confidence": 0.9,
+                    "sources": ["security_best_practices.md"],
+                },
+                "performance_agent": {
+                    "content": "Performance optimization for auth systems...",
+                    "confidence": 0.75,
+                    "sources": ["performance_guide.md"],
+                },
+            }
+            return responses.get(agent_name, responses["create_agent"])
+
+        mock_mcp_client.call_agent.side_effect = mock_agent_call
+
+        intent = QueryIntent(
+            original_query="How to implement secure and fast authentication?",
+            query_type=QueryType.IMPLEMENTATION,
+            confidence=0.9,
+            keywords=["authentication", "secure", "fast", "implement"],
+            context_requirements=["python", "web"],
+        )
+
+        agent_selection = AgentSelection(
+            primary_agents=["create_agent", "security_agent"],
+            secondary_agents=["performance_agent"],
+            reasoning="Requires implementation, security, and performance knowledge",
+            confidence=0.9,
+        )
+
+        result = await query_counselor.orchestrate_workflow(intent, agent_selection)
+
+        assert isinstance(result, WorkflowResult)
+        assert len(result.steps) >= 2  # At least primary agents
+        assert result.success is True
+        assert result.final_response is not None
+        assert "Implementation approach" in result.final_response
+        assert "Security considerations" in result.final_response
+
+    @pytest.mark.asyncio
+    async def test_orchestrate_workflow_agent_failure(self, query_counselor, mock_mcp_client):
+        """Test workflow orchestration when an agent fails."""
+
+        # Mock one agent failing
+        def mock_agent_call(agent_name, query, context=None):
+            if agent_name == "failing_agent":
+                raise Exception("Agent failed")
+            return {
+                "content": f"Response from {agent_name}...",
+                "confidence": 0.8,
+                "sources": [f"{agent_name}_guide.md"],
+            }
+
+        mock_mcp_client.call_agent.side_effect = mock_agent_call
+
+        intent = QueryIntent(
+            original_query="Test query",
+            query_type=QueryType.IMPLEMENTATION,
+            confidence=0.8,
+            keywords=["test"],
+            context_requirements=[],
+        )
+
+        agent_selection = AgentSelection(
+            primary_agents=["create_agent", "failing_agent"],
+            secondary_agents=[],
+            reasoning="Testing failure handling",
+            confidence=0.8,
+        )
+
+        result = await query_counselor.orchestrate_workflow(intent, agent_selection)
+
+        assert isinstance(result, WorkflowResult)
+        assert len(result.steps) >= 1  # At least one successful step
+        assert result.success is True  # Should still succeed with partial results
+        assert result.final_response is not None
+
+    # Test synthesize_response method
+    @pytest.mark.asyncio
+    async def test_synthesize_response_basic(self, query_counselor):
+        """Test basic response synthesis."""
+        workflow_result = WorkflowResult(
+            steps=[
+                WorkflowStep(
+                    agent_name="create_agent",
+                    input_query="How to implement authentication?",
+                    response="Here's how to implement authentication...",
+                    confidence=0.85,
+                    processing_time=0.5,
+                    success=True,
+                ),
+                WorkflowStep(
+                    agent_name="security_agent",
+                    input_query="Security considerations for authentication?",
+                    response="Security best practices include...",
+                    confidence=0.9,
+                    processing_time=0.3,
+                    success=True,
+                ),
+            ],
+            final_response="Combined response about authentication implementation and security",
+            success=True,
+            total_time=1.2,
+        )
+
+        response = await query_counselor.synthesize_response(workflow_result)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert len(response.content) > 0
+        assert 0.0 <= response.confidence <= 1.0
+        assert len(response.agents_used) > 0
+        assert response.processing_time > 0.0
+        assert len(response.sources) >= 0
+
+    @pytest.mark.asyncio
+    async def test_synthesize_response_empty_workflow(self, query_counselor):
+        """Test response synthesis with empty workflow."""
+        workflow_result = WorkflowResult(steps=[], final_response="", success=False, total_time=0.0)
+
+        response = await query_counselor.synthesize_response(workflow_result)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert response.confidence < 0.5
+        assert len(response.agents_used) == 0
+        assert response.processing_time >= 0.0
+
+    # Test process_query method (main entry point)
+    @pytest.mark.asyncio
+    async def test_process_query_basic(self, query_counselor, mock_mcp_client):
+        """Test basic query processing."""
+        mock_mcp_client.call_agent.return_value = {
+            "content": "Response content",
+            "confidence": 0.85,
+            "sources": ["test_source.md"],
+        }
+
+        query = "How to implement authentication in Python?"
+        response = await query_counselor.process_query(query)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert len(response.content) > 0
+        assert response.confidence > 0.0
+        assert len(response.agents_used) > 0
+        assert response.processing_time > 0.0
+
+    @pytest.mark.asyncio
+    async def test_process_query_with_different_types(self, query_counselor, mock_mcp_client, sample_queries):
+        """Test query processing with different query types."""
+        mock_mcp_client.call_agent.return_value = {
+            "content": "Response content",
+            "confidence": 0.8,
+            "sources": ["test_source.md"],
+        }
+
+        for query in sample_queries[:3]:  # Test first 3 queries
+            response = await query_counselor.process_query(query)
+
+            assert isinstance(response, QueryResponse)
+            assert response.content is not None
+            assert response.confidence > 0.0
+            assert len(response.agents_used) > 0
+            assert response.processing_time > 0.0
+
+    # Test process_query_with_hyde method
+    @pytest.mark.asyncio
+    async def test_process_query_with_hyde_basic(self, query_counselor, mock_mcp_client, mock_hyde_processor):
+        """Test query processing with HyDE integration."""
+        # Mock HyDE processor response
+        mock_hyde_processor.three_tier_analysis.return_value = QueryAnalysis(
+            original_query="How to implement authentication?",
+            specificity_score=75,
+            specificity_level=SpecificityLevel.MEDIUM,
+            enhanced_query="How to implement secure user authentication in Python web applications?",
+            processing_strategy="enhanced",
+            confidence=0.85,
+        )
+
+        mock_hyde_processor.process_query.return_value = SearchResult(
+            results=[
+                {
+                    "content": "Authentication implementation guide...",
+                    "score": 0.92,
+                    "metadata": {"source": "auth_guide.md"},
+                },
+            ],
+            total_results=1,
+            processing_time=0.3,
+        )
+
+        # Mock MCP client response
+        mock_mcp_client.call_agent.return_value = {
+            "content": "Enhanced response with HyDE context",
+            "confidence": 0.9,
+            "sources": ["auth_guide.md"],
+        }
+
+        query = "How to implement authentication?"
+        response = await query_counselor.process_query_with_hyde(query)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert response.confidence > 0.0
+        assert len(response.agents_used) > 0
+        assert response.processing_time > 0.0
+
+        # Verify HyDE processor was called
+        mock_hyde_processor.three_tier_analysis.assert_called_once_with(query)
+        mock_hyde_processor.process_query.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_process_query_with_hyde_different_specificity_levels(
+        self, query_counselor, mock_mcp_client, mock_hyde_processor,
+    ):
+        """Test HyDE processing with different specificity levels."""
+        specificity_levels = [(SpecificityLevel.LOW, 30), (SpecificityLevel.MEDIUM, 65), (SpecificityLevel.HIGH, 90)]
+
+        for level, score in specificity_levels:
+            mock_hyde_processor.three_tier_analysis.return_value = QueryAnalysis(
+                original_query="Test query",
+                specificity_score=score,
+                specificity_level=level,
+                enhanced_query="Enhanced test query",
+                processing_strategy=level.value.lower(),
+                confidence=0.8,
+            )
+
+            mock_hyde_processor.process_query.return_value = SearchResult(
+                results=[{"content": "Test content", "score": 0.8}], total_results=1, processing_time=0.2,
+            )
+
+            mock_mcp_client.call_agent.return_value = {
+                "content": f"Response for {level.value} specificity",
+                "confidence": 0.8,
+                "sources": [],
+            }
+
+            response = await query_counselor.process_query_with_hyde("Test query")
+
+            assert isinstance(response, QueryResponse)
+            assert response.content is not None
+            assert response.confidence > 0.0
+
+    # Test error handling
+    @pytest.mark.asyncio
+    async def test_process_query_mcp_failure(self, query_counselor, mock_mcp_client):
+        """Test query processing when MCP client fails."""
+        mock_mcp_client.call_agent.side_effect = Exception("MCP connection failed")
+
+        query = "How to implement authentication?"
+        response = await query_counselor.process_query(query)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert response.confidence < 0.5  # Should have low confidence due to failure
+        assert response.processing_time > 0.0
+
+    @pytest.mark.asyncio
+    async def test_process_query_with_hyde_processor_failure(
+        self, query_counselor, mock_mcp_client, mock_hyde_processor,
+    ):
+        """Test HyDE processing when processor fails."""
+        mock_hyde_processor.three_tier_analysis.side_effect = Exception("HyDE processor failed")
+
+        # Should fall back to regular processing
+        mock_mcp_client.call_agent.return_value = {"content": "Fallback response", "confidence": 0.7, "sources": []}
+
+        query = "How to implement authentication?"
+        response = await query_counselor.process_query_with_hyde(query)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert response.confidence > 0.0
+
+    # Test performance with decorators
+    @pytest.mark.asyncio
+    async def test_analyze_intent_performance_decorator(self, query_counselor):
+        """Test that performance decorators are applied to analyze_intent."""
+        # This test verifies the decorator is applied without breaking functionality
+        query = "How to implement authentication?"
+
+        intent = await query_counselor.analyze_intent(query)
+
+        assert isinstance(intent, QueryIntent)
+        assert intent.original_query == query
+
+        # Test caching by running same query again
+        intent2 = await query_counselor.analyze_intent(query)
+        assert intent2.original_query == query
+
+    # Test concurrent processing
+    @pytest.mark.asyncio
+    async def test_concurrent_query_processing(self, query_counselor, mock_mcp_client):
+        """Test concurrent query processing."""
+        mock_mcp_client.call_agent.return_value = {"content": "Concurrent response", "confidence": 0.8, "sources": []}
+
+        queries = [
+            "How to implement authentication?",
+            "What are REST API best practices?",
+            "How to optimize database queries?",
+        ]
+
+        # Process queries concurrently
+        tasks = [query_counselor.process_query(query) for query in queries]
+        responses = await asyncio.gather(*tasks)
+
+        assert len(responses) == len(queries)
+        for response in responses:
+            assert isinstance(response, QueryResponse)
+            assert response.content is not None
+            assert response.confidence > 0.0
+
+    # Test edge cases
+    @pytest.mark.asyncio
+    async def test_process_query_none_input(self, query_counselor):
+        """Test processing None input."""
+        response = await query_counselor.process_query(None)
+
+        assert isinstance(response, QueryResponse)
+        assert response.confidence < 0.5
+
+    @pytest.mark.asyncio
+    async def test_process_query_whitespace_input(self, query_counselor):
+        """Test processing whitespace-only input."""
+        response = await query_counselor.process_query("   \n\t  ")
+
+        assert isinstance(response, QueryResponse)
+        assert response.confidence < 0.5
+
+    @pytest.mark.asyncio
+    async def test_process_query_very_long_input(self, query_counselor, mock_mcp_client):
+        """Test processing very long input."""
+        mock_mcp_client.call_agent.return_value = {"content": "Long query response", "confidence": 0.8, "sources": []}
+
+        very_long_query = "How to implement authentication? " * 100
+        response = await query_counselor.process_query(very_long_query)
+
+        assert isinstance(response, QueryResponse)
+        assert response.content is not None
+        assert response.confidence > 0.0
+
+    # Test configuration and initialization variations
+    def test_query_counselor_with_none_dependencies(self):
+        """Test QueryCounselor with None dependencies."""
+        counselor = QueryCounselor(mcp_client=None, hyde_processor=None)
+
+        assert counselor.mcp_client is None
+        assert counselor.hyde_processor is None
+        assert counselor.confidence_threshold == 0.7
+
+    def test_query_counselor_with_invalid_threshold(self, mock_mcp_client, mock_hyde_processor):
+        """Test QueryCounselor with invalid confidence threshold."""
+        # Should handle invalid threshold gracefully
+        counselor = QueryCounselor(
+            mcp_client=mock_mcp_client,
+            hyde_processor=mock_hyde_processor,
+            confidence_threshold=1.5,  # Invalid threshold
+        )
+
+        # Should clamp to valid range
+        assert 0.0 <= counselor.confidence_threshold <= 1.0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
