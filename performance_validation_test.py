@@ -134,7 +134,8 @@ class PerformanceValidator:
         success = all(import_results)
         self.test_results["module_imports"] = success
         print_status(
-            f"Module imports: {len([r for r in import_results if r])}/{len(import_results)} successful", success,
+            f"Module imports: {len([r for r in import_results if r])}/{len(import_results)} successful",
+            success,
         )
 
         return success
@@ -360,7 +361,9 @@ class PerformanceValidator:
                 for j in range(5):  # 5 search operations per config
                     # Create mock search parameters
                     search_params = SearchParameters(
-                        embeddings=[[0.1] * 384], limit=10, collection="test_collection",  # Mock embedding
+                        embeddings=[[0.1] * 384],
+                        limit=10,
+                        collection="test_collection",  # Mock embedding
                     )
 
                     start_time = time.time()

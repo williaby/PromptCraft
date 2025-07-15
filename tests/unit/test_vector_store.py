@@ -62,7 +62,11 @@ class TestVectorStoreModels:
         embeddings = [[0.1, 0.2], [0.3, 0.4]]
 
         params = SearchParameters(
-            embeddings=embeddings, limit=5, collection="test", strategy=SearchStrategy.SEMANTIC, score_threshold=0.7,
+            embeddings=embeddings,
+            limit=5,
+            collection="test",
+            strategy=SearchStrategy.SEMANTIC,
+            score_threshold=0.7,
         )
 
         assert params.embeddings == embeddings
@@ -85,7 +89,11 @@ class TestVectorStoreModels:
     def test_search_result_creation(self):
         """Test SearchResult model creation."""
         result = SearchResult(
-            document_id="doc_1", content="Test content", score=0.85, metadata={"type": "test"}, source="mock_store",
+            document_id="doc_1",
+            content="Test content",
+            score=0.85,
+            metadata={"type": "test"},
+            source="mock_store",
         )
 
         assert result.document_id == "doc_1"
@@ -115,7 +123,10 @@ class TestVectorStoreModels:
     def test_health_check_result(self):
         """Test HealthCheckResult model."""
         result = HealthCheckResult(
-            status=ConnectionStatus.HEALTHY, latency=0.05, details={"connections": 5}, error_message=None,
+            status=ConnectionStatus.HEALTHY,
+            latency=0.05,
+            details={"connections": 5},
+            error_message=None,
         )
 
         assert result.status == ConnectionStatus.HEALTHY
@@ -368,7 +379,10 @@ class TestEnhancedMockVectorStore:
     async def test_update_nonexistent_document(self, mock_store):
         """Test updating non-existent document."""
         doc = VectorDocument(
-            id="nonexistent", content="Content", embedding=[0.1] * DEFAULT_VECTOR_DIMENSIONS, collection="default",
+            id="nonexistent",
+            content="Content",
+            embedding=[0.1] * DEFAULT_VECTOR_DIMENSIONS,
+            collection="default",
         )
 
         result = await mock_store.update_document(doc)

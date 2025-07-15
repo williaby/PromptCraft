@@ -28,7 +28,8 @@ def main():
                 "-x",
                 "--tb=short",
             ],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
             timeout=300,
         )
@@ -49,7 +50,11 @@ def main():
         try:
             print("\nTrying quick performance test...")
             result = subprocess.run(
-                [sys.executable, "test_performance_quick.py"], check=False, capture_output=True, text=True, timeout=300,
+                [sys.executable, "test_performance_quick.py"],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=300,
             )
 
             print("STDOUT:")

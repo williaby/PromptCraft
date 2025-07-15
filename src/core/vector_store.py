@@ -469,7 +469,10 @@ class EnhancedMockVectorStore(AbstractVectorStore):
             batch_id = f"mock_batch_{int(time.time())}"
 
             self.logger.info(
-                "Mock batch insert completed: %d/%d successful in %.3fs", success_count, len(documents), processing_time,
+                "Mock batch insert completed: %d/%d successful in %.3fs",
+                success_count,
+                len(documents),
+                processing_time,
             )
 
             return BatchOperationResult(
@@ -946,7 +949,8 @@ class QdrantVectorStore(AbstractVectorStore):
             from qdrant_client.http.models import Distance, VectorParams
 
             await self._client.create_collection(
-                collection_name=collection_name, vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+                collection_name=collection_name,
+                vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
 
             self.logger.info("Created Qdrant collection: %s", collection_name)
@@ -1100,7 +1104,10 @@ class MockVectorStore(EnhancedMockVectorStore):
             List[SearchResult]: Search results
         """
         parameters = SearchParameters(
-            embeddings=embeddings, limit=limit, collection="default", strategy=SearchStrategy.SEMANTIC,
+            embeddings=embeddings,
+            limit=limit,
+            collection="default",
+            strategy=SearchStrategy.SEMANTIC,
         )
 
         return await super().search(parameters)

@@ -127,7 +127,9 @@ class TestComprehensiveErrorHandling:
 
             # Test error handling
             handled_error = await error_handler.handle_error(
-                exc_info.value, error_context, RecoveryStrategy.CIRCUIT_BREAKER,
+                exc_info.value,
+                error_context,
+                RecoveryStrategy.CIRCUIT_BREAKER,
             )
 
             assert handled_error.severity == ErrorSeverity.HIGH
@@ -356,7 +358,8 @@ class TestComprehensiveErrorHandling:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -472,7 +475,9 @@ class TestComprehensiveErrorHandling:
         )
 
         handled_validation = await error_handler.handle_error(
-            validation_error, validation_context, RecoveryStrategy.IMMEDIATE_FAIL,
+            validation_error,
+            validation_context,
+            RecoveryStrategy.IMMEDIATE_FAIL,
         )
 
         assert handled_validation.category == ErrorCategory.VALIDATION
@@ -553,11 +558,16 @@ class TestComprehensiveErrorHandling:
         # Test immediate fail strategy
         critical_error = RuntimeError("Critical system failure")
         critical_context = ErrorContext(
-            operation="system_operation", component="CoreSystem", error_type="RuntimeError", details={"critical": True},
+            operation="system_operation",
+            component="CoreSystem",
+            error_type="RuntimeError",
+            details={"critical": True},
         )
 
         handled_critical = await error_handler.handle_error(
-            critical_error, critical_context, RecoveryStrategy.IMMEDIATE_FAIL,
+            critical_error,
+            critical_context,
+            RecoveryStrategy.IMMEDIATE_FAIL,
         )
 
         assert handled_critical.recovery_strategy == RecoveryStrategy.IMMEDIATE_FAIL
@@ -566,7 +576,10 @@ class TestComprehensiveErrorHandling:
         # Test retry strategy
         transient_error = httpx.TimeoutException("Request timeout")
         transient_context = ErrorContext(
-            operation="http_request", component="HTTPClient", error_type="TimeoutException", details={"timeout": 5.0},
+            operation="http_request",
+            component="HTTPClient",
+            error_type="TimeoutException",
+            details={"timeout": 5.0},
         )
 
         handled_transient = await error_handler.handle_error(transient_error, transient_context, RecoveryStrategy.RETRY)
@@ -584,7 +597,9 @@ class TestComprehensiveErrorHandling:
         )
 
         handled_network = await error_handler.handle_error(
-            network_error, network_context, RecoveryStrategy.CIRCUIT_BREAKER,
+            network_error,
+            network_context,
+            RecoveryStrategy.CIRCUIT_BREAKER,
         )
 
         assert handled_network.recovery_strategy == RecoveryStrategy.CIRCUIT_BREAKER
@@ -627,7 +642,8 @@ class TestComprehensiveErrorHandling:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -681,7 +697,10 @@ class TestComprehensiveErrorHandling:
         # Test error logging
         test_error = RuntimeError("Test error for logging")
         test_context = ErrorContext(
-            operation="test_operation", component="TestComponent", error_type="RuntimeError", details={"test": True},
+            operation="test_operation",
+            component="TestComponent",
+            error_type="RuntimeError",
+            details={"test": True},
         )
 
         handled_error = await error_handler.handle_error(test_error, test_context, RecoveryStrategy.RETRY)
@@ -715,7 +734,8 @@ class TestComprehensiveErrorHandling:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -745,7 +765,8 @@ class TestComprehensiveErrorHandling:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):

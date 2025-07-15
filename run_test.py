@@ -12,7 +12,12 @@ def main():
 
     # Run the test
     try:
-        result = subprocess.run([sys.executable, "test_hyde_vector_integration.py"], check=False, capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, "test_hyde_vector_integration.py"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
 
         print("STDOUT:")
         print(result.stdout)

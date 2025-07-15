@@ -171,7 +171,8 @@ async def test_performance_optimizations():
         )
 
         print_status(
-            f"HyDE Processor: {response_time:.3f}s, strategy={enhanced_query.processing_strategy}", hyde_working,
+            f"HyDE Processor: {response_time:.3f}s, strategy={enhanced_query.processing_strategy}",
+            hyde_working,
         )
         if hyde_working:
             success_count += 1
@@ -191,7 +192,9 @@ async def test_performance_optimizations():
 
         # Test search operation
         search_params = SearchParameters(
-            embeddings=[[0.1] * 384], limit=10, collection="test_collection",  # Mock embedding
+            embeddings=[[0.1] * 384],
+            limit=10,
+            collection="test_collection",  # Mock embedding
         )
 
         start_time = time.time()

@@ -96,7 +96,9 @@ class TestQueryCounselor:
         """Test QueryCounselor initialization with custom confidence threshold."""
         custom_threshold = 0.8
         counselor = QueryCounselor(
-            mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor, confidence_threshold=custom_threshold,
+            mcp_client=mock_mcp_client,
+            hyde_processor=mock_hyde_processor,
+            confidence_threshold=custom_threshold,
         )
         assert counselor.confidence_threshold == custom_threshold
 
@@ -501,7 +503,10 @@ class TestQueryCounselor:
 
     @pytest.mark.asyncio
     async def test_process_query_with_hyde_different_specificity_levels(
-        self, query_counselor, mock_mcp_client, mock_hyde_processor,
+        self,
+        query_counselor,
+        mock_mcp_client,
+        mock_hyde_processor,
     ):
         """Test HyDE processing with different specificity levels."""
         specificity_levels = [(SpecificityLevel.LOW, 30), (SpecificityLevel.MEDIUM, 65), (SpecificityLevel.HIGH, 90)]
@@ -517,7 +522,9 @@ class TestQueryCounselor:
             )
 
             mock_hyde_processor.process_query.return_value = SearchResult(
-                results=[{"content": "Test content", "score": 0.8}], total_results=1, processing_time=0.2,
+                results=[{"content": "Test content", "score": 0.8}],
+                total_results=1,
+                processing_time=0.2,
             )
 
             mock_mcp_client.call_agent.return_value = {
@@ -548,7 +555,10 @@ class TestQueryCounselor:
 
     @pytest.mark.asyncio
     async def test_process_query_with_hyde_processor_failure(
-        self, query_counselor, mock_mcp_client, mock_hyde_processor,
+        self,
+        query_counselor,
+        mock_mcp_client,
+        mock_hyde_processor,
     ):
         """Test HyDE processing when processor fails."""
         mock_hyde_processor.three_tier_analysis.side_effect = Exception("HyDE processor failed")

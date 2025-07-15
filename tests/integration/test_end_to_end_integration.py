@@ -170,7 +170,10 @@ class TestEndToEndIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_complete_query_processing_workflow(
-        self, full_system_settings, sample_knowledge_documents, sample_test_queries,
+        self,
+        full_system_settings,
+        sample_knowledge_documents,
+        sample_test_queries,
     ):
         """Test complete query processing workflow from input to output."""
 
@@ -232,7 +235,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -318,7 +322,12 @@ class TestEndToEndIntegration:
 
             # Mock fast vector store
             mock_vector_store = EnhancedMockVectorStore(
-                {"type": "mock", "simulate_latency": True, "error_rate": 0.0, "base_latency": 0.005},  # Very low latency
+                {
+                    "type": "mock",
+                    "simulate_latency": True,
+                    "error_rate": 0.0,
+                    "base_latency": 0.005,
+                },  # Very low latency
             )
             await mock_vector_store.connect()
             await mock_vector_store.insert_documents(sample_knowledge_documents)
@@ -338,7 +347,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -430,7 +440,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -537,7 +548,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -576,7 +588,8 @@ class TestEndToEndIntegration:
                 # Execute queries concurrently
                 start_time = time.time()
                 results = await asyncio.gather(
-                    *[process_single_query(query) for query in concurrent_queries], return_exceptions=True,
+                    *[process_single_query(query) for query in concurrent_queries],
+                    return_exceptions=True,
                 )
                 total_time = time.time() - start_time
 
@@ -629,7 +642,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -724,7 +738,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -831,7 +846,8 @@ class TestEndToEndIntegration:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):

@@ -144,7 +144,9 @@ class QueryCounselor:
     """
 
     def __init__(
-        self, mcp_client: MCPClientInterface | None = None, hyde_processor: HydeProcessor | None = None,
+        self,
+        mcp_client: MCPClientInterface | None = None,
+        hyde_processor: HydeProcessor | None = None,
     ) -> None:
         """Initialize QueryCounselor with optional MCP client and HyDE processor."""
         if mcp_client is None:

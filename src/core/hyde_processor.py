@@ -128,7 +128,8 @@ class EnhancedQuery(BaseModel):
     enhanced_query: str = Field(description="Processed query for search")
     embeddings: list[list[float]] = Field(default_factory=list, description="Query embeddings")
     hypothetical_docs: list[HypotheticalDocument] = Field(
-        default_factory=list, description="Generated hypothetical documents",
+        default_factory=list,
+        description="Generated hypothetical documents",
     )
     specificity_analysis: QueryAnalysis
     processing_strategy: str = Field(description="HyDE strategy applied")
@@ -459,7 +460,8 @@ class HydeProcessor:
             if enhanced_query.hypothetical_docs:
                 # HyDE-enhanced search
                 embeddings = await self.enhance_embeddings(
-                    enhanced_query.enhanced_query, enhanced_query.hypothetical_docs,
+                    enhanced_query.enhanced_query,
+                    enhanced_query.hypothetical_docs,
                 )
                 hyde_enhanced = True
             else:

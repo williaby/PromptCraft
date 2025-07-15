@@ -147,7 +147,11 @@ class PerformanceMonitor:
         return metric
 
     def complete_operation(
-        self, metric: PerformanceMetrics, cache_hit: bool = False, batch_size: int = 1, error_occurred: bool = False,
+        self,
+        metric: PerformanceMetrics,
+        cache_hit: bool = False,
+        batch_size: int = 1,
+        error_occurred: bool = False,
     ) -> None:
         """Complete operation tracking."""
         metric.complete()

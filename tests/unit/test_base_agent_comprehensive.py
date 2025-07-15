@@ -34,7 +34,10 @@ class TestBaseAgent:
         class TestAgent(BaseAgent):
             async def execute(self, agent_input: AgentInput) -> AgentOutput:
                 return self._create_output(
-                    content="Test response", metadata={"test": True}, confidence=0.9, request_id=agent_input.request_id,
+                    content="Test response",
+                    metadata={"test": True},
+                    confidence=0.9,
+                    request_id=agent_input.request_id,
                 )
 
         config = {"agent_id": "test_agent"}
@@ -272,7 +275,11 @@ class TestBaseAgent:
 
         metadata = {"key": "value", "count": 42}
         output = agent._create_output(
-            content="Test content", metadata=metadata, confidence=0.85, processing_time=1.5, request_id="req-123",
+            content="Test content",
+            metadata=metadata,
+            confidence=0.85,
+            processing_time=1.5,
+            request_id="req-123",
         )
 
         assert output.content == "Test content"

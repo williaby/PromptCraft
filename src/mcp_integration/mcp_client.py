@@ -129,7 +129,10 @@ class MCPServiceUnavailableError(MCPError):
     """Service unavailability errors."""
 
     def __init__(
-        self, message: str, retry_after: int | None = None, details: dict[str, Any] | None = None,
+        self,
+        message: str,
+        retry_after: int | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message, MCPErrorType.SERVICE_UNAVAILABLE, details, retry_after)
 
@@ -623,7 +626,8 @@ class ZenMCPClient(MCPClientInterface):
 
                 # Extract server information from response
                 server_capabilities = health_data.get(
-                    "capabilities", ["zen_orchestration", "multi_agent", "consensus", "validation"],
+                    "capabilities",
+                    ["zen_orchestration", "multi_agent", "consensus", "validation"],
                 )
                 server_version = health_data.get("version", "ZenMCP-1.0.0")
                 server_status = health_data.get("status", "healthy")
@@ -831,7 +835,8 @@ class ZenMCPClient(MCPClientInterface):
 
                 capabilities_data = response.json()
                 return capabilities_data.get(
-                    "capabilities", ["zen_orchestration", "multi_agent", "consensus", "validation"],
+                    "capabilities",
+                    ["zen_orchestration", "multi_agent", "consensus", "validation"],
                 )
 
             except httpx.HTTPStatusError as e:

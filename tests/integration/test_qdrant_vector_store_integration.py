@@ -148,7 +148,10 @@ class TestQdrantVectorStoreIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_enhanced_mock_vector_store_complete_workflow(
-        self, mock_config, sample_documents, sample_search_params,
+        self,
+        mock_config,
+        sample_documents,
+        sample_search_params,
     ):
         """Test complete workflow with enhanced mock vector store."""
 
@@ -411,7 +414,9 @@ class TestQdrantVectorStoreIntegration:
 
         # Test search performance
         search_params = SearchParameters(
-            embeddings=[[0.8, 0.3, 0.6] + [0.1] * (DEFAULT_VECTOR_DIMENSIONS - 3)], limit=10, collection="default",
+            embeddings=[[0.8, 0.3, 0.6] + [0.1] * (DEFAULT_VECTOR_DIMENSIONS - 3)],
+            limit=10,
+            collection="default",
         )
 
         start_time = time.time()
@@ -499,7 +504,9 @@ class TestQdrantVectorStoreIntegration:
 
         hyde_docs = [
             MockHypotheticalDocument(
-                content="Test HyDE document", embedding=[0.5] * DEFAULT_VECTOR_DIMENSIONS, metadata={"source": "hyde"},
+                content="Test HyDE document",
+                embedding=[0.5] * DEFAULT_VECTOR_DIMENSIONS,
+                metadata={"source": "hyde"},
             ),
         ]
 
@@ -524,7 +531,10 @@ class TestQdrantVectorStoreIntegration:
 
         for strategy in strategies:
             search_params = SearchParameters(
-                embeddings=[base_embedding], limit=5, collection="integration_test", strategy=strategy,
+                embeddings=[base_embedding],
+                limit=5,
+                collection="integration_test",
+                strategy=strategy,
             )
 
             results = await store.search(search_params)
@@ -652,7 +662,9 @@ class TestQdrantVectorStoreIntegration:
 
             # Test search through HydeProcessor
             search_params = SearchParameters(
-                embeddings=[[0.5] * DEFAULT_VECTOR_DIMENSIONS], limit=5, collection="default",
+                embeddings=[[0.5] * DEFAULT_VECTOR_DIMENSIONS],
+                limit=5,
+                collection="default",
             )
 
             search_results = await mock_hyde.vector_store.search(search_params)

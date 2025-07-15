@@ -115,7 +115,9 @@ class TestHydeProcessor:
     def test_hyde_processor_custom_thresholds(self, mock_vector_store):
         """Test HydeProcessor with custom thresholds."""
         custom_processor = HydeProcessor(
-            vector_store=mock_vector_store, specificity_threshold_high=90, specificity_threshold_medium=50,
+            vector_store=mock_vector_store,
+            specificity_threshold_high=90,
+            specificity_threshold_medium=50,
         )
 
         assert custom_processor.specificity_threshold_high == 90
@@ -312,7 +314,11 @@ class TestHydeProcessor:
 
     @pytest.mark.asyncio
     async def test_process_query_different_specificity_levels(
-        self, hyde_processor, mock_vector_store, mock_search_results, sample_queries,
+        self,
+        hyde_processor,
+        mock_vector_store,
+        mock_search_results,
+        sample_queries,
     ):
         """Test query processing with different specificity levels."""
         mock_vector_store.search.return_value = mock_search_results["medium_relevance"]
@@ -478,7 +484,11 @@ class TestHydeProcessor:
 
     @pytest.mark.asyncio
     async def test_concurrent_process_query(
-        self, hyde_processor, mock_vector_store, mock_search_results, sample_queries,
+        self,
+        hyde_processor,
+        mock_vector_store,
+        mock_search_results,
+        sample_queries,
     ):
         """Test concurrent query processing."""
         mock_vector_store.search.return_value = mock_search_results["medium_relevance"]
@@ -581,7 +591,9 @@ class TestHydeProcessor:
             SearchResult(results=[{"content": "High relevance", "score": 0.95}], total_results=1, processing_time=0.1),
             # Medium relevance results
             SearchResult(
-                results=[{"content": "Medium relevance", "score": 0.65}], total_results=1, processing_time=0.2,
+                results=[{"content": "Medium relevance", "score": 0.65}],
+                total_results=1,
+                processing_time=0.2,
             ),
             # Low relevance results
             SearchResult(results=[{"content": "Low relevance", "score": 0.35}], total_results=1, processing_time=0.3),
