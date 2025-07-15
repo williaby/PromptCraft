@@ -236,7 +236,7 @@ jobs:
       - name: Install mypy type stubs
         run: |
           for i in 1 2 3; do
-            poetry run mypy --install-types --non-interactive && break || {
+            poetry run mypy --install-types --non-interactive src/ && break || {
               echo "Attempt $i failed, retrying..."
               sleep 5
             }
@@ -252,10 +252,16 @@ jobs:
             }
           done
 
-      - name: Run tests with service mocking
+      - name: Run tests with service mocking and test analytics
         run: |
-          echo "Running tests with CI environment configuration"
-          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
+          echo "Running tests with CI environment configuration and test analytics"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junitxml=junit.xml \
+            -o junit_family=xunit2 \
+            --tb=short
         env:
           CI_ENVIRONMENT: true
           PROMPTCRAFT_REDIS_HOST: localhost
@@ -282,6 +288,12 @@ jobs:
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Coverage fallback notice
         if: ${{ env.CODECOV_TOKEN == '' }}
@@ -343,7 +355,7 @@ jobs:
       - name: Install mypy type stubs
         run: |
           for i in 1 2 3; do
-            poetry run mypy --install-types --non-interactive && break || {
+            poetry run mypy --install-types --non-interactive src/ && break || {
               echo "Attempt $i failed, retrying..."
               sleep 5
             }
@@ -359,10 +371,16 @@ jobs:
             }
           done
 
-      - name: Run tests with service mocking
+      - name: Run tests with service mocking and test analytics
         run: |
-          echo "Running tests with CI environment configuration"
-          poetry run pytest -v --cov=src --cov-report=xml --cov-report=term-missing
+          echo "Running tests with CI environment configuration and test analytics"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junitxml=junit.xml \
+            -o junit_family=xunit2 \
+            --tb=short
         env:
           CI_ENVIRONMENT: true
           PROMPTCRAFT_REDIS_HOST: localhost
@@ -378,6 +396,12 @@ jobs:
           poetry run black . --check
           poetry run ruff check .
           echo "All linting checks passed"
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
