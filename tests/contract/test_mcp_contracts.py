@@ -67,6 +67,7 @@ except ImportError:
 
 @pytest.mark.skipif(not PACT_AVAILABLE, reason="pact-python not installed")
 @pytest.mark.skipif(os.getenv("CI_ENVIRONMENT") == "true", reason="Pact tests require actual MCP servers, skip in CI")
+@pytest.mark.contract
 class TestZenMCPContracts:
     """Contract tests for Zen MCP Server integration."""
 
@@ -239,6 +240,7 @@ class TestZenMCPContracts:
 
 @pytest.mark.skipif(not PACT_AVAILABLE, reason="pact-python not installed")
 @pytest.mark.skipif(os.getenv("CI_ENVIRONMENT") == "true", reason="Pact tests require actual MCP servers, skip in CI")
+@pytest.mark.contract
 class TestHeimdalMCPContracts:
     """Contract tests for Heimdall MCP Server integration."""
 
@@ -364,6 +366,7 @@ class TestHeimdalMCPContracts:
         return {"status": "error", "message": "Unknown endpoint"}
 
 
+@pytest.mark.contract
 class TestMockMCPContracts:
     """Mock contract tests that run without Pact dependency."""
 
