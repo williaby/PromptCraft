@@ -53,7 +53,7 @@ class TestAgentRegistry:
         assert excinfo.value.error_code == "DUPLICATE_AGENT_ID"
 
     @pytest.mark.parametrize(
-        "agent_id, expected_error",
+        ("agent_id", "expected_error"),
         [
             ("", "Agent ID must be a non-empty string"),
             (None, "Agent ID must be a non-empty string"),
@@ -233,7 +233,7 @@ class TestAgentRegistry:
 
         # Get agent instance (should store capabilities)
         config = {"agent_id": "capable_agent"}
-        agent = registry.get_agent("capable_agent", config)
+        _agent = registry.get_agent("capable_agent", config)
 
         # Verify capabilities are stored
         assert "capable_agent" in registry._capabilities
@@ -459,13 +459,14 @@ class TestAgentRegistry:
             # Verify logging
             mock_info.assert_called_once()
             args, kwargs = mock_info.call_args
-            assert "Registered agent 'test_agent'" in args[0]
+            assert "Registered agent with class" in args[0]
             assert kwargs["extra"]["agent_id"] == "test_agent"
 
     def test_global_agent_registry_singleton(self):
         """Test that global agent_registry is a singleton."""
-        from src.agents.registry import agent_registry as registry1
-        from src.agents.registry import agent_registry as registry2
+        # pylint: disable=import-outside-toplevel
+        from src.agents.registry import agent_registry as registry1  # noqa: PLC0415
+        from src.agents.registry import agent_registry as registry2  # noqa: PLC0415
 
         # Should be the same instance
         assert registry1 is registry2
@@ -555,6 +556,7 @@ class TestAgentRegistry:
                 config = {"agent_id": "security_agent", "malicious_param": malicious_input}
                 agent = registry.get_agent("security_agent", config)
                 assert agent is not None
-            except Exception:
+            except Exception:  # nosec B110 - Expected for security testing  # noqa: S112
                 # Some malicious inputs might cause instantiation errors
-                pass
+                # This is expected behavior for security validation
+                continue

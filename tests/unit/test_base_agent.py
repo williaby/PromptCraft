@@ -47,7 +47,7 @@ class TestBaseAgent:
         assert "Agent ID is required in configuration" in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "agent_id, expected_error",
+        ("agent_id", "expected_error"),
         [
             ("", "Agent ID is required in configuration"),
             ("test-agent", "Agent ID 'test-agent' must contain only alphanumeric characters and underscores"),
@@ -304,9 +304,9 @@ class TestBaseAgent:
             # Verify logging calls
             assert mock_info.call_count >= 1  # At least start logging
 
-            # Check that request_id is logged
-            call_args = [call[0][0] for call in mock_info.call_args_list]
-            assert any(sample_agent_input.request_id in arg for arg in call_args)
+            # Check that request_id is logged in kwargs
+            call_kwargs = [call[1] for call in mock_info.call_args_list]
+            assert any(sample_agent_input.request_id == kwargs.get("request_id") for kwargs in call_kwargs)
 
     def test_base_agent_get_capabilities(self, sample_agent_config):
         """Test get_capabilities method."""
