@@ -154,6 +154,20 @@ class MCPRateLimitError(MCPError):
         super().__init__(message, MCPErrorType.RATE_LIMIT_ERROR, details, retry_after)
 
 
+class MCPAuthenticationError(MCPError):
+    """Authentication-related MCP errors."""
+
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message, MCPErrorType.AUTHENTICATION_ERROR, details)
+
+
+class MCPValidationError(MCPError):
+    """Validation-related MCP errors."""
+
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message, MCPErrorType.INVALID_REQUEST, details)
+
+
 class MCPHealthStatus(BaseModel):
     """Health status information for MCP connections."""
 
