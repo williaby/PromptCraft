@@ -6,7 +6,6 @@ testing guide requirements for reusable setup and teardown logic.
 """
 
 import time
-from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -15,6 +14,7 @@ import pytest
 from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
+from src.utils.time_utils import to_utc_datetime
 
 
 @pytest.fixture
@@ -168,7 +168,7 @@ def mock_logger():
 @pytest.fixture
 def timestamp_fixture():
     """Fixed timestamp for testing."""
-    return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    return to_utc_datetime(2024, 1, 1, 12, 0, 0)
 
 
 @pytest.fixture

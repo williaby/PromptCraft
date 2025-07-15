@@ -60,6 +60,21 @@ Space Complexity: O(k) where k is the number of active MCP connections
 from .client import MCPClient
 from .config_manager import MCPConfigurationManager
 from .docker_mcp_client import DockerMCPClient
+from .mcp_client import (
+    MCPClientFactory,
+    MCPClientInterface,
+    MCPConnectionError,
+    MCPConnectionManager,
+    MCPConnectionState,
+    MCPError,
+    MCPErrorType,
+    MCPHealthStatus,
+    MCPRateLimitError,
+    MCPServiceUnavailableError,
+    MCPTimeoutError,
+    MockMCPClient,
+    ZenMCPClient,
+)
 from .parallel_executor import ParallelSubagentExecutor
 
 __all__ = [
@@ -67,4 +82,18 @@ __all__ = [
     "MCPClient",
     "MCPConfigurationManager",
     "ParallelSubagentExecutor",
+    # New MCP client interface components
+    "MCPClientInterface",
+    "MockMCPClient",
+    "ZenMCPClient",
+    "MCPClientFactory",
+    "MCPConnectionManager",
+    "MCPError",
+    "MCPConnectionError",
+    "MCPTimeoutError",
+    "MCPServiceUnavailableError",
+    "MCPRateLimitError",
+    "MCPHealthStatus",
+    "MCPConnectionState",
+    "MCPErrorType",
 ]

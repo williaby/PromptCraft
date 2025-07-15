@@ -13,8 +13,9 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from typing import Any
+
+from src.utils.time_utils import utc_timestamp
 
 # Optional OpenTelemetry imports
 try:
@@ -57,7 +58,7 @@ class StructuredLogger:
     def _get_context(self) -> dict[str, Any]:
         """Get current logging context."""
         context = {
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            "timestamp": utc_timestamp(),
             "logger": self.logger.name,
             "thread_id": threading.current_thread().ident,
         }
@@ -110,7 +111,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_entry = {
-            "timestamp": datetime.now(tz=timezone.utc).isoformat(),
+            "timestamp": utc_timestamp(),
             "level": record.levelname,
             "message": record.getMessage(),
             "module": record.module,
