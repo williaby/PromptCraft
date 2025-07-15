@@ -82,7 +82,7 @@ class AgentError(Exception):
         context: dict[str, Any] | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """
         Initialize the AgentError.
 
@@ -109,7 +109,7 @@ class AgentError(Exception):
                 "agent_id": agent_id,
                 "request_id": request_id,
                 "context": context,
-                "message": message,
+                "error_message": message,
             },
         )
 
@@ -173,7 +173,7 @@ class AgentConfigurationError(AgentError):
         context: dict[str, Any] | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """Initialize the AgentConfigurationError."""
         super().__init__(message, error_code, context, agent_id, request_id)
 
@@ -212,7 +212,7 @@ class AgentExecutionError(AgentError):
         context: dict[str, Any] | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """Initialize the AgentExecutionError."""
         super().__init__(message, error_code, context, agent_id, request_id)
 
@@ -250,7 +250,7 @@ class AgentRegistrationError(AgentError):
         context: dict[str, Any] | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """Initialize the AgentRegistrationError."""
         super().__init__(message, error_code, context, agent_id, request_id)
 
@@ -290,7 +290,7 @@ class AgentValidationError(AgentError):
         context: dict[str, Any] | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """Initialize the AgentValidationError."""
         super().__init__(message, error_code, context, agent_id, request_id)
 
@@ -322,7 +322,7 @@ class AgentTimeoutError(AgentExecutionError):
         processing_time: float | None = None,
         agent_id: str | None = None,
         request_id: str | None = None,
-    ):
+    ) -> None:
         """
         Initialize the AgentTimeoutError.
 
