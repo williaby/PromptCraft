@@ -15,7 +15,20 @@ SECRET_FIELD_NAMES = [
     "jwt_secret_key",
     "qdrant_api_key",
     "encryption_key",
+    "mcp_api_key",
 ]
+
+# Qdrant configuration defaults
+QDRANT_DEFAULT_HOST = "192.168.1.16"
+QDRANT_DEFAULT_PORT = 6333
+QDRANT_DEFAULT_TIMEOUT = 30.0
+QDRANT_DEFAULT_COLLECTION = "default"
+
+# Vector store configuration
+VECTOR_STORE_AUTO_DETECT = "auto"
+VECTOR_STORE_QDRANT = "qdrant"
+VECTOR_STORE_MOCK = "mock"
+DEFAULT_VECTOR_DIMENSIONS = 384
 
 # Sensitive error patterns for validation error sanitization
 # Each tuple contains (pattern, replacement_message)
