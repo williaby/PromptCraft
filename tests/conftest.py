@@ -6,7 +6,7 @@ testing guide requirements for reusable setup and teardown logic.
 """
 
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -168,7 +168,7 @@ def mock_logger():
 @pytest.fixture
 def timestamp_fixture():
     """Fixed timestamp for testing."""
-    return datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
@@ -306,7 +306,7 @@ def performance_metrics():
         123,
         {"app_name": ""},
         {"app_name": None},
-        {"app_name": "a" * 1000},
+        pytest.param({"app_name": "a" * 1000}, id="long-app-name"),
         {"app_name": "\x00\x01"},
         {"app_name": "🚀🔥💯"},
         {"environment": "dev"},
@@ -324,8 +324,8 @@ def config_edge_cases(request):
         "",
         "a",
         "a" * 100,
-        "a" * 1000,
-        "a" * 10000,
+        pytest.param("a" * 1000, id="medium-input"),
+        pytest.param("a" * 10000, id="large-input"),
         "\x00\x01",
         "🚀🔥💯",
         "\n\r\t",
