@@ -32,6 +32,9 @@ CACHE_TTL_SECONDS = 300  # 5 minutes
 MAX_CACHE_SIZE = 1000
 BATCH_SIZE = 50
 PERFORMANCE_THRESHOLD_MS = 2000  # 2 seconds
+MAX_METRICS_COUNT = 10000
+METRICS_TRIMMED_COUNT = 5000
+RECENT_METRICS_SECONDS = 300  # 5 minutes
 
 
 @dataclass
@@ -56,10 +59,14 @@ class PerformanceMetrics:
         return self.duration_ms > PERFORMANCE_THRESHOLD_MS
 
 
+# Alias for backward compatibility
+PerformanceMetric = PerformanceMetrics
+
+
 class LRUCache:
     """High-performance LRU cache with TTL support."""
 
-    def __init__(self, max_size: int = MAX_CACHE_SIZE, ttl_seconds: int = CACHE_TTL_SECONDS):
+    def __init__(self, max_size: int = MAX_CACHE_SIZE, ttl_seconds: int = CACHE_TTL_SECONDS) -> None:
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.cache: OrderedDict[str, tuple[Any, float]] = OrderedDict()
@@ -136,15 +143,14 @@ class LRUCache:
 class PerformanceMonitor:
     """Performance monitoring and alerting system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: list[PerformanceMetrics] = []
         self.alerts: list[str] = []
         self.logger = logging.getLogger(__name__)
 
     def start_operation(self, operation_name: str) -> PerformanceMetrics:
         """Start tracking an operation."""
-        metric = PerformanceMetrics(operation_name=operation_name, start_time=time.time())
-        return metric
+        return PerformanceMetrics(operation_name=operation_name, start_time=time.time())
 
     def complete_operation(
         self,
@@ -168,15 +174,15 @@ class PerformanceMonitor:
             self.logger.warning(alert)
 
         # Keep only recent metrics
-        if len(self.metrics) > 10000:
-            self.metrics = self.metrics[-5000:]
+        if len(self.metrics) > MAX_METRICS_COUNT:
+            self.metrics = self.metrics[-METRICS_TRIMMED_COUNT:]
 
     def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary statistics."""
         if not self.metrics:
             return {"total_operations": 0}
 
-        recent_metrics = [m for m in self.metrics if time.time() - m.end_time < 300]  # Last 5 minutes
+        recent_metrics = [m for m in self.metrics if time.time() - m.end_time < RECENT_METRICS_SECONDS]
 
         durations = [m.duration_ms for m in recent_metrics]
         cache_hits = sum(1 for m in recent_metrics if m.cache_hit)
@@ -206,14 +212,11 @@ def cache_query_analysis(func: F) -> F:
     """Decorator to cache query analysis results."""
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         # Create cache key from query content
-        if args and len(args) > 1:
-            query = args[1]  # Assuming query is second argument
-        else:
-            query = kwargs.get("query", "")
+        query = args[1] if args and len(args) > 1 else kwargs.get("query", "")
 
-        cache_key = f"query_analysis:{hashlib.md5(query.encode()).hexdigest()}"
+        cache_key = f"query_analysis:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
 
         # Check cache first
         cached_result = _query_cache.get(cache_key)
@@ -226,21 +229,18 @@ def cache_query_analysis(func: F) -> F:
 
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
 def cache_hyde_processing(func: F) -> F:
     """Decorator to cache HyDE processing results."""
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         # Create cache key from query and parameters
-        if args and len(args) > 1:
-            query = args[1]  # Assuming query is second argument
-        else:
-            query = kwargs.get("query", "")
+        query = args[1] if args and len(args) > 1 else kwargs.get("query", "")
 
-        cache_key = f"hyde_processing:{hashlib.md5(query.encode()).hexdigest()}"
+        cache_key = f"hyde_processing:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
 
         # Check cache first
         cached_result = _hyde_cache.get(cache_key)
@@ -253,26 +253,21 @@ def cache_hyde_processing(func: F) -> F:
 
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
 def cache_vector_search(func: F) -> F:
     """Decorator to cache vector search results."""
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         # Create cache key from search parameters
-        if args and len(args) > 1:
-            params = args[1]  # Assuming SearchParameters is second argument
-        else:
-            params = kwargs.get("parameters")
+        params = args[1] if args and len(args) > 1 else kwargs.get("parameters")
 
         if hasattr(params, "embeddings") and params.embeddings:
             # Create hash from embeddings and parameters
             embedding_str = str(params.embeddings[0][:10])  # First 10 dimensions
-            cache_key = (
-                f"vector_search:{hashlib.md5(embedding_str.encode()).hexdigest()}:{params.limit}:{params.collection}"
-            )
+            cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}:{params.limit}:{params.collection}"
         else:
             return await func(*args, **kwargs)
 
@@ -287,15 +282,15 @@ def cache_vector_search(func: F) -> F:
 
         return result
 
-    return wrapper
+    return wrapper  # type: ignore[return-value]
 
 
-def monitor_performance(operation_name: str):
+def monitor_performance(operation_name: str) -> Callable[[F], F]:
     """Decorator to monitor operation performance."""
 
     def decorator(func: F) -> F:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             metric = _performance_monitor.start_operation(operation_name)
 
             try:
@@ -306,7 +301,7 @@ def monitor_performance(operation_name: str):
                 _performance_monitor.complete_operation(metric, error_occurred=True)
                 raise
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator
 
@@ -314,13 +309,13 @@ def monitor_performance(operation_name: str):
 class AsyncBatcher:
     """Batches async operations for better performance."""
 
-    def __init__(self, batch_size: int = BATCH_SIZE, max_wait_time: float = 0.1):
+    def __init__(self, batch_size: int = BATCH_SIZE, max_wait_time: float = 0.1) -> None:
         self.batch_size = batch_size
         self.max_wait_time = max_wait_time
         self.pending_operations: list[tuple[Callable, tuple, dict]] = []
         self.batch_lock = asyncio.Lock()
 
-    async def add_operation(self, operation: Callable, *args, **kwargs) -> Any:
+    async def add_operation(self, operation: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Add operation to batch."""
         async with self.batch_lock:
             self.pending_operations.append((operation, args, kwargs))
@@ -333,6 +328,8 @@ class AsyncBatcher:
 
             if self.pending_operations:
                 return await self._execute_batch()
+        
+        return None
 
     async def _execute_batch(self) -> list[Any]:
         """Execute batched operations."""
@@ -344,15 +341,13 @@ class AsyncBatcher:
 
         # Execute all operations concurrently
         tasks = [op(*args, **kwargs) for op, args, kwargs in operations]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        return results
+        return await asyncio.gather(*tasks, return_exceptions=True)
 
 
 class ConnectionPool:
     """Connection pool for vector store operations."""
 
-    def __init__(self, max_connections: int = 10):
+    def __init__(self, max_connections: int = 10) -> None:
         self.max_connections = max_connections
         self.available_connections: asyncio.Queue = asyncio.Queue(maxsize=max_connections)
         self.active_connections = 0
@@ -418,7 +413,7 @@ async def warm_up_system() -> None:
     # This would normally call actual query processing
     # For now, just log the warm-up process
     for query in common_queries:
-        cache_key = f"warmup:{hashlib.md5(query.encode()).hexdigest()}"
+        cache_key = f"warmup:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
         _query_cache.put(cache_key, {"warmed_up": True})
 
     logger.info("System warm-up completed")
@@ -428,7 +423,7 @@ async def warm_up_system() -> None:
 class PerformanceOptimizer:
     """Main performance optimization coordinator."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.connection_pool = ConnectionPool(max_connections=20)
         self.batcher = AsyncBatcher(batch_size=25, max_wait_time=0.05)
         self.logger = logging.getLogger(__name__)
@@ -439,12 +434,12 @@ class PerformanceOptimizer:
 
         try:
             # Check cache first
-            cache_key = f"optimized_query:{hashlib.md5(query.encode()).hexdigest()}"
+            cache_key = f"optimized_query:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
             cached_result = _query_cache.get(cache_key)
 
             if cached_result:
                 _performance_monitor.complete_operation(metric, cache_hit=True)
-                return cached_result
+                return cached_result  # type: ignore[no-any-return]
 
             # Process query with optimizations
             result = {"query": query, "optimized": True, "cache_miss": True, "timestamp": time.time()}

@@ -61,9 +61,11 @@ from src.core.vector_store import (
     AbstractVectorStore,
     EnhancedMockVectorStore,
     SearchParameters,
-    SearchResult,
     SearchStrategy,
     VectorStoreFactory,
+)
+from src.core.vector_store import (
+    SearchResult as VectorSearchResult,
 )
 
 # Constants for HyDE processing thresholds (per hyde-processor.md)
@@ -71,6 +73,10 @@ HIGH_SPECIFICITY_THRESHOLD = 85
 LOW_SPECIFICITY_THRESHOLD = 40
 MAX_HYPOTHETICAL_DOCS = 3
 DEFAULT_EMBEDDING_DIMENSIONS = 384
+
+# Constants for query analysis
+HIGH_WORD_COUNT_THRESHOLD = 15
+MEDIUM_WORD_COUNT_THRESHOLD = 8
 
 
 class SpecificityLevel(str, Enum):
@@ -81,12 +87,24 @@ class SpecificityLevel(str, Enum):
     LOW = "low"  # Score < 40 - Return clarifying questions
 
 
+class ProcessingStrategy(str, Enum):
+    """Processing strategies for HyDE query handling."""
+
+    DIRECT = "direct_retrieval"
+    ENHANCED = "standard_hyde"
+    HYPOTHETICAL = "clarification_needed"
+
+
 class QueryAnalysis(BaseModel):
     """Query analysis results from the Query Counselor."""
 
+    original_query: str = Field(description="Original query string")
     specificity_score: float = Field(ge=0.0, le=100.0, description="Specificity score 0-100")
     specificity_level: SpecificityLevel
-    reasoning: str = Field(description="Brief explanation of the scoring")
+    enhanced_query: str = Field(description="Enhanced query for processing")
+    processing_strategy: str = Field(description="Processing strategy to use")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in analysis")
+    reasoning: str = Field(default="", description="Brief explanation of the scoring")
     guiding_questions: list[str] = Field(default_factory=list, description="Questions for low-specificity queries")
     processing_time: float = Field(default=0.0, description="Analysis processing time")
 
@@ -101,7 +119,7 @@ class HypotheticalDocument(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
-class SearchResult(BaseModel):
+class HydeSearchResult(BaseModel):
     """Search result from vector database."""
 
     document_id: str
@@ -114,7 +132,7 @@ class SearchResult(BaseModel):
 class RankedResults(BaseModel):
     """Ranked and filtered search results."""
 
-    results: list[SearchResult]
+    results: list[VectorSearchResult]
     total_found: int
     processing_time: float
     ranking_method: str = Field(default="similarity", description="Ranking strategy used")
@@ -157,9 +175,9 @@ class MockQueryCounselor:
             specificity_score += 20
 
         # Increase score for longer, more detailed queries
-        if word_count > 15:
+        if word_count > HIGH_WORD_COUNT_THRESHOLD:
             specificity_score += 15
-        elif word_count > 8:
+        elif word_count > MEDIUM_WORD_COUNT_THRESHOLD:
             specificity_score += 10
 
         # Decrease score for vague queries
@@ -190,8 +208,12 @@ class MockQueryCounselor:
         processing_time = time.time() - start_time
 
         return QueryAnalysis(
+            original_query=query,
             specificity_score=specificity_score,
             specificity_level=level,
+            enhanced_query=query,
+            processing_strategy="mock_analysis",
+            confidence=specificity_score / 100.0,
             reasoning=f"Score based on technical terms, query length ({word_count} words), and specificity indicators",
             guiding_questions=guiding_questions,
             processing_time=processing_time,
@@ -372,7 +394,8 @@ class HydeProcessor:
         embeddings = []
 
         # Create embedding for original query (mock implementation)
-        query_embedding = [0.5] * DEFAULT_EMBEDDING_DIMENSIONS
+        # Use query parameter to create variant embeddings
+        query_embedding = [0.5 + hash(query) % 100 / 1000] * DEFAULT_EMBEDDING_DIMENSIONS
         embeddings.append(query_embedding)
 
         # Add embeddings from hypothetical documents
@@ -385,7 +408,7 @@ class HydeProcessor:
 
         return embeddings
 
-    async def rank_results(self, results: list[SearchResult]) -> RankedResults:
+    async def rank_results(self, results: list[VectorSearchResult]) -> RankedResults:
         """
         Rank and filter search results based on relevance and quality.
 

@@ -60,6 +60,17 @@ from src.utils.resilience import (
 from src.utils.secure_random import SecureRandom, secure_random
 
 
+class ErrorCategory:
+    """Error category constants for structured error handling."""
+
+    NETWORK = "network"
+    VALIDATION = "validation"
+    TIMEOUT = "timeout"
+    RATE_LIMIT = "rate_limit"
+    INTERNAL = "internal"
+    UNKNOWN = "unknown"
+
+
 class ZenMCPError(ResilienceError):
     """Base exception for Zen MCP errors."""
 

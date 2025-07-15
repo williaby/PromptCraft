@@ -1092,7 +1092,20 @@ class MockVectorStore(EnhancedMockVectorStore):
         # Auto-connect for backward compatibility
         asyncio.create_task(self.connect())
 
-    async def search(self, embeddings: list[list[float]], limit: int = 5) -> list[SearchResult]:
+    async def search(self, parameters: SearchParameters) -> list[SearchResult]:
+        """
+        Search method compatible with AbstractVectorStore interface.
+
+        Args:
+            parameters: Search parameters including embeddings, limit, etc.
+
+        Returns:
+            List of search results
+        """
+        # Call parent search method
+        return await super().search(parameters)
+
+    async def search_embeddings(self, embeddings: list[list[float]], limit: int = 5) -> list[SearchResult]:
         """
         Backward compatible search method for HydeProcessor.
 
@@ -1143,6 +1156,9 @@ class MockVectorStore(EnhancedMockVectorStore):
             return False
 
 
+# Alias for backward compatibility
+VectorStore = MockVectorStore
+
 # Export main classes for external use
 __all__ = [
     "AbstractVectorStore",
@@ -1156,6 +1172,7 @@ __all__ = [
     "SearchResult",
     "SearchStrategy",
     "VectorDocument",
+    "VectorStore",  # Main alias for import compatibility
     "VectorStoreFactory",
     "VectorStoreMetrics",
     "VectorStoreType",

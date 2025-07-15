@@ -58,6 +58,12 @@ from src.mcp_integration.mcp_client import (
     MCPClientInterface,
     MCPError,
 )
+from src.mcp_integration.mcp_client import (
+    Response as MCPResponse,
+)
+from src.mcp_integration.mcp_client import (
+    WorkflowStep as MCPWorkflowStep,
+)
 
 # Constants for query complexity analysis
 COMPLEX_QUERY_WORD_THRESHOLD = 20
@@ -101,6 +107,26 @@ class Agent(BaseModel):
     load_factor: float = Field(ge=0.0, le=1.0, default=0.0)
 
 
+class AgentSelection(BaseModel):
+    """Data model for agent selection results."""
+
+    primary_agents: list[str] = Field(description="Primary agents selected for the query")
+    secondary_agents: list[str] = Field(default_factory=list, description="Secondary/fallback agents")
+    reasoning: str = Field(description="Reasoning behind the agent selection")
+    confidence: float = Field(ge=0.0, le=1.0, default=0.8, description="Confidence in selection")
+
+
+class QueryResponse(BaseModel):
+    """Data model for the final query response."""
+
+    response: str = Field(description="The response content")
+    agents_used: list[str] = Field(default_factory=list, description="List of agents that contributed")
+    processing_time: float = Field(description="Total processing time in seconds")
+    success: bool = Field(default=True, description="Whether the query processing was successful")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the response")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
 class WorkflowStep(BaseModel):
     """Individual step in a multi-agent workflow."""
 
@@ -109,6 +135,17 @@ class WorkflowStep(BaseModel):
     input_data: dict[str, Any]
     dependencies: list[str] = Field(default_factory=list)
     timeout_seconds: int = 30
+
+
+class WorkflowResult(BaseModel):
+    """Data model for workflow execution results."""
+
+    steps: list[WorkflowStep] = Field(description="List of workflow steps executed")
+    final_response: str = Field(description="The final response from the workflow")
+    success: bool = Field(description="Whether the workflow completed successfully")
+    total_time: float = Field(description="Total execution time in seconds")
+    agents_used: list[str] = Field(default_factory=list, description="List of agents involved")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional workflow metadata")
 
 
 class Response(BaseModel):
@@ -283,7 +320,7 @@ class QueryCounselor:
         return selected_agents
 
     @monitor_performance("orchestrate_workflow")
-    async def orchestrate_workflow(self, agents: list[Agent], query: str) -> list[Response]:
+    async def orchestrate_workflow(self, agents: list[Agent], query: str) -> list[MCPResponse]:
         """
         Orchestrate multi-agent workflow for query processing.
 
@@ -306,7 +343,7 @@ class QueryCounselor:
         # Create workflow steps
         workflow_steps = []
         for i, agent in enumerate(agents):
-            step = WorkflowStep(
+            step = MCPWorkflowStep(
                 step_id=f"step_{i}",
                 agent_id=agent.agent_id,
                 input_data={
@@ -331,7 +368,7 @@ class QueryCounselor:
             # Return error responses for graceful fallback
             error_responses = []
             for agent in agents:
-                error_response = Response(
+                error_response = MCPResponse(
                     agent_id=agent.agent_id,
                     content=f"Agent {agent.agent_id} unavailable due to MCP error",
                     confidence=0.0,
@@ -346,7 +383,7 @@ class QueryCounselor:
             # Return error responses for graceful fallback
             error_responses = []
             for agent in agents:
-                error_response = Response(
+                error_response = MCPResponse(
                     agent_id=agent.agent_id,
                     content=f"Agent {agent.agent_id} unavailable",
                     confidence=0.0,
@@ -358,7 +395,7 @@ class QueryCounselor:
             return error_responses
 
     @monitor_performance("synthesize_response")
-    async def synthesize_response(self, agent_outputs: list[Response]) -> FinalResponse:
+    async def synthesize_response(self, agent_outputs: list[MCPResponse]) -> FinalResponse:
         """
         Synthesize final response from multiple agent outputs.
 

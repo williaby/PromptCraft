@@ -50,6 +50,45 @@ _COMPILED_FILE_PATH_PATTERNS = [re.compile(pattern) for pattern in FILE_PATH_PAT
 logger = logging.getLogger(__name__)
 
 
+class HealthChecker:
+    """Health checker for configuration and system components."""
+
+    def __init__(self, settings: ApplicationSettings) -> None:
+        """Initialize health checker with settings.
+
+        Args:
+            settings: Application settings instance
+        """
+        self.settings = settings
+        self.logger = logging.getLogger(__name__)
+
+    async def check_health(self) -> dict[str, Any]:
+        """Perform comprehensive health check.
+
+        Returns:
+            Dictionary with health status information
+        """
+        try:
+            status = get_configuration_status(self.settings)
+            mcp_health = await get_mcp_configuration_health()
+
+            overall_healthy = status.config_healthy and mcp_health.get("healthy", False)
+
+            return {
+                "healthy": overall_healthy,
+                "configuration": status.model_dump(),
+                "mcp": mcp_health,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        except Exception as e:
+            self.logger.error("Health check failed: %s", e)
+            return {
+                "healthy": False,
+                "error": f"Health check failed: {e}",
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
+
 class ConfigurationStatusModel(BaseModel):
     """Configuration status model for health check responses.
 
