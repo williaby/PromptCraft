@@ -46,7 +46,7 @@ import time
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.hyde_processor import HydeProcessor
 from src.core.performance_optimizer import (
@@ -98,7 +98,8 @@ class QueryIntent(BaseModel):
     keywords: list[str] = Field(default_factory=list, description="Extracted keywords from query")
     context_requirements: list[str] = Field(default_factory=list, description="Context requirements for the query")
 
-    @validator("complexity")
+    @field_validator("complexity")
+    @classmethod
     def validate_complexity(cls, v: str) -> str:
         if v not in ["simple", "medium", "complex"]:
             raise ValueError("Complexity must be simple, medium, or complex")
@@ -333,7 +334,7 @@ class QueryCounselor:
             context_requirements=context_requirements,
         )
 
-    async def select_agents(self, intent: QueryIntent) -> list[Agent]:
+    async def select_agents(self, intent: QueryIntent) -> AgentSelection:
         """
         Select appropriate agents based on query intent.
 
@@ -341,7 +342,7 @@ class QueryCounselor:
             intent: QueryIntent from analyze_intent()
 
         Returns:
-            List[Agent]: Selected agents for processing
+            AgentSelection: Selected agents for processing
         """
         selected_agents = []
 
@@ -363,7 +364,16 @@ class QueryCounselor:
             [a.agent_id for a in selected_agents],
         )
 
-        return selected_agents
+        # Create AgentSelection object
+        primary_agents = [a.agent_id for a in selected_agents[:2]]  # First 2 as primary
+        secondary_agents = [a.agent_id for a in selected_agents[2:]]  # Rest as secondary
+
+        return AgentSelection(
+            primary_agents=primary_agents,
+            secondary_agents=secondary_agents,
+            reasoning=f"Selected {len(selected_agents)} agents based on query requirements: {intent.requires_agents}",
+            confidence=intent.confidence,
+        )
 
     @monitor_performance("orchestrate_workflow")
     async def orchestrate_workflow(self, agents: list[Agent], query: str) -> list[MCPResponse]:
@@ -537,8 +547,14 @@ class QueryCounselor:
             intent = await self.analyze_intent(query)
 
             # Step 2: Agent selection and orchestration
-            agents = await self.select_agents(intent)
-            agent_responses = await self.orchestrate_workflow(agents, query)
+            agent_selection = await self.select_agents(intent)
+            # Convert AgentSelection to list of Agent objects for orchestration
+            selected_agents = []
+            for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
+                agent = next((a for a in self._available_agents if a.agent_id == agent_id), None)
+                if agent:
+                    selected_agents.append(agent)
+            agent_responses = await self.orchestrate_workflow(selected_agents, query)
 
             # Step 3: Response synthesis
             final_response = await self.synthesize_response(agent_responses)
@@ -604,11 +620,17 @@ class QueryCounselor:
                     hyde_results = await self.hyde_processor.process_query(query)
 
             # Step 3: Agent selection and orchestration
-            agents = await self.select_agents(intent)
+            agent_selection = await self.select_agents(intent)
+            # Convert AgentSelection to list of Agent objects for orchestration
+            selected_agents = []
+            for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
+                agent = next((a for a in self._available_agents if a.agent_id == agent_id), None)
+                if agent:
+                    selected_agents.append(agent)
 
             # Use enhanced query for agent processing if available
             processing_query = enhanced_query.enhanced_query if enhanced_query else query
-            agent_responses = await self.orchestrate_workflow(agents, processing_query)
+            agent_responses = await self.orchestrate_workflow(selected_agents, processing_query)
 
             # Step 4: Enhanced response synthesis with HyDE context
             final_response = await self.synthesize_response(agent_responses)
@@ -727,7 +749,13 @@ class QueryCounselor:
                 }
 
             # Get agent recommendations
-            agents = await self.select_agents(intent)
+            agent_selection = await self.select_agents(intent)
+            # Convert AgentSelection to list of Agent objects for recommendations
+            selected_agents = []
+            for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
+                agent = next((a for a in self._available_agents if a.agent_id == agent_id), None)
+                if agent:
+                    selected_agents.append(agent)
 
             return {
                 "query_analysis": {
@@ -745,12 +773,12 @@ class QueryCounselor:
                         "capabilities": agent.capabilities,
                         "availability": agent.availability,
                     }
-                    for agent in agents
+                    for agent in selected_agents
                 ],
                 "processing_strategy": {
                     "use_hyde": intent.hyde_recommended,
                     "expected_complexity": intent.complexity,
-                    "estimated_agents": len(agents),
+                    "estimated_agents": len(selected_agents),
                     "recommended_timeout": 30 if intent.complexity == "complex" else 15,
                 },
             }

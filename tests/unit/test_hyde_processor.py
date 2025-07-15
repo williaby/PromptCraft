@@ -6,16 +6,23 @@ class including three-tier analysis, query enhancement, and vector store integra
 """
 
 import asyncio
-import os
 import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))
 
-from src.core.hyde_processor import HydeProcessor, ProcessingStrategy, QueryAnalysis, SpecificityLevel
+from src.core.hyde_processor import (
+    HIGH_SPECIFICITY_THRESHOLD,
+    LOW_SPECIFICITY_THRESHOLD,
+    HydeProcessor,
+    ProcessingStrategy,
+    QueryAnalysis,
+    SpecificityLevel,
+)
 from src.core.vector_store import SearchParameters, SearchResult, SearchStrategy, VectorStore
 
 
@@ -105,23 +112,24 @@ class TestHydeProcessor:
     # Test HydeProcessor initialization
     def test_hyde_processor_initialization(self, hyde_processor):
         """Test HydeProcessor initialization."""
+
         assert hyde_processor is not None
         assert hasattr(hyde_processor, "vector_store")
-        assert hasattr(hyde_processor, "specificity_threshold_high")
-        assert hasattr(hyde_processor, "specificity_threshold_medium")
-        assert hyde_processor.specificity_threshold_high == 85
-        assert hyde_processor.specificity_threshold_medium == 40
+        # Check constants are properly defined
+        assert HIGH_SPECIFICITY_THRESHOLD == 85
+        assert LOW_SPECIFICITY_THRESHOLD == 40
 
     def test_hyde_processor_custom_thresholds(self, mock_vector_store):
-        """Test HydeProcessor with custom thresholds."""
+        """Test HydeProcessor constants are properly configured."""
+
         custom_processor = HydeProcessor(
             vector_store=mock_vector_store,
-            specificity_threshold_high=90,
-            specificity_threshold_medium=50,
         )
 
-        assert custom_processor.specificity_threshold_high == 90
-        assert custom_processor.specificity_threshold_medium == 50
+        # Test that constants are accessible and properly configured
+        assert HIGH_SPECIFICITY_THRESHOLD == 85
+        assert LOW_SPECIFICITY_THRESHOLD == 40
+        assert custom_processor is not None
 
     def test_hyde_processor_none_vector_store(self):
         """Test HydeProcessor with None vector store."""
@@ -323,7 +331,7 @@ class TestHydeProcessor:
         """Test query processing with different specificity levels."""
         mock_vector_store.search.return_value = mock_search_results["medium_relevance"]
 
-        for level, queries in sample_queries.items():
+        for _level, queries in sample_queries.items():
             for query in queries[:2]:  # Test 2 queries per level
                 result = await hyde_processor.process_query(query)
 

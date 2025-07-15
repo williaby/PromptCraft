@@ -7,14 +7,14 @@ orchestration, and HyDE integration.
 """
 
 import asyncio
-import os
 import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))
 
 from src.core.hyde_processor import HydeProcessor, QueryAnalysis, SpecificityLevel
 from src.core.query_counselor import (
@@ -177,6 +177,7 @@ class TestQueryCounselor:
             original_query="How to implement authentication?",
             query_type=QueryType.IMPLEMENTATION,
             confidence=0.8,
+            complexity="medium",
             keywords=["authentication", "implement", "security"],
             context_requirements=["python", "web"],
         )
