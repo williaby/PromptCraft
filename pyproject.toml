@@ -277,6 +277,9 @@ addopts = """
 --cov-report=xml
 --junitxml=junit.xml
 -o junit_family=xunit2
+-o junit_suite_name=PromptCraft
+-o junit_logging=no
+-o junit_log_passing_tests=false
 --tb=short
 --cov-fail-under=80
 """
