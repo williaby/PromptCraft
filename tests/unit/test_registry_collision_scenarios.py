@@ -6,6 +6,8 @@ duplicate agent IDs, namespace conflicts, capability conflicts, and
 other edge cases that could occur in the registry system.
 """
 
+import threading
+import time
 from typing import Any
 
 import pytest
@@ -150,8 +152,8 @@ class TestRegistryCollisionScenarios:
         assert len(registry) == 2
 
         # Create instances to populate capabilities
-        first_agent = registry.get_agent("first_agent", {"agent_id": "first_agent"})
-        conflicting_agent = registry.get_agent("conflicting_agent", {"agent_id": "conflicting_agent"})
+        registry.get_agent("first_agent", {"agent_id": "first_agent"})
+        registry.get_agent("conflicting_agent", {"agent_id": "conflicting_agent"})
 
         # Both should be found when searching by specialization
         specialty_agents = registry.find_agents_by_capability("specialization", "first_specialty")
@@ -181,8 +183,6 @@ class TestRegistryCollisionScenarios:
     @pytest.mark.unit
     def test_concurrent_registration_collision(self, registry, sample_agent_classes):
         """Test collision detection during concurrent registration attempts."""
-        import threading
-        import time
 
         registration_results = []
         registration_errors = []
@@ -198,7 +198,7 @@ class TestRegistryCollisionScenarios:
 
         # Create multiple threads trying to register the same agent ID
         threads = []
-        for i in range(5):
+        for _i in range(5):
             thread = threading.Thread(
                 target=register_agent,
                 args=("concurrent_agent", sample_agent_classes["FirstAgent"]),
@@ -250,7 +250,7 @@ class TestRegistryCollisionScenarios:
         # Use global registry
 
         # Store original state
-        original_agents = list(agent_registry.list_agents())
+        _original_agents = list(agent_registry.list_agents())
 
         try:
             # Create local registry

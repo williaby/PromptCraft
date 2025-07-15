@@ -8,7 +8,7 @@ needed to reach the 80% target.
 import pytest
 
 from src.agents.base_agent import BaseAgent
-from src.agents.exceptions import AgentRegistrationError, AgentTimeoutError
+from src.agents.exceptions import AgentConfigurationError, AgentRegistrationError, AgentTimeoutError
 from src.agents.models import AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
 
@@ -33,7 +33,7 @@ class TestFinalCoverageBoost:
         # Test with non-dict config - this should hit line 216 in base_agent.py
         agent.config = "not_a_dict"
 
-        with pytest.raises(Exception):  # This should raise AgentConfigurationError
+        with pytest.raises(AgentConfigurationError):  # This should raise AgentConfigurationError
             agent._validate_configuration()
 
     def test_agent_timeout_error_with_processing_time(self):

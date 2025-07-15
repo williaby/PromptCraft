@@ -59,12 +59,13 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..utils.observability import (
+from src.utils.observability import (
     create_structured_logger,
     get_metrics_collector,
     log_agent_event,
     trace_agent_operation,
 )
+
 from .exceptions import AgentConfigurationError, AgentExecutionError, AgentTimeoutError, handle_agent_error
 from .models import AgentInput, AgentOutput
 
@@ -102,7 +103,7 @@ class BaseAgent(ABC):
         ```
     """
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         Initialize the BaseAgent.
 

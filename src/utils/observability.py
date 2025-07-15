@@ -13,7 +13,7 @@ import threading
 import time
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 # Optional OpenTelemetry imports
@@ -35,7 +35,7 @@ except ImportError:
 class StructuredLogger:
     """Structured logger with JSON formatting and correlation IDs."""
 
-    def __init__(self, name: str, correlation_id: str | None = None):
+    def __init__(self, name: str, correlation_id: str | None = None) -> None:
         """Initialize structured logger.
 
         Args:
@@ -57,7 +57,7 @@ class StructuredLogger:
     def _get_context(self) -> dict[str, Any]:
         """Get current logging context."""
         context = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
             "logger": self.logger.name,
             "thread_id": threading.current_thread().ident,
         }
@@ -110,7 +110,7 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
             "level": record.levelname,
             "message": record.getMessage(),
             "module": record.module,
@@ -132,7 +132,7 @@ class StructuredFormatter(logging.Formatter):
 class OpenTelemetryInstrumentor:
     """OpenTelemetry instrumentation for agent system."""
 
-    def __init__(self, service_name: str = "promptcraft-agents"):
+    def __init__(self, service_name: str = "promptcraft-agents") -> None:
         """Initialize OpenTelemetry instrumentation.
 
         Args:
@@ -165,10 +165,10 @@ class OpenTelemetryInstrumentor:
             )
             span_processor = BatchSpanProcessor(jaeger_exporter)
             tracer_provider.add_span_processor(span_processor)
-        except Exception:  # nosec B110 - Jaeger is optional dependency
+        except Exception as e:  # nosec B110 - Jaeger is optional dependency
             # Jaeger not available, continue without it
             # This is expected when Jaeger is not configured and is not an error
-            pass
+            logging.getLogger(__name__).debug("Jaeger exporter not available: %s", e)
 
         # Get tracer
         self.tracer = trace.get_tracer(__name__)
@@ -276,9 +276,10 @@ class AgentMetrics:
                 if isinstance(metric_value, list):
                     metric_value.append(duration)
 
-                    # Keep only last 1000 measurements
-                    if len(metric_value) > 1000:
-                        self.metrics[metric_name] = metric_value[-1000:]
+                    # Keep only last N measurements to prevent memory bloat
+                    max_measurements = 1000
+                    if len(metric_value) > max_measurements:
+                        self.metrics[metric_name] = metric_value[-max_measurements:]
 
     def get_metrics(self) -> dict[str, Any]:
         """Get current metrics snapshot."""
@@ -318,7 +319,7 @@ _metrics_collector = None
 
 def get_instrumentor() -> "OpenTelemetryInstrumentor":
     """Get global OpenTelemetry instrumentor."""
-    global _observability_instrumentor
+    global _observability_instrumentor  # noqa: PLW0603
     if _observability_instrumentor is None:
         _observability_instrumentor = OpenTelemetryInstrumentor()
     return _observability_instrumentor
@@ -326,20 +327,20 @@ def get_instrumentor() -> "OpenTelemetryInstrumentor":
 
 def get_metrics_collector() -> "AgentMetrics":
     """Get global metrics collector."""
-    global _metrics_collector
+    global _metrics_collector  # noqa: PLW0603
     if _metrics_collector is None:
         _metrics_collector = AgentMetrics()
     return _metrics_collector
 
 
-def trace_agent_operation(operation_name: str) -> Callable:
+def trace_agent_operation(operation_name: str) -> Callable:  # noqa: PLR0915
     """Decorator for tracing agent operations.
 
     Args:
         operation_name: Name of the operation to trace
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable:  # noqa: PLR0915
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             instrumentor = get_instrumentor()

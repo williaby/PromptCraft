@@ -45,7 +45,7 @@ class TestAgentInput:
         assert len(input2.request_id) > 0
 
     @pytest.mark.parametrize(
-        "content, expected_error",
+        ("content", "expected_error"),
         [
             ("", "Content cannot be empty or whitespace-only"),
             ("   ", "Content cannot be empty or whitespace-only"),
@@ -66,7 +66,7 @@ class TestAgentInput:
         assert agent_input.content == "Test content with whitespace"
 
     @pytest.mark.parametrize(
-        "context, expected_error",
+        ("context", "expected_error"),
         [
             ("not_a_dict", "Context must be a dictionary"),
             ({123: "value"}, "All context keys must be strings"),
@@ -81,7 +81,7 @@ class TestAgentInput:
         assert expected_error in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "config_overrides, expected_error",
+        ("config_overrides", "expected_error"),
         [
             ("not_a_dict", "Config overrides must be a dictionary"),
             ({123: "value"}, "All config override keys must be strings"),
@@ -166,7 +166,7 @@ class TestAgentOutput:
         assert isinstance(agent_output.timestamp, datetime)
 
     @pytest.mark.parametrize(
-        "content, expected_error",
+        ("content", "expected_error"),
         [
             ("", "Content cannot be empty or whitespace-only"),
             ("   ", "Content cannot be empty or whitespace-only"),
@@ -192,7 +192,7 @@ class TestAgentOutput:
         assert agent_output.content == "Test output with whitespace"
 
     @pytest.mark.parametrize(
-        "confidence, expected_error",
+        ("confidence", "expected_error"),
         [
             (-0.1, "Input should be greater than or equal to 0"),
             (1.1, "Input should be less than or equal to 1"),
@@ -207,7 +207,7 @@ class TestAgentOutput:
         assert expected_error in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "processing_time, expected_error",
+        ("processing_time", "expected_error"),
         [
             (-0.1, "Input should be greater than or equal to 0"),
             ("not_a_number", "Input should be a valid number"),
@@ -221,7 +221,7 @@ class TestAgentOutput:
         assert expected_error in str(excinfo.value)
 
     @pytest.mark.parametrize(
-        "agent_id, expected_error",
+        ("agent_id", "expected_error"),
         [
             ("", "Agent ID cannot be empty or whitespace-only"),
             ("   ", "Agent ID cannot be empty or whitespace-only"),
@@ -243,7 +243,7 @@ class TestAgentOutput:
         assert agent_output.agent_id == "test_agent"
 
     @pytest.mark.parametrize(
-        "metadata, expected_error",
+        ("metadata", "expected_error"),
         [
             ("not_a_dict", "Metadata must be a dictionary"),
             ({123: "value"}, "All metadata keys must be strings"),
@@ -328,7 +328,7 @@ class TestAgentConfig:
         assert agent_config.enabled is False
 
     @pytest.mark.parametrize(
-        "agent_id, expected_error",
+        ("agent_id", "expected_error"),
         [
             ("", "Agent ID cannot be empty"),
             ("   ", "Agent ID cannot be empty"),
@@ -350,7 +350,7 @@ class TestAgentConfig:
         assert agent_config.agent_id == "test_agent"
 
     @pytest.mark.parametrize(
-        "name, expected_error",
+        ("name", "expected_error"),
         [
             ("", "Name cannot be empty"),
             ("   ", "Name cannot be empty"),
@@ -369,7 +369,7 @@ class TestAgentConfig:
         assert agent_config.name == "Test Agent"
 
     @pytest.mark.parametrize(
-        "description, expected_error",
+        ("description", "expected_error"),
         [
             ("", "Description cannot be empty"),
             ("   ", "Description cannot be empty"),

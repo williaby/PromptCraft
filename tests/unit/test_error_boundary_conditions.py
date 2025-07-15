@@ -321,21 +321,21 @@ class TestErrorBoundaryConditions:
 
         agent_input = AgentInput(content="Test empty content")
 
-        with pytest.raises(Exception):  # Should raise validation error
+        with pytest.raises((AgentExecutionError, AgentValidationError)):  # Should raise validation error
             await agent.process(agent_input)
 
         # Test invalid confidence value
         config_conf = {"agent_id": "invalid_conf_agent", "error_scenario": "invalid_confidence"}
         agent_conf = error_prone_agent_class(config_conf)
 
-        with pytest.raises(Exception):  # Should raise validation error
+        with pytest.raises((AgentExecutionError, AgentValidationError)):  # Should raise validation error
             await agent_conf.process(agent_input)
 
         # Test negative processing time
         config_time = {"agent_id": "negative_time_agent", "error_scenario": "negative_time"}
         agent_time = error_prone_agent_class(config_time)
 
-        with pytest.raises(Exception):  # Should raise validation error
+        with pytest.raises((AgentExecutionError, AgentValidationError)):  # Should raise validation error
             await agent_time.process(agent_input)
 
     @pytest.mark.unit
@@ -439,7 +439,7 @@ class TestErrorBoundaryConditions:
         config = {"agent_id": "init_fail_agent", "error_scenario": "config_validation"}
 
         with pytest.raises(AgentConfigurationError):
-            agent = error_prone_agent_class(config)
+            error_prone_agent_class(config)
 
         # Test successful initialization after fixing config
         config_fixed = {"agent_id": "init_success_agent", "error_scenario": "none"}

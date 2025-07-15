@@ -181,7 +181,7 @@ class AgentRegistry:
             AgentRegistrationError: If agent class is invalid
         """
         # Import here to avoid circular imports
-        from .base_agent import BaseAgent
+        from .base_agent import BaseAgent  # noqa: PLC0415
 
         # Check if class inherits from BaseAgent
         if not issubclass(agent_class, BaseAgent):
@@ -378,9 +378,8 @@ class AgentRegistry:
         matching_agents = []
 
         for agent_id, capabilities in self._capabilities.items():
-            if capability in capabilities:
-                if value is None or capabilities[capability] == value:
-                    matching_agents.append(agent_id)
+            if capability in capabilities and (value is None or capabilities[capability] == value):
+                matching_agents.append(agent_id)
 
         return matching_agents
 
@@ -401,9 +400,8 @@ class AgentRegistry:
             input_types = capabilities.get("input_types", [])
             output_types = capabilities.get("output_types", [])
 
-            if input_type in input_types:
-                if output_type is None or output_type in output_types:
-                    matching_agents.append(agent_id)
+            if input_type in input_types and (output_type is None or output_type in output_types):
+                matching_agents.append(agent_id)
 
         return matching_agents
 

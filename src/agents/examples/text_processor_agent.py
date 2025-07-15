@@ -55,10 +55,10 @@ Complexity: O(n) where n is the length of input text
 import re
 from typing import Any
 
-from ..base_agent import BaseAgent
-from ..exceptions import AgentExecutionError, AgentValidationError
-from ..models import AgentInput, AgentOutput
-from ..registry import agent_registry
+from src.agents.base_agent import BaseAgent
+from src.agents.exceptions import AgentExecutionError, AgentValidationError
+from src.agents.models import AgentInput, AgentOutput
+from src.agents.registry import agent_registry
 
 
 @agent_registry.register("text_processor")
@@ -105,7 +105,7 @@ class TextProcessorAgent(BaseAgent):
         ```
     """
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         Initialize the TextProcessorAgent.
 
@@ -468,7 +468,9 @@ class TextProcessorAgent(BaseAgent):
         word_freq: dict[str, int] = {}
         for word in words:
             word_lower = word.lower().strip(".,!?;:")
-            if len(word_lower) > 2:  # Skip short words
+            # Skip short words (length <= 2 characters)
+            min_word_length = 2
+            if len(word_lower) > min_word_length:
                 word_freq[word_lower] = word_freq.get(word_lower, 0) + 1
 
         # Sort by frequency
@@ -476,7 +478,7 @@ class TextProcessorAgent(BaseAgent):
 
         return [{"word": word, "frequency": freq} for word, freq in sorted_words[:count]]
 
-    def _calculate_readability(self, text: str, words: list[str], sentences: list[str]) -> float:
+    def _calculate_readability(self, _text: str, words: list[str], sentences: list[str]) -> float:
         """
         Calculate a simple readability score.
 
