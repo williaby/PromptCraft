@@ -269,11 +269,13 @@ def cache_vector_search(func: F) -> F:
             and hasattr(params, "embeddings")
             and hasattr(params, "limit")
             and hasattr(params, "collection")
+            and hasattr(params, "strategy")
             and params.embeddings
         ):
             # Create hash from embeddings and parameters
             embedding_str = str(params.embeddings[0][:10])  # First 10 dimensions
-            cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}:{params.limit}:{params.collection}"
+            strategy_str = params.strategy.value if hasattr(params.strategy, "value") else str(params.strategy)
+            cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}:{params.limit}:{params.collection}:{strategy_str}"
         else:
             return await func(*args, **kwargs)
 

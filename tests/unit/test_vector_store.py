@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from src.core.performance_optimizer import clear_all_caches
 from src.core.vector_store import (
     CIRCUIT_BREAKER_THRESHOLD,
     DEFAULT_SEARCH_LIMIT,
@@ -206,6 +207,11 @@ class TestVectorStoreMetrics:
 
 class TestEnhancedMockVectorStore:
     """Test EnhancedMockVectorStore implementation."""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        """Clear all caches before each test."""
+        clear_all_caches()
 
     @pytest.fixture
     def mock_config(self):
@@ -532,7 +538,7 @@ class TestMockVectorStoreCompatibility:
         store = MockVectorStore()
 
         # Should auto-connect
-        await asyncio.sleep(0.1)  # Give time for auto-connect
+        await asyncio.sleep(0.2)  # Give time for auto-connect
         assert store.get_connection_status() == ConnectionStatus.HEALTHY
 
     @pytest.mark.asyncio

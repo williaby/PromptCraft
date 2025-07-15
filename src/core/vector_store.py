@@ -1103,17 +1103,29 @@ class MockVectorStore(EnhancedMockVectorStore):
         # Auto-connect for backward compatibility
         self._auto_connect_task = asyncio.create_task(self.connect())
 
-    async def search(self, parameters: SearchParameters) -> list[SearchResult]:
+    async def search(self, parameters: SearchParameters | list[list[float]], limit: int = 5) -> list[SearchResult]:
         """
-        Search method compatible with AbstractVectorStore interface.
+        Search method compatible with both new and legacy interfaces.
 
         Args:
-            parameters: Search parameters including embeddings, limit, etc.
+            parameters: Either SearchParameters object or list of embeddings (legacy)
+            limit: Maximum number of results (only used with legacy interface)
 
         Returns:
             List of search results
         """
-        # Call parent search method
+        # Handle legacy interface: search(embeddings, limit=3)
+        if isinstance(parameters, list):
+            embeddings = parameters
+            search_params = SearchParameters(
+                embeddings=embeddings,
+                limit=limit,
+                collection="default",
+                strategy=SearchStrategy.SEMANTIC,
+            )
+            return await super().search(search_params)
+
+        # Handle new interface: search(SearchParameters)
         return await super().search(parameters)
 
     async def search_embeddings(self, embeddings: list[list[float]], limit: int = 5) -> list[SearchResult]:
