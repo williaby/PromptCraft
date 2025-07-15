@@ -58,3 +58,4 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:python"
+          # Force fresh analysis to resolve stalled required check
