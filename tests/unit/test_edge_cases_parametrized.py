@@ -45,7 +45,11 @@ class TestConfigurationValidationEdgeCases:
             # Edge case values
             ({"app_name": ""}, (ValueError, ValidationError)),
             ({"app_name": None}, (TypeError, ValidationError)),
-            ({"app_name": "a" * 1000}, (ValueError, ValidationError)),  # Very long name (over 100 char limit)
+            pytest.param(
+                {"app_name": "a" * 1000},
+                (ValueError, ValidationError),
+                id="very-long-name",
+            ),  # Very long name (over 100 char limit)
             ({"app_name": "\x00\x01"}, (ValueError, ValidationError)),  # Binary data
             ({"app_name": "🚀🔥💯"}, (ValueError, ValidationError)),  # Unicode not allowed in app_name validation
             # Missing required fields
@@ -61,7 +65,7 @@ class TestConfigurationValidationEdgeCases:
             "number-config",
             "empty-name",
             "null-name",
-            "very-long-name",
+            None,  # Will use pytest.param id
             "binary-name",
             "unicode-name",
             "missing-name",
@@ -103,9 +107,9 @@ class TestInputSanitizationBoundaries:
             "",  # Empty input
             "a",  # Single character
             "a" * 10,  # Small input
-            "a" * 1000,  # Medium input
-            "a" * 10000,  # Large input
-            "a" * 100000,  # Very large input
+            pytest.param("a" * 1000, id="medium-input"),  # Medium input
+            pytest.param("a" * 10000, id="large-input"),  # Large input
+            pytest.param("a" * 100000, id="very-large-input"),  # Very large input
             "\x00\x01",  # Binary data
             "🚀🔥💯",  # Unicode/emoji
             "\n\r\t",  # Whitespace characters
@@ -118,9 +122,9 @@ class TestInputSanitizationBoundaries:
             "empty-input",
             "single-char",
             "small-input",
-            "medium-input",
-            "large-input",
-            "very-large-input",
+            None,  # Will use pytest.param id
+            None,  # Will use pytest.param id
+            None,  # Will use pytest.param id
             "binary-input",
             "unicode-input",
             "whitespace-input",
@@ -161,7 +165,7 @@ class TestQueryProcessingEdgeCases:
         [
             # Query variations
             ("", "context", "handle_empty_query"),
-            ("a" * 10000, "context", "handle_long_query"),
+            pytest.param("a" * 10000, "context", "handle_long_query", id="long-query"),
             (None, "context", "handle_null_query"),
             ("normal query", "", "handle_empty_context"),
             ("normal query", None, "handle_null_context"),
@@ -176,7 +180,7 @@ class TestQueryProcessingEdgeCases:
         ],
         ids=[
             "empty-query",
-            "long-query",
+            None,  # Will use pytest.param id
             "null-query",
             "empty-context",
             "null-context",
@@ -339,7 +343,7 @@ class TestSecurityEdgeCases:
             ("../../../etc/passwd", "path_traversal"),
             ("%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd", "encoded_path_traversal"),
             # Large payloads (potential DoS)
-            ("A" * 1000000, "large_payload"),
+            pytest.param("A" * 1000000, "large_payload", id="large-payload"),
             # Special characters
             ("\x00admin\x00", "null_byte_injection"),
             ("admin\r\nSet-Cookie: evil=1", "crlf_injection"),
@@ -351,7 +355,7 @@ class TestSecurityEdgeCases:
             "log4j-injection",
             "path-traversal",
             "encoded-path-traversal",
-            "large-payload",
+            None,  # Will use pytest.param id
             "null-byte-injection",
             "crlf-injection",
         ],
