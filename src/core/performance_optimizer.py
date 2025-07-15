@@ -264,7 +264,7 @@ def cache_vector_search(func: F) -> F:
         # Create cache key from search parameters
         params = args[1] if args and len(args) > 1 else kwargs.get("parameters")
 
-        if hasattr(params, "embeddings") and params.embeddings:
+        if params is not None and hasattr(params, "embeddings") and params.embeddings:
             # Create hash from embeddings and parameters
             embedding_str = str(params.embeddings[0][:10])  # First 10 dimensions
             cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}:{params.limit}:{params.collection}"
@@ -328,7 +328,7 @@ class AsyncBatcher:
 
             if self.pending_operations:
                 return await self._execute_batch()
-        
+
         return None
 
     async def _execute_batch(self) -> list[Any]:
@@ -357,8 +357,7 @@ class ConnectionPool:
         """Acquire a connection from the pool."""
         try:
             # Try to get existing connection
-            connection = self.available_connections.get_nowait()
-            return connection
+            return self.available_connections.get_nowait()
         except asyncio.QueueEmpty:
             # Create new connection if under limit
             async with self.connection_lock:

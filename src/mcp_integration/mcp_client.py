@@ -46,6 +46,7 @@ Space Complexity: O(k) where k is the number of concurrent connections
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -61,7 +62,16 @@ from tenacity import (
     wait_exponential,
 )
 
+from src.utils.secure_random import secure_random
+
 logger = logging.getLogger(__name__)
+
+# Constants for mock client behavior
+DEGRADED_ERROR_THRESHOLD = 3
+MAX_QUERY_LENGTH = 10000
+HTTP_OK_STATUS = 200
+HTTP_BAD_REQUEST = 400
+HTTP_TOO_MANY_REQUESTS = 429
 
 
 class MCPConnectionState(str, Enum):
@@ -354,7 +364,11 @@ class MockMCPClient(MCPClientInterface):
         # Determine connection state
         if self.simulate_failures and self._should_fail():
             self.error_count += 1
-            state = MCPConnectionState.DEGRADED if self.error_count < 3 else MCPConnectionState.FAILED
+            state = (
+                MCPConnectionState.DEGRADED
+                if self.error_count < DEGRADED_ERROR_THRESHOLD
+                else MCPConnectionState.FAILED
+            )
         else:
             state = self.connection_state
             self.error_count = max(0, self.error_count - 1)
@@ -389,7 +403,7 @@ class MockMCPClient(MCPClientInterface):
         potential_issues = []
 
         # Check for potential security issues (mock)
-        if len(query) > 10000:
+        if len(query) > MAX_QUERY_LENGTH:
             potential_issues.append("Query exceeds maximum length")
 
         if any(keyword in query.lower() for keyword in ["<script>", "javascript:", "eval("]):
@@ -472,9 +486,7 @@ class MockMCPClient(MCPClientInterface):
 
     def _should_fail(self) -> bool:
         """Determine if mock operation should fail based on failure rate."""
-        import random
-
-        return random.random() < self.failure_rate
+        return secure_random.random() < self.failure_rate
 
 
 class ZenMCPClient(MCPClientInterface):
@@ -521,7 +533,7 @@ class ZenMCPClient(MCPClientInterface):
         Implements real HTTP client connection with authentication and health validation.
         """
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
 
             self.connection_state = MCPConnectionState.CONNECTING
             logger.info(f"Connecting to Zen MCP Server at {self.server_url}")
@@ -542,7 +554,7 @@ class ZenMCPClient(MCPClientInterface):
             # Perform server health check and handshake
             try:
                 response = await self.session.get("/health")
-                if response.status_code != 200:
+                if response.status_code != HTTP_OK_STATUS:
                     raise MCPConnectionError(
                         f"Server health check failed: HTTP {response.status_code}",
                         {"status_code": response.status_code, "response": response.text[:200]},
@@ -552,15 +564,15 @@ class ZenMCPClient(MCPClientInterface):
                 health_data = (
                     response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
                 )
-                if not health_data.get("status") == "healthy":
+                if health_data.get("status") != "healthy":
                     logger.warning(f"Server health check returned non-healthy status: {health_data}")
 
             except httpx.ConnectError as e:
-                raise MCPConnectionError(f"Failed to connect to MCP server: {e}")
+                raise MCPConnectionError(f"Failed to connect to MCP server: {e}") from e
             except httpx.TimeoutException as e:
-                raise MCPTimeoutError(f"Connection timeout to MCP server: {e}", self.timeout)
+                raise MCPTimeoutError(f"Connection timeout to MCP server: {e}", self.timeout) from e
             except Exception as e:
-                raise MCPConnectionError(f"Unexpected connection error: {e}")
+                raise MCPConnectionError(f"Unexpected connection error: {e}") from e
 
             self.connection_state = MCPConnectionState.CONNECTED
             self.error_count = 0
@@ -577,7 +589,7 @@ class ZenMCPClient(MCPClientInterface):
                 await self.session.aclose()
                 self.session = None
 
-            raise MCPConnectionError(f"Connection failed: {e}")
+            raise MCPConnectionError(f"Connection failed: {e}") from e
 
     async def disconnect(self) -> bool:
         """Disconnect from Zen MCP Server and cleanup resources."""
@@ -606,7 +618,7 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
 
             if self.connection_state == MCPConnectionState.DISCONNECTED or not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -657,19 +669,19 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 self.error_count += 1
-                raise MCPConnectionError(f"Health check HTTP error: {e.response.status_code}")
+                raise MCPConnectionError(f"Health check HTTP error: {e.response.status_code}") from e
             except httpx.TimeoutException as e:
                 self.error_count += 1
-                raise MCPTimeoutError(f"Health check timeout: {e}", 5.0)
+                raise MCPTimeoutError(f"Health check timeout: {e}", 5.0) from e
             except httpx.ConnectError as e:
                 self.error_count += 1
-                raise MCPConnectionError(f"Health check connection error: {e}")
+                raise MCPConnectionError(f"Health check connection error: {e}") from e
 
         except Exception as e:
             self.error_count += 1
             if isinstance(e, MCPError):
                 raise
-            raise MCPConnectionError(f"Health check failed: {e}")
+            raise MCPConnectionError(f"Health check failed: {e}") from e
 
     async def validate_query(self, query: str) -> dict[str, Any]:
         """Validate query using Zen MCP Server security services."""
@@ -679,7 +691,7 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -696,13 +708,31 @@ class ZenMCPClient(MCPClientInterface):
                 processing_time_ms = (time.time() - start_time) * 1000
 
                 # Add processing time to result
-                validation_result["processing_time_ms"] = processing_time_ms
+                if isinstance(validation_result, dict):
+                    # Ensure we return the expected dict structure
+                    typed_result: dict[str, Any] = {
+                        "is_valid": validation_result.get("is_valid", True),
+                        "sanitized_query": validation_result.get("sanitized_query", query),
+                        "potential_issues": validation_result.get("potential_issues", []),
+                        "processing_time_ms": processing_time_ms,
+                    }
+                    # Add any additional fields from the response
+                    for key, value in validation_result.items():
+                        if key not in typed_result:
+                            typed_result[key] = value
 
-                self.last_successful_request = time.time()
-                return validation_result
+                    self.last_successful_request = time.time()
+                    return typed_result
+                # Fallback for non-dict responses
+                return {
+                    "is_valid": False,
+                    "sanitized_query": query,
+                    "potential_issues": ["Invalid response format"],
+                    "processing_time_ms": processing_time_ms,
+                }
 
             except httpx.HTTPStatusError as e:
-                if e.response.status_code == 400:
+                if e.response.status_code == HTTP_BAD_REQUEST:
                     # Bad request - return validation failure
                     error_data = (
                         e.response.json()
@@ -715,18 +745,18 @@ class ZenMCPClient(MCPClientInterface):
                         "potential_issues": error_data.get("issues", ["Invalid query format"]),
                         "processing_time_ms": (time.time() - start_time) * 1000,
                     }
-                raise MCPServiceUnavailableError(f"Validation service error: HTTP {e.response.status_code}")
+                raise MCPServiceUnavailableError(f"Validation service error: HTTP {e.response.status_code}") from e
 
             except httpx.TimeoutException as e:
-                raise MCPTimeoutError(f"Query validation timeout: {e}", self.timeout)
+                raise MCPTimeoutError(f"Query validation timeout: {e}", self.timeout) from e
             except httpx.ConnectError as e:
-                raise MCPConnectionError(f"Validation service connection error: {e}")
+                raise MCPConnectionError(f"Validation service connection error: {e}") from e
 
         except Exception as e:
             if isinstance(e, MCPError):
                 raise
             logger.error(f"Query validation failed: {e}")
-            raise MCPServiceUnavailableError(f"Validation service unavailable: {e}")
+            raise MCPServiceUnavailableError(f"Validation service unavailable: {e}") from e
 
     @retry(
         stop=stop_after_attempt(3),
@@ -739,7 +769,7 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -790,7 +820,7 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 self.error_count += 1
-                if e.response.status_code == 400:
+                if e.response.status_code == HTTP_BAD_REQUEST:
                     error_data = (
                         e.response.json()
                         if e.response.headers.get("content-type", "").startswith("application/json")
@@ -800,30 +830,30 @@ class ZenMCPClient(MCPClientInterface):
                         f"Invalid orchestration request: {error_data.get('message', 'Bad request')}",
                         MCPErrorType.INVALID_REQUEST,
                         error_data,
-                    )
-                if e.response.status_code == 429:
+                    ) from e
+                if e.response.status_code == HTTP_TOO_MANY_REQUESTS:
                     retry_after = int(e.response.headers.get("Retry-After", 60))
-                    raise MCPRateLimitError("Rate limit exceeded", retry_after)
-                raise MCPServiceUnavailableError(f"Orchestration service error: HTTP {e.response.status_code}")
+                    raise MCPRateLimitError("Rate limit exceeded", retry_after) from e
+                raise MCPServiceUnavailableError(f"Orchestration service error: HTTP {e.response.status_code}") from e
 
             except httpx.TimeoutException as e:
                 self.error_count += 1
-                raise MCPTimeoutError(f"Orchestration timeout: {e}", self.timeout)
+                raise MCPTimeoutError(f"Orchestration timeout: {e}", self.timeout) from e
             except httpx.ConnectError as e:
                 self.error_count += 1
-                raise MCPConnectionError(f"Orchestration service connection error: {e}")
+                raise MCPConnectionError(f"Orchestration service connection error: {e}") from e
 
         except Exception as e:
             self.error_count += 1
             if isinstance(e, MCPError):
                 raise
             logger.error(f"Zen MCP orchestration failed: {e}")
-            raise MCPServiceUnavailableError(f"Orchestration service unavailable: {e}")
+            raise MCPServiceUnavailableError(f"Orchestration service unavailable: {e}") from e
 
     async def get_capabilities(self) -> list[str]:
         """Get Zen MCP Server capabilities."""
         try:
-            import httpx
+            import httpx  # noqa: PLC0415
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -834,25 +864,30 @@ class ZenMCPClient(MCPClientInterface):
                 response.raise_for_status()
 
                 capabilities_data = response.json()
-                return capabilities_data.get(
+                # Ensure we return a list of strings
+                capabilities = capabilities_data.get(
                     "capabilities",
                     ["zen_orchestration", "multi_agent", "consensus", "validation"],
                 )
+                # Type-check the capabilities
+                if isinstance(capabilities, list):
+                    return [str(cap) for cap in capabilities]
+                return ["zen_orchestration", "multi_agent", "consensus", "validation"]
 
             except httpx.HTTPStatusError as e:
                 logger.error(f"Failed to get capabilities: HTTP {e.response.status_code}")
                 # Fall back to default capabilities on server error
                 return ["zen_orchestration", "multi_agent", "consensus", "validation"]
             except httpx.TimeoutException as e:
-                raise MCPTimeoutError(f"Capabilities query timeout: {e}", 5.0)
+                raise MCPTimeoutError(f"Capabilities query timeout: {e}", 5.0) from e
             except httpx.ConnectError as e:
-                raise MCPConnectionError(f"Capabilities query connection error: {e}")
+                raise MCPConnectionError(f"Capabilities query connection error: {e}") from e
 
         except Exception as e:
             if isinstance(e, MCPError):
                 raise
             logger.error(f"Failed to get Zen MCP capabilities: {e}")
-            raise MCPConnectionError(f"Capabilities query failed: {e}")
+            raise MCPConnectionError(f"Capabilities query failed: {e}") from e
 
 
 class MCPClientFactory:
@@ -907,7 +942,7 @@ class MCPClientFactory:
             MCPClientInterface: Configured client instance based on settings
         """
         if settings is None:
-            from src.config.settings import get_settings
+            from src.config.settings import get_settings  # noqa: PLC0415
 
             settings = get_settings()
 
@@ -983,10 +1018,8 @@ class MCPConnectionManager:
         """Stop connection manager and cleanup resources."""
         if self._health_check_task:
             self._health_check_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
 
         await self.client.disconnect()
         logger.info("MCP connection manager stopped")
@@ -1070,8 +1103,12 @@ class MCPConnectionManager:
         }
 
         if operation == "orchestrate_agents":
-            # Return empty responses for agent orchestration
-            return []
+            # Return dict with empty responses for agent orchestration
+            return {
+                "responses": [],
+                "total_agents": 0,
+                **base_response,
+            }
 
         if operation == "validate_query":
             # Return permissive validation for query validation
@@ -1083,7 +1120,14 @@ class MCPConnectionManager:
             }
 
         if operation == "get_capabilities":
-            # Return minimal capabilities
-            return ["basic_processing"]
+            # Return dict with minimal capabilities
+            return {
+                "capabilities": ["basic_processing"],
+                **base_response,
+            }
 
         return base_response
+
+
+# Alias for backward compatibility with tests
+MCPClient = ZenMCPClient

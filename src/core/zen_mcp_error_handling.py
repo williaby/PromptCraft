@@ -42,6 +42,7 @@ Complexity: O(1) for circuit breaker operations, O(n) for retry attempts where n
 """
 
 import asyncio
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -69,6 +70,63 @@ class ErrorCategory:
     RATE_LIMIT = "rate_limit"
     INTERNAL = "internal"
     UNKNOWN = "unknown"
+
+
+class ErrorSeverity:
+    """Error severity levels for structured error handling."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class RecoveryStrategy:
+    """Recovery strategy constants for error handling."""
+
+    RETRY = "retry"
+    CIRCUIT_BREAKER = "circuit_breaker"
+    FALLBACK = "fallback"
+    FAIL_FAST = "fail_fast"
+
+
+class ErrorContext:
+    """Error context information for structured error handling."""
+
+    def __init__(
+        self,
+        error_type: str,
+        severity: str = ErrorSeverity.MEDIUM,
+        category: str = ErrorCategory.UNKNOWN,
+        recovery_strategy: str = RecoveryStrategy.RETRY,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize error context.
+
+        Args:
+            error_type: Type of error
+            severity: Error severity level
+            category: Error category
+            recovery_strategy: Recovery strategy to use
+            metadata: Additional metadata
+        """
+        self.error_type = error_type
+        self.severity = severity
+        self.category = category
+        self.recovery_strategy = recovery_strategy
+        self.metadata = metadata or {}
+        self.timestamp = time.time()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert error context to dictionary."""
+        return {
+            "error_type": self.error_type,
+            "severity": self.severity,
+            "category": self.category,
+            "recovery_strategy": self.recovery_strategy,
+            "metadata": self.metadata,
+            "timestamp": self.timestamp,
+        }
 
 
 class ZenMCPError(ResilienceError):
@@ -628,3 +686,56 @@ def create_fast_fail_zen_mcp_integration(
     )
 
     return create_default_zen_mcp_integration(client, circuit_breaker_config, retry_config)
+
+
+# Aliases for backward compatibility with tests
+ZenMCPCircuitBreaker = CircuitBreakerStrategy
+ZenMCPRetryPolicy = RetryStrategy
+
+
+class ZenMCPErrorHandler:
+    """High-level error handler for Zen MCP operations."""
+
+    def __init__(
+        self,
+        circuit_breaker: CircuitBreakerStrategy | None = None,
+        retry_policy: RetryStrategy | None = None,
+    ) -> None:
+        """Initialize error handler.
+
+        Args:
+            circuit_breaker: Circuit breaker strategy
+            retry_policy: Retry policy strategy
+        """
+        self.circuit_breaker = circuit_breaker or CircuitBreakerStrategy()
+        self.retry_policy = retry_policy or RetryStrategy()
+        self.logger = logging.getLogger(__name__)
+
+    async def handle_error(self, error: Exception, context: ErrorContext) -> bool:
+        """Handle an error with the appropriate strategy.
+
+        Args:
+            error: The error that occurred
+            context: Error context information
+
+        Returns:
+            True if error was handled successfully, False otherwise
+        """
+        try:
+            if context.recovery_strategy == RecoveryStrategy.CIRCUIT_BREAKER:
+                return self.circuit_breaker.should_continue(error, 1)
+            if context.recovery_strategy == RecoveryStrategy.RETRY:
+                return self.retry_policy.should_continue(error, 1)
+            # Default handling
+            self.logger.warning("Unhandled error: %s", error)
+            return False
+        except Exception as e:
+            self.logger.error("Error handling failed: %s", e)
+            return False
+
+    def get_health_status(self) -> dict[str, Any]:
+        """Get health status of error handler components."""
+        return {
+            "circuit_breaker": self.circuit_breaker.get_health_status(),
+            "retry_policy": self.retry_policy.get_health_status(),
+        }

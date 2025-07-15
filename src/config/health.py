@@ -72,7 +72,7 @@ class HealthChecker:
             status = get_configuration_status(self.settings)
             mcp_health = await get_mcp_configuration_health()
 
-            overall_healthy = status.config_healthy and mcp_health.get("healthy", False)
+            overall_healthy = bool(status.config_healthy) and bool(mcp_health.get("healthy", False))
 
             return {
                 "healthy": overall_healthy,

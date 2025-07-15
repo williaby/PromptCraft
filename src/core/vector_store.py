@@ -68,6 +68,24 @@ from src.core.performance_optimizer import (
     cache_vector_search,
     monitor_performance,
 )
+from src.utils.secure_random import secure_random
+
+# Optional imports for Qdrant - only available if qdrant-client is installed
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http.exceptions import UnexpectedResponse
+    from qdrant_client.http.models import Distance, Filter, PointStruct, VectorParams
+
+    QDRANT_AVAILABLE = True
+except ImportError:
+    # Fallback for when qdrant-client is not available
+    QdrantClient = None  # type: ignore[misc,assignment]
+    UnexpectedResponse = None  # type: ignore[misc,assignment]
+    Distance = None  # type: ignore[misc,assignment]
+    Filter = None  # type: ignore[misc,assignment]
+    PointStruct = None  # type: ignore[misc,assignment]
+    VectorParams = None  # type: ignore[misc,assignment]
+    QDRANT_AVAILABLE = False
 
 # Type aliases for better readability
 EmbeddingVector = list[float]
@@ -83,6 +101,7 @@ DEFAULT_TIMEOUT = 30.0
 CONNECTION_POOL_SIZE = 5
 HEALTH_CHECK_INTERVAL = 60.0
 CIRCUIT_BREAKER_THRESHOLD = 5
+DEGRADED_LATENCY_THRESHOLD = 0.1
 
 
 class VectorStoreType(str, Enum):
@@ -342,7 +361,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
 
         # Simulate occasional degraded performance
         status = ConnectionStatus.HEALTHY
-        if latency > 0.1:
+        if latency > DEGRADED_LATENCY_THRESHOLD:
             status = ConnectionStatus.DEGRADED
 
         return HealthCheckResult(
@@ -609,21 +628,18 @@ class EnhancedMockVectorStore(AbstractVectorStore):
     async def _simulate_operation_delay(self) -> None:
         """Simulate realistic operation latency."""
         if self._simulate_latency:
-            # Add some randomness to latency
-            import random
-
-            latency = self._base_latency + random.uniform(0, self._base_latency)
+            # Add some randomness to latency using secure random
+            jitter = secure_random.random() * self._base_latency
+            latency = self._base_latency + jitter
             await asyncio.sleep(latency)
 
     async def _maybe_simulate_error(self, operation: str, probability: float | None = None) -> None:
         """Simulate random errors for testing error handling."""
-        import random
-
         error_prob = probability if probability is not None else self._error_rate
-        if error_prob > 0 and random.random() < error_prob:
+        if error_prob > 0 and secure_random.random() < error_prob:
             raise RuntimeError(f"Simulated error in {operation} operation")
 
-    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:
+    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:  # noqa: PLR0911
         """Check if document matches metadata filters."""
         for key, value in filters.items():
             if key not in document.metadata:
@@ -674,20 +690,17 @@ class QdrantVectorStore(AbstractVectorStore):
     async def connect(self) -> None:
         """Establish connection to Qdrant server."""
         try:
-            # Dynamic import to avoid dependency issues in mock mode
-            from qdrant_client import QdrantClient
-            from qdrant_client.http.exceptions import UnexpectedResponse
+            if not QDRANT_AVAILABLE:
+                self.logger.error("qdrant-client not available. Using mock implementation.")
+                raise RuntimeError("Qdrant client not available")
 
             self._client = QdrantClient(host=self._host, port=self._port, api_key=self._api_key, timeout=self._timeout)
 
             # Test connection
-            await self._client.get_collections()
+            self._client.get_collections()
             self._connection_status = ConnectionStatus.HEALTHY
             self.logger.info("Connected to Qdrant at %s:%d", self._host, self._port)
 
-        except ImportError:
-            self.logger.error("qdrant-client not available. Using mock implementation.")
-            raise RuntimeError("Qdrant client not available")
         except Exception as e:
             self._connection_status = ConnectionStatus.UNHEALTHY
             self.logger.error("Failed to connect to Qdrant: %s", str(e))
@@ -710,7 +723,7 @@ class QdrantVectorStore(AbstractVectorStore):
 
         try:
             # Simple health check - list collections
-            collections = await self._client.get_collections()
+            collections = self._client.get_collections()
             latency = time.time() - start_time
 
             status = ConnectionStatus.HEALTHY
@@ -737,18 +750,16 @@ class QdrantVectorStore(AbstractVectorStore):
         start_time = time.time()
 
         try:
-            from qdrant_client.http.models import Filter
-
             # Convert filters to Qdrant format
             qdrant_filter = None
-            if parameters.filters:
+            if parameters.filters and Filter is not None:
                 qdrant_filter = Filter(**parameters.filters)
 
             results = []
 
             # Search with each embedding
             for embedding in parameters.embeddings:
-                search_result = await self._client.search(
+                search_result = self._client.search(
                     collection_name=parameters.collection,
                     query_vector=embedding,
                     limit=parameters.limit,
@@ -809,7 +820,8 @@ class QdrantVectorStore(AbstractVectorStore):
         start_time = time.time()
 
         try:
-            from qdrant_client.http.models import PointStruct
+            if PointStruct is None:
+                raise RuntimeError("PointStruct not available - qdrant-client not installed")
 
             # Group documents by collection
             by_collection: dict[str, list[VectorDocument]] = {}
@@ -875,7 +887,8 @@ class QdrantVectorStore(AbstractVectorStore):
             return False
 
         try:
-            from qdrant_client.http.models import PointStruct
+            if PointStruct is None:
+                raise RuntimeError("PointStruct not available - qdrant-client not installed")
 
             point = PointStruct(
                 id=document.id,
@@ -883,9 +896,9 @@ class QdrantVectorStore(AbstractVectorStore):
                 payload={"content": document.content, "metadata": document.metadata, "timestamp": document.timestamp},
             )
 
-            result = await self._client.upsert(collection_name=document.collection, points=[point])
+            result = self._client.upsert(collection_name=document.collection, points=[point])
 
-            return result.status == "completed"
+            return bool(result.status == "completed")
 
         except Exception as e:
             self.logger.error("Failed to update document %s: %s", document.id, str(e))
@@ -906,7 +919,7 @@ class QdrantVectorStore(AbstractVectorStore):
         start_time = time.time()
 
         try:
-            result = await self._client.delete(collection_name=collection, points_selector=document_ids)
+            result = self._client.delete(collection_name=collection, points_selector=document_ids)
 
             processing_time = time.time() - start_time
 
@@ -946,9 +959,10 @@ class QdrantVectorStore(AbstractVectorStore):
             return False
 
         try:
-            from qdrant_client.http.models import Distance, VectorParams
+            if VectorParams is None or Distance is None:
+                raise RuntimeError("VectorParams/Distance not available - qdrant-client not installed")
 
-            await self._client.create_collection(
+            self._client.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
             )
@@ -966,7 +980,7 @@ class QdrantVectorStore(AbstractVectorStore):
             return []
 
         try:
-            collections = await self._client.get_collections()
+            collections = self._client.get_collections()
             return [col.name for col in collections.collections]
 
         except Exception as e:
@@ -979,7 +993,7 @@ class QdrantVectorStore(AbstractVectorStore):
             raise ValueError("Client not connected")
 
         try:
-            info = await self._client.get_collection(collection_name)
+            info = self._client.get_collection(collection_name)
             return {
                 "vector_size": info.config.params.vectors.size,
                 "distance": info.config.params.vectors.distance.value,
@@ -994,8 +1008,10 @@ class QdrantVectorStore(AbstractVectorStore):
 
     async def _ensure_collection_exists(self, collection_name: str, vector_size: int) -> None:
         """Ensure a collection exists, create if it doesn't."""
+        if not self._client:
+            return
         try:
-            await self._client.get_collection(collection_name)
+            self._client.get_collection(collection_name)
         except Exception:
             # Collection doesn't exist, create it
             self.logger.info("Creating collection: %s", collection_name)
@@ -1041,13 +1057,8 @@ class VectorStoreFactory:
     def _detect_store_type(config: dict[str, Any]) -> VectorStoreType:
         """Detect appropriate vector store type based on environment."""
         # Check if Qdrant is available and configured
-        if config.get("host") and config.get("port"):
-            try:
-                import qdrant_client
-
-                return VectorStoreType.QDRANT
-            except ImportError:
-                pass
+        if config.get("host") and config.get("port") and QDRANT_AVAILABLE:
+            return VectorStoreType.QDRANT
 
         # Fall back to mock
         return VectorStoreType.MOCK
@@ -1090,7 +1101,7 @@ class MockVectorStore(EnhancedMockVectorStore):
         config = {"simulate_latency": True, "error_rate": 0.0, "base_latency": 0.05}
         super().__init__(config)
         # Auto-connect for backward compatibility
-        asyncio.create_task(self.connect())
+        self._auto_connect_task = asyncio.create_task(self.connect())
 
     async def search(self, parameters: SearchParameters) -> list[SearchResult]:
         """

@@ -68,6 +68,7 @@ from src.mcp_integration.mcp_client import (
 # Constants for query complexity analysis
 COMPLEX_QUERY_WORD_THRESHOLD = 20
 MEDIUM_QUERY_WORD_THRESHOLD = 10
+MIN_KEYWORD_LENGTH = 3
 
 
 class QueryType(str, Enum):
@@ -78,6 +79,10 @@ class QueryType(str, Enum):
     ANALYSIS_REQUEST = "analysis_request"
     DOCUMENTATION = "documentation"
     GENERAL_QUERY = "general_query"
+    UNKNOWN = "unknown"
+    IMPLEMENTATION = "implementation"
+    SECURITY = "security"
+    PERFORMANCE = "performance"
 
 
 class QueryIntent(BaseModel):
@@ -89,6 +94,9 @@ class QueryIntent(BaseModel):
     requires_agents: list[str] = Field(default_factory=list, description="Required agent types")
     context_needed: bool = Field(default=False, description="Whether additional context is needed")
     hyde_recommended: bool = Field(default=False, description="Whether HyDE processing recommended")
+    original_query: str = Field(description="Original query text")
+    keywords: list[str] = Field(default_factory=list, description="Extracted keywords from query")
+    context_requirements: list[str] = Field(default_factory=list, description="Context requirements for the query")
 
     @validator("complexity")
     def validate_complexity(cls, v: str) -> str:
@@ -184,6 +192,7 @@ class QueryCounselor:
         self,
         mcp_client: MCPClientInterface | None = None,
         hyde_processor: HydeProcessor | None = None,
+        confidence_threshold: float = 0.7,
     ) -> None:
         """Initialize QueryCounselor with optional MCP client and HyDE processor."""
         if mcp_client is None:
@@ -192,6 +201,7 @@ class QueryCounselor:
         else:
             self.mcp_client = mcp_client
         self.hyde_processor = hyde_processor or HydeProcessor()
+        self.confidence_threshold = confidence_threshold
         self.logger = logging.getLogger(__name__)
 
         # Initialize agent registry mock data
@@ -207,7 +217,7 @@ class QueryCounselor:
 
     @cache_query_analysis
     @monitor_performance("analyze_intent")
-    async def analyze_intent(self, query: str) -> QueryIntent:
+    async def analyze_intent(self, query: str) -> QueryIntent:  # noqa: PLR0915
         """
         Analyze query intent and classify the type of request.
 
@@ -219,9 +229,20 @@ class QueryCounselor:
         """
         start_time = time.time()
 
-        # Input validation
+        # Input validation - handle empty queries
         if not query or not query.strip():
-            raise ValueError("Query cannot be empty")
+            # Return UNKNOWN type for empty queries
+            return QueryIntent(
+                query_type=QueryType.UNKNOWN,
+                confidence=0.0,
+                complexity="simple",
+                requires_agents=[],
+                context_needed=False,
+                hyde_recommended=False,
+                original_query=query,
+                keywords=[],
+                context_requirements=[],
+            )
 
         query = query.strip()
 
@@ -234,6 +255,7 @@ class QueryCounselor:
         complexity = "simple"
         requires_agents = ["general_agent"]
         hyde_recommended = False
+        context_requirements = []
 
         if any(keyword in query_lower for keyword in ["create", "generate", "enhance", "improve"]):
             query_type = QueryType.CREATE_ENHANCEMENT
@@ -257,6 +279,24 @@ class QueryCounselor:
             confidence = 0.75
             complexity = "medium"
 
+        elif any(keyword in query_lower for keyword in ["implement", "build", "develop", "code"]):
+            query_type = QueryType.IMPLEMENTATION
+            requires_agents = ["create_agent"]
+            confidence = 0.8
+            context_requirements = ["python"]
+
+        elif any(keyword in query_lower for keyword in ["security", "secure", "auth", "attack", "vulnerability"]):
+            query_type = QueryType.SECURITY
+            requires_agents = ["security_agent"]
+            confidence = 0.85
+            context_requirements = ["security", "web"]
+
+        elif any(keyword in query_lower for keyword in ["performance", "optimize", "speed", "fast", "slow"]):
+            query_type = QueryType.PERFORMANCE
+            requires_agents = ["performance_agent"]
+            confidence = 0.8
+            context_requirements = ["performance"]
+
         # Determine complexity
         if len(query.split()) > COMPLEX_QUERY_WORD_THRESHOLD or "complex" in query_lower or "detailed" in query_lower:
             complexity = "complex"
@@ -268,6 +308,9 @@ class QueryCounselor:
 
         # Context needed for complex queries
         context_needed = complexity in ["medium", "complex"] or query_type == QueryType.ANALYSIS_REQUEST
+
+        # Extract simple keywords (basic word splitting)
+        keywords = [word.lower() for word in query.split() if len(word) > MIN_KEYWORD_LENGTH]
 
         processing_time = time.time() - start_time
 
@@ -285,6 +328,9 @@ class QueryCounselor:
             requires_agents=requires_agents,
             context_needed=context_needed,
             hyde_recommended=hyde_recommended,
+            original_query=query,
+            keywords=keywords,
+            context_requirements=context_requirements,
         )
 
     async def select_agents(self, intent: QueryIntent) -> list[Agent]:
@@ -470,6 +516,56 @@ class QueryCounselor:
                 "failed_agents": len(agent_outputs) - len(successful_responses),
             },
         )
+
+    async def process_query(self, query: str) -> FinalResponse:
+        """
+        Main entry point for query processing.
+
+        This method provides the standard query processing pipeline without
+        automatic HyDE integration, suitable for most use cases.
+
+        Args:
+            query: User query string
+
+        Returns:
+            FinalResponse: Processed query response
+        """
+        start_time = time.time()
+
+        try:
+            # Step 1: Intent analysis
+            intent = await self.analyze_intent(query)
+
+            # Step 2: Agent selection and orchestration
+            agents = await self.select_agents(intent)
+            agent_responses = await self.orchestrate_workflow(agents, query)
+
+            # Step 3: Response synthesis
+            final_response = await self.synthesize_response(agent_responses)
+
+            # Update processing time
+            total_processing_time = time.time() - start_time
+            final_response.processing_time = total_processing_time
+
+            return final_response
+
+        except Exception as e:
+            processing_time = time.time() - start_time
+            self.logger.error("Query processing failed: %s", str(e))
+
+            return FinalResponse(
+                content=f"Query processing failed: {e!s}",
+                sources=[],
+                confidence=0.0,
+                processing_time=processing_time,
+                query_type=QueryType.GENERAL_QUERY,
+                agents_used=[],
+                metadata={
+                    "error": True,
+                    "error_message": str(e),
+                    "error_type": type(e).__name__,
+                },
+            )
 
     async def process_query_with_hyde(self, query: str) -> FinalResponse:
         """
