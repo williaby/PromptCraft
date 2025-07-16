@@ -6,16 +6,18 @@ query processing, and configuration management.
 """
 
 import asyncio
-import os
 import sys
 import time
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+import tenacity
+from qdrant_client.http.exceptions import ResponseHandlingException
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.core.query_counselor import QueryCounselor
@@ -40,12 +42,16 @@ from src.mcp_integration.mcp_client import (
     MCPAuthenticationError,
     MCPConnectionError,
     MCPConnectionState,
+    MCPRateLimitError,
     MCPServiceUnavailableError,
     MCPTimeoutError,
     MCPValidationError,
     ZenMCPClient,
 )
-from src.mcp_integration.parallel_executor import ParallelSubagentExecutor
+from src.mcp_integration.parallel_executor import (
+    ExecutionResult,
+    ParallelSubagentExecutor,
+)
 from src.utils.resilience import (
     CircuitBreakerConfig,
     RetryConfig,
@@ -179,8 +185,6 @@ class TestComprehensiveErrorHandling:
             mock_client.post.side_effect = http_error
 
             # Service unavailable errors are retried, so we expect a RetryError wrapping the original
-            import tenacity
-
             with pytest.raises(tenacity.RetryError) as exc_info:
                 await client.orchestrate_agents([])
 
@@ -219,8 +223,6 @@ class TestComprehensiveErrorHandling:
             mock_error_response.headers = {"Retry-After": "60", "X-RateLimit-Limit": "100"}
             http_error = httpx.HTTPStatusError("Rate limit exceeded", request=MagicMock(), response=mock_error_response)
             mock_client.post.side_effect = http_error
-
-            from src.mcp_integration.mcp_client import MCPRateLimitError
 
             with pytest.raises(MCPRateLimitError) as exc_info:
                 await client.orchestrate_agents([])
@@ -320,15 +322,16 @@ class TestComprehensiveErrorHandling:
         success_count = 0
 
         # Attempt multiple searches
-        for i in range(20):
+        for _ in range(20):
             try:
-                results = await store.search(search_params)
+                await store.search(search_params)
                 success_count += 1
-            except Exception as e:
+            except RuntimeError as e:
                 error_count += 1
                 # Verify error is properly handled
-                assert isinstance(e, RuntimeError)
-                assert "Simulated error" in str(e)
+                error_msg = "Expected 'Simulated error' in exception message"
+                if "Simulated error" not in str(e):
+                    raise AssertionError(error_msg) from e
 
         # Test that operations complete (regardless of error simulation effectiveness)
         assert error_count + success_count == 20  # Total attempts
@@ -358,8 +361,6 @@ class TestComprehensiveErrorHandling:
         # Mock the client's get_collections method to raise a connection error
         with patch.object(store, "_client") as mock_client:
             # Create a mock that raises the expected error
-            from qdrant_client.http.exceptions import ResponseHandlingException
-
             mock_client.get_collections.side_effect = ResponseHandlingException("Connection refused")
 
             # The error should be caught and handled by QdrantVectorStore
@@ -421,20 +422,19 @@ class TestComprehensiveErrorHandling:
         async def failing_function():
             raise RuntimeError("Simulated failure")
 
-        for i in range(3):
+        for _ in range(3):
             try:
                 await circuit_breaker.execute(failing_function)
             except Exception:
-                pass  # Expected to fail
+                # Expected to fail - circuit breaker should open after failures
+                continue
 
         # Should transition to OPEN state
         assert circuit_breaker.state.value == "open"
 
         # Test call blocking in OPEN state
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(RuntimeError, match="Circuit breaker is OPEN"):
             await circuit_breaker.execute(lambda: "test")
-
-        assert "Circuit breaker is OPEN" in str(exc_info.value)
 
         # Test transition to HALF_OPEN after timeout
         await asyncio.sleep(0.1)  # Simulate time passing
@@ -480,7 +480,7 @@ class TestComprehensiveErrorHandling:
             call_count += 1
             raise Exception("Permanent failure")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Permanent failure"):
             await retry_policy.execute(always_failing_function)
 
         assert call_count == 4  # Original + 3 retries
@@ -555,12 +555,12 @@ class TestComprehensiveErrorHandling:
             def mock_execute_single_subagent(task, timeout):
                 agent_id = task.get("agent_id", "unknown")
                 if agent_id == "failing_agent":
-                    from src.mcp_integration.parallel_executor import ExecutionResult
-
                     return ExecutionResult(
-                        agent_id=agent_id, success=False, error="Agent execution failed", execution_time=0.001,
+                        agent_id=agent_id,
+                        success=False,
+                        error="Agent execution failed",
+                        execution_time=0.001,
                     )
-                from src.mcp_integration.parallel_executor import ExecutionResult
 
                 return ExecutionResult(
                     agent_id=agent_id,
@@ -739,7 +739,7 @@ class TestComprehensiveErrorHandling:
                         # Try to process with HyDE (may fail due to vector store errors)
                         try:
                             hyde_result = await counselor.hyde_processor.process_query(query)
-                        except:
+                        except Exception:
                             # Use original query if HyDE fails
                             hyde_result = {"enhanced_query": query}
 
@@ -764,12 +764,16 @@ class TestComprehensiveErrorHandling:
                         except Exception as e:
                             failed_queries += 1
                             # Verify error is handled gracefully
-                            assert isinstance(e, (MCPTimeoutError, RuntimeError))
+                            if not isinstance(e, MCPTimeoutError | RuntimeError):
+                                error_msg = f"Expected MCPTimeoutError or RuntimeError, got {type(e)}"
+                                raise TypeError(error_msg) from e
 
                     except Exception as e:
                         failed_queries += 1
                         # Should be controlled failures
-                        assert isinstance(e, (MCPTimeoutError, RuntimeError, ConnectionError))
+                        if not isinstance(e, MCPTimeoutError | RuntimeError | ConnectionError):
+                            error_msg = f"Expected controlled failure type, got {type(e)}"
+                            raise TypeError(error_msg) from e
 
                 # Should have mixed results due to intermittent failures
                 assert successful_queries > 0
