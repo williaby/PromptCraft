@@ -85,7 +85,10 @@ class TestMCPConfigurationIntegration:
 
             # Verify correct client type was created
             mock_zen_client.assert_called_once_with(
-                server_url="http://localhost:3000", timeout=30.0, max_retries=3, api_key="test_key_123",
+                server_url="http://localhost:3000",
+                timeout=30.0,
+                max_retries=3,
+                api_key="test_key_123",
             )
             assert client == mock_zen_client.return_value
 
@@ -209,7 +212,11 @@ class TestMCPConfigurationIntegration:
 
         # Test development environment
         dev_settings = ApplicationSettings(
-            environment="dev", mcp_enabled=True, mcp_server_url="http://localhost:3000", mcp_timeout=30.0, debug=True,
+            environment="dev",
+            mcp_enabled=True,
+            mcp_server_url="http://localhost:3000",
+            mcp_timeout=30.0,
+            debug=True,
         )
 
         # Test production environment

@@ -119,7 +119,12 @@ class TestProductionReadiness:
 
             # Mock optimized vector store
             mock_vector_store = EnhancedMockVectorStore(
-                {"type": "mock", "simulate_latency": True, "error_rate": 0.0, "base_latency": 0.005},  # Very low latency
+                {
+                    "type": "mock",
+                    "simulate_latency": True,
+                    "error_rate": 0.0,
+                    "base_latency": 0.005,
+                },  # Very low latency
             )
             await mock_vector_store.connect()
 
@@ -138,7 +143,8 @@ class TestProductionReadiness:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -243,7 +249,8 @@ class TestProductionReadiness:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -276,7 +283,8 @@ class TestProductionReadiness:
                     # Execute concurrent queries
                     start_time = time.time()
                     results = await asyncio.gather(
-                        *[process_query_with_timing(query) for query in queries], return_exceptions=True,
+                        *[process_query_with_timing(query) for query in queries],
+                        return_exceptions=True,
                     )
                     total_time = time.time() - start_time
 
@@ -320,7 +328,9 @@ class TestProductionReadiness:
 
                     # Record performance metrics
                     performance_monitor.record_concurrent_load(
-                        concurrent_queries, success_rate, avg_response_time if response_times else 0,
+                        concurrent_queries,
+                        success_rate,
+                        avg_response_time if response_times else 0,
                     )
 
     @pytest.mark.performance
@@ -364,7 +374,8 @@ class TestProductionReadiness:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -545,7 +556,8 @@ class TestProductionReadiness:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -642,7 +654,8 @@ class TestProductionReadiness:
 
             with (
                 patch(
-                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client,
+                    "src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings",
+                    return_value=mock_mcp_client,
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
@@ -686,7 +699,8 @@ class TestProductionReadiness:
                             }
 
                         batch_results = await asyncio.gather(
-                            *[process_stress_query(query) for query in batch_queries], return_exceptions=True,
+                            *[process_stress_query(query) for query in batch_queries],
+                            return_exceptions=True,
                         )
 
                         phase_responses.extend([r for r in batch_results if not isinstance(r, Exception)])

@@ -30,7 +30,11 @@ class TestExecutionResult:
         """Test ExecutionResult initialization."""
         start_time = time.time()
         result = ExecutionResult(
-            agent_id="test_agent", success=True, result={"data": "test"}, error=None, execution_time=1.5,
+            agent_id="test_agent",
+            success=True,
+            result={"data": "test"},
+            error=None,
+            execution_time=1.5,
         )
 
         assert result.agent_id == "test_agent"
@@ -64,7 +68,11 @@ class TestExecutionResult:
     def test_execution_result_to_dict(self):
         """Test ExecutionResult to_dict method."""
         result = ExecutionResult(
-            agent_id="test_agent", success=True, result={"data": "test"}, error=None, execution_time=1.5,
+            agent_id="test_agent",
+            success=True,
+            result={"data": "test"},
+            error=None,
+            execution_time=1.5,
         )
 
         result_dict = result.to_dict()

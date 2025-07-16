@@ -109,7 +109,9 @@ class TestVectorStoreHydeIntegration:
             # Verify documents can be searched
             embeddings = [hyde_doc.embedding for hyde_doc in enhanced_query.hypothetical_docs]
             search_params = SearchParameters(
-                embeddings=embeddings, collection="hyde_documents", strategy=SearchStrategy.SEMANTIC,
+                embeddings=embeddings,
+                collection="hyde_documents",
+                strategy=SearchStrategy.SEMANTIC,
             )
 
             search_results = await enhanced_vector_store.search(search_params)
@@ -157,7 +159,10 @@ class TestVectorStoreHydeIntegration:
 
         for strategy in strategies_to_test:
             search_params = SearchParameters(
-                embeddings=[query_embedding], collection="multi_tier_test", strategy=strategy, limit=5,
+                embeddings=[query_embedding],
+                collection="multi_tier_test",
+                strategy=strategy,
+                limit=5,
             )
 
             results = await enhanced_vector_store.search(search_params)
