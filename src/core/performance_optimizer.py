@@ -369,6 +369,10 @@ def cache_hyde_processing(func: F) -> F:
         # Create cache key from query and parameters
         query = args[1] if args and len(args) > 1 else kwargs.get("query", "")
 
+        # Handle None query by converting to empty string
+        if query is None:
+            query = ""
+
         cache_key = f"hyde_processing:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
 
         # Check cache first

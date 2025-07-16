@@ -234,12 +234,16 @@ class HydeProcessor:
         self,
         vector_store: AbstractVectorStore | None = None,
         query_counselor: MockQueryCounselor | None = None,
+        specificity_threshold_high: float | None = None,
+        specificity_threshold_low: float | None = None,
     ) -> None:
         """Initialize HydeProcessor with optional dependencies.
 
         Args:
             vector_store: Vector store instance (auto-creates from settings if None)
             query_counselor: Query counselor instance (creates mock if None)
+            specificity_threshold_high: High specificity threshold (default: 85)
+            specificity_threshold_low: Low specificity threshold (default: 40)
         """
         self.logger = logging.getLogger(__name__)
 
@@ -268,6 +272,10 @@ class HydeProcessor:
             self.vector_store = vector_store
 
         self.query_counselor = query_counselor or MockQueryCounselor()
+
+        # Store thresholds
+        self.specificity_threshold_high = specificity_threshold_high or HIGH_SPECIFICITY_THRESHOLD
+        self.specificity_threshold_low = specificity_threshold_low or LOW_SPECIFICITY_THRESHOLD
 
         # Initialize vector store connection
         self._vector_store_connected = False
@@ -378,6 +386,136 @@ class HydeProcessor:
 
         return docs
 
+    def _analyze_query_specificity(self, query: str) -> float:
+        """
+        Analyze query specificity and return a score.
+
+        Args:
+            query: User query string
+
+        Returns:
+            float: Specificity score between 0-100
+        """
+        if not query or not query.strip():
+            return 0.0
+
+        query_lower = query.strip().lower()
+        word_count = len(query.split())
+        specificity_score = 50.0  # Default medium specificity
+
+        # Increase score for specific technical terms
+        technical_terms = ["implement", "configure", "install", "error", "debug", "optimize"]
+        if any(term in query_lower for term in technical_terms):
+            specificity_score += 20
+
+        # Increase score for longer, more detailed queries
+        if word_count > HIGH_WORD_COUNT_THRESHOLD:
+            specificity_score += 15
+        elif word_count > MEDIUM_WORD_COUNT_THRESHOLD:
+            specificity_score += 10
+
+        # Decrease score for vague queries
+        vague_terms = ["help", "how", "what", "general", "basic", "simple"]
+        if any(term in query_lower for term in vague_terms):
+            specificity_score -= 20
+
+        # Extra penalty for very short vague queries
+        if word_count <= 2 and any(term in query_lower for term in vague_terms):
+            specificity_score -= 20
+
+        # Ensure score is within bounds
+        return max(0.0, min(100.0, specificity_score))
+
+    def _determine_processing_strategy(self, analysis: QueryAnalysis) -> str:
+        """
+        Determine processing strategy based on query analysis.
+
+        Args:
+            analysis: Query analysis results
+
+        Returns:
+            str: Processing strategy to use
+        """
+        if analysis.specificity_score > self.specificity_threshold_high:
+            return ProcessingStrategy.HYPOTHETICAL.value
+        if analysis.specificity_score >= self.specificity_threshold_low:
+            return ProcessingStrategy.ENHANCED.value
+        return ProcessingStrategy.DIRECT.value
+
+    def _enhance_query(self, query: str, strategy: ProcessingStrategy) -> str:
+        """
+        Enhance query based on processing strategy.
+
+        Args:
+            query: Original query string
+            strategy: Processing strategy to apply
+
+        Returns:
+            str: Enhanced query string
+        """
+        if strategy == ProcessingStrategy.DIRECT:
+            # Direct strategy - return query as-is
+            return query
+        if strategy == ProcessingStrategy.ENHANCED:
+            # Enhanced strategy - add context and specificity
+            return f"Detailed explanation and implementation guide for: {query}"
+        # HYPOTHETICAL
+        # Hypothetical strategy - add clarifying context
+        return f"Please provide more specific details about: {query}"
+
+    def _create_embeddings(self, text: str) -> list[float]:
+        """
+        Create embeddings for text.
+
+        Args:
+            text: Text to create embeddings for
+
+        Returns:
+            list[float]: Embedding vector
+        """
+        if not text or not text.strip():
+            return [0.0] * DEFAULT_EMBEDDING_DIMENSIONS
+
+        # Mock embedding generation based on text hash
+        text_hash = hash(text.strip())
+        base_value = (text_hash % 1000) / 1000.0  # 0.0 to 0.999
+
+        # Create variant embeddings based on text characteristics
+        embeddings = []
+        for i in range(DEFAULT_EMBEDDING_DIMENSIONS):
+            value = base_value + (i * 0.001)
+            # Normalize to [-1, 1] range typical for embeddings
+            embeddings.append((value % 2.0) - 1.0)
+
+        return embeddings
+
+    def _create_search_parameters(
+        self,
+        enhanced_query: str,
+        embeddings: list[float],
+        limit: int = 10,
+        collection: str = "default",
+    ) -> SearchParameters:
+        """
+        Create search parameters for vector store query.
+
+        Args:
+            enhanced_query: Enhanced query string
+            embeddings: Query embeddings
+            limit: Maximum number of results
+            collection: Collection name to search
+
+        Returns:
+            SearchParameters: Search parameters object
+        """
+        return SearchParameters(
+            embeddings=[embeddings],  # SearchParameters expects list of embeddings
+            limit=limit,
+            collection=collection,
+            strategy=SearchStrategy.SEMANTIC,
+            score_threshold=0.3,
+        )
+
     async def enhance_embeddings(self, query: str, docs: list[HypotheticalDocument]) -> list[list[float]]:
         """
         Create enhanced embeddings from query and hypothetical documents.
@@ -464,6 +602,7 @@ class HydeProcessor:
         Returns:
             RankedResults: Final processed and ranked results
         """
+        start_time = time.time()
         try:
             # Step 1: Three-tier analysis
             enhanced_query = await self.three_tier_analysis(query)
@@ -511,10 +650,11 @@ class HydeProcessor:
         except Exception as e:
             self.logger.error("HyDE processing failed: %s", str(e))
             # Return empty results with error indication
+            processing_time = time.time() - start_time
             return RankedResults(
                 results=[],
                 total_found=0,
-                processing_time=0.0,
+                processing_time=processing_time,
                 ranking_method="error",
                 hyde_enhanced=False,
             )

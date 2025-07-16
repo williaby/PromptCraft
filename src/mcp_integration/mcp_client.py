@@ -157,15 +157,27 @@ class MCPRateLimitError(MCPError):
 class MCPAuthenticationError(MCPError):
     """Authentication-related MCP errors."""
 
-    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        error_code: str = "AUTHENTICATION_FAILED",
+        details: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(message, MCPErrorType.AUTHENTICATION_ERROR, details)
+        self.error_code = error_code
 
 
 class MCPValidationError(MCPError):
     """Validation-related MCP errors."""
 
-    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        validation_errors: dict[str, Any] | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(message, MCPErrorType.INVALID_REQUEST, details)
+        self.validation_errors = validation_errors or {}
 
 
 class MCPHealthStatus(BaseModel):
@@ -568,6 +580,18 @@ class ZenMCPClient(MCPClientInterface):
             # Perform server health check and handshake
             try:
                 response = await self.session.get("/health")
+                if response.status_code == 401:  # Unauthorized
+                    error_data = {}
+                    try:
+                        if response.headers.get("content-type", "").startswith("application/json"):
+                            error_data = response.json()
+                    except Exception:
+                        pass
+                    raise MCPAuthenticationError(
+                        "Authentication failed",
+                        error_code="INVALID_API_KEY",
+                        details={"status_code": response.status_code, "response": response.text[:200], **error_data},
+                    )
                 if response.status_code != HTTP_OK_STATUS:
                     raise MCPConnectionError(
                         f"Server health check failed: HTTP {response.status_code}",
@@ -585,6 +609,9 @@ class ZenMCPClient(MCPClientInterface):
                 raise MCPConnectionError(f"Failed to connect to MCP server: {e}") from e
             except httpx.TimeoutException as e:
                 raise MCPTimeoutError(f"Connection timeout to MCP server: {e}", self.timeout) from e
+            except (MCPAuthenticationError, MCPValidationError):
+                # Re-raise MCP-specific errors without wrapping
+                raise
             except Exception as e:
                 raise MCPConnectionError(f"Unexpected connection error: {e}") from e
 
@@ -593,6 +620,18 @@ class ZenMCPClient(MCPClientInterface):
             logger.info("Successfully connected to Zen MCP Server")
             return True
 
+        except (MCPAuthenticationError, MCPValidationError) as e:
+            # Re-raise MCP-specific errors without wrapping
+            self.connection_state = MCPConnectionState.FAILED
+            self.error_count += 1
+            logger.error(f"Failed to connect to Zen MCP Server: {e}")
+
+            # Cleanup session on connection failure
+            if hasattr(self, "session") and self.session:
+                await self.session.aclose()
+                self.session = None
+
+            raise
         except Exception as e:
             self.connection_state = MCPConnectionState.FAILED
             self.error_count += 1
@@ -747,18 +786,24 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == HTTP_BAD_REQUEST:
-                    # Bad request - return validation failure
+                    # Bad request - raise validation error
                     error_data = (
                         e.response.json()
                         if e.response.headers.get("content-type", "").startswith("application/json")
                         else {}
                     )
-                    return {
-                        "is_valid": False,
-                        "sanitized_query": query.strip(),
-                        "potential_issues": error_data.get("issues", ["Invalid query format"]),
-                        "processing_time_ms": (time.time() - start_time) * 1000,
-                    }
+                    raise MCPValidationError(
+                        error_data.get("error", "Validation failed"),
+                        validation_errors=error_data.get("details", {}),
+                        details={
+                            "status_code": e.response.status_code,
+                            "response": e.response.text[:200],
+                            **error_data,
+                        },
+                    ) from e
+                if e.response.status_code == 503:  # Service Unavailable
+                    retry_after = int(e.response.headers.get("Retry-After", 60))
+                    raise MCPServiceUnavailableError("Validation service unavailable", retry_after) from e
                 raise MCPServiceUnavailableError(f"Validation service error: HTTP {e.response.status_code}") from e
 
             except httpx.TimeoutException as e:
@@ -834,6 +879,22 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 self.error_count += 1
+                if e.response.status_code == 401:  # Unauthorized
+                    error_data = {}
+                    try:
+                        if e.response.headers.get("content-type", "").startswith("application/json"):
+                            error_data = e.response.json()
+                    except Exception:
+                        pass
+                    raise MCPAuthenticationError(
+                        "Authentication failed",
+                        error_code="INVALID_API_KEY",
+                        details={
+                            "status_code": e.response.status_code,
+                            "response": e.response.text[:200],
+                            **error_data,
+                        },
+                    ) from e
                 if e.response.status_code == HTTP_BAD_REQUEST:
                     error_data = (
                         e.response.json()
@@ -848,7 +909,12 @@ class ZenMCPClient(MCPClientInterface):
                 if e.response.status_code == HTTP_TOO_MANY_REQUESTS:
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPRateLimitError("Rate limit exceeded", retry_after) from e
-                raise MCPServiceUnavailableError(f"Orchestration service error: HTTP {e.response.status_code}") from e
+                if e.response.status_code == 503:  # Service Unavailable
+                    retry_after = int(e.response.headers.get("Retry-After", 60))
+                    raise MCPServiceUnavailableError("Service unavailable", retry_after) from e
+                raise MCPServiceUnavailableError(
+                    f"Orchestration service error: HTTP {e.response.status_code}",
+                ) from e
 
             except httpx.TimeoutException as e:
                 self.error_count += 1
