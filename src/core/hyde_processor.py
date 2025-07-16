@@ -67,6 +67,8 @@ from src.core.vector_store import (
 from src.core.vector_store import (
     SearchResult as VectorSearchResult,
 )
+from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
+from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
 
 # Constants for HyDE processing thresholds (per hyde-processor.md)
 HIGH_SPECIFICITY_THRESHOLD = 85
@@ -230,12 +232,18 @@ class HydeProcessor:
     - Low specificity: Return clarifying questions to user
     """
 
+    # Class attribute type annotations
+    hybrid_router: HybridRouter | None
+    model_registry: ModelRegistry | None
+
     def __init__(
         self,
         vector_store: AbstractVectorStore | None = None,
         query_counselor: MockQueryCounselor | None = None,
         specificity_threshold_high: float | None = None,
         specificity_threshold_low: float | None = None,
+        hybrid_router: HybridRouter | None = None,
+        enable_openrouter: bool = True,
     ) -> None:
         """Initialize HydeProcessor with optional dependencies.
 
@@ -244,6 +252,8 @@ class HydeProcessor:
             query_counselor: Query counselor instance (creates mock if None)
             specificity_threshold_high: High specificity threshold (default: 85)
             specificity_threshold_low: Low specificity threshold (default: 40)
+            hybrid_router: HybridRouter instance for OpenRouter integration
+            enable_openrouter: Whether to enable OpenRouter integration
         """
         self.logger = logging.getLogger(__name__)
 
@@ -276,6 +286,19 @@ class HydeProcessor:
         # Store thresholds
         self.specificity_threshold_high = specificity_threshold_high or HIGH_SPECIFICITY_THRESHOLD
         self.specificity_threshold_low = specificity_threshold_low or LOW_SPECIFICITY_THRESHOLD
+
+        # Initialize OpenRouter integration
+        self.enable_openrouter = enable_openrouter
+        if enable_openrouter:
+            self.hybrid_router = hybrid_router or HybridRouter(
+                strategy=RoutingStrategy.OPENROUTER_PRIMARY,
+                enable_gradual_rollout=True,
+            )
+            self.model_registry = get_model_registry()
+            self.logger.info("Initialized HydeProcessor with OpenRouter integration")
+        else:
+            self.hybrid_router = None
+            self.model_registry = None
 
         # Initialize vector store connection
         self._vector_store_connected = False
@@ -351,7 +374,14 @@ class HydeProcessor:
         """Internal method to generate hypothetical documents."""
         start_time = time.time()
 
-        # Mock document generation (to be replaced with real AI service)
+        # Try to use OpenRouter for document generation if available
+        if self.enable_openrouter and self.hybrid_router and self.model_registry:
+            try:
+                return await self._generate_hypothetical_docs_with_openrouter(query)
+            except Exception as e:
+                self.logger.warning("OpenRouter document generation failed, falling back to mock: %s", str(e))
+
+        # Fallback to mock document generation
         docs = []
 
         # Generate 1-3 hypothetical documents based on query
@@ -385,6 +415,92 @@ class HydeProcessor:
         self.logger.info("Generated %d hypothetical documents in %.3fs", len(docs), processing_time)
 
         return docs
+
+    async def _generate_hypothetical_docs_with_openrouter(self, query: str) -> list[HypotheticalDocument]:
+        """Generate hypothetical documents using OpenRouter API."""
+        start_time = time.time()
+
+        # Select appropriate model for document generation
+        if not self.model_registry:
+            raise ValueError("Model registry not available for HyDE processing")
+
+        selected_model = self.model_registry.select_best_model(
+            task_type="general",
+            allow_premium=False,  # Use free models for HyDE
+        )
+
+        # Create workflow steps for document generation
+        from src.mcp_integration.mcp_client import WorkflowStep
+
+        workflow_steps = []
+        for i in range(MAX_HYPOTHETICAL_DOCS):
+            step = WorkflowStep(
+                step_id=f"hyde_doc_{i}",
+                agent_id="hyde_generator",
+                input_data={
+                    "query": query,
+                    "selected_model": selected_model,
+                    "task_type": "document_generation",
+                    "document_type": ["guide", "technical_doc", "expert_analysis"][i],
+                    "generation_prompt": self._create_hyde_prompt(query, i),
+                },
+                timeout_seconds=30,
+            )
+            workflow_steps.append(step)
+
+        # Execute document generation through HybridRouter
+        if not self.hybrid_router:
+            raise ValueError("Hybrid router not available for HyDE processing")
+
+        responses = await self.hybrid_router.orchestrate_agents(workflow_steps)
+
+        # Convert responses to HypotheticalDocument objects
+        docs = []
+        for i, response in enumerate(responses):
+            if response.success and response.content:
+                # Create embedding from the generated content
+                embedding = self._create_embeddings(response.content)
+
+                doc = HypotheticalDocument(
+                    content=response.content,
+                    relevance_score=response.confidence,
+                    embedding=embedding,
+                    generation_method="openrouter",
+                    metadata={
+                        "generated_at": time.time(),
+                        "query_hash": hash(query),
+                        "doc_index": i,
+                        "model_used": selected_model,
+                        "processing_time": response.processing_time,
+                    },
+                )
+                docs.append(doc)
+
+        processing_time = time.time() - start_time
+        self.logger.info(
+            "Generated %d hypothetical documents via OpenRouter in %.3fs (model: %s)",
+            len(docs),
+            processing_time,
+            selected_model,
+        )
+
+        return docs
+
+    def _create_hyde_prompt(self, query: str, doc_index: int) -> str:
+        """Create specialized prompt for hypothetical document generation."""
+        prompt_templates = [
+            f"Write a comprehensive guide that would answer the query '{query}'. "
+            f"Include step-by-step instructions, best practices, and practical examples. "
+            f"Format as a well-structured technical document.",
+            f"Create technical documentation that explains '{query}' with detailed code examples, "
+            f"troubleshooting tips, and common implementation patterns. "
+            f"Focus on practical implementation details.",
+            f"Provide expert analysis of '{query}' including common pitfalls, "
+            f"recommended solutions, performance considerations, and real-world examples. "
+            f"Write from the perspective of an experienced practitioner.",
+        ]
+
+        return prompt_templates[doc_index % len(prompt_templates)]
 
     def _analyze_query_specificity(self, query: str) -> float:
         """

@@ -347,6 +347,39 @@ class ApplicationSettings(BaseSettings):
         description="MCP health check interval in seconds",
     )
 
+    # OpenRouter Configuration
+    openrouter_api_key: SecretStr | None = Field(
+        default=None,
+        description="OpenRouter API key for AI model routing (sensitive - never logged)",
+    )
+
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        description="OpenRouter API base URL",
+    )
+
+    openrouter_timeout: float = Field(
+        default=30.0,
+        description="OpenRouter request timeout in seconds",
+    )
+
+    openrouter_max_retries: int = Field(
+        default=3,
+        description="Maximum number of OpenRouter request retries",
+    )
+
+    openrouter_enabled: bool = Field(
+        default=True,
+        description="Whether OpenRouter integration is enabled",
+    )
+
+    openrouter_traffic_percentage: int = Field(
+        default=0,
+        ge=0,
+        le=100,
+        description="Percentage of traffic to route to OpenRouter (0-100) for gradual rollout",
+    )
+
     # Qdrant Vector Database Configuration
     qdrant_host: str = Field(
         default="192.168.1.16",
@@ -430,6 +463,48 @@ class ApplicationSettings(BaseSettings):
     retry_enabled: bool = Field(
         default=True,
         description="Whether retry logic is enabled",
+    )
+
+    # Circuit breaker configuration
+    circuit_breaker_failure_threshold: int = Field(
+        default=5,
+        description="Number of failures before opening circuit breaker",
+    )
+    circuit_breaker_success_threshold: int = Field(
+        default=3,
+        description="Number of successes to close circuit breaker from half-open",
+    )
+    circuit_breaker_recovery_timeout: int = Field(
+        default=60,
+        description="Seconds before attempting recovery from open state",
+    )
+    circuit_breaker_max_retries: int = Field(
+        default=3,
+        description="Maximum retry attempts before circuit breaker action",
+    )
+    circuit_breaker_base_delay: float = Field(
+        default=1.0,
+        description="Base delay in seconds for exponential backoff",
+    )
+    circuit_breaker_max_delay: float = Field(
+        default=60.0,
+        description="Maximum delay in seconds between retries",
+    )
+    circuit_breaker_backoff_multiplier: float = Field(
+        default=2.0,
+        description="Multiplier for exponential backoff calculation",
+    )
+    circuit_breaker_jitter_enabled: bool = Field(
+        default=True,
+        description="Enable jitter to prevent thundering herd effect",
+    )
+    circuit_breaker_health_check_interval: int = Field(
+        default=30,
+        description="Seconds between automated health checks",
+    )
+    circuit_breaker_health_check_timeout: float = Field(
+        default=5.0,
+        description="Timeout in seconds for health check operations",
     )
 
     model_config = SettingsConfigDict(

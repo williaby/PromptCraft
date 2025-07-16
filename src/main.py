@@ -38,6 +38,7 @@ from src.security.error_handlers import setup_secure_error_handlers
 from src.security.input_validation import SecureQueryParams, SecureTextInput
 from src.security.middleware import setup_security_middleware
 from src.security.rate_limiting import RateLimits, rate_limit, setup_rate_limiting
+from src.utils.circuit_breaker import get_all_circuit_breakers
 
 # Configure logging
 logging.basicConfig(
@@ -216,11 +217,18 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     try:
         health_summary = get_configuration_health_summary()
 
+        # Add circuit breaker status
+        circuit_breakers = get_all_circuit_breakers()
+        circuit_breaker_status = {
+            "circuit_breakers": {name: breaker.get_health_status() for name, breaker in circuit_breakers.items()},
+        }
+
         if health_summary["healthy"]:
             return {
                 "status": "healthy",
                 "service": "promptcraft-hybrid",
                 **health_summary,
+                **circuit_breaker_status,
             }
         logger.warning("Health check failed - configuration unhealthy")
         raise HTTPException(
@@ -355,6 +363,65 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
                 "status": "error",
                 "service": "mcp-integration",
                 "error": "MCP health check failed",
+            },
+        ) from e
+
+
+@app.get("/health/circuit-breakers", response_model=dict[str, Any])
+@rate_limit(RateLimits.HEALTH_CHECK)
+async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    """Circuit breaker health check endpoint.
+
+    This endpoint provides detailed status information for all registered
+    circuit breakers, including state, metrics, and configuration details.
+    Useful for monitoring service resilience and failure patterns.
+
+    Returns:
+        Circuit breaker health status information
+
+    Raises:
+        HTTPException: If circuit breaker status cannot be determined
+    """
+    try:
+        circuit_breakers = get_all_circuit_breakers()
+
+        if not circuit_breakers:
+            return {
+                "status": "no_circuit_breakers",
+                "service": "circuit-breaker-monitoring",
+                "message": "No circuit breakers registered",
+                "circuit_breakers": {},
+            }
+
+        # Get status for all circuit breakers
+        circuit_breaker_details = {}
+        overall_healthy = True
+
+        for name, breaker in circuit_breakers.items():
+            status_info = breaker.get_health_status()
+            circuit_breaker_details[name] = status_info
+
+            # Check if any circuit breaker is unhealthy
+            if not status_info.get("healthy", True):
+                overall_healthy = False
+
+        return {
+            "status": "healthy" if overall_healthy else "degraded",
+            "service": "circuit-breaker-monitoring",
+            "overall_healthy": overall_healthy,
+            "circuit_breaker_count": len(circuit_breakers),
+            "circuit_breakers": circuit_breaker_details,
+        }
+
+    except Exception as e:
+        logger.error("Circuit breaker health check failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "status": "error",
+                "service": "circuit-breaker-monitoring",
+                "error": "Circuit breaker health check failed",
+                "details": str(e),
             },
         ) from e
 

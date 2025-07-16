@@ -43,7 +43,10 @@ class TestHydeProcessor:
     @pytest.fixture
     def hyde_processor(self, mock_vector_store):
         """Create HydeProcessor instance with mocked vector store."""
-        return HydeProcessor(vector_store=mock_vector_store)
+        return HydeProcessor(
+            vector_store=mock_vector_store,
+            enable_openrouter=False,  # Disable OpenRouter for tests
+        )
 
     @pytest.fixture
     def sample_queries(self):
