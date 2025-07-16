@@ -64,12 +64,17 @@ class MockOpenRouterClient(MCPClientInterface):
     async def health_check(self) -> MCPHealthStatus:
         if self.should_fail:
             return MCPHealthStatus(
-                status="unhealthy",
-                response_time=1.0,
+                connection_state=MCPConnectionState.FAILED,
+                response_time_ms=1000.0,
                 error_count=5,
                 metadata={"service": "openrouter", "error": "Mock failure"},
             )
-        return MCPHealthStatus(status="healthy", response_time=0.1, error_count=0, metadata={"service": "openrouter"})
+        return MCPHealthStatus(
+            connection_state=MCPConnectionState.CONNECTED,
+            response_time_ms=100.0,
+            error_count=0,
+            metadata={"service": "openrouter"},
+        )
 
     async def validate_query(self, query: str) -> dict:
         if self.should_fail:
@@ -130,12 +135,17 @@ class MockMCPClient(MCPClientInterface):
     async def health_check(self) -> MCPHealthStatus:
         if self.should_fail:
             return MCPHealthStatus(
-                status="unhealthy",
-                response_time=1.0,
+                connection_state=MCPConnectionState.FAILED,
+                response_time_ms=1000.0,
                 error_count=3,
                 metadata={"service": "mcp", "error": "Mock failure"},
             )
-        return MCPHealthStatus(status="healthy", response_time=0.2, error_count=0, metadata={"service": "mcp"})
+        return MCPHealthStatus(
+            connection_state=MCPConnectionState.CONNECTED,
+            response_time_ms=200.0,
+            error_count=0,
+            metadata={"service": "mcp"},
+        )
 
     async def validate_query(self, query: str) -> dict:
         if self.should_fail:
@@ -176,6 +186,10 @@ class MockCircuitBreaker:
     def __init__(self, is_open: bool = False):
         self.is_open = is_open
         self.call_count = 0
+        # Add state attribute to match the real circuit breaker
+        from src.utils.circuit_breaker import CircuitBreakerState
+
+        self.state = CircuitBreakerState.OPEN if is_open else CircuitBreakerState.CLOSED
 
     def is_available(self) -> bool:
         return not self.is_open
@@ -492,6 +506,7 @@ class TestGradualRolloutRouting:
         router = HybridRouter(
             openrouter_client=openrouter_client,
             mcp_client=mcp_client,
+            strategy=RoutingStrategy.MCP_PRIMARY,  # Use MCP primary to avoid overriding gradual rollout
         )
 
         # Test with 30% OpenRouter traffic
@@ -782,8 +797,8 @@ class TestHealthChecks:
         """Test health check when both services are healthy."""
         health_status = await hybrid_router.health_check()
 
-        assert health_status.status == "healthy"
-        assert health_status.response_time > 0
+        assert health_status.connection_state == MCPConnectionState.CONNECTED
+        assert health_status.response_time_ms > 0
         assert "hybrid_router" in health_status.metadata["service"]
         assert "openrouter_health" in health_status.metadata
         assert "mcp_health" in health_status.metadata
@@ -795,7 +810,7 @@ class TestHealthChecks:
 
         health_status = await hybrid_router.health_check()
 
-        assert health_status.status == "degraded"
+        assert health_status.connection_state == MCPConnectionState.DEGRADED
         assert health_status.metadata["openrouter_health"]["status"] == "unhealthy"
 
     @pytest.mark.asyncio
@@ -806,7 +821,7 @@ class TestHealthChecks:
 
         health_status = await hybrid_router.health_check()
 
-        assert health_status.status == "unhealthy"
+        assert health_status.connection_state == MCPConnectionState.FAILED
         assert hybrid_router.error_count > 0
 
 

@@ -330,16 +330,23 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
             # Determine overall health status
             response_time = time.time() - start_time
 
-            if openrouter_health and mcp_health:
+            # Check if services are healthy based on connection state
+            openrouter_healthy = (
+                openrouter_health and openrouter_health.connection_state == MCPConnectionState.CONNECTED
+            )
+            mcp_healthy = mcp_health and mcp_health.connection_state == MCPConnectionState.CONNECTED
+
+            # Check if services are degraded
+            openrouter_degraded = (
+                openrouter_health and openrouter_health.connection_state == MCPConnectionState.DEGRADED
+            )
+            mcp_degraded = mcp_health and mcp_health.connection_state == MCPConnectionState.DEGRADED
+
+            if openrouter_healthy and mcp_healthy:
                 # Both services healthy
                 status = "healthy"
-                if (
-                    openrouter_health.connection_state == MCPConnectionState.DEGRADED
-                    or mcp_health.connection_state == MCPConnectionState.DEGRADED
-                ):
-                    status = "degraded"
-            elif openrouter_health or mcp_health:
-                # One service healthy
+            elif (openrouter_healthy or mcp_healthy) or (openrouter_degraded or mcp_degraded):
+                # One service healthy or degraded
                 status = "degraded"
             else:
                 # Both services unhealthy
@@ -352,8 +359,14 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 "strategy": self.strategy.value,
                 "openrouter_traffic_percentage": self.openrouter_traffic_percentage,
                 "routing_metrics": self.metrics.to_dict(),
-                "openrouter_health": openrouter_health.metadata if openrouter_health else None,
-                "mcp_health": mcp_health.metadata if mcp_health else None,
+                "openrouter_health": {
+                    "status": "healthy" if openrouter_healthy else "degraded" if openrouter_degraded else "unhealthy",
+                    **(openrouter_health.metadata if openrouter_health else {}),
+                },
+                "mcp_health": {
+                    "status": "healthy" if mcp_healthy else "degraded" if mcp_degraded else "unhealthy",
+                    **(mcp_health.metadata if mcp_health else {}),
+                },
                 "circuit_breaker_enabled": self.circuit_breaker is not None,
             }
 

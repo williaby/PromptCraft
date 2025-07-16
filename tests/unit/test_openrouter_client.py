@@ -16,6 +16,7 @@ from src.mcp_integration.mcp_client import (
     MCPAuthenticationError,
     MCPConnectionError,
     MCPConnectionState,
+    MCPError,
     MCPHealthStatus,
     MCPRateLimitError,
     MCPTimeoutError,
@@ -278,7 +279,8 @@ class TestOpenRouterClientConnection:
             mock_settings.return_value = mock_settings_obj
 
             client = OpenRouterClient()
-            client.session = AsyncMock()
+            mock_session = AsyncMock()
+            client.session = mock_session
             client.connection_state = MCPConnectionState.CONNECTED
 
             result = await client.disconnect()
@@ -286,7 +288,7 @@ class TestOpenRouterClientConnection:
             assert result is True
             assert client.connection_state == MCPConnectionState.DISCONNECTED
             assert client.session is None
-            client.session.aclose.assert_called_once()
+            mock_session.aclose.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_disconnect_with_error(self):
@@ -335,7 +337,7 @@ class TestOpenRouterClientHealthCheck:
             health_status = await client.health_check()
 
             assert isinstance(health_status, MCPHealthStatus)
-            assert health_status.status == "healthy"
+            assert health_status.connection_state == MCPConnectionState.CONNECTED
             assert health_status.error_count == 0
             assert health_status.metadata["service"] == "openrouter"
             assert health_status.metadata["models_available"] == 2
@@ -362,7 +364,7 @@ class TestOpenRouterClientHealthCheck:
 
             health_status = await client.health_check()
 
-            assert health_status.status == "degraded"
+            assert health_status.connection_state == MCPConnectionState.DEGRADED
             assert health_status.error_count == 2  # Incremented during health check
             assert health_status.metadata["error"] == "HTTP 503"
 
@@ -382,7 +384,7 @@ class TestOpenRouterClientHealthCheck:
 
             health_status = await client.health_check()
 
-            assert health_status.status == "unhealthy"
+            assert health_status.connection_state == MCPConnectionState.FAILED
             assert "Connection failed" in health_status.metadata["error"]
 
 
@@ -454,7 +456,7 @@ class TestOpenRouterClientValidation:
             mock_settings.return_value = mock_settings_obj
 
             client = OpenRouterClient()
-            repetitive_query = " ".join(["spam"] * 60)  # Exceeds repetition limit
+            repetitive_query = " ".join(["spam"] * 120)  # Exceeds repetition limit (>100 words and >50 repetitions)
 
             result = await client.validate_query(repetitive_query)
 
@@ -522,7 +524,8 @@ class TestOpenRouterClientOrchestration:
             mock_settings.return_value = mock_settings_obj
 
             client = OpenRouterClient()
-            # No session - should trigger connection error
+            # Mock connect method to fail
+            client.connect = AsyncMock(return_value=False)
 
             step = WorkflowStep(
                 step_id="test-step",

@@ -20,9 +20,9 @@ class TestQueryCounselorHydeIntegration:
     """Test suite for QueryCounselor + HydeProcessor integration."""
 
     @pytest.fixture
-    async def query_counselor(self):
+    async def query_counselor(self, mock_hyde_processor, mock_mcp_client):
         """Create QueryCounselor instance for testing."""
-        return QueryCounselor()
+        return QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
     @pytest.fixture
     async def mock_hyde_processor(self):
@@ -31,6 +31,60 @@ class TestQueryCounselorHydeIntegration:
         hyde.three_tier_analysis = AsyncMock()
         hyde.process_query = AsyncMock()
         return hyde
+
+    @pytest.fixture
+    async def mock_mcp_client(self):
+        """Create mock MCP client for testing."""
+        from src.mcp_integration.mcp_client import MCPClientInterface, Response
+
+        mock_client = Mock(spec=MCPClientInterface)
+
+        # Mock workflow orchestration with conditional behavior
+        async def mock_orchestrate(workflow_steps, **kwargs):
+            # Extract query from workflow steps to determine behavior
+            query = ""
+            if workflow_steps and len(workflow_steps) > 0:
+                # Get query from the workflow step's input_data
+                input_data = getattr(workflow_steps[0], "input_data", {})
+                query = input_data.get("query", "")
+
+            # Return error response for empty queries
+            if not query or not query.strip():
+                return [
+                    Response(
+                        agent_id="mock_agent",
+                        content="Empty query error",
+                        success=False,
+                        confidence=0.0,
+                        processing_time=0.1,
+                        metadata={"error": True, "error_type": "empty_query"},
+                    ),
+                ]
+
+            # Normal successful response for non-empty queries
+            return [
+                Response(
+                    agent_id="mock_agent",
+                    content="Mocked response content",
+                    success=True,
+                    confidence=0.8,
+                    processing_time=0.1,
+                    metadata={"source": "mock"},
+                ),
+            ]
+
+        mock_client.orchestrate_agents = AsyncMock(side_effect=mock_orchestrate)
+
+        # Mock validate_query to return proper structure
+        mock_client.validate_query = AsyncMock(
+            side_effect=lambda q: {
+                "is_valid": True,
+                "sanitized_query": q,  # Return the original query
+                "potential_issues": [],
+            },
+        )
+
+        return mock_client
 
     @pytest.mark.asyncio
     async def test_hyde_processor_initialization(self, query_counselor):
@@ -49,7 +103,7 @@ class TestQueryCounselorHydeIntegration:
 
         # Validate response structure
         assert response is not None
-        assert response.content is not None
+        assert response.response is not None
         assert response.processing_time > 0
         assert processing_time < 2.0  # Must meet <2s SLA
 
@@ -69,7 +123,7 @@ class TestQueryCounselorHydeIntegration:
 
         # Validate response structure
         assert response is not None
-        assert response.content is not None
+        assert response.response is not None
         assert processing_time < 2.0  # Must meet <2s SLA
 
         # Check HyDE metadata (should indicate HyDE applied for complex query)

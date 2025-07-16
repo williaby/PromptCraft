@@ -200,6 +200,11 @@ class OpenRouterClient(MCPClientInterface):
                     logger.warning(f"OpenRouter connection test failed: {e}")
                     return False
 
+            except MCPAuthenticationError:
+                # Re-raise authentication errors without wrapping them
+                self.connection_state = MCPConnectionState.DISCONNECTED
+                self.error_count += 1
+                raise
             except Exception as e:
                 self.connection_state = MCPConnectionState.DISCONNECTED
                 self.error_count += 1

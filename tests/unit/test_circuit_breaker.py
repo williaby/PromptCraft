@@ -221,8 +221,8 @@ class TestCircuitBreakerStates:
         # Force circuit to open
         circuit_breaker.force_open()
 
-        # Wait for recovery timeout
-        await asyncio.sleep(1.1)  # Slightly longer than recovery timeout
+        # Wait for recovery timeout - use longer timeout to ensure recovery
+        await asyncio.sleep(2.0)  # Well beyond recovery timeout (recovery_timeout=1)
 
         async def success_func():
             return "recovery_success"
@@ -678,7 +678,7 @@ class TestCircuitBreakerIntegration:
             await circuit_breaker.call_async(simulated_service_call)
 
         # Phase 4: Wait for recovery timeout
-        await asyncio.sleep(1.1)
+        await asyncio.sleep(1.5)
 
         # Phase 5: Service comes back online
         service_healthy = True

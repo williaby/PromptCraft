@@ -74,7 +74,10 @@ class ParallelSubagentExecutor(LoggerMixin):
         """Get maximum number of concurrent workers."""
         parallel_config = self.config_manager.get_parallel_execution_config()
         max_concurrent = parallel_config.get("max_concurrent", 5)
-        return min(max_concurrent if isinstance(max_concurrent, int) else 5, 10)  # Cap at 10 for safety
+        return min(
+            max_concurrent if isinstance(max_concurrent, int) and max_concurrent > 0 else 5,
+            10,
+        )  # Cap at 10 for safety
 
     async def _select_optimal_client(self, server_name: str, tool_name: str = "") -> tuple[Any, str]:
         """Select optimal client (Docker vs self-hosted) for server and tool.
@@ -86,30 +89,35 @@ class ParallelSubagentExecutor(LoggerMixin):
         Returns:
             Tuple of (client_instance, deployment_type)
         """
-        # Check if server is available in Docker MCP Toolkit
-        if await self.docker_client.is_available(server_name):
-            # If specific tool requested, check if Docker deployment supports it
-            if tool_name and not await self.docker_client.supports_feature(server_name, tool_name):
-                self.logger.info(f"Docker MCP doesn't support {tool_name} for {server_name}, using self-hosted")
-                return self.mcp_client, "self_hosted_fallback"
+        try:
+            # Check if server is available in Docker MCP Toolkit
+            if await self.docker_client.is_available(server_name):
+                # If specific tool requested, check if Docker deployment supports it
+                if tool_name and not await self.docker_client.supports_feature(server_name, tool_name):
+                    self.logger.info(f"Docker MCP doesn't support {tool_name} for {server_name}, using self-hosted")
+                    return self.mcp_client, "self_hosted_fallback"
 
-            # Check server configuration preferences
-            server_config = self.config_manager.get_server_config(server_name)
-            if server_config:
-                preference = server_config.deployment_preference
-                if preference == "self-hosted":
-                    self.logger.info(f"Server {server_name} configured for self-hosted deployment")
-                    return self.mcp_client, "self_hosted_configured"
-                if preference == "docker":
-                    return self.docker_client, "docker_preferred"
+                # Check server configuration preferences
+                server_config = self.config_manager.get_server_config(server_name)
+                if server_config:
+                    preference = server_config.deployment_preference
+                    if preference == "self-hosted":
+                        self.logger.info(f"Server {server_name} configured for self-hosted deployment")
+                        return self.mcp_client, "self_hosted_configured"
+                    if preference == "docker":
+                        return self.docker_client, "docker_preferred"
 
-            # Default to Docker for universal IDE access
-            self.logger.debug(f"Using Docker MCP for {server_name} (universal IDE access)")
-            return self.docker_client, "docker_default"
+                # Default to Docker for universal IDE access
+                self.logger.debug(f"Using Docker MCP for {server_name} (universal IDE access)")
+                return self.docker_client, "docker_default"
 
-        # Fall back to self-hosted
-        self.logger.debug(f"Using self-hosted MCP for {server_name} (not available in Docker)")
-        return self.mcp_client, "self_hosted_only"
+            # Fall back to self-hosted
+            self.logger.debug(f"Using self-hosted MCP for {server_name} (not available in Docker)")
+            return self.mcp_client, "self_hosted_only"
+        except Exception as e:
+            # If Docker client fails, fall back to self-hosted
+            self.logger.warning(f"Docker client error for {server_name}, falling back to self-hosted: {e}")
+            return self.mcp_client, "self_hosted"
 
     async def execute_subagents_parallel(
         self,
