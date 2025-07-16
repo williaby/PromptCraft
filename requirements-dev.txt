@@ -808,7 +808,7 @@ marshmallow==4.0.0 ; python_version >= "3.11" and python_version < "3.13" \
 matplotlib-inline==0.1.7 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90 \
     --hash=sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca
-mcp==1.0.0 ; python_version >= "3.11" and python_version < "3.13" \
+mcp==1.10.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:bbe70ffa3341cd4da78b5eb504958355c68381fb29971471cea1e642a2af5b8a \
     --hash=sha256:dba51ce0b5c6a80e25576f606760c49a91ee90210fed805b530ca165d3bbc9b7
 mdurl==0.1.2 ; python_version >= "3.11" and python_version < "3.13" \
