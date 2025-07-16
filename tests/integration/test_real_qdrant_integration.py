@@ -323,7 +323,9 @@ class TestRealQdrantIntegration:
 
             with pytest.raises(Exception):
                 search_params = SearchParameters(
-                    embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS], limit=5, collection="test_collection",
+                    embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS],
+                    limit=5,
+                    collection="test_collection",
                 )
                 await store.search(search_params)
 
@@ -518,7 +520,9 @@ class TestRealQdrantIntegration:
 
             # Test concurrent search operations
             search_params = SearchParameters(
-                embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS], limit=5, collection="test_collection",
+                embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS],
+                limit=5,
+                collection="test_collection",
             )
 
             # Execute multiple concurrent searches
@@ -640,7 +644,9 @@ class TestRealQdrantIntegration:
 
             # Perform various operations to generate metrics
             search_params = SearchParameters(
-                embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS], limit=5, collection="metrics_test",
+                embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS],
+                limit=5,
+                collection="metrics_test",
             )
 
             # Execute multiple operations

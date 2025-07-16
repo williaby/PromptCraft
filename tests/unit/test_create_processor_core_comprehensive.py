@@ -52,7 +52,10 @@ class TestCreateProcessorCore:
     def test_create_request_dataclass(self):
         """Test CreateRequest dataclass initialization."""
         request = CreateRequest(
-            input_prompt="Test prompt", domain="technical", context={"key": "value"}, settings={"param": "value"},
+            input_prompt="Test prompt",
+            domain="technical",
+            context={"key": "value"},
+            settings={"param": "value"},
         )
         assert request.input_prompt == "Test prompt"
         assert request.domain == "technical"

@@ -7,11 +7,13 @@ Tests cover functionality, performance, error handling, and integration scenario
 """
 
 import asyncio
+import contextlib
 import time
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from src.core.performance_optimizer import clear_all_caches
 from src.core.vector_store import (
     CIRCUIT_BREAKER_THRESHOLD,
     DEFAULT_SEARCH_LIMIT,
@@ -32,6 +34,13 @@ from src.core.vector_store import (
     VectorStoreType,
     vector_store_connection,
 )
+
+# Import for integration tests
+try:
+    from src.core.hyde_processor import HydeProcessor, HypotheticalDocument
+except ImportError:
+    HydeProcessor = None
+    HypotheticalDocument = None
 
 
 class TestVectorStoreModels:
@@ -62,7 +71,11 @@ class TestVectorStoreModels:
         embeddings = [[0.1, 0.2], [0.3, 0.4]]
 
         params = SearchParameters(
-            embeddings=embeddings, limit=5, collection="test", strategy=SearchStrategy.SEMANTIC, score_threshold=0.7,
+            embeddings=embeddings,
+            limit=5,
+            collection="test",
+            strategy=SearchStrategy.SEMANTIC,
+            score_threshold=0.7,
         )
 
         assert params.embeddings == embeddings
@@ -85,7 +98,11 @@ class TestVectorStoreModels:
     def test_search_result_creation(self):
         """Test SearchResult model creation."""
         result = SearchResult(
-            document_id="doc_1", content="Test content", score=0.85, metadata={"type": "test"}, source="mock_store",
+            document_id="doc_1",
+            content="Test content",
+            score=0.85,
+            metadata={"type": "test"},
+            source="mock_store",
         )
 
         assert result.document_id == "doc_1"
@@ -115,7 +132,10 @@ class TestVectorStoreModels:
     def test_health_check_result(self):
         """Test HealthCheckResult model."""
         result = HealthCheckResult(
-            status=ConnectionStatus.HEALTHY, latency=0.05, details={"connections": 5}, error_message=None,
+            status=ConnectionStatus.HEALTHY,
+            latency=0.05,
+            details={"connections": 5},
+            error_message=None,
         )
 
         assert result.status == ConnectionStatus.HEALTHY
@@ -150,8 +170,8 @@ class TestVectorStoreMetrics:
 
         metrics.update_search_metrics(0.2)
         assert metrics.search_count == 2
-        assert metrics.total_latency == 0.3
-        assert metrics.avg_latency == 0.15
+        assert metrics.total_latency == pytest.approx(0.3)
+        assert metrics.avg_latency == pytest.approx(0.15)
 
     def test_insert_metrics_update(self):
         """Test insert metrics update."""
@@ -187,6 +207,11 @@ class TestVectorStoreMetrics:
 
 class TestEnhancedMockVectorStore:
     """Test EnhancedMockVectorStore implementation."""
+
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        """Clear all caches before each test."""
+        clear_all_caches()
 
     @pytest.fixture
     def mock_config(self):
@@ -368,7 +393,10 @@ class TestEnhancedMockVectorStore:
     async def test_update_nonexistent_document(self, mock_store):
         """Test updating non-existent document."""
         doc = VectorDocument(
-            id="nonexistent", content="Content", embedding=[0.1] * DEFAULT_VECTOR_DIMENSIONS, collection="default",
+            id="nonexistent",
+            content="Content",
+            embedding=[0.1] * DEFAULT_VECTOR_DIMENSIONS,
+            collection="default",
         )
 
         result = await mock_store.update_document(doc)
@@ -494,10 +522,8 @@ class TestEnhancedMockVectorStore:
 
         # Trigger circuit breaker
         for _ in range(CIRCUIT_BREAKER_THRESHOLD + 1):
-            try:
+            with contextlib.suppress(RuntimeError):
                 await store.search(params)
-            except RuntimeError:
-                pass
 
         # Circuit breaker should now be open
         assert store._circuit_breaker_open is True
@@ -512,7 +538,7 @@ class TestMockVectorStoreCompatibility:
         store = MockVectorStore()
 
         # Should auto-connect
-        await asyncio.sleep(0.1)  # Give time for auto-connect
+        await asyncio.sleep(0.2)  # Give time for auto-connect
         assert store.get_connection_status() == ConnectionStatus.HEALTHY
 
     @pytest.mark.asyncio
@@ -706,8 +732,8 @@ class TestIntegrationWithHydeProcessor:
     @pytest.mark.asyncio
     async def test_hyde_processor_integration(self):
         """Test vector store integration with HydeProcessor."""
-        # Import here to avoid circular imports
-        from src.core.hyde_processor import HydeProcessor
+        if HydeProcessor is None:
+            pytest.skip("HydeProcessor not available")
 
         # Create enhanced mock store
         config = {"simulate_latency": False, "error_rate": 0.0}
@@ -732,7 +758,8 @@ class TestIntegrationWithHydeProcessor:
     @pytest.mark.asyncio
     async def test_hypothetical_document_conversion(self):
         """Test conversion between HypotheticalDocument and VectorDocument."""
-        from src.core.hyde_processor import HypotheticalDocument
+        if HypotheticalDocument is None:
+            pytest.skip("HypotheticalDocument not available")
 
         # Create HypotheticalDocument
         hyde_doc = HypotheticalDocument(

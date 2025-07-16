@@ -155,7 +155,10 @@ class TestQueryCounselorHydeIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_hyde_processor_vector_store_integration(
-        self, query_counselor, mock_hyde_processor, mock_vector_store,
+        self,
+        query_counselor,
+        mock_hyde_processor,
+        mock_vector_store,
     ):
         """Test HydeProcessor integration with vector store operations."""
 

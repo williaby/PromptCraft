@@ -166,7 +166,8 @@ class TestApplicationSettings:
 
         # Test valid secret
         settings = ApplicationSettings(
-            database_password=SecretStr("valid_password"), api_key=SecretStr("valid_api_key"),
+            database_password=SecretStr("valid_password"),
+            api_key=SecretStr("valid_api_key"),
         )
 
         assert settings.database_password.get_secret_value() == "valid_password"
@@ -276,7 +277,9 @@ class TestConfigurationValidation:
 
         # Test invalid production configuration
         prod_settings = ApplicationSettings(
-            environment="prod", debug=True, api_host="localhost",  # Invalid for production  # Invalid for production
+            environment="prod",
+            debug=True,
+            api_host="localhost",  # Invalid for production  # Invalid for production
         )
 
         with pytest.raises(ConfigurationValidationError) as exc_info:
@@ -543,7 +546,8 @@ class TestSettingsFactory:
         with patch("src.config.settings.validate_encryption_available", return_value=False):
             with patch("src.config.settings.ApplicationSettings") as mock_settings:
                 mock_settings.side_effect = ValidationError(
-                    [{"loc": ("api_port",), "msg": "Invalid port", "type": "value_error"}], ApplicationSettings,
+                    [{"loc": ("api_port",), "msg": "Invalid port", "type": "value_error"}],
+                    ApplicationSettings,
                 )
 
                 with pytest.raises(ConfigurationValidationError) as exc_info:
@@ -626,7 +630,9 @@ class TestConfigurationHealthChecks:
         from pydantic import SecretStr
 
         settings = ApplicationSettings(
-            secret_key=SecretStr("secret1"), database_password=SecretStr("secret2"), api_key=SecretStr("secret3"),
+            secret_key=SecretStr("secret1"),
+            database_password=SecretStr("secret2"),
+            api_key=SecretStr("secret3"),
         )
 
         count = _count_configured_secrets(settings)
@@ -713,7 +719,9 @@ class TestConfigurationHealthChecks:
         with patch("src.config.health.validate_encryption_available", return_value=False):
             with patch("src.config.health.validate_configuration_on_startup") as mock_validate:
                 mock_validate.side_effect = ConfigurationValidationError(
-                    "Test error", field_errors=["Debug mode enabled in production"], suggestions=["Set debug=false"],
+                    "Test error",
+                    field_errors=["Debug mode enabled in production"],
+                    suggestions=["Set debug=false"],
                 )
 
                 status = get_configuration_status(settings)

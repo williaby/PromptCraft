@@ -84,7 +84,10 @@ class VectorStoreExamples:
         # Search for similar documents
         query_embedding = [0.75, 0.5, 0.6] + [0.2] * (DEFAULT_VECTOR_DIMENSIONS - 3)
         search_params = SearchParameters(
-            embeddings=[query_embedding], limit=3, collection="programming", strategy=SearchStrategy.SEMANTIC,
+            embeddings=[query_embedding],
+            limit=3,
+            collection="programming",
+            strategy=SearchStrategy.SEMANTIC,
         )
 
         search_results = await store.search(search_params)
@@ -169,7 +172,10 @@ class VectorStoreExamples:
                 print(f"\n{description}:")
 
                 search_params = SearchParameters(
-                    embeddings=[query_embedding], collection="ml_docs", strategy=strategy, limit=3,
+                    embeddings=[query_embedding],
+                    collection="ml_docs",
+                    strategy=strategy,
+                    limit=3,
                 )
 
                 results = await store.search(search_params)
@@ -256,7 +262,9 @@ class VectorStoreExamples:
                     # Search using enhanced embeddings
                     embeddings = await hyde_processor.enhance_embeddings(query, enhanced_query.hypothetical_docs)
                     search_params = SearchParameters(
-                        embeddings=embeddings, collection="hyde_docs", strategy=SearchStrategy.HYBRID,
+                        embeddings=embeddings,
+                        collection="hyde_docs",
+                        strategy=SearchStrategy.HYBRID,
                     )
 
                     search_results = await enhanced_store.search(search_params)

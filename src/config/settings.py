@@ -342,6 +342,11 @@ class ApplicationSettings(BaseSettings):
         description="Whether MCP integration is enabled",
     )
 
+    mcp_health_check_interval: float = Field(
+        default=60.0,
+        description="MCP health check interval in seconds",
+    )
+
     # Qdrant Vector Database Configuration
     qdrant_host: str = Field(
         default="192.168.1.16",
@@ -382,6 +387,49 @@ class ApplicationSettings(BaseSettings):
     trusted_proxy_2: str | None = Field(
         default=None,
         description="IP address of the second trusted proxy server",
+    )
+
+    # Performance Configuration
+    performance_monitoring_enabled: bool = Field(
+        default=True,
+        description="Whether performance monitoring is enabled",
+    )
+
+    max_concurrent_queries: int = Field(
+        default=10,
+        description="Maximum number of concurrent queries",
+    )
+
+    query_timeout: float = Field(
+        default=30.0,
+        description="Query timeout in seconds",
+    )
+
+    # Health Check Configuration
+    health_check_enabled: bool = Field(
+        default=True,
+        description="Whether health checks are enabled",
+    )
+
+    health_check_interval: float = Field(
+        default=30.0,
+        description="Health check interval in seconds",
+    )
+
+    # Error Recovery Configuration
+    error_recovery_enabled: bool = Field(
+        default=True,
+        description="Whether error recovery is enabled",
+    )
+
+    circuit_breaker_enabled: bool = Field(
+        default=True,
+        description="Whether circuit breaker is enabled",
+    )
+
+    retry_enabled: bool = Field(
+        default=True,
+        description="Whether retry logic is enabled",
     )
 
     model_config = SettingsConfigDict(

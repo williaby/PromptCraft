@@ -19,7 +19,11 @@ def run_integration_test():
     try:
         # Run the integration test
         result = subprocess.run(
-            [sys.executable, "integration_test_summary.py"], check=False, capture_output=True, text=True, timeout=30,
+            [sys.executable, "integration_test_summary.py"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
 
         print("INTEGRATION TEST OUTPUT:")
