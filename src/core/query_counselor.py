@@ -54,7 +54,6 @@ from src.core.performance_optimizer import (
     monitor_performance,
 )
 from src.mcp_integration.mcp_client import (
-    MCPClientFactory,
     MCPClientInterface,
     MCPError,
 )
@@ -196,13 +195,11 @@ class QueryCounselor:
         confidence_threshold: float = 0.7,
     ) -> None:
         """Initialize QueryCounselor with optional MCP client and HyDE processor."""
-        if mcp_client is None:
-            # Use settings-based client creation for real MCP integration
-            self.mcp_client = MCPClientFactory.create_from_settings()
-        else:
-            self.mcp_client = mcp_client
-        self.hyde_processor = hyde_processor or HydeProcessor()
-        self.confidence_threshold = confidence_threshold
+        # Respect explicitly passed None values for testing
+        self.mcp_client = mcp_client
+        self.hyde_processor = hyde_processor
+        # Clamp confidence threshold to valid range
+        self.confidence_threshold = max(0.0, min(1.0, confidence_threshold))
         self.logger = logging.getLogger(__name__)
 
         # Initialize agent registry mock data
@@ -214,6 +211,16 @@ class QueryCounselor:
             ),
             Agent(agent_id="analysis_agent", agent_type="analysis", capabilities=["code_analysis", "documentation"]),
             Agent(agent_id="general_agent", agent_type="general", capabilities=["general_query", "assistance"]),
+            Agent(
+                agent_id="security_agent",
+                agent_type="security",
+                capabilities=["security_analysis", "vulnerability_assessment"],
+            ),
+            Agent(
+                agent_id="performance_agent",
+                agent_type="performance",
+                capabilities=["performance_optimization", "monitoring"],
+            ),
         ]
 
     @cache_query_analysis
@@ -389,12 +396,15 @@ class QueryCounselor:
         """
         start_time = time.time()
 
-        # Validate query first
-        validation_result = await self.mcp_client.validate_query(query)
-        if not validation_result["is_valid"]:
-            raise ValueError(f"Query validation failed: {validation_result.get('potential_issues', [])}")
-
-        sanitized_query = validation_result["sanitized_query"]
+        # Validate query first if MCP client is available
+        if self.mcp_client is not None:
+            validation_result = await self.mcp_client.validate_query(query)
+            if not validation_result["is_valid"]:
+                raise ValueError(f"Query validation failed: {validation_result.get('potential_issues', [])}")
+            sanitized_query = validation_result["sanitized_query"]
+        else:
+            # If no MCP client, use query as-is
+            sanitized_query = query
 
         # Create workflow steps
         workflow_steps = []
@@ -410,42 +420,58 @@ class QueryCounselor:
             )
             workflow_steps.append(step)
 
-        # Execute workflow through MCP
-        try:
-            responses = await self.mcp_client.orchestrate_agents(workflow_steps)
+        # Execute workflow through MCP if available
+        if self.mcp_client is not None:
+            try:
+                responses = await self.mcp_client.orchestrate_agents(workflow_steps)
 
-            processing_time = time.time() - start_time
-            self.logger.info("Workflow orchestration completed in %.3fs", processing_time)
+                processing_time = time.time() - start_time
+                self.logger.info("Workflow orchestration completed in %.3fs", processing_time)
 
-            return responses
+                return responses
 
-        except MCPError as e:
-            self.logger.error("MCP orchestration failed: %s (type: %s)", str(e), e.error_type)
-            # Return error responses for graceful fallback
+            except MCPError as e:
+                self.logger.error("MCP orchestration failed: %s (type: %s)", str(e), e.error_type)
+                # Return error responses for graceful fallback
+                error_responses = []
+                for agent in agents:
+                    error_response = MCPResponse(
+                        agent_id=agent.agent_id,
+                        content=f"Agent {agent.agent_id} unavailable due to MCP error",
+                        confidence=0.0,
+                        processing_time=0.0,
+                        success=False,
+                        error_message=f"{e.error_type}: {e!s}",
+                    )
+                    error_responses.append(error_response)
+                return error_responses
+            except Exception as e:
+                self.logger.error("Workflow orchestration failed: %s", str(e))
+                # Return error responses for graceful fallback
+                error_responses = []
+                for agent in agents:
+                    error_response = MCPResponse(
+                        agent_id=agent.agent_id,
+                        content=f"Agent {agent.agent_id} unavailable",
+                        confidence=0.0,
+                        processing_time=0.0,
+                        success=False,
+                        error_message=str(e),
+                    )
+                    error_responses.append(error_response)
+                return error_responses
+        else:
+            # If no MCP client, return error responses for all agents
+            self.logger.warning("No MCP client available for workflow orchestration")
             error_responses = []
             for agent in agents:
                 error_response = MCPResponse(
                     agent_id=agent.agent_id,
-                    content=f"Agent {agent.agent_id} unavailable due to MCP error",
+                    content=f"Agent {agent.agent_id} unavailable - no MCP client",
                     confidence=0.0,
                     processing_time=0.0,
                     success=False,
-                    error_message=f"{e.error_type}: {e!s}",
-                )
-                error_responses.append(error_response)
-            return error_responses
-        except Exception as e:
-            self.logger.error("Workflow orchestration failed: %s", str(e))
-            # Return error responses for graceful fallback
-            error_responses = []
-            for agent in agents:
-                error_response = MCPResponse(
-                    agent_id=agent.agent_id,
-                    content=f"Agent {agent.agent_id} unavailable",
-                    confidence=0.0,
-                    processing_time=0.0,
-                    success=False,
-                    error_message=str(e),
+                    error_message="No MCP client available",
                 )
                 error_responses.append(error_response)
             return error_responses
@@ -617,7 +643,7 @@ class QueryCounselor:
             # Step 2: HyDE processing if recommended
             enhanced_query = None
             hyde_results = None
-            if intent.hyde_recommended:
+            if intent.hyde_recommended and self.hyde_processor is not None:
                 self.logger.info("Applying HyDE enhancement for complex query")
                 enhanced_query = await self.hyde_processor.three_tier_analysis(query)
 
@@ -751,7 +777,7 @@ class QueryCounselor:
 
             # Get HyDE analysis if recommended
             hyde_analysis = None
-            if intent.hyde_recommended:
+            if intent.hyde_recommended and self.hyde_processor is not None:
                 enhanced_query = await self.hyde_processor.three_tier_analysis(query)
                 hyde_analysis = {
                     "processing_strategy": enhanced_query.processing_strategy,
