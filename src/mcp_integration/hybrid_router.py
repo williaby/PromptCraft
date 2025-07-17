@@ -569,7 +569,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         ]
         capabilities.update(hybrid_capabilities)
 
-        return sorted(list(capabilities))
+        return sorted(capabilities)
 
     def _make_routing_decision(
         self,
@@ -702,6 +702,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 fallback_available=True,
                 request_id=request_id,
             )
+        return None
 
     def _is_openrouter_available(self) -> bool:
         """Check if OpenRouter is available (circuit breaker and connection)."""

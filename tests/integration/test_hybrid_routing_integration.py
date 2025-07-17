@@ -151,7 +151,7 @@ class TestHybridRoutingIntegration:
             (QueryType.GENERAL_QUERY, "simple", "general"),
         ]
 
-        for query_type, complexity, expected_task_type in test_cases:
+        for query_type, complexity, _expected_task_type in test_cases:
             selected_model = counselor._select_model_for_task(query_type, complexity)
 
             assert selected_model is not None
@@ -356,7 +356,7 @@ class TestHybridRoutingIntegration:
         ]
 
         # Execute multiple workflows
-        for i in range(5):
+        for _i in range(5):
             await router.orchestrate_agents(workflow_steps)
 
         # Verify metrics collection

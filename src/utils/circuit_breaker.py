@@ -11,7 +11,7 @@ import asyncio
 import logging
 import threading
 from collections.abc import Awaitable, Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -423,8 +423,7 @@ class CircuitBreaker:
         for attempt in range(self.config.max_retries + 1):
             try:
                 with self._request_context():
-                    result = await func(*args, **kwargs)
-                    return result
+                    return await func(*args, **kwargs)
 
             except CircuitBreakerOpenError:
                 # Don't retry if circuit breaker is open
@@ -570,10 +569,8 @@ class CircuitBreaker:
         if self._health_check_task:
             self._shutdown_event.set()
             self._health_check_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
             self._health_check_task = None
             logger.info("Stopped health monitoring for circuit breaker '%s'", self.name)
 
@@ -701,13 +698,11 @@ def create_openrouter_circuit_breaker(settings: Any) -> CircuitBreaker:
             logger.warning("OpenRouter health check failed: %s", e)
             return False
 
-    circuit_breaker = CircuitBreaker(
+    return CircuitBreaker(
         name="openrouter",
         config=config,
         health_check_func=openrouter_health_check if settings.health_check_enabled else None,
     )
-
-    return circuit_breaker
 
 
 # Global circuit breaker instances

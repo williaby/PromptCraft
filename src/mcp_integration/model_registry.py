@@ -63,7 +63,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.config.settings import get_settings
 
@@ -164,13 +164,15 @@ class ModelRegistryConfig(BaseModel):
     openrouter_api_key: str | None = Field(default=None, description="OpenRouter API key")
     custom_config_path: str | None = Field(default=None, description="Custom model config file path")
 
-    @validator("max_fallback_depth")
+    @field_validator("max_fallback_depth")
+    @classmethod
     def validate_fallback_depth(cls, v: int) -> int:
         if v < 0 or v > 10:
             raise ValueError("Fallback depth must be between 0 and 10")
         return v
 
-    @validator("default_category")
+    @field_validator("default_category")
+    @classmethod
     def validate_category(cls, v: str) -> str:
         valid_categories = {"free_general", "free_reasoning", "premium_reasoning", "premium_analysis", "large_context"}
         if v not in valid_categories:
@@ -228,7 +230,7 @@ class ModelRegistry:
 
     def _load_config(self) -> ModelRegistryConfig:
         """Load registry configuration from environment variables."""
-        settings = get_settings()
+        get_settings()
 
         return ModelRegistryConfig(
             default_category=os.getenv("PROMPTCRAFT_DEFAULT_MODEL_CATEGORY", "free_general"),

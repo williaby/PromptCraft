@@ -677,16 +677,14 @@ class TestConfigurationHealthChecks:
             assert source == "env_vars"
 
         # Test with files
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("pathlib.Path.exists", return_value=True):
-                source = _determine_config_source(settings)
-                assert source == "env_files"
+        with patch.dict(os.environ, {}, clear=True), patch("pathlib.Path.exists", return_value=True):
+            source = _determine_config_source(settings)
+            assert source == "env_files"
 
         # Test defaults
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("pathlib.Path.exists", return_value=False):
-                source = _determine_config_source(settings)
-                assert source == "defaults"
+        with patch.dict(os.environ, {}, clear=True), patch("pathlib.Path.exists", return_value=False):
+            source = _determine_config_source(settings)
+            assert source == "defaults"
 
     def test_sanitize_validation_errors(self):
         """Test validation error sanitization."""
@@ -1109,7 +1107,7 @@ class TestConfigurationConstants:
         assert "prod" in CORS_ORIGINS_BY_ENVIRONMENT
 
         # Each environment should have a list of origins
-        for env, origins in CORS_ORIGINS_BY_ENVIRONMENT.items():
+        for _env, origins in CORS_ORIGINS_BY_ENVIRONMENT.items():
             assert isinstance(origins, list)
             assert len(origins) > 0
             for origin in origins:

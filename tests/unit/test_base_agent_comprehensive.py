@@ -629,7 +629,7 @@ class TestBaseAgent:
             mock_logger = Mock()
             mock_create_logger.return_value = mock_logger
 
-            agent = TestAgent(config)
+            TestAgent(config)
 
             # Verify structured logger was created
             mock_create_logger.assert_called_with("agent.test_agent")

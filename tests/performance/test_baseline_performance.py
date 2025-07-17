@@ -175,7 +175,7 @@ class BaselinePerformanceTestSuite:
             )
 
             with track_performance("query_counselor_orchestration") as tracker:
-                responses = await self.query_counselor.orchestrate_workflow(agents, query)
+                await self.query_counselor.orchestrate_workflow(agents, query)
                 orchestration_times.append(tracker.start_time - time.time() if tracker.start_time else 0.0)
 
         # Calculate performance metrics
@@ -229,7 +229,7 @@ class BaselinePerformanceTestSuite:
             query = MEDIUM_QUERIES[i % len(MEDIUM_QUERIES)]  # Use medium complexity queries
 
             with track_performance("hyde_processor_doc_generation") as tracker:
-                docs = await self.hyde_processor.generate_hypothetical_docs(query)
+                await self.hyde_processor.generate_hypothetical_docs(query)
                 doc_generation_times.append(tracker.start_time - time.time() if tracker.start_time else 0.0)
 
         # Test full query processing pipeline
@@ -238,7 +238,7 @@ class BaselinePerformanceTestSuite:
             query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
 
             with track_performance("hyde_processor_full_pipeline") as tracker:
-                ranked_results = await self.hyde_processor.process_query(query)
+                await self.hyde_processor.process_query(query)
                 processing_times.append(tracker.start_time - time.time() if tracker.start_time else 0.0)
 
         # Calculate performance metrics
@@ -286,9 +286,8 @@ class BaselinePerformanceTestSuite:
                 intent = await self.query_counselor.analyze_intent(query)
 
                 # Step 2: HyDE processing if recommended
-                enhanced_query = None
                 if intent.hyde_recommended:
-                    enhanced_query = await self.hyde_processor.three_tier_analysis(query)
+                    await self.hyde_processor.three_tier_analysis(query)
                     hyde_usage_count += 1
 
                 # Step 3: Agent selection and orchestration
@@ -347,7 +346,7 @@ class BaselinePerformanceTestSuite:
                 intent = await self.query_counselor.analyze_intent(query)
 
                 if intent.hyde_recommended:
-                    enhanced_query = await self.hyde_processor.three_tier_analysis(query)
+                    await self.hyde_processor.three_tier_analysis(query)
 
                 agents = await self.query_counselor.select_agents(intent)
                 responses = await self.query_counselor.orchestrate_workflow(agents, query)
@@ -459,11 +458,11 @@ class BaselinePerformanceTestSuite:
             intent = await self.query_counselor.analyze_intent(query)
 
             if intent.hyde_recommended:
-                enhanced_query = await self.hyde_processor.three_tier_analysis(query)
+                await self.hyde_processor.three_tier_analysis(query)
 
             agents = await self.query_counselor.select_agents(intent)
             responses = await self.query_counselor.orchestrate_workflow(agents, query)
-            final_response = await self.query_counselor.synthesize_response(responses)
+            await self.query_counselor.synthesize_response(responses)
 
             # Sample memory usage every 10 iterations
             if iteration_count % 10 == 0:
@@ -488,7 +487,7 @@ class BaselinePerformanceTestSuite:
 
         # Analyze memory usage patterns
         memory_values = [sample["memory_mb"] for sample in memory_samples]
-        memory_growth_values = [sample["memory_growth_mb"] for sample in memory_samples]
+        [sample["memory_growth_mb"] for sample in memory_samples]
 
         results["metrics"] = {
             "initial_memory_mb": initial_memory,
@@ -889,7 +888,7 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
     logger.info("WEEK 1 ACCEPTANCE CRITERIA VALIDATION REPORT")
     logger.info("=" * 80)
 
-    for criterion, status in acceptance_criteria.items():
+    for criterion, _status in acceptance_criteria.items():
         result = validation_results.get(criterion, {"status": "UNKNOWN", "details": "No validation data"})
         logger.info("%s: %s - %s", criterion.upper(), result["status"], result["details"])
 

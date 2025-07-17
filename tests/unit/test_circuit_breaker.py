@@ -185,7 +185,7 @@ class TestCircuitBreakerStates:
             raise Exception("Service unavailable")
 
         # First 2 failures should keep circuit closed
-        for i in range(2):
+        for _i in range(2):
             with pytest.raises(Exception):
                 circuit_breaker.call_sync(failing_func)
             assert circuit_breaker.state == CircuitBreakerState.CLOSED
@@ -667,7 +667,7 @@ class TestCircuitBreakerIntegration:
         service_healthy = False
 
         # Multiple failures should open the circuit
-        for i in range(3):
+        for _i in range(3):
             with pytest.raises(Exception):
                 await circuit_breaker.call_async(simulated_service_call)
 

@@ -167,7 +167,7 @@ class TestQueryCounselorHydeIntegration:
     async def test_performance_tracking_integration(self, query_counselor):
         """Test that performance tracking is properly integrated."""
         monitor = PerformanceMonitor()
-        initial_metrics = monitor.get_all_metrics()
+        monitor.get_all_metrics()
 
         # Process a query
         test_query = "Generate a template for deployment"
@@ -347,7 +347,7 @@ class TestPerformanceIntegration:
 
         # Use performance tracking
         with track_performance("integration_test") as tracker:
-            response = await query_counselor.process_query_with_hyde("Test query")
+            await query_counselor.process_query_with_hyde("Test query")
 
         # Validate tracking worked
         assert tracker.start_time is not None

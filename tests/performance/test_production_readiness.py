@@ -290,7 +290,7 @@ class TestProductionReadiness:
 
                     # Analyze results
                     successful_results = [r for r in results if not isinstance(r, Exception) and r["success"]]
-                    failed_results = [r for r in results if isinstance(r, Exception) or not r.get("success", True)]
+                    [r for r in results if isinstance(r, Exception) or not r.get("success", True)]
 
                     # Verify concurrent performance
                     success_rate = len(successful_results) / len(queries)
@@ -390,7 +390,7 @@ class TestProductionReadiness:
                 intent = await counselor.analyze_intent("Production readiness test query")
                 hyde_result = await counselor.hyde_processor.process_query("Production readiness test query")
                 agents = await counselor.select_agents(intent)
-                responses = await counselor.orchestrate_workflow(agents, hyde_result["enhanced_query"])
+                await counselor.orchestrate_workflow(agents, hyde_result["enhanced_query"])
                 response_time = time.time() - start_time
 
                 production_checks.append(
@@ -505,9 +505,8 @@ class TestProductionReadiness:
                     for check in failed_checks:
                         print(f"  - {check['check']}: {check['value']}")
 
-                    assert False, f"Production readiness failed: {len(failed_checks)} checks failed"
-                else:
-                    print("\n✅ All production readiness checks passed!")
+                    raise AssertionError(f"Production readiness failed: {len(failed_checks)} checks failed")
+                print("\n✅ All production readiness checks passed!")
 
                 # Assert all checks pass
                 assert len(failed_checks) == 0, "All production readiness checks must pass"
@@ -579,7 +578,7 @@ class TestProductionReadiness:
                     intent = await counselor.analyze_intent(query)
                     hyde_result = await counselor.hyde_processor.process_query(query)
                     agents = await counselor.select_agents(intent)
-                    responses = await counselor.orchestrate_workflow(agents, hyde_result["enhanced_query"])
+                    await counselor.orchestrate_workflow(agents, hyde_result["enhanced_query"])
 
                     # Measure memory every 10 queries
                     if i % 10 == 0:
@@ -591,7 +590,7 @@ class TestProductionReadiness:
                 final_memory = process.memory_info().rss / 1024 / 1024  # MB
                 memory_increase = final_memory - baseline_memory
                 peak_memory = max(memory_measurements)
-                avg_memory = statistics.mean(memory_measurements)
+                statistics.mean(memory_measurements)
 
                 # Verify memory performance
                 assert memory_increase < 50, f"Memory increase {memory_increase:.1f}MB exceeds 50MB limit"

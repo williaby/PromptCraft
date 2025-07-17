@@ -240,12 +240,11 @@ def hybrid_router(mock_openrouter_client, mock_mcp_client):
         with patch("src.mcp_integration.hybrid_router.get_circuit_breaker") as mock_get_cb:
             mock_get_cb.return_value = MockCircuitBreaker()
 
-            router = HybridRouter(
+            return HybridRouter(
                 openrouter_client=mock_openrouter_client,
                 mcp_client=mock_mcp_client,
                 strategy=RoutingStrategy.OPENROUTER_PRIMARY,
             )
-            return router
 
 
 class TestRoutingDecision:
@@ -487,7 +486,6 @@ class TestGradualRolloutRouting:
 
             # Verify hash calculation matches expectation
             hash_value = zlib.crc32(request_id.encode()) % 100
-            expected_service = "openrouter" if hash_value < traffic_percentage else "mcp"
 
             # Note: routing decision might override based on availability
             # but hash should be consistent
@@ -523,9 +521,9 @@ class TestGradualRolloutRouting:
             hash_value = zlib.crc32(request_id.encode()) % 100
             if hash_value < 30:  # 30% threshold
                 # Should route to OpenRouter if available
-                expected_service = "openrouter"
+                pass
             else:
-                expected_service = "mcp"
+                pass
 
             # Count actual OpenRouter decisions
             if decision.service == "openrouter":

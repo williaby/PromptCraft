@@ -378,7 +378,7 @@ class TestQdrantVectorStoreIntegration:
         sample_params = SearchParameters(embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS], limit=5, collection="default")
 
         failure_count = 0
-        for i in range(10):
+        for _i in range(10):
             try:
                 await store.search(sample_params)
             except Exception:
@@ -689,9 +689,9 @@ class TestQdrantVectorStoreIntegration:
         failed_searches = 0
 
         # Attempt multiple searches
-        for i in range(20):
+        for _i in range(20):
             try:
-                results = await store.search(search_params)
+                await store.search(search_params)
                 successful_searches += 1
             except Exception:
                 failed_searches += 1

@@ -193,8 +193,6 @@ def check_environment() -> None:
 
 async def main() -> None:
     """Run all demo scenarios."""
-    print("OpenRouter Client Demo - Phase 1 Issue NEW-11")
-    print("=" * 50)
 
     # Check environment
     check_environment()
@@ -203,16 +201,6 @@ async def main() -> None:
     await demo_basic_functionality()
     await demo_error_handling()
     await demo_model_integration()
-
-    print("\n" + "=" * 50)
-    print("Demo completed! Check the logs above for results.")
-    print("\nKey Implementation Features Demonstrated:")
-    print("✓ MCPClientInterface compliance")
-    print("✓ OpenRouter API integration")
-    print("✓ Authentication and error handling")
-    print("✓ Query validation and security")
-    print("✓ ModelRegistry integration")
-    print("✓ Comprehensive logging and monitoring")
 
 
 if __name__ == "__main__":

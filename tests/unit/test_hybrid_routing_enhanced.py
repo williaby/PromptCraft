@@ -5,6 +5,7 @@ This module tests the specific enhancements made to QueryCounselor and HydeProce
 for hybrid routing integration with OpenRouter and MCP services.
 """
 
+import asyncio
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
@@ -134,7 +135,7 @@ class TestQueryCounselorHybridRouting:
             (QueryType.GENERAL_QUERY, "simple", "general"),
         ]
 
-        for query_type, complexity, expected_task_type in test_cases:
+        for query_type, complexity, _expected_task_type in test_cases:
             selected_model = counselor._select_model_for_task(query_type, complexity)
 
             if counselor.hybrid_routing_enabled:
@@ -225,7 +226,7 @@ class TestQueryCounselorHybridRouting:
         )
 
         # Execute workflow
-        responses = await counselor.orchestrate_workflow(agents, "test query", intent)
+        await counselor.orchestrate_workflow(agents, "test query", intent)
 
         # Verify orchestration was called with enhanced metadata
         assert counselor.mcp_client.orchestrate_agents.called
@@ -264,12 +265,11 @@ class TestHydeProcessorHybridRouting:
             mock_get_registry.return_value = Mock(spec=ModelRegistry)
             mock_get_registry.return_value.select_best_model = Mock(return_value="test-model")
 
-            processor = HydeProcessor(
+            return HydeProcessor(
                 vector_store=None,  # Will use mock
                 hybrid_router=mock_hybrid_router,
                 enable_openrouter=True,
             )
-            return processor
 
     @pytest.fixture
     def hyde_processor_without_openrouter(self):
