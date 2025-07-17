@@ -6,7 +6,6 @@ on:
       - main
       - 'feature/phase-1-development'
       - 'feature/**'
-      # Note: Cannot use branches-ignore with branches - use only branches for explicit inclusion
   pull_request:
     branches:
       - main
@@ -25,23 +24,47 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Global environment variables for consistent caching and configuration
+env:
+  CI_ENVIRONMENT: true
+  PROMPTCRAFT_REDIS_HOST: localhost
+  PROMPTCRAFT_QDRANT_HOST: localhost
+  PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
+  POETRY_VERSION: 2.1.2
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
+  POETRY_VENV_IN_PROJECT: true
+
 jobs:
-  dependency-check:
-    name: Verify Dependencies
+  # Shared setup job for dependency preparation and requirements generation
+  setup:
+    name: Setup Dependencies
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    outputs:
+      requirements-hash: ${{ steps.requirements.outputs.hash }}
+      poetry-lock-hash: ${{ steps.poetry-lock.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+          restore-keys: |
+            poetry-${{ env.POETRY_VERSION }}-
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 2.1.2
+          version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -52,9 +75,12 @@ jobs:
               echo "Attempt $i failed, retrying..."
               sleep 5
             }
-          done || echo "Plugin installation failed after retries, continuing..."
+          done
 
-      - name: Cache dependencies
+      - name: Verify poetry.lock is up to date
+        run: poetry check --lock
+
+      - name: Cache virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
@@ -62,10 +88,7 @@ jobs:
           restore-keys: |
             venv-${{ runner.os }}-3.11-
 
-      - name: Verify poetry.lock is up to date
-        run: poetry check --lock
-
-      - name: Install dependencies for export
+      - name: Install dependencies
         run: |
           for i in 1 2 3; do
             poetry install && break || {
@@ -75,11 +98,33 @@ jobs:
           done
 
       - name: Export requirements with hashes
-        run: ./scripts/generate_requirements.sh
+        run: |
+          poetry export --format=requirements.txt --output=requirements-ci.txt --with=dev
+          poetry export --format=requirements.txt --output=requirements-main.txt
+
+      - name: Generate output hashes
+        id: requirements
+        run: |
+          echo "hash=$(sha256sum requirements-ci.txt | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Generate poetry lock hash
+        id: poetry-lock
+        run: |
+          echo "hash=$(sha256sum poetry.lock | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
+      - name: Upload requirements artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: requirements-files
+          path: |
+            requirements-ci.txt
+            requirements-main.txt
+          retention-days: 1
 
       - name: Verify requirements.txt hasn't changed
         if: github.ref == 'refs/heads/feature/phase-1-development'
         run: |
+          ./scripts/generate_requirements.sh
           git diff --exit-code requirements*.txt || {
             echo "::error::requirements files are out of sync."
             echo "Run ./scripts/generate_requirements.sh and commit the changes."
@@ -91,7 +136,7 @@ jobs:
           python -m venv test-env
           source test-env/bin/activate
           for i in 1 2 3; do
-            pip install --no-cache-dir --require-hashes -r requirements.txt && break || {
+            pip install --no-cache-dir --require-hashes -r requirements-main.txt && break || {
               echo "Attempt $i failed, retrying..."
               sleep 10
             }
@@ -99,10 +144,12 @@ jobs:
           deactivate
           rm -rf test-env
 
+  # Security scanning (runs in parallel with tests)
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    needs: setup
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -112,70 +159,60 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Download requirements artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: requirements-files
+
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 2.1.2
+          version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin
-        run: |
-          for i in 1 2 3; do
-            poetry self add poetry-plugin-export && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 5
-            }
-          done || echo "Plugin installation failed after retries, continuing..."
-
-      - name: Cache dependencies
+      - name: Cache virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-3.11-${{ needs.setup.outputs.poetry-lock-hash }}
           restore-keys: |
             venv-${{ runner.os }}-3.11-
 
-      - name: Set up CI environment variables
+      - name: Install dependencies
         run: |
-          echo "CI_ENVIRONMENT=true" >> $GITHUB_ENV
-          echo "PROMPTCRAFT_REDIS_HOST=localhost" >> $GITHUB_ENV
-          echo "PROMPTCRAFT_QDRANT_HOST=localhost" >> $GITHUB_ENV
-          echo "PROMPTCRAFT_ENABLE_SERVICE_MOCKING=true" >> $GITHUB_ENV
-          echo "CI environment configured with service mocking"
+          python -m pip install --no-cache-dir -r requirements-ci.txt
+          poetry install --sync --only-root
 
       - name: Start Redis service for testing
         run: |
-          for i in 1 2 3; do
-            sudo apt-get update && sudo apt-get install -y redis-server && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 5
-            }
-          done
+          sudo apt-get update && sudo apt-get install -y redis-server
           sudo systemctl start redis-server
           redis-cli ping || echo "Redis not started - will use mocking"
         continue-on-error: true
 
-      - name: Install dependencies
-        run: |
-          for i in 1 2 3; do
-            poetry install && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 10
-            }
-          done
-
       - name: Run safety check
         run: |
-          echo "Running dependency vulnerability scan"
-          poetry run safety check --json || echo "Safety vulnerability scan completed with findings"
+          poetry run safety check --json --output .safety-report.json || {
+            echo "Safety vulnerability scan completed with findings"
+            cat .safety-report.json
+          }
         continue-on-error: true
 
       - name: Run bandit security scan
         run: |
-          echo "Running Bandit security analysis"
-          poetry run bandit -r src -ll -f json -o bandit-report.json || \
+          poetry run bandit -r src -ll -f json -o bandit-report.json || {
             echo "Bandit security scan completed with findings"
+            cat bandit-report.json
+          }
 
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -187,14 +224,16 @@ jobs:
             .safety-report.json
 
 
+  # Primary test matrix (required for CI success)
   test-matrix:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: always()
+    timeout-minutes: 25
+    needs: setup
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
@@ -204,100 +243,90 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Download requirements artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: requirements-files
+
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+          restore-keys: |
+            poetry-${{ env.POETRY_VERSION }}-
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 2.1.2
+          version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin
-        run: |
-          for i in 1 2 3; do
-            poetry self add poetry-plugin-export && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 5
-            }
-          done || echo "Plugin installation failed after retries, continuing..."
-
-      - name: Cache dependencies
+      - name: Cache virtual environment
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ needs.setup.outputs.poetry-lock-hash }}
           restore-keys: |
             venv-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install dependencies for export
-        run: |
-          for i in 1 2 3; do
-            poetry install && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 10
-            }
-          done
+      - name: Cache MyPy type stubs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mypy
+          key: mypy-${{ runner.os }}-${{ matrix.python-version }}-${{ needs.setup.outputs.poetry-lock-hash }}
+          restore-keys: |
+            mypy-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install mypy type stubs
+      - name: Install dependencies
         run: |
-          for i in 1 2 3; do
-            poetry run mypy --install-types --non-interactive src/ && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 5
-            }
-          done
+          # Install from pre-generated requirements for faster setup
+          python -m pip install --no-cache-dir -r requirements-ci.txt
+          poetry install --sync --only-root
 
-      - name: Export and install dependencies with hash verification
+      - name: Install MyPy type stubs
         run: |
-          poetry export --format=requirements.txt --output=requirements-ci.txt
-          for i in 1 2 3; do
-            poetry run pip install --no-cache-dir --require-hashes -r requirements-ci.txt && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 10
-            }
-          done
+          poetry run mypy --install-types --non-interactive src/ || true
 
-      - name: Run tests with service mocking and test analytics
+      - name: Run tests with coverage
         run: |
-          echo "Running tests with CI environment configuration and test analytics"
           poetry run pytest -v \
             --cov=src \
             --cov-report=xml \
             --cov-report=term-missing \
-            --junitxml=junit.xml \
+            --junitxml=junit-${{ matrix.python-version }}.xml \
             -o junit_family=xunit2 \
-            -o junit_suite_name=PromptCraft \
-            -o junit_logging=no \
-            -o junit_log_passing_tests=false \
+            -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
             --tb=short
-        env:
-          CI_ENVIRONMENT: true
-          PROMPTCRAFT_REDIS_HOST: localhost
-          PROMPTCRAFT_QDRANT_HOST: localhost
-          PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
 
       - name: Run type checking
         run: poetry run mypy src
 
       - name: Run linting
         run: |
-          echo "Running code formatting and linting checks"
           poetry run black . --check
           poetry run ruff check .
-          echo "All linting checks passed"
 
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: test-results-${{ matrix.python-version }}
+          path: |
+            junit-${{ matrix.python-version }}.xml
+            coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: ${{ env.CODECOV_TOKEN != '' }}
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: python-${{ matrix.python-version }}
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -309,11 +338,94 @@ jobs:
           echo "Coverage reports available locally in htmlcov/"
           echo "To enable Codecov upload, add CODECOV_TOKEN secret to repository"
 
+  # Python 3.13 compatibility testing (informational only)
+  test-python313:
+    name: Test Python 3.13 (Compatibility)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: setup
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13-dev'
+
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.13-${{ needs.setup.outputs.poetry-lock-hash }}
+
+      - name: Install dependencies (compatibility mode)
+        run: |
+          # Update Python version constraint for 3.13 compatibility testing
+          poetry env use python3.13
+          poetry install --sync || {
+            echo "⚠️ Python 3.13 compatibility issue detected"
+            echo "This is informational only and won't fail CI"
+            exit 0
+          }
+
+      - name: Run compatibility tests
+        run: |
+          # Basic import and syntax tests
+          poetry run python -c "
+          import sys
+          print(f'Python version: {sys.version}')
+          try:
+              from src.main import app
+              print('✅ Main imports successful')
+          except Exception as e:
+              print(f'⚠️ Import issues: {e}')
+              
+          try:
+              import pytest
+              print('✅ Test framework imports successful')
+          except Exception as e:
+              print(f'⚠️ Test framework issues: {e}')
+          "
+
+      - name: Run basic tests (if possible)
+        run: |
+          poetry run pytest tests/unit/ -v --tb=short -x || {
+            echo "⚠️ Some tests failed on Python 3.13 - this is informational only"
+            exit 0
+          }
+
+      - name: Upload Python 3.13 test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-3.13-compatibility
+          path: |
+            junit-3.13.xml
+            coverage.xml
+        continue-on-error: true
+
+  # Docker build (only after successful tests)
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: [test-matrix]
+    timeout-minutes: 20
+    needs: [test-matrix, setup]
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
@@ -321,35 +433,42 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: docker-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            docker-${{ runner.os }}-
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.cache/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 2.1.2
+          version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
 
-      - name: Install Poetry Export Plugin
-        run: |
-          for i in 1 2 3; do
-            poetry self add poetry-plugin-export && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 5
-            }
-          done || echo "Plugin installation failed after retries, continuing..."
+      - name: Cache virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ needs.setup.outputs.poetry-lock-hash }}
 
-      - name: Install dependencies for export
-        run: |
-          for i in 1 2 3; do
-            poetry install && break || {
-              echo "Attempt $i failed, retrying..."
-              sleep 10
-            }
-          done
+      - name: Install dependencies
+        run: poetry install --sync
 
       - name: Generate requirements for Docker
         run: ./scripts/generate_requirements.sh
@@ -360,8 +479,39 @@ jobs:
           context: .
           push: false
           tags: promptcraft-hybrid:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=gha
+          cache-to: |
+            type=local,dest=/tmp/.buildx-cache-new,mode=max
+            type=gha,mode=max
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  # Summary job for required status checks
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [test-matrix, security-scan, setup]
+    if: always()
+    steps:
+      - name: Check CI Results
+        run: |
+          # Check if required jobs succeeded
+          if [[ "${{ needs.test-matrix.result }}" == "success" && \
+                "${{ needs.setup.result }}" == "success" ]]; then
+            echo "✅ All required CI checks passed"
+            exit 0
+          else
+            echo "❌ Required CI checks failed"
+            echo "test-matrix: ${{ needs.test-matrix.result }}"
+            echo "setup: ${{ needs.setup.result }}"
+            echo "security-scan: ${{ needs.security-scan.result }} (optional)"
+            exit 1
+          fi
