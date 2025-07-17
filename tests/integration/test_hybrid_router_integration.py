@@ -20,12 +20,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from config.settings import ApplicationSettings
-from mcp_integration.hybrid_router import (
+from src.config.settings import ApplicationSettings
+from src.mcp_integration.hybrid_router import (
     HybridRouter,
     RoutingStrategy,
 )
-from mcp_integration.mcp_client import (
+from src.mcp_integration.mcp_client import (
     MCPConnectionState,
     MCPHealthStatus,
     Response,
@@ -280,8 +280,9 @@ class TestHybridRouterIntegration:
         assert router.metrics.mcp_requests == len(mcp_calls)
 
     @pytest.mark.asyncio
-    @patch("mcp_integration.hybrid_router.get_settings")
-    @patch("mcp_integration.hybrid_router.get_circuit_breaker")
+    @pytest.mark.integration
+    @patch("src.mcp_integration.hybrid_router.get_settings")
+    @patch("src.mcp_integration.hybrid_router.get_circuit_breaker")
     async def test_circuit_breaker_protection_and_recovery(self, mock_get_cb, mock_get_settings, mock_settings):
         """Test circuit breaker protection and service recovery."""
         mock_settings.openrouter_traffic_percentage = 100  # Force OpenRouter
@@ -295,7 +296,7 @@ class TestHybridRouterIntegration:
 
         async def mock_call_async(func):
             if circuit_breaker_state["is_open"]:
-                from utils.circuit_breaker import CircuitBreakerOpenError
+                from src.utils.circuit_breaker import CircuitBreakerOpenError
 
                 raise CircuitBreakerOpenError("Circuit breaker is open")
             return await func()

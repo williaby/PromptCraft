@@ -366,7 +366,7 @@ class TestConfigCoverage:
         empty_values = ["", [], {}, None, 0, False]
         for value in empty_values:
             # Most empty values should be falsy
-            if value not in {False}:
+            if value is not False:
                 assert not bool(value)
 
     def test_string_operations(self):

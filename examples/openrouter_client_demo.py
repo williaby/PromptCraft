@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 
-async def demo_basic_functionality():
+async def demo_basic_functionality() -> None:
     """Demonstrate basic OpenRouter client functionality."""
     logger.info("=== OpenRouter Client Demo ===")
 
@@ -55,19 +55,19 @@ async def demo_basic_functionality():
         test_query = "What are the key principles of secure software development?"
         validation_result = await client.validate_query(test_query)
 
-        logger.info(f"Query validation result: {validation_result}")
+        logger.info("Query validation result: %s", validation_result)
 
         if not validation_result["is_valid"]:
-            logger.warning(f"Query validation failed: {validation_result['potential_issues']}")
+            logger.warning("Query validation failed: %s", validation_result["potential_issues"])
             return
 
         # Check capabilities
         logger.info("4. Getting OpenRouter capabilities...")
         try:
             capabilities = await client.get_capabilities()
-            logger.info(f"Available capabilities: {capabilities}")
+            logger.info("Available capabilities: %s", capabilities)
         except MCPError as e:
-            logger.warning(f"Could not retrieve capabilities: {e}")
+            logger.warning("Could not retrieve capabilities: %s", e)
 
         # Create a test workflow step
         logger.info("5. Creating test workflow step...")
@@ -91,25 +91,25 @@ async def demo_basic_functionality():
             if responses:
                 response = responses[0]
                 logger.info("✓ Workflow completed successfully")
-                logger.info(f"Agent: {response.agent_id}")
-                logger.info(f"Content: {response.content[:100]}...")
-                logger.info(f"Confidence: {response.confidence}")
-                logger.info(f"Processing time: {response.processing_time:.3f}s")
+                logger.info("Agent: %s", response.agent_id)
+                logger.info("Content: %s...", response.content[:100])
+                logger.info("Confidence: %s", response.confidence)
+                logger.info("Processing time: %.3fs", response.processing_time)
             else:
                 logger.warning("No responses received from workflow")
 
         except MCPError as e:
-            logger.warning(f"Workflow execution failed (expected without real API key): {e}")
+            logger.warning("Workflow execution failed (expected without real API key): %s", e)
 
         # Health check
         logger.info("7. Performing health check...")
         health_status = await client.health_check()
-        logger.info(f"Health status: {health_status.status}")
-        logger.info(f"Response time: {health_status.response_time:.3f}s")
-        logger.info(f"Error count: {health_status.error_count}")
+        logger.info("Health status: %s", health_status.status)
+        logger.info("Response time: %.3fs", health_status.response_time)
+        logger.info("Error count: %s", health_status.error_count)
 
     except Exception as e:
-        logger.error(f"Demo error: {e}")
+        logger.error("Demo error: %s", e)
 
     finally:
         # Disconnect
@@ -118,7 +118,7 @@ async def demo_basic_functionality():
         logger.info("✓ Disconnected successfully")
 
 
-async def demo_error_handling():
+async def demo_error_handling() -> None:
     """Demonstrate error handling capabilities."""
     logger.info("\n=== Error Handling Demo ===")
 
@@ -129,7 +129,7 @@ async def demo_error_handling():
         logger.info("Testing connection with invalid configuration...")
         await client.connect()
     except MCPError as e:
-        logger.info(f"✓ Correctly caught connection error: {type(e).__name__}")
+        logger.info("✓ Correctly caught connection error: %s", type(e).__name__)
 
     # Test query validation with suspicious content
     logger.info("Testing query validation with suspicious content...")
@@ -138,14 +138,14 @@ async def demo_error_handling():
     try:
         validation = await client.validate_query(suspicious_query)
         if not validation["is_valid"]:
-            logger.info(f"✓ Correctly identified security issues: {validation['potential_issues']}")
+            logger.info("✓ Correctly identified security issues: %s", validation["potential_issues"])
         else:
             logger.warning("Failed to detect security issues in suspicious query")
     except Exception as e:
-        logger.error(f"Query validation error: {e}")
+        logger.error("Query validation error: %s", e)
 
 
-async def demo_model_integration():
+async def demo_model_integration() -> None:
     """Demonstrate ModelRegistry integration."""
     logger.info("\n=== Model Registry Integration Demo ===")
 
@@ -155,7 +155,7 @@ async def demo_model_integration():
     task_types = ["general", "reasoning", "vision", "analysis"]
 
     for task_type in task_types:
-        logger.info(f"Testing model selection for task type: {task_type}")
+        logger.info("Testing model selection for task type: %s", task_type)
 
         workflow_step = WorkflowStep(
             step_id=f"demo-{task_type}",
@@ -173,10 +173,10 @@ async def demo_model_integration():
             # This will trigger model selection through ModelRegistry
             await client._execute_single_step(workflow_step)
         except Exception as e:
-            logger.info(f"Model selection for {task_type}: {type(e).__name__} (expected without real API)")
+            logger.info("Model selection for %s: %s (expected without real API)", task_type, type(e).__name__)
 
 
-def check_environment():
+def check_environment() -> None:
     """Check environment configuration."""
     logger.info("\n=== Environment Check ===")
 
@@ -188,10 +188,10 @@ def check_environment():
         logger.info("Set PROMPTCRAFT_OPENROUTER_API_KEY to test with real API")
 
     base_url = os.getenv("PROMPTCRAFT_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-    logger.info(f"OpenRouter base URL: {base_url}")
+    logger.info("OpenRouter base URL: %s", base_url)
 
 
-async def main():
+async def main() -> None:
     """Run all demo scenarios."""
     print("OpenRouter Client Demo - Phase 1 Issue NEW-11")
     print("=" * 50)

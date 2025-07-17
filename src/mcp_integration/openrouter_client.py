@@ -45,6 +45,7 @@ Space Complexity: O(k) where k is the number of concurrent connections
 """
 
 import logging
+import re
 import time
 from typing import Any, NoReturn
 
@@ -341,8 +342,6 @@ class OpenRouterClient(MCPClientInterface):
                 r"onload\s*=",
                 r"onerror\s*=",
             ]
-
-            import re
 
             for pattern in suspicious_patterns:
                 if re.search(pattern, query, re.IGNORECASE):

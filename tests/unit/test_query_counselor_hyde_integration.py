@@ -6,10 +6,14 @@ seamless HyDE processing coordination and performance monitoring.
 """
 
 import asyncio
+import gc
+import logging
 import time
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 from src.core.hyde_processor import HydeProcessor
 from src.core.query_counselor import QueryCounselor
@@ -324,12 +328,12 @@ class TestQueryCounselorHydeIntegration:
         ), f"Success rate too low: {successful_count}/{len(test_queries)}"
 
         # Log performance summary
-        print("\nSLA Compliance Test Results:")
-        print(f"  Queries processed: {len(test_queries)}")
-        print(f"  Successful: {successful_count}")
-        print(f"  Average time: {avg_time:.3f}s")
-        print(f"  Max time: {max_time:.3f}s")
-        print(f"  P95 time: {p95_time:.3f}s")
+        logger.info("SLA Compliance Test Results:")
+        logger.info("  Queries processed: %s", len(test_queries))
+        logger.info("  Successful: %s", successful_count)
+        logger.info("  Average time: %.3fs", avg_time)
+        logger.info("  Max time: %.3fs", max_time)
+        logger.info("  P95 time: %.3fs", p95_time)
 
 
 @pytest.mark.performance
@@ -358,8 +362,6 @@ class TestPerformanceIntegration:
     @pytest.mark.asyncio
     async def test_memory_usage_stability(self):
         """Test memory usage stability during processing."""
-        import gc
-
         query_counselor = QueryCounselor()
 
         # Force garbage collection

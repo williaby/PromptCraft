@@ -54,6 +54,7 @@ from src.mcp_integration.parallel_executor import (
 )
 from src.utils.resilience import (
     CircuitBreakerConfig,
+    CircuitBreakerOpenError,
     RetryConfig,
 )
 
@@ -433,7 +434,7 @@ class TestComprehensiveErrorHandling:
         assert circuit_breaker.state.value == "open"
 
         # Test call blocking in OPEN state
-        with pytest.raises(RuntimeError, match="Circuit breaker is OPEN"):
+        with pytest.raises(CircuitBreakerOpenError, match="Circuit breaker is OPEN"):
             await circuit_breaker.execute(lambda: "test")
 
         # Test transition to HALF_OPEN after timeout

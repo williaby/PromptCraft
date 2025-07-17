@@ -171,16 +171,8 @@ class TestQueryCounselorHybridRouting:
         """Test that intent analysis excludes hybrid routing metadata when disabled."""
         counselor = query_counselor_without_hybrid_routing
 
-        # Debug: Check the counselor state
-        print(f"DEBUG: hybrid_routing_enabled = {counselor.hybrid_routing_enabled}")
-        print(f"DEBUG: model_registry = {counselor.model_registry}")
-        print(f"DEBUG: mcp_client = {counselor.mcp_client}")
-
         query = "How to implement authentication in Python?"
         intent = await counselor.analyze_intent(query)
-
-        # Debug: Check the intent
-        print(f"DEBUG: intent.metadata = {intent.metadata}")
 
         # Check that metadata is empty when hybrid routing is disabled
         assert hasattr(intent, "metadata")

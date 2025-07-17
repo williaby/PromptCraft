@@ -68,6 +68,7 @@ from src.core.vector_store import (
     SearchResult as VectorSearchResult,
 )
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
+from src.mcp_integration.mcp_client import WorkflowStep
 from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
 
 # Constants for HyDE processing thresholds (per hyde-processor.md)
@@ -430,8 +431,6 @@ class HydeProcessor:
         )
 
         # Create workflow steps for document generation
-        from src.mcp_integration.mcp_client import WorkflowStep
-
         workflow_steps = []
         for i in range(MAX_HYPOTHETICAL_DOCS):
             step = WorkflowStep(

@@ -36,10 +36,12 @@ from typing import Any
 from src.config.settings import get_settings
 from src.mcp_integration.mcp_client import (
     MCPClientInterface,
+    MCPConnectionError,
     MCPConnectionState,
     MCPError,
     MCPErrorType,
     MCPHealthStatus,
+    MCPServiceUnavailableError,
     Response,
     WorkflowStep,
     ZenMCPClient,
@@ -260,8 +262,6 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
             return True
         self.connection_state = MCPConnectionState.DISCONNECTED
         self.logger.error("HybridRouter: Both services failed to connect")
-        from src.mcp_integration.mcp_client import MCPConnectionError
-
         raise MCPConnectionError("Failed to connect to any service (OpenRouter or MCP)")
 
     async def disconnect(self) -> bool:
@@ -521,8 +521,6 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
             if isinstance(e, MCPError):
                 raise
-
-            from src.mcp_integration.mcp_client import MCPServiceUnavailableError
 
             raise MCPServiceUnavailableError(
                 f"Orchestration failed on all services: {e}",

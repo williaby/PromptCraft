@@ -376,7 +376,7 @@ class BaselinePerformanceTestSuite:
         concurrency_results = {}
 
         for concurrency in concurrency_levels:
-            self.logger.info(f"Testing concurrency level: {concurrency}")
+            self.logger.info("Testing concurrency level: %s", concurrency)
 
             # Create concurrent tasks
             tasks = []
@@ -608,9 +608,9 @@ async def test_query_counselor_baseline_performance(performance_test_suite):
 
     # Log performance summary
     logger.info("QueryCounselor Performance Summary:")
-    logger.info(f"  Intent Analysis P95: {results['metrics']['intent_analysis']['p95']:.3f}s")
-    logger.info(f"  Agent Selection P95: {results['metrics']['agent_selection']['p95']:.3f}s")
-    logger.info(f"  Workflow Orchestration P95: {results['metrics']['workflow_orchestration']['p95']:.3f}s")
+    logger.info("  Intent Analysis P95: %.3fs", results["metrics"]["intent_analysis"]["p95"])
+    logger.info("  Agent Selection P95: %.3fs", results["metrics"]["agent_selection"]["p95"])
+    logger.info("  Workflow Orchestration P95: %.3fs", results["metrics"]["workflow_orchestration"]["p95"])
 
 
 @pytest.mark.asyncio
@@ -635,10 +635,10 @@ async def test_hyde_processor_baseline_performance(performance_test_suite):
 
     # Log performance summary
     logger.info("HydeProcessor Performance Summary:")
-    logger.info(f"  Three-tier Analysis P95: {results['metrics']['three_tier_analysis']['p95']:.3f}s")
-    logger.info(f"  Document Generation P95: {results['metrics']['doc_generation']['p95']:.3f}s")
-    logger.info(f"  Full Pipeline P95: {results['metrics']['full_pipeline']['p95']:.3f}s")
-    logger.info(f"  Specificity Distribution: {specificity}")
+    logger.info("  Three-tier Analysis P95: %.3fs", results["metrics"]["three_tier_analysis"]["p95"])
+    logger.info("  Document Generation P95: %.3fs", results["metrics"]["doc_generation"]["p95"])
+    logger.info("  Full Pipeline P95: %.3fs", results["metrics"]["full_pipeline"]["p95"])
+    logger.info("  Specificity Distribution: %s", specificity)
 
 
 @pytest.mark.asyncio
@@ -659,9 +659,9 @@ async def test_integrated_workflow_baseline_performance(performance_test_suite):
 
     # Log integration performance summary
     logger.info("Integrated Workflow Performance Summary:")
-    logger.info(f"  End-to-End P95: {results['metrics']['end_to_end_workflow']['p95']:.3f}s")
-    logger.info(f"  HyDE Usage Rate: {results['workflow_analysis']['hyde_usage_rate']:.1f}%")
-    logger.info(f"  Workflow Success Rate: {results['workflow_analysis']['workflow_success_rate']:.1f}%")
+    logger.info("  End-to-End P95: %.3fs", results["metrics"]["end_to_end_workflow"]["p95"])
+    logger.info("  HyDE Usage Rate: %.1f%%", results["workflow_analysis"]["hyde_usage_rate"])
+    logger.info("  Workflow Success Rate: %.1f%%", results["workflow_analysis"]["workflow_success_rate"])
 
 
 @pytest.mark.asyncio
@@ -688,12 +688,16 @@ async def test_concurrent_processing_performance(performance_test_suite):
 
     # Log concurrent processing summary
     logger.info("Concurrent Processing Performance Summary:")
-    logger.info(f"  Max Concurrent Capacity: {max_capacity} requests")
+    logger.info("  Max Concurrent Capacity: %s requests", max_capacity)
     logger.info(
-        f"  Throughput at {MIN_CONCURRENT_REQUESTS} concurrent: {min_concurrency_data['throughput_rps']:.2f} RPS",
+        "  Throughput at %s concurrent: %.2f RPS",
+        MIN_CONCURRENT_REQUESTS,
+        min_concurrency_data["throughput_rps"],
     )
     logger.info(
-        f"  P95 Response Time at {MIN_CONCURRENT_REQUESTS} concurrent: {min_concurrency_data['p95_processing_time']:.3f}s",
+        "  P95 Response Time at %s concurrent: %.3fs",
+        MIN_CONCURRENT_REQUESTS,
+        min_concurrency_data["p95_processing_time"],
     )
 
 
@@ -721,10 +725,10 @@ async def test_memory_usage_performance(performance_test_suite):
 
     # Log memory usage summary
     logger.info("Memory Usage Performance Summary:")
-    logger.info(f"  Initial Memory: {results['metrics']['initial_memory_mb']:.1f} MB")
-    logger.info(f"  Peak Memory: {results['metrics']['peak_memory_mb']:.1f} MB")
-    logger.info(f"  Total Growth: {results['metrics']['total_memory_growth_mb']:.1f} MB")
-    logger.info(f"  Memory Per Request: {efficiency['mb_per_request']:.3f} MB")
+    logger.info("  Initial Memory: %.1f MB", results["metrics"]["initial_memory_mb"])
+    logger.info("  Peak Memory: %.1f MB", results["metrics"]["peak_memory_mb"])
+    logger.info("  Total Growth: %.1f MB", results["metrics"]["total_memory_growth_mb"])
+    logger.info("  Memory Per Request: %.3f MB", efficiency["mb_per_request"])
 
 
 @pytest.mark.asyncio
@@ -887,11 +891,11 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
 
     for criterion, status in acceptance_criteria.items():
         result = validation_results.get(criterion, {"status": "UNKNOWN", "details": "No validation data"})
-        logger.info(f"{criterion.upper()}: {result['status']} - {result['details']}")
+        logger.info("%s: %s - %s", criterion.upper(), result["status"], result["details"])
 
     logger.info("=" * 80)
-    logger.info(f"OVERALL STATUS: {'PASS' if all_criteria_met else 'FAIL'}")
-    logger.info(f"CRITERIA MET: {sum(acceptance_criteria.values())}/{len(acceptance_criteria)}")
+    logger.info("OVERALL STATUS: %s", "PASS" if all_criteria_met else "FAIL")
+    logger.info("CRITERIA MET: %s/%s", sum(acceptance_criteria.values()), len(acceptance_criteria))
     logger.info("=" * 80)
 
     # Assert overall success

@@ -305,10 +305,10 @@ class QueryCounselor:
                 task_type=task_type,
                 allow_premium=allow_premium,
             )
-            self.logger.debug(f"Selected model {selected_model} for {query_type} task")
+            self.logger.debug("Selected model %s for %s task", selected_model, query_type)
             return selected_model
         except Exception as e:
-            self.logger.warning(f"Model selection failed: {e}")
+            self.logger.warning("Model selection failed: %s", e)
             return None
 
     @cache_query_analysis

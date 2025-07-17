@@ -24,6 +24,8 @@ from src.core.vector_store import (
     DEFAULT_VECTOR_DIMENSIONS,
     ConnectionStatus,
     EnhancedMockVectorStore,
+    SearchParameters,
+    SearchResult,
     VectorDocument,
 )
 from src.mcp_integration.config_manager import MCPConfigurationManager
@@ -222,8 +224,6 @@ class TestEndToEndIntegration:
             mock_hyde_processor.vector_store = mock_vector_store
 
             async def mock_process_query(query):
-                from src.core.vector_store import SearchParameters, SearchResult
-
                 # Perform a real search on the mock vector store to increment metrics
                 search_params = SearchParameters(
                     embeddings=[[0.1] * 384],
