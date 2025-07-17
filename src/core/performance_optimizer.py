@@ -230,19 +230,27 @@ class PerformanceMonitor:
     def complete_operation(
         self,
         metric: PerformanceMetrics,
-        cache_hit: bool = False,
-        batch_size: int = 1,
-        error_occurred: bool = False,
-        success: bool | None = None,
-        error: str | None = None,
+        **kwargs: Any,
     ) -> None:
-        """Complete operation tracking."""
+        """Complete operation tracking.
+        
+        Args:
+            metric: Performance metrics object to complete
+            **kwargs: Additional parameters including:
+                - cache_hit: Whether cache was hit (default: False)
+                - batch_size: Size of the batch processed (default: 1)
+                - error_occurred: Whether an error occurred (default: False)
+                - success: Whether operation was successful
+                - error: Error message if any
+        """
         metric.complete()
-        metric.cache_hit = cache_hit
-        metric.batch_size = batch_size
-        metric.error_occurred = error_occurred
+        metric.cache_hit = kwargs.get("cache_hit", False)
+        metric.batch_size = kwargs.get("batch_size", 1)
+        metric.error_occurred = kwargs.get("error_occurred", False)
 
         # Handle success/error parameters
+        success = kwargs.get("success")
+        error = kwargs.get("error")
         if success is not None:
             metric.success = success
         if error is not None:
@@ -744,37 +752,44 @@ class PerformanceOptimizer:
         self.logger.info("Warming up performance caches...")
 
         if warm_up_data:
-            # Use provided warm-up data
-            for cache_name, cache_data in warm_up_data.items():
-                if cache_name == "query_cache" and hasattr(self, "query_cache"):
-                    for key, value in cache_data.items():
-                        self.query_cache.put(key, value)
-                        self.logger.debug("Warmed up query_cache with key: %s", key)
-                elif cache_name == "hyde_cache" and hasattr(self, "hyde_cache"):
-                    for key, value in cache_data.items():
-                        self.hyde_cache.put(key, value)
-                        self.logger.debug("Warmed up hyde_cache with key: %s", key)
-                elif cache_name == "vector_cache" and hasattr(self, "vector_cache"):
-                    for key, value in cache_data.items():
-                        self.vector_cache.put(key, value)
-                        self.logger.debug("Warmed up vector_cache with key: %s", key)
+            self._warm_up_with_provided_data(warm_up_data)
         else:
-            # Pre-populate query cache with common queries
-            common_queries = [
-                "help",
-                "create prompt",
-                "analyze code",
-                "documentation",
-                "security best practices",
-            ]
+            await self._warm_up_with_default_data()
 
-            for query in common_queries:
-                try:
-                    result = await self.optimize_query_processing(query)
-                    # Ensure result is cached by accessing the cache
-                    if result:
-                        self.logger.debug("Warmed up cache for query: %s", query)
-                except Exception as e:
-                    self.logger.warning("Failed to warm up cache for query '%s': %s", query, e)
+    def _warm_up_with_provided_data(self, warm_up_data: dict[str, dict[str, str]]) -> None:
+        """Warm up caches with provided data."""
+        for cache_name, cache_data in warm_up_data.items():
+            if cache_name == "query_cache" and hasattr(self, "query_cache"):
+                for key, value in cache_data.items():
+                    self.query_cache.put(key, value)
+                    self.logger.debug("Warmed up query_cache with key: %s", key)
+            elif cache_name == "hyde_cache" and hasattr(self, "hyde_cache"):
+                for key, value in cache_data.items():
+                    self.hyde_cache.put(key, value)
+                    self.logger.debug("Warmed up hyde_cache with key: %s", key)
+            elif cache_name == "vector_cache" and hasattr(self, "vector_cache"):
+                for key, value in cache_data.items():
+                    self.vector_cache.put(key, value)
+                    self.logger.debug("Warmed up vector_cache with key: %s", key)
+
+    async def _warm_up_with_default_data(self) -> None:
+        """Warm up caches with default data."""
+        # Pre-populate query cache with common queries
+        common_queries = [
+            "help",
+            "create prompt",
+            "analyze code",
+            "documentation",
+            "security best practices",
+        ]
+
+        for query in common_queries:
+            try:
+                result = await self.optimize_query_processing(query)
+                # Ensure result is cached by accessing the cache
+                if result:
+                    self.logger.debug("Warmed up cache for query: %s", query)
+            except Exception as e:
+                self.logger.warning("Failed to warm up cache for query '%s': %s", query, e)
 
         self.logger.info("Cache warm-up completed")
