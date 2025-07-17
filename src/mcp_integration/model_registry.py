@@ -69,6 +69,9 @@ from src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Model registry constants
+MAX_FALLBACK_DEPTH = 10  # Maximum depth for fallback chains to prevent infinite loops
+
 
 @dataclass
 class ModelCapabilities:
@@ -167,8 +170,8 @@ class ModelRegistryConfig(BaseModel):
     @field_validator("max_fallback_depth")
     @classmethod
     def validate_fallback_depth(cls, v: int) -> int:
-        if v < 0 or v > 10:
-            raise ValueError("Fallback depth must be between 0 and 10")
+        if v < 0 or v > MAX_FALLBACK_DEPTH:
+            raise ValueError(f"Fallback depth must be between 0 and {MAX_FALLBACK_DEPTH}")
         return v
 
     @field_validator("default_category")

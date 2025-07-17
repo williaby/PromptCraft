@@ -23,8 +23,7 @@ from src.utils.secure_random import secure_jitter
 from src.utils.time_utils import utc_now
 
 if TYPE_CHECKING:
-    from src.mcp_integration.mcp_client import MCPConnectionState
-    from src.mcp_integration.openrouter_client import OpenRouterClient
+    pass
 
 logger = logging.getLogger(__name__)
 

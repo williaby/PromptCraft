@@ -53,6 +53,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
 from pydantic import BaseModel, Field
 from tenacity import (
     before_sleep_log,
@@ -62,6 +67,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from src.config.settings import get_settings
 from src.utils.secure_random import secure_random
 
 logger = logging.getLogger(__name__)
@@ -564,7 +570,8 @@ class ZenMCPClient(MCPClientInterface):
         Implements real HTTP client connection with authentication and health validation.
         """
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             self.connection_state = MCPConnectionState.CONNECTING
             logger.info(f"Connecting to Zen MCP Server at {self.server_url}")
@@ -676,7 +683,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if self.connection_state == MCPConnectionState.DISCONNECTED or not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -749,7 +757,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -833,7 +842,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -938,7 +948,8 @@ class ZenMCPClient(MCPClientInterface):
     async def get_capabilities(self) -> list[str]:
         """Get Zen MCP Server capabilities."""
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -1027,8 +1038,6 @@ class MCPClientFactory:
             MCPClientInterface: Configured client instance based on settings
         """
         if settings is None:
-            from src.config.settings import get_settings  # noqa: PLC0415
-
             settings = get_settings()
 
         # Determine client type based on settings
