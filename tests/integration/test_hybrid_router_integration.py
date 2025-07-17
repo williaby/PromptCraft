@@ -31,6 +31,7 @@ from src.mcp_integration.mcp_client import (
     Response,
     WorkflowStep,
 )
+from src.utils.circuit_breaker import CircuitBreakerOpenError
 
 
 @pytest.fixture
@@ -308,8 +309,6 @@ class TestHybridRouterIntegration:
 
         async def mock_call_async(func):
             if circuit_breaker_state["is_open"]:
-                from src.utils.circuit_breaker import CircuitBreakerOpenError
-
                 raise CircuitBreakerOpenError("Circuit breaker is open")
             return await func()
 

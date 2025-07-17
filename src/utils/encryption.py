@@ -5,6 +5,7 @@ This module provides encryption/decryption capabilities for sensitive data,
 following the pattern established in ledgerbase for secure .env file handling.
 """
 
+import logging
 import os
 import subprocess  # nosec B404
 import sys
@@ -182,7 +183,8 @@ def initialize_encryption() -> None:
             os.environ.setdefault(key, value)
     except FileNotFoundError:
         # No encrypted env file found, which is okay for development
-        pass
+        # Log this as debug info to maintain visibility without cluttering logs
+        logging.getLogger(__name__).debug("No encrypted .env file found, continuing with standard environment variables")
 
 
 if __name__ == "__main__":

@@ -108,6 +108,68 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Code-Server for Journey 3 IDE Integration
+  promptcraft-ide:
+    image: codercom/code-server:latest
+    container_name: promptcraft-ide
+    ports:
+      - "127.0.0.1:8080:8080"     # Bind to localhost only for cloudflared tunnel
+    environment:
+      - PASSWORD=${CODE_SERVER_PASSWORD}
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT:-6333}
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+    env_file:
+      - .env.local
+    volumes:
+      - ./src:/home/coder/workspace/src:rw
+      - ./config:/home/coder/workspace/config:ro
+      - ./knowledge:/home/coder/workspace/knowledge:ro
+      - ./docs:/home/coder/workspace/docs:rw
+      - ./tests:/home/coder/workspace/tests:rw
+      - ./configs/code-server:/home/coder/.config:rw
+      - ./configs/mcp:/home/coder/.claude:rw
+    command: |
+      code-server 
+        --bind-addr 0.0.0.0:8080 
+        --auth password 
+        --disable-telemetry
+        --user-data-dir /home/coder/.config
+        --extensions-dir /home/coder/.local/share/code-server/extensions
+        /home/coder/workspace
+    user: "1000:1000"              # Non-root user
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - promptcraft
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   redis:
     image: redis:7-alpine
     container_name: promptcraft-redis
@@ -162,3 +224,24 @@ volumes:
 # Note: External Qdrant server configured via QDRANT_HOST environment variable
 # This is accessed directly from containers via environment variables
 # No container definition needed as it's hosted externally
+
+# Cloudflared Tunnel Integration Notes:
+# - All services bind to 127.0.0.1 (localhost) for cloudflared tunnel routing
+# - Gradio UI (port 7860): Journey 1, 2, 4 web interface  
+# - FastAPI (port 8000): API endpoints and backend services
+# - Code-Server (port 8080): Journey 3 IDE integration
+# - Cloudflared tunnel handles authentication, SSL, and routing
+# - No nginx or OAuth2 proxy needed - tunnel provides unified access
+# 
+# Example cloudflared config.yml:
+# ingress:
+#   - hostname: promptcraft.yourdomain.com
+#     path: /ide/*
+#     service: http://localhost:8080
+#   - hostname: promptcraft.yourdomain.com
+#     path: /api/*
+#     service: http://localhost:8000
+#   - hostname: promptcraft.yourdomain.com
+#     path: /
+#     service: http://localhost:7860
+#   - service: http_status:404

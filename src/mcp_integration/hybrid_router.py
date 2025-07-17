@@ -54,6 +54,11 @@ from src.utils.circuit_breaker import (
 )
 from src.utils.logging_mixin import LoggerMixin
 
+# Routing constants
+MAX_TRAFFIC_PERCENTAGE = 100  # Maximum traffic percentage for rollout
+FALLBACK_THRESHOLD = 0.6  # Threshold for fallback routing
+CIRCUIT_BREAKER_MAX_PERCENTAGE = 100  # Maximum percentage for circuit breaker
+
 logger = logging.getLogger(__name__)
 
 
@@ -189,9 +194,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
         # Gradual rollout configuration (0-100, default 0)
         self.openrouter_traffic_percentage = int(settings.openrouter_traffic_percentage or 0)
-        if not (0 <= self.openrouter_traffic_percentage <= 100):
+        if not (0 <= self.openrouter_traffic_percentage <= MAX_TRAFFIC_PERCENTAGE):
             self.logger.warning(
-                f"Invalid OPENROUTER_TRAFFIC_PERCENTAGE: {self.openrouter_traffic_percentage}, " "using default 0",
+                f"Invalid OPENROUTER_TRAFFIC_PERCENTAGE: {self.openrouter_traffic_percentage}, using default 0",
             )
             self.openrouter_traffic_percentage = 0
 
@@ -659,7 +664,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 )
 
                 # Route to less-used service
-                service = "mcp" if openrouter_success_rate > 0.6 else "openrouter"
+                service = "mcp" if openrouter_success_rate > FALLBACK_THRESHOLD else "openrouter"
             else:
                 service = "openrouter"  # Default for first request
 
@@ -755,8 +760,8 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Args:
             percentage: New percentage (0-100)
         """
-        if not (0 <= percentage <= 100):
-            raise ValueError(f"Traffic percentage must be 0-100, got {percentage}")
+        if not (0 <= percentage <= CIRCUIT_BREAKER_MAX_PERCENTAGE):
+            raise ValueError(f"Traffic percentage must be 0-{CIRCUIT_BREAKER_MAX_PERCENTAGE}, got {percentage}")
 
         old_percentage = self.openrouter_traffic_percentage
         self.openrouter_traffic_percentage = percentage

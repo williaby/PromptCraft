@@ -328,7 +328,7 @@ class TestEndToEndIntegration:
                     # Verify MCP orchestration was called correctly
                     mock_mcp_client.orchestrate_agents.assert_called()
 
-                    # Verify vector store search was performed  
+                    # Verify vector store search was performed
                     # Note: With mocked HyDE processor, we need to ensure search is triggered
                     # The search count should be > 0 either from HyDE processing or from vector initialization
                     metrics = mock_vector_store.get_metrics()

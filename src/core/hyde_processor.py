@@ -535,7 +535,9 @@ class HydeProcessor:
             specificity_score -= 20
 
         # Extra penalty for very short vague queries
-        if word_count <= 2 and any(term in query_lower for term in vague_terms):
+        # Create constant for minimum word count
+        MIN_WORD_COUNT = 2
+        if word_count <= MIN_WORD_COUNT and any(term in query_lower for term in vague_terms):
             specificity_score -= 20
 
         # Ensure score is within bounds

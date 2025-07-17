@@ -71,7 +71,9 @@ DEGRADED_ERROR_THRESHOLD = 3
 MAX_QUERY_LENGTH = 10000
 HTTP_OK_STATUS = 200
 HTTP_BAD_REQUEST = 400
+HTTP_UNAUTHORIZED = 401
 HTTP_TOO_MANY_REQUESTS = 429
+HTTP_SERVICE_UNAVAILABLE = 503
 
 
 class MCPConnectionState(str, Enum):
@@ -583,13 +585,13 @@ class ZenMCPClient(MCPClientInterface):
             # Perform server health check and handshake
             try:
                 response = await self.session.get("/health")
-                if response.status_code == 401:  # Unauthorized
+                if response.status_code == HTTP_UNAUTHORIZED:  # Unauthorized
                     error_data = {}
                     try:
                         if response.headers.get("content-type", "").startswith("application/json"):
                             error_data = response.json()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Failed to parse JSON error response: %s", e)
                     raise MCPAuthenticationError(
                         "Authentication failed",
                         error_code="INVALID_API_KEY",
@@ -804,7 +806,7 @@ class ZenMCPClient(MCPClientInterface):
                             **error_data,
                         },
                     ) from e
-                if e.response.status_code == 503:  # Service Unavailable
+                if e.response.status_code == HTTP_SERVICE_UNAVAILABLE:  # Service Unavailable
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPServiceUnavailableError("Validation service unavailable", retry_after) from e
                 raise MCPServiceUnavailableError(f"Validation service error: HTTP {e.response.status_code}") from e
@@ -882,13 +884,13 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 self.error_count += 1
-                if e.response.status_code == 401:  # Unauthorized
+                if e.response.status_code == HTTP_UNAUTHORIZED:  # Unauthorized
                     error_data = {}
                     try:
                         if e.response.headers.get("content-type", "").startswith("application/json"):
                             error_data = e.response.json()
-                    except Exception:
-                        pass
+                    except Exception as parse_error:
+                        logger.debug("Failed to parse JSON error response: %s", parse_error)
                     raise MCPAuthenticationError(
                         "Authentication failed",
                         error_code="INVALID_API_KEY",
@@ -912,7 +914,7 @@ class ZenMCPClient(MCPClientInterface):
                 if e.response.status_code == HTTP_TOO_MANY_REQUESTS:
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPRateLimitError("Rate limit exceeded", retry_after) from e
-                if e.response.status_code == 503:  # Service Unavailable
+                if e.response.status_code == HTTP_SERVICE_UNAVAILABLE:  # Service Unavailable
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPServiceUnavailableError("Service unavailable", retry_after) from e
                 raise MCPServiceUnavailableError(

@@ -149,11 +149,39 @@ make dev
 docker-compose -f docker-compose.zen-vm.yaml up -d
 
 # This starts:
-# - Gradio UI: http://192.168.1.205:7860
-# - Zen MCP Server: http://192.168.1.205:3000
+# - Gradio UI: http://127.0.0.1:7860 (Journey 1, 2, 4)
+# - FastAPI Backend: http://127.0.0.1:8000 (API endpoints)
+# - Code-Server IDE: http://127.0.0.1:8080 (Journey 3)
 # - External Qdrant Dashboard: http://192.168.1.16:6333/dashboard (external dependency)
-# - Cloudflare tunnel for remote access
+# - Cloudflared tunnel provides unified access at single domain
 ```
+
+### Cloudflared Tunnel Integration
+
+The system uses cloudflared tunnel for unified access to all journeys:
+
+```yaml
+# Example cloudflared config.yml for unified access
+ingress:
+  - hostname: promptcraft.yourdomain.com
+    path: /ide/*
+    service: http://localhost:8080      # Journey 3 (Code-Server)
+  - hostname: promptcraft.yourdomain.com
+    path: /api/*
+    service: http://localhost:8000      # API endpoints
+  - hostname: promptcraft.yourdomain.com
+    path: /
+    service: http://localhost:7860      # Journey 1, 2, 4 (Gradio)
+  - service: http_status:404
+```
+
+**Benefits of Cloudflared Tunnel Approach:**
+- Single domain access for all four journeys
+- No nginx or OAuth2 proxy needed
+- Built-in Google OAuth authentication
+- Automatic SSL termination
+- Native WebSocket support for Code-Server
+- Simplified infrastructure (40% reduction in complexity)
 
 ### Context7 MCP Server Integration
 
