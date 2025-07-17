@@ -267,7 +267,7 @@ class PerformanceMonitor:
         self._max_duration = max(self._max_duration, duration_seconds)
         self._min_duration = min(self._min_duration, duration_seconds)
 
-        if error_occurred or metric.error_occurred:
+        if kwargs.get("error_occurred", False) or metric.error_occurred:
             self.error_count += 1
 
         # Check for performance issues
