@@ -506,7 +506,11 @@ class TestBaseAgent:
 
         # Mock structured logger
         with patch.object(agent, "structured_logger") as mock_logger:
-            agent_input = AgentInput(content="test content", request_id="req-123")
+            agent_input = AgentInput(
+                content="test content",
+                request_id="req-123",
+                config_overrides={"debug": True},  # Add config overrides to trigger debug logging
+            )
             await agent.process(agent_input)
 
             # Verify structured logging calls
@@ -625,7 +629,7 @@ class TestBaseAgent:
             mock_logger = Mock()
             mock_create_logger.return_value = mock_logger
 
-            agent = TestAgent(config)
+            TestAgent(config)
 
             # Verify structured logger was created
             mock_create_logger.assert_called_with("agent.test_agent")

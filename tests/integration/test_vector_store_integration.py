@@ -7,6 +7,7 @@ compatibility and end-to-end workflows.
 """
 
 import asyncio
+import contextlib
 import time
 
 import pytest
@@ -395,10 +396,8 @@ class TestVectorStoreErrorHandling:
 
         # Trigger circuit breaker
         for _ in range(10):
-            try:
+            with contextlib.suppress(Exception):
                 await store.search(params)
-            except Exception:
-                pass
 
         # Circuit breaker should be open
         assert store._circuit_breaker_open is True

@@ -7,6 +7,7 @@ vector operations and performance requirements.
 """
 
 import asyncio
+import contextlib
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -335,10 +336,8 @@ class TestRealQdrantIntegration:
             # Test circuit breaker activation
             # Simulate multiple failures to trigger circuit breaker
             for _ in range(6):  # Exceed CIRCUIT_BREAKER_THRESHOLD
-                try:
+                with contextlib.suppress(Exception):
                     await store.search(search_params)
-                except Exception:
-                    pass
 
             # Circuit breaker should now be open
             assert store._circuit_breaker_open is True
@@ -673,10 +672,8 @@ class TestRealQdrantIntegration:
             # Test error metrics
             mock_qdrant_client.search.side_effect = Exception("Test error")
 
-            try:
+            with contextlib.suppress(Exception):
                 await store.search(search_params)
-            except Exception:
-                pass
 
             # Verify error count increased
             updated_metrics = store.get_metrics()

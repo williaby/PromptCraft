@@ -182,10 +182,7 @@ def validate_performance_requirements() -> bool:
         return False
 
     # Check if connection pool sizes are reasonable
-    if config.max_vector_connections < 5:
-        return False
-
-    return True
+    return not config.max_vector_connections < 5
 
 
 def get_optimization_recommendations() -> dict[str, str]:

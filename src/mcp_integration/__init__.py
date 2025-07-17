@@ -60,6 +60,12 @@ Space Complexity: O(k) where k is the number of active MCP connections
 from .client import MCPClient
 from .config_manager import MCPConfigurationManager
 from .docker_mcp_client import DockerMCPClient
+from .hybrid_router import (
+    HybridRouter,
+    RoutingDecision,
+    RoutingMetrics,
+    RoutingStrategy,
+)
 from .mcp_client import (
     MCPClientFactory,
     MCPClientInterface,
@@ -75,25 +81,32 @@ from .mcp_client import (
     MockMCPClient,
     ZenMCPClient,
 )
+from .openrouter_client import OpenRouterClient
 from .parallel_executor import ParallelSubagentExecutor
 
 __all__ = [
     "DockerMCPClient",
+    "HybridRouter",
     "MCPClient",
-    "MCPConfigurationManager",
-    "ParallelSubagentExecutor",
-    # New MCP client interface components
-    "MCPClientInterface",
-    "MockMCPClient",
-    "ZenMCPClient",
     "MCPClientFactory",
-    "MCPConnectionManager",
-    "MCPError",
+    "MCPClientInterface",
+    "MCPConfigurationManager",
     "MCPConnectionError",
-    "MCPTimeoutError",
-    "MCPServiceUnavailableError",
-    "MCPRateLimitError",
-    "MCPHealthStatus",
+    "MCPConnectionManager",
     "MCPConnectionState",
+    "MCPError",
     "MCPErrorType",
+    "MCPHealthStatus",
+    "MCPRateLimitError",
+    "MCPServiceUnavailableError",
+    "MCPTimeoutError",
+    "MockMCPClient",
+    "ModelCapabilities",
+    "ModelRegistry",
+    "OpenRouterClient",
+    "ParallelSubagentExecutor",
+    "RoutingDecision",
+    "RoutingMetrics",
+    "RoutingStrategy",
+    "ZenMCPClient",
 ]

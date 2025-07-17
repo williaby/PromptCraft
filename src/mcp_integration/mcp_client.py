@@ -94,6 +94,9 @@ class MCPErrorType(str, Enum):
     INVALID_REQUEST = "invalid_request"
     RATE_LIMIT_ERROR = "rate_limit_error"
     UNKNOWN_ERROR = "unknown_error"
+    VALIDATION_ERROR = "validation_error"
+    SERVICE_ERROR = "service_error"
+    INVALID_RESPONSE = "invalid_response"
 
 
 class MCPError(Exception):

@@ -26,7 +26,9 @@ class TestEncryptionIntegration:
 
     def test_secret_str_fields_exist(self):
         """Test that SecretStr fields are properly defined."""
-        settings = ApplicationSettings()
+        # Clear environment to test defaults
+        with patch.dict(os.environ, {}, clear=True):
+            settings = ApplicationSettings()
 
         # Check that secret fields are defined and None by default
         assert settings.database_password is None

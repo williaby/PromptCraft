@@ -369,6 +369,8 @@ class BaseAgent(ABC):
 
             # Update processing time
             processing_time = time.time() - start_time
+            # Ensure processing time is non-negative to avoid validation errors
+            processing_time = max(0.0, processing_time)
             result.processing_time = processing_time
 
             # Record success metrics
@@ -391,6 +393,8 @@ class BaseAgent(ABC):
 
         except Exception as e:
             processing_time = time.time() - start_time
+            # Ensure processing time is non-negative to avoid validation errors
+            processing_time = max(0.0, processing_time)
             error = handle_agent_error(e, agent_id=self.agent_id, request_id=agent_input.request_id)
 
             # Record failure metrics

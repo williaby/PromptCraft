@@ -53,6 +53,7 @@ from src.core.performance_optimizer import (
     cache_query_analysis,
     monitor_performance,
 )
+from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import (
     MCPClientInterface,
     MCPError,
@@ -63,6 +64,7 @@ from src.mcp_integration.mcp_client import (
 from src.mcp_integration.mcp_client import (
     WorkflowStep as MCPWorkflowStep,
 )
+from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
 
 # Constants for query complexity analysis
 COMPLEX_QUERY_WORD_THRESHOLD = 20
@@ -96,6 +98,7 @@ class QueryIntent(BaseModel):
     original_query: str = Field(description="Original query text")
     keywords: list[str] = Field(default_factory=list, description="Extracted keywords from query")
     context_requirements: list[str] = Field(default_factory=list, description="Context requirements for the query")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata for hybrid routing")
 
     @field_validator("complexity")
     @classmethod
@@ -188,19 +191,62 @@ class QueryCounselor:
     agents, orchestrates multi-agent workflows, and synthesizes final responses.
     """
 
+    # Class attribute type annotations
+    mcp_client: MCPClientInterface | None
+    model_registry: ModelRegistry | None
+
     def __init__(
         self,
         mcp_client: MCPClientInterface | None = None,
         hyde_processor: HydeProcessor | None = None,
         confidence_threshold: float = 0.7,
+        routing_strategy: RoutingStrategy = RoutingStrategy.OPENROUTER_PRIMARY,
+        enable_hybrid_routing: bool | None = None,
     ) -> None:
-        """Initialize QueryCounselor with optional MCP client and HyDE processor."""
-        # Respect explicitly passed None values for testing
-        self.mcp_client = mcp_client
+        """Initialize QueryCounselor with optional MCP client and HyDE processor.
+
+        Args:
+            mcp_client: MCP client interface (if None and enable_hybrid_routing is True, creates HybridRouter)
+            hyde_processor: HyDE processor instance
+            confidence_threshold: Confidence threshold for decisions (0.0-1.0)
+            routing_strategy: Routing strategy for HybridRouter
+            enable_hybrid_routing: Whether to enable hybrid OpenRouter/MCP routing
+                                  (None = auto-detect based on mcp_client parameter)
+        """
+        self.logger = logging.getLogger(__name__)
+
+        # Auto-detect hybrid routing if not explicitly specified
+        if enable_hybrid_routing is None:
+            # Default to False for backward compatibility
+            # Users must explicitly enable hybrid routing
+            enable_hybrid_routing = False
+
+        # Initialize MCP client or HybridRouter
+        if mcp_client is not None:
+            # Use explicitly provided MCP client (for testing)
+            self.mcp_client = mcp_client
+            self.model_registry = None
+            self.hybrid_routing_enabled = False
+        # Create HybridRouter for production use if enabled
+        elif enable_hybrid_routing:
+            self.mcp_client = HybridRouter(
+                strategy=routing_strategy,
+                enable_gradual_rollout=True,
+            )
+            self.model_registry = get_model_registry()
+            self.hybrid_routing_enabled = True
+            self.logger.info("Initialized QueryCounselor with HybridRouter")
+        else:
+            # Fallback to None - will create error responses
+            self.mcp_client = None
+            self.model_registry = None
+            self.hybrid_routing_enabled = False
+            self.logger.warning("QueryCounselor initialized without MCP client")
+
+        # Initialize other components
         self.hyde_processor = hyde_processor
         # Clamp confidence threshold to valid range
         self.confidence_threshold = max(0.0, min(1.0, confidence_threshold))
-        self.logger = logging.getLogger(__name__)
 
         # Initialize agent registry mock data
         self._available_agents = [
@@ -223,6 +269,48 @@ class QueryCounselor:
             ),
         ]
 
+    def _select_model_for_task(self, query_type: QueryType, complexity: str) -> str | None:
+        """Select optimal model for query type and complexity.
+
+        Args:
+            query_type: Type of query being processed
+            complexity: Query complexity level (simple, medium, complex)
+
+        Returns:
+            Model ID string if hybrid routing enabled, None otherwise
+        """
+        if not self.hybrid_routing_enabled or not self.model_registry:
+            return None
+
+        # Map query types to task types for model selection
+        task_type_mapping = {
+            QueryType.CREATE_ENHANCEMENT: "general",
+            QueryType.TEMPLATE_GENERATION: "general",
+            QueryType.ANALYSIS_REQUEST: "analysis",
+            QueryType.DOCUMENTATION: "general",
+            QueryType.GENERAL_QUERY: "general",
+            QueryType.IMPLEMENTATION: "reasoning",
+            QueryType.SECURITY: "analysis",
+            QueryType.PERFORMANCE: "analysis",
+            QueryType.UNKNOWN: "general",
+        }
+
+        task_type = task_type_mapping.get(query_type, "general")
+
+        # Determine if premium models are allowed (for complex queries)
+        allow_premium = complexity == "complex"
+
+        try:
+            selected_model = self.model_registry.select_best_model(
+                task_type=task_type,
+                allow_premium=allow_premium,
+            )
+            self.logger.debug("Selected model %s for %s task", selected_model, query_type)
+            return selected_model
+        except Exception as e:
+            self.logger.warning("Model selection failed: %s", e)
+            return None
+
     @cache_query_analysis
     @monitor_performance("analyze_intent")
     async def analyze_intent(self, query: str) -> QueryIntent:  # noqa: PLR0915
@@ -240,7 +328,7 @@ class QueryCounselor:
         # Input validation - handle empty queries
         if not query or not query.strip():
             # Return UNKNOWN type for empty queries
-            return QueryIntent(
+            intent = QueryIntent(
                 query_type=QueryType.UNKNOWN,
                 confidence=0.0,
                 complexity="simple",
@@ -251,6 +339,17 @@ class QueryCounselor:
                 keywords=[],
                 context_requirements=[],
             )
+
+            # Add hybrid routing metadata if enabled
+            if self.hybrid_routing_enabled:
+                intent.metadata = {
+                    "selected_model": None,
+                    "hybrid_routing_enabled": True,
+                    "task_type": "general",
+                    "allow_premium": False,
+                }
+
+            return intent
 
         query = query.strip()
 
@@ -322,14 +421,19 @@ class QueryCounselor:
 
         processing_time = time.time() - start_time
 
+        # Select optimal model for this query type and complexity
+        selected_model = self._select_model_for_task(query_type, complexity)
+
         self.logger.info(
-            "Intent analysis completed in %.3fs: %s (confidence: %.2f)",
+            "Intent analysis completed in %.3fs: %s (confidence: %.2f, model: %s)",
             processing_time,
             query_type,
             confidence,
+            selected_model or "default",
         )
 
-        return QueryIntent(
+        # Create QueryIntent with model selection metadata
+        intent = QueryIntent(
             query_type=query_type,
             confidence=confidence,
             complexity=complexity,
@@ -340,6 +444,31 @@ class QueryCounselor:
             keywords=keywords,
             context_requirements=context_requirements,
         )
+
+        # Add hybrid routing metadata if enabled
+        if self.hybrid_routing_enabled:
+            # Map query types to task types for model selection
+            task_type_mapping = {
+                QueryType.CREATE_ENHANCEMENT: "general",
+                QueryType.TEMPLATE_GENERATION: "general",
+                QueryType.ANALYSIS_REQUEST: "analysis",
+                QueryType.DOCUMENTATION: "general",
+                QueryType.GENERAL_QUERY: "general",
+                QueryType.IMPLEMENTATION: "reasoning",
+                QueryType.SECURITY: "analysis",
+                QueryType.PERFORMANCE: "analysis",
+                QueryType.UNKNOWN: "general",
+            }
+
+            # Store model selection in a way that can be accessed by orchestration
+            intent.metadata = {
+                "selected_model": selected_model,
+                "hybrid_routing_enabled": self.hybrid_routing_enabled,
+                "task_type": task_type_mapping.get(query_type, "general"),
+                "allow_premium": complexity == "complex",
+            }
+
+        return intent
 
     async def select_agents(self, intent: QueryIntent) -> AgentSelection:
         """
@@ -383,13 +512,19 @@ class QueryCounselor:
         )
 
     @monitor_performance("orchestrate_workflow")
-    async def orchestrate_workflow(self, agents: list[Agent], query: str) -> list[MCPResponse]:
+    async def orchestrate_workflow(
+        self,
+        agents: list[Agent],
+        query: str,
+        intent: QueryIntent | None = None,
+    ) -> list[MCPResponse]:
         """
         Orchestrate multi-agent workflow for query processing.
 
         Args:
             agents: List of selected agents
             query: Original user query
+            intent: Optional query intent for model routing
 
         Returns:
             List[Response]: Responses from all agents
@@ -406,17 +541,31 @@ class QueryCounselor:
             # If no MCP client, use query as-is
             sanitized_query = query
 
-        # Create workflow steps
+        # Create workflow steps with enhanced metadata for hybrid routing
         workflow_steps = []
         for i, agent in enumerate(agents):
+            step_input = {
+                "query": sanitized_query,
+                "agent_type": agent.agent_type,
+                "capabilities": agent.capabilities,
+            }
+
+            # Add model selection metadata if available
+            if intent and intent.metadata:
+                step_input.update(
+                    {
+                        "selected_model": intent.metadata.get("selected_model"),
+                        "task_type": intent.metadata.get("task_type", "general"),
+                        "complexity": intent.complexity,
+                        "query_type": intent.query_type.value,
+                        "hybrid_routing_enabled": intent.metadata.get("hybrid_routing_enabled", False),
+                    },
+                )
+
             step = MCPWorkflowStep(
                 step_id=f"step_{i}",
                 agent_id=agent.agent_id,
-                input_data={
-                    "query": sanitized_query,
-                    "agent_type": agent.agent_type,
-                    "capabilities": agent.capabilities,
-                },
+                input_data=step_input,
             )
             workflow_steps.append(step)
 
@@ -580,7 +729,7 @@ class QueryCounselor:
                 agent = next((a for a in self._available_agents if a.agent_id == agent_id), None)
                 if agent:
                     selected_agents.append(agent)
-            agent_responses = await self.orchestrate_workflow(selected_agents, query)
+            agent_responses = await self.orchestrate_workflow(selected_agents, query, intent)
 
             # Step 3: Response synthesis
             final_response = await self.synthesize_response(agent_responses)
@@ -662,7 +811,7 @@ class QueryCounselor:
 
             # Use enhanced query for agent processing if available
             processing_query = enhanced_query.enhanced_query if enhanced_query else query
-            agent_responses = await self.orchestrate_workflow(selected_agents, processing_query)
+            agent_responses = await self.orchestrate_workflow(selected_agents, processing_query, intent)
 
             # Step 4: Enhanced response synthesis with HyDE context
             final_response = await self.synthesize_response(agent_responses)

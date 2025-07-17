@@ -7,6 +7,7 @@ integration with HydeProcessor and other PromptCraft components.
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 
@@ -30,9 +31,8 @@ class VectorStoreExamples:
     """Comprehensive examples of vector store usage patterns."""
 
     @staticmethod
-    async def basic_mock_store_usage():
+    async def basic_mock_store_usage() -> None:
         """Example 1: Basic mock vector store usage."""
-        print("\n=== Example 1: Basic Mock Vector Store Usage ===")
 
         # Configuration for mock store
         config = {
@@ -46,11 +46,8 @@ class VectorStoreExamples:
         store = VectorStoreFactory.create_vector_store(config)
         await store.connect()
 
-        print(f"Store connected: {store.get_connection_status()}")
-
         # Check health
-        health = await store.health_check()
-        print(f"Health status: {health.status}, Latency: {health.latency:.3f}s")
+        await store.health_check()
 
         # Insert some documents
         documents = [
@@ -78,8 +75,7 @@ class VectorStoreExamples:
         ]
 
         # Batch insert
-        result = await store.insert_documents(documents)
-        print(f"Inserted {result.success_count}/{result.total_count} documents")
+        await store.insert_documents(documents)
 
         # Search for similar documents
         query_embedding = [0.75, 0.5, 0.6] + [0.2] * (DEFAULT_VECTOR_DIMENSIONS - 3)
@@ -91,24 +87,17 @@ class VectorStoreExamples:
         )
 
         search_results = await store.search(search_params)
-        print(f"Found {len(search_results)} results:")
-        for i, result in enumerate(search_results):
-            print(f"  {i+1}. {result.document_id} (score: {result.score:.3f})")
-            print(f"     Content: {result.content[:60]}...")
+        for _i, _result in enumerate(search_results):
+            pass
 
         # Get metrics
-        metrics = store.get_metrics()
-        print(
-            f"Metrics: {metrics.search_count} searches, {metrics.insert_count} inserts, "
-            f"avg latency: {metrics.avg_latency:.3f}s",
-        )
+        store.get_metrics()
 
         await store.disconnect()
 
     @staticmethod
-    async def advanced_search_strategies():
+    async def advanced_search_strategies() -> None:
         """Example 2: Advanced search strategies and filtering."""
-        print("\n=== Example 2: Advanced Search Strategies ===")
 
         config = {"type": VectorStoreType.MOCK, "simulate_latency": False}
 
@@ -168,8 +157,7 @@ class VectorStoreExamples:
                 (SearchStrategy.FILTERED, "Filtered search"),
             ]
 
-            for strategy, description in strategies:
-                print(f"\n{description}:")
+            for strategy, _description in strategies:
 
                 search_params = SearchParameters(
                     embeddings=[query_embedding],
@@ -180,12 +168,10 @@ class VectorStoreExamples:
 
                 results = await store.search(search_params)
                 for result in results:
-                    print(f"  - {result.document_id}: {result.score:.3f}")
                     if strategy == SearchStrategy.HYBRID and result.embedding:
-                        print("    (includes embedding data)")
+                        pass
 
             # Test filtered search
-            print("\nFiltered search examples:")
 
             filter_examples = [
                 ({"difficulty": "beginner"}, "Beginner level documents"),
@@ -194,7 +180,7 @@ class VectorStoreExamples:
                 ({"tags": ["advanced"]}, "Documents tagged as advanced"),
             ]
 
-            for filters, description in filter_examples:
+            for filters, _description in filter_examples:
                 search_params = SearchParameters(
                     embeddings=[query_embedding],
                     collection="ml_docs",
@@ -203,12 +189,10 @@ class VectorStoreExamples:
                 )
 
                 results = await store.search(search_params)
-                print(f"  {description}: {len(results)} results")
 
     @staticmethod
-    async def hyde_processor_integration():
+    async def hyde_processor_integration() -> None:
         """Example 3: Integration with HydeProcessor."""
-        print("\n=== Example 3: HydeProcessor Integration ===")
 
         # Create enhanced vector store for storage
         enhanced_config = {"type": VectorStoreType.MOCK, "simulate_latency": False}
@@ -226,15 +210,11 @@ class VectorStoreExamples:
         ]
 
         for query in test_queries:
-            print(f"\nProcessing query: '{query}'")
 
             # Analyze query specificity
             enhanced_query = await hyde_processor.three_tier_analysis(query)
-            print(f"  Specificity: {enhanced_query.specificity_analysis.specificity_score:.1f}")
-            print(f"  Strategy: {enhanced_query.processing_strategy}")
 
             if enhanced_query.processing_strategy == "standard_hyde":
-                print(f"  Generated {len(enhanced_query.hypothetical_docs)} hypothetical documents")
 
                 # Store hypothetical documents in enhanced vector store
                 vector_docs = []
@@ -256,8 +236,7 @@ class VectorStoreExamples:
 
                 # Insert hypothetical documents
                 if vector_docs:
-                    result = await enhanced_store.insert_documents(vector_docs)
-                    print(f"  Stored {result.success_count} hypothetical documents")
+                    await enhanced_store.insert_documents(vector_docs)
 
                     # Search using enhanced embeddings
                     embeddings = await hyde_processor.enhance_embeddings(query, enhanced_query.hypothetical_docs)
@@ -267,20 +246,17 @@ class VectorStoreExamples:
                         strategy=SearchStrategy.HYBRID,
                     )
 
-                    search_results = await enhanced_store.search(search_params)
-                    print(f"  Enhanced search found {len(search_results)} results")
+                    await enhanced_store.search(search_params)
 
             elif enhanced_query.processing_strategy == "clarification_needed":
-                print("  Clarifying questions:")
-                for question in enhanced_query.specificity_analysis.guiding_questions:
-                    print(f"    - {question}")
+                for _question in enhanced_query.specificity_analysis.guiding_questions:
+                    pass
 
         await enhanced_store.disconnect()
 
     @staticmethod
-    async def performance_monitoring():
+    async def performance_monitoring() -> None:
         """Example 4: Performance monitoring and optimization."""
-        print("\n=== Example 4: Performance Monitoring ===")
 
         config = {"type": VectorStoreType.MOCK, "simulate_latency": True, "base_latency": 0.02}
 
@@ -288,7 +264,6 @@ class VectorStoreExamples:
         await store.connect()
 
         # Generate test data
-        print("Generating test documents...")
         documents = []
         for i in range(100):
             doc = VectorDocument(
@@ -302,11 +277,8 @@ class VectorStoreExamples:
 
         # Batch insert with timing
         start_time = time.time()
-        result = await store.insert_documents(documents)
-        insert_time = time.time() - start_time
-
-        print(f"Inserted {result.success_count} documents in {insert_time:.3f}s")
-        print(f"Insert rate: {result.success_count / insert_time:.1f} docs/sec")
+        await store.insert_documents(documents)
+        time.time() - start_time
 
         # Multiple searches with timing
         search_times = []
@@ -315,34 +287,23 @@ class VectorStoreExamples:
             search_params = SearchParameters(embeddings=[query_embedding], collection="performance_test", limit=5)
 
             start_time = time.time()
-            results = await store.search(search_params)
+            await store.search(search_params)
             search_time = time.time() - start_time
             search_times.append(search_time)
 
         # Calculate search statistics
-        avg_search_time = sum(search_times) / len(search_times)
-        max_search_time = max(search_times)
-        min_search_time = min(search_times)
-
-        print("Search performance (20 queries):")
-        print(f"  Average: {avg_search_time:.3f}s")
-        print(f"  Min: {min_search_time:.3f}s")
-        print(f"  Max: {max_search_time:.3f}s")
+        sum(search_times) / len(search_times)
+        max(search_times)
+        min(search_times)
 
         # Get comprehensive metrics
-        metrics = store.get_metrics()
-        print("Overall metrics:")
-        print(f"  Total searches: {metrics.search_count}")
-        print(f"  Total inserts: {metrics.insert_count}")
-        print(f"  Average latency: {metrics.avg_latency:.3f}s")
-        print(f"  Error count: {metrics.error_count}")
+        store.get_metrics()
 
         await store.disconnect()
 
     @staticmethod
-    async def error_handling_and_resilience():
+    async def error_handling_and_resilience() -> None:
         """Example 5: Error handling and resilience patterns."""
-        print("\n=== Example 5: Error Handling and Resilience ===")
 
         # Configure store with some error simulation
         config = {"type": VectorStoreType.MOCK, "simulate_latency": False, "error_rate": 0.3}  # 30% error rate
@@ -351,7 +312,6 @@ class VectorStoreExamples:
         await store.connect()
 
         # Test resilient search pattern
-        print("Testing resilient search with retry logic...")
 
         query_embedding = [0.5] * DEFAULT_VECTOR_DIMENSIONS
         search_params = SearchParameters(embeddings=[query_embedding])
@@ -359,18 +319,15 @@ class VectorStoreExamples:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                results = await store.search(search_params)
-                print(f"  Attempt {attempt + 1}: Success - {len(results)} results")
+                await store.search(search_params)
                 break
-            except Exception as e:
-                print(f"  Attempt {attempt + 1}: Failed - {type(e).__name__}: {e}")
+            except Exception:
                 if attempt == max_retries - 1:
-                    print("  All retries exhausted")
+                    pass
                 else:
                     await asyncio.sleep(0.1 * (2**attempt))  # Exponential backoff
 
         # Test circuit breaker behavior
-        print("\nTesting circuit breaker...")
 
         error_store = VectorStoreFactory.create_vector_store(
             {"type": VectorStoreType.MOCK, "error_rate": 1.0},  # Always error
@@ -378,25 +335,19 @@ class VectorStoreExamples:
         await error_store.connect()
 
         # Trigger circuit breaker
-        for i in range(8):
-            try:
+        for _i in range(8):
+            with contextlib.suppress(Exception):
                 await error_store.search(search_params)
-            except Exception:
-                print(f"  Error {i + 1}")
-
-        print(f"  Circuit breaker open: {error_store._circuit_breaker_open}")
 
         # Circuit breaker should now prevent operations
-        results = await error_store.search(search_params)
-        print(f"  Search after circuit breaker: {len(results)} results (expected: 0)")
+        await error_store.search(search_params)
 
         await store.disconnect()
         await error_store.disconnect()
 
     @staticmethod
-    async def qdrant_configuration_example():
+    async def qdrant_configuration_example() -> None:
         """Example 6: Qdrant configuration (demonstrates interface, won't connect)."""
-        print("\n=== Example 6: Qdrant Configuration ===")
 
         # Production Qdrant configuration for PromptCraft
         qdrant_config = {
@@ -407,55 +358,36 @@ class VectorStoreExamples:
             "timeout": 30.0,
         }
 
-        print("Qdrant configuration:")
-        print(f"  Host: {qdrant_config['host']}")
-        print(f"  Port: {qdrant_config['port']}")
-        print(f"  Timeout: {qdrant_config['timeout']}s")
-
         # Create Qdrant store (won't actually connect without qdrant-client)
         try:
-            qdrant_store = VectorStoreFactory.create_vector_store(qdrant_config)
-            print(f"  Store type: {type(qdrant_store).__name__}")
-            print(f"  Connection status: {qdrant_store.get_connection_status()}")
+            VectorStoreFactory.create_vector_store(qdrant_config)
 
             # Example of what production usage would look like
-            print("\nProduction usage pattern:")
-            print("  1. await qdrant_store.connect()")
-            print("  2. health = await qdrant_store.health_check()")
-            print("  3. collections = await qdrant_store.list_collections()")
-            print("  4. # Perform operations...")
-            print("  5. await qdrant_store.disconnect()")
 
-        except Exception as e:
-            print(f"  Note: {e}")
-            print("  (This is expected without qdrant-client installed)")
+        except Exception:
+            pass
 
     @staticmethod
-    async def collection_management():
+    async def collection_management() -> None:
         """Example 7: Collection management operations."""
-        print("\n=== Example 7: Collection Management ===")
 
         config = {"type": VectorStoreType.MOCK, "simulate_latency": False}
 
         async with vector_store_connection(config) as store:
             # List initial collections
-            initial_collections = await store.list_collections()
-            print(f"Initial collections: {initial_collections}")
+            await store.list_collections()
 
             # Create new collections
             new_collections = [("user_knowledge", 512), ("code_examples", 768), ("documentation", 384)]
 
             for name, vector_size in new_collections:
                 success = await store.create_collection(name, vector_size)
-                print(f"Created collection '{name}' (size {vector_size}): {success}")
 
                 if success:
-                    info = await store.get_collection_info(name)
-                    print(f"  Collection info: {info}")
+                    await store.get_collection_info(name)
 
             # List all collections
             all_collections = await store.list_collections()
-            print(f"All collections: {all_collections}")
 
             # Insert documents into different collections
             documents_by_collection = {
@@ -490,8 +422,7 @@ class VectorStoreExamples:
 
             for collection_name, docs in documents_by_collection.items():
                 if collection_name in all_collections:
-                    result = await store.insert_documents(docs)
-                    print(f"Inserted into {collection_name}: {result.success_count} docs")
+                    await store.insert_documents(docs)
 
             # Search across different collections
             query_embedding_512 = [0.15] * 512
@@ -508,14 +439,11 @@ class VectorStoreExamples:
                 if collection_name in all_collections:
                     search_params = SearchParameters(embeddings=embeddings, collection=collection_name, limit=5)
 
-                    results = await store.search(search_params)
-                    print(f"Search in {collection_name}: {len(results)} results")
+                    await store.search(search_params)
 
 
-async def main():
+async def main() -> None:
     """Run all vector store examples."""
-    print("PromptCraft Vector Store Usage Examples")
-    print("=" * 50)
 
     examples = VectorStoreExamples()
 
@@ -533,13 +461,8 @@ async def main():
     for example_method in example_methods:
         try:
             await example_method()
-        except Exception as e:
-            print(f"\nError in {example_method.__name__}: {e}")
+        except Exception:
             logger.exception("Example failed")
-
-        print("\n" + "-" * 50)
-
-    print("\nAll examples completed!")
 
 
 if __name__ == "__main__":
