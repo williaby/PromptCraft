@@ -353,7 +353,7 @@ def cache_query_analysis(func: F) -> F:
         if not isinstance(query, str):
             query = str(query)
 
-        cache_key = f"query_analysis:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
+        cache_key = f"query_analysis:{hashlib.sha256(query.encode()).hexdigest()}"
 
         # Check cache first
         cached_result = _query_cache.get(cache_key)
@@ -381,7 +381,7 @@ def cache_hyde_processing(func: F) -> F:
         if query is None:
             query = ""
 
-        cache_key = f"hyde_processing:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
+        cache_key = f"hyde_processing:{hashlib.sha256(query.encode()).hexdigest()}"
 
         # Check cache first
         cached_result = _hyde_cache.get(cache_key)
@@ -408,7 +408,7 @@ def cache_vector_search(func: F) -> F:
         if embeddings and isinstance(embeddings, list):
             # Create hash from embeddings
             embedding_str = str(embeddings)
-            cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}"
+            cache_key = f"vector_search:{hashlib.sha256(embedding_str.encode()).hexdigest()}"
         else:
             # Fallback to original approach for complex parameters
             params = args[1] if args and len(args) > 1 else kwargs.get("parameters")
@@ -424,7 +424,7 @@ def cache_vector_search(func: F) -> F:
                 # Create hash from embeddings and parameters
                 embedding_str = str(params.embeddings[0][:10])  # First 10 dimensions
                 strategy_str = params.strategy.value if hasattr(params.strategy, "value") else str(params.strategy)
-                cache_key = f"vector_search:{hashlib.md5(embedding_str.encode(), usedforsecurity=False).hexdigest()}:{params.limit}:{params.collection}:{strategy_str}"
+                cache_key = f"vector_search:{hashlib.sha256(embedding_str.encode()).hexdigest()}:{params.limit}:{params.collection}:{strategy_str}"
             else:
                 return await func(*args, **kwargs)
 
@@ -687,7 +687,7 @@ async def warm_up_system() -> None:
     # This would normally call actual query processing
     # For now, just log the warm-up process
     for query in common_queries:
-        cache_key = f"warmup:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
+        cache_key = f"warmup:{hashlib.sha256(query.encode()).hexdigest()}"
         _query_cache.put(cache_key, {"warmed_up": True})
 
     logger.info("System warm-up completed")
@@ -716,7 +716,7 @@ class PerformanceOptimizer:
 
         try:
             # Check cache first
-            cache_key = f"optimized_query:{hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()}"
+            cache_key = f"optimized_query:{hashlib.sha256(query.encode()).hexdigest()}"
             cached_result = _query_cache.get(cache_key)
 
             if cached_result:
