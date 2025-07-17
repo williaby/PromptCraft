@@ -1,0 +1,228 @@
+# OpenRouter Model Configuration for PromptCraft-Hybrid
+# This file defines available AI models with their capabilities, rate limits, and routing configurations
+# Follows OpenRouter API documentation and integrates with existing model_utils.sh patterns
+
+# Model specifications based on OpenRouter free tier models
+# Rate limits are conservative estimates based on free tier limitations
+# Context windows and capabilities are from official documentation
+
+models:
+  # DeepSeek V3 - Primary free reasoning model
+  - model_id: "deepseek/deepseek-chat-v3-0324:free"
+    display_name: "DeepSeek V3 Chat (Free)"
+    provider: "deepseek"
+    category: "free_general"
+    context_window: 163840  # 163K context window
+    max_tokens_per_request: 8192
+    rate_limit_requests_per_minute: 20  # Conservative for free tier
+    rate_limit_tokens_per_minute: 100000  # Estimated based on context window
+    cost_per_input_token: null  # Free model
+    cost_per_output_token: null  # Free model
+    timeout_seconds: 30.0
+    supports_streaming: true
+    supports_function_calling: false
+    supports_vision: false
+    supports_reasoning: true  # DeepSeek V3 has strong reasoning capabilities
+    available_regions: ["global"]
+    fallback_models:
+      - "google/gemini-2.0-flash-exp:free"
+      - "qwen/qwen3-32b:free"
+    enabled: true
+    metadata:
+      model_version: "v3.0"
+      release_date: "2024-12-26"
+      architecture: "MoE"  # Mixture of Experts
+      parameters: "685B"
+      notes: "Latest DeepSeek model with enhanced reasoning capabilities"
+
+  # Google Gemini 2.0 Flash - Experimental free model
+  - model_id: "google/gemini-2.0-flash-exp:free"
+    display_name: "Gemini 2.0 Flash Experimental (Free)"
+    provider: "google"
+    category: "free_general"
+    context_window: 1000000  # 1M context window
+    max_tokens_per_request: 8192
+    rate_limit_requests_per_minute: 15  # Lower limit for experimental model
+    rate_limit_tokens_per_minute: 75000  # Conservative estimate
+    cost_per_input_token: null  # Free model
+    cost_per_output_token: null  # Free model
+    timeout_seconds: 30.0
+    supports_streaming: true
+    supports_function_calling: true  # Gemini supports function calling
+    supports_vision: true  # Gemini 2.0 has vision capabilities
+    supports_reasoning: false  # Standard reasoning, not specialized
+    available_regions: ["global"]
+    fallback_models:
+      - "deepseek/deepseek-chat-v3-0324:free"
+      - "qwen/qwen3-32b:free"
+    enabled: true
+    metadata:
+      model_version: "2.0-flash-exp"
+      release_date: "2024-12-11"
+      architecture: "Transformer"
+      parameters: "unknown"
+      notes: "Experimental release with large context window and multimodal capabilities"
+
+  # Qwen 3 32B - Reliable free model
+  - model_id: "qwen/qwen3-32b:free"
+    display_name: "Qwen 3 32B (Free)"
+    provider: "qwen"
+    category: "free_general"
+    context_window: 32768  # 32K context window
+    max_tokens_per_request: 4096
+    rate_limit_requests_per_minute: 25  # Slightly higher for established model
+    rate_limit_tokens_per_minute: 50000  # Based on context window capacity
+    cost_per_input_token: null  # Free model
+    cost_per_output_token: null  # Free model
+    timeout_seconds: 25.0
+    supports_streaming: true
+    supports_function_calling: false
+    supports_vision: false
+    supports_reasoning: false  # General purpose model
+    available_regions: ["global"]
+    fallback_models:
+      - "deepseek/deepseek-chat-v3-0324:free"
+    enabled: true
+    metadata:
+      model_version: "3.0"
+      release_date: "2024-09-19"
+      architecture: "Transformer"
+      parameters: "32B"
+      notes: "Reliable general-purpose model with good performance"
+
+  # DeepSeek R1 - Specialized reasoning model
+  - model_id: "deepseek/deepseek-r1-0528:free"
+    display_name: "DeepSeek R1 (Free)"
+    provider: "deepseek"
+    category: "free_reasoning"
+    context_window: 65536  # 65K context window
+    max_tokens_per_request: 8192
+    rate_limit_requests_per_minute: 15  # Lower limit for reasoning model
+    rate_limit_tokens_per_minute: 60000
+    cost_per_input_token: null  # Free model
+    cost_per_output_token: null  # Free model
+    timeout_seconds: 45.0  # Longer timeout for reasoning tasks
+    supports_streaming: true
+    supports_function_calling: false
+    supports_vision: false
+    supports_reasoning: true  # Specialized reasoning model
+    available_regions: ["global"]
+    fallback_models:
+      - "deepseek/deepseek-chat-v3-0324:free"
+      - "microsoft/mai-ds-r1:free"
+    enabled: true
+    metadata:
+      model_version: "r1"
+      release_date: "2024-05-28"
+      architecture: "Reasoning-enhanced Transformer"
+      parameters: "unknown"
+      notes: "Specialized for complex reasoning tasks with thinking mode"
+
+  # Microsoft MAI DS R1 - Alternative reasoning model
+  - model_id: "microsoft/mai-ds-r1:free"
+    display_name: "Microsoft MAI DS R1 (Free)"
+    provider: "microsoft"
+    category: "free_reasoning"
+    context_window: 32768  # 32K context window
+    max_tokens_per_request: 4096
+    rate_limit_requests_per_minute: 20
+    rate_limit_tokens_per_minute: 40000
+    cost_per_input_token: null  # Free model
+    cost_per_output_token: null  # Free model
+    timeout_seconds: 35.0
+    supports_streaming: true
+    supports_function_calling: false
+    supports_vision: false
+    supports_reasoning: true
+    available_regions: ["global"]
+    fallback_models:
+      - "deepseek/deepseek-r1-0528:free"
+      - "deepseek/deepseek-chat-v3-0324:free"
+    enabled: true
+    metadata:
+      model_version: "r1"
+      release_date: "2024-06-15"
+      architecture: "MAI Reasoning"
+      parameters: "unknown"
+      notes: "Microsoft's reasoning-enhanced model"
+
+# Fallback chains matching model_utils.sh patterns
+# Organized by model category for different use cases
+fallback_chains:
+  # Primary free models for general use
+  free_general:
+    - "deepseek/deepseek-chat-v3-0324:free"
+    - "google/gemini-2.0-flash-exp:free"
+    - "qwen/qwen3-32b:free"
+
+  # Free models optimized for reasoning tasks
+  free_reasoning:
+    - "deepseek/deepseek-r1-0528:free"
+    - "microsoft/mai-ds-r1:free"
+    - "deepseek/deepseek-chat-v3-0324:free"
+
+  # Large context window models (mix of free and premium)
+  large_context:
+    - "google/gemini-2.5-pro"  # Premium model (not configured above)
+    - "google/gemini-2.5-flash"  # Premium model (not configured above)
+    - "google/gemini-2.0-flash-exp:free"
+    - "deepseek/deepseek-chat-v3-0324:free"
+
+  # Premium reasoning models (for future expansion)
+  premium_reasoning:
+    - "openai/o3"  # Premium model (not configured above)
+    - "openai/o3-mini"  # Premium model (not configured above)
+    - "anthropic/claude-opus-4"  # Premium model (not configured above)
+    - "microsoft/phi-4"  # Premium model (not configured above)
+
+  # Premium analysis models (for future expansion)
+  premium_analysis:
+    - "anthropic/claude-opus-4"  # Premium model (not configured above)
+    - "anthropic/claude-sonnet-4"  # Premium model (not configured above)
+    - "google/gemini-2.5-pro"  # Premium model (not configured above)
+    - "openai/o3"  # Premium model (not configured above)
+
+# Configuration metadata
+metadata:
+  version: "1.0.0"
+  last_updated: "2025-01-16"
+  description: "OpenRouter model configuration for PromptCraft-Hybrid Phase 1"
+  supported_providers: ["deepseek", "google", "qwen", "microsoft"]
+  total_free_models: 5
+  notes: |
+    This configuration focuses on free models available through OpenRouter API.
+    Rate limits are conservative estimates based on free tier limitations.
+    Premium models are referenced in fallback chains but not fully configured.
+    Future phases will expand premium model support with cost management.
+
+# Environment variable mappings
+# These can be overridden via environment variables
+environment_variables:
+  api_key: "PROMPTCRAFT_OPENROUTER_API_KEY"
+  custom_config: "PROMPTCRAFT_MODEL_REGISTRY_CONFIG"
+  enable_fallback: "PROMPTCRAFT_ENABLE_MODEL_FALLBACK"
+  default_category: "PROMPTCRAFT_DEFAULT_MODEL_CATEGORY"
+  max_fallback_depth: "PROMPTCRAFT_MAX_FALLBACK_DEPTH"
+
+# Rate limiting configuration per provider
+# Used for global rate limit management across all models
+provider_rate_limits:
+  deepseek:
+    requests_per_minute: 30  # Total across all DeepSeek models
+    tokens_per_minute: 150000
+    burst_allowance: 5
+
+  google:
+    requests_per_minute: 20  # Total across all Google models
+    tokens_per_minute: 100000
+    burst_allowance: 3
+
+  qwen:
+    requests_per_minute: 30  # Total across all Qwen models
+    tokens_per_minute: 75000
+    burst_allowance: 5
+
+  microsoft:
+    requests_per_minute: 25  # Total across all Microsoft models
+    tokens_per_minute: 60000
+    burst_allowance: 4

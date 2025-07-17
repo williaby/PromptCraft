@@ -177,36 +177,42 @@ class TestConfigurationStatusHelpers:
 
     def test_count_configured_secrets_with_some_secrets(self) -> None:
         """Test counting secrets when only some secret fields are configured."""
-        settings = ApplicationSettings(
-            api_key=SecretStr("api_key_value"),
-            secret_key=SecretStr("app_secret_key"),
-            jwt_secret_key=SecretStr("jwt_secret"),
-            # Other secrets left as None
-        )
+        # Clear environment to avoid picking up unexpected values
+        with patch.dict(os.environ, {}, clear=True):
+            settings = ApplicationSettings(
+                api_key=SecretStr("api_key_value"),
+                secret_key=SecretStr("app_secret_key"),
+                jwt_secret_key=SecretStr("jwt_secret"),
+                # Other secrets left as None
+            )
 
         count = _count_configured_secrets(settings)
         assert count == 3
 
     def test_count_configured_secrets_with_empty_strings(self) -> None:
         """Test counting secrets ignores empty string values."""
-        # Create settings first with valid values
-        settings = ApplicationSettings(
-            api_key=SecretStr("valid_key"),
-        )
+        # Clear environment to avoid picking up unexpected values
+        with patch.dict(os.environ, {}, clear=True):
+            # Create settings first with valid values
+            settings = ApplicationSettings(
+                api_key=SecretStr("valid_key"),
+            )
 
-        # Manually set empty values to bypass validation (for testing purposes)
-        settings.secret_key = SecretStr("")
-        settings.jwt_secret_key = SecretStr("   ")
+            # Manually set empty values to bypass validation (for testing purposes)
+            settings.secret_key = SecretStr("")
+            settings.jwt_secret_key = SecretStr("   ")
 
-        count = _count_configured_secrets(settings)
-        assert count == 1  # Only api_key counts
+            count = _count_configured_secrets(settings)
+            assert count == 1  # Only api_key counts
 
     def test_count_configured_secrets_with_no_secrets(self) -> None:
         """Test counting secrets when no secret fields are configured."""
-        settings = ApplicationSettings()
+        # Clear environment to avoid picking up unexpected values
+        with patch.dict(os.environ, {}, clear=True):
+            settings = ApplicationSettings()
 
-        count = _count_configured_secrets(settings)
-        assert count == 0
+            count = _count_configured_secrets(settings)
+            assert count == 0
 
     @patch.dict(
         os.environ,
@@ -285,30 +291,32 @@ class TestConfigurationStatusGeneration:
         mock_validate_encryption.return_value = True
         mock_validate_startup.return_value = None  # No exception = validation passed
 
-        settings = ApplicationSettings(
-            app_name="Test App",
-            version="1.2.3",
-            environment="staging",
-            debug=False,
-            api_host="api.staging.com",
-            api_port=8080,
-            api_key=SecretStr("test_api_key"),
-            secret_key=SecretStr("test_secret_key"),
-        )
+        # Clear environment to avoid picking up unexpected values
+        with patch.dict(os.environ, {}, clear=True):
+            settings = ApplicationSettings(
+                app_name="Test App",
+                version="1.2.3",
+                environment="staging",
+                debug=False,
+                api_host="api.staging.com",
+                api_port=8080,
+                api_key=SecretStr("test_api_key"),
+                secret_key=SecretStr("test_secret_key"),
+            )
 
-        status = get_configuration_status(settings)
+            status = get_configuration_status(settings)
 
-        assert status.environment == "staging"
-        assert status.version == "1.2.3"
-        assert status.debug is False
-        assert status.config_loaded is True
-        assert status.encryption_enabled is True
-        assert status.validation_status == "passed"
-        assert status.validation_errors == []
-        assert status.secrets_configured == 2  # api_key and secret_key
-        assert status.api_host == "api.staging.com"
-        assert status.api_port == 8080
-        assert status.config_healthy is True
+            assert status.environment == "staging"
+            assert status.version == "1.2.3"
+            assert status.debug is False
+            assert status.config_loaded is True
+            assert status.encryption_enabled is True
+            assert status.validation_status == "passed"
+            assert status.validation_errors == []
+            assert status.secrets_configured == 2  # api_key and secret_key
+            assert status.api_host == "api.staging.com"
+            assert status.api_port == 8080
+            assert status.config_healthy is True
 
     @patch("src.config.health.validate_encryption_available")
     @patch("src.config.settings.validate_configuration_on_startup")

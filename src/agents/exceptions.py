@@ -347,6 +347,16 @@ class AgentTimeoutError(AgentExecutionError):
             request_id=request_id,
         )
 
+    @property
+    def timeout(self) -> float | None:
+        """Get the timeout value from context."""
+        return self.context.get("timeout")
+
+    @property
+    def processing_time(self) -> float | None:
+        """Get the processing time from context."""
+        return self.context.get("processing_time")
+
 
 # Utility functions for error handling
 def create_agent_error(

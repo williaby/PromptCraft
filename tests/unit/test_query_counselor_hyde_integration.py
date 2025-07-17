@@ -6,10 +6,14 @@ seamless HyDE processing coordination and performance monitoring.
 """
 
 import asyncio
+import gc
+import logging
 import time
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
+logger = logging.getLogger(__name__)
 
 from src.core.hyde_processor import HydeProcessor
 from src.core.query_counselor import QueryCounselor
@@ -20,9 +24,9 @@ class TestQueryCounselorHydeIntegration:
     """Test suite for QueryCounselor + HydeProcessor integration."""
 
     @pytest.fixture
-    async def query_counselor(self):
+    async def query_counselor(self, mock_hyde_processor, mock_mcp_client):
         """Create QueryCounselor instance for testing."""
-        return QueryCounselor()
+        return QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
     @pytest.fixture
     async def mock_hyde_processor(self):
@@ -31,6 +35,60 @@ class TestQueryCounselorHydeIntegration:
         hyde.three_tier_analysis = AsyncMock()
         hyde.process_query = AsyncMock()
         return hyde
+
+    @pytest.fixture
+    async def mock_mcp_client(self):
+        """Create mock MCP client for testing."""
+        from src.mcp_integration.mcp_client import MCPClientInterface, Response
+
+        mock_client = Mock(spec=MCPClientInterface)
+
+        # Mock workflow orchestration with conditional behavior
+        async def mock_orchestrate(workflow_steps, **kwargs):
+            # Extract query from workflow steps to determine behavior
+            query = ""
+            if workflow_steps and len(workflow_steps) > 0:
+                # Get query from the workflow step's input_data
+                input_data = getattr(workflow_steps[0], "input_data", {})
+                query = input_data.get("query", "")
+
+            # Return error response for empty queries
+            if not query or not query.strip():
+                return [
+                    Response(
+                        agent_id="mock_agent",
+                        content="Empty query error",
+                        success=False,
+                        confidence=0.0,
+                        processing_time=0.1,
+                        metadata={"error": True, "error_type": "empty_query"},
+                    ),
+                ]
+
+            # Normal successful response for non-empty queries
+            return [
+                Response(
+                    agent_id="mock_agent",
+                    content="Mocked response content",
+                    success=True,
+                    confidence=0.8,
+                    processing_time=0.1,
+                    metadata={"source": "mock"},
+                ),
+            ]
+
+        mock_client.orchestrate_agents = AsyncMock(side_effect=mock_orchestrate)
+
+        # Mock validate_query to return proper structure
+        mock_client.validate_query = AsyncMock(
+            side_effect=lambda q: {
+                "is_valid": True,
+                "sanitized_query": q,  # Return the original query
+                "potential_issues": [],
+            },
+        )
+
+        return mock_client
 
     @pytest.mark.asyncio
     async def test_hyde_processor_initialization(self, query_counselor):
@@ -49,7 +107,7 @@ class TestQueryCounselorHydeIntegration:
 
         # Validate response structure
         assert response is not None
-        assert response.content is not None
+        assert response.response is not None
         assert response.processing_time > 0
         assert processing_time < 2.0  # Must meet <2s SLA
 
@@ -69,7 +127,7 @@ class TestQueryCounselorHydeIntegration:
 
         # Validate response structure
         assert response is not None
-        assert response.content is not None
+        assert response.response is not None
         assert processing_time < 2.0  # Must meet <2s SLA
 
         # Check HyDE metadata (should indicate HyDE applied for complex query)
@@ -109,7 +167,7 @@ class TestQueryCounselorHydeIntegration:
     async def test_performance_tracking_integration(self, query_counselor):
         """Test that performance tracking is properly integrated."""
         monitor = PerformanceMonitor()
-        initial_metrics = monitor.get_all_metrics()
+        monitor.get_all_metrics()
 
         # Process a query
         test_query = "Generate a template for deployment"
@@ -270,12 +328,12 @@ class TestQueryCounselorHydeIntegration:
         ), f"Success rate too low: {successful_count}/{len(test_queries)}"
 
         # Log performance summary
-        print("\nSLA Compliance Test Results:")
-        print(f"  Queries processed: {len(test_queries)}")
-        print(f"  Successful: {successful_count}")
-        print(f"  Average time: {avg_time:.3f}s")
-        print(f"  Max time: {max_time:.3f}s")
-        print(f"  P95 time: {p95_time:.3f}s")
+        logger.info("SLA Compliance Test Results:")
+        logger.info("  Queries processed: %s", len(test_queries))
+        logger.info("  Successful: %s", successful_count)
+        logger.info("  Average time: %.3fs", avg_time)
+        logger.info("  Max time: %.3fs", max_time)
+        logger.info("  P95 time: %.3fs", p95_time)
 
 
 @pytest.mark.performance
@@ -289,7 +347,7 @@ class TestPerformanceIntegration:
 
         # Use performance tracking
         with track_performance("integration_test") as tracker:
-            response = await query_counselor.process_query_with_hyde("Test query")
+            await query_counselor.process_query_with_hyde("Test query")
 
         # Validate tracking worked
         assert tracker.start_time is not None
@@ -304,8 +362,6 @@ class TestPerformanceIntegration:
     @pytest.mark.asyncio
     async def test_memory_usage_stability(self):
         """Test memory usage stability during processing."""
-        import gc
-
         query_counselor = QueryCounselor()
 
         # Force garbage collection

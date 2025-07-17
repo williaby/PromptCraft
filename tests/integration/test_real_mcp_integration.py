@@ -6,6 +6,7 @@ validating end-to-end workflows with actual HTTP communication and error handlin
 """
 
 import asyncio
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -426,8 +427,6 @@ class TestRealMCPIntegration:
     @pytest.mark.asyncio
     async def test_mcp_performance_requirements(self, zen_mcp_client, mock_httpx_client):
         """Test MCP performance meets <2s response time requirement."""
-        import time
-
         # Mock fast responses
         mock_response = MagicMock()
         mock_response.status_code = 200

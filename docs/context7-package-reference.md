@@ -224,4 +224,6 @@ This document should be updated whenever:
 - Better alternatives are discovered
 - Trust scores significantly change
 
-**Last updated:** $(date)
+## Last Updated
+
+$(date)

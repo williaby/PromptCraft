@@ -18,12 +18,28 @@ import pytest
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning, module="pact")
 
 # Import Pact for contract testing
+import shutil
+import subprocess
+
 try:
     from pact import Consumer, EachLike, Like, Provider
 
     PACT_AVAILABLE = True
+
+    # Check if pact-mock-service binary is available
+    PACT_STANDALONE_INSTALLED = shutil.which("pact-mock-service") is not None
+
+    if not PACT_STANDALONE_INSTALLED:
+        # Try alternative method to find pact tools
+        try:
+            subprocess.run(["pact-mock-service", "--help"], capture_output=True, check=True, timeout=5)
+            PACT_STANDALONE_INSTALLED = True
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+            PACT_STANDALONE_INSTALLED = False
+
 except ImportError:
     PACT_AVAILABLE = False
+    PACT_STANDALONE_INSTALLED = False
 
     # Mock Pact classes for testing when pact-python is not available
     class Consumer:
@@ -66,6 +82,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(not PACT_AVAILABLE, reason="pact-python not installed")
+@pytest.mark.skipif(not PACT_STANDALONE_INSTALLED, reason="pact-mock-service binary not available")
 @pytest.mark.skipif(os.getenv("CI_ENVIRONMENT") == "true", reason="Pact tests require actual MCP servers, skip in CI")
 @pytest.mark.contract
 class TestZenMCPContracts:
@@ -239,6 +256,7 @@ class TestZenMCPContracts:
 
 
 @pytest.mark.skipif(not PACT_AVAILABLE, reason="pact-python not installed")
+@pytest.mark.skipif(not PACT_STANDALONE_INSTALLED, reason="pact-mock-service binary not available")
 @pytest.mark.skipif(os.getenv("CI_ENVIRONMENT") == "true", reason="Pact tests require actual MCP servers, skip in CI")
 @pytest.mark.contract
 class TestHeimdalMCPContracts:

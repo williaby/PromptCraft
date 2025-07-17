@@ -16,6 +16,7 @@ SECRET_FIELD_NAMES = [
     "qdrant_api_key",
     "encryption_key",
     "mcp_api_key",
+    "openrouter_api_key",
 ]
 
 # Qdrant configuration defaults

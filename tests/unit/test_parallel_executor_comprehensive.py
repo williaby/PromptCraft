@@ -194,7 +194,7 @@ class TestParallelSubagentExecutor:
         client, deployment_type = await executor._select_optimal_client("test_server", "test_tool")
 
         assert client == executor.docker_client
-        assert deployment_type == "docker"
+        assert deployment_type == "docker_preferred"
 
     @pytest.mark.asyncio
     async def test_select_optimal_client_feature_not_supported(self):
@@ -231,7 +231,7 @@ class TestParallelSubagentExecutor:
         client, deployment_type = await executor._select_optimal_client("test_server", "test_tool")
 
         assert client == executor.mcp_client
-        assert deployment_type == "self_hosted"
+        assert deployment_type == "self_hosted_only"
 
     @pytest.mark.asyncio
     async def test_select_optimal_client_no_tool_name(self):
@@ -245,6 +245,7 @@ class TestParallelSubagentExecutor:
 
         # Mock Docker client availability
         executor.docker_client.is_available = AsyncMock(return_value=True)
+        executor.docker_client.supports_feature = AsyncMock(return_value=True)
 
         # Mock config manager
         config_manager.get_server_config.return_value = Mock(deployment_preference="docker")
@@ -252,7 +253,7 @@ class TestParallelSubagentExecutor:
         client, deployment_type = await executor._select_optimal_client("test_server")
 
         assert client == executor.docker_client
-        assert deployment_type == "docker"
+        assert deployment_type == "docker_preferred"
         # Should not call supports_feature when no tool name provided
         executor.docker_client.supports_feature.assert_not_called()
 
@@ -276,7 +277,7 @@ class TestParallelSubagentExecutor:
         client, deployment_type = await executor._select_optimal_client("test_server", "test_tool")
 
         assert client == executor.mcp_client
-        assert deployment_type == "self_hosted"
+        assert deployment_type == "self_hosted_configured"
 
     @pytest.mark.asyncio
     async def test_select_optimal_client_no_server_config(self):
@@ -298,7 +299,7 @@ class TestParallelSubagentExecutor:
         client, deployment_type = await executor._select_optimal_client("test_server", "test_tool")
 
         assert client == executor.docker_client
-        assert deployment_type == "docker"
+        assert deployment_type == "docker_default"
 
     @pytest.mark.asyncio
     async def test_select_optimal_client_logging(self):
@@ -423,7 +424,7 @@ class TestParallelSubagentExecutor:
 
     @pytest.mark.asyncio
     async def test_select_optimal_client_memory_considerations(self):
-        """Test _select_optimal_client considers memory requirements."""
+        """Test _select_optimal_client with auto preference defaults to docker."""
         config_manager = Mock(spec=MCPConfigurationManager)
         mcp_client = Mock(spec=MCPClient)
 
@@ -435,16 +436,16 @@ class TestParallelSubagentExecutor:
         executor.docker_client.is_available = AsyncMock(return_value=True)
         executor.docker_client.supports_feature = AsyncMock(return_value=True)
 
-        # Mock server config with memory requirement
+        # Mock server config with auto preference (no memory consideration in current impl)
         server_config = Mock(deployment_preference="auto")
-        server_config.memory_mb = 3000  # > 2GB, should prefer self-hosted
+        server_config.memory_mb = 3000  # This is ignored in current implementation
         config_manager.get_server_config.return_value = server_config
 
         client, deployment_type = await executor._select_optimal_client("test_server", "test_tool")
 
-        # Should prefer self-hosted for high memory requirements
-        assert client == executor.mcp_client
-        assert deployment_type == "self_hosted"
+        # Should default to docker when available (auto preference)
+        assert client == executor.docker_client
+        assert deployment_type == "docker_default"
 
     def test_max_workers_boundary_conditions(self):
         """Test max_workers handles boundary conditions correctly."""

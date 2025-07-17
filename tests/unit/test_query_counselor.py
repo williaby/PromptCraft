@@ -82,7 +82,11 @@ class TestQueryCounselor:
     @pytest.fixture
     def query_counselor(self, mock_mcp_client, mock_hyde_processor):
         """Create QueryCounselor instance with mocked dependencies."""
-        return QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
+        return QueryCounselor(
+            mcp_client=mock_mcp_client,
+            hyde_processor=mock_hyde_processor,
+            enable_hybrid_routing=False,  # Disable hybrid routing for tests
+        )
 
     @pytest.fixture
     def sample_queries(self):
