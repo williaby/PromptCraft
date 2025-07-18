@@ -10,7 +10,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,10 @@ class ExportUtils:
     def export_journey1_content(
         self,
         enhanced_prompt: str,
-        create_breakdown: Dict[str, str],
-        model_info: Dict[str, Any],
-        file_sources: List[Dict[str, Any]],
-        session_data: Dict[str, Any],
+        create_breakdown: dict[str, str],
+        model_info: dict[str, Any],
+        file_sources: list[dict[str, Any]],
+        session_data: dict[str, Any],
         format_type: str = "markdown",
     ) -> str:
         """
@@ -81,10 +81,10 @@ class ExportUtils:
     def _export_as_markdown_j1(
         self,
         enhanced_prompt: str,
-        create_breakdown: Dict[str, str],
-        model_info: Dict[str, Any],
-        file_sources: List[Dict[str, Any]],
-        session_data: Dict[str, Any],
+        create_breakdown: dict[str, str],
+        model_info: dict[str, Any],
+        file_sources: list[dict[str, Any]],
+        session_data: dict[str, Any],
         timestamp: str,
     ) -> str:
         """Export Journey 1 content as markdown."""
@@ -160,10 +160,10 @@ class ExportUtils:
     def _export_as_text_j1(
         self,
         enhanced_prompt: str,
-        create_breakdown: Dict[str, str],
-        model_info: Dict[str, Any],
-        file_sources: List[Dict[str, Any]],
-        session_data: Dict[str, Any],
+        create_breakdown: dict[str, str],
+        model_info: dict[str, Any],
+        file_sources: list[dict[str, Any]],
+        session_data: dict[str, Any],
         timestamp: str,
     ) -> str:
         """Export Journey 1 content as plain text."""
@@ -223,7 +223,7 @@ SESSION INFORMATION:
 Exported from PromptCraft-Hybrid | Generated with AI assistance
 """
 
-    def _export_as_json(self, data: Dict[str, Any]) -> str:
+    def _export_as_json(self, data: dict[str, Any]) -> str:
         """Export content as JSON with proper formatting."""
         try:
             return json.dumps(data, indent=2, ensure_ascii=False)
@@ -231,7 +231,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             logger.error(f"Error exporting as JSON: {e}")
             return json.dumps({"error": f"Export failed: {e}"}, indent=2)
 
-    def extract_code_blocks(self, content: str) -> List[Dict[str, str]]:
+    def extract_code_blocks(self, content: str) -> list[dict[str, str]]:
         """
         Extract code blocks from content with enhanced detection.
 
@@ -287,7 +287,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             return "java"
         elif re.search(r"#include\s*<", code):
             return "cpp"
-        elif re.search(r"SELECT\s+.*FROM", code, re.IGNORECASE):
+        elif re.search(r"SELECT\s+[^;]+FROM", code, re.IGNORECASE):
             return "sql"
         elif re.search(r"<html|<div|<p>", code, re.IGNORECASE):
             return "html"
@@ -298,7 +298,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         else:
             return "text"
 
-    def _extract_comments(self, code: str, language: str) -> List[str]:
+    def _extract_comments(self, code: str, language: str) -> list[str]:
         """Extract comments from code based on language."""
         import re
 
@@ -311,10 +311,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         elif language in ["javascript", "java", "cpp"]:
             # C-style comments
             comments.extend(re.findall(r"//\s*(.+)", code))
-            comments.extend(re.findall(r"/\*([\s\S]*?)\*/", code))
+            comments.extend(re.findall(r"/\*([^*]*(?:\*(?!/)[^*]*)*)\*/", code))
         elif language == "html":
             # HTML comments
-            comments.extend(re.findall(r"<!--([\s\S]*?)-->", code))
+            comments.extend(re.findall(r"<!--([^-]*(?:-(?!->)[^-]*)*?)-->", code))
 
         return [comment.strip() for comment in comments if comment.strip()]
 
@@ -327,7 +327,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         elif language == "javascript":
             return bool(re.search(r"function\s+\w+\s*\(", code))
         elif language in ["java", "cpp"]:
-            return bool(re.search(r"\w+\s+\w+\s*\([^)]*\)\s*{", code))
+            return bool(re.search(r"\w+\s+\w+\s*\([^)]*\)\s*\{", code))
         return False
 
     def _assess_complexity(self, code: str) -> str:
@@ -340,7 +340,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         else:
             return "complex"
 
-    def format_code_blocks_for_export(self, code_blocks: List[Dict[str, str]]) -> str:
+    def format_code_blocks_for_export(self, code_blocks: list[dict[str, str]]) -> str:
         """
         Format code blocks for export with enhanced metadata.
 
@@ -401,7 +401,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return export_content
 
-    def copy_code_as_markdown(self, code_blocks: List[Dict[str, str]]) -> str:
+    def copy_code_as_markdown(self, code_blocks: list[dict[str, str]]) -> str:
         """
         Format code blocks as markdown for copying with enhanced metadata.
 
