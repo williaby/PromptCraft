@@ -1187,6 +1187,7 @@ __all__ = [
     "AbstractVectorStore",
     "BatchOperationResult",
     "ConnectionStatus",
+    "DEFAULT_VECTOR_DIMENSIONS",
     "EnhancedMockVectorStore",
     "HealthCheckResult",
     "MockVectorStore",  # Backward compatibility

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 from src.config.settings import ApplicationSettings
 from src.core.hyde_processor import HydeProcessor
 from src.core.query_counselor import QueryCounselor
-from src.core.vector_store import VectorStore
+from src.core.vector_store import AbstractVectorStore
 from src.mcp_integration.mcp_client import ZenMCPClient
 
 
@@ -52,9 +52,10 @@ class TestQueryCounselorHydeIntegration:
     @pytest.fixture
     def mock_vector_store(self):
         """Create mock vector store for testing."""
-        store = AsyncMock(spec=VectorStore)
-        store.initialize.return_value = True
-        store.is_healthy.return_value = True
+        store = AsyncMock(spec=AbstractVectorStore)
+        store.connect.return_value = None
+        store.disconnect.return_value = None
+        store.health_check.return_value = {"status": "healthy"}
         return store
 
     @pytest.fixture
@@ -62,7 +63,6 @@ class TestQueryCounselorHydeIntegration:
         """Create mock HydeProcessor for testing."""
         processor = AsyncMock(spec=HydeProcessor)
         processor.vector_store = mock_vector_store
-        processor.initialize.return_value = True
         return processor
 
     @pytest.fixture
