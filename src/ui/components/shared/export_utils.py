@@ -276,58 +276,88 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
     def _detect_language(self, code: str) -> str:
         """Detect programming language from code content."""
-        import re
-
-        # Simple language detection based on common patterns
-        if re.search(r"def\s+\w+\s*\(", code):
+        # Simple language detection using string operations (safer than regex)
+        code_lower = code.lower()
+        
+        # Check for common keywords with simple string operations
+        if "def " in code and "(" in code:
             return "python"
-        elif re.search(r"function\s+\w+\s*\(", code):
+        elif "function " in code and "(" in code:
             return "javascript"
-        elif re.search(r"class\s+\w+\s*{", code):
+        elif "class " in code and "{" in code:
             return "java"
-        elif re.search(r"#include\s*<", code):
+        elif "#include" in code:
             return "cpp"
-        elif re.search(r"SELECT\s+[^;]+FROM", code, re.IGNORECASE):
+        elif "select " in code_lower and "from " in code_lower:
             return "sql"
-        elif re.search(r"<html|<div|<p>", code, re.IGNORECASE):
+        elif any(tag in code_lower for tag in ["<html", "<div", "<p>"]):
             return "html"
-        elif re.search(r'{\s*["\']?\w+["\']?\s*:', code):
+        elif code.strip().startswith("{") and ":" in code:
             return "json"
-        elif re.search(r"---\n", code):
+        elif "---" in code:
             return "yaml"
         else:
             return "text"
 
     def _extract_comments(self, code: str, language: str) -> list[str]:
         """Extract comments from code based on language."""
-        import re
-
         comments = []
 
         if language == "python":
-            # Python comments
-            comments.extend(re.findall(r"#\s*(.+)", code))
-            comments.extend(re.findall(r'"""([\s\S]*?)"""', code))
+            # Python comments - use simple line-by-line parsing
+            for line in code.split('\n'):
+                if '#' in line:
+                    comment_part = line.split('#', 1)[1].strip()
+                    if comment_part:
+                        comments.append(comment_part)
+            
+            # Simple docstring detection
+            if '"""' in code:
+                parts = code.split('"""')
+                for i in range(1, len(parts), 2):  # Every other part is a docstring
+                    if parts[i].strip():
+                        comments.append(parts[i].strip())
+                        
         elif language in ["javascript", "java", "cpp"]:
-            # C-style comments
-            comments.extend(re.findall(r"//\s*(.+)", code))
-            comments.extend(re.findall(r"/\*([^*]*(?:\*(?!/)[^*]*)*)\*/", code))
+            # C-style comments - use simple line-by-line parsing
+            for line in code.split('\n'):
+                if '//' in line:
+                    comment_part = line.split('//', 1)[1].strip()
+                    if comment_part:
+                        comments.append(comment_part)
+                        
+            # Simple block comment detection
+            if '/*' in code and '*/' in code:
+                parts = code.split('/*')
+                for part in parts[1:]:  # Skip first part (before first comment)
+                    if '*/' in part:
+                        comment_content = part.split('*/', 1)[0].strip()
+                        if comment_content:
+                            comments.append(comment_content)
+                            
         elif language == "html":
-            # HTML comments
-            comments.extend(re.findall(r"<!--([^-]*(?:-(?!->)[^-]*)*?)-->", code))
+            # HTML comments - use simple string operations
+            if '<!--' in code and '-->' in code:
+                parts = code.split('<!--')
+                for part in parts[1:]:  # Skip first part (before first comment)
+                    if '-->' in part:
+                        comment_content = part.split('-->', 1)[0].strip()
+                        if comment_content:
+                            comments.append(comment_content)
 
         return [comment.strip() for comment in comments if comment.strip()]
 
     def _has_functions(self, code: str, language: str) -> bool:
         """Check if code contains function definitions."""
-        import re
-
         if language == "python":
-            return bool(re.search(r"def\s+\w+\s*\(", code))
+            # Simple check for Python function definitions
+            return "def " in code and "(" in code
         elif language == "javascript":
-            return bool(re.search(r"function\s+\w+\s*\(", code))
+            # Simple check for JavaScript function definitions
+            return "function " in code and "(" in code
         elif language in ["java", "cpp"]:
-            return bool(re.search(r"\w+\s+\w+\s*\([^)]*\)\s*\{", code))
+            # Simple check for Java/C++ function definitions
+            return "(" in code and ")" in code and "{" in code
         return False
 
     def _assess_complexity(self, code: str) -> str:
