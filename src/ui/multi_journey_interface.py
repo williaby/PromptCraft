@@ -23,7 +23,7 @@ import gradio as gr
 from gradio.events import Events
 
 from src.config.settings import ApplicationSettings
-from src.utils.logging_mixin import LoggingMixin
+from src.utils.logging_mixin import LoggerMixin
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -165,7 +165,7 @@ class RateLimiter:
         }
 
 
-class MultiJourneyInterface(LoggingMixin):
+class MultiJourneyInterface(LoggerMixin):
     """
     Main Gradio interface supporting all four PromptCraft journeys.
 
