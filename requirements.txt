@@ -1207,6 +1207,9 @@ python-dotenv==1.0.1 ; python_version >= "3.11" and python_version < "3.13" \
 python-gnupg==0.5.4 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:40ce25cde9df29af91fe931ce9df3ce544e14a37f62b13ca878c897217b2de6c \
     --hash=sha256:f2fdb5fb29615c77c2743e1cb3d9314353a6e87b10c37d238d91ae1c6feae086
+python-magic==0.4.27 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b \
+    --hash=sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3
 python-multipart==0.0.18 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:7a68db60c8bfb82e460637fa4750727b45af1d5e2ed215593f917f64694d34fe \
     --hash=sha256:efe91480f485f6a361427a541db4796f9e1591afc0fb8e7a4ba06bfbc6708996
