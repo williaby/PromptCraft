@@ -5,7 +5,7 @@ configuration including Cloudflare Access integration, email whitelisting,
 and role mapping.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class AuthenticationConfig(BaseModel):
@@ -146,7 +146,7 @@ class AuthenticationConfig(BaseModel):
 
     @field_validator("cloudflare_jwks_url")
     @classmethod
-    def validate_jwks_url(cls, v: str, info) -> str:
+    def validate_jwks_url(cls, v: str, info: ValidationInfo) -> str:
         """Validate and auto-generate JWKS URL if needed."""
         if not v and info.data.get("cloudflare_team_domain"):
             # Auto-generate JWKS URL from team domain
@@ -159,17 +159,17 @@ class AuthenticationConfig(BaseModel):
     def validate_email_whitelist(cls, v: list[str]) -> list[str]:
         """Validate email whitelist entries."""
         validated = []
-        for email in v:
-            email = email.strip().lower()
-            if email:
+        for email_entry in v:
+            email_addr = email_entry.strip().lower()
+            if email_addr:
                 # Basic validation for email format or domain format
-                if email.startswith("@"):
+                if email_addr.startswith("@"):
                     # Domain entry - must have at least one dot after @
-                    if "." in email[1:]:
-                        validated.append(email)
-                elif "@" in email:
+                    if "." in email_addr[1:]:
+                        validated.append(email_addr)
+                elif "@" in email_addr:
                     # Email entry - basic format check
-                    validated.append(email)
+                    validated.append(email_addr)
         return validated
 
     @field_validator("admin_email_domains")
@@ -177,13 +177,13 @@ class AuthenticationConfig(BaseModel):
     def validate_admin_domains(cls, v: list[str]) -> list[str]:
         """Validate admin email domains."""
         validated = []
-        for domain in v:
-            domain = domain.strip().lower()
-            if domain and "." in domain:
+        for domain_entry in v:
+            domain_name = domain_entry.strip().lower()
+            if domain_name and "." in domain_name:
                 # Remove @ prefix if present
-                if domain.startswith("@"):
-                    domain = domain[1:]
-                validated.append(domain)
+                if domain_name.startswith("@"):
+                    domain_name = domain_name[1:]
+                validated.append(domain_name)
         return validated
 
     @field_validator("rate_limit_key_func")

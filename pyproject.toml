@@ -209,6 +209,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "ANN", "ARG", "PLR2004"]
+"tests/auth/*" = ["S101", "S105", "S110", "ANN", "ARG", "PLR2004", "COM812", "UP017", "PLC0415", "RET504", "SIM117"]  # Allow test patterns
 "tests/performance/*" = ["T201", "S311", "PLC0415", "F401", "PTH123", "S101", "ANN", "ARG", "PLR2004"]
 "tests/security/test_codeql_validation.py" = ["S105", "S602", "S603", "S608", "S301", "S506", "S324", "S307", "PTH123", "T201", "S101", "ANN", "ARG", "PLR2004"]
 "scripts/*" = ["T20", "INP001", "ANN", "PLR0912", "PLR2004", "PTH123", "SIM118", "RUF013", "B007", "PLC0415", "G004", "S607", "S602", "S314", "S603", "RET504", "DTZ005", "RUF100"]
@@ -219,6 +220,7 @@ ignore = [
 "src/utils/observability.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "tests/conftest.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "src/mcp_integration/*" = ["G004"]  # Allow f-strings in logging for structured logging
+"src/auth/*" = ["G004", "PLR2004", "SIM110", "RET504"]  # Allow f-strings, magic numbers, and specific patterns
 "src/core/*" = ["N805"]  # Allow cls parameter name in Pydantic validators
 "src/utils/resilience.py" = ["UP046"]  # Generic class syntax for Python 3.11 compatibility
 "src/utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility

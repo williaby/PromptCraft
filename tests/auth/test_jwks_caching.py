@@ -1,9 +1,9 @@
 """Tests for JWKS caching functionality."""
 
-import pytest
 from unittest.mock import Mock, patch
+
 import httpx
-from datetime import datetime, timedelta
+import pytest
 
 from src.auth.jwks_client import JWKSClient
 from src.auth.models import JWKSError

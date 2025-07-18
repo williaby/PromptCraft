@@ -1,16 +1,17 @@
 """Negative path security tests for authentication system."""
 
-import pytest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
-import jwt
-import httpx
-from datetime import datetime, timezone, timedelta
 
-from src.auth.jwt_validator import JWTValidator
-from src.auth.jwks_client import JWKSClient
-from src.auth.middleware import AuthenticationMiddleware
+import httpx
+import jwt
+import pytest
+
 from src.auth.config import AuthenticationConfig
-from src.auth.models import JWTValidationError, JWKSError, AuthenticationError
+from src.auth.jwks_client import JWKSClient
+from src.auth.jwt_validator import JWTValidator
+from src.auth.middleware import AuthenticationMiddleware
+from src.auth.models import JWKSError, JWTValidationError
 
 
 class TestAuthenticationNegativePaths:
@@ -230,7 +231,6 @@ class TestAuthenticationNegativePaths:
     def test_middleware_missing_headers(self, auth_config, jwt_validator):
         """Test middleware behavior with missing authentication headers."""
         from fastapi import FastAPI, Request
-        from fastapi.testclient import TestClient
 
         app = FastAPI()
         middleware = AuthenticationMiddleware(
@@ -258,8 +258,9 @@ class TestAuthenticationNegativePaths:
 
     def test_rate_limiting_bypass_attempts(self, auth_config):
         """Test various rate limiting bypass attempts."""
-        from src.auth.middleware import create_rate_limiter
         from fastapi import Request
+
+        from src.auth.middleware import create_rate_limiter
 
         limiter = create_rate_limiter(auth_config)
 
@@ -301,7 +302,6 @@ class TestAuthenticationNegativePaths:
     def test_concurrent_authentication_attempts(self, jwt_validator, mock_jwks_client):
         """Test system behavior under concurrent authentication attempts."""
         import threading
-        import time
 
         mock_jwks_client.get_key_by_kid.return_value = {
             "kty": "RSA",

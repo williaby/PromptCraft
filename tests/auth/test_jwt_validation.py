@@ -1,12 +1,13 @@
 """Tests for JWT validation functionality."""
 
-import pytest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
-import jwt
-from datetime import datetime, timezone, timedelta
 
-from src.auth.jwt_validator import JWTValidator
+import jwt
+import pytest
+
 from src.auth.jwks_client import JWKSClient
+from src.auth.jwt_validator import JWTValidator
 from src.auth.models import JWTValidationError, UserRole
 
 
