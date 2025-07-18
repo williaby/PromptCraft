@@ -55,6 +55,7 @@ python-multipart = "^0.0.18"
 redis = {extras = ["hiredis"], version = "^6.0.0"}
 prometheus-client = "^0.20.0"
 python-dotenv = "^1.0.1"
+python-magic = "^0.4.27"
 structlog = ">=24.0.0,<26.0.0"
 rich = "^14.0.0"
 tenacity = "^9.0.0"
