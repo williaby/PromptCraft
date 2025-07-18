@@ -362,10 +362,7 @@ class AgentTimeoutError(AgentExecutionError):
 def create_agent_error(
     error_type: str,
     message: str,
-    error_code: str = "UNKNOWN_ERROR",
-    context: dict[str, Any] | None = None,
-    agent_id: str | None = None,
-    request_id: str | None = None,
+    **kwargs: Any,
 ) -> "AgentError":
     """
     Factory function to create agent errors based on error type.
@@ -373,10 +370,11 @@ def create_agent_error(
     Args:
         error_type: Type of error (configuration, execution, registration, validation)
         message: Human-readable error message
-        error_code: Machine-readable error code
-        context: Additional context information
-        agent_id: ID of the agent that caused the error
-        request_id: ID of the request that caused the error
+        **kwargs: Additional parameters including:
+            - error_code: Machine-readable error code (default: "UNKNOWN_ERROR")
+            - context: Additional context information
+            - agent_id: ID of the agent that caused the error
+            - request_id: ID of the request that caused the error
 
     Returns:
         AgentError: Appropriate exception instance
@@ -401,6 +399,12 @@ def create_agent_error(
     }
 
     error_class = error_classes.get(error_type, AgentError)
+
+    # Extract kwargs with defaults
+    error_code = kwargs.get("error_code", "UNKNOWN_ERROR")
+    context = kwargs.get("context")
+    agent_id = kwargs.get("agent_id")
+    request_id = kwargs.get("request_id")
 
     # Handle timeout error special case (different signature)
     if error_type == "timeout":

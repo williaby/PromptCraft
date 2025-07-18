@@ -47,6 +47,7 @@ Complexity: O(k*n) where k is number of tiers and n is query/document complexity
 import asyncio
 import logging
 import time
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -61,11 +62,9 @@ from src.core.vector_store import (
     AbstractVectorStore,
     EnhancedMockVectorStore,
     SearchParameters,
+    SearchResult as VectorSearchResult,
     SearchStrategy,
     VectorStoreFactory,
-)
-from src.core.vector_store import (
-    SearchResult as VectorSearchResult,
 )
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import WorkflowStep
@@ -223,6 +222,18 @@ class MockQueryCounselor:
         )
 
 
+@dataclass
+class HydeProcessorConfig:
+    """Configuration for HydeProcessor initialization."""
+    
+    vector_store: "AbstractVectorStore | None" = None
+    query_counselor: "MockQueryCounselor | None" = None
+    specificity_threshold_high: float | None = None
+    specificity_threshold_low: float | None = None
+    hybrid_router: "HybridRouter | None" = None
+    enable_openrouter: bool = True
+
+
 class HydeProcessor:
     """
     HyDE (Hypothetical Document Embeddings) processor for enhanced retrieval.
@@ -239,27 +250,23 @@ class HydeProcessor:
 
     def __init__(
         self,
-        vector_store: AbstractVectorStore | None = None,
-        query_counselor: MockQueryCounselor | None = None,
-        specificity_threshold_high: float | None = None,
-        specificity_threshold_low: float | None = None,
-        hybrid_router: HybridRouter | None = None,
-        enable_openrouter: bool = True,
+        config: HydeProcessorConfig | None = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize HydeProcessor with optional dependencies.
 
         Args:
-            vector_store: Vector store instance (auto-creates from settings if None)
-            query_counselor: Query counselor instance (creates mock if None)
-            specificity_threshold_high: High specificity threshold (default: 85)
-            specificity_threshold_low: Low specificity threshold (default: 40)
-            hybrid_router: HybridRouter instance for OpenRouter integration
-            enable_openrouter: Whether to enable OpenRouter integration
+            config: Configuration object with all dependencies and settings
+            **kwargs: Additional configuration parameters (for backward compatibility)
         """
         self.logger = logging.getLogger(__name__)
 
+        # Use config or create from kwargs for backward compatibility
+        if config is None:
+            config = HydeProcessorConfig(**kwargs)
+
         # Initialize vector store using factory if not provided
-        if vector_store is None:
+        if config.vector_store is None:
             try:
                 settings = get_settings()
                 vector_config = {
@@ -280,18 +287,18 @@ class HydeProcessor:
                     {"simulate_latency": True, "error_rate": 0.0, "base_latency": 0.05},
                 )
         else:
-            self.vector_store = vector_store
+            self.vector_store = config.vector_store
 
-        self.query_counselor = query_counselor or MockQueryCounselor()
+        self.query_counselor = config.query_counselor or MockQueryCounselor()
 
         # Store thresholds
-        self.specificity_threshold_high = specificity_threshold_high or HIGH_SPECIFICITY_THRESHOLD
-        self.specificity_threshold_low = specificity_threshold_low or LOW_SPECIFICITY_THRESHOLD
+        self.specificity_threshold_high = config.specificity_threshold_high or HIGH_SPECIFICITY_THRESHOLD
+        self.specificity_threshold_low = config.specificity_threshold_low or LOW_SPECIFICITY_THRESHOLD
 
         # Initialize OpenRouter integration
-        self.enable_openrouter = enable_openrouter
-        if enable_openrouter:
-            self.hybrid_router = hybrid_router or HybridRouter(
+        self.enable_openrouter = config.enable_openrouter
+        if config.enable_openrouter:
+            self.hybrid_router = config.hybrid_router or HybridRouter(
                 strategy=RoutingStrategy.OPENROUTER_PRIMARY,
                 enable_gradual_rollout=True,
             )
@@ -535,7 +542,9 @@ class HydeProcessor:
             specificity_score -= 20
 
         # Extra penalty for very short vague queries
-        if word_count <= 2 and any(term in query_lower for term in vague_terms):
+        # Create constant for minimum word count
+        MIN_WORD_COUNT = 2
+        if word_count <= MIN_WORD_COUNT and any(term in query_lower for term in vague_terms):
             specificity_score -= 20
 
         # Ensure score is within bounds

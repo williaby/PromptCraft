@@ -185,7 +185,7 @@ class DockerMCPClient(LoggerMixin):
             Health status of Docker MCP Toolkit integration
         """
         available_servers = len(self.docker_servers)
-        authenticated_servers = len([name for name, auth in self.authenticated_services.items() if auth])
+        authenticated_servers = len([name for name, auth in self.authenticated_services.items() if auth and name in self.docker_servers])
 
         return {
             "docker_mcp_available": available_servers > 0,

@@ -244,6 +244,7 @@ def hybrid_router(mock_openrouter_client, mock_mcp_client):
                 openrouter_client=mock_openrouter_client,
                 mcp_client=mock_mcp_client,
                 strategy=RoutingStrategy.OPENROUTER_PRIMARY,
+                enable_gradual_rollout=False,  # Disable gradual rollout for consistent testing
             )
 
 
@@ -850,6 +851,9 @@ class TestCapabilitiesAndValidation:
     @pytest.mark.asyncio
     async def test_validate_query_with_fallback(self, hybrid_router):
         """Test query validation with fallback."""
+        # Connect first to ensure proper state
+        await hybrid_router.connect()
+        
         # Make primary service fail
         hybrid_router.openrouter_client.should_fail = True
 

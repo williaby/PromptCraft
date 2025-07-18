@@ -65,8 +65,9 @@ This project is built on several key concepts and a unique hybrid architecture.
 | **Query Intelligence**       | HyDE Engine         | Enhances ambiguous user queries.                    |
 | **RAG Framework**            | LlamaIndex          | Manages data ingestion and retrieval pipelines.     |
 | **Vector Database**          | Qdrant (External)   | High-speed semantic search on Unraid (192.168.1.16) |
-| **UI Framework**             | Gradio              | Rapid development of the user interface.            |
+| **UI Framework**             | Gradio + Code-Server| Journeys 1-4 web interface + IDE integration       |
 | **Application Host**         | Ubuntu VM           | Hosts MCP stack on VM (192.168.1.205)               |
+| **Unified Access**           | Cloudflared Tunnel  | Single domain access for all journeys              |
 
 > _For a complete breakdown of the architecture and the rationale behind these choices, please see our
 [**Architecture Decision Record (ADR)**](./docs/planning/ADR.md)._
@@ -138,7 +139,26 @@ available commands.
    # This starts all services except Qdrant (external dependency)
    ```
 
-5. **Run Tests**:
+5. **Configure Cloudflared Tunnel** (Optional for remote access):
+   * Set up cloudflared tunnel for unified web access to all journeys.
+   * All services bind to localhost (127.0.0.1) for tunnel routing.
+
+   ```yaml
+   # Example cloudflared config.yml
+   ingress:
+     - hostname: promptcraft.yourdomain.com
+       path: /ide/*
+       service: http://localhost:8080      # Journey 3 (Code-Server)
+     - hostname: promptcraft.yourdomain.com
+       path: /api/*
+       service: http://localhost:8000      # API endpoints
+     - hostname: promptcraft.yourdomain.com
+       path: /
+       service: http://localhost:7860      # Journey 1, 2, 4 (Gradio)
+     - service: http_status:404
+   ```
+
+6. **Run Tests**:
    * Use Nox to run the test suite and ensure your environment is set up correctly.
 
    ```bash

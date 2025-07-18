@@ -400,45 +400,69 @@ class CreateProcessor:
         """
         sections = []
 
-        # Context section
-        if components["context"]["role"]:
-            sections.append(f"## Context\nRole: {components['context']['role']}")
-            if components["context"]["background"]:
-                sections.append(f"Background: {components['context']['background']}")
-            if components["context"]["goal"]:
-                sections.append(f"Goal: {components['context']['goal']}")
-
-        # Request section
-        if components["request"]["task"]:
-            sections.append(f"## Request\nTask: {components['request']['task']}")
-            if components["request"]["deliverable"]:
-                sections.append(f"Deliverable: {components['request']['deliverable']}")
-
-        # Examples section
-        if components["examples"]["patterns"]:
-            sections.append("## Examples")
-            for pattern in components["examples"]["patterns"]:
-                sections.append(f"- {pattern}")
-
-        # Augmentations section
-        if components["augmentations"]["frameworks"]:
-            sections.append("## Augmentations")
-            sections.append(f"Domain: {components['augmentations']['domain']}")
-            if components["augmentations"]["frameworks"]:
-                sections.append(f"Frameworks: {', '.join(components['augmentations']['frameworks'])}")
-
-        # Tone & Format section
-        sections.append("## Tone & Format")
-        sections.append(f"Tone: {components['tone_format']['tone']}")
-        sections.append(f"Format: {components['tone_format']['format']}")
-
-        # Evaluation section
-        sections.append("## Evaluation")
-        sections.append("Quality checks:")
-        for check in components["evaluation"]["quality_checks"]:
-            sections.append(f"- {check}")
+        # Build each section using helper methods
+        sections.extend(self._build_context_section(components["context"]))
+        sections.extend(self._build_request_section(components["request"]))
+        sections.extend(self._build_examples_section(components["examples"]))
+        sections.extend(self._build_augmentations_section(components["augmentations"]))
+        sections.extend(self._build_tone_format_section(components["tone_format"]))
+        sections.extend(self._build_evaluation_section(components["evaluation"]))
 
         return "\n\n".join(sections)
+
+    def _build_context_section(self, context: dict[str, Any]) -> list[str]:
+        """Build the context section of the prompt."""
+        sections = []
+        if context["role"]:
+            sections.append(f"## Context\nRole: {context['role']}")
+            if context["background"]:
+                sections.append(f"Background: {context['background']}")
+            if context["goal"]:
+                sections.append(f"Goal: {context['goal']}")
+        return sections
+
+    def _build_request_section(self, request: dict[str, Any]) -> list[str]:
+        """Build the request section of the prompt."""
+        sections = []
+        if request["task"]:
+            sections.append(f"## Request\nTask: {request['task']}")
+            if request["deliverable"]:
+                sections.append(f"Deliverable: {request['deliverable']}")
+        return sections
+
+    def _build_examples_section(self, examples: dict[str, Any]) -> list[str]:
+        """Build the examples section of the prompt."""
+        sections = []
+        if examples["patterns"]:
+            sections.append("## Examples")
+            for pattern in examples["patterns"]:
+                sections.append(f"- {pattern}")
+        return sections
+
+    def _build_augmentations_section(self, augmentations: dict[str, Any]) -> list[str]:
+        """Build the augmentations section of the prompt."""
+        sections = []
+        if augmentations["frameworks"]:
+            sections.append("## Augmentations")
+            sections.append(f"Domain: {augmentations['domain']}")
+            if augmentations["frameworks"]:
+                sections.append(f"Frameworks: {', '.join(augmentations['frameworks'])}")
+        return sections
+
+    def _build_tone_format_section(self, tone_format: dict[str, Any]) -> list[str]:
+        """Build the tone & format section of the prompt."""
+        return [
+            "## Tone & Format",
+            f"Tone: {tone_format['tone']}",
+            f"Format: {tone_format['format']}",
+        ]
+
+    def _build_evaluation_section(self, evaluation: dict[str, Any]) -> list[str]:
+        """Build the evaluation section of the prompt."""
+        sections = ["## Evaluation", "Quality checks:"]
+        for check in evaluation["quality_checks"]:
+            sections.append(f"- {check}")
+        return sections
 
     async def process_prompt(self, input_prompt: str, domain: str | None = None) -> CreateResponse:
         """Process a prompt using the C.R.E.A.T.E. framework.

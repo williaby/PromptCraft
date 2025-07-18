@@ -16,11 +16,14 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from src.utils.observability import get_metrics_collector, trace_agent_operation
 from src.utils.secure_random import secure_jitter
 from src.utils.time_utils import utc_now
+
+if TYPE_CHECKING:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -679,8 +682,8 @@ def create_openrouter_circuit_breaker(settings: Any) -> CircuitBreaker:
         """Health check function for OpenRouter API."""
         try:
             # Import here to avoid circular imports
-            from src.mcp_integration.mcp_client import MCPConnectionState
-            from src.mcp_integration.openrouter_client import OpenRouterClient
+            from src.mcp_integration.mcp_client import MCPConnectionState  # noqa: PLC0415
+            from src.mcp_integration.openrouter_client import OpenRouterClient  # noqa: PLC0415
 
             # Create a minimal client for health check
             client = OpenRouterClient(

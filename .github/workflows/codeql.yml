@@ -4,14 +4,6 @@
 name: "CodeQL Analysis"
 
 on:
-  push:
-    branches:
-      - "main"
-      - "feature/phase-1-development"
-      - "feature/**"  # Include all feature branches
-    paths:
-      - '**/*.py'
-      - '.github/workflows/codeql.yml'
   pull_request:
     branches:
       - "main"

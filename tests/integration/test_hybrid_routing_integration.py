@@ -39,10 +39,12 @@ class TestHybridRoutingIntegration:
         mock_client.disconnect = AsyncMock(return_value=True)
         mock_client.health_check = AsyncMock(
             return_value=MCPHealthStatus(
-                status="healthy",
-                response_time=0.1,
+                connection_state=MCPConnectionState.CONNECTED,
+                last_successful_request=1234567890.0,
                 error_count=0,
-                last_success=1234567890.0,
+                response_time_ms=100.0,
+                capabilities=["text_generation", "reasoning", "analysis"],
+                server_version="1.0.0",
                 metadata={"service": "openrouter"},
             ),
         )
@@ -73,10 +75,12 @@ class TestHybridRoutingIntegration:
         mock_client.disconnect = AsyncMock(return_value=True)
         mock_client.health_check = AsyncMock(
             return_value=MCPHealthStatus(
-                status="healthy",
-                response_time=0.15,
+                connection_state=MCPConnectionState.CONNECTED,
+                last_successful_request=1234567890.0,
                 error_count=0,
-                last_success=1234567890.0,
+                response_time_ms=150.0,
+                capabilities=["agent_orchestration", "workflow_management"],
+                server_version="1.0.0",
                 metadata={"service": "mcp"},
             ),
         )

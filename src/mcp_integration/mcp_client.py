@@ -53,6 +53,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
 from pydantic import BaseModel, Field
 from tenacity import (
     before_sleep_log,
@@ -62,6 +67,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from src.config.settings import get_settings
 from src.utils.secure_random import secure_random
 
 logger = logging.getLogger(__name__)
@@ -71,7 +77,9 @@ DEGRADED_ERROR_THRESHOLD = 3
 MAX_QUERY_LENGTH = 10000
 HTTP_OK_STATUS = 200
 HTTP_BAD_REQUEST = 400
+HTTP_UNAUTHORIZED = 401
 HTTP_TOO_MANY_REQUESTS = 429
+HTTP_SERVICE_UNAVAILABLE = 503
 
 
 class MCPConnectionState(str, Enum):
@@ -562,7 +570,8 @@ class ZenMCPClient(MCPClientInterface):
         Implements real HTTP client connection with authentication and health validation.
         """
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             self.connection_state = MCPConnectionState.CONNECTING
             logger.info(f"Connecting to Zen MCP Server at {self.server_url}")
@@ -583,13 +592,13 @@ class ZenMCPClient(MCPClientInterface):
             # Perform server health check and handshake
             try:
                 response = await self.session.get("/health")
-                if response.status_code == 401:  # Unauthorized
+                if response.status_code == HTTP_UNAUTHORIZED:  # Unauthorized
                     error_data = {}
                     try:
                         if response.headers.get("content-type", "").startswith("application/json"):
                             error_data = response.json()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Failed to parse JSON error response: %s", e)
                     raise MCPAuthenticationError(
                         "Authentication failed",
                         error_code="INVALID_API_KEY",
@@ -674,7 +683,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if self.connection_state == MCPConnectionState.DISCONNECTED or not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -747,7 +757,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -804,7 +815,7 @@ class ZenMCPClient(MCPClientInterface):
                             **error_data,
                         },
                     ) from e
-                if e.response.status_code == 503:  # Service Unavailable
+                if e.response.status_code == HTTP_SERVICE_UNAVAILABLE:  # Service Unavailable
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPServiceUnavailableError("Validation service unavailable", retry_after) from e
                 raise MCPServiceUnavailableError(f"Validation service error: HTTP {e.response.status_code}") from e
@@ -831,7 +842,8 @@ class ZenMCPClient(MCPClientInterface):
         start_time = time.time()
 
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -882,13 +894,13 @@ class ZenMCPClient(MCPClientInterface):
 
             except httpx.HTTPStatusError as e:
                 self.error_count += 1
-                if e.response.status_code == 401:  # Unauthorized
+                if e.response.status_code == HTTP_UNAUTHORIZED:  # Unauthorized
                     error_data = {}
                     try:
                         if e.response.headers.get("content-type", "").startswith("application/json"):
                             error_data = e.response.json()
-                    except Exception:
-                        pass
+                    except Exception as parse_error:
+                        logger.debug("Failed to parse JSON error response: %s", parse_error)
                     raise MCPAuthenticationError(
                         "Authentication failed",
                         error_code="INVALID_API_KEY",
@@ -912,7 +924,7 @@ class ZenMCPClient(MCPClientInterface):
                 if e.response.status_code == HTTP_TOO_MANY_REQUESTS:
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPRateLimitError("Rate limit exceeded", retry_after) from e
-                if e.response.status_code == 503:  # Service Unavailable
+                if e.response.status_code == HTTP_SERVICE_UNAVAILABLE:  # Service Unavailable
                     retry_after = int(e.response.headers.get("Retry-After", 60))
                     raise MCPServiceUnavailableError("Service unavailable", retry_after) from e
                 raise MCPServiceUnavailableError(
@@ -936,7 +948,8 @@ class ZenMCPClient(MCPClientInterface):
     async def get_capabilities(self) -> list[str]:
         """Get Zen MCP Server capabilities."""
         try:
-            import httpx  # noqa: PLC0415
+            if httpx is None:
+                raise ImportError("httpx is not installed")
 
             if not self.session:
                 raise MCPConnectionError("Not connected to server")
@@ -1025,8 +1038,6 @@ class MCPClientFactory:
             MCPClientInterface: Configured client instance based on settings
         """
         if settings is None:
-            from src.config.settings import get_settings  # noqa: PLC0415
-
             settings = get_settings()
 
         # Determine client type based on settings

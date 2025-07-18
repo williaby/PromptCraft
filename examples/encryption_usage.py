@@ -26,8 +26,8 @@ def setup_example_environment() -> dict[str, str]:
         "PROMPTCRAFT_SECRET_KEY": "your-secret-signing-key-here",
         "PROMPTCRAFT_AZURE_OPENAI_API_KEY": "abcd1234567890efgh1234567890ijkl",
         "PROMPTCRAFT_JWT_SECRET_KEY": "jwt-signing-secret-key-here",
-        "PROMPTCRAFT_QDRANT_API_KEY": "qdrant-vector-db-api-key",
-        "PROMPTCRAFT_ENCRYPTION_KEY": "encryption-key-for-data-at-rest",
+        "PROMPTCRAFT_QDRANT_API_KEY": "example-qdrant-api-key-not-real",
+        "PROMPTCRAFT_ENCRYPTION_KEY": "example-encryption-key-not-real",
     }
 
 
