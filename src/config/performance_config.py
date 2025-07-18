@@ -10,6 +10,10 @@ from typing import Any
 
 from src.config.settings import get_settings
 
+# Performance validation constants
+MIN_CACHE_TTL_SECONDS = 60  # Minimum cache TTL in seconds
+MIN_VECTOR_CONNECTIONS = 5  # Minimum number of vector connections
+
 
 @dataclass
 class PerformanceConfig:
@@ -178,11 +182,11 @@ def validate_performance_requirements() -> bool:
         return False
 
     # Check if cache TTL is reasonable
-    if config.query_cache_ttl_seconds < 60:  # Less than 1 minute
+    if config.query_cache_ttl_seconds < MIN_CACHE_TTL_SECONDS:  # Less than 1 minute
         return False
 
     # Check if connection pool sizes are reasonable
-    return not config.max_vector_connections < 5
+    return not config.max_vector_connections < MIN_VECTOR_CONNECTIONS
 
 
 def get_optimization_recommendations() -> dict[str, str]:

@@ -8,6 +8,8 @@ See: https://github.com/pact-foundation/pact-python/issues/396
 """
 
 import os
+import shutil
+import subprocess
 import warnings
 from typing import Any
 
@@ -16,10 +18,6 @@ import pytest
 # Suppress PendingDeprecationWarning from Pact Python v2->v3 transition
 # TODO: Migrate to pact.v3 API when it becomes stable and fully documented
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning, module="pact")
-
-# Import Pact for contract testing
-import shutil
-import subprocess
 
 try:
     from pact import Consumer, EachLike, Like, Provider

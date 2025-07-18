@@ -1,0 +1,2994 @@
+[
+  {
+    "cell": null,
+    "code": "INP001",
+    "end_location": {
+      "column": 1,
+      "row": 1
+    },
+    "filename": "/home/byron/dev/PromptCraft/examples/vector_store_usage.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 1
+    },
+    "message": "File `examples/vector_store_usage.py` is part of an implicit namespace package. Add an `__init__.py`.",
+    "noqa_row": 7,
+    "url": "https://docs.astral.sh/ruff/rules/implicit-namespace-package"
+  },
+  {
+    "cell": null,
+    "code": "SIM105",
+    "end_location": {
+      "column": 17,
+      "row": 368
+    },
+    "filename": "/home/byron/dev/PromptCraft/examples/vector_store_usage.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 362
+    },
+    "message": "Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`",
+    "noqa_row": 362,
+    "url": "https://docs.astral.sh/ruff/rules/suppressible-exception"
+  },
+  {
+    "cell": null,
+    "code": "S110",
+    "end_location": {
+      "column": 17,
+      "row": 368
+    },
+    "filename": "/home/byron/dev/PromptCraft/examples/vector_store_usage.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 367
+    },
+    "message": "`try`-`except`-`pass` detected, consider logging the exception",
+    "noqa_row": 367,
+    "url": "https://docs.astral.sh/ruff/rules/try-except-pass"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 43,
+      "row": 181
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/config/performance_config.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 181
+    },
+    "message": "Magic value used in comparison, consider replacing `60` with a constant variable",
+    "noqa_row": 181,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 49,
+      "row": 185
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/config/performance_config.py",
+    "fix": null,
+    "location": {
+      "column": 48,
+      "row": 185
+    },
+    "message": "Magic value used in comparison, consider replacing `5` with a constant variable",
+    "noqa_row": 185,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 27,
+      "row": 538
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/core/hyde_processor.py",
+    "fix": null,
+    "location": {
+      "column": 26,
+      "row": 538
+    },
+    "message": "Magic value used in comparison, consider replacing `2` with a constant variable",
+    "noqa_row": 538,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "ARG002",
+    "end_location": {
+      "column": 23,
+      "row": 609
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/core/hyde_processor.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 609
+    },
+    "message": "Unused method argument: `enhanced_query`",
+    "noqa_row": 609,
+    "url": "https://docs.astral.sh/ruff/rules/unused-method-argument"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 63,
+      "row": 192
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 60,
+      "row": 192
+    },
+    "message": "Magic value used in comparison, consider replacing `100` with a constant variable",
+    "noqa_row": 192,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "ISC001",
+    "end_location": {
+      "column": 115,
+      "row": 194
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 194
+    },
+    "message": "Implicitly concatenated string literals on one line",
+    "noqa_row": 194,
+    "url": "https://docs.astral.sh/ruff/rules/single-line-implicit-string-concatenation"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 14,
+      "row": 444
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 440
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 440,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 14,
+      "row": 528
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 525
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 525,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "PLR0911",
+    "end_location": {
+      "column": 31,
+      "row": 574
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 574
+    },
+    "message": "Too many return statements (9 > 6)",
+    "noqa_row": 574,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-return-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLR0912",
+    "end_location": {
+      "column": 31,
+      "row": 574
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 574
+    },
+    "message": "Too many branches (18 > 12)",
+    "noqa_row": 574,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-branches"
+  },
+  {
+    "cell": null,
+    "code": "ARG002",
+    "end_location": {
+      "column": 18,
+      "row": 577
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 577
+    },
+    "message": "Unused method argument: `operation`",
+    "noqa_row": 577,
+    "url": "https://docs.astral.sh/ruff/rules/unused-method-argument"
+  },
+  {
+    "cell": null,
+    "code": "SIM102",
+    "end_location": {
+      "column": 52,
+      "row": 598
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 596
+    },
+    "message": "Use a single `if` statement instead of nested `if` statements",
+    "noqa_row": 596,
+    "url": "https://docs.astral.sh/ruff/rules/collapsible-if"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 65,
+      "row": 662
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 62,
+      "row": 662
+    },
+    "message": "Magic value used in comparison, consider replacing `0.6` with a constant variable",
+    "noqa_row": 662,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 39,
+      "row": 758
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 758
+    },
+    "message": "Magic value used in comparison, consider replacing `100` with a constant variable",
+    "noqa_row": 758,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR0912",
+    "end_location": {
+      "column": 22,
+      "row": 558
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 558
+    },
+    "message": "Too many branches (14 > 12)",
+    "noqa_row": 558,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-branches"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 22,
+      "row": 558
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 558
+    },
+    "message": "Too many statements (53 > 50)",
+    "noqa_row": 558,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 47,
+      "row": 586
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 44,
+      "row": 586
+    },
+    "message": "Magic value used in comparison, consider replacing `401` with a constant variable",
+    "noqa_row": 586,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 49,
+      "row": 807
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 46,
+      "row": 807
+    },
+    "message": "Magic value used in comparison, consider replacing `503` with a constant variable",
+    "noqa_row": 807,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR0912",
+    "end_location": {
+      "column": 33,
+      "row": 829
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 829
+    },
+    "message": "Too many branches (13 > 12)",
+    "noqa_row": 829,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-branches"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 49,
+      "row": 885
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 46,
+      "row": 885
+    },
+    "message": "Magic value used in comparison, consider replacing `401` with a constant variable",
+    "noqa_row": 885,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 49,
+      "row": 915
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/mcp_client.py",
+    "fix": null,
+    "location": {
+      "column": 46,
+      "row": 915
+    },
+    "message": "Magic value used in comparison, consider replacing `503` with a constant variable",
+    "noqa_row": 915,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "SIM102",
+    "end_location": {
+      "column": 96,
+      "row": 136
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 135
+    },
+    "message": "Use a single `if` statement instead of nested `if` statements",
+    "noqa_row": 135,
+    "url": "https://docs.astral.sh/ruff/rules/collapsible-if"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 27,
+      "row": 170
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 170
+    },
+    "message": "Magic value used in comparison, consider replacing `10` with a constant variable",
+    "noqa_row": 170,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PTH123",
+    "end_location": {
+      "column": 22,
+      "row": 251
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 251
+    },
+    "message": "`open()` should be replaced by `Path.open()`",
+    "noqa_row": 251,
+    "url": "https://docs.astral.sh/ruff/rules/builtin-open"
+  },
+  {
+    "cell": null,
+    "code": "PLW0603",
+    "end_location": {
+      "column": 28,
+      "row": 603
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 603
+    },
+    "message": "Using the global statement to update `_global_registry` is discouraged",
+    "noqa_row": 603,
+    "url": "https://docs.astral.sh/ruff/rules/global-statement"
+  },
+  {
+    "cell": null,
+    "code": "PLW0603",
+    "end_location": {
+      "column": 28,
+      "row": 611
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 611
+    },
+    "message": "Using the global statement to update `_global_registry` is discouraged",
+    "noqa_row": 611,
+    "url": "https://docs.astral.sh/ruff/rules/global-statement"
+  },
+  {
+    "cell": null,
+    "code": "PLW0603",
+    "end_location": {
+      "column": 28,
+      "row": 620
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 620
+    },
+    "message": "Using the global statement to update `_global_registry` is discouraged",
+    "noqa_row": 620,
+    "url": "https://docs.astral.sh/ruff/rules/global-statement"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 51,
+      "row": 184
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 48,
+      "row": 184
+    },
+    "message": "Magic value used in comparison, consider replacing `200` with a constant variable",
+    "noqa_row": 184,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 53,
+      "row": 194
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 50,
+      "row": 194
+    },
+    "message": "Magic value used in comparison, consider replacing `401` with a constant variable",
+    "noqa_row": 194,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "B904",
+    "end_location": {
+      "column": 26,
+      "row": 199
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 195
+    },
+    "message": "Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling",
+    "noqa_row": 195,
+    "url": "https://docs.astral.sh/ruff/rules/raise-without-from-inside-except"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 43,
+      "row": 269
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 269
+    },
+    "message": "Magic value used in comparison, consider replacing `200` with a constant variable",
+    "noqa_row": 269,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 34,
+      "row": 332
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 29,
+      "row": 332
+    },
+    "message": "Magic value used in comparison, consider replacing `50000` with a constant variable",
+    "noqa_row": 332,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 32,
+      "row": 353
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 29,
+      "row": 353
+    },
+    "message": "Magic value used in comparison, consider replacing `100` with a constant variable",
+    "noqa_row": 353,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 46,
+      "row": 357
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 44,
+      "row": 357
+    },
+    "message": "Magic value used in comparison, consider replacing `50` with a constant variable",
+    "noqa_row": 357,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 43,
+      "row": 601
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 601
+    },
+    "message": "Magic value used in comparison, consider replacing `200` with a constant variable",
+    "noqa_row": 601,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 30,
+      "row": 667
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 667
+    },
+    "message": "Magic value used in comparison, consider replacing `401` with a constant variable",
+    "noqa_row": 667,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 30,
+      "row": 673
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 673
+    },
+    "message": "Magic value used in comparison, consider replacing `400` with a constant variable",
+    "noqa_row": 673,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 30,
+      "row": 675
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 675
+    },
+    "message": "Magic value used in comparison, consider replacing `429` with a constant variable",
+    "noqa_row": 675,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 30,
+      "row": 678
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 678
+    },
+    "message": "Magic value used in comparison, consider replacing `503` with a constant variable",
+    "noqa_row": 678,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 29,
+      "row": 699
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 699
+    },
+    "message": "Magic value used in comparison, consider replacing `10` with a constant variable",
+    "noqa_row": 699,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 32,
+      "row": 701
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 29,
+      "row": 701
+    },
+    "message": "Magic value used in comparison, consider replacing `100` with a constant variable",
+    "noqa_row": 701,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "PLR2004",
+    "end_location": {
+      "column": 50,
+      "row": 706
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/mcp_integration/openrouter_client.py",
+    "fix": null,
+    "location": {
+      "column": 48,
+      "row": 706
+    },
+    "message": "Magic value used in comparison, consider replacing `50` with a constant variable",
+    "noqa_row": 706,
+    "url": "https://docs.astral.sh/ruff/rules/magic-value-comparison"
+  },
+  {
+    "cell": null,
+    "code": "SIM103",
+    "end_location": {
+      "column": 21,
+      "row": 301
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/utils/circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 296
+    },
+    "message": "Return the condition directly",
+    "noqa_row": 296,
+    "url": "https://docs.astral.sh/ruff/rules/needless-bool"
+  },
+  {
+    "cell": null,
+    "code": "SIM102",
+    "end_location": {
+      "column": 85,
+      "row": 313
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/utils/circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 312
+    },
+    "message": "Use a single `if` statement instead of nested `if` statements",
+    "noqa_row": 312,
+    "url": "https://docs.astral.sh/ruff/rules/collapsible-if"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 74,
+      "row": 682
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/utils/circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 682
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 682,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 79,
+      "row": 683
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/utils/circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 683
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 683,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 23,
+      "row": 186
+    },
+    "filename": "/home/byron/dev/PromptCraft/src/utils/encryption.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 186
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 186,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 14,
+      "row": 21
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/contract/test_mcp_contracts.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 21
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 21,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 18,
+      "row": 22
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/contract/test_mcp_contracts.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 22
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 22,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "S607",
+    "end_location": {
+      "column": 59,
+      "row": 35
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/contract/test_mcp_contracts.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 35
+    },
+    "message": "Starting a process with a partial executable path",
+    "noqa_row": 35,
+    "url": "https://docs.astral.sh/ruff/rules/start-process-with-partial-path"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 98,
+      "row": 374
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 374
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 374,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 98,
+      "row": 374
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 374
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 374,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 97,
+      "row": 412
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 412
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 412,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 97,
+      "row": 412
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 412
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 412,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "S112",
+    "end_location": {
+      "column": 25,
+      "row": 431
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 429
+    },
+    "message": "`try`-`except`-`continue` detected, consider logging the exception",
+    "noqa_row": 429,
+    "url": "https://docs.astral.sh/ruff/rules/try-except-continue"
+  },
+  {
+    "cell": null,
+    "code": "S110",
+    "end_location": {
+      "column": 17,
+      "row": 455
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_comprehensive_error_handling.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 453
+    },
+    "message": "`try`-`except`-`pass` detected, consider logging the exception",
+    "noqa_row": 453,
+    "url": "https://docs.astral.sh/ruff/rules/try-except-pass"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_end_to_end_integration.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 17
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_end_to_end_integration.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 17
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 54,
+      "row": 434
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_end_to_end_integration.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 434
+    },
+    "message": "Too many statements (54 > 50)",
+    "noqa_row": 434,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 77,
+      "row": 552
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_end_to_end_integration.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 552
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 552,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 50,
+      "row": 878
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_end_to_end_integration.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 878
+    },
+    "message": "Too many statements (79 > 50)",
+    "noqa_row": 878,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 89,
+      "row": 158
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_router_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 157
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 157,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 78,
+      "row": 311
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_router_integration.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 311
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 311,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 38,
+      "row": 678
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_router_integration.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 678
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 678,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 37,
+      "row": 678
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_router_integration.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 678
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 678,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 57,
+      "row": 187
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_routing_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 187
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 187,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 51,
+      "row": 205
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_hybrid_routing_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 205
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 205,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 16
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 16
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 16,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 16
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 16
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 16,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PTH108",
+    "end_location": {
+      "column": 18,
+      "row": 63
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 63
+    },
+    "message": "`os.unlink()` should be replaced by `Path.unlink()`",
+    "noqa_row": 63,
+    "url": "https://docs.astral.sh/ruff/rules/os-unlink"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 15,
+      "row": 171
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 165
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 165,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 46,
+      "row": 352
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 22,
+      "row": 352
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 352,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 45,
+      "row": 352
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 352
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 352,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 78,
+      "row": 468
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_mcp_config_integration.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 468
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 468,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_qdrant_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 17
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_qdrant_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 17
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 57,
+      "row": 234
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_qdrant_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 234
+    },
+    "message": "Too many statements (64 > 50)",
+    "noqa_row": 234,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 16
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 16
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 16,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 16
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 16
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 16,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 66,
+      "row": 228
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 228
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 228,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "SIM105",
+    "end_location": {
+      "column": 17,
+      "row": 415
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 411
+    },
+    "message": "Use `contextlib.suppress(TimeoutError)` instead of `try`-`except`-`pass`",
+    "noqa_row": 411,
+    "url": "https://docs.astral.sh/ruff/rules/suppressible-exception"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 72,
+      "row": 394
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_mcp_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 394
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 394,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 42,
+      "row": 168
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_qdrant_integration.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 168
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 168,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 41,
+      "row": 168
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_qdrant_integration.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 168
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 168,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PT012",
+    "end_location": {
+      "column": 50,
+      "row": 331
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_qdrant_integration.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 325
+    },
+    "message": "`pytest.raises()` block should contain a single simple statement",
+    "noqa_row": 325,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-with-multiple-statements"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 42,
+      "row": 325
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_qdrant_integration.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 325
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 325,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 41,
+      "row": 325
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_real_qdrant_integration.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 325
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 325,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 42,
+      "row": 421
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 421
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 421,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 41,
+      "row": 421
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 421
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 421,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 67,
+      "row": 426
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 426
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 426,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "PT017",
+    "end_location": {
+      "column": 67,
+      "row": 426
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/integration/test_vector_store_integration.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 426
+    },
+    "message": "Found assertion on exception `e` in `except` block, use `pytest.raises()` instead",
+    "noqa_row": 426,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-assert-in-except"
+  },
+  {
+    "cell": null,
+    "code": "B007",
+    "end_location": {
+      "column": 14,
+      "row": 151
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_baseline_performance.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 151
+    },
+    "message": "Loop control variable `i` not used within loop body",
+    "noqa_row": 151,
+    "url": "https://docs.astral.sh/ruff/rules/unused-loop-control-variable"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 52,
+      "row": 735
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_baseline_performance.py",
+    "fix": null,
+    "location": {
+      "column": 11,
+      "row": 735
+    },
+    "message": "Too many statements (79 > 50)",
+    "noqa_row": 735,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "UP035",
+    "end_location": {
+      "column": 24,
+      "row": 11
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_performance_requirements.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 11
+    },
+    "message": "`typing.List` is deprecated, use `list` instead",
+    "noqa_row": 11,
+    "url": "https://docs.astral.sh/ruff/rules/deprecated-import"
+  },
+  {
+    "cell": null,
+    "code": "S110",
+    "end_location": {
+      "column": 21,
+      "row": 356
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_performance_requirements.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 355
+    },
+    "message": "`try`-`except`-`pass` detected, consider logging the exception",
+    "noqa_row": 355,
+    "url": "https://docs.astral.sh/ruff/rules/try-except-pass"
+  },
+  {
+    "cell": null,
+    "code": "UP035",
+    "end_location": {
+      "column": 45,
+      "row": 14
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 14
+    },
+    "message": "`typing.Dict` is deprecated, use `dict` instead",
+    "noqa_row": 14,
+    "url": "https://docs.astral.sh/ruff/rules/deprecated-import"
+  },
+  {
+    "cell": null,
+    "code": "UP035",
+    "end_location": {
+      "column": 45,
+      "row": 14
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 14
+    },
+    "message": "`typing.List` is deprecated, use `list` instead",
+    "noqa_row": 14,
+    "url": "https://docs.astral.sh/ruff/rules/deprecated-import"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 20
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 20
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 20
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 20
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 50,
+      "row": 338
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 338
+    },
+    "message": "Too many statements (67 > 50)",
+    "noqa_row": 338,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLR0915",
+    "end_location": {
+      "column": 39,
+      "row": 605
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/performance/test_production_readiness.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 605
+    },
+    "message": "Too many statements (56 > 50)",
+    "noqa_row": 605,
+    "url": "https://docs.astral.sh/ruff/rules/too-many-statements"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_base_agent_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 17
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 17
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_base_agent_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 17
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 17,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 50,
+      "row": 608
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_base_agent_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 608
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 608,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 42,
+      "row": 189
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 189
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 189,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 41,
+      "row": 189
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 189
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 189,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 38,
+      "row": 194
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 194
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 194,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 37,
+      "row": 194
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 194
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 194,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "B023",
+    "end_location": {
+      "column": 60,
+      "row": 285
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 59,
+      "row": 285
+    },
+    "message": "Function definition does not bind loop variable `i`",
+    "noqa_row": 285,
+    "url": "https://docs.astral.sh/ruff/rules/function-uses-loop-variable"
+  },
+  {
+    "cell": null,
+    "code": "RUF003",
+    "end_location": {
+      "column": 49,
+      "row": 305
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 48,
+      "row": 305
+    },
+    "message": "Comment contains ambiguous `×` (MULTIPLICATION SIGN). Did you mean `x` (LATIN SMALL LETTER X)?",
+    "noqa_row": 305,
+    "url": "https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-comment"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 38,
+      "row": 319
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 319
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 319,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 37,
+      "row": 319
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 319
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 319,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 38,
+      "row": 400
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 400
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 400,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 37,
+      "row": 400
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 400
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 400,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "DTZ005",
+    "end_location": {
+      "column": 29,
+      "row": 598
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 598
+    },
+    "message": "`datetime.datetime.now()` called without a `tz` argument",
+    "noqa_row": 598,
+    "url": "https://docs.astral.sh/ruff/rules/call-datetime-now-without-tzinfo"
+  },
+  {
+    "cell": null,
+    "code": "DTZ005",
+    "end_location": {
+      "column": 29,
+      "row": 614
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 15,
+      "row": 614
+    },
+    "message": "`datetime.datetime.now()` called without a `tz` argument",
+    "noqa_row": 614,
+    "url": "https://docs.astral.sh/ruff/rules/call-datetime-now-without-tzinfo"
+  },
+  {
+    "cell": null,
+    "code": "B017",
+    "end_location": {
+      "column": 42,
+      "row": 671
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 18,
+      "row": 671
+    },
+    "message": "Do not assert blind exception: `Exception`",
+    "noqa_row": 671,
+    "url": "https://docs.astral.sh/ruff/rules/assert-raises-exception"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 41,
+      "row": 671
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_circuit_breaker.py",
+    "fix": null,
+    "location": {
+      "column": 32,
+      "row": 671
+    },
+    "message": "`pytest.raises(Exception)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 671,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 19
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 19
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 19
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 19
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "F811",
+    "end_location": {
+      "column": 68,
+      "row": 75
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 35,
+      "row": 75
+    },
+    "message": "Redefinition of unused `validate_configuration_on_startup` from line 71",
+    "noqa_row": 75,
+    "url": "https://docs.astral.sh/ruff/rules/redefined-while-unused"
+  },
+  {
+    "cell": null,
+    "code": "S104",
+    "end_location": {
+      "column": 46,
+      "row": 89
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 37,
+      "row": 89
+    },
+    "message": "Possible binding to all interfaces",
+    "noqa_row": 89,
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-bind-all-interfaces"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 168
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 168
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 168,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "S104",
+    "end_location": {
+      "column": 77,
+      "row": 253
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 68,
+      "row": 253
+    },
+    "message": "Possible binding to all interfaces",
+    "noqa_row": 253,
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-bind-all-interfaces"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 57,
+      "row": 263
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 263
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 263,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 277
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 277
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 277,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "S104",
+    "end_location": {
+      "column": 29,
+      "row": 336
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 336
+    },
+    "message": "Possible binding to all interfaces",
+    "noqa_row": 336,
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-bind-all-interfaces"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 61,
+      "row": 359
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 358
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 358,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 78,
+      "row": 366
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 365
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 365,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 50,
+      "row": 433
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 433
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 433,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 91,
+      "row": 457
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 456
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 456,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 482
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 482
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 482,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 35,
+      "row": 530
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 530
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 530,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 35,
+      "row": 537
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 537
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 537,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 84,
+      "row": 559
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 558
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 558,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 58,
+      "row": 563
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 563
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 563,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 650
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 650
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 650,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 712
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 712
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 712,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 83,
+      "row": 725
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 724
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 724,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 96,
+      "row": 743
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 742
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 742,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 89,
+      "row": 759
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 758
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 758,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 85,
+      "row": 822
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 821
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 821,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 91,
+      "row": 1006
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 1005
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 1005,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 97,
+      "row": 1140
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 1138
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 1138,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 51,
+      "row": 1143
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 1143
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 1143,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 97,
+      "row": 1194
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 1193
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 1193,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 51,
+      "row": 1197
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 1197
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 1197,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PT012",
+    "end_location": {
+      "column": 72,
+      "row": 1208
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 25,
+      "row": 1201
+    },
+    "message": "`pytest.raises()` block should contain a single simple statement",
+    "noqa_row": 1201,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-with-multiple-statements"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 39,
+      "row": 1223
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 1223
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 1223,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "S104",
+    "end_location": {
+      "column": 31,
+      "row": 1230
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 22,
+      "row": 1230
+    },
+    "message": "Possible binding to all interfaces",
+    "noqa_row": 1230,
+    "url": "https://docs.astral.sh/ruff/rules/hardcoded-bind-all-interfaces"
+  },
+  {
+    "cell": null,
+    "code": "SIM117",
+    "end_location": {
+      "column": 79,
+      "row": 1235
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_config_management.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 1234
+    },
+    "message": "Use a single `with` statement with multiple contexts instead of nested `with` statements",
+    "noqa_row": 1234,
+    "url": "https://docs.astral.sh/ruff/rules/multiple-with-statements"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 15
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_create_processor_core_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 15
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 15
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_create_processor_core_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 15
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 66,
+      "row": 190
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 190
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 190,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PT011",
+    "end_location": {
+      "column": 38,
+      "row": 922
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_router.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 922
+    },
+    "message": "`pytest.raises(ValueError)` is too broad, set the `match` parameter or use a more specific exception",
+    "noqa_row": 922,
+    "url": "https://docs.astral.sh/ruff/rules/pytest-raises-too-broad"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 68,
+      "row": 53
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_routing_enhanced.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 53
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 53,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 76,
+      "row": 54
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_routing_enhanced.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 54
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 54,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 68,
+      "row": 88
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_routing_enhanced.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 88
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 88,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 76,
+      "row": 89
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_routing_enhanced.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 89
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 89,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 51,
+      "row": 204
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_hybrid_routing_enhanced.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 204
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 204,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PTH108",
+    "end_location": {
+      "column": 18,
+      "row": 244
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 244
+    },
+    "message": "`os.unlink()` should be replaced by `Path.unlink()`",
+    "noqa_row": 244,
+    "url": "https://docs.astral.sh/ruff/rules/os-unlink"
+  },
+  {
+    "cell": null,
+    "code": "PTH108",
+    "end_location": {
+      "column": 22,
+      "row": 285
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 285
+    },
+    "message": "`os.unlink()` should be replaced by `Path.unlink()`",
+    "noqa_row": 285,
+    "url": "https://docs.astral.sh/ruff/rules/os-unlink"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 69,
+      "row": 534
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 534
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 534,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 69,
+      "row": 549
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 549
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 549,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PTH108",
+    "end_location": {
+      "column": 22,
+      "row": 581
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 581
+    },
+    "message": "`os.unlink()` should be replaced by `Path.unlink()`",
+    "noqa_row": 581,
+    "url": "https://docs.astral.sh/ruff/rules/os-unlink"
+  },
+  {
+    "cell": null,
+    "code": "PTH108",
+    "end_location": {
+      "column": 22,
+      "row": 616
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_model_registry.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 616
+    },
+    "message": "`os.unlink()` should be replaced by `Path.unlink()`",
+    "noqa_row": 616,
+    "url": "https://docs.astral.sh/ruff/rules/os-unlink"
+  },
+  {
+    "cell": null,
+    "code": "PTH118",
+    "end_location": {
+      "column": 32,
+      "row": 15
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_parallel_executor_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 15
+    },
+    "message": "`os.path.join()` should be replaced by `Path` with `/` operator",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-join"
+  },
+  {
+    "cell": null,
+    "code": "PTH120",
+    "end_location": {
+      "column": 48,
+      "row": 15
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_parallel_executor_comprehensive.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 15
+    },
+    "message": "`os.path.dirname()` should be replaced by `Path.parent`",
+    "noqa_row": 15,
+    "url": "https://docs.astral.sh/ruff/rules/os-path-dirname"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 50,
+      "row": 18
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 18
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 18,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 52,
+      "row": 19
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 19
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 19,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "E402",
+    "end_location": {
+      "column": 80,
+      "row": 20
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 1,
+      "row": 20
+    },
+    "message": "Module level import not at top of file",
+    "noqa_row": 20,
+    "url": "https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 80,
+      "row": 42
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 42
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 42,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  },
+  {
+    "cell": null,
+    "code": "PLC0415",
+    "end_location": {
+      "column": 74,
+      "row": 356
+    },
+    "filename": "/home/byron/dev/PromptCraft/tests/unit/test_query_counselor_hyde_integration.py",
+    "fix": null,
+    "location": {
+      "column": 9,
+      "row": 356
+    },
+    "message": "`import` should be at the top-level of a file",
+    "noqa_row": 356,
+    "url": "https://docs.astral.sh/ruff/rules/import-outside-top-level"
+  }
+]

@@ -359,13 +359,10 @@ class VectorStoreExamples:
         }
 
         # Create Qdrant store (won't actually connect without qdrant-client)
-        try:
+        with contextlib.suppress(Exception):
             VectorStoreFactory.create_vector_store(qdrant_config)
 
             # Example of what production usage would look like
-
-        except Exception:
-            pass
 
     @staticmethod
     async def collection_management() -> None:

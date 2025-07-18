@@ -77,6 +77,20 @@ from src.utils.circuit_breaker import (
 logger = logging.getLogger(__name__)
 
 # OpenRouter API constants
+HTTP_OK = 200
+HTTP_BAD_REQUEST = 400
+HTTP_UNAUTHORIZED = 401
+HTTP_TOO_MANY_REQUESTS = 429
+HTTP_SERVICE_UNAVAILABLE = 503
+
+# Rate limiting constants
+MAX_TOKENS_PER_MINUTE = 1000000
+MAX_REQUESTS_PER_MINUTE = 100
+MAX_REQUESTS_PER_HOUR = 50
+FALLBACK_RETRY_LIMIT = 10
+
+# Query validation constants
+MAX_QUERY_LENGTH = 50000  # 50K character limit for query validation
 OPENROUTER_CHAT_ENDPOINT = "/chat/completions"
 DEFAULT_SITE_URL = "https://promptcraft.io"
 DEFAULT_APP_NAME = "PromptCraft-Hybrid"
@@ -181,7 +195,7 @@ class OpenRouterClient(MCPClientInterface):
                 # Test connection with a simple model list request
                 try:
                     response = await self.session.get("/models", timeout=10.0)
-                    if response.status_code == 200:
+                    if response.status_code == HTTP_OK:
                         self.connection_state = MCPConnectionState.CONNECTED
                         self.last_successful_request = time.time()
                         logger.info("OpenRouter client connected successfully")
@@ -191,7 +205,7 @@ class OpenRouterClient(MCPClientInterface):
                     return False
 
                 except httpx.HTTPStatusError as e:
-                    if e.response.status_code == 401:
+                    if e.response.status_code == HTTP_UNAUTHORIZED:
                         raise MCPAuthenticationError(
                             "OpenRouter API key authentication failed",
                             error_code="INVALID_API_KEY",
@@ -266,7 +280,7 @@ class OpenRouterClient(MCPClientInterface):
             response = await self.session.get("/models", timeout=5.0)
             response_time = time.time() - start_time
 
-            if response.status_code == 200:
+            if response.status_code == HTTP_OK:
                 return MCPHealthStatus(
                     connection_state=MCPConnectionState.CONNECTED,
                     response_time_ms=response_time * 1000,  # Convert to milliseconds
@@ -329,9 +343,9 @@ class OpenRouterClient(MCPClientInterface):
             sanitized_query = query.strip()
 
             # Basic security validations
-            if len(query) > 50000:  # 50K character limit
+            if len(query) > MAX_QUERY_LENGTH:  # 50K character limit
                 potential_issues.append("Query length exceeds recommended limit")
-                sanitized_query = query[:50000]
+                sanitized_query = query[:MAX_QUERY_LENGTH]
 
             # Check for potential injection patterns
             suspicious_patterns = [
@@ -350,11 +364,11 @@ class OpenRouterClient(MCPClientInterface):
 
             # Check for excessive repetition (potential DoS)
             words = sanitized_query.split()
-            if len(words) > 100:
+            if len(words) > MAX_REQUESTS_PER_MINUTE:
                 word_counts: dict[str, int] = {}
                 for word in words:
                     word_counts[word] = word_counts.get(word, 0) + 1
-                    if word_counts[word] > 50:  # Same word repeated > 50 times
+                    if word_counts[word] > MAX_REQUESTS_PER_HOUR:  # Same word repeated > 50 times
                         potential_issues.append("Query contains excessive repetition")
                         break
 
@@ -598,7 +612,7 @@ class OpenRouterClient(MCPClientInterface):
             )
 
             # Handle API response
-            if response.status_code == 200:
+            if response.status_code == HTTP_OK:
                 result = response.json()
 
                 # Extract response content
@@ -664,18 +678,18 @@ class OpenRouterClient(MCPClientInterface):
         except Exception:
             error_data = {"message": response.text[:200]}
 
-        if status_code == 401:
+        if status_code == HTTP_UNAUTHORIZED:
             raise MCPAuthenticationError(
                 "OpenRouter API authentication failed",
                 error_code="INVALID_API_KEY",
                 details={"status_code": status_code, **error_data},
             )
-        if status_code == 400:
+        if status_code == HTTP_BAD_REQUEST:
             raise MCPValidationError(f"Invalid OpenRouter request: {error_data.get('message', 'Bad request')}")
-        if status_code == 429:
+        if status_code == HTTP_TOO_MANY_REQUESTS:
             retry_after = int(response.headers.get("Retry-After", 60))
             raise MCPRateLimitError("OpenRouter rate limit exceeded", retry_after)
-        if status_code == 503:
+        if status_code == HTTP_SERVICE_UNAVAILABLE:
             retry_after = int(response.headers.get("Retry-After", 60))
             raise MCPServiceUnavailableError("OpenRouter service unavailable", retry_after)
         raise MCPServiceUnavailableError(
@@ -696,14 +710,14 @@ class OpenRouterClient(MCPClientInterface):
         confidence = 0.8  # Base confidence
 
         # Adjust based on content length and quality
-        if len(content) < 10:
+        if len(content) < FALLBACK_RETRY_LIMIT:
             confidence -= 0.3  # Very short responses are less confident
-        elif len(content) > 100:
+        elif len(content) > MAX_REQUESTS_PER_MINUTE:
             confidence += 0.1  # Longer responses generally more confident
 
         # Adjust based on API usage information
         usage = api_response.get("usage", {})
-        if usage.get("completion_tokens", 0) > 50:
+        if usage.get("completion_tokens", 0) > MAX_REQUESTS_PER_HOUR:
             confidence += 0.05  # More tokens suggest more complete response
 
         # Adjust based on model finish reason
