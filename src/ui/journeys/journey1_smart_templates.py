@@ -8,17 +8,14 @@ with file upload support, model selection, and code snippet copying.
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-import gradio as gr
-from gradio.events import EventData
-
-from src.utils.logging_mixin import LoggingMixin
+from src.utils.logging_mixin import LoggerMixin
 
 logger = logging.getLogger(__name__)
 
 
-class Journey1SmartTemplates(LoggingMixin):
+class Journey1SmartTemplates(LoggerMixin):
     """
     Journey 1: Smart Templates implementation with C.R.E.A.T.E. framework.
 
@@ -36,7 +33,7 @@ class Journey1SmartTemplates(LoggingMixin):
         self.max_file_size = 10 * 1024 * 1024  # 10MB
         self.max_files = 5
 
-    def extract_file_content(self, file_path: str) -> Tuple[str, str]:
+    def extract_file_content(self, file_path: str) -> tuple[str, str]:
         """
         Extract content from uploaded file with enhanced processing.
 
@@ -51,13 +48,13 @@ class Journey1SmartTemplates(LoggingMixin):
             file_extension = file_path_obj.suffix.lower()
 
             if file_extension in [".txt", ".md"]:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Clean up common formatting issues
                 content = self._clean_text_content(content)
                 return content, file_extension
 
-            elif file_extension == ".pdf":
+            if file_extension == ".pdf":
                 # Enhanced PDF processing with metadata
                 file_size = file_path_obj.stat().st_size
                 return (
@@ -69,7 +66,7 @@ Content preview not available - please convert to text format""",
                     file_extension,
                 )
 
-            elif file_extension in [".docx"]:
+            if file_extension in [".docx"]:
                 # Enhanced DOCX processing with metadata
                 file_size = file_path_obj.stat().st_size
                 return (
@@ -81,28 +78,27 @@ Content preview not available - please convert to text format""",
                     file_extension,
                 )
 
-            elif file_extension == ".csv":
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            if file_extension == ".csv":
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Enhanced CSV processing with structure analysis
                 processed_content = self._process_csv_content(content, file_path_obj.name)
                 return processed_content, file_extension
 
-            elif file_extension == ".json":
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            if file_extension == ".json":
+                with open(file_path, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Enhanced JSON processing with structure analysis
                 processed_content = self._process_json_content(content, file_path_obj.name)
                 return processed_content, file_extension
 
-            else:
-                return (
-                    f"""[Unsupported file type: {file_extension}]
+            return (
+                f"""[Unsupported file type: {file_extension}]
 File: {file_path_obj.name}
 Supported formats: .txt, .md, .pdf, .docx, .csv, .json
 Please convert to a supported format for processing""",
-                    file_extension,
-                )
+                file_extension,
+            )
 
         except Exception as e:
             logger.error(f"Error extracting content from {file_path}: {e}")
@@ -113,7 +109,7 @@ Please check file format and try again""",
                 "error",
             )
 
-    def process_files(self, files: List[Any]) -> Dict[str, Any]:
+    def process_files(self, files: list[Any]) -> dict[str, Any]:
         """
         Process uploaded files and extract content with enhanced integration.
 
@@ -177,7 +173,7 @@ Please check file format and try again""",
 
             except Exception as e:
                 logger.error(f"Error processing file {i+1}: {e}")
-                errors.append(f"File {i+1}: {str(e)}")
+                errors.append(f"File {i+1}: {e!s}")
 
                 # Add error file info
                 error_file = {
@@ -185,7 +181,7 @@ Please check file format and try again""",
                     "type": "error",
                     "size": 0,
                     "size_mb": 0,
-                    "content": f"Error processing file: {str(e)}",
+                    "content": f"Error processing file: {e!s}",
                     "full_content": "",
                     "is_supported": False,
                     "processing_status": "error",
@@ -219,13 +215,13 @@ Please check file format and try again""",
     def enhance_prompt(
         self,
         text_input: str,
-        files: List[Any],
+        files: list[Any],
         model_mode: str,
         custom_model: str,
         reasoning_depth: str,
         search_tier: str,
         temperature: float,
-    ) -> Tuple[str, str, str, str, str, str, str, str, str]:
+    ) -> tuple[str, str, str, str, str, str, str, str, str]:
         """
         Enhance the prompt using the C.R.E.A.T.E. framework.
 
@@ -276,8 +272,8 @@ Please check file format and try again""",
             # Create model attribution
             model_attribution = f"""
             <div class="model-attribution">
-                <strong>🤖 Generated by:</strong> {selected_model} | 
-                <strong>⏱️ Response time:</strong> {response_time:.2f}s | 
+                <strong>🤖 Generated by:</strong> {selected_model} |
+                <strong>⏱️ Response time:</strong> {response_time:.2f}s |
                 <strong>💰 Cost:</strong> ${mock_cost:.4f}
             </div>
             """
@@ -399,7 +395,7 @@ You are a professional communication specialist helping to create clear, effecti
 
         return enhanced
 
-    def _create_mock_create_breakdown(self, input_text: str) -> Dict[str, str]:
+    def _create_mock_create_breakdown(self, input_text: str) -> dict[str, str]:
         """Create a mock C.R.E.A.T.E. framework breakdown with enhanced details."""
         task = input_text.strip()[:50] + "..." if len(input_text) > 50 else input_text.strip()
 
@@ -456,7 +452,7 @@ You are a professional communication specialist helping to create clear, effecti
         total_tokens = (input_length + output_length) // 4  # Rough token estimation
         return (total_tokens / 1000) * cost_per_1k
 
-    def _create_file_sources_display(self, file_data: Dict[str, Any]) -> str:
+    def _create_file_sources_display(self, file_data: dict[str, Any]) -> str:
         """Create the enhanced file sources display HTML."""
         if not file_data["files"]:
             return """
@@ -553,26 +549,25 @@ You are a professional communication specialist helping to create clear, effecti
             # Format with code blocks preserved
             markdown_blocks = export_utils.copy_code_as_markdown(code_blocks)
             return f"Copied {len(content)} characters as markdown with {len(code_blocks)} code blocks preserved:\n\n{markdown_blocks}"
-        else:
-            # Format as regular markdown
-            lines = content.split("\n")
-            formatted_lines = []
+        # Format as regular markdown
+        lines = content.split("\n")
+        formatted_lines = []
 
-            for line in lines:
-                # Add markdown formatting for headers if not already present
-                if line.strip() and not line.startswith("#") and not line.startswith("*") and not line.startswith("-"):
-                    # Check if it might be a title/header (short line followed by content)
-                    if len(line.strip()) < 60 and line.strip().endswith(":"):
-                        formatted_lines.append(f"## {line.strip()}")
-                    else:
-                        formatted_lines.append(line)
+        for line in lines:
+            # Add markdown formatting for headers if not already present
+            if line.strip() and not line.startswith("#") and not line.startswith("*") and not line.startswith("-"):
+                # Check if it might be a title/header (short line followed by content)
+                if len(line.strip()) < 60 and line.strip().endswith(":"):
+                    formatted_lines.append(f"## {line.strip()}")
                 else:
                     formatted_lines.append(line)
+            else:
+                formatted_lines.append(line)
 
-            formatted_content = "\n".join(formatted_lines)
-            return f"Copied {len(content)} characters as markdown (formatted): {len(formatted_lines)} lines"
+        formatted_content = "\n".join(formatted_lines)
+        return f"Copied {len(content)} characters as markdown (formatted): {len(formatted_lines)} lines"
 
-    def download_content(self, content: str, create_data: Dict[str, str]) -> str:
+    def download_content(self, content: str, create_data: dict[str, str]) -> str:
         """Prepare content for download."""
         # In practice, this would generate a proper download file
         return f"Download prepared: {len(content)} characters of enhanced content"
@@ -647,7 +642,7 @@ Formatted Content:
         except json.JSONDecodeError as e:
             return f"""[JSON Data: {filename}]
 Status: Invalid JSON format
-Error: {str(e)}
+Error: {e!s}
 
 Raw Content:
 {content}"""
@@ -656,7 +651,7 @@ Raw Content:
             logger.error(f"Error processing JSON content: {e}")
             return f"""[JSON Data: {filename}]
 Status: Processing error
-Error: {str(e)}
+Error: {e!s}
 
 Raw Content:
 {content}"""

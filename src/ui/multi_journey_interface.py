@@ -11,16 +11,12 @@ Implements comprehensive file upload, OpenRouter model selection,
 and code snippet copying functionality.
 """
 
-import asyncio
 import logging
-import os
 import time
 from collections import defaultdict, deque
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import gradio as gr
-from gradio.events import Events
 
 from src.config.settings import ApplicationSettings
 from src.utils.logging_mixin import LoggerMixin
@@ -33,33 +29,38 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """
     Rate limiter to prevent DoS attacks through request flooding.
-    
+
     Implements sliding window rate limiting with separate limits for:
     - General requests per minute/hour
     - File uploads per hour
     """
-    
-    def __init__(self, max_requests_per_minute: int = 30, max_requests_per_hour: int = 200, max_file_uploads_per_hour: int = 50):
+
+    def __init__(
+        self,
+        max_requests_per_minute: int = 30,
+        max_requests_per_hour: int = 200,
+        max_file_uploads_per_hour: int = 50,
+    ):
         self.max_requests_per_minute = max_requests_per_minute
         self.max_requests_per_hour = max_requests_per_hour
         self.max_file_uploads_per_hour = max_file_uploads_per_hour
-        
+
         # Track requests per session using sliding windows
-        self.request_windows: Dict[str, deque] = defaultdict(deque)
-        self.file_upload_windows: Dict[str, deque] = defaultdict(deque)
-        
+        self.request_windows: dict[str, deque] = defaultdict(deque)
+        self.file_upload_windows: dict[str, deque] = defaultdict(deque)
+
         # Cleanup old entries periodically
         self.last_cleanup = time.time()
         self.cleanup_interval = 300  # 5 minutes
-    
+
     def _cleanup_old_entries(self) -> None:
         """Remove old entries to prevent memory leaks."""
         current_time = time.time()
         if current_time - self.last_cleanup < self.cleanup_interval:
             return
-        
+
         cutoff_time = current_time - 3600  # Remove entries older than 1 hour
-        
+
         # Clean request windows
         for session_id in list(self.request_windows.keys()):
             window = self.request_windows[session_id]
@@ -67,7 +68,7 @@ class RateLimiter:
                 window.popleft()
             if not window:
                 del self.request_windows[session_id]
-        
+
         # Clean file upload windows
         for session_id in list(self.file_upload_windows.keys()):
             window = self.file_upload_windows[session_id]
@@ -75,84 +76,84 @@ class RateLimiter:
                 window.popleft()
             if not window:
                 del self.file_upload_windows[session_id]
-        
+
         self.last_cleanup = current_time
-    
+
     def check_request_rate(self, session_id: str) -> bool:
         """
         Check if request is within rate limits and record the request.
-        
+
         Args:
             session_id: Unique session identifier
-            
+
         Returns:
             True if request is allowed, False if rate limited
         """
         self._cleanup_old_entries()
-        
+
         current_time = time.time()
         window = self.request_windows[session_id]
-        
+
         # Remove requests older than 1 hour
         while window and window[0] < current_time - 3600:
             window.popleft()
-        
+
         # Count requests in last minute and hour
         minute_cutoff = current_time - 60
         requests_last_minute = sum(1 for timestamp in window if timestamp > minute_cutoff)
         requests_last_hour = len(window)
-        
+
         # Check limits
         if requests_last_minute >= self.max_requests_per_minute:
             return False
         if requests_last_hour >= self.max_requests_per_hour:
             return False
-        
+
         # Record this request
         window.append(current_time)
         return True
-    
+
     def check_file_upload_rate(self, session_id: str) -> bool:
         """
         Check if file upload is within rate limits and record the upload.
-        
+
         Args:
             session_id: Unique session identifier
-            
+
         Returns:
             True if upload is allowed, False if rate limited
         """
         self._cleanup_old_entries()
-        
+
         current_time = time.time()
         window = self.file_upload_windows[session_id]
-        
+
         # Remove uploads older than 1 hour
         while window and window[0] < current_time - 3600:
             window.popleft()
-        
+
         # Check hourly limit
         if len(window) >= self.max_file_uploads_per_hour:
             return False
-        
+
         # Record this upload
         window.append(current_time)
         return True
-    
-    def get_rate_limit_status(self, session_id: str) -> Dict[str, Any]:
+
+    def get_rate_limit_status(self, session_id: str) -> dict[str, Any]:
         """Get current rate limit status for a session."""
         current_time = time.time()
-        
+
         # Request window
         request_window = self.request_windows.get(session_id, deque())
         minute_cutoff = current_time - 60
         requests_last_minute = sum(1 for timestamp in request_window if timestamp > minute_cutoff)
         requests_last_hour = len(request_window)
-        
+
         # File upload window
         upload_window = self.file_upload_windows.get(session_id, deque())
         uploads_last_hour = len(upload_window)
-        
+
         return {
             "requests_last_minute": requests_last_minute,
             "requests_last_hour": requests_last_hour,
@@ -161,7 +162,7 @@ class RateLimiter:
                 "max_requests_per_minute": self.max_requests_per_minute,
                 "max_requests_per_hour": self.max_requests_per_hour,
                 "max_file_uploads_per_hour": self.max_file_uploads_per_hour,
-            }
+            },
         }
 
 
@@ -179,21 +180,21 @@ class MultiJourneyInterface(LoggerMixin):
 
     def __init__(self):
         super().__init__()
-        self.settings = Settings()
+        self.settings = ApplicationSettings()
         # Remove shared instance variables that cause session corruption
         # self.session_state = {}  # REMOVED: Shared between users
         # self.current_journey = "journey_1"  # REMOVED: Shared between users
         # self.session_cost = 0.0  # REMOVED: Shared between users
         self.model_costs = self._load_model_costs()
-        
+
         # Rate limiting configuration
         self.rate_limiter = RateLimiter(
             max_requests_per_minute=30,  # 30 requests per minute per session
-            max_requests_per_hour=200,   # 200 requests per hour per session
-            max_file_uploads_per_hour=50  # 50 file uploads per hour per session
+            max_requests_per_hour=200,  # 200 requests per hour per session
+            max_file_uploads_per_hour=50,  # 50 file uploads per hour per session
         )
 
-    def _load_model_costs(self) -> Dict[str, float]:
+    def _load_model_costs(self) -> dict[str, float]:
         """Load model pricing information for cost tracking."""
         return {
             # Free models
@@ -232,7 +233,7 @@ class MultiJourneyInterface(LoggerMixin):
                 </div>
             </div>
         </div>
-        """
+        """,
         )
 
     def _create_model_selector(self) -> gr.Dropdown:
@@ -299,7 +300,7 @@ class MultiJourneyInterface(LoggerMixin):
                 </div>
             </div>
         </div>
-        """
+        """,
         )
 
     def create_interface(self) -> gr.Blocks:
@@ -311,7 +312,7 @@ class MultiJourneyInterface(LoggerMixin):
             max-width: 1400px !important;
             margin: 0 auto !important;
         }
-        
+
         .journey-header {
             text-align: center;
             margin-bottom: 24px;
@@ -320,18 +321,18 @@ class MultiJourneyInterface(LoggerMixin):
             border-radius: 12px;
             color: white;
         }
-        
+
         .journey-title {
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 8px;
         }
-        
+
         .journey-subtitle {
             font-size: 16px;
             opacity: 0.9;
         }
-        
+
         .input-section {
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -339,7 +340,7 @@ class MultiJourneyInterface(LoggerMixin):
             margin-bottom: 20px;
             background: white;
         }
-        
+
         .model-attribution {
             background: #f8fafc;
             padding: 12px;
@@ -347,7 +348,7 @@ class MultiJourneyInterface(LoggerMixin):
             margin-bottom: 16px;
             border-left: 4px solid #3b82f6;
         }
-        
+
         .code-block {
             background: #1e293b;
             color: #e2e8f0;
@@ -358,7 +359,7 @@ class MultiJourneyInterface(LoggerMixin):
             position: relative;
             margin: 12px 0;
         }
-        
+
         .file-upload-zone {
             border: 2px dashed #cbd5e1;
             border-radius: 8px;
@@ -367,33 +368,33 @@ class MultiJourneyInterface(LoggerMixin):
             background: #f8fafc;
             margin: 16px 0;
         }
-        
+
         .file-upload-zone:hover {
             border-color: #3b82f6;
             background: #eff6ff;
         }
-        
+
         .btn-primary {
             background: #3b82f6 !important;
             border: 1px solid #3b82f6 !important;
             color: white !important;
         }
-        
+
         .btn-primary:hover {
             background: #2563eb !important;
             border-color: #2563eb !important;
         }
-        
+
         .btn-secondary {
             background: #f8fafc !important;
             border: 1px solid #d1d5db !important;
             color: #374151 !important;
         }
-        
+
         .btn-secondary:hover {
             background: #f1f5f9 !important;
         }
-        
+
         .progress-indicator {
             background: #f1f5f9;
             padding: 8px 16px;
@@ -413,7 +414,7 @@ class MultiJourneyInterface(LoggerMixin):
                     "current_journey": "journey_1",
                     "session_start_time": None,
                     "user_preferences": {},
-                }
+                },
             )
 
             # Header
@@ -451,12 +452,14 @@ class MultiJourneyInterface(LoggerMixin):
                     <div>Support: <a href="mailto:help@promptcraft.ai">help@promptcraft.ai</a></div>
                 </div>
             </div>
-            """
+            """,
             )
 
             # Event handlers
             model_selector.change(
-                fn=self._on_model_selector_change, inputs=[model_selector], outputs=[custom_model_selector]
+                fn=self._on_model_selector_change,
+                inputs=[model_selector],
+                outputs=[custom_model_selector],
             )
 
         return interface
@@ -464,8 +467,8 @@ class MultiJourneyInterface(LoggerMixin):
     def _create_journey1_interface(self):
         """Create Journey 1: Smart Templates interface with enhanced file upload."""
         # Initialize Journey 1 processor
-        from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
         from src.ui.components.shared.export_utils import ExportUtils
+        from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
 
         journey1_processor = Journey1SmartTemplates()
         export_utils = ExportUtils()
@@ -478,7 +481,7 @@ class MultiJourneyInterface(LoggerMixin):
                 <div class="journey-title">Journey 1: Smart Templates</div>
                 <div class="journey-subtitle">Transform rough ideas into polished prompts using the C.R.E.A.T.E. framework</div>
             </div>
-            """
+            """,
             )
 
             # Input Section
@@ -542,11 +545,11 @@ class MultiJourneyInterface(LoggerMixin):
                 model_attribution = gr.HTML(
                     """
                 <div class="model-attribution">
-                    <strong>🤖 Generated by:</strong> <span id="j1-model-used">-</span> | 
-                    <strong>⏱️ Response time:</strong> <span id="j1-response-time">-</span> | 
+                    <strong>🤖 Generated by:</strong> <span id="j1-model-used">-</span> |
+                    <strong>⏱️ Response time:</strong> <span id="j1-response-time">-</span> |
                     <strong>💰 Cost:</strong> $<span id="j1-cost">0.00</span>
                 </div>
-                """
+                """,
                 )
 
                 # Enhanced prompt display
@@ -597,7 +600,7 @@ class MultiJourneyInterface(LoggerMixin):
                     <strong>📄 Source Files Used:</strong>
                     <div id="file-list">No files uploaded</div>
                 </div>
-                """
+                """,
                 )
 
                 # Action buttons
@@ -612,16 +615,25 @@ class MultiJourneyInterface(LoggerMixin):
                     thumbs_up = gr.Button("👍", scale=1)
                     thumbs_down = gr.Button("👎", scale=1)
                     feedback_comment = gr.Textbox(
-                        placeholder="Optional feedback comment...", label="Feedback", lines=1, scale=4
+                        placeholder="Optional feedback comment...",
+                        label="Feedback",
+                        lines=1,
+                        scale=4,
                     )
 
             # Event handlers
             def handle_enhancement(
-                text_input, files, model_mode, custom_model, reasoning_depth, search_tier, temperature, session_state
+                text_input,
+                files,
+                model_mode,
+                custom_model,
+                reasoning_depth,
+                search_tier,
+                temperature,
+                session_state,
             ):
                 """Handle the enhancement process with comprehensive security validation."""
                 import os
-                import mimetypes
                 import time
                 from pathlib import Path
 
@@ -637,14 +649,14 @@ class MultiJourneyInterface(LoggerMixin):
                         raise gr.Error(
                             "❌ Rate Limit Exceeded: Too many requests. "
                             "Please wait a moment before trying again. "
-                            "Rate limits: 30 requests/minute, 200 requests/hour."
+                            "Rate limits: 30 requests/minute, 200 requests/hour.",
                         )
-                    
+
                     if files and not self.rate_limiter.check_file_upload_rate(session_id):
                         raise gr.Error(
                             "❌ File Upload Rate Limit Exceeded: Too many file uploads. "
                             "Please wait before uploading more files. "
-                            "Limit: 50 file uploads per hour."
+                            "Limit: 50 file uploads per hour.",
                         )
 
                     # 1. MODEL SELECTION VALIDATION
@@ -664,7 +676,7 @@ class MultiJourneyInterface(LoggerMixin):
                     if files and len(files) > self.settings.max_files:
                         raise gr.Error(
                             f"❌ Security Error: Maximum {self.settings.max_files} files allowed. "
-                            f"You uploaded {len(files)} files. Please reduce the number of files."
+                            f"You uploaded {len(files)} files. Please reduce the number of files.",
                         )
 
                     # 3. FILE SIZE AND TYPE VALIDATION WITH MEMORY-SAFE PROCESSING
@@ -688,7 +700,7 @@ class MultiJourneyInterface(LoggerMixin):
                                         raise gr.Error(
                                             f"❌ Security Error: File '{file_name}' is {size_mb:.1f}MB, "
                                             f"which exceeds the {limit_mb:.0f}MB size limit. "
-                                            f"Please upload a smaller file."
+                                            f"Please upload a smaller file.",
                                         )
 
                                     # File type validation
@@ -696,16 +708,22 @@ class MultiJourneyInterface(LoggerMixin):
                                         supported_types = ", ".join(self.settings.supported_file_types)
                                         raise gr.Error(
                                             f"❌ Security Error: File '{file_name}' has unsupported type '{file_ext}'. "
-                                            f"Supported types: {supported_types}"
+                                            f"Supported types: {supported_types}",
                                         )
 
                                     # ENHANCED MIME type validation with content sniffing
-                                    detected_mime, guessed_mime = self._validate_file_content_and_mime(file_path, file_ext)
-                                    if not self._is_safe_mime_type(detected_mime, file_ext) or not self._is_safe_mime_type(guessed_mime, file_ext):
+                                    detected_mime, guessed_mime = self._validate_file_content_and_mime(
+                                        file_path,
+                                        file_ext,
+                                    )
+                                    if not self._is_safe_mime_type(
+                                        detected_mime,
+                                        file_ext,
+                                    ) or not self._is_safe_mime_type(guessed_mime, file_ext):
                                         raise gr.Error(
                                             f"❌ Security Error: File '{file_name}' has suspicious content or MIME type. "
                                             f"Detected: '{detected_mime}', Expected for '{file_ext}'. "
-                                            f"File may be corrupted, mislabeled, or potentially malicious."
+                                            f"File may be corrupted, mislabeled, or potentially malicious.",
                                         )
 
                                     # MEMORY-SAFE FILE PROCESSING
@@ -718,13 +736,13 @@ class MultiJourneyInterface(LoggerMixin):
                                             "size": file_size,
                                             "content": file_content,
                                             "type": file_ext,
-                                        }
+                                        },
                                     )
 
                                     total_size += file_size
 
                             except OSError as e:
-                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {str(e)}")
+                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {e!s}")
 
                         # Total size validation (additional safety check)
                         max_total_size = self.settings.max_file_size * self.settings.max_files
@@ -733,7 +751,7 @@ class MultiJourneyInterface(LoggerMixin):
                             limit_mb = max_total_size / (1024 * 1024)
                             raise gr.Error(
                                 f"❌ Security Error: Total file size {total_mb:.1f}MB exceeds limit of {limit_mb:.0f}MB. "
-                                f"Please reduce file sizes or upload fewer files."
+                                f"Please reduce file sizes or upload fewer files.",
                             )
 
                         # Update files parameter with processed content for downstream processing
@@ -743,7 +761,7 @@ class MultiJourneyInterface(LoggerMixin):
                     if text_input and len(text_input) > 50000:  # 50KB text limit
                         raise gr.Error(
                             f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
-                            f"Maximum 50,000 characters allowed. Please shorten your text."
+                            f"Maximum 50,000 characters allowed. Please shorten your text.",
                         )
 
                     # 5. UPDATE SESSION TRACKING
@@ -751,7 +769,8 @@ class MultiJourneyInterface(LoggerMixin):
 
                     # Calculate estimated cost (mock calculation for now)
                     estimated_cost = self.model_costs.get(
-                        custom_model if model_mode == "custom" else "gpt-4o-mini", 0.002
+                        custom_model if model_mode == "custom" else "gpt-4o-mini",
+                        0.002,
                     )
                     session_state["total_cost"] = session_state.get("total_cost", 0.0) + estimated_cost
 
@@ -769,7 +788,13 @@ class MultiJourneyInterface(LoggerMixin):
 
                         try:
                             result = journey1_processor.enhance_prompt(
-                                text_input, files, model_mode, custom_model, reasoning_depth, search_tier, temperature
+                                text_input,
+                                files,
+                                model_mode,
+                                custom_model,
+                                reasoning_depth,
+                                search_tier,
+                                temperature,
                             )
                         finally:
                             # Always cancel timeout
@@ -803,7 +828,9 @@ class MultiJourneyInterface(LoggerMixin):
 
                         # Provide graceful degradation
                         fallback_result = self._create_error_fallback_result(
-                            text_input, custom_model, str(processing_error)
+                            text_input,
+                            custom_model,
+                            str(processing_error),
                         )
                         return fallback_result + (session_state,)
 
@@ -814,8 +841,8 @@ class MultiJourneyInterface(LoggerMixin):
                     # Log unexpected errors and show user-friendly message
                     self.logger.error(f"Unexpected error in file processing: {e}")
                     raise gr.Error(
-                        f"❌ Processing Error: An unexpected error occurred while processing your request. "
-                        f"Please try again or contact support if the problem persists."
+                        "❌ Processing Error: An unexpected error occurred while processing your request. "
+                        "Please try again or contact support if the problem persists.",
                     )
 
             def handle_copy_code(content):
@@ -843,7 +870,12 @@ class MultiJourneyInterface(LoggerMixin):
                 session_data = {"total_cost": 0.003, "request_count": 1, "avg_response_time": 1.2}
 
                 return export_utils.export_journey1_content(
-                    enhanced_prompt, create_breakdown, model_info, file_sources, session_data, "markdown"
+                    enhanced_prompt,
+                    create_breakdown,
+                    model_info,
+                    file_sources,
+                    session_data,
+                    "markdown",
                 )
 
             def load_example():
@@ -926,12 +958,12 @@ class MultiJourneyInterface(LoggerMixin):
                 <div class="journey-title">Journey 2: Intelligent Search</div>
                 <div class="journey-subtitle">HyDE-powered multi-source knowledge retrieval with context analysis</div>
             </div>
-            """
+            """,
             )
 
             gr.Markdown("### 🔍 Search Interface")
             gr.HTML(
-                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 2 requires the HyDE processor and vector database integration.</p>"
+                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 2 requires the HyDE processor and vector database integration.</p>",
             )
 
     def _create_journey3_interface(self):
@@ -943,12 +975,12 @@ class MultiJourneyInterface(LoggerMixin):
                 <div class="journey-title">Journey 3: IDE Integration</div>
                 <div class="journey-subtitle">AI-powered development with web-based VS Code through Code-Server</div>
             </div>
-            """
+            """,
             )
 
             gr.Markdown("### 💻 Code-Server Integration")
             gr.HTML(
-                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 3 requires the Code-Server deployment and workspace integration.</p>"
+                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 3 requires the Code-Server deployment and workspace integration.</p>",
             )
 
     def _create_journey4_interface(self):
@@ -960,20 +992,19 @@ class MultiJourneyInterface(LoggerMixin):
                 <div class="journey-title">Journey 4: Autonomous Workflows</div>
                 <div class="journey-subtitle">Self-directed AI agents with comprehensive cost control and Free Mode</div>
             </div>
-            """
+            """,
             )
 
             gr.Markdown("### 🤖 Workflow Management")
             gr.HTML(
-                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 4 requires the autonomous workflow engine and multi-agent coordination.</p>"
+                "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 4 requires the autonomous workflow engine and multi-agent coordination.</p>",
             )
 
     def _on_model_selector_change(self, model_mode: str) -> gr.Dropdown:
         """Handle model selector changes."""
         if model_mode == "custom":
             return gr.Dropdown(visible=True)
-        else:
-            return gr.Dropdown(visible=False)
+        return gr.Dropdown(visible=False)
 
     def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate the cost for a model request."""
@@ -984,7 +1015,7 @@ class MultiJourneyInterface(LoggerMixin):
         total_tokens = input_tokens + output_tokens
         return (total_tokens / 1000) * cost_per_1k
 
-    def update_session_cost(self, session_state: Dict[str, Any], cost: float) -> None:
+    def update_session_cost(self, session_state: dict[str, Any], cost: float) -> None:
         """Update the session cost tracking for a specific user session."""
         session_state["total_cost"] = session_state.get("total_cost", 0.0) + cost
 
@@ -1015,60 +1046,62 @@ class MultiJourneyInterface(LoggerMixin):
     def _validate_file_content_and_mime(self, file_path: str, file_ext: str) -> tuple[str, str]:
         """
         Validate file content using both magic number detection and MIME guessing.
-        
+
         Args:
             file_path: Path to the file to validate
             file_ext: File extension for validation
-            
+
         Returns:
             Tuple of (detected_mime_from_content, guessed_mime_from_extension)
-            
+
         Raises:
             gr.Error: If content validation fails
         """
         try:
-            import magic
             import mimetypes
-            
+
+            import magic
+
             # Content-based MIME detection using magic numbers
             try:
                 detected_mime = magic.from_file(file_path, mime=True)
             except Exception as e:
                 self.logger.warning(f"Magic content detection failed: {e}")
                 detected_mime = "application/octet-stream"  # Fallback for unknown content
-            
+
             # Extension-based MIME guessing (existing method)
             guessed_mime, _ = mimetypes.guess_type(file_path)
             if not guessed_mime:
                 guessed_mime = "application/octet-stream"
-            
+
             # Additional security checks for common attack vectors
             self._check_for_content_anomalies(file_path, detected_mime, file_ext)
-            
+
             return detected_mime, guessed_mime
-            
+
         except ImportError:
             # Fallback if python-magic not available
             self.logger.warning("python-magic not available, falling back to basic MIME detection")
             import mimetypes
+
             guessed_mime, _ = mimetypes.guess_type(file_path)
             return guessed_mime or "application/octet-stream", guessed_mime or "application/octet-stream"
         except Exception as e:
             self.logger.error(f"File content validation failed: {e}")
             raise gr.Error(
-                f"❌ Security Error: Unable to validate file content safely. "
-                f"File may be corrupted or use unsupported format."
+                "❌ Security Error: Unable to validate file content safely. "
+                "File may be corrupted or use unsupported format.",
             )
 
     def _check_for_content_anomalies(self, file_path: str, detected_mime: str, file_ext: str) -> None:
         """
         Check for content anomalies that might indicate malicious files.
-        
+
         Args:
             file_path: Path to the file
             detected_mime: MIME type detected from content
             file_ext: File extension
-            
+
         Raises:
             gr.Error: If anomalies are detected
         """
@@ -1083,38 +1116,38 @@ class MultiJourneyInterface(LoggerMixin):
             # Script content in non-script files
             ("text/x-script" in detected_mime, file_ext not in [".txt", ".md"]),
         ]
-        
+
         for condition, is_suspicious in suspicious_patterns:
             if condition and is_suspicious:
                 raise gr.Error(
                     f"❌ Security Error: File appears to be a polyglot or contains suspicious content. "
                     f"Detected MIME type '{detected_mime}' is incompatible with extension '{file_ext}'. "
-                    f"This may indicate a malicious file attempting to bypass security checks."
+                    f"This may indicate a malicious file attempting to bypass security checks.",
                 )
-        
+
         # ENHANCEMENT 3: Archive bomb detection
         self._detect_archive_bombs(file_path, detected_mime)
 
     def _detect_archive_bombs(self, file_path: str, detected_mime: str) -> None:
         """
         Detect archive bombs (compression bombs) that could cause DoS through memory/disk exhaustion.
-        
+
         Archive bombs are malicious files that are small when compressed but expand to huge sizes,
         potentially exhausting system resources when decompressed.
-        
+
         Args:
             file_path: Path to the file to check
             detected_mime: MIME type detected from file content
-            
+
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
         import os
-        
+
         # Only check files that could be compressed archives
         archive_mimes = [
             "application/zip",
-            "application/x-zip-compressed", 
+            "application/x-zip-compressed",
             "application/gzip",
             "application/x-gzip",
             "application/x-tar",
@@ -1124,34 +1157,34 @@ class MultiJourneyInterface(LoggerMixin):
             "application/x-compress",
             "application/x-compressed",
         ]
-        
+
         # Check if file appears to be an archive
         is_archive = any(archive_mime in detected_mime for archive_mime in archive_mimes)
-        
+
         if is_archive:
             try:
                 file_size = os.path.getsize(file_path)
-                
+
                 # Archive bomb heuristics
                 self._check_archive_bomb_heuristics(file_path, file_size, detected_mime)
-                
+
             except Exception as e:
                 self.logger.warning(f"Archive bomb detection failed: {e}")
                 # Fail safe - if we can't analyze, treat as suspicious
                 raise gr.Error(
-                    f"❌ Security Error: Unable to analyze archive file safely. "
-                    f"For security reasons, this file cannot be processed."
+                    "❌ Security Error: Unable to analyze archive file safely. "
+                    "For security reasons, this file cannot be processed.",
                 )
 
     def _check_archive_bomb_heuristics(self, file_path: str, file_size: int, detected_mime: str) -> None:
         """
         Apply heuristics to detect potential archive bombs.
-        
+
         Args:
             file_path: Path to the archive file
             file_size: Size of the compressed file
             detected_mime: MIME type of the file
-            
+
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
@@ -1160,46 +1193,45 @@ class MultiJourneyInterface(LoggerMixin):
             self._check_zip_bomb_heuristics(file_path, file_size)
         elif "gzip" in detected_mime or "tar" in detected_mime:
             self._check_tar_gzip_bomb_heuristics(file_path, file_size)
-        
+
         # Heuristic 2: Size-based checks (regardless of format)
         # If a very small file claims to be an archive, it's suspicious
         if file_size < 100:  # Less than 100 bytes
             raise gr.Error(
                 f"❌ Security Error: Archive file is suspiciously small ({file_size} bytes). "
-                f"This could be an archive bomb designed to expand enormously when extracted."
+                f"This could be an archive bomb designed to expand enormously when extracted.",
             )
 
     def _check_zip_bomb_heuristics(self, file_path: str, file_size: int) -> None:
         """
         Check for ZIP bomb characteristics using safe heuristics.
-        
+
         Args:
             file_path: Path to the ZIP file
             file_size: Size of the ZIP file
-            
+
         Raises:
             gr.Error: If ZIP bomb characteristics are detected
         """
         try:
             import zipfile
-            import io
-            
+
             # Safe limits for ZIP analysis
             MAX_FILES_TO_CHECK = 10
             MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100MB total uncompressed
             MAX_COMPRESSION_RATIO = 1000  # 1000:1 compression ratio is suspicious
-            
-            with zipfile.ZipFile(file_path, 'r') as zip_file:
+
+            with zipfile.ZipFile(file_path, "r") as zip_file:
                 total_uncompressed = 0
                 files_checked = 0
-                
+
                 for info in zip_file.filelist:
                     if files_checked >= MAX_FILES_TO_CHECK:
                         break
-                        
+
                     compressed_size = info.compress_size
                     uncompressed_size = info.file_size
-                    
+
                     # Check individual file compression ratio
                     if compressed_size > 0:  # Avoid division by zero
                         ratio = uncompressed_size / compressed_size
@@ -1207,101 +1239,100 @@ class MultiJourneyInterface(LoggerMixin):
                             raise gr.Error(
                                 f"❌ Security Error: Archive contains file '{info.filename}' "
                                 f"with suspicious compression ratio ({ratio:.0f}:1). "
-                                f"This indicates a potential ZIP bomb attack."
+                                f"This indicates a potential ZIP bomb attack.",
                             )
-                    
+
                     total_uncompressed += uncompressed_size
                     files_checked += 1
-                    
+
                     # Check if total uncompressed size is too large
                     if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
                             f"Maximum allowed expansion is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB. "
-                            f"This could be an archive bomb."
+                            f"This could be an archive bomb.",
                         )
-                
+
                 # Overall compression ratio check
                 if file_size > 0:
                     overall_ratio = total_uncompressed / file_size
                     if overall_ratio > MAX_COMPRESSION_RATIO:
                         raise gr.Error(
                             f"❌ Security Error: Archive has suspicious overall compression ratio "
-                            f"({overall_ratio:.0f}:1). This indicates a potential archive bomb."
+                            f"({overall_ratio:.0f}:1). This indicates a potential archive bomb.",
                         )
-                        
+
         except zipfile.BadZipFile:
             raise gr.Error(
-                f"❌ Security Error: File appears to be a corrupted or malicious ZIP archive."
+                "❌ Security Error: File appears to be a corrupted or malicious ZIP archive.",
             )
         except Exception as e:
             self.logger.warning(f"ZIP bomb detection failed: {e}")
             # Conservative approach - block if we can't safely analyze
             raise gr.Error(
-                f"❌ Security Error: Unable to safely analyze ZIP archive. "
-                f"File blocked as a security precaution."
+                "❌ Security Error: Unable to safely analyze ZIP archive. File blocked as a security precaution.",
             )
 
     def _check_tar_gzip_bomb_heuristics(self, file_path: str, file_size: int) -> None:
         """
         Check for TAR/GZIP bomb characteristics using safe heuristics.
-        
+
         Args:
-            file_path: Path to the TAR/GZIP file  
+            file_path: Path to the TAR/GZIP file
             file_size: Size of the compressed file
-            
+
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
         try:
-            import tarfile
             import gzip
-            
+            import tarfile
+
             # Conservative limits for TAR/GZIP analysis
             MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50MB total uncompressed
             MAX_COMPRESSION_RATIO = 500  # 500:1 compression ratio limit
-            
+
             # Try to analyze as tarfile first
             try:
-                with tarfile.open(file_path, 'r:*') as tar_file:
+                with tarfile.open(file_path, "r:*") as tar_file:
                     total_uncompressed = 0
                     files_checked = 0
-                    
+
                     for member in tar_file.getmembers():
                         if files_checked >= 10:  # Limit analysis to first 10 files
                             break
-                            
+
                         if member.isfile():
                             total_uncompressed += member.size
                             files_checked += 1
-                            
+
                             # Check if individual file is too large
                             if member.size > MAX_UNCOMPRESSED_SIZE:
                                 raise gr.Error(
                                     f"❌ Security Error: Archive contains file '{member.name}' "
                                     f"that would expand to {member.size / (1024*1024):.1f}MB. "
-                                    f"This could be an archive bomb."
+                                    f"This could be an archive bomb.",
                                 )
-                    
+
                     # Check overall expansion
                     if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB."
+                            f"Maximum allowed is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB.",
                         )
-                    
+
                     # Check compression ratio
                     if file_size > 0:
                         ratio = total_uncompressed / file_size
                         if ratio > MAX_COMPRESSION_RATIO:
                             raise gr.Error(
                                 f"❌ Security Error: Archive has suspicious compression ratio "
-                                f"({ratio:.0f}:1). This indicates a potential archive bomb."
+                                f"({ratio:.0f}:1). This indicates a potential archive bomb.",
                             )
-                            
+
             except tarfile.TarError:
                 # If not a valid TAR, try GZIP
-                with gzip.open(file_path, 'rb') as gz_file:
+                with gzip.open(file_path, "rb") as gz_file:
                     # Read first chunk to estimate compression
                     chunk = gz_file.read(1024)  # Read 1KB sample
                     if len(chunk) == 1024:  # File has more content
@@ -1309,16 +1340,16 @@ class MultiJourneyInterface(LoggerMixin):
                         estimated_uncompressed = file_size * 1000  # Conservative estimate
                         if estimated_uncompressed > MAX_UNCOMPRESSED_SIZE:
                             raise gr.Error(
-                                f"❌ Security Error: GZIP file appears to have excessive compression. "
-                                f"This could be a compression bomb."
+                                "❌ Security Error: GZIP file appears to have excessive compression. "
+                                "This could be a compression bomb.",
                             )
-                            
+
         except Exception as e:
             self.logger.warning(f"TAR/GZIP bomb detection failed: {e}")
             # Conservative approach - block if analysis fails
             raise gr.Error(
-                f"❌ Security Error: Unable to safely analyze compressed archive. "
-                f"File blocked as a security precaution."
+                "❌ Security Error: Unable to safely analyze compressed archive. "
+                "File blocked as a security precaution.",
             )
 
     def _process_file_safely(self, file_path: str, file_size: int, chunk_size: int = 8192) -> str:
@@ -1342,7 +1373,7 @@ class MultiJourneyInterface(LoggerMixin):
 
             if file_size > memory_limit:
                 # For large files, read first chunk only and truncate
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
+                with open(file_path, encoding="utf-8", errors="ignore") as file:
                     content_chunks = []
                     bytes_read = 0
 
@@ -1363,29 +1394,29 @@ class MultiJourneyInterface(LoggerMixin):
                     return content
             else:
                 # For smaller files, read normally but with error handling
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as file:
+                with open(file_path, encoding="utf-8", errors="ignore") as file:
                     return file.read()
 
         except UnicodeDecodeError:
             # Handle binary or non-text files
             raise gr.Error(
-                f"❌ File Error: File appears to be binary or uses unsupported encoding. "
-                f"Please ensure file is in UTF-8 text format."
+                "❌ File Error: File appears to be binary or uses unsupported encoding. "
+                "Please ensure file is in UTF-8 text format.",
             )
         except MemoryError:
             # Handle memory exhaustion
             raise gr.Error(
-                f"❌ Memory Error: File is too large to process safely. "
-                f"Please upload a smaller file (under 5MB recommended)."
+                "❌ Memory Error: File is too large to process safely. "
+                "Please upload a smaller file (under 5MB recommended).",
             )
         except OSError as e:
             # Handle file system errors
-            raise gr.Error(f"❌ File Error: Unable to read file. {str(e)}")
+            raise gr.Error(f"❌ File Error: Unable to read file. {e!s}")
         except Exception as e:
             # Handle unexpected errors
             self.logger.error(f"Unexpected error processing file {file_path}: {e}")
             raise gr.Error(
-                f"❌ Processing Error: Unable to process file safely. " f"Please try again or contact support."
+                "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
             )
 
     def _create_fallback_result(self, text_input: str, model: str) -> tuple:
@@ -1400,7 +1431,7 @@ Your original input: {text_input[:500]}{"..." if len(text_input) > 500 else ""}
 ## Context
 Please provide more context about your specific goals and requirements.
 
-## Request  
+## Request
 {text_input[:200]}{"..." if len(text_input) > 200 else ""}
 
 ## Suggested Next Steps
@@ -1437,7 +1468,7 @@ Your request: {text_input[:300]}{"..." if len(text_input) > 300 else ""}
 ## Simplified Approach
 To get faster results, try:
 1. **Shorter inputs**: Break complex requests into smaller parts
-2. **Specific focus**: Target one main objective at a time  
+2. **Specific focus**: Target one main objective at a time
 3. **Clear context**: Provide essential background only
 
 ## Quick Enhancement
