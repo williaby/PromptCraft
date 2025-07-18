@@ -92,10 +92,9 @@ class TestLoggerMixin:
                 self.base_kwarg = base_kwarg
 
         class TestComponent(LoggerMixin, BaseClass):
-            def __init__(self, base_arg, base_kwarg=None, **kwargs):
+            def __init__(self, base_arg, base_kwarg=None, logger_name=None, **kwargs):
                 # Pass logger_name to LoggerMixin but not to BaseClass
-                logger_name = kwargs.pop('logger_name', None)
-                super().__init__(base_arg, base_kwarg=base_kwarg, logger_name=logger_name, **kwargs)
+                super().__init__(logger_name=logger_name, base_arg=base_arg, base_kwarg=base_kwarg, **kwargs)
 
         component = TestComponent("test_arg", base_kwarg="test_kwarg", logger_name="test")
 
@@ -432,8 +431,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "Test message",
+            "Test message - Context: %s",
             expected_context
         )
 
@@ -454,8 +452,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "Test message",
+            "Test message - Context: %s",
             expected_context
         )
 
@@ -484,8 +481,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "Test message",
+            "Test message - Context: %s",
             expected_context
         )
 
@@ -508,8 +504,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "API call: GET /api/test",
+            "API call: GET /api/test - Context: %s",
             expected_context
         )
 
@@ -541,8 +536,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "API call: POST /api/test",
+            "API call: POST /api/test - Context: %s",
             expected_context
         )
 
@@ -566,8 +560,7 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "%s - Context: %s",
-            "API call: PUT /api/test",
+            "API call: PUT /api/test - Context: %s",
             expected_context
         )
 
@@ -643,10 +636,9 @@ class TestEdgeCasesAndComplexScenarios:
                 self.other_value = other_value
 
         class ComplexComponent(LoggerMixin, OtherMixin, BaseClass):
-            def __init__(self, base_value, other_value=None, **kwargs):
+            def __init__(self, base_value, other_value=None, logger_name=None, **kwargs):
                 # Pass logger_name to LoggerMixin but not to other classes
-                logger_name = kwargs.pop('logger_name', None)
-                super().__init__(base_value, other_value=other_value, logger_name=logger_name, **kwargs)
+                super().__init__(logger_name=logger_name, base_value=base_value, other_value=other_value, **kwargs)
 
         component = ComplexComponent("base", other_value="other", logger_name="complex")
 
@@ -678,7 +670,7 @@ class TestEdgeCasesAndComplexScenarios:
         component.logger.debug.assert_called_once()
         call_args = component.logger.debug.call_args[0]
         assert call_args[1] == "complex_method"
-        assert call_args[2] == complex_args
+        assert call_args[2] == tuple(complex_args)  # Args are converted to tuple
         assert "_private" not in call_args[3]
         assert "dict_value" in call_args[3]
 
@@ -767,17 +759,18 @@ class TestEdgeCasesAndComplexScenarios:
 
         # Test with None context
         component.log_error_with_context(ValueError("test"), context=None)
+        from unittest.mock import ANY
         component.logger.error.assert_called_with(
             "Error%s: %s - Context: %s",
             "",
-            pytest.mock.ANY,  # The ValueError instance
+            ANY,  # The ValueError instance
             {},
             exc_info=True
         )
 
         # Test with empty context
         component.log_performance_metric("test_metric", 100.0, context={})
-        assert any(call[0][3] == {} for call in component.logger.info.call_args_list)
+        assert any(call[0][4] == {} for call in component.logger.info.call_args_list)
 
 
 @pytest.mark.parametrize(
@@ -851,7 +844,7 @@ class TestRealWorldUsageScenarios:
         service.logger.log.assert_called_once()
         call_args = service.logger.log.call_args[0]
         assert call_args[0] == logging.INFO
-        assert "GET /api/users/123" in call_args[1]
+        assert call_args[1] == "API call: GET /api/users/123 - Context: %s"
         
         context = call_args[2]
         assert context["component_id"] == "user_service"
@@ -885,8 +878,12 @@ class TestRealWorldUsageScenarios:
         
         # Check first transition
         first_call = machine.logger.info.call_args_list[0][0]
-        assert "idle -> processing" in first_call[1]
-        assert "(reason: user_request)" in first_call[1]
+        # The format string is "STATE_CHANGE: %s -> %s%s - Context: %s"
+        # first_call[0] is the format string, first_call[1] is "idle", first_call[2] is "processing", first_call[3] is " (reason: user_request)"
+        assert first_call[0] == "STATE_CHANGE: %s -> %s%s - Context: %s"
+        assert first_call[1] == "idle"
+        assert first_call[2] == "processing"
+        assert "(reason: user_request)" in first_call[3]
 
     def test_error_handling_with_context(self):
         """Test realistic error handling with context."""

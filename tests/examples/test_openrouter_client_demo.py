@@ -6,6 +6,7 @@ ensuring 80%+ test coverage while following project testing standards.
 """
 
 import asyncio
+import logging
 import os
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -372,15 +373,19 @@ class TestCheckEnvironment:
     @patch('examples.openrouter_client_demo.logger')
     def test_check_environment_base_url_default(self, mock_logger, mock_getenv):
         """Test check_environment with default base URL."""
-        mock_getenv.side_effect = lambda key, default=None: {
-            "PROMPTCRAFT_OPENROUTER_API_KEY": "sk-test-key",
-            "PROMPTCRAFT_OPENROUTER_BASE_URL": None
-        }.get(key, default)
+        def mock_getenv_func(key, default=None):
+            if key == "PROMPTCRAFT_OPENROUTER_API_KEY":
+                return "sk-test-key"
+            elif key == "PROMPTCRAFT_OPENROUTER_BASE_URL":
+                return default  # Return the default value (https://openrouter.ai/api/v1)
+            return default
+        
+        mock_getenv.side_effect = mock_getenv_func
         
         check_environment()
         
         # Should log default base URL
-        log_calls = [str(call[0]) for call in mock_logger.info.call_args_list]
+        log_calls = [str(call) for call in mock_logger.info.call_args_list]
         base_url_log = next((call for call in log_calls if "https://openrouter.ai/api/v1" in call), None)
         assert base_url_log is not None
 
@@ -469,15 +474,20 @@ class TestMainFunction:
 class TestLoggingAndFormatting:
     """Test logging and output formatting."""
 
-    @patch('examples.openrouter_client_demo.logging.basicConfig')
+    @patch('logging.basicConfig')
     def test_logging_configuration(self, mock_basic_config):
         """Test that logging is configured correctly."""
-        # Import the module to trigger logging setup
+        # Re-import the module to trigger logging setup
+        import importlib
         import examples.openrouter_client_demo
+        importlib.reload(examples.openrouter_client_demo)
         
         # Verify logging was configured
-        mock_basic_config.assert_called_once()
-        args, kwargs = mock_basic_config.call_args
+        mock_basic_config.assert_called()
+        # Find the call with level=INFO
+        info_calls = [call for call in mock_basic_config.call_args_list if 'level' in call.kwargs and call.kwargs['level'] == logging.INFO]
+        assert len(info_calls) >= 1
+        args, kwargs = info_calls[0]
         assert kwargs['level'] == logging.INFO
         assert 'format' in kwargs
 

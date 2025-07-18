@@ -413,7 +413,7 @@ class TestDASTScanning:
         """Test dast_scanning session when application is not running."""
         # Make health check fail but docker check succeed, and handle other calls normally
         def side_effect(*args, **kwargs):
-            if "curl" in args and "health" in args:
+            if "curl" in args and "health" in str(args):
                 raise Exception("Connection refused")
             elif "docker" in args and "--version" in args:
                 return None  # Docker check succeeds

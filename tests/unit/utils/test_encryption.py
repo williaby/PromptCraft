@@ -488,6 +488,7 @@ class TestMainScriptExecution:
     def test_main_script_success(self, mock_print, mock_exit, mock_validate):
         """Test main script execution on successful validation."""
         # Test the main script logic directly by executing the relevant code
+        from src.utils.encryption import validate_environment_keys
         try:
             validate_environment_keys()
             print("✓ All required keys are present and configured")
@@ -505,6 +506,7 @@ class TestMainScriptExecution:
         mock_validate.side_effect = EncryptionError("Test validation error")
 
         # Test the main script logic directly
+        from src.utils.encryption import validate_environment_keys
         try:
             validate_environment_keys()
             print("✓ All required keys are present and configured")
