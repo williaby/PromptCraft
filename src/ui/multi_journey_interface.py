@@ -14,6 +14,7 @@ and code snippet copying functionality.
 import logging
 import time
 from collections import defaultdict, deque
+from pathlib import Path
 from typing import Any
 
 import gradio as gr
@@ -1019,6 +1020,64 @@ class MultiJourneyInterface(LoggerMixin):
         """Update the session cost tracking for a specific user session."""
         session_state["total_cost"] = session_state.get("total_cost", 0.0) + cost
 
+    def _validate_files(self, files: list[Any]) -> None:
+        """
+        Validate uploaded files for security and limits.
+
+        Args:
+            files: List of uploaded file objects
+
+        Raises:
+            gr.Error: If files exceed limits or contain security risks
+        """
+        if not files:
+            return
+
+        # Check file count limit
+        if len(files) > self.settings.max_files:
+            raise gr.Error(
+                f"❌ Security Error: Maximum {self.settings.max_files} files allowed. "
+                f"You uploaded {len(files)} files. Please reduce the number of files.",
+            )
+
+        for file_obj in files:
+            file_path = file_obj.name if hasattr(file_obj, "name") else str(file_obj)
+            file_size = Path(file_path).stat().st_size if Path(file_path).exists() else 0
+            file_ext = Path(file_path).suffix.lower()
+
+            # Check file size limit
+            if file_size > self.settings.max_file_size:
+                size_mb = file_size / (1024 * 1024)
+                limit_mb = self.settings.max_file_size / (1024 * 1024)
+                raise gr.Error(
+                    f"❌ Security Error: File '{Path(file_path).name}' is {size_mb:.1f}MB, "
+                    f"which exceeds the {limit_mb:.0f}MB size limit. Please upload a smaller file.",
+                )
+
+            # Check file type
+            if file_ext not in self.settings.supported_file_types:
+                supported_types = ", ".join(self.settings.supported_file_types)
+                raise gr.Error(
+                    f"❌ Security Error: File '{Path(file_path).name}' has unsupported type '{file_ext}'. "
+                    f"Supported types: {supported_types}",
+                )
+
+    def _validate_text_input(self, text_input: str) -> None:
+        """
+        Validate text input for length and security.
+
+        Args:
+            text_input: User text input
+
+        Raises:
+            gr.Error: If text input exceeds limits
+        """
+        if text_input and len(text_input) > 50000:  # 50KB text limit
+            raise gr.Error(
+                f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
+                f"Maximum 50,000 characters allowed. Please shorten your text.",
+            )
+
     def _is_safe_mime_type(self, mime_type: str, file_ext: str) -> bool:
         """
         Validate that the MIME type matches the expected file extension.
@@ -1376,20 +1435,38 @@ class MultiJourneyInterface(LoggerMixin):
                 with open(file_path, encoding="utf-8", errors="ignore") as file:
                     content_chunks = []
                     bytes_read = 0
+                    # Reserve space for truncation message
+                    truncation_msg = f"\n\n[FILE TRUNCATED - Original size: {file_size / (1024 * 1024):.1f}MB, showing first 5MB for memory safety]"
+                    msg_size = len(truncation_msg.encode("utf-8"))
+                    effective_limit = memory_limit - msg_size
 
-                    while bytes_read < memory_limit:
+                    current_content_size = 0
+                    while current_content_size < effective_limit:
                         chunk = file.read(chunk_size)
                         if not chunk:
                             break
+
+                        # Check if adding this chunk would exceed limit
+                        chunk_size_bytes = len(chunk.encode("utf-8"))
+                        if current_content_size + chunk_size_bytes > effective_limit:
+                            # Take only part of the chunk that fits
+                            remaining_bytes = effective_limit - current_content_size
+                            # Approximate character count that fits in remaining bytes
+                            partial_chars = int(remaining_bytes / (chunk_size_bytes / len(chunk)))
+                            chunk = chunk[:partial_chars]
+
                         content_chunks.append(chunk)
-                        bytes_read += len(chunk.encode("utf-8"))
+                        current_content_size += len(chunk.encode("utf-8"))
+
+                        # If we've hit our limit, stop
+                        if current_content_size >= effective_limit:
+                            break
 
                     content = "".join(content_chunks)
 
                     # Add truncation notice if file was truncated
-                    if bytes_read >= memory_limit:
-                        file_mb = file_size / (1024 * 1024)
-                        content += f"\n\n[FILE TRUNCATED - Original size: {file_mb:.1f}MB, showing first 5MB for memory safety]"
+                    if current_content_size >= effective_limit:
+                        content += truncation_msg
 
                     return content
             else:
