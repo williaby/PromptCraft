@@ -223,10 +223,16 @@ class QueryCounselor:
 
         # Initialize MCP client or HybridRouter
         if mcp_client is not None:
-            # Use explicitly provided MCP client (for testing)
+            # Use explicitly provided MCP client
             self.mcp_client = mcp_client
-            self.model_registry = None
-            self.hybrid_routing_enabled = False
+            # Check if the provided client is a HybridRouter
+            if isinstance(mcp_client, HybridRouter):
+                self.model_registry = get_model_registry()
+                self.hybrid_routing_enabled = True
+            else:
+                # Regular MCP client (for testing)
+                self.model_registry = None
+                self.hybrid_routing_enabled = False
         # Create HybridRouter for production use if enabled
         elif enable_hybrid_routing:
             self.mcp_client = HybridRouter(

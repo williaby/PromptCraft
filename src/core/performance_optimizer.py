@@ -424,7 +424,8 @@ def cache_vector_search(func: F) -> F:
                 # Create hash from embeddings and parameters
                 embedding_str = str(params.embeddings[0][:10])  # First 10 dimensions
                 strategy_str = params.strategy.value if hasattr(params.strategy, "value") else str(params.strategy)
-                cache_key = f"vector_search:{hashlib.sha256(embedding_str.encode()).hexdigest()}:{params.limit}:{params.collection}:{strategy_str}"
+                filters_str = str(sorted(params.filters.items())) if params.filters else "no_filters"
+                cache_key = f"vector_search:{hashlib.sha256(embedding_str.encode()).hexdigest()}:{params.limit}:{params.collection}:{strategy_str}:{hashlib.sha256(filters_str.encode()).hexdigest()}"
             else:
                 return await func(*args, **kwargs)
 

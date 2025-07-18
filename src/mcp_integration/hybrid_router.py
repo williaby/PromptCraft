@@ -608,6 +608,15 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                         fallback_available=True,
                         request_id=request_id,
                     )
+            else:
+                # Route to MCP for remaining traffic
+                return RoutingDecision(
+                    service="mcp",
+                    reason=f"Gradual rollout: {hash_value} >= {self.openrouter_traffic_percentage}%",
+                    confidence=0.9,
+                    fallback_available=self._is_openrouter_available(),
+                    request_id=request_id,
+                )
 
         # Apply routing strategy
         if self.strategy == RoutingStrategy.OPENROUTER_PRIMARY:

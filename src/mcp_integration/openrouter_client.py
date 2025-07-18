@@ -88,6 +88,9 @@ MAX_TOKENS_PER_MINUTE = 1000000
 MAX_REQUESTS_PER_MINUTE = 100
 MAX_REQUESTS_PER_HOUR = 50
 FALLBACK_RETRY_LIMIT = 10
+
+# Query validation constants
+MAX_QUERY_LENGTH = 50000  # 50K character limit for query validation
 OPENROUTER_CHAT_ENDPOINT = "/chat/completions"
 DEFAULT_SITE_URL = "https://promptcraft.io"
 DEFAULT_APP_NAME = "PromptCraft-Hybrid"
@@ -340,9 +343,9 @@ class OpenRouterClient(MCPClientInterface):
             sanitized_query = query.strip()
 
             # Basic security validations
-            if len(query) > MAX_TOKENS_PER_MINUTE:  # 50K character limit
+            if len(query) > MAX_QUERY_LENGTH:  # 50K character limit
                 potential_issues.append("Query length exceeds recommended limit")
-                sanitized_query = query[:MAX_TOKENS_PER_MINUTE]
+                sanitized_query = query[:MAX_QUERY_LENGTH]
 
             # Check for potential injection patterns
             suspicious_patterns = [
