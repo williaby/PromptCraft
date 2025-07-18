@@ -225,7 +225,7 @@ class MockQueryCounselor:
 @dataclass
 class HydeProcessorConfig:
     """Configuration for HydeProcessor initialization."""
-    
+
     vector_store: "AbstractVectorStore | None" = None
     query_counselor: "MockQueryCounselor | None" = None
     specificity_threshold_high: float | None = None

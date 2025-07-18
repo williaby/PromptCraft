@@ -52,7 +52,7 @@ from src.utils.circuit_breaker import (
     CircuitBreakerState,
     get_circuit_breaker,
 )
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 
 # Routing constants
 MAX_TRAFFIC_PERCENTAGE = 100  # Maximum traffic percentage for rollout
@@ -146,7 +146,7 @@ class RoutingMetrics:
         }
 
 
-class HybridRouter(MCPClientInterface, LoggerMixin):
+class HybridRouter(MCPClientInterface, LoggingMixin):
     """
     Hybrid Router for intelligent routing between OpenRouter and MCP services.
 

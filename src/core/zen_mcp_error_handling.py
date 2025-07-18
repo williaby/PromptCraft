@@ -47,7 +47,7 @@ import time
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 from src.utils.resilience import (
     CircuitBreakerConfig,
     CircuitBreakerOpenError,
@@ -145,7 +145,7 @@ class ZenMCPRateLimitError(ZenMCPError):
     """Exception raised for rate limit errors."""
 
 
-class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
+class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggingMixin):
     """Circuit breaker resilience strategy for Zen MCP integration."""
 
     def __init__(
@@ -311,7 +311,7 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
             self.state = CircuitBreakerState.OPEN
 
 
-class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
+class RetryStrategy(ResilienceStrategy[Any], LoggingMixin):
     """Retry resilience strategy with exponential backoff and secure jitter."""
 
     def __init__(
@@ -457,7 +457,7 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         )
 
 
-class MockZenMCPClient(LoggerMixin):
+class MockZenMCPClient(LoggingMixin):
     """Mock Zen MCP client for testing error handling with secure randomness."""
 
     def __init__(
@@ -509,7 +509,7 @@ class MockZenMCPClient(LoggerMixin):
         return response
 
 
-class ZenMCPIntegration(LoggerMixin):
+class ZenMCPIntegration(LoggingMixin):
     """High-level integration layer for Zen MCP with modular resilience."""
 
     def __init__(

@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class MCPClientError(Exception):
     """Base exception for MCP client operations."""
 
 
-class MCPClient(LoggerMixin):
+class MCPClient(LoggingMixin):
     """Client for communicating with MCP servers.
 
     Provides connection management, message serialization, and error handling

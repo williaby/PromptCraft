@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 
 from .client import MCPClient
 from .config_manager import MCPConfigurationManager
@@ -44,7 +44,7 @@ class ExecutionResult:
         }
 
 
-class ParallelSubagentExecutor(LoggerMixin):
+class ParallelSubagentExecutor(LoggingMixin):
     """Executor for running subagents in parallel via MCP servers.
 
     Coordinates execution of multiple subagents concurrently, manages resource allocation,

@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class MCPConfigurationBundle(BaseModel):
         allow_population_by_field_name = True
 
 
-class MCPConfigurationManager(LoggerMixin):
+class MCPConfigurationManager(LoggingMixin):
     """Manager for MCP server configuration and validation.
 
     Handles loading, validation, and management of MCP server configurations,

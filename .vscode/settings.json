@@ -22,16 +22,12 @@
         "--rootdir=${workspaceFolder}"
     ],
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
-    "python.testing.pytest.path": ["poetry", "run", "pytest"],
+    "python.testing.pytest.path": "poetry run pytest",
     "python.defaultInterpreterPath": ".venv/bin/python",
     "python.testing.cwd": "${workspaceFolder}",
     "python.envFile": "${workspaceFolder}/.env",
     "python.analysis.extraPaths": ["src"],
     "python.analysis.autoImportCompletions": true,
-    "python.testing.pytestPaths": [
-        "tests/examples",
-        "tests/unit/utils",
-        "tests/unit",
-        "tests"
-    ]
+    "python.testing.debugPort": 3000,
+    "python.testing.pytest.useSystemPytest": false
 }

@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from src.utils.logging_mixin import LoggerMixin
+from src.utils.logging_mixin import LoggingMixin
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class DockerMCPError(Exception):
     """Exception for Docker MCP Toolkit operations."""
 
 
-class DockerMCPClient(LoggerMixin):
+class DockerMCPClient(LoggingMixin):
     """Client for Docker MCP Toolkit integration.
 
     Provides seamless access to MCP servers deployed via Docker Desktop's
@@ -185,7 +185,9 @@ class DockerMCPClient(LoggerMixin):
             Health status of Docker MCP Toolkit integration
         """
         available_servers = len(self.docker_servers)
-        authenticated_servers = len([name for name, auth in self.authenticated_services.items() if auth and name in self.docker_servers])
+        authenticated_servers = len(
+            [name for name, auth in self.authenticated_services.items() if auth and name in self.docker_servers]
+        )
 
         return {
             "docker_mcp_available": available_servers > 0,

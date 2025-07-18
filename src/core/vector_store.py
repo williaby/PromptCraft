@@ -378,7 +378,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
     @cache_vector_search
     @monitor_performance("mock_vector_search")
     async def search(self, parameters: SearchParameters) -> list[SearchResult]:
-        """Perform mock vector search with realistic behavior."""        
+        """Perform mock vector search with realistic behavior."""
         if not await self._handle_circuit_breaker("search"):
             return []
 

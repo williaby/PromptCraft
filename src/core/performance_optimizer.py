@@ -233,7 +233,7 @@ class PerformanceMonitor:
         **kwargs: Any,
     ) -> None:
         """Complete operation tracking.
-        
+
         Args:
             metric: Performance metrics object to complete
             **kwargs: Additional parameters including:
