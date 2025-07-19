@@ -77,6 +77,7 @@ pytest-env = ">=1.1.3"
 pytest-mock = ">=3.12.0"
 pytest-timeout = ">=2.2.0"
 pytest-xdist = ">=3.5.0"
+pytest-rerunfailures = ">=12.0"
 hypothesis = ">=6.98.9"
 faker = ">=37.0.0"
 black = "24.10.0"
@@ -274,23 +275,7 @@ warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = """
--ra
---strict-markers
---strict-config
---cov=src
---cov-branch
---cov-report=term-missing:skip-covered
---cov-report=html
---cov-report=xml
---junitxml=junit.xml
--o junit_family=xunit2
--o junit_suite_name=PromptCraft
--o junit_logging=no
--o junit_log_passing_tests=false
---tb=short
---cov-fail-under=80
-"""
+addopts = "-ra --strict-markers --strict-config --cov=src --cov-branch --cov-report=term-missing:skip-covered --cov-report=html --cov-report=xml --junitxml=junit.xml -o junit_family=xunit2 -o junit_suite_name=PromptCraft -o junit_logging=no -o junit_log_passing_tests=false -m 'not slow' --tb=short --cov-fail-under=80 --reruns=2 --reruns-delay=1"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
@@ -303,15 +288,29 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",  # Suppress Pact Python v2->v3 migration warnings globally
 ]
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "performance: marks tests as performance tests",
-    "security: marks tests as security tests",
-    "stress: marks tests as stress tests",
-    "contract: marks tests as contract tests (require external services)",
-    "fast: marks tests as fast-running for development cycles",
-    "smoke: marks tests as smoke tests for basic functionality validation",
+    # Primary execution control markers
+    "slow: genuinely slow tests (excluded from CI/CD and local development)",
+    "fast: development cycle tests (for IDE integration)",
+    
+    # Test pyramid layer taxonomy (for analysis and metrics)
+    "unit: unit-level tests (pure functions/classes; no I/O, no network) - DEFAULT",
+    "component: component-level tests (single bounded context incl. DB/container mocks)",
+    "contract: consumer-driven contract tests (Pact consumer/provider verifications)",
+    "integration: cross-service integration tests (multi-service / real DB / message bus)",
+    "e2e: user-facing end-to-end tests (full user journey via HTTP/UI driver)",
+    
+    # Non-functional test types (for analysis and selective execution)
+    "perf: performance/load tests (benchmarks, stress, timing assertions)",
+    "chaos: fault-injection/resilience tests (chaos engineering, fault tolerance)",
+    "security: runtime security assertions (Bandit assertions, penetration tests)",
+    
+    # Legacy compatibility markers
+    "performance: legacy performance marker (mapped to 'perf' in analysis)",
+    "stress: legacy stress marker (mapped to 'perf' in analysis)",
+    
+    # Execution behavior markers
+    "smoke: basic functionality validation tests",
+    "no_parallel: tests that should not run in parallel",
 ]
 
 # Test execution profiles for different scenarios
@@ -392,3 +391,22 @@ skips = ["B101", "B404"]
 
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"]
+
+[tool.pytest.benchmark]
+# Benchmark configuration
+min_rounds = 5
+max_time = 1.0
+min_time = 0.000005
+calibration_precision = 10
+warmup = false
+warmup_iterations = 100000
+disable_gc = false
+timer = "time.perf_counter"
+sort = "mean"
+columns = "min, max, mean, stddev, median, iqr, outliers, ops, rounds"
+histogram = true
+save_data = true
+autosave = true
+save = ".benchmarks"
+compare = "0001"
+compare_fail = ["min:5%", "max:5%", "mean:5%", "median:5%", "stddev:5%"]
