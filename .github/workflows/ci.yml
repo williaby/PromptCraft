@@ -223,7 +223,7 @@ jobs:
   test-matrix:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15  # Reduced from 25 due to tiered testing optimization
     needs: setup
     strategy:
       matrix:
@@ -286,16 +286,46 @@ jobs:
         run: |
           poetry run mypy --install-types --non-interactive src/ || true
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (tiered approach)
         run: |
-          poetry run pytest -v \
-            --cov=src \
-            --cov-report=xml \
-            --cov-report=term-missing \
-            --junitxml=junit-${{ matrix.python-version }}.xml \
-            -o junit_family=xunit2 \
-            -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
-            --tb=short
+          # Use tiered testing based on event type for performance optimization
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "🚀 Running PR validation tests (excluding performance/stress)"
+            poetry run pytest -v \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --junitxml=junit-${{ matrix.python-version }}.xml \
+              -o junit_family=xunit2 \
+              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
+              --tb=short \
+              --maxfail=10 \
+              -m "not performance and not stress"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "🔍 Running full test suite (including performance tests)"
+            poetry run pytest -v \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --junitxml=junit-${{ matrix.python-version }}.xml \
+              -o junit_family=xunit2 \
+              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
+              --tb=short \
+              --maxfail=15 \
+              --durations=20
+          else
+            echo "⚡ Running fast validation tests"
+            poetry run pytest -v \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --junitxml=junit-${{ matrix.python-version }}.xml \
+              -o junit_family=xunit2 \
+              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
+              --tb=short \
+              --maxfail=5 \
+              -m "not performance and not stress and not contract"
+          fi
 
       - name: Run type checking
         run: poetry run mypy src
@@ -414,6 +444,68 @@ jobs:
             junit-3.13.xml
             coverage.xml
         continue-on-error: true
+
+  # Performance testing (runs only on main branch or scheduled)
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: setup
+    if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: deps-${{ runner.os }}-3.11-${{ needs.setup.outputs.poetry-lock-hash }}
+
+      - name: Install dependencies
+        run: |
+          poetry install --sync
+
+      - name: Start Redis service for performance testing
+        run: |
+          sudo apt-get update && sudo apt-get install -y redis-server
+          sudo systemctl start redis-server
+
+      - name: Run performance tests only
+        run: |
+          echo "🏃‍♂️ Running performance and stress tests"
+          poetry run pytest tests/performance/ -v \
+            --junitxml=junit-performance.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Performance \
+            --tb=short \
+            --durations=20 \
+            -m "performance or stress"
+
+      - name: Upload performance test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-results
+          path: |
+            junit-performance.xml
 
   # Docker build (only after successful tests)
   build-docker:

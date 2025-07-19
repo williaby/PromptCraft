@@ -310,6 +310,46 @@ markers = [
     "security: marks tests as security tests",
     "stress: marks tests as stress tests",
     "contract: marks tests as contract tests (require external services)",
+    "fast: marks tests as fast-running for development cycles",
+    "smoke: marks tests as smoke tests for basic functionality validation",
+]
+
+# Test execution profiles for different scenarios
+[tool.pytest.profiles]
+# Fast development loop (< 1 minute)
+fast = [
+    "tests/unit/",
+    "tests/auth/",
+    "-m", "not slow and not performance and not stress",
+    "--maxfail=3",
+    "--tb=short"
+]
+
+# Pre-commit validation (< 2 minutes)
+pre-commit = [
+    "tests/unit/",
+    "tests/auth/",
+    "tests/integration/",
+    "-m", "not performance and not stress and not contract",
+    "--maxfail=5"
+]
+
+# PR validation (< 5 minutes)
+pr = [
+    "-m", "not performance and not stress",
+    "--maxfail=10"
+]
+
+# Full suite (scheduled/main branch)
+full = [
+    "--durations=20"
+]
+
+# Performance tests only
+performance = [
+    "tests/performance/",
+    "-m", "performance or stress",
+    "--tb=line"
 ]
 
 [tool.coverage.run]
