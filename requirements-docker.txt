@@ -645,7 +645,7 @@ markupsafe==3.0.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:f3818cb119498c0678015754eba762e0d61e5b52d34c8b13d770f0719f7b1d79 \
     --hash=sha256:f8b3d067f2e40fe93e1ccdd6b2e1d16c43140e76f02fb1319a05cf2b79d99430 \
     --hash=sha256:fcabf5ff6eea076f859677f5f0b6b5c1a51e70a376b0579e0eadef8db48c6b50
-mcp==1.0.0 ; python_version >= "3.11" and python_version < "3.13" \
+mcp==1.10.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:bbe70ffa3341cd4da78b5eb504958355c68381fb29971471cea1e642a2af5b8a \
     --hash=sha256:dba51ce0b5c6a80e25576f606760c49a91ee90210fed805b530ca165d3bbc9b7
 mdurl==0.1.2 ; python_version >= "3.11" and python_version < "3.13" \
