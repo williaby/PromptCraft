@@ -8,6 +8,8 @@ on:
   schedule:
     # Run security checks daily
     - cron: '0 0 * * *'
+    # Run mutation tests weekly (Sundays at midnight)
+    - cron: '0 0 * * 0'
 
 permissions:
   contents: read
@@ -286,46 +288,84 @@ jobs:
         run: |
           poetry run mypy --install-types --non-interactive src/ || true
 
-      - name: Run tests with coverage (tiered approach)
+      - name: Run unit tests with coverage
         run: |
-          # Use tiered testing based on event type for performance optimization
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "🚀 Running PR validation tests (excluding performance/stress)"
-            poetry run pytest -v \
-              --cov=src \
-              --cov-report=xml \
-              --cov-report=term-missing \
-              --junitxml=junit-${{ matrix.python-version }}.xml \
-              -o junit_family=xunit2 \
-              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
-              --tb=short \
-              --maxfail=10 \
-              -m "not performance and not stress"
-          elif [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event_name }}" == "schedule" ]]; then
-            echo "🔍 Running full test suite (including performance tests)"
-            poetry run pytest -v \
-              --cov=src \
-              --cov-report=xml \
-              --cov-report=term-missing \
-              --junitxml=junit-${{ matrix.python-version }}.xml \
-              -o junit_family=xunit2 \
-              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
-              --tb=short \
-              --maxfail=15 \
-              --durations=20
-          else
-            echo "⚡ Running fast validation tests"
-            poetry run pytest -v \
-              --cov=src \
-              --cov-report=xml \
-              --cov-report=term-missing \
-              --junitxml=junit-${{ matrix.python-version }}.xml \
-              -o junit_family=xunit2 \
-              -o junit_suite_name=PromptCraft-${{ matrix.python-version }} \
-              --tb=short \
-              --maxfail=5 \
-              -m "not performance and not stress and not contract"
-          fi
+          echo "🧪 Running unit tests"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-unit.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-unit-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Unit-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=10 \
+            -m "unit" \
+            tests/unit/
+
+      - name: Run integration tests with coverage
+        run: |
+          echo "🔗 Running integration tests"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-integration.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-integration-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Integration-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=8 \
+            -m "integration" \
+            tests/integration/
+
+      - name: Run auth tests with coverage
+        run: |
+          echo "🔐 Running authentication tests"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-auth.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-auth-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Auth-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=5 \
+            -m "auth" \
+            tests/auth/
+
+      - name: Run performance tests with coverage (main branch only)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+        run: |
+          echo "🏃‍♂️ Running performance tests"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-performance.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-performance-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Performance-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=5 \
+            --durations=20 \
+            -m "performance" \
+            tests/performance/
+
+      - name: Run stress tests with coverage (main branch only)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+        run: |
+          echo "💪 Running stress tests"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-stress.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-stress-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Stress-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=3 \
+            --durations=20 \
+            -m "stress" \
+            tests/performance/
 
       - name: Run type checking
         run: poetry run mypy src
@@ -341,17 +381,70 @@ jobs:
         with:
           name: test-results-${{ matrix.python-version }}
           path: |
-            junit-${{ matrix.python-version }}.xml
-            coverage.xml
+            junit-*-${{ matrix.python-version }}.xml
+            coverage-*.xml
 
-      - name: Upload coverage to Codecov
+      - name: Upload unit test coverage to Codecov
         uses: codecov/codecov-action@v4
         if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
         with:
-          file: ./coverage.xml
+          file: ./coverage-unit.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: python-${{ matrix.python-version }}
+          flags: unit
+          name: Unit Tests (Python ${{ matrix.python-version }})
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload integration test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-integration.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: integration
+          name: Integration Tests (Python ${{ matrix.python-version }})
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload auth test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-auth.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: auth
+          name: Auth Tests (Python ${{ matrix.python-version }})
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload performance test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+        with:
+          file: ./coverage-performance.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: performance
+          name: Performance Tests (Python ${{ matrix.python-version }})
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload stress test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+        with:
+          file: ./coverage-stress.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: stress
+          name: Stress Tests (Python ${{ matrix.python-version }})
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -420,7 +513,7 @@ jobs:
               print('✅ Main imports successful')
           except Exception as e:
               print(f'⚠️ Import issues: {e}')
-              
+
           try:
               import pytest
               print('✅ Test framework imports successful')
@@ -490,14 +583,57 @@ jobs:
 
       - name: Run performance tests only
         run: |
-          echo "🏃‍♂️ Running performance and stress tests"
+          echo "🏃‍♂️ Running performance tests"
           poetry run pytest tests/performance/ -v \
+            --cov=src \
+            --cov-report=xml:coverage-performance-dedicated.xml \
+            --cov-report=term-missing \
             --junitxml=junit-performance.xml \
             -o junit_family=xunit2 \
             -o junit_suite_name=PromptCraft-Performance \
             --tb=short \
             --durations=20 \
-            -m "performance or stress"
+            -m "performance"
+
+      - name: Run stress tests only
+        run: |
+          echo "💪 Running stress tests"
+          poetry run pytest tests/performance/ -v \
+            --cov=src \
+            --cov-report=xml:coverage-stress-dedicated.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-stress.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Stress \
+            --tb=short \
+            --durations=20 \
+            -m "stress"
+
+      - name: Upload performance test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-performance-dedicated.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: performance
+          name: Performance Tests (Dedicated Job)
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload stress test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-stress-dedicated.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: stress
+          name: Stress Tests (Dedicated Job)
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload performance test results
         if: always()
@@ -506,6 +642,84 @@ jobs:
           name: performance-test-results
           path: |
             junit-performance.xml
+            junit-stress.xml
+            coverage-performance-dedicated.xml
+            coverage-stress-dedicated.xml
+
+  # Mutation testing (runs weekly on schedule)
+  mutation-tests:
+    name: Mutation Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: setup
+    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 * * 0')  # Weekly Sunday
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache Poetry installation
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pypoetry
+          key: poetry-${{ env.POETRY_VERSION }}-${{ runner.os }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: deps-${{ runner.os }}-3.11-${{ needs.setup.outputs.poetry-lock-hash }}
+
+      - name: Install dependencies and mutmut
+        run: |
+          poetry install --sync
+          poetry add --group dev mutmut
+
+      - name: Run mutation tests
+        run: |
+          echo "🧬 Running mutation tests"
+          # Run mutmut on core components only (limited scope for CI performance)
+          poetry run mutmut run --paths-to-mutate=src/core/,src/agents/,src/config/ \
+            --tests-dir=tests/unit/ \
+            --runner="python -m pytest -x" \
+            --use-coverage || echo "Mutation testing completed with findings"
+
+          # Generate mutation test report
+          poetry run mutmut results --format=json > mutation-report.json || true
+          poetry run mutmut results > mutation-report.txt || true
+
+      - name: Upload mutation coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./mutation-report.json
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: mutation
+          name: Mutation Tests
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload mutation test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-test-results
+          path: |
+            mutation-report.json
+            mutation-report.txt
+        continue-on-error: true
 
   # Docker build (only after successful tests)
   build-docker:

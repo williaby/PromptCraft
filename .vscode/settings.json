@@ -19,7 +19,10 @@
         "tests",
         "-v",
         "--tb=short",
-        "--rootdir=${workspaceFolder}"
+        "--rootdir=${workspaceFolder}",
+        "--cov=src",
+        "--cov-report=term-missing",
+        "--cov-report=html"
     ],
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "python.testing.pytest.path": ["poetry", "run", "pytest"],
@@ -33,5 +36,11 @@
         "tests/unit/utils",
         "tests/unit",
         "tests"
+    ],
+    "python.testing.coverageEnabled": true,
+    "python.testing.coverageArgs": [
+        "--cov=src",
+        "--cov-report=html",
+        "--cov-report=term"
     ]
 }
