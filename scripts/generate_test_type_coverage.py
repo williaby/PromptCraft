@@ -81,7 +81,8 @@ def main():
 
             # Insert after the <h1> tag
             content = content.replace(
-                "<h1>Coverage report</h1>", f"<h1>Coverage report: {description}</h1>{custom_header}",
+                "<h1>Coverage report</h1>",
+                f"<h1>Coverage report: {description}</h1>{custom_header}",
             )
 
             index_file.write_text(content)
@@ -133,7 +134,8 @@ def main():
         </div>
         """
         content = content.replace(
-            "<h1>Coverage report</h1>", f"<h1>Coverage report: All Tests Combined</h1>{custom_header}",
+            "<h1>Coverage report</h1>",
+            f"<h1>Coverage report: All Tests Combined</h1>{custom_header}",
         )
         combined_index.write_text(content)
         print("✅ Combined HTML report: htmlcov-by-type/combined/index.html")

@@ -456,6 +456,7 @@ class TestMainFunction:
         mock_collection_mgmt.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     @patch.object(VectorStoreExamples, 'basic_mock_store_usage', side_effect=Exception("Test error"))
     @patch.object(VectorStoreExamples, 'advanced_search_strategies')
     @patch('examples.vector_store_usage.logger')

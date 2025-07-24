@@ -162,8 +162,9 @@ class CreateProcessor:
 
         # Simple pattern matching for context extraction
         role_patterns = [
-            r"(?:you are|act as|role:|as a) (.*?)(?:\.|,|$)",
-            r"(?:assume the role of|playing the role of) (.*?)(?:\.|,|$)",
+            r"(?:you are|act as|role:)\s*(?:a\s+)?(.*?)(?:\s+with|\.|,|$)",
+            r"(?:as a)\s+(.*?)(?:\s+with|\.|,|$)",
+            r"(?:assume the role of|playing the role of)\s+(.*?)(?:\s+with|\.|,|$)",
         ]
 
         for pattern in role_patterns:

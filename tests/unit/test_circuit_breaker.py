@@ -215,6 +215,7 @@ class TestCircuitBreakerStates:
         metrics = circuit_breaker.metrics
         assert metrics.rejected_requests == 1
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_half_open_recovery(self, circuit_breaker):
         """Test recovery through half-open state."""

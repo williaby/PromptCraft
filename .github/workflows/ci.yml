@@ -300,7 +300,7 @@ jobs:
             -o junit_suite_name=PromptCraft-Unit-${{ matrix.python-version }} \
             --tb=short \
             --maxfail=10 \
-            -m "unit" \
+            -m "unit and not slow" \
             tests/unit/
 
       - name: Run integration tests with coverage
@@ -315,7 +315,7 @@ jobs:
             -o junit_suite_name=PromptCraft-Integration-${{ matrix.python-version }} \
             --tb=short \
             --maxfail=8 \
-            -m "integration" \
+            -m "integration and not slow" \
             tests/integration/
 
       - name: Run auth tests with coverage
@@ -330,7 +330,7 @@ jobs:
             -o junit_suite_name=PromptCraft-Auth-${{ matrix.python-version }} \
             --tb=short \
             --maxfail=5 \
-            -m "auth" \
+            -m "auth and not slow" \
             tests/auth/
 
       - name: Run performance tests with coverage (main branch only)

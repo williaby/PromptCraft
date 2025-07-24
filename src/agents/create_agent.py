@@ -155,5 +155,5 @@ class CreateAgent:
             integrate with Zen MCP Server and knowledge base per development.md.
         """
         # Placeholder implementation - follows development.md 2.3 Focus on Unique Value
-        pref_str = f"\nPreferences: {preferences}" if preferences else ""
+        pref_str = f"\nPreferences: {preferences}" if preferences is not None else ""
         return f"# Generated C.R.E.A.T.E. Prompt\n\nAgent: {self.agent_id}\nContext: {context}{pref_str}"

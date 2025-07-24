@@ -5,24 +5,16 @@ This version addresses file organization issues by putting all generated files i
 """
 
 import os
-import subprocess
-import tempfile
-from pathlib import Path
 import shutil
+import subprocess
+from pathlib import Path
 
 
 def run_command(cmd, description, cwd=None):
     """Run a command and handle output."""
     print(f"🔍 {description}...")
     try:
-        result = subprocess.run(
-            cmd, 
-            check=False, 
-            shell=True, 
-            capture_output=True, 
-            text=True,
-            cwd=cwd
-        )
+        result = subprocess.run(cmd, check=False, shell=True, capture_output=True, text=True, cwd=cwd)
         if result.returncode != 0:
             print(f"⚠️  {description} completed with warnings")
             if result.stderr:
@@ -38,55 +30,50 @@ def run_command(cmd, description, cwd=None):
 def setup_output_directories():
     """Create organized output directories."""
     directories = {
-        'reports': Path('reports'),
-        'coverage': Path('reports/coverage'),
-        'coverage_by_type': Path('reports/coverage/by-type'),
-        'temp': Path('reports/temp'),
+        "reports": Path("reports"),
+        "coverage": Path("reports/coverage"),
+        "coverage_by_type": Path("reports/coverage/by-type"),
+        "temp": Path("reports/temp"),
     }
-    
+
     for name, path in directories.items():
         path.mkdir(parents=True, exist_ok=True)
         print(f"📁 Created directory: {path}")
-    
+
     return directories
 
 
 def cleanup_root_files():
     """Clean up any files that might be created at root level."""
-    cleanup_patterns = [
-        'coverage-*.xml',
-        'junit-*.xml', 
-        'bandit-*.json',
-        '.coverage.*'
-    ]
-    
-    root = Path('.')
+    cleanup_patterns = ["coverage-*.xml", "junit-*.xml", "bandit-*.json", ".coverage.*"]
+
+    root = Path()
     cleaned_files = []
-    
+
     for pattern in cleanup_patterns:
         for file in root.glob(pattern):
             if file.is_file():
                 # Move to temp directory
-                temp_dir = Path('reports/temp')
+                temp_dir = Path("reports/temp")
                 temp_dir.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(file), temp_dir / file.name)
                 cleaned_files.append(file.name)
-    
+
     if cleaned_files:
         print(f"🧹 Moved {len(cleaned_files)} files to reports/temp/")
-    
+
     return cleaned_files
 
 
 def generate_test_type_coverage(test_type, path, marker, description, directories):
     """Generate coverage for a specific test type with organized output."""
     print(f"\n📊 Generating {description} coverage...")
-    
+
     # Use organized paths - consistent with conftest.py structure
-    html_output = directories['coverage_by_type'] / test_type
-    xml_output = directories['coverage'] / f"coverage-{test_type}.xml"
-    junit_output = directories['temp'] / f"junit-{test_type}.xml"
-    
+    html_output = directories["coverage_by_type"] / test_type
+    xml_output = directories["coverage"] / f"coverage-{test_type}.xml"
+    junit_output = directories["temp"] / f"junit-{test_type}.xml"
+
     # Build command with organized output paths
     cmd = f"""poetry run pytest \
         --cov=src \
@@ -98,27 +85,26 @@ def generate_test_type_coverage(test_type, path, marker, description, directorie
         --quiet \
         -m "{marker}" \
         {path}"""
-    
+
     success = run_command(cmd, f"{description} coverage generation")
-    
+
     if success and (html_output / "index.html").exists():
         # Add custom header to HTML report
         customize_html_report(html_output / "index.html", description, marker, path)
         print(f"✅ {description} HTML report: {html_output}/index.html")
-        
+
         # Extract coverage data
         coverage_data = extract_coverage_data(xml_output)
         return coverage_data
-    else:
-        print(f"❌ Failed to generate {description} HTML report")
-        return None
+    print(f"❌ Failed to generate {description} HTML report")
+    return None
 
 
 def customize_html_report(html_file, description, marker, path):
     """Add custom header with test type information to HTML report."""
     try:
         content = html_file.read_text()
-        
+
         custom_header = f"""
         <div style="background: #e6f3ff; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #007acc;">
             <h3 style="margin: 0 0 10px 0; color: #333;">📊 {description} Coverage Report</h3>
@@ -132,14 +118,11 @@ def customize_html_report(html_file, description, marker, path):
             </p>
         </div>
         """
-        
-        content = content.replace(
-            "<h1>Coverage report</h1>",
-            f"<h1>Coverage report: {description}</h1>{custom_header}"
-        )
-        
+
+        content = content.replace("<h1>Coverage report</h1>", f"<h1>Coverage report: {description}</h1>{custom_header}")
+
         html_file.write_text(content)
-        
+
     except Exception as e:
         print(f"⚠️  Could not customize {description} report: {e}")
 
@@ -148,13 +131,13 @@ def extract_coverage_data(xml_file):
     """Extract coverage percentage from XML report."""
     try:
         import xml.etree.ElementTree as ET
-        
+
         if not xml_file.exists():
             return None
-            
+
         tree = ET.parse(xml_file)
         root = tree.getroot()
-        
+
         return {
             "percentage": float(root.attrib["line-rate"]) * 100,
             "covered": int(root.attrib["lines-covered"]),
@@ -253,8 +236,8 @@ def create_navigation_index(directories, coverage_summary):
     </body>
     </html>
     """
-    
-    index_file = directories['coverage_by_type'] / ".." / "index.html"
+
+    index_file = directories["coverage_by_type"] / ".." / "index.html"
     index_file.write_text(html_content)
     print(f"✅ Navigation index created: {index_file}")
 
@@ -263,18 +246,20 @@ def generate_coverage_cards(coverage_summary):
     """Generate HTML for coverage summary cards."""
     if not coverage_summary:
         return "<p>No coverage data available</p>"
-    
+
     cards = []
     for test_type, data in coverage_summary.items():
         if data:
-            cards.append(f"""
+            cards.append(
+                f"""
                 <div class="coverage-item">
                     <h4>{test_type.capitalize()}</h4>
                     <p><strong>{data['percentage']:.1f}%</strong></p>
                     <small>{data['covered']}/{data['total']} lines</small>
                 </div>
-            """)
-    
+            """,
+            )
+
     return "".join(cards)
 
 
@@ -282,16 +267,16 @@ def main():
     """Generate organized coverage reports for each test type."""
     print("🔍 Generating organized HTML coverage reports by test type")
     print("=" * 60)
-    
+
     # Ensure we're in project root
     os.chdir(Path(__file__).parent.parent)
-    
-    # Set up organized directory structure  
+
+    # Set up organized directory structure
     directories = setup_output_directories()
-    
+
     # Clean up any existing root-level files
     cleanup_root_files()
-    
+
     # Test configurations: (name, path, marker, description)
     test_configs = [
         ("unit", "tests/unit/", "unit", "Unit Tests"),
@@ -300,41 +285,41 @@ def main():
         ("performance", "tests/performance/", "performance", "Performance Tests"),
         ("stress", "tests/performance/", "stress", "Stress Tests"),
     ]
-    
+
     coverage_summary = {}
-    
+
     # Generate coverage for each test type
     for name, path, marker, description in test_configs:
         coverage_data = generate_test_type_coverage(name, path, marker, description, directories)
         if coverage_data:
             coverage_summary[name] = coverage_data
-    
+
     # Create organized navigation index
     create_navigation_index(directories, coverage_summary)
-    
+
     # Final cleanup of any stray files
-    final_cleanup = cleanup_root_files()
-    
+    cleanup_root_files()
+
     # Print summary
     print("\n📈 Coverage Summary by Test Type")
     print("=" * 40)
-    
+
     for name, data in coverage_summary.items():
         if data:
             print(f"{name.capitalize():15} {data['percentage']:6.2f}% ({data['covered']}/{data['total']} lines)")
-    
+
     print("\n🎉 Organized coverage reports generated successfully!")
     print("📁 Reports structure:")
     print("  • HTML Reports: reports/coverage/by-type/")
     print("  • XML Coverage: reports/coverage/")
     print("  • Temp Files: reports/temp/")
     print("  • Navigation: reports/coverage/index.html")
-    
-    print(f"\n🧹 Organization improvements:")
-    print(f"  • All artifacts properly organized in reports/ directory")
-    print(f"  • Root level cleaned of coverage/junit/bandit files")
-    print(f"  • Consistent file naming and structure")
-    print(f"  • Easy cleanup with 'rm -rf reports/' if needed")
+
+    print("\n🧹 Organization improvements:")
+    print("  • All artifacts properly organized in reports/ directory")
+    print("  • Root level cleaned of coverage/junit/bandit files")
+    print("  • Consistent file naming and structure")
+    print("  • Easy cleanup with 'rm -rf reports/' if needed")
 
 
 if __name__ == "__main__":

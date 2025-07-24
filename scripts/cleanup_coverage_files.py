@@ -4,55 +4,55 @@ Cleanup script to organize coverage and test artifacts that are currently scatte
 This script moves files to proper locations and creates an organized reports structure.
 """
 
+import glob
 import shutil
 from pathlib import Path
-import glob
 
 
 def setup_reports_structure():
     """Create organized reports directory structure."""
     directories = [
-        'reports',
-        'reports/coverage',
-        'reports/coverage/by-type', 
-        'reports/junit',
-        'reports/bandit',
-        'reports/temp',
-        'reports/archive'
+        "reports",
+        "reports/coverage",
+        "reports/coverage/by-type",
+        "reports/junit",
+        "reports/bandit",
+        "reports/temp",
+        "reports/archive",
     ]
-    
+
     for directory in directories:
         Path(directory).mkdir(parents=True, exist_ok=True)
         print(f"📁 Created: {directory}/")
-    
+
     return True
 
 
 def organize_coverage_files():
     """Move coverage files to organized locations."""
     moved_files = []
-    
+
     # Coverage XML files
-    for file_path in glob.glob("coverage*.xml"):
-        dest = Path("reports/coverage") / Path(file_path).name
-        shutil.move(file_path, dest)
+    for file_path in Path(".").glob("coverage*.xml"):
+        dest = Path("reports/coverage") / file_path.name
+        shutil.move(str(file_path), dest)
         moved_files.append(f"{file_path} → {dest}")
         print(f"📊 Moved coverage: {file_path} → {dest}")
-    
-    # JUnit XML files  
-    for file_path in glob.glob("junit*.xml"):
-        dest = Path("reports/junit") / Path(file_path).name
-        shutil.move(file_path, dest)
+
+    # JUnit XML files
+    for file_path in Path(".").glob("junit*.xml"):
+        dest = Path("reports/junit") / file_path.name
+        shutil.move(str(file_path), dest)
         moved_files.append(f"{file_path} → {dest}")
         print(f"🧪 Moved junit: {file_path} → {dest}")
-    
+
     return moved_files
 
 
 def organize_security_files():
     """Move security scan files to organized locations."""
     moved_files = []
-    
+
     # Bandit JSON files
     bandit_files = ["bandit-report.json", "bandit_report.json"]
     for file_name in bandit_files:
@@ -61,14 +61,14 @@ def organize_security_files():
             shutil.move(file_name, dest)
             moved_files.append(f"{file_name} → {dest}")
             print(f"🔒 Moved bandit: {file_name} → {dest}")
-    
+
     return moved_files
 
 
 def organize_htmlcov_directories():
     """Move HTML coverage directories to organized structure."""
     moved_dirs = []
-    
+
     # Standard htmlcov directory
     if Path("htmlcov").exists():
         dest = Path("reports/coverage/standard")
@@ -77,8 +77,8 @@ def organize_htmlcov_directories():
         shutil.move("htmlcov", dest)
         moved_dirs.append(f"htmlcov/ → {dest}/")
         print(f"📋 Moved htmlcov: htmlcov/ → {dest}/")
-    
-    # Type-specific htmlcov directory  
+
+    # Type-specific htmlcov directory
     if Path("htmlcov-by-type").exists():
         dest = Path("reports/coverage/by-type")
         # Move contents rather than the whole directory
@@ -86,16 +86,16 @@ def organize_htmlcov_directories():
             item_dest = dest / item.name
             if item_dest.exists():
                 if item_dest.is_dir():
-                    shutil.rmtree(item_dest) 
+                    shutil.rmtree(item_dest)
                 else:
                     item_dest.unlink()
             shutil.move(str(item), item_dest)
-        
+
         # Remove empty source directory
         Path("htmlcov-by-type").rmdir()
         moved_dirs.append(f"htmlcov-by-type/ → {dest}/")
         print(f"📋 Moved htmlcov-by-type: htmlcov-by-type/ → {dest}/")
-    
+
     return moved_dirs
 
 
@@ -123,7 +123,7 @@ def create_reports_index():
     <body>
         <div class="container">
             <h1>📊 PromptCraft Reports Dashboard</h1>
-            
+
             <div class="file-structure">
                 <h3>📁 Organized Reports Structure</h3>
                 <p><strong>All test and coverage artifacts are now properly organized:</strong></p>
@@ -185,7 +185,7 @@ def create_reports_index():
     </body>
     </html>
     """
-    
+
     index_file = Path("reports/index.html")
     index_file.write_text(html_content)
     print(f"📋 Created master index: {index_file}")
@@ -194,7 +194,7 @@ def create_reports_index():
 def update_gitignore():
     """Update .gitignore to include organized reports directory."""
     gitignore_path = Path(".gitignore")
-    
+
     if gitignore_path.exists():
         content = gitignore_path.read_text()
         if "reports/" not in content:
@@ -212,40 +212,40 @@ def main():
     """Main cleanup function."""
     print("🧹 Organizing coverage and test artifacts")
     print("=" * 50)
-    
+
     # Set up organized structure
     setup_reports_structure()
     print()
-    
+
     # Move files to organized locations
     coverage_files = organize_coverage_files()
     security_files = organize_security_files()
     htmlcov_dirs = organize_htmlcov_directories()
     print()
-    
+
     # Create master index
     create_reports_index()
-    
+
     # Update .gitignore
     update_gitignore()
-    
+
     # Summary
     total_moved = len(coverage_files) + len(security_files) + len(htmlcov_dirs)
-    
-    print(f"\n🎉 Cleanup completed successfully!")
-    print(f"📁 Reports organized in: reports/")
+
+    print("\n🎉 Cleanup completed successfully!")
+    print("📁 Reports organized in: reports/")
     print(f"📊 Files moved: {total_moved}")
-    print(f"🔗 Master index: reports/index.html")
-    
+    print("🔗 Master index: reports/index.html")
+
     if total_moved > 0:
-        print(f"\n📋 What was moved:")
+        print("\n📋 What was moved:")
         for item in coverage_files + security_files + htmlcov_dirs:
             print(f"  • {item}")
-    
-    print(f"\n💡 Next steps:")
-    print(f"  • Use scripts/generate_test_type_coverage_clean.py for future reports")
-    print(f"  • All new artifacts will be automatically organized")
-    print(f"  • Root directory stays clean!")
+
+    print("\n💡 Next steps:")
+    print("  • Use scripts/generate_test_type_coverage_clean.py for future reports")
+    print("  • All new artifacts will be automatically organized")
+    print("  • Root directory stays clean!")
 
 
 if __name__ == "__main__":

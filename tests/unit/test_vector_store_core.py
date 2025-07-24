@@ -305,8 +305,8 @@ class TestEnhancedMockVectorStore:
         await self.store.insert_documents(docs)
         
         # Search
-        params = SearchParameters(limit=5)
-        results = await self.store.search([0.1, 0.2, 0.3], "test_collection", params)
+        params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]], limit=5)
+        results = await self.store.search(params)
         
         assert isinstance(results, list)
         if results:  # Mock might return results
@@ -324,7 +324,7 @@ class TestEnhancedMockVectorStore:
             content="Original content",
             embedding=[0.1, 0.2, 0.3]
         )
-        await self.store.insert([doc], "test_collection")
+        await self.store.insert_documents([doc])
         
         # Update document
         updated_doc = VectorDocument(
@@ -348,7 +348,7 @@ class TestEnhancedMockVectorStore:
             content="Test content",
             embedding=[0.1, 0.2, 0.3]
         )
-        await self.store.insert([doc], "test_collection")
+        await self.store.insert_documents([doc])
         
         # Delete document
         result = await self.store.delete(["doc1"], "test_collection")
@@ -359,7 +359,7 @@ class TestEnhancedMockVectorStore:
     async def test_get_collection_info(self):
         """Test getting collection information."""
         await self.store.connect()
-        await self.store.create_collection("test_collection", dimension=128)
+        await self.store.create_collection("test_collection", vector_size=128)
         
         info = await self.store.get_collection_info("test_collection")
         
@@ -412,10 +412,10 @@ class TestQdrantVectorStore:
     async def test_operations_require_connection(self):
         """Test that operations require connection."""
         # All operations should handle disconnected state gracefully
-        params = SearchParameters()
+        params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
         
         with pytest.raises(Exception):
-            await self.store.search([0.1, 0.2, 0.3], "test", params)
+            await self.store.search(params)
 
 class TestVectorStoreFactory:
     """Test VectorStoreFactory."""
@@ -489,11 +489,11 @@ class TestVectorStoreErrorHandling:
     async def test_operations_when_disconnected(self):
         """Test operations when store is disconnected."""
         # Most operations should handle disconnected state gracefully
-        params = SearchParameters()
+        params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
         
         # These should not crash but may return empty results or handle gracefully
         try:
-            await self.store.search([0.1, 0.2, 0.3], "test", params)
+            await self.store.search(params)
         except Exception:
             pass  # Expected for some implementations
         
@@ -508,8 +508,8 @@ class TestVectorStoreErrorHandling:
         await self.store.connect()
         
         # Operations on non-existent collections should be handled gracefully
-        params = SearchParameters()
-        results = await self.store.search([0.1, 0.2, 0.3], "nonexistent", params)
+        params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]], collection="nonexistent")
+        results = await self.store.search(params)
         
         # Should return empty results or handle gracefully
         assert isinstance(results, list)
@@ -523,7 +523,7 @@ class TestVectorStoreErrorHandling:
         
         # Try an operation that might fail
         try:
-            await self.store.search([0.1, 0.2, 0.3], "nonexistent", SearchParameters())
+            await self.store.search(SearchParameters(embeddings=[[0.1, 0.2, 0.3]], collection="nonexistent"))
         except Exception:
             pass
         

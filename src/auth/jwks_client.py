@@ -63,19 +63,23 @@ class JWKSClient:
 
             # Validate JWKS structure
             if not isinstance(jwks, dict) or "keys" not in jwks:
-                raise JWKSError("Invalid JWKS format: missing 'keys' field")
+                raise JWKSError("Invalid JWKS format: missing 'keys' field", "jwks_error")
 
             if not isinstance(jwks["keys"], list):
-                raise JWKSError("Invalid JWKS format: 'keys' must be a list")
+                raise JWKSError("Invalid JWKS format: 'keys' must be a list", "jwks_error")
 
             if not jwks["keys"]:
-                raise JWKSError("Invalid JWKS format: 'keys' list is empty")
+                raise JWKSError("Invalid JWKS format: 'keys' list is empty", "jwks_error")
 
             # Cache the JWKS
             self._cache["jwks"] = jwks
             logger.info(f"Successfully cached JWKS with {len(jwks['keys'])} keys")
 
             return jwks
+
+        except JWKSError:
+            # Re-raise JWKSError without modification
+            raise
 
         except httpx.TimeoutException as e:
             logger.error(f"Timeout fetching JWKS: {e}")

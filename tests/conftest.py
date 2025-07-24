@@ -33,7 +33,6 @@ def pytest_runtest_protocol(item, nextitem):
             break
 
     # Call the default implementation
-    return None  # Let pytest handle the test normally
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -50,7 +49,7 @@ def pytest_sessionfinish(session, exitstatus):
 
     # Check if VS Code coverage is enabled (lightweight generation)
     vscode_coverage = any("--cov-report=html" in arg for arg in sys.argv)
-    
+
     if vscode_coverage and len(executed_test_types) > 0:
         print("\n🔍 Generating organized coverage reports (VS Code integration)...")
         generate_lightweight_reports(executed_test_types)
@@ -64,31 +63,33 @@ def generate_lightweight_reports(test_types: set[str]):
         # Create organized structure
         reports_dir = Path("reports/coverage/by-type")
         reports_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Move standard htmlcov to organized location
         if Path("htmlcov").exists():
-            standard_dir = Path("reports/coverage/standard") 
+            standard_dir = Path("reports/coverage/standard")
             if standard_dir.exists():
                 import shutil
+
                 shutil.rmtree(standard_dir)
             Path("htmlcov").rename(standard_dir)
-            print(f"  📋 Organized standard coverage: reports/coverage/standard/")
-        
+            print("  📋 Organized standard coverage: reports/coverage/standard/")
+
         # Also move any htmlcov-by-type content to organized location
         if Path("htmlcov-by-type").exists():
             by_type_dir = Path("reports/coverage/by-type")
             if by_type_dir.exists():
                 import shutil
+
                 shutil.rmtree(by_type_dir)
             Path("htmlcov-by-type").rename(by_type_dir)
-            print(f"  📋 Organized detailed coverage: reports/coverage/by-type/")
-        
+            print("  📋 Organized detailed coverage: reports/coverage/by-type/")
+
         # Create navigation index for VS Code integration
         create_vscode_navigation_index(test_types)
-        
-        print(f"  ✅ Organized coverage reports available at: reports/coverage/")
-        print(f"  🔗 Navigation: reports/coverage/index.html")
-        
+
+        print("  ✅ Organized coverage reports available at: reports/coverage/")
+        print("  🔗 Navigation: reports/coverage/index.html")
+
     except Exception as e:
         print(f"  ⚠️  Could not organize reports: {e}")
 
@@ -115,7 +116,7 @@ def create_vscode_navigation_index(test_types: set[str]):
     <body>
         <div class="container">
             <h1>📊 Coverage Reports (Auto-Generated)</h1>
-            
+
             <div class="info">
                 <p><strong>Generated automatically by VS Code "Run Tests with Coverage"</strong></p>
                 <p>This navigation page is created each time you run coverage in VS Code, organizing your reports for easy access.</p>
@@ -150,7 +151,7 @@ def create_vscode_navigation_index(test_types: set[str]):
     </body>
     </html>
     """
-    
+
     index_file = Path("reports/coverage/index.html")
     index_file.write_text(html_content)
 
@@ -185,7 +186,7 @@ def generate_test_type_reports(test_types: set[str]):
             # Ensure reports directory exists
             reports_dir = Path("reports/coverage")
             reports_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Generate coverage report for this specific test type with organized output
             cmd = [
                 "poetry",
@@ -201,7 +202,7 @@ def generate_test_type_reports(test_types: set[str]):
                 test_type,
                 test_path,
             ]
-            
+
             # Create temp directory for junit files
             Path("reports/temp").mkdir(parents=True, exist_ok=True)
 

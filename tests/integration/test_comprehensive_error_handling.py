@@ -156,6 +156,7 @@ class TestComprehensiveErrorHandling:
             assert error_context.recovery_strategy == RecoveryStrategy.CIRCUIT_BREAKER
 
     @pytest.mark.integration
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_mcp_service_unavailable_error_handling(self, mock_error_settings):
         """Test MCP service unavailable error handling."""

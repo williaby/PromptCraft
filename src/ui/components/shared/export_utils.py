@@ -100,7 +100,7 @@ class ExportUtils:
                     file_sources_md += f" - {size_mb:.1f}MB"
                 file_sources_md += "\\n"
 
-        # Build C.R.E.A.T.E. breakdown
+        # Build C.R.E.A.T.E. breakdown with safe key access
         create_md = """
 ## 📋 C.R.E.A.T.E. Framework Breakdown
 
@@ -122,7 +122,12 @@ class ExportUtils:
 ### Evaluation
 {evaluation}
 """.format(
-            **create_breakdown
+            context=create_breakdown.get('context', 'N/A'),
+            request=create_breakdown.get('request', 'N/A'),
+            examples=create_breakdown.get('examples', 'N/A'),
+            augmentations=create_breakdown.get('augmentations', 'N/A'),
+            tone_format=create_breakdown.get('tone_format', 'N/A'),
+            evaluation=create_breakdown.get('evaluation', 'N/A')
         )
 
         return f"""# Enhanced Prompt Export
@@ -244,13 +249,14 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         import re
 
         # Pattern to match code blocks with optional language specification
-        pattern = r"```(?:([\w-]+))?\n([\s\S]*?)```"
+        # Use greedy matching to capture content including nested backticks in strings
+        pattern = r"```(?:([\w-]+))?\n([\s\S]*)```"
         matches = re.findall(pattern, content)
 
         code_blocks = []
         for i, (language, code) in enumerate(matches):
             code_content = code.strip()
-            lines = code_content.split("\\n")
+            lines = code_content.split("\n")
 
             # Enhanced language detection
             detected_language = language or self._detect_language(code_content)
@@ -361,14 +367,31 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         return False
 
     def _assess_complexity(self, code: str) -> str:
-        """Assess code complexity."""
-        lines = len(code.split("\\n"))
-        if lines < 5:
+        """Assess code complexity based on lines and complexity indicators."""
+        lines = len(code.split("\n"))
+        
+        # Count complexity indicators
+        complexity_indicators = 0
+        
+        # Check for control structures
+        if "if " in code or "elif " in code or "else:" in code:
+            complexity_indicators += 1
+        if "for " in code or "while " in code:
+            complexity_indicators += 1
+        if "try:" in code or "except:" in code or "finally:" in code:
+            complexity_indicators += 1
+        if "def " in code or "class " in code:
+            complexity_indicators += 1
+        if "import " in code:
+            complexity_indicators += 1
+            
+        # Assess based on lines and complexity indicators
+        if lines < 10 and complexity_indicators <= 1:
             return "simple"
-        elif lines < 20:
-            return "moderate"
-        else:
+        elif lines >= 20 or complexity_indicators > 3:
             return "complex"
+        else:
+            return "moderate"
 
     def format_code_blocks_for_export(self, code_blocks: list[dict[str, str]]) -> str:
         """
@@ -385,7 +408,14 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         # Summary header
         total_lines = sum(block.get("line_count", 0) for block in code_blocks)
-        languages = list(set(block.get("language", "text") for block in code_blocks))
+        # Preserve order while removing duplicates
+        seen = set()
+        languages = []
+        for block in code_blocks:
+            lang = block.get("language", "text")
+            if lang not in seen:
+                languages.append(lang)
+                seen.add(lang)
 
         export_content = f"""CODE BLOCKS EXPORT
 ==================
@@ -446,7 +476,14 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         # Summary header
         total_lines = sum(block.get("line_count", 0) for block in code_blocks)
-        languages = list(set(block.get("language", "text") for block in code_blocks))
+        # Preserve order while removing duplicates
+        seen = set()
+        languages = []
+        for block in code_blocks:
+            lang = block.get("language", "text")
+            if lang not in seen:
+                languages.append(lang)
+                seen.add(lang)
 
         markdown_content = f"""# Code Blocks Export
 

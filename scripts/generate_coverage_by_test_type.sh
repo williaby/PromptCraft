@@ -26,9 +26,9 @@ generate_coverage_for_test_type() {
     local test_path=$2
     local marker=$3
     local description=$4
-    
+
     echo -e "\n${YELLOW}📊 Generating coverage for ${description}${NC}"
-    
+
     # Run tests with coverage for this specific type
     poetry run pytest \
         --cov=src \
@@ -40,13 +40,13 @@ generate_coverage_for_test_type() {
         ${test_path} || {
         echo -e "${RED}⚠️  Some ${description} failed, but coverage was generated${NC}"
     }
-    
+
     # Add test type info to the HTML report
     if [ -f "htmlcov-by-type/${test_type}/index.html" ]; then
         # Insert custom header with test type info
         sed -i "s/<h1>Coverage report<\/h1>/<h1>Coverage report: ${description}<\/h1><p style=\"background: #e6f3ff; padding: 10px; border-radius: 5px; margin: 10px 0;\"><strong>Test Type:<\/strong> ${description} | <strong>Marker:<\/strong> ${marker} | <strong>Path:<\/strong> ${test_path}<\/p>/" \
             "htmlcov-by-type/${test_type}/index.html"
-        
+
         echo -e "${GREEN}✅ ${description} coverage report: htmlcov-by-type/${test_type}/index.html${NC}"
     else
         echo -e "${RED}❌ Failed to generate ${description} coverage report${NC}"
@@ -90,7 +90,7 @@ for report in coverage-unit.xml coverage-integration.xml coverage-auth.xml cover
         coverage=$(grep -oP 'line-rate="\K[^"]*' "$report" | head -1 | awk '{printf "%.2f%%", $1*100}')
         lines_covered=$(grep -oP 'lines-covered="\K[^"]*' "$report" | head -1)
         lines_valid=$(grep -oP 'lines-valid="\K[^"]*' "$report" | head -1)
-        
+
         printf "%-15s %8s (%s/%s lines)\n" "$test_type:" "$coverage" "$lines_covered" "$lines_valid"
     fi
 done
@@ -102,7 +102,7 @@ echo -e "${BLUE}🌐 Start server: cd htmlcov-by-type && python -m http.server 8
 # Start a simple HTTP server for viewing reports
 echo -e "\n${YELLOW}🚀 Starting HTTP server for coverage reports...${NC}"
 cd htmlcov-by-type
-nohup python -m http.server 8081 > /dev/null 2>&1 & 
+nohup python -m http.server 8081 > /dev/null 2>&1 &
 SERVER_PID=$!
 echo -e "${GREEN}📡 Coverage reports server started at http://localhost:8081${NC}"
 echo -e "${BLUE}Available reports:${NC}"
