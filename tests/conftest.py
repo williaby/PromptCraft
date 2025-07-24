@@ -7,30 +7,49 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Coverage hook functionality integrated directly to avoid plugin conflicts
+
 # Global variable to track which test types were executed
 executed_test_types: set[str] = set()
 
 
 def pytest_runtest_protocol(item, nextitem):
-    """Hook called for each test to track test types by markers."""
+    """Hook called for each test to track test types by path and markers."""
     global executed_test_types
 
     # Extract markers from the test item
     markers = [marker.name for marker in item.iter_markers()]
 
-    # Map markers to test types
-    test_type_markers = {
-        "unit": "unit",
-        "integration": "integration",
-        "auth": "auth",
-        "performance": "performance",
-        "stress": "stress",
-    }
+    # Get test file path to determine test type
+    test_path = str(item.fspath)
 
-    for marker, test_type in test_type_markers.items():
-        if marker in markers:
-            executed_test_types.add(test_type)
-            break
+    # Map test paths to test types (primary method for VS Code)
+    if "tests/unit/" in test_path:
+        executed_test_types.add("unit")
+    elif "tests/integration/" in test_path:
+        executed_test_types.add("integration")
+    elif "tests/auth/" in test_path:
+        executed_test_types.add("auth")
+    elif "tests/examples/" in test_path:
+        executed_test_types.add("examples")
+    elif "tests/performance/" in test_path:
+        executed_test_types.add("performance")
+    elif "tests/contract/" in test_path:
+        executed_test_types.add("contract")
+    else:
+        # Fallback to marker-based detection
+        test_type_markers = {
+            "unit": "unit",
+            "integration": "integration",
+            "auth": "auth",
+            "performance": "performance",
+            "stress": "stress",
+        }
+
+        for marker, test_type in test_type_markers.items():
+            if marker in markers:
+                executed_test_types.add(test_type)
+                break
 
     # Call the default implementation
 
@@ -39,22 +58,80 @@ def pytest_sessionfinish(session, exitstatus):
     """Hook called after all tests are completed."""
     global executed_test_types
 
-    # Only generate reports if coverage was enabled and tests were run
+    # Enhanced coverage detection for VS Code integration
+    coverage_enabled = (
+        any("--cov" in arg for arg in sys.argv)
+        or any("coverage" in arg.lower() for arg in sys.argv)
+        or any("--cov-report" in arg for arg in sys.argv)
+        or hasattr(session.config, "_cov")
+        or getattr(session.config.option, "cov_source", None)
+        or getattr(session.config.option, "cov", None)
+    )
+
+    # Also check if coverage.xml or .coverage files exist (indicates coverage was run)
+    project_root = Path(__file__).parent.parent
+    coverage_files_exist = (project_root / "coverage.xml").exists() or (project_root / ".coverage").exists()
+
+    # Trigger if coverage is detected or coverage files exist
+    if coverage_enabled or coverage_files_exist:
+        # Trigger automatic coverage report generation (user's primary request)
+        trigger_automatic_coverage_reports()
+
+    # Only generate organized reports if coverage was enabled and tests were run
     if not executed_test_types:
         return
 
-    # Check if this is a coverage run (look for --cov in sys.argv)
-    if not any("--cov" in arg for arg in sys.argv):
+    if not (coverage_enabled or coverage_files_exist):
         return
 
-    # Check if VS Code coverage is enabled (lightweight generation)
-    vscode_coverage = any("--cov-report=html" in arg for arg in sys.argv)
+    # Skip the lightweight generation since we're already generating detailed reports
+    # via trigger_automatic_coverage_reports() above
+    print("\n✅ Detailed coverage reports generated automatically")
 
-    if vscode_coverage and len(executed_test_types) > 0:
-        print("\n🔍 Generating organized coverage reports (VS Code integration)...")
-        generate_lightweight_reports(executed_test_types)
-    else:
-        print("\n💡 Use scripts/generate_test_type_coverage_clean.py for detailed reports")
+
+def trigger_automatic_coverage_reports():
+    """Trigger automatic coverage report generation (user's primary request)."""
+    import time
+
+    # Small delay to allow coverage files to be written
+    time.sleep(0.5)
+
+    # Find the coverage hook script
+    project_root = Path(__file__).parent.parent
+    hook_script = project_root / "scripts" / "generate_test_coverage_fast.py"
+
+    if not hook_script.exists():
+        print("⚠️  Coverage report generator not found")
+        return
+
+    try:
+        # Execute the coverage report generator with quieter output but still show key info
+        result = subprocess.run(
+            [sys.executable, str(hook_script), "--quiet"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode == 0:
+            print("\n✅ Coverage reports updated automatically")
+            # Show key report locations
+            reports_dir = project_root / "reports" / "coverage"
+            if reports_dir.exists():
+                print(f"📊 Main Report: {reports_dir / 'index.html'}")
+                print(f"📋 Standard Report: {reports_dir / 'standard' / 'index.html'}")
+        else:
+            print("\n⚠️  Coverage report generation had issues:")
+            if result.stderr:
+                print(f"   Error: {result.stderr.strip()}")
+            if result.stdout:
+                print(f"   Output: {result.stdout.strip()}")
+
+    except subprocess.TimeoutExpired:
+        print("\n⚠️  Coverage report generation timed out")
+    except Exception as e:
+        print(f"\n⚠️  Coverage report generation failed: {e}")
 
 
 def generate_lightweight_reports(test_types: set[str]):
@@ -94,8 +171,36 @@ def generate_lightweight_reports(test_types: set[str]):
         print(f"  ⚠️  Could not organize reports: {e}")
 
 
+def check_detailed_reports_status():
+    """Check if detailed by-type reports exist and are current."""
+
+    by_type_dir = Path("reports/coverage/by-type")
+    standard_dir = Path("reports/coverage/standard")
+
+    if not by_type_dir.exists() or not standard_dir.exists():
+        return {"status": "missing", "message": "Detailed reports not found"}
+
+    # Get timestamps
+    try:
+        standard_time = standard_dir.stat().st_mtime
+        by_type_time = by_type_dir.stat().st_mtime
+
+        # If detailed reports are more than 5 minutes older than standard, they're stale
+        if (standard_time - by_type_time) > 300:  # 5 minutes in seconds
+            age_hours = (standard_time - by_type_time) / 3600
+            return {"status": "stale", "message": f"Detailed reports are {age_hours:.1f} hours old"}
+        return {"status": "current", "message": "Detailed reports are current"}
+
+    except Exception:
+        return {"status": "unknown", "message": "Could not check report timestamps"}
+
+
 def create_vscode_navigation_index(test_types: set[str]):
     """Create lightweight navigation index for VS Code integration."""
+
+    # Check if detailed reports exist and are current
+    detailed_reports_status = check_detailed_reports_status()
+
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -137,6 +242,7 @@ def create_vscode_navigation_index(test_types: set[str]):
                 <h3>🔧 Detailed Test-Type Reports</h3>
                 <p>Test-type-specific coverage breakdowns (unit, integration, auth, etc.).</p>
                 <a href="by-type/index.html">View Detailed Reports →</a>
+                <p><small><em>Note: Use scripts/generate_test_type_coverage_clean.py to generate fresh detailed reports</em></small></p>
             </div>
 
             <div class="info">
