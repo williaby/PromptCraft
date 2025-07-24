@@ -38,7 +38,7 @@ class CoverageFileWatcher:
         self.project_root = project_root or Path(__file__).parent.parent
         self.coverage_xml = self.project_root / "coverage.xml"
         self.junit_xml = self.project_root / "reports" / "junit.xml"
-        self.generator_script = self.project_root / "scripts" / "generate_test_coverage_fast.py"
+        self.generator_script = self.project_root / "scripts" / "auto_coverage_report.py"
 
         # Debouncing
         self.last_update_time = 0
