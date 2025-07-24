@@ -101,10 +101,10 @@ def main():
 
     # Step 3: Report results
     print("\n🎉 Coverage report generation complete!")
-    
+
     if vscode_success or enhanced_reports:
         print("\n📂 Generated Reports:")
-        
+
         # Main overview report
         main_report = project_root / "reports" / "coverage" / "index.html"
         if main_report.exists():
@@ -120,14 +120,16 @@ def main():
             print(f"\n🧪 Test-Type Specific Reports ({len(enhanced_reports)} types):")
             for test_type, report_path in enhanced_reports.items():
                 if report_path.exists():
-                    print(f"   {_get_test_type_icon(test_type)} {test_type.capitalize()}: file://{report_path.absolute()}")
+                    print(
+                        f"   {_get_test_type_icon(test_type)} {test_type.capitalize()}: file://{report_path.absolute()}",
+                    )
 
         # Standard coverage report
         standard_locations = [
             project_root / "reports" / "coverage" / "standard" / "index.html",
             project_root / "reports" / "coverage" / "htmlcov" / "index.html",
         ]
-        
+
         for location in standard_locations:
             if location.exists():
                 print(f"   📋 Standard Coverage: file://{location.absolute()}")
@@ -138,7 +140,7 @@ def main():
         print("   • Parallel report generation for improved performance")
         print("   • Enhanced navigation between test type reports")
         print("   • Coverage.py dynamic contexts for precise test type filtering")
-        
+
         print("\n💡 Next Steps:")
         print("   • Open the Main Overview report for a complete dashboard")
         print("   • Use test-type specific reports for focused analysis")
@@ -154,14 +156,7 @@ def main():
 
 def _get_test_type_icon(test_type: str) -> str:
     """Get emoji icon for test type."""
-    icons = {
-        "unit": "🧪",
-        "auth": "🔐", 
-        "integration": "🔗",
-        "security": "🛡️",
-        "performance": "🏃‍♂️",
-        "stress": "💪"
-    }
+    icons = {"unit": "🧪", "auth": "🔐", "integration": "🔗", "security": "🛡️", "performance": "🏃‍♂️", "stress": "💪"}
     return icons.get(test_type, "📋")
 
 

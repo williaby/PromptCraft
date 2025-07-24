@@ -379,7 +379,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
     @cache_vector_search
     @monitor_performance("mock_vector_search")
     async def search(self, parameters: SearchParameters) -> list[SearchResult]:
-        """Perform mock vector search with realistic behavior."""        
+        """Perform mock vector search with realistic behavior."""
         if not await self._handle_circuit_breaker("search"):
             return []
 
@@ -714,12 +714,14 @@ class QdrantVectorStore(AbstractVectorStore):
         self._client: Any | None = None  # QdrantClient will be imported dynamically
         self._connection_pool: list[Any] = []
         self._pool_semaphore = asyncio.Semaphore(CONNECTION_POOL_SIZE)
-        
+
         # Use ApplicationSettings for configuration with config overrides
         settings = ApplicationSettings()
         self._host = config.get("host") or settings.qdrant_host
         self._port = config.get("port") or settings.qdrant_port
-        self._api_key = config.get("api_key") or (settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None)
+        self._api_key = config.get("api_key") or (
+            settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None
+        )
         self._timeout = config.get("timeout") or settings.qdrant_timeout
 
     async def connect(self) -> None:
@@ -781,7 +783,7 @@ class QdrantVectorStore(AbstractVectorStore):
         """Perform Qdrant vector search."""
         if not self._client:
             raise RuntimeError("QdrantVectorStore is not connected")
-        
+
         if not await self._handle_circuit_breaker("search"):
             return []
 
@@ -1081,7 +1083,7 @@ class VectorStoreFactory:
             ValueError: If store type is invalid
         """
         config = config or {}
-        
+
         if isinstance(store_type, str):
             try:
                 store_type = VectorStoreType(store_type)
@@ -1090,10 +1092,9 @@ class VectorStoreFactory:
 
         if store_type == VectorStoreType.MOCK:
             return EnhancedMockVectorStore(config)
-        elif store_type == VectorStoreType.QDRANT:
+        if store_type == VectorStoreType.QDRANT:
             return QdrantVectorStore(config)
-        else:
-            raise ValueError(f"Unknown vector store type: {store_type}")
+        raise ValueError(f"Unknown vector store type: {store_type}")
 
     @staticmethod
     def create_store_from_config(config: dict[str, Any] | None = None) -> AbstractVectorStore:
@@ -1112,10 +1113,10 @@ class VectorStoreFactory:
             store_type = settings.vector_store_type
         else:
             store_type = config.get("type", "auto")
-        
+
         if store_type == "auto":
             store_type = VectorStoreFactory._detect_store_type(config or {})
-        
+
         return VectorStoreFactory.create_store(store_type, config)
 
     @staticmethod
@@ -1216,7 +1217,7 @@ class MockVectorStore(EnhancedMockVectorStore):
             List of search results
         """
         await self._ensure_connected()
-        
+
         # Handle legacy interface: search(embeddings, limit=3)
         if isinstance(parameters, list):
             embeddings = parameters
@@ -1262,7 +1263,7 @@ class MockVectorStore(EnhancedMockVectorStore):
             bool: Success status
         """
         await self._ensure_connected()
-        
+
         try:
             # Convert HypotheticalDocument to VectorDocument
             vector_docs = []
@@ -1289,10 +1290,10 @@ VectorStore = MockVectorStore
 
 # Export main classes for external use
 __all__ = [
+    "DEFAULT_VECTOR_DIMENSIONS",
     "AbstractVectorStore",
     "BatchOperationResult",
     "ConnectionStatus",
-    "DEFAULT_VECTOR_DIMENSIONS",
     "EnhancedMockVectorStore",
     "HealthCheckResult",
     "MockVectorStore",  # Backward compatibility

@@ -827,6 +827,7 @@ class TestOpenRouterClientIntegration:
 
 # Additional comprehensive tests to improve coverage beyond 80%
 
+
 @pytest.mark.unit
 class TestOpenRouterClientAdditionalCoverage:
     """Additional tests to ensure comprehensive coverage of OpenRouterClient."""
@@ -840,10 +841,10 @@ class TestOpenRouterClientAdditionalCoverage:
         ):
             mock_settings.return_value = create_mock_settings()
             client = OpenRouterClient()
-            
+
             # Create query that exceeds max length
             long_query = "x" * 60000  # Exceeds MAX_QUERY_LENGTH of 50000
-            
+
             validation = await client.validate_query(long_query)
             assert validation["is_valid"] is False
             assert "error" in validation
@@ -858,7 +859,7 @@ class TestOpenRouterClientAdditionalCoverage:
         ):
             mock_settings.return_value = create_mock_settings()
             client = OpenRouterClient()
-            
+
             validation = await client.validate_query("")
             assert validation["is_valid"] is False
             assert "error" in validation
@@ -873,7 +874,7 @@ class TestOpenRouterClientAdditionalCoverage:
         ):
             mock_settings.return_value = create_mock_settings()
             client = OpenRouterClient()
-            
+
             validation = await client.validate_query(None)
             assert validation["is_valid"] is False
             assert "error" in validation
@@ -890,9 +891,9 @@ class TestOpenRouterClientAdditionalCoverage:
             client.connection_state = MCPConnectionState.CONNECTED
             client.error_count = 0
             client.last_successful_request = time.time() - 30  # 30 seconds ago
-            
+
             health = client.health_check()
-            
+
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 0
             assert "HEALTHY" in health.metadata["status"]
@@ -907,9 +908,9 @@ class TestOpenRouterClientAdditionalCoverage:
             mock_settings.return_value = create_mock_settings()
             client = OpenRouterClient()
             client.connection_state = MCPConnectionState.DISCONNECTED
-            
+
             health = client.health_check()
-            
+
             assert health.connection_state == MCPConnectionState.DISCONNECTED
             assert "UNHEALTHY" in health.metadata["status"]
             assert "not connected" in health.metadata["message"].lower()
@@ -924,9 +925,9 @@ class TestOpenRouterClientAdditionalCoverage:
             client = OpenRouterClient()
             client.connection_state = MCPConnectionState.CONNECTED
             client.error_count = 15  # High error count
-            
+
             health = client.health_check()
-            
+
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 15
             assert "DEGRADED" in health.metadata["status"]
@@ -943,9 +944,9 @@ class TestOpenRouterClientAdditionalCoverage:
             client.connection_state = MCPConnectionState.CONNECTED
             client.error_count = 0
             client.last_successful_request = time.time() - 3700  # Over an hour ago
-            
+
             health = client.health_check()
-            
+
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 0
             assert "DEGRADED" in health.metadata["status"]
@@ -961,9 +962,9 @@ class TestOpenRouterClientAdditionalCoverage:
             mock_settings.return_value = create_mock_settings(circuit_breaker_enabled=True)
             mock_circuit_breaker = Mock()
             mock_get_cb.return_value = mock_circuit_breaker
-            
+
             client = OpenRouterClient()
-            
+
             # Verify circuit breaker is set up
             assert client.circuit_breaker == mock_circuit_breaker
             mock_get_cb.assert_called_once_with("openrouter", mock_settings.return_value)
@@ -975,9 +976,9 @@ class TestOpenRouterClientAdditionalCoverage:
             patch("src.mcp_integration.openrouter_client.get_model_registry"),
         ):
             mock_settings.return_value = create_mock_settings(circuit_breaker_enabled=False)
-            
+
             client = OpenRouterClient()
-            
+
             # Verify no circuit breaker
             assert client.circuit_breaker is None
 
@@ -988,9 +989,9 @@ class TestOpenRouterClientAdditionalCoverage:
             patch("src.mcp_integration.openrouter_client.get_model_registry"),
         ):
             mock_settings.return_value = create_mock_settings()
-            
+
             client = OpenRouterClient(base_url="https://api.example.com/v1/")
-            
+
             # Should strip trailing slash
             assert client.base_url == "https://api.example.com/v1"
 
@@ -1001,7 +1002,7 @@ class TestOpenRouterClientAdditionalCoverage:
             patch("src.mcp_integration.openrouter_client.get_model_registry") as mock_registry,
         ):
             mock_settings.return_value = create_mock_settings()
-            
+
             # Mock model registry with capabilities using the correct interface
             mock_registry_instance = Mock()
             mock_capabilities = ModelCapabilities(
@@ -1013,13 +1014,13 @@ class TestOpenRouterClientAdditionalCoverage:
                 max_tokens_per_request=2048,
                 rate_limit_requests_per_minute=100,
                 supports_function_calling=True,
-                supports_vision=False
+                supports_vision=False,
             )
             mock_registry_instance.get_model_capabilities.return_value = mock_capabilities
             mock_registry.return_value = mock_registry_instance
-            
+
             client = OpenRouterClient()
-            
+
             # Test capabilities retrieval
             capabilities = client.model_registry.get_model_capabilities("test_model")
             assert capabilities.context_window == 4096

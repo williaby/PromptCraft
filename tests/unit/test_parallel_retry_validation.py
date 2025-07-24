@@ -3,7 +3,9 @@
 import os
 import random
 import time
+
 import pytest
+
 
 class TestParallelExecution:
     """Tests to validate parallel execution and retry functionality."""
@@ -41,12 +43,13 @@ class TestParallelExecution:
         assert result == 15
 
     @pytest.mark.unit
-    @pytest.mark.fast 
+    @pytest.mark.fast
     def test_independent_calculations(self):
         """Test independent calculations that can run in parallel."""
         x = random.randint(1, 100)
         y = random.randint(1, 100)
         assert x + y == y + x  # Commutative property
+
 
 class TestRetryFunctionality:
     """Tests for retry functionality validation."""
@@ -64,7 +67,7 @@ class TestRetryFunctionality:
         result = pow(2, 3)
         assert result == 8
 
-    @pytest.mark.unit 
+    @pytest.mark.unit
     @pytest.mark.fast
     def test_string_operations(self):
         """Test string operations for stability."""
@@ -80,6 +83,7 @@ class TestRetryFunctionality:
         items.append(4)
         assert len(items) == 4
         assert items[-1] == 4
+
 
 @pytest.mark.no_parallel
 class TestSequentialOnly:
@@ -102,6 +106,7 @@ class TestSequentialOnly:
         TestSequentialOnly.shared_resource += 1
         time.sleep(0.01)  # Small delay to simulate work
         assert TestSequentialOnly.shared_resource >= 1
+
 
 class TestPerformanceImpact:
     """Tests to measure performance impact of parallel execution."""
@@ -138,6 +143,7 @@ class TestPerformanceImpact:
         result = len([i for i in range(5000) if i % 3 == 0])
         assert result > 0
 
+
 class TestConfigurationValidation:
     """Tests to validate pytest configuration."""
 
@@ -149,7 +155,7 @@ class TestConfigurationValidation:
         assert True
 
     @pytest.mark.unit
-    @pytest.mark.fast 
+    @pytest.mark.fast
     def test_test_discovery(self):
         """Test that test discovery works correctly."""
         # If this test is discovered and runs, test discovery works

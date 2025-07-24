@@ -853,7 +853,7 @@ class TestCapabilitiesAndValidation:
         """Test query validation with fallback."""
         # Connect first to ensure proper state
         await hybrid_router.connect()
-        
+
         # Make primary service fail
         hybrid_router.openrouter_client.should_fail = True
 

@@ -16,10 +16,8 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from src.config.settings import ApplicationSettings
-from src.core.hyde_processor import HydeProcessor
 from src.core.query_counselor import QueryCounselor
 from src.core.vector_store import AbstractVectorStore
-from src.mcp_integration.mcp_client import ZenMCPClient
 
 
 class TestQueryCounselorHydeIntegration:
@@ -48,14 +46,12 @@ class TestQueryCounselorHydeIntegration:
         client.connect = AsyncMock(return_value=True)
         client.disconnect = AsyncMock(return_value=True)
         client.connection_state = "connected"
-        
+
         # Mock query validation
-        client.validate_query = AsyncMock(return_value={
-            "is_valid": True,
-            "sanitized_query": "test query",
-            "potential_issues": []
-        })
-        
+        client.validate_query = AsyncMock(
+            return_value={"is_valid": True, "sanitized_query": "test query", "potential_issues": []},
+        )
+
         # Mock orchestrate_agents with realistic responses
         def mock_orchestrate_response(workflow_steps):
             responses = []
@@ -75,9 +71,9 @@ class TestQueryCounselorHydeIntegration:
                 response.metadata = {"agent_type": step.input_data.get("agent_type", "unknown")}
                 responses.append(response)
             return responses
-        
+
         client.orchestrate_agents = AsyncMock(side_effect=mock_orchestrate_response)
-        
+
         return client
 
     @pytest.fixture
@@ -95,10 +91,10 @@ class TestQueryCounselorHydeIntegration:
         # Create a more lenient mock without strict spec to allow dynamic attribute setting
         processor = AsyncMock()
         processor.vector_store = mock_vector_store
-        
+
         # Set up default return values for key methods
         processor.initialize = AsyncMock(return_value=True)
-        
+
         # Mock three_tier_analysis method with realistic response
         mock_enhanced_query = MagicMock()
         mock_enhanced_query.enhanced_query = "Enhanced test query"
@@ -109,9 +105,11 @@ class TestQueryCounselorHydeIntegration:
         mock_enhanced_query.specificity_analysis.specificity_score = 65.0
         mock_enhanced_query.specificity_analysis.processing_time = 0.1
         mock_enhanced_query.specificity_analysis.reasoning = "Medium specificity query suitable for HyDE enhancement"
-        mock_enhanced_query.specificity_analysis.guiding_questions = ["What specific implementation details are needed?"]
+        mock_enhanced_query.specificity_analysis.guiding_questions = [
+            "What specific implementation details are needed?",
+        ]
         processor.three_tier_analysis = AsyncMock(return_value=mock_enhanced_query)
-        
+
         # Mock process_query method with realistic response
         mock_results = MagicMock()
         mock_results.results = [
@@ -120,11 +118,11 @@ class TestQueryCounselorHydeIntegration:
                 "content": "Test document content",
                 "score": 0.89,
                 "metadata": {"source": "test_source"},
-            }
+            },
         ]
         mock_results.hyde_enhanced = True
         processor.process_query = AsyncMock(return_value=mock_results)
-        
+
         return processor
 
     @pytest.fixture
@@ -300,7 +298,7 @@ class TestQueryCounselorHydeIntegration:
             # In a real implementation, this should fall back to original query
             intent = await query_counselor.analyze_intent(query)
             assert intent is not None
-            
+
             # Try to process the query directly which would trigger HyDE if recommended
             if intent.hyde_recommended and query_counselor.hyde_processor is not None:
                 # This should fail but be handled gracefully
@@ -308,7 +306,7 @@ class TestQueryCounselorHydeIntegration:
                     await query_counselor.hyde_processor.process_query(query)
                 except Exception:
                     pass  # Expected failure
-                    
+
         except Exception as e:
             # Should not propagate vector store errors
             assert "Vector store connection failed" not in str(e)
@@ -440,7 +438,7 @@ class TestQueryCounselorHydeIntegration:
                     metadata={"analysis_type": "architecture", "patterns_found": 3},
                 ),
                 MagicMock(
-                    agent_id="create_agent", 
+                    agent_id="create_agent",
                     content="Implementation guide for database patterns",
                     confidence=0.89,
                     processing_time=1.1,
@@ -448,7 +446,7 @@ class TestQueryCounselorHydeIntegration:
                     metadata={"output_type": "implementation_guide", "complexity": "high"},
                 ),
             ]
-        
+
         mock_mcp_client.orchestrate_agents.side_effect = mock_multi_agent_response
 
         # Process complex query
@@ -507,7 +505,7 @@ class TestQueryCounselorHydeIntegration:
                     metadata={"fallback": True, "enhancement": "failed"},
                 ),
             ]
-        
+
         mock_mcp_client.orchestrate_agents.side_effect = mock_fallback_response
 
         # Process query that should trigger fallback
@@ -619,7 +617,9 @@ class TestQueryCounselorHydeIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_query_counselor_initialization_integration(self, test_settings, mock_mcp_client, mock_hyde_processor):
+    async def test_query_counselor_initialization_integration(
+        self, test_settings, mock_mcp_client, mock_hyde_processor,
+    ):
         """Test QueryCounselor initialization with HydeProcessor integration."""
 
         with (
@@ -634,20 +634,20 @@ class TestQueryCounselorHydeIntegration:
             # Verify initialization - the QueryCounselor should have the injected dependencies
             assert counselor.mcp_client == mock_mcp_client
             assert counselor.hyde_processor == mock_hyde_processor
-            
+
             # Verify the counselor is configured correctly
             assert counselor.confidence_threshold > 0.0
             assert counselor.confidence_threshold <= 1.0
             assert len(counselor._available_agents) > 0
-            
+
             # Verify the mock dependencies have correct specs
-            assert hasattr(counselor.mcp_client, 'connect')
-            assert hasattr(counselor.hyde_processor, 'initialize')
+            assert hasattr(counselor.mcp_client, "connect")
+            assert hasattr(counselor.hyde_processor, "initialize")
 
             # Test that mock methods can be called
             await counselor.mcp_client.connect()
             await counselor.hyde_processor.initialize()
-            
+
             # Verify the calls were made
             mock_mcp_client.connect.assert_called()
             mock_hyde_processor.initialize.assert_called()

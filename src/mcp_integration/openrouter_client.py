@@ -373,24 +373,24 @@ class OpenRouterClient(MCPClientInterface):
         """
         try:
             potential_issues = []
-            
+
             # Handle None or empty queries
             if query is None:
                 return {
                     "is_valid": False,
                     "sanitized_query": "",
                     "potential_issues": ["Query is None"],
-                    "error": "Query cannot be empty or None"
+                    "error": "Query cannot be empty or None",
                 }
-            
+
             if not query.strip():
                 return {
                     "is_valid": False,
                     "sanitized_query": "",
                     "potential_issues": ["Query is empty"],
-                    "error": "Query cannot be empty or None"
+                    "error": "Query cannot be empty or None",
                 }
-            
+
             sanitized_query = query.strip()
 
             # Basic security validations
@@ -401,7 +401,7 @@ class OpenRouterClient(MCPClientInterface):
                     "is_valid": False,
                     "sanitized_query": sanitized_query,
                     "potential_issues": potential_issues,
-                    "error": "Query is too long"
+                    "error": "Query is too long",
                 }
 
             # Check for potential injection patterns
@@ -436,10 +436,10 @@ class OpenRouterClient(MCPClientInterface):
                 "sanitized_query": sanitized_query,
                 "potential_issues": potential_issues,
             }
-            
+
             if not is_valid:
                 result["error"] = "Query validation failed"
-            
+
             return result
 
         except Exception as e:

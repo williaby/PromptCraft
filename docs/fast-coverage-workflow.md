@@ -8,7 +8,7 @@ This document describes the new **path-based coverage analysis** approach that p
 
 The original enhanced coverage reports used Coverage.py's `--cov-context=test` feature, which:
 - ❌ **5x performance penalty** - Tests slowed from ~3.6s to 7+ seconds
-- ❌ **Runtime overhead** - Context tracking during every test execution  
+- ❌ **Runtime overhead** - Context tracking during every test execution
 - ❌ **Collection slowdown** - Pytest discovery and setup significantly slower
 
 ## The Solution
@@ -36,7 +36,7 @@ python scripts/path_based_coverage_analyzer.py
 
 ### 3. Same Rich Reports
 - Test-type specific coverage breakdowns
-- Detailed file-level analysis  
+- Detailed file-level analysis
 - Interactive sortable HTML reports
 - VS Code integration compatibility
 
@@ -49,13 +49,13 @@ The path-based classifier uses intelligent heuristics to determine which test ty
 - **Excludes**: Integration points, main entry points
 - **Estimated**: ~3,250 tests
 
-### Auth Tests (🔐) 
+### Auth Tests (🔐)
 - **Covers**: Authentication system (`src/auth/`, JWT, middleware)
 - **Patterns**: `*jwt*`, `*authentication*`, `*token*`
 - **Estimated**: ~320 tests
 
 ### Security Tests (🛡️)
-- **Covers**: Security modules (`src/security/`, crypto, validation)  
+- **Covers**: Security modules (`src/security/`, crypto, validation)
 - **Patterns**: `*crypto*`, `*hash*`, `*audit*`
 - **Estimated**: ~160 tests
 
@@ -120,7 +120,7 @@ The path-based approach is compatible with VS Code's "Run Tests with Coverage":
 
 ### For Developers
 - **Faster feedback loop** - Tests run at normal speed
-- **Same insights** - No loss of test-type analysis detail  
+- **Same insights** - No loss of test-type analysis detail
 - **Better experience** - No waiting for slow test collection
 
 ### For CI/CD
@@ -148,7 +148,7 @@ The path-based approach is compatible with VS Code's "Run Tests with Coverage":
    ```json
    {
      "python.testing.coverageArgs": [
-       "--cov=src", 
+       "--cov=src",
        "--cov-report=html"
        // Remove --cov-context=test
      ]
@@ -218,7 +218,7 @@ chmod +x scripts/path_based_coverage_analyzer.py
 The path-based coverage analysis approach provides:
 
 1. **Performance restoration** - Tests run at full speed
-2. **Feature preservation** - Same detailed test-type insights  
+2. **Feature preservation** - Same detailed test-type insights
 3. **Workflow compatibility** - Integrates with existing tools
 4. **Intelligence enhancement** - Smarter classification using domain knowledge
 

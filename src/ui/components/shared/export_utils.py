@@ -9,8 +9,7 @@ and session information.
 import json
 import logging
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -65,18 +64,18 @@ class ExportUtils:
                     "model_info": model_info,
                     "file_sources": file_sources,
                     "session_data": session_data,
-                }
+                },
             )
 
-        elif format_type == "markdown":
+        if format_type == "markdown":
             return self._export_as_markdown_j1(
-                enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp
+                enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp,
             )
 
-        else:  # text format
-            return self._export_as_text_j1(
-                enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp
-            )
+        # text format
+        return self._export_as_text_j1(
+            enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp,
+        )
 
     def _export_as_markdown_j1(
         self,
@@ -122,12 +121,12 @@ class ExportUtils:
 ### Evaluation
 {evaluation}
 """.format(
-            context=create_breakdown.get('context', 'N/A'),
-            request=create_breakdown.get('request', 'N/A'),
-            examples=create_breakdown.get('examples', 'N/A'),
-            augmentations=create_breakdown.get('augmentations', 'N/A'),
-            tone_format=create_breakdown.get('tone_format', 'N/A'),
-            evaluation=create_breakdown.get('evaluation', 'N/A')
+            context=create_breakdown.get("context", "N/A"),
+            request=create_breakdown.get("request", "N/A"),
+            examples=create_breakdown.get("examples", "N/A"),
+            augmentations=create_breakdown.get("augmentations", "N/A"),
+            tone_format=create_breakdown.get("tone_format", "N/A"),
+            evaluation=create_breakdown.get("evaluation", "N/A"),
         )
 
         return f"""# Enhanced Prompt Export
@@ -275,7 +274,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
                     "has_functions": self._has_functions(code_content, detected_language),
                     "complexity": self._assess_complexity(code_content),
                     "preview": lines[0][:50] + "..." if lines else "",
-                }
+                },
             )
 
         return code_blocks
@@ -284,26 +283,25 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         """Detect programming language from code content."""
         # Simple language detection using string operations (safer than regex)
         code_lower = code.lower()
-        
+
         # Check for common keywords with simple string operations
         if "def " in code and "(" in code:
             return "python"
-        elif "function " in code and "(" in code:
+        if "function " in code and "(" in code:
             return "javascript"
-        elif "class " in code and "{" in code:
+        if "class " in code and "{" in code:
             return "java"
-        elif "#include" in code:
+        if "#include" in code:
             return "cpp"
-        elif "select " in code_lower and "from " in code_lower:
+        if "select " in code_lower and "from " in code_lower:
             return "sql"
-        elif any(tag in code_lower for tag in ["<html", "<div", "<p>"]):
+        if any(tag in code_lower for tag in ["<html", "<div", "<p>"]):
             return "html"
-        elif code.strip().startswith("{") and ":" in code:
+        if code.strip().startswith("{") and ":" in code:
             return "json"
-        elif "---" in code:
+        if "---" in code:
             return "yaml"
-        else:
-            return "text"
+        return "text"
 
     def _extract_comments(self, code: str, language: str) -> list[str]:
         """Extract comments from code based on language."""
@@ -311,43 +309,43 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         if language == "python":
             # Python comments - use simple line-by-line parsing
-            for line in code.split('\n'):
-                if '#' in line:
-                    comment_part = line.split('#', 1)[1].strip()
+            for line in code.split("\n"):
+                if "#" in line:
+                    comment_part = line.split("#", 1)[1].strip()
                     if comment_part:
                         comments.append(comment_part)
-            
+
             # Simple docstring detection
             if '"""' in code:
                 parts = code.split('"""')
                 for i in range(1, len(parts), 2):  # Every other part is a docstring
                     if parts[i].strip():
                         comments.append(parts[i].strip())
-                        
+
         elif language in ["javascript", "java", "cpp"]:
             # C-style comments - use simple line-by-line parsing
-            for line in code.split('\n'):
-                if '//' in line:
-                    comment_part = line.split('//', 1)[1].strip()
+            for line in code.split("\n"):
+                if "//" in line:
+                    comment_part = line.split("//", 1)[1].strip()
                     if comment_part:
                         comments.append(comment_part)
-                        
+
             # Simple block comment detection
-            if '/*' in code and '*/' in code:
-                parts = code.split('/*')
+            if "/*" in code and "*/" in code:
+                parts = code.split("/*")
                 for part in parts[1:]:  # Skip first part (before first comment)
-                    if '*/' in part:
-                        comment_content = part.split('*/', 1)[0].strip()
+                    if "*/" in part:
+                        comment_content = part.split("*/", 1)[0].strip()
                         if comment_content:
                             comments.append(comment_content)
-                            
+
         elif language == "html":
             # HTML comments - use simple string operations
-            if '<!--' in code and '-->' in code:
-                parts = code.split('<!--')
+            if "<!--" in code and "-->" in code:
+                parts = code.split("<!--")
                 for part in parts[1:]:  # Skip first part (before first comment)
-                    if '-->' in part:
-                        comment_content = part.split('-->', 1)[0].strip()
+                    if "-->" in part:
+                        comment_content = part.split("-->", 1)[0].strip()
                         if comment_content:
                             comments.append(comment_content)
 
@@ -358,10 +356,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         if language == "python":
             # Simple check for Python function definitions
             return "def " in code and "(" in code
-        elif language == "javascript":
+        if language == "javascript":
             # Simple check for JavaScript function definitions
             return "function " in code and "(" in code
-        elif language in ["java", "cpp"]:
+        if language in ["java", "cpp"]:
             # Simple check for Java/C++ function definitions
             return "(" in code and ")" in code and "{" in code
         return False
@@ -369,10 +367,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
     def _assess_complexity(self, code: str) -> str:
         """Assess code complexity based on lines and complexity indicators."""
         lines = len(code.split("\n"))
-        
+
         # Count complexity indicators
         complexity_indicators = 0
-        
+
         # Check for control structures
         if "if " in code or "elif " in code or "else:" in code:
             complexity_indicators += 1
@@ -384,14 +382,13 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             complexity_indicators += 1
         if "import " in code:
             complexity_indicators += 1
-            
+
         # Assess based on lines and complexity indicators
         if lines < 10 and complexity_indicators <= 1:
             return "simple"
-        elif lines >= 20 or complexity_indicators > 3:
+        if lines >= 20 or complexity_indicators > 3:
             return "complex"
-        else:
-            return "moderate"
+        return "moderate"
 
     def format_code_blocks_for_export(self, code_blocks: list[dict[str, str]]) -> str:
         """
@@ -445,7 +442,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
                 export_content += f"• Preview: {block['preview']}\n"
 
             export_content += f"\n{'-'*40}\n"
-            export_content += f"CODE:\n"
+            export_content += "CODE:\n"
             export_content += f"{'-'*40}\n"
             export_content += block["content"]
             export_content += "\n\n"
@@ -453,7 +450,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             # Include comments if available
             if block.get("comments"):
                 export_content += f"{'-'*40}\n"
-                export_content += f"COMMENTS:\n"
+                export_content += "COMMENTS:\n"
                 export_content += f"{'-'*40}\n"
                 for comment in block["comments"]:
                     export_content += f"• {comment}\n"
@@ -516,7 +513,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
             # Add comments if available
             if block.get("comments"):
-                markdown_content += f"**Comments:**\n"
+                markdown_content += "**Comments:**\n"
                 for comment in block["comments"]:
                     markdown_content += f"- {comment}\n"
                 markdown_content += "\n"

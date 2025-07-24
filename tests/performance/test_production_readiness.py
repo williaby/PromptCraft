@@ -20,7 +20,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 # CI environment detection for more lenient thresholds
-IS_CI = os.getenv('CI', '').lower() in ('true', '1', 'yes') or os.getenv('GITHUB_ACTIONS', '').lower() == 'true'
+IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
 
 from src.config.settings import ApplicationSettings
 from src.core.hyde_processor import HydeProcessor
@@ -172,14 +172,14 @@ class TestProductionReadiness:
                     intent = await counselor.analyze_intent(query)
                     hyde_result = await counselor.hyde_processor.process_query(query)
                     agent_selection = await counselor.select_agents(intent)
-                    
+
                     # Convert AgentSelection to list of Agent objects
                     selected_agents = []
                     for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
                         agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
                         if agent:
                             selected_agents.append(agent)
-                    
+
                     responses = await counselor.orchestrate_workflow(selected_agents, hyde_result["enhanced_query"])
 
                     processing_time = time.time() - start_time
@@ -191,18 +191,23 @@ class TestProductionReadiness:
 
                     # Record performance metrics using MetricData
                     from src.utils.performance_monitor import MetricData, MetricType
-                    performance_monitor.record_metric(MetricData(
-                        name="query_time",
-                        value=processing_time,
-                        timestamp=time.time(),
-                        metric_type=MetricType.TIMER
-                    ))
-                    performance_monitor.record_metric(MetricData(
-                        name="response_quality",
-                        value=len(responses[0].content),
-                        timestamp=time.time(),
-                        metric_type=MetricType.GAUGE
-                    ))
+
+                    performance_monitor.record_metric(
+                        MetricData(
+                            name="query_time",
+                            value=processing_time,
+                            timestamp=time.time(),
+                            metric_type=MetricType.TIMER,
+                        ),
+                    )
+                    performance_monitor.record_metric(
+                        MetricData(
+                            name="response_quality",
+                            value=len(responses[0].content),
+                            timestamp=time.time(),
+                            metric_type=MetricType.GAUGE,
+                        ),
+                    )
 
                 # Verify performance requirements (CI-adapted thresholds)
                 avg_response_time = statistics.mean(response_times)
@@ -214,7 +219,9 @@ class TestProductionReadiness:
                 max_threshold = 5.0 if IS_CI else 2.0
                 p95_threshold = 5.0 if IS_CI else 2.0
 
-                assert avg_response_time < avg_threshold, f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s target"
+                assert (
+                    avg_response_time < avg_threshold
+                ), f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s target"
                 assert (
                     max_response_time < max_threshold
                 ), f"Maximum response time {max_response_time:.2f}s exceeds {max_threshold}s requirement"
@@ -225,17 +232,19 @@ class TestProductionReadiness:
                 # Verify performance metrics (CI-adapted)
                 metrics = performance_monitor.get_all_metrics()
                 metrics_threshold = 3.0 if IS_CI else 1.5
-                
+
                 # Check timer metrics for query time
                 timer_stats = performance_monitor.get_timer_stats("query_time")
                 if timer_stats:
                     assert timer_stats.get("mean", 0) < metrics_threshold
-                
+
                 # Check gauge for response quality (CI-adapted threshold)
                 response_quality = performance_monitor.get_gauge("response_quality")
                 min_response_length = 20 if IS_CI else 50  # More lenient thresholds
                 if response_quality > 0:  # Only check if we have responses
-                    assert response_quality > min_response_length, f"Response quality {response_quality} below {min_response_length} threshold"
+                    assert (
+                        response_quality > min_response_length
+                    ), f"Response quality {response_quality} below {min_response_length} threshold"
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -311,14 +320,14 @@ class TestProductionReadiness:
                         intent = await counselor.analyze_intent(query)
                         hyde_result = await counselor.hyde_processor.process_query(query)
                         agent_selection = await counselor.select_agents(intent)
-                        
+
                         # Convert AgentSelection to list of Agent objects
                         selected_agents = []
                         for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
                             agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
                             if agent:
                                 selected_agents.append(agent)
-                        
+
                         responses = await counselor.orchestrate_workflow(selected_agents, hyde_result["enhanced_query"])
 
                         processing_time = time.time() - start_time
@@ -383,25 +392,29 @@ class TestProductionReadiness:
 
                     # Record performance metrics using MetricData
                     from src.utils.performance_monitor import MetricData, MetricType
-                    performance_monitor.record_metric(MetricData(
-                        name="concurrent_queries",
-                        value=concurrent_queries,
-                        timestamp=time.time(),
-                        metric_type=MetricType.GAUGE
-                    ))
-                    performance_monitor.record_metric(MetricData(
-                        name="success_rate",
-                        value=success_rate,
-                        timestamp=time.time(),
-                        metric_type=MetricType.GAUGE
-                    ))
-                    if response_times:
-                        performance_monitor.record_metric(MetricData(
-                            name="avg_response_time",
-                            value=avg_response_time,
+
+                    performance_monitor.record_metric(
+                        MetricData(
+                            name="concurrent_queries",
+                            value=concurrent_queries,
                             timestamp=time.time(),
-                            metric_type=MetricType.TIMER
-                        ))
+                            metric_type=MetricType.GAUGE,
+                        ),
+                    )
+                    performance_monitor.record_metric(
+                        MetricData(
+                            name="success_rate", value=success_rate, timestamp=time.time(), metric_type=MetricType.GAUGE,
+                        ),
+                    )
+                    if response_times:
+                        performance_monitor.record_metric(
+                            MetricData(
+                                name="avg_response_time",
+                                value=avg_response_time,
+                                timestamp=time.time(),
+                                metric_type=MetricType.TIMER,
+                            ),
+                        )
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -464,14 +477,14 @@ class TestProductionReadiness:
                 intent = await counselor.analyze_intent("Production readiness test query")
                 hyde_result = await counselor.hyde_processor.process_query("Production readiness test query")
                 agent_selection = await counselor.select_agents(intent)
-                
+
                 # Convert AgentSelection to list of Agent objects
                 selected_agents = []
                 for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
                     agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
                     if agent:
                         selected_agents.append(agent)
-                
+
                 await counselor.orchestrate_workflow(selected_agents, hyde_result["enhanced_query"])
                 response_time = time.time() - start_time
 
@@ -528,12 +541,12 @@ class TestProductionReadiness:
                 try:
                     # Record performance metric using MetricData
                     from src.utils.performance_monitor import MetricData, MetricType
-                    performance_monitor.record_metric(MetricData(
-                        name="query_time",
-                        value=response_time,
-                        timestamp=time.time(),
-                        metric_type=MetricType.TIMER
-                    ))
+
+                    performance_monitor.record_metric(
+                        MetricData(
+                            name="query_time", value=response_time, timestamp=time.time(), metric_type=MetricType.TIMER,
+                        ),
+                    )
                     metrics = performance_monitor.get_all_metrics()
                     # Check if timer stats for query_time exist
                     timer_stats = performance_monitor.get_timer_stats("query_time")
@@ -677,14 +690,14 @@ class TestProductionReadiness:
                     intent = await counselor.analyze_intent(query)
                     hyde_result = await counselor.hyde_processor.process_query(query)
                     agent_selection = await counselor.select_agents(intent)
-                    
+
                     # Convert AgentSelection to list of Agent objects
                     selected_agents = []
                     for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
                         agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
                         if agent:
                             selected_agents.append(agent)
-                    
+
                     await counselor.orchestrate_workflow(selected_agents, hyde_result["enhanced_query"])
 
                     # Measure memory every 10 queries
@@ -704,12 +717,18 @@ class TestProductionReadiness:
                 peak_memory_limit = 200 if IS_CI else 100  # MB - more lenient in CI
                 memory_trend_limit = 1.0 if IS_CI else 0.5  # MB per measurement
 
-                assert memory_increase < memory_increase_limit, f"Memory increase {memory_increase:.1f}MB exceeds {memory_increase_limit}MB limit"
-                assert peak_memory < baseline_memory + peak_memory_limit, f"Peak memory {peak_memory:.1f}MB exceeds baseline + {peak_memory_limit}MB"
+                assert (
+                    memory_increase < memory_increase_limit
+                ), f"Memory increase {memory_increase:.1f}MB exceeds {memory_increase_limit}MB limit"
+                assert (
+                    peak_memory < baseline_memory + peak_memory_limit
+                ), f"Peak memory {peak_memory:.1f}MB exceeds baseline + {peak_memory_limit}MB"
 
                 # Check for memory leaks
                 memory_trend = (memory_measurements[-1] - memory_measurements[0]) / len(memory_measurements)
-                assert memory_trend < memory_trend_limit, f"Memory trend {memory_trend:.2f}MB per measurement indicates potential leak"
+                assert (
+                    memory_trend < memory_trend_limit
+                ), f"Memory trend {memory_trend:.2f}MB per measurement indicates potential leak"
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -733,10 +752,10 @@ class TestProductionReadiness:
 
                 # Simulate realistic load pattern with pronounced differences
                 # Phase 1 (Light): calls 1-30 -> low load
-                # Phase 2 (Medium): calls 31-60 -> medium load  
+                # Phase 2 (Medium): calls 31-60 -> medium load
                 # Phase 3 (Heavy): calls 61-90 -> high load
                 # Phase 4 (Recovery): calls 91+ -> back to low load
-                
+
                 if call_count <= 30:  # Light load
                     load_factor = 1.0
                 elif call_count <= 60:  # Medium load
@@ -829,15 +848,17 @@ class TestProductionReadiness:
                             intent = await counselor.analyze_intent(query)
                             hyde_result = await counselor.hyde_processor.process_query(query)
                             agent_selection = await counselor.select_agents(intent)
-                            
+
                             # Convert AgentSelection to list of Agent objects
                             selected_agents = []
                             for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
                                 agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
                                 if agent:
                                     selected_agents.append(agent)
-                            
-                            responses = await counselor.orchestrate_workflow(selected_agents, hyde_result["enhanced_query"])
+
+                            responses = await counselor.orchestrate_workflow(
+                                selected_agents, hyde_result["enhanced_query"],
+                            )
 
                             processing_time = time.time() - start_time
 
@@ -904,22 +925,31 @@ class TestProductionReadiness:
                 recovery_improvement = (
                     heavy_load_result["avg_response_time"] - recovery_result["avg_response_time"]
                 ) / heavy_load_result["avg_response_time"]
-                
+
                 # More lenient threshold for CI environments where timing is less predictable
                 if IS_CI:
                     # In CI, timing is highly variable - focus on ensuring recovery doesn't degrade significantly
                     # Allow negative improvement up to -5% in CI, but still expect some recovery
                     improvement_threshold = -0.05  # Allow up to 5% degradation in CI
-                    assert recovery_improvement > improvement_threshold, f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (CI allows timing variation)"
-                    
+                    assert (
+                        recovery_improvement > improvement_threshold
+                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (CI allows timing variation)"
+
                     # Additional CI-specific check: recovery should be reasonable compared to light load
                     # CI environments have highly variable timing, so be very lenient
                     light_load_result = phase_results[0]
-                    recovery_vs_light = abs(recovery_result["avg_response_time"] - light_load_result["avg_response_time"]) / light_load_result["avg_response_time"]
-                    assert recovery_vs_light < 1.0, f"Recovery time should be within 100% of light load baseline (was {recovery_vs_light:.2%}) - CI timing is highly variable"
+                    recovery_vs_light = (
+                        abs(recovery_result["avg_response_time"] - light_load_result["avg_response_time"])
+                        / light_load_result["avg_response_time"]
+                    )
+                    assert (
+                        recovery_vs_light < 1.0
+                    ), f"Recovery time should be within 100% of light load baseline (was {recovery_vs_light:.2%}) - CI timing is highly variable"
                 else:
                     # Local environment - expect clear improvement with more pronounced timing
                     # With load_factor of 8.0 vs 1.0, we should see significant improvement
                     # But allow for some timing variability even in local environment
                     improvement_threshold = 0.05  # 5% improvement expected with pronounced timing
-                    assert recovery_improvement > improvement_threshold, f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}%"
+                    assert (
+                        recovery_improvement > improvement_threshold
+                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}%"

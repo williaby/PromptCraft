@@ -230,7 +230,7 @@ The CI pipeline uses tiered testing for optimal performance:
 
 **Test Distribution:**
 - Unit tests: 1,603 (fast, < 5 minutes)
-- Integration tests: 161 (moderate, < 3 minutes)  
+- Integration tests: 161 (moderate, < 3 minutes)
 - Performance tests: 24 (slow, excluded from PRs)
 - Auth/Security tests: 35 (fast, always included)
 

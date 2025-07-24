@@ -15,12 +15,10 @@ import pytest
 from src.config.settings import ApplicationSettings
 from src.core.query_counselor import QueryCounselor
 from src.mcp_integration.mcp_client import (
-    MCPAuthenticationError,
     MCPClientFactory,
     MCPConnectionError,
     MCPConnectionState,
     MCPHealthStatus,
-    MCPRateLimitError,
     MCPServiceUnavailableError,
     MCPTimeoutError,
     MCPValidationError,
@@ -288,7 +286,9 @@ class TestRealMCPIntegration:
             mock_error_response_401.status_code = 401
             mock_error_response_401.headers = {"content-type": "application/json"}
             mock_error_response_401.json.return_value = {"error": "Unauthorized"}
-            http_error_401 = httpx.HTTPStatusError("Unauthorized", request=MagicMock(), response=mock_error_response_401)
+            http_error_401 = httpx.HTTPStatusError(
+                "Unauthorized", request=MagicMock(), response=mock_error_response_401,
+            )
             mock_httpx_client.post.side_effect = http_error_401
 
             with pytest.raises(MCPServiceUnavailableError):
@@ -301,7 +301,7 @@ class TestRealMCPIntegration:
             with pytest.raises(MCPConnectionError):
                 await zen_mcp_client.validate_query("some query")
 
-            # Test timeout error  
+            # Test timeout error
             timeout_error = httpx.TimeoutException("Request timeout")
             mock_httpx_client.post.side_effect = timeout_error
 
@@ -380,6 +380,7 @@ class TestRealMCPIntegration:
 
             # Create QueryCounselor with MockMCP client to avoid real MCP interactions
             from src.mcp_integration.mcp_client import MockMCPClient
+
             mock_client = MockMCPClient()
             counselor = QueryCounselor(mcp_client=mock_client)
 
@@ -404,21 +405,22 @@ class TestRealMCPIntegration:
 
             # Test orchestrating with MockMCPClient (no HTTP calls needed)
             from src.mcp_integration.mcp_client import WorkflowStep
+
             workflow_steps = [
                 WorkflowStep(
                     step_id="step_1",
                     agent_id=agents.primary_agents[0],
                     input_data={"query": query, "type": "create_enhancement"},
-                )
+                ),
             ]
             responses = await counselor.mcp_client.orchestrate_agents(workflow_steps)
-            
+
             # MockMCPClient returns mock responses
             assert len(responses) == 1
             assert responses[0].agent_id == agents.primary_agents[0]
             assert responses[0].success is True
             assert len(responses[0].content) > 0
-            
+
             # MockMCPClient doesn't make real HTTP calls, so no verification needed
             # The test validates that the integration flows work end-to-end
 

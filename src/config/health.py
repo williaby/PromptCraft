@@ -236,20 +236,20 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
         def is_sensitive_quoted_value(match):
             value = match.group(1) if match.groups() else match.group(0)[1:-1]
             # Don't sanitize short field names that look like identifiers
-            if len(value) <= 8 and '_' in value and value.islower() and value.isalnum() == False:
+            if len(value) <= 8 and "_" in value and value.islower() and value.isalnum() == False:
                 return False
             # Check if the quoted value looks like sensitive data or is just any value being quoted
-            sensitive_indicators = ['pass', 'secret', 'token', 'auth', 'credential']
+            sensitive_indicators = ["pass", "secret", "token", "auth", "credential"]
             return any(indicator in value.lower() for indicator in sensitive_indicators) or len(value) > 8
-        
+
         # Replace quoted values that look sensitive
-        sanitized_error = re.sub(r"'([^']*)'", 
-                               lambda m: "'***'" if is_sensitive_quoted_value(m) else m.group(0), 
-                               sanitized_error)
-        sanitized_error = re.sub(r'"([^"]*)"', 
-                               lambda m: '"***"' if is_sensitive_quoted_value(m) else m.group(0), 
-                               sanitized_error)
-        
+        sanitized_error = re.sub(
+            r"'([^']*)'", lambda m: "'***'" if is_sensitive_quoted_value(m) else m.group(0), sanitized_error,
+        )
+        sanitized_error = re.sub(
+            r'"([^"]*)"', lambda m: '"***"' if is_sensitive_quoted_value(m) else m.group(0), sanitized_error,
+        )
+
         # Check for sensitive patterns using pre-compiled regex patterns
         # Only do full replacement if the error hasn't been sanitized and contains obvious secrets
         pattern_matched = False
@@ -262,7 +262,7 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
                         sanitized_error = replacement
                         pattern_matched = True
                         break
-        
+
         # Check for file path patterns using pre-compiled patterns
         if not pattern_matched and sanitized_error == error:
             for compiled_path_pattern in _COMPILED_FILE_PATH_PATTERNS:

@@ -178,7 +178,7 @@ class TestHybridRouterIntegration:
                 router = HybridRouter(
                     openrouter_client=mock_or_instance,
                     mcp_client=mock_mcp_client,
-                    strategy=RoutingStrategy.OPENROUTER_PRIMARY
+                    strategy=RoutingStrategy.OPENROUTER_PRIMARY,
                 )
 
                 # Test connection

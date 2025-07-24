@@ -14,8 +14,8 @@ This report documents the findings and fixes for cross-cutting mock issues acros
   ```python
   # Before
   r"(?:you are|act as|role:|as a) (.*?)(?:\.|,|$)"
-  
-  # After  
+
+  # After
   r"(?:you are|act as|role:)\s*(?:a\s+)?(.*?)(?:\s+with|\.|,|$)"
   r"(?:as a)\s+(.*?)(?:\s+with|\.|,|$)"
   ```
@@ -33,7 +33,7 @@ This report documents the findings and fixes for cross-cutting mock issues acros
       return "moderate"
   else:
       return "complex"
-  
+
   # After
   if lines < 10 and complexity_indicators <= 1:
       return "simple"
@@ -67,7 +67,7 @@ def mock_base_agent() -> Mock:
     mock_agent = Mock(spec=BaseAgent)
     mock_agent.agent_id = "test_agent"
     mock_agent.config = {"agent_id": "test_agent"}
-    
+
     # Use AsyncMock for async methods
     mock_agent.execute = AsyncMock(return_value=expected_output)
     return mock_agent

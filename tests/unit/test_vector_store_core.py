@@ -4,28 +4,28 @@ Tests for core vector store implementation.
 This module tests the actual vector store classes and interfaces to improve coverage.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock
-from typing import List, Dict, Any
 
 # Import the actual vector store classes to get coverage
 from src.core.vector_store import (
-    VectorStoreType,
-    ConnectionStatus,
-    SearchStrategy,
-    VectorStoreMetrics,
-    VectorDocument,
-    SearchResult,
-    SearchParameters,
-    BatchOperationResult,
-    HealthCheckResult,
     AbstractVectorStore,
+    BatchOperationResult,
+    ConnectionStatus,
     EnhancedMockVectorStore,
+    HealthCheckResult,
+    MockVectorStore,
     QdrantVectorStore,
+    SearchParameters,
+    SearchResult,
+    SearchStrategy,
+    VectorDocument,
     VectorStoreFactory,
-    MockVectorStore
+    VectorStoreMetrics,
+    VectorStoreType,
 )
+
 
 class TestEnums:
     """Test enum classes."""
@@ -49,6 +49,7 @@ class TestEnums:
         assert SearchStrategy.SEMANTIC == "semantic"
         assert SearchStrategy.FILTERED == "filtered"
 
+
 class TestVectorStoreMetrics:
     """Test VectorStoreMetrics class."""
 
@@ -66,7 +67,7 @@ class TestVectorStoreMetrics:
         """Test recording search metrics."""
         metrics = VectorStoreMetrics()
         metrics.update_search_metrics(0.5)
-        
+
         assert metrics.search_count == 1
         assert metrics.total_latency == 0.5
         assert metrics.avg_latency == 0.5
@@ -81,7 +82,7 @@ class TestVectorStoreMetrics:
         """Test recording insert metrics."""
         metrics = VectorStoreMetrics()
         metrics.update_insert_metrics(0.3)
-        
+
         assert metrics.insert_count == 1
         assert metrics.total_latency == 0.3
         assert metrics.avg_latency == 0.3
@@ -90,7 +91,7 @@ class TestVectorStoreMetrics:
         """Test recording error metrics."""
         metrics = VectorStoreMetrics()
         metrics.increment_error_count()
-        
+
         assert metrics.error_count == 1
 
     def test_combined_metrics(self):
@@ -99,25 +100,21 @@ class TestVectorStoreMetrics:
         metrics.update_search_metrics(0.5)
         metrics.update_insert_metrics(0.3)
         metrics.increment_error_count()
-        
+
         assert metrics.search_count == 1
         assert metrics.insert_count == 1
         assert metrics.error_count == 1
         assert metrics.total_latency == 0.8  # 0.5 + 0.3
         assert metrics.avg_latency == 0.4  # 0.8 / 2
 
+
 class TestVectorStoreModels:
     """Test vector store model classes."""
 
     def test_vector_document_creation(self):
         """Test VectorDocument model creation."""
-        doc = VectorDocument(
-            id="doc1",
-            content="Test content",
-            embedding=[0.1, 0.2, 0.3],
-            metadata={"type": "test"}
-        )
-        
+        doc = VectorDocument(id="doc1", content="Test content", embedding=[0.1, 0.2, 0.3], metadata={"type": "test"})
+
         assert doc.id == "doc1"
         assert doc.content == "Test content"
         assert doc.embedding == [0.1, 0.2, 0.3]
@@ -130,9 +127,9 @@ class TestVectorStoreModels:
             content="Test content",
             score=0.95,
             metadata={"source": "test"},
-            embedding=[0.1, 0.2, 0.3]
+            embedding=[0.1, 0.2, 0.3],
         )
-        
+
         assert result.document_id == "doc1"
         assert result.content == "Test content"
         assert result.score == 0.95
@@ -142,7 +139,7 @@ class TestVectorStoreModels:
     def test_search_parameters_defaults(self):
         """Test SearchParameters with defaults."""
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
-        
+
         assert params.limit == 10
         assert params.score_threshold == 0.0
         assert params.strategy == SearchStrategy.SEMANTIC
@@ -157,9 +154,9 @@ class TestVectorStoreModels:
             score_threshold=0.8,
             strategy=SearchStrategy.HYBRID,
             filters={"type": "document"},
-            collection="custom"
+            collection="custom",
         )
-        
+
         assert params.limit == 5
         assert params.score_threshold == 0.8
         assert params.strategy == SearchStrategy.HYBRID
@@ -174,9 +171,9 @@ class TestVectorStoreModels:
             total_count=3,
             errors=["Error processing doc3"],
             processing_time=1.5,
-            batch_id="batch_123"
+            batch_id="batch_123",
         )
-        
+
         assert result.success_count == 2
         assert result.error_count == 1
         assert result.total_count == 3
@@ -186,15 +183,12 @@ class TestVectorStoreModels:
 
     def test_health_check_result(self):
         """Test HealthCheckResult model."""
-        result = HealthCheckResult(
-            status=ConnectionStatus.HEALTHY,
-            latency=50.0,
-            details={"collections": 5}
-        )
-        
+        result = HealthCheckResult(status=ConnectionStatus.HEALTHY, latency=50.0, details={"collections": 5})
+
         assert result.status == ConnectionStatus.HEALTHY
         assert result.latency == 50.0
         assert result.details == {"collections": 5}
+
 
 class TestEnhancedMockVectorStore:
     """Test EnhancedMockVectorStore implementation."""
@@ -208,11 +202,11 @@ class TestEnhancedMockVectorStore:
         """Test connection and disconnection."""
         # Initially disconnected
         assert not self.store._connected
-        
+
         # Connect
         await self.store.connect()
         assert self.store._connected
-        
+
         # Disconnect
         await self.store.disconnect()
         assert not self.store._connected
@@ -221,9 +215,9 @@ class TestEnhancedMockVectorStore:
     async def test_health_check(self):
         """Test health check functionality."""
         await self.store.connect()
-        
+
         health = await self.store.health_check()
-        
+
         assert isinstance(health, HealthCheckResult)
         assert health.status == ConnectionStatus.HEALTHY
         assert health.latency >= 0
@@ -232,17 +226,17 @@ class TestEnhancedMockVectorStore:
     async def test_health_check_disconnected(self):
         """Test health check when disconnected."""
         health = await self.store.health_check()
-        
+
         assert health.status == ConnectionStatus.UNHEALTHY
 
     @pytest.mark.asyncio
     async def test_create_collection(self):
         """Test collection creation."""
         await self.store.connect()
-        
+
         result = await self.store.create_collection("test_collection", vector_size=128)
         assert result is True
-        
+
         # Collection should exist
         collections = await self.store.list_collections()
         assert "test_collection" in collections
@@ -251,11 +245,11 @@ class TestEnhancedMockVectorStore:
     async def test_create_existing_collection(self):
         """Test creating an existing collection."""
         await self.store.connect()
-        
+
         # Create collection first time
         result1 = await self.store.create_collection("test_collection", vector_size=128)
         assert result1 is True
-        
+
         # Try to create again
         result2 = await self.store.create_collection("test_collection", vector_size=128)
         assert result2 is False  # Should fail or return False for existing
@@ -265,24 +259,14 @@ class TestEnhancedMockVectorStore:
         """Test document insertion."""
         await self.store.connect()
         await self.store.create_collection("test_collection", vector_size=3)
-        
+
         docs = [
-            VectorDocument(
-                id="doc1",
-                content="First document",
-                embedding=[0.1, 0.2, 0.3],
-                metadata={"type": "test"}
-            ),
-            VectorDocument(
-                id="doc2",
-                content="Second document",
-                embedding=[0.4, 0.5, 0.6],
-                metadata={"type": "test"}
-            )
+            VectorDocument(id="doc1", content="First document", embedding=[0.1, 0.2, 0.3], metadata={"type": "test"}),
+            VectorDocument(id="doc2", content="Second document", embedding=[0.4, 0.5, 0.6], metadata={"type": "test"}),
         ]
-        
+
         result = await self.store.insert_documents(docs)
-        
+
         assert isinstance(result, BatchOperationResult)
         assert result.success_count == 2
         assert result.error_count == 0
@@ -292,22 +276,17 @@ class TestEnhancedMockVectorStore:
         """Test document searching."""
         await self.store.connect()
         await self.store.create_collection("test_collection", vector_size=3)
-        
+
         # Insert test documents
         docs = [
-            VectorDocument(
-                id="doc1",
-                content="First document",
-                embedding=[0.1, 0.2, 0.3],
-                metadata={"type": "test"}
-            )
+            VectorDocument(id="doc1", content="First document", embedding=[0.1, 0.2, 0.3], metadata={"type": "test"}),
         ]
         await self.store.insert_documents(docs)
-        
+
         # Search
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]], limit=5)
         results = await self.store.search(params)
-        
+
         assert isinstance(results, list)
         if results:  # Mock might return results
             assert isinstance(results[0], SearchResult)
@@ -317,23 +296,15 @@ class TestEnhancedMockVectorStore:
         """Test document updating."""
         await self.store.connect()
         await self.store.create_collection("test_collection", vector_size=3)
-        
+
         # Insert document first
-        doc = VectorDocument(
-            id="doc1",
-            content="Original content",
-            embedding=[0.1, 0.2, 0.3]
-        )
+        doc = VectorDocument(id="doc1", content="Original content", embedding=[0.1, 0.2, 0.3])
         await self.store.insert_documents([doc])
-        
+
         # Update document
-        updated_doc = VectorDocument(
-            id="doc1",
-            content="Updated content",
-            embedding=[0.4, 0.5, 0.6]
-        )
+        updated_doc = VectorDocument(id="doc1", content="Updated content", embedding=[0.4, 0.5, 0.6])
         result = await self.store.update(updated_doc, "test_collection")
-        
+
         assert result is True
 
     @pytest.mark.asyncio
@@ -341,18 +312,14 @@ class TestEnhancedMockVectorStore:
         """Test document deletion."""
         await self.store.connect()
         await self.store.create_collection("test_collection", vector_size=3)
-        
+
         # Insert document first
-        doc = VectorDocument(
-            id="doc1",
-            content="Test content",
-            embedding=[0.1, 0.2, 0.3]
-        )
+        doc = VectorDocument(id="doc1", content="Test content", embedding=[0.1, 0.2, 0.3])
         await self.store.insert_documents([doc])
-        
+
         # Delete document
         result = await self.store.delete(["doc1"], "test_collection")
-        
+
         assert isinstance(result, BatchOperationResult)
 
     @pytest.mark.asyncio
@@ -360,9 +327,9 @@ class TestEnhancedMockVectorStore:
         """Test getting collection information."""
         await self.store.connect()
         await self.store.create_collection("test_collection", vector_size=128)
-        
+
         info = await self.store.get_collection_info("test_collection")
-        
+
         assert isinstance(info, dict)
         assert "name" in info
 
@@ -371,9 +338,10 @@ class TestEnhancedMockVectorStore:
         """Test using store as context manager."""
         async with self.store as store:
             assert store.is_connected()
-        
+
         # Should be disconnected after exiting context
         assert not self.store.is_connected()
+
 
 class TestQdrantVectorStore:
     """Test QdrantVectorStore implementation."""
@@ -396,16 +364,16 @@ class TestQdrantVectorStore:
         """Test connection attempt (will fail without real Qdrant)."""
         with patch("src.core.vector_store.QdrantClient") as mock_client:
             mock_client.return_value.get_collections.return_value = Mock()
-            
+
             await self.store.connect()
-            
+
             mock_client.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_health_check_disconnected(self):
         """Test health check when disconnected."""
         health = await self.store.health_check()
-        
+
         assert health.status == ConnectionStatus.UNHEALTHY
 
     @pytest.mark.asyncio
@@ -413,9 +381,10 @@ class TestQdrantVectorStore:
         """Test that operations require connection."""
         # All operations should handle disconnected state gracefully
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
-        
+
         with pytest.raises(Exception):
             await self.store.search(params)
+
 
 class TestVectorStoreFactory:
     """Test VectorStoreFactory."""
@@ -423,14 +392,14 @@ class TestVectorStoreFactory:
     def test_create_mock_store(self):
         """Test creating mock store."""
         store = VectorStoreFactory.create_store(VectorStoreType.MOCK)
-        
+
         assert isinstance(store, EnhancedMockVectorStore)
 
     def test_create_qdrant_store(self):
         """Test creating Qdrant store."""
         with patch("src.core.vector_store.ApplicationSettings"):
             store = VectorStoreFactory.create_store(VectorStoreType.QDRANT)
-            
+
             assert isinstance(store, QdrantVectorStore)
 
     def test_create_store_from_config(self):
@@ -440,7 +409,7 @@ class TestVectorStoreFactory:
             mock_settings.return_value.vector_store_type = "mock"
             store = VectorStoreFactory.create_store_from_config()
             assert isinstance(store, EnhancedMockVectorStore)
-            
+
             # Test qdrant config
             mock_settings.return_value.vector_store_type = "qdrant"
             store = VectorStoreFactory.create_store_from_config()
@@ -454,9 +423,10 @@ class TestVectorStoreFactory:
     def test_get_supported_types(self):
         """Test getting supported store types."""
         types = VectorStoreFactory.get_supported_types()
-        
+
         assert VectorStoreType.MOCK in types
         assert VectorStoreType.QDRANT in types
+
 
 class TestMockVectorStoreCompatibility:
     """Test MockVectorStore compatibility class."""
@@ -464,7 +434,7 @@ class TestMockVectorStoreCompatibility:
     def test_mock_vector_store_inheritance(self):
         """Test MockVectorStore inherits from EnhancedMockVectorStore."""
         store = MockVectorStore()
-        
+
         assert isinstance(store, EnhancedMockVectorStore)
         assert isinstance(store, AbstractVectorStore)
 
@@ -473,10 +443,11 @@ class TestMockVectorStoreCompatibility:
         """Test legacy compatibility methods work."""
         store = MockVectorStore()
         await store.connect()
-        
+
         # Should have all the enhanced functionality
         collections = await store.list_collections()
         assert isinstance(collections, list)
+
 
 class TestVectorStoreErrorHandling:
     """Test error handling in vector store operations."""
@@ -490,13 +461,13 @@ class TestVectorStoreErrorHandling:
         """Test operations when store is disconnected."""
         # Most operations should handle disconnected state gracefully
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
-        
+
         # These should not crash but may return empty results or handle gracefully
         try:
             await self.store.search(params)
         except Exception:
             pass  # Expected for some implementations
-        
+
         try:
             await self.store.list_collections()
         except Exception:
@@ -506,11 +477,11 @@ class TestVectorStoreErrorHandling:
     async def test_invalid_collection_operations(self):
         """Test operations on non-existent collections."""
         await self.store.connect()
-        
+
         # Operations on non-existent collections should be handled gracefully
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]], collection="nonexistent")
         results = await self.store.search(params)
-        
+
         # Should return empty results or handle gracefully
         assert isinstance(results, list)
 
@@ -518,14 +489,14 @@ class TestVectorStoreErrorHandling:
     async def test_metrics_error_tracking(self):
         """Test that metrics track errors properly."""
         await self.store.connect()
-        
+
         initial_errors = self.store.metrics.error_count
-        
+
         # Try an operation that might fail
         try:
             await self.store.search(SearchParameters(embeddings=[[0.1, 0.2, 0.3]], collection="nonexistent"))
         except Exception:
             pass
-        
+
         # Error count might increase depending on implementation
         assert self.store.metrics.error_count >= initial_errors

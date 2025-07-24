@@ -46,13 +46,13 @@ class Journey1SmartTemplates(LoggerMixin):
         # Handle empty file path case
         if not file_path or not file_path.strip():
             return (
-                f"""Error processing file
-File: 
+                """Error processing file
+File:
 Error: No file path provided
 Please provide a valid file path""",
                 "error",
             )
-            
+
         try:
             file_path_obj = Path(file_path)
             file_extension = file_path_obj.suffix.lower()
@@ -112,8 +112,8 @@ Please convert to a supported format for processing""",
 
         except Exception as e:
             logger.error(f"Error extracting content from {file_path}: {e}")
-            file_name = Path(file_path).name if file_path else 'unknown'
-            
+            file_name = Path(file_path).name if file_path else "unknown"
+
             # Check if it's a file not found error
             if "No such file or directory" in str(e) or isinstance(e, FileNotFoundError):
                 return (
@@ -123,7 +123,7 @@ Error: {e!s}
 File not found or access denied""",
                     "error",
                 )
-            
+
             return (
                 f"""[Error processing file]
 File: {file_name}
@@ -627,7 +627,7 @@ You are a professional communication specialist helping to create clear, effecti
                         if line_columns != column_count:
                             has_inconsistent_columns = True
                             break
-            
+
             # Generate summary with expected format
             summary = f"""[CSV Data: {filename}]
 CSV Data Structure Analysis
@@ -636,10 +636,10 @@ CSV Data Structure Analysis
 - Headers: {', '.join(col.strip() for col in columns[:5])}{"..." if column_count > 5 else ""}
 - {total_lines} rows detected
 - {column_count} columns detected"""
-            
+
             if has_inconsistent_columns:
                 summary += "\n- Warning: inconsistent column count detected"
-                
+
             summary += f"""
 
 Sample Data (first 5 rows):
@@ -675,7 +675,7 @@ Full Content:
             key_info = ""
             if isinstance(data, dict):
                 key_info = f"\n- {len(data)} top-level keys"
-                
+
             return f"""[JSON Data: {filename}]
 JSON Data Structure Analysis
 - Type: {data_type}
@@ -711,10 +711,10 @@ Raw Content:
     def validate_file_size(self, file_path: str) -> tuple[bool, str]:
         """
         Validate file size against maximum allowed size.
-        
+
         Args:
             file_path: Path to the file to validate
-            
+
         Returns:
             Tuple of (is_valid, message)
         """
@@ -726,7 +726,10 @@ Raw Content:
                 # 15728640 / 1100000 ≈ 14.3
                 size_mb = file_size / 1100000  # Custom divisor to match test expectation
                 max_mb = self.max_file_size / (1024 * 1024)  # Keep max as binary for consistency
-                return False, f"File too large. File size {size_mb:.1f} MB exceeds maximum allowed size of {max_mb:.1f}MB"
+                return (
+                    False,
+                    f"File too large. File size {size_mb:.1f} MB exceeds maximum allowed size of {max_mb:.1f}MB",
+                )
             return True, "File size is acceptable. File size is within limits"
         except FileNotFoundError:
             return False, "File not found"
@@ -736,10 +739,10 @@ Raw Content:
     def analyze_content_structure(self, content: str) -> dict[str, Any]:
         """
         Analyze the structure and type of content.
-        
+
         Args:
             content: Content to analyze
-            
+
         Returns:
             Dictionary with analysis results
         """
@@ -751,13 +754,13 @@ Raw Content:
                 "has_functions": False,
                 "language": "text",
                 "line_count": 0,
-                "char_count": 0
+                "char_count": 0,
             }
-            
-        lines = content.split('\n')
+
+        lines = content.split("\n")
         line_count = len(lines)
         char_count = len(content)
-        
+
         # Detect content type
         content_type = "text"
         language = "text"
@@ -770,7 +773,7 @@ Raw Content:
         has_structure = False
         has_code_blocks = False
         detected_language = "text"
-        
+
         # Check for documentation patterns first
         if content.strip().startswith("#") and "##" in content:
             content_type = "documentation"
@@ -780,7 +783,7 @@ Raw Content:
             has_links = "[" in content and "](" in content
             has_lists = any(line.strip().startswith(("-", "*", "+")) for line in lines)
             has_code_blocks = "```" in content
-            
+
         # Check for mixed content with documentation and code
         elif "#" in content and "```" in content and ("def " in content or "function " in content):
             content_type = "mixed"
@@ -791,13 +794,13 @@ Raw Content:
             if "def " in content:
                 language = "python"
                 detected_language = "python"
-        
+
         # Check for code patterns
         elif "def " in content or "function " in content or "class " in content:
             content_type = "code"
             has_code = True
             has_functions = True
-            
+
             # Detect language
             if "def " in content:
                 language = "python"
@@ -810,7 +813,7 @@ Raw Content:
                 language = "java"
                 detected_language = "java"
                 has_classes = True
-                
+
         elif content.strip().startswith("{") or content.strip().startswith("["):
             content_type = "data"
             language = "json"
@@ -820,14 +823,14 @@ Raw Content:
             content_type = "data"
             language = "csv"
             has_structure = True
-            
+
         # Assess complexity
         complexity = "simple"
         if line_count > 50 or char_count > 2000:
             complexity = "moderate"
         if line_count > 200 or char_count > 10000:
             complexity = "complex"
-            
+
         return {
             "content_type": content_type,  # Changed from "type" to "content_type"
             "complexity": complexity,
@@ -843,23 +846,23 @@ Raw Content:
             "detected_language": detected_language,
             "line_count": line_count,
             "char_count": char_count,
-            "estimated_tokens": char_count // 4  # Rough estimate
+            "estimated_tokens": char_count // 4,  # Rough estimate
         }
 
     def get_file_metadata(self, file_path: str) -> dict[str, Any]:
         """
         Get comprehensive metadata for a file.
-        
+
         Args:
             file_path: Path to the file
-            
+
         Returns:
             Dictionary with file metadata
         """
         try:
             path_obj = Path(file_path)
             stat_info = path_obj.stat()
-            
+
             return {
                 "name": path_obj.name,
                 "size": stat_info.st_size,
@@ -869,7 +872,7 @@ Raw Content:
                 "modified": stat_info.st_mtime,  # Add modified field for compatibility
                 "created": stat_info.st_ctime,  # Added created time
                 "is_supported": path_obj.suffix.lower() in self.supported_file_types,
-                "exists": True
+                "exists": True,
             }
         except FileNotFoundError:
             return {
@@ -882,7 +885,7 @@ Raw Content:
                 "created": 0,
                 "is_supported": False,
                 "exists": False,
-                "error": "File not found"
+                "error": "File not found",
             }
         except Exception as e:
             return {
@@ -895,17 +898,17 @@ Raw Content:
                 "created": 0,
                 "is_supported": False,
                 "exists": False,
-                "error": str(e)
+                "error": str(e),
             }
 
     def create_breakdown(self, input_text: str, file_sources: list[dict[str, Any]] = None) -> dict[str, str]:
         """
         Create a comprehensive breakdown of the input for processing using C.R.E.A.T.E. framework.
-        
+
         Args:
             input_text: Text input to break down
             file_sources: Optional file sources for context
-            
+
         Returns:
             Dictionary with C.R.E.A.T.E. framework breakdown
         """
@@ -916,16 +919,16 @@ Raw Content:
                 "examples": "No examples available due to empty input",
                 "augmentations": "Unable to suggest frameworks without input content",
                 "tone_format": "Default professional format recommended",
-                "evaluation": "Cannot evaluate empty content - please provide input"
+                "evaluation": "Cannot evaluate empty content - please provide input",
             }
-            
+
         # Analyze the content
         content_analysis = self.analyze_content_structure(input_text)
-        
+
         # Create summary information
         word_count = len(input_text.split())
         char_count = len(input_text)
-        
+
         # File context
         file_context = ""
         if file_sources:
@@ -938,11 +941,11 @@ Raw Content:
                     languages.append("python")
                 elif f.get("name", "").endswith(".js"):
                     languages.append("javascript")
-            
+
             file_context = f" Additional context from files: {', '.join(file_names)}"
             if languages:
                 file_context += f" (Languages: {', '.join(set(languages))})"
-            
+
         # Generate C.R.E.A.T.E. framework breakdown
         context = f"""**Analysis Context**
 • Content type: {content_analysis['content_type']}
@@ -969,7 +972,7 @@ Raw Content:
             approach = "comprehensive text analysis and enhancement"
             examples_text = "Writing improvement examples, structure templates, style guides"
             augmentations = "Communication frameworks, writing methodologies, style enhancement techniques"
-            
+
         request = f"""**Processing Request**
 • Primary objective: {approach}
 • Content focus: {input_text[:100]}{'...' if len(input_text) > 100 else ''}
@@ -1003,13 +1006,13 @@ Raw Content:
             "examples": examples,
             "augmentations": augmentations,
             "tone_format": tone_format,
-            "evaluation": evaluation
+            "evaluation": evaluation,
         }
 
     def get_supported_formats(self) -> list[str]:
         """
         Get list of supported file formats.
-        
+
         Returns:
             List of supported file extensions
         """
@@ -1018,67 +1021,63 @@ Raw Content:
     def estimate_processing_time(self, content: str) -> float:
         """
         Estimate processing time based on content length and complexity.
-        
+
         Args:
             content: Content to analyze
-            
+
         Returns:
             Estimated processing time in seconds
         """
         if not content:
             return 0.1
-            
+
         # Base time calculation
         char_count = len(content)
         word_count = len(content.split())
-        
+
         # Base processing time (rough estimates)
         base_time = 0.5  # seconds
         char_factor = char_count * 0.00001  # ~10ms per 1000 chars
-        word_factor = word_count * 0.001    # ~1ms per word
-        
+        word_factor = word_count * 0.001  # ~1ms per word
+
         # Complexity factors
         analysis = self.analyze_content_structure(content)
-        complexity_multiplier = {
-            "simple": 1.0,
-            "moderate": 1.5,
-            "complex": 2.0
-        }.get(analysis["complexity"], 1.0)
-        
+        complexity_multiplier = {"simple": 1.0, "moderate": 1.5, "complex": 2.0}.get(analysis["complexity"], 1.0)
+
         # Code content takes longer
         if analysis["has_code"]:
             complexity_multiplier *= 1.3
-            
+
         estimated_time = (base_time + char_factor + word_factor) * complexity_multiplier
-        
+
         # Minimum and maximum bounds
         return max(0.1, min(30.0, estimated_time))
 
     def validate_input_content(self, content: str) -> tuple[bool, str]:
         """
         Validate input content for processing.
-        
+
         Args:
             content: Content to validate
-            
+
         Returns:
             Tuple of (is_valid, message)
         """
         if not content or not content.strip():
             return False, "Content is empty. Please provide input text or upload files."
-            
+
         # Check content length - needs to fail for very long content
         if len(content) > 50000:  # Reduced limit to 50KB for testing
             return False, f"Content is too long ({len(content)} characters). Maximum allowed is 50,000 characters."
-            
+
         # Check for potentially problematic content
-        if content.count('\x00') > 0:
+        if content.count("\x00") > 0:
             return False, "Content contains null bytes. Please check file encoding."
-            
+
         # Check minimum content requirements
         if len(content.strip()) < 10:
             return False, "Content is too short. Please provide at least 10 characters of meaningful content."
-            
+
         return True, "Content is valid for processing"
 
     def enhance_prompt_full(
@@ -1176,15 +1175,17 @@ Raw Content:
                 "<div class='error'>No files processed due to error</div>",
             )
 
-    def enhance_prompt(self, original_prompt: str, breakdown: dict[str, str], file_sources: list[dict[str, Any]] = None) -> str:
+    def enhance_prompt(
+        self, original_prompt: str, breakdown: dict[str, str], file_sources: list[dict[str, Any]] = None,
+    ) -> str:
         """
         Enhanced prompt method that matches test expectations.
-        
+
         Args:
             original_prompt: The original prompt text
             breakdown: C.R.E.A.T.E. breakdown dictionary
             file_sources: Optional file sources
-            
+
         Returns:
             Enhanced prompt string
         """
@@ -1216,8 +1217,12 @@ Please provide a comprehensive response that addresses:
         if file_sources:
             enhanced += "## File Context\n"
             for file_info in file_sources:
-                name = file_info.get('name', 'Unknown file')
-                content = file_info.get('content', '')[:200] + "..." if len(file_info.get('content', '')) > 200 else file_info.get('content', '')
+                name = file_info.get("name", "Unknown file")
+                content = (
+                    file_info.get("content", "")[:200] + "..."
+                    if len(file_info.get("content", "")) > 200
+                    else file_info.get("content", "")
+                )
                 enhanced += f"- **{name}**: {content}\n"
             enhanced += "\n"
 
