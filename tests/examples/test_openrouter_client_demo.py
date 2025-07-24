@@ -414,7 +414,11 @@ class TestMainFunction:
     @patch("examples.openrouter_client_demo.demo_error_handling")
     @patch("examples.openrouter_client_demo.demo_model_integration")
     async def test_main_function_execution_order(
-        self, mock_model_integration, mock_error_handling, mock_basic_functionality, mock_check_environment,
+        self,
+        mock_model_integration,
+        mock_error_handling,
+        mock_basic_functionality,
+        mock_check_environment,
     ):
         """Test that main function executes all demos in correct order."""
         await main()
@@ -431,7 +435,11 @@ class TestMainFunction:
     @patch("examples.openrouter_client_demo.demo_error_handling")
     @patch("examples.openrouter_client_demo.demo_model_integration")
     async def test_main_function_error_propagation(
-        self, mock_model_integration, mock_error_handling, mock_basic_functionality, mock_check_environment,
+        self,
+        mock_model_integration,
+        mock_error_handling,
+        mock_basic_functionality,
+        mock_check_environment,
     ):
         """Test that main function propagates errors from subfunctions."""
         with pytest.raises(Exception, match="Check error"):
@@ -446,7 +454,11 @@ class TestMainFunction:
     @patch("examples.openrouter_client_demo.demo_error_handling")
     @patch("examples.openrouter_client_demo.demo_model_integration")
     async def test_main_function_continues_on_demo_error(
-        self, mock_model_integration, mock_error_handling, mock_basic_functionality, mock_check_environment,
+        self,
+        mock_model_integration,
+        mock_error_handling,
+        mock_basic_functionality,
+        mock_check_environment,
     ):
         """Test that main function continues even if individual demos fail."""
         with pytest.raises(Exception, match="Demo error"):

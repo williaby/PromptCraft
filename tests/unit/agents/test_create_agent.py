@@ -6,7 +6,6 @@ testing C.R.E.A.T.E. framework prompt generation, agent identification,
 and configuration management according to development.md standards.
 """
 
-
 import pytest
 
 from src.agents.create_agent import CreateAgent

@@ -123,7 +123,12 @@ class TestBasicSessions:
 
         # Verify codecov upload was called
         mock_session.run.assert_any_call(
-            "codecov", "-f", "coverage-integration.xml", "-F", "integration", external=True,
+            "codecov",
+            "-f",
+            "coverage-integration.xml",
+            "-F",
+            "integration",
+            external=True,
         )
 
 

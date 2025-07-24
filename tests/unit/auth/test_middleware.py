@@ -36,7 +36,9 @@ class TestAuthenticationMiddleware:
         """Test middleware initialization with default configuration."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
 
@@ -54,7 +56,9 @@ class TestAuthenticationMiddleware:
         """Test middleware initialization with custom excluded paths."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         custom_paths = ["/custom", "/api/public"]
@@ -68,7 +72,9 @@ class TestAuthenticationMiddleware:
         """Test that excluded paths skip authentication."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -91,7 +97,9 @@ class TestAuthenticationMiddleware:
         """Test that disabled authentication skips validation."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=False, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=False,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -124,7 +132,9 @@ class TestAuthenticationMiddleware:
 
         # Mock authenticated user
         authenticated_user = AuthenticatedUser(
-            email="test@example.com", role=UserRole.USER, jwt_claims={"email": "test@example.com", "exp": 1234567890},
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "test@example.com", "exp": 1234567890},
         )
 
         # Mock request with JWT token
@@ -185,7 +195,9 @@ class TestAuthenticationMiddleware:
         """Test handling of unexpected errors."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -210,7 +222,9 @@ class TestAuthenticationMiddleware:
         """Test exact path exclusion matching."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -223,7 +237,9 @@ class TestAuthenticationMiddleware:
         """Test prefix path exclusion matching."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -236,7 +252,9 @@ class TestAuthenticationMiddleware:
         """Test non-matching paths are not excluded."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -250,7 +268,9 @@ class TestAuthenticationMiddleware:
         """Test authentication fails when token is missing."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -281,7 +301,9 @@ class TestAuthenticationMiddleware:
 
         # Mock authenticated user
         authenticated_user = AuthenticatedUser(
-            email="test@example.com", role=UserRole.USER, jwt_claims={"email": "test@example.com"},
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "test@example.com"},
         )
         jwt_validator.validate_token.return_value = authenticated_user
 
@@ -299,7 +321,9 @@ class TestAuthenticationMiddleware:
         """Test handling of JWT validation errors."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -322,7 +346,9 @@ class TestAuthenticationMiddleware:
         """Test JWT token extraction from Cloudflare Access header."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -339,7 +365,9 @@ class TestAuthenticationMiddleware:
         """Test JWT token extraction from Authorization header."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -356,7 +384,9 @@ class TestAuthenticationMiddleware:
         """Test JWT token extraction from custom header."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -373,7 +403,9 @@ class TestAuthenticationMiddleware:
         """Test token extraction priority: Cloudflare > Authorization > Custom."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -397,7 +429,9 @@ class TestAuthenticationMiddleware:
         """Test token extraction with invalid Authorization header format."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -414,7 +448,9 @@ class TestAuthenticationMiddleware:
         """Test token extraction when no relevant headers are present."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -702,7 +738,9 @@ class TestHelperFunctions:
     def test_get_current_user_with_authenticated_user(self):
         """Test getting current user when user is authenticated."""
         authenticated_user = AuthenticatedUser(
-            email="test@example.com", role=UserRole.USER, jwt_claims={"email": "test@example.com"},
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "test@example.com"},
         )
 
         request = Mock(spec=Request)
@@ -743,7 +781,9 @@ class TestHelperFunctions:
     def test_require_authentication_with_authenticated_user(self):
         """Test requiring authentication when user is authenticated."""
         authenticated_user = AuthenticatedUser(
-            email="test@example.com", role=UserRole.USER, jwt_claims={"email": "test@example.com"},
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "test@example.com"},
         )
 
         request = Mock(spec=Request)
@@ -773,7 +813,9 @@ class TestHelperFunctions:
     def test_require_role_with_correct_role(self):
         """Test requiring specific role when user has correct role."""
         authenticated_user = AuthenticatedUser(
-            email="admin@example.com", role=UserRole.ADMIN, jwt_claims={"email": "admin@example.com"},
+            email="admin@example.com",
+            role=UserRole.ADMIN,
+            jwt_claims={"email": "admin@example.com"},
         )
 
         request = Mock(spec=Request)
@@ -787,7 +829,9 @@ class TestHelperFunctions:
     def test_require_role_with_incorrect_role(self):
         """Test requiring specific role when user has incorrect role."""
         authenticated_user = AuthenticatedUser(
-            email="user@example.com", role=UserRole.USER, jwt_claims={"email": "user@example.com"},
+            email="user@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "user@example.com"},
         )
 
         request = Mock(spec=Request)
@@ -837,7 +881,9 @@ class TestIntegrationScenarios:
         # Mock JWT validator
         jwt_validator = Mock(spec=JWTValidator)
         authenticated_user = AuthenticatedUser(
-            email="test@example.com", role=UserRole.USER, jwt_claims={"email": "test@example.com", "exp": 1234567890},
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"email": "test@example.com", "exp": 1234567890},
         )
         jwt_validator.validate_token.return_value = authenticated_user
 
@@ -903,7 +949,9 @@ class TestIntegrationScenarios:
         """Test token extraction priority in integration scenario."""
         app = FastAPI()
         config = AuthenticationConfig(
-            cloudflare_access_enabled=True, cloudflare_team_domain="test", cloudflare_jwks_url="https://test.com/jwks",
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test",
+            cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
         middleware = AuthenticationMiddleware(app, config, jwt_validator)
@@ -911,7 +959,11 @@ class TestIntegrationScenarios:
         # Mock request with multiple token headers
         request = Mock(spec=Request)
         request.headers = Headers(
-            {"Authorization": "Bearer auth.token", "CF-Access-Jwt-Assertion": "cf.token", "X-JWT-Token": "custom.token"},
+            {
+                "Authorization": "Bearer auth.token",
+                "CF-Access-Jwt-Assertion": "cf.token",
+                "X-JWT-Token": "custom.token",
+            },
         )
 
         token = middleware._extract_jwt_token(request)

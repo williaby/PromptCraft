@@ -217,7 +217,9 @@ class TestJWKSClientGetJWKS:
 
             mock_response = Mock()
             mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-                "404 Not Found", request=Mock(), response=Mock(),
+                "404 Not Found",
+                request=Mock(),
+                response=Mock(),
             )
             mock_client.get.return_value = mock_response
 

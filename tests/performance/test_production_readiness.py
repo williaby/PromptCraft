@@ -403,7 +403,10 @@ class TestProductionReadiness:
                     )
                     performance_monitor.record_metric(
                         MetricData(
-                            name="success_rate", value=success_rate, timestamp=time.time(), metric_type=MetricType.GAUGE,
+                            name="success_rate",
+                            value=success_rate,
+                            timestamp=time.time(),
+                            metric_type=MetricType.GAUGE,
                         ),
                     )
                     if response_times:
@@ -544,7 +547,10 @@ class TestProductionReadiness:
 
                     performance_monitor.record_metric(
                         MetricData(
-                            name="query_time", value=response_time, timestamp=time.time(), metric_type=MetricType.TIMER,
+                            name="query_time",
+                            value=response_time,
+                            timestamp=time.time(),
+                            metric_type=MetricType.TIMER,
                         ),
                     )
                     metrics = performance_monitor.get_all_metrics()
@@ -857,7 +863,8 @@ class TestProductionReadiness:
                                     selected_agents.append(agent)
 
                             responses = await counselor.orchestrate_workflow(
-                                selected_agents, hyde_result["enhanced_query"],
+                                selected_agents,
+                                hyde_result["enhanced_query"],
                             )
 
                             processing_time = time.time() - start_time

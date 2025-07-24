@@ -276,7 +276,11 @@ class TestBatchOperationResult:
     def test_create_successful_result(self):
         """Test creating a successful batch operation result."""
         result = BatchOperationResult(
-            success_count=10, error_count=0, total_count=10, processing_time=1.5, batch_id="batch_123",
+            success_count=10,
+            error_count=0,
+            total_count=10,
+            processing_time=1.5,
+            batch_id="batch_123",
         )
 
         assert result.success_count == 10
@@ -291,7 +295,12 @@ class TestBatchOperationResult:
         errors = ["Error 1", "Error 2"]
 
         result = BatchOperationResult(
-            success_count=8, error_count=2, total_count=10, errors=errors, processing_time=2.1, batch_id="batch_456",
+            success_count=8,
+            error_count=2,
+            total_count=10,
+            errors=errors,
+            processing_time=2.1,
+            batch_id="batch_456",
         )
 
         assert result.success_count == 8
@@ -318,7 +327,10 @@ class TestHealthCheckResult:
         details = {"connected": False, "error_code": 500}
 
         result = HealthCheckResult(
-            status=ConnectionStatus.UNHEALTHY, latency=10.0, details=details, error_message="Connection failed",
+            status=ConnectionStatus.UNHEALTHY,
+            latency=10.0,
+            details=details,
+            error_message="Connection failed",
         )
 
         assert result.status == ConnectionStatus.UNHEALTHY
@@ -915,7 +927,9 @@ class TestEnhancedMockVectorStore:
 
         # Update document
         updated_doc = VectorDocument(
-            id="update_test", content="Updated content", embedding=[0.2] * DEFAULT_VECTOR_DIMENSIONS,
+            id="update_test",
+            content="Updated content",
+            embedding=[0.2] * DEFAULT_VECTOR_DIMENSIONS,
         )
 
         result = await store.update_document(updated_doc)
@@ -1033,7 +1047,10 @@ class TestEnhancedMockVectorStore:
         store = EnhancedMockVectorStore({})
 
         doc = VectorDocument(
-            id="test", content="Test", embedding=[0.1], metadata={"category": "tech", "priority": "high"},
+            id="test",
+            content="Test",
+            embedding=[0.1],
+            metadata={"category": "tech", "priority": "high"},
         )
 
         # Exact match filters
@@ -1274,7 +1291,9 @@ class TestQdrantVectorStore:
         store._client = mock_client
 
         params = SearchParameters(
-            embeddings=[[0.1, 0.2, 0.3]], collection="test_collection", strategy=SearchStrategy.HYBRID,
+            embeddings=[[0.1, 0.2, 0.3]],
+            collection="test_collection",
+            strategy=SearchStrategy.HYBRID,
         )
 
         results = await store.search(params)
@@ -1317,7 +1336,10 @@ class TestQdrantVectorStore:
             with patch("src.core.vector_store.PointStruct") as mock_point_struct:
                 docs = [
                     VectorDocument(
-                        id="test_doc", content="Test content", embedding=[0.1, 0.2], collection="test_collection",
+                        id="test_doc",
+                        content="Test content",
+                        embedding=[0.1, 0.2],
+                        collection="test_collection",
                     ),
                 ]
 
@@ -1804,7 +1826,8 @@ class TestIntegrationScenarios:
 
             # Delete documents
             delete_result = await store.delete_documents(
-                ["workflow_doc_1", "workflow_doc_2"], collection="test_workflow",
+                ["workflow_doc_1", "workflow_doc_2"],
+                collection="test_workflow",
             )
             assert delete_result.success_count == 2
 

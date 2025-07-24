@@ -1176,7 +1176,10 @@ Raw Content:
             )
 
     def enhance_prompt(
-        self, original_prompt: str, breakdown: dict[str, str], file_sources: list[dict[str, Any]] = None,
+        self,
+        original_prompt: str,
+        breakdown: dict[str, str],
+        file_sources: list[dict[str, Any]] = None,
     ) -> str:
         """
         Enhanced prompt method that matches test expectations.

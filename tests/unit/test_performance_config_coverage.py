@@ -257,7 +257,10 @@ class TestAsyncConfig:
     def test_get_async_config(self, mock_get_performance_config):
         """Test async configuration retrieval."""
         mock_config = PerformanceConfig(
-            max_concurrent_queries=75, semaphore_limit=40, batch_size=30, max_batch_wait_time_ms=60,
+            max_concurrent_queries=75,
+            semaphore_limit=40,
+            batch_size=30,
+            max_batch_wait_time_ms=60,
         )
         mock_get_performance_config.return_value = mock_config
 
@@ -387,7 +390,10 @@ class TestGetOptimizationRecommendations:
         mock_get_settings.return_value = mock_settings
 
         mock_config = PerformanceConfig(
-            target_response_time_ms=1000, max_response_time_ms=2000, batch_size=25, max_concurrent_queries=50,
+            target_response_time_ms=1000,
+            max_response_time_ms=2000,
+            batch_size=25,
+            max_concurrent_queries=50,
         )
         mock_get_performance_config.return_value = mock_config
 
@@ -419,7 +425,10 @@ class TestGetOptimizationRecommendations:
         mock_get_settings.return_value = mock_settings
 
         mock_config = PerformanceConfig(
-            target_response_time_ms=800, max_response_time_ms=2000, batch_size=25, max_concurrent_queries=100,
+            target_response_time_ms=800,
+            max_response_time_ms=2000,
+            batch_size=25,
+            max_concurrent_queries=100,
         )
         mock_get_performance_config.return_value = mock_config
 
@@ -453,7 +462,10 @@ class TestGetOptimizationRecommendations:
         mock_get_settings.return_value = mock_settings
 
         mock_config = PerformanceConfig(
-            target_response_time_ms=1000, max_response_time_ms=2000, batch_size=25, max_concurrent_queries=75,
+            target_response_time_ms=1000,
+            max_response_time_ms=2000,
+            batch_size=25,
+            max_concurrent_queries=75,
         )
         mock_get_performance_config.return_value = mock_config
 

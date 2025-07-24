@@ -78,7 +78,8 @@ class TestConfigDemo:
         # Check for development-specific logging
         log_calls = [str(call[0]) for call in mock_logger.info.call_args_list]
         dev_log = next(
-            (call for call in log_calls if "🔧 Development mode active - verbose logging enabled" in call), None,
+            (call for call in log_calls if "🔧 Development mode active - verbose logging enabled" in call),
+            None,
         )
         assert dev_log is not None, "Development mode message should be logged"
 
@@ -129,7 +130,8 @@ class TestConfigDemo:
         # Check for production-specific logging
         log_calls = [str(call[0]) for call in mock_logger.info.call_args_list]
         prod_log = next(
-            (call for call in log_calls if "🏭 Production mode active - optimized for performance" in call), None,
+            (call for call in log_calls if "🏭 Production mode active - optimized for performance" in call),
+            None,
         )
         assert prod_log is not None, "Production mode message should be logged"
 

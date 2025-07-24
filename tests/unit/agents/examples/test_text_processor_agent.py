@@ -167,7 +167,9 @@ class TestTextProcessorAgentValidation:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="this is a very long text", context={"operation": "analyze"}, request_id="test_req",  # 6 words
+            content="this is a very long text",
+            context={"operation": "analyze"},
+            request_id="test_req",  # 6 words
         )
 
         with pytest.raises(AgentValidationError) as exc_info:
@@ -188,7 +190,9 @@ class TestTextProcessorAgentExecution:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="Hello world! This is a test sentence.", context={"operation": "analyze"}, request_id="test_req",
+            content="Hello world! This is a test sentence.",
+            context={"operation": "analyze"},
+            request_id="test_req",
         )
 
         result = await agent.execute(input_data)
@@ -207,7 +211,9 @@ class TestTextProcessorAgentExecution:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="Hello   world!!!    Extra   spaces.", context={"operation": "clean"}, request_id="test_req",
+            content="Hello   world!!!    Extra   spaces.",
+            context={"operation": "clean"},
+            request_id="test_req",
         )
 
         result = await agent.execute(input_data)
@@ -381,7 +387,9 @@ class TestTextProcessorAgentExecution:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="Test content for analysis", context=None, request_id="test_req",  # No context provided
+            content="Test content for analysis",
+            context=None,
+            request_id="test_req",  # No context provided
         )
 
         result = await agent.execute(input_data)
@@ -408,7 +416,9 @@ class TestTextProcessorAgentExecution:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="Test content", context={"operation": "sentiment"}, request_id="test_req",  # Not allowed
+            content="Test content",
+            context={"operation": "sentiment"},
+            request_id="test_req",  # Not allowed
         )
 
         with pytest.raises(AgentValidationError) as exc_info:
@@ -472,7 +482,9 @@ class TestTextProcessorAgentExecution:
 
         # Second request
         input2 = AgentInput(
-            content="Second longer test content", context={"operation": "clean"}, request_id="test_req2",  # 4 words
+            content="Second longer test content",
+            context={"operation": "clean"},
+            request_id="test_req2",  # 4 words
         )
         result = await agent.execute(input2)
 
@@ -792,7 +804,9 @@ class TestTextProcessorAgentCapabilitiesAndStatus:
 
         # Process a request
         input_data = AgentInput(
-            content="Test content with four words", context={"operation": "analyze"}, request_id="test_req",  # 5 words
+            content="Test content with four words",
+            context={"operation": "analyze"},
+            request_id="test_req",  # 5 words
         )
         await agent.execute(input_data)
 
@@ -853,7 +867,9 @@ class TestTextProcessorAgentErrorHandling:
         agent = TextProcessorAgent(config)
 
         input_data = AgentInput(
-            content="Test content", context={"operation": "sentiment"}, request_id="test_req",  # Not allowed
+            content="Test content",
+            context={"operation": "sentiment"},
+            request_id="test_req",  # Not allowed
         )
 
         # Should preserve the original AgentValidationError

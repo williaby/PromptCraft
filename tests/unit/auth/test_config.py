@@ -6,7 +6,6 @@ testing all field validators, methods, configuration options, and edge cases.
 Uses proper pytest markers for codecov integration per codecov.yml auth component.
 """
 
-
 import pytest
 from pydantic import ValidationError
 
@@ -109,7 +108,8 @@ class TestAuthenticationConfigValidators:
     def test_validate_jwks_url_auto_generation(self):
         """Test JWKS URL auto-generation from team domain."""
         config = AuthenticationConfig(
-            cloudflare_team_domain="myteam", cloudflare_jwks_url="",  # Empty, should be auto-generated
+            cloudflare_team_domain="myteam",
+            cloudflare_jwks_url="",  # Empty, should be auto-generated
         )
 
         expected_url = "https://myteam.cloudflareaccess.com/cdn-cgi/access/certs"
@@ -374,7 +374,9 @@ class TestAuthenticationConfigEdgeCases:
     def test_config_serialization(self):
         """Test configuration can be serialized and deserialized."""
         original_config = AuthenticationConfig(
-            cloudflare_team_domain="test", email_whitelist=["user@example.com"], admin_emails=["admin@test.com"],
+            cloudflare_team_domain="test",
+            email_whitelist=["user@example.com"],
+            admin_emails=["admin@test.com"],
         )
 
         # Serialize to dict

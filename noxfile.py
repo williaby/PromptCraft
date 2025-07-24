@@ -189,7 +189,14 @@ def tests_integration(session):
     # Upload to Codecov with integration flag if token is available
     if session.env.get("CODECOV_TOKEN"):
         session.run(
-            "codecov", "-f", "coverage-integration.xml", "-F", "integration", "-n", "integration-tests", external=True,
+            "codecov",
+            "-f",
+            "coverage-integration.xml",
+            "-F",
+            "integration",
+            "-n",
+            "integration-tests",
+            external=True,
         )
 
 

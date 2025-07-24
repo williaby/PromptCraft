@@ -143,7 +143,10 @@ class TestLoggerMixin:
 
         # Should only include public kwargs
         component.logger.debug.assert_called_once_with(
-            "Entering %s with args=%s, kwargs=%s", "test_method", (), {"public_arg": "public"},
+            "Entering %s with args=%s, kwargs=%s",
+            "test_method",
+            (),
+            {"public_arg": "public"},
         )
 
     def test_log_method_entry_with_debug_disabled(self):
@@ -231,7 +234,11 @@ class TestLoggerMixin:
         component.log_error_with_context(error, context=context, method_name="test_method")
 
         component.logger.error.assert_called_once_with(
-            "Error%s: %s - Context: %s", " in test_method", error, context, exc_info=True,
+            "Error%s: %s - Context: %s",
+            " in test_method",
+            error,
+            context,
+            exc_info=True,
         )
 
     def test_log_performance_metric_minimal(self):
@@ -246,7 +253,11 @@ class TestLoggerMixin:
         component.log_performance_metric("response_time", 150.5)
 
         component.logger.info.assert_called_once_with(
-            "PERF_METRIC: %s=%.2f%s - Context: %s", "response_time", 150.5, "ms", {},
+            "PERF_METRIC: %s=%.2f%s - Context: %s",
+            "response_time",
+            150.5,
+            "ms",
+            {},
         )
 
     def test_log_performance_metric_full(self):
@@ -262,7 +273,11 @@ class TestLoggerMixin:
         component.log_performance_metric("response_time", 150.5, unit="seconds", context=context)
 
         component.logger.info.assert_called_once_with(
-            "PERF_METRIC: %s=%.2f%s - Context: %s", "response_time", 150.5, "seconds", context,
+            "PERF_METRIC: %s=%.2f%s - Context: %s",
+            "response_time",
+            150.5,
+            "seconds",
+            context,
         )
 
     def test_log_state_change_minimal(self):
@@ -277,7 +292,11 @@ class TestLoggerMixin:
         component.log_state_change("idle", "processing")
 
         component.logger.info.assert_called_once_with(
-            "STATE_CHANGE: %s -> %s%s - Context: %s", "idle", "processing", "", {},
+            "STATE_CHANGE: %s -> %s%s - Context: %s",
+            "idle",
+            "processing",
+            "",
+            {},
         )
 
     def test_log_state_change_full(self):
@@ -293,7 +312,11 @@ class TestLoggerMixin:
         component.log_state_change("idle", "processing", reason="user_request", context=context)
 
         component.logger.info.assert_called_once_with(
-            "STATE_CHANGE: %s -> %s%s - Context: %s", "idle", "processing", " (reason: user_request)", context,
+            "STATE_CHANGE: %s -> %s%s - Context: %s",
+            "idle",
+            "processing",
+            " (reason: user_request)",
+            context,
         )
 
     def test_log_business_event_minimal(self):
@@ -322,7 +345,10 @@ class TestLoggerMixin:
         component.log_business_event("user_login", event_data=event_data, level=logging.WARNING)
 
         component.logger.log.assert_called_once_with(
-            logging.WARNING, "BUSINESS_EVENT: %s - Data: %s", "user_login", event_data,
+            logging.WARNING,
+            "BUSINESS_EVENT: %s - Data: %s",
+            "user_login",
+            event_data,
         )
 
 
@@ -431,7 +457,11 @@ class TestStructuredLoggerMixin:
         component.logger = Mock()
 
         component.log_structured(
-            logging.INFO, "Test message", event_type="api_call", request_id="req_123", user_id="user_456",
+            logging.INFO,
+            "Test message",
+            event_type="api_call",
+            request_id="req_123",
+            user_id="user_456",
         )
 
         expected_context = {
@@ -462,7 +492,9 @@ class TestStructuredLoggerMixin:
             "method": "GET",
         }
         component.logger.log.assert_called_once_with(
-            logging.INFO, "API call: GET /api/test - Context: %s", expected_context,
+            logging.INFO,
+            "API call: GET /api/test - Context: %s",
+            expected_context,
         )
 
     def test_log_api_call_full(self):
@@ -487,7 +519,9 @@ class TestStructuredLoggerMixin:
             "request_id": "req_123",
         }
         component.logger.log.assert_called_once_with(
-            logging.INFO, "API call: POST /api/test - Context: %s", expected_context,
+            logging.INFO,
+            "API call: POST /api/test - Context: %s",
+            expected_context,
         )
 
     def test_log_api_call_partial_parameters(self):
@@ -510,7 +544,9 @@ class TestStructuredLoggerMixin:
             "status_code": 200,
         }
         component.logger.log.assert_called_once_with(
-            logging.INFO, "API call: PUT /api/test - Context: %s", expected_context,
+            logging.INFO,
+            "API call: PUT /api/test - Context: %s",
+            expected_context,
         )
 
     def test_inheritance_from_logger_mixin(self):
@@ -701,7 +737,11 @@ class TestEdgeCasesAndComplexScenarios:
         from unittest.mock import ANY
 
         component.logger.error.assert_called_with(
-            "Error%s: %s - Context: %s", "", ANY, {}, exc_info=True,  # The ValueError instance
+            "Error%s: %s - Context: %s",
+            "",
+            ANY,
+            {},
+            exc_info=True,  # The ValueError instance
         )
 
         # Test with empty context
@@ -760,7 +800,11 @@ class TestRealWorldUsageScenarios:
         class APIService(StructuredLoggerMixin):
             def __init__(self, service_name, *args, **kwargs):
                 super().__init__(
-                    component_id=service_name, correlation_id=None, logger_name=f"api.{service_name}", *args, **kwargs,
+                    component_id=service_name,
+                    correlation_id=None,
+                    logger_name=f"api.{service_name}",
+                    *args,
+                    **kwargs,
                 )
 
         service = APIService("user_service")
@@ -829,7 +873,9 @@ class TestRealWorldUsageScenarios:
 
                 except Exception as e:
                     self.log_error_with_context(
-                        e, context={"data_id": data_id, "user_id": user_id}, method_name="process_data",
+                        e,
+                        context={"data_id": data_id, "user_id": user_id},
+                        method_name="process_data",
                     )
                     raise
 

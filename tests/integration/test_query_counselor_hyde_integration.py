@@ -618,7 +618,10 @@ class TestQueryCounselorHydeIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_query_counselor_initialization_integration(
-        self, test_settings, mock_mcp_client, mock_hyde_processor,
+        self,
+        test_settings,
+        mock_mcp_client,
+        mock_hyde_processor,
     ):
         """Test QueryCounselor initialization with HydeProcessor integration."""
 

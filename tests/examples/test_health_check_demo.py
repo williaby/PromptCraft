@@ -68,7 +68,10 @@ class TestDemonstrateConfigurationStatus:
     @patch("examples.health_check_demo.get_configuration_status")
     @patch("examples.health_check_demo.console")
     def test_demonstrate_configuration_status_with_validation_errors(
-        self, mock_console, mock_get_status, mock_get_settings,
+        self,
+        mock_console,
+        mock_get_status,
+        mock_get_settings,
     ):
         """Test configuration status with validation errors."""
         mock_settings = Mock()

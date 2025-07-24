@@ -22,7 +22,10 @@ class TestJWTValidatorCoverage:
         mock_jwks_client = Mock(spec=JWKSClient)
 
         validator = JWTValidator(
-            jwks_client=mock_jwks_client, audience="test-audience", issuer="test-issuer", algorithm="RS256",
+            jwks_client=mock_jwks_client,
+            audience="test-audience",
+            issuer="test-issuer",
+            algorithm="RS256",
         )
 
         assert validator.jwks_client == mock_jwks_client

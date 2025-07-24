@@ -287,7 +287,9 @@ class TestRealMCPIntegration:
             mock_error_response_401.headers = {"content-type": "application/json"}
             mock_error_response_401.json.return_value = {"error": "Unauthorized"}
             http_error_401 = httpx.HTTPStatusError(
-                "Unauthorized", request=MagicMock(), response=mock_error_response_401,
+                "Unauthorized",
+                request=MagicMock(),
+                response=mock_error_response_401,
             )
             mock_httpx_client.post.side_effect = http_error_401
 

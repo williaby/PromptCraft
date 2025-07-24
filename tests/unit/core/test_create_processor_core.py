@@ -871,7 +871,10 @@ class TestCreateRequestResponse:
     def test_create_request_basic(self):
         """Test CreateRequest initialization."""
         request = CreateRequest(
-            input_prompt="Test prompt", domain="business", context={"key": "value"}, settings={"setting": "value"},
+            input_prompt="Test prompt",
+            domain="business",
+            context={"key": "value"},
+            settings={"setting": "value"},
         )
 
         assert request.input_prompt == "Test prompt"

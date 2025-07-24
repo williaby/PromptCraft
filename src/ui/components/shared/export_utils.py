@@ -69,12 +69,22 @@ class ExportUtils:
 
         if format_type == "markdown":
             return self._export_as_markdown_j1(
-                enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp,
+                enhanced_prompt,
+                create_breakdown,
+                model_info,
+                file_sources,
+                session_data,
+                timestamp,
             )
 
         # text format
         return self._export_as_text_j1(
-            enhanced_prompt, create_breakdown, model_info, file_sources, session_data, timestamp,
+            enhanced_prompt,
+            create_breakdown,
+            model_info,
+            file_sources,
+            session_data,
+            timestamp,
         )
 
     def _export_as_markdown_j1(

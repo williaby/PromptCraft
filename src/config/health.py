@@ -244,10 +244,14 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
 
         # Replace quoted values that look sensitive
         sanitized_error = re.sub(
-            r"'([^']*)'", lambda m: "'***'" if is_sensitive_quoted_value(m) else m.group(0), sanitized_error,
+            r"'([^']*)'",
+            lambda m: "'***'" if is_sensitive_quoted_value(m) else m.group(0),
+            sanitized_error,
         )
         sanitized_error = re.sub(
-            r'"([^"]*)"', lambda m: '"***"' if is_sensitive_quoted_value(m) else m.group(0), sanitized_error,
+            r'"([^"]*)"',
+            lambda m: '"***"' if is_sensitive_quoted_value(m) else m.group(0),
+            sanitized_error,
         )
 
         # Check for sensitive patterns using pre-compiled regex patterns

@@ -547,7 +547,8 @@ class TestGetConfigurationStatus:
 
         # Mock validation error
         validation_error = ConfigurationValidationError(
-            "Validation failed", ["Field 'password' invalid", "Missing required field"],
+            "Validation failed",
+            ["Field 'password' invalid", "Missing required field"],
         )
 
         with patch("src.config.health.validate_encryption_available", return_value=False):
@@ -574,7 +575,8 @@ class TestGetConfigurationStatus:
             with patch("src.config.health._count_configured_secrets", return_value=0):
                 with patch("src.config.health._determine_config_source", return_value="defaults"):
                     with patch(
-                        "src.config.health.validate_configuration_on_startup", side_effect=ValueError("Format error"),
+                        "src.config.health.validate_configuration_on_startup",
+                        side_effect=ValueError("Format error"),
                     ):
                         status = get_configuration_status(settings)
 
@@ -595,7 +597,8 @@ class TestGetConfigurationStatus:
             with patch("src.config.health._count_configured_secrets", return_value=0):
                 with patch("src.config.health._determine_config_source", return_value="defaults"):
                     with patch(
-                        "src.config.health.validate_configuration_on_startup", side_effect=TypeError("Type error"),
+                        "src.config.health.validate_configuration_on_startup",
+                        side_effect=TypeError("Type error"),
                     ):
                         status = get_configuration_status(settings)
 
@@ -888,7 +891,8 @@ class TestIntegrationScenarios:
 
         # Mock configuration as unhealthy
         validation_error = ConfigurationValidationError(
-            "Critical validation failed", ["Database connection failed", "Missing API key"],
+            "Critical validation failed",
+            ["Database connection failed", "Missing API key"],
         )
 
         with patch("src.config.health.validate_encryption_available", return_value=False):
@@ -897,7 +901,8 @@ class TestIntegrationScenarios:
                     with patch("src.config.health.validate_configuration_on_startup", side_effect=validation_error):
                         with patch("src.config.health._sanitize_validation_errors", return_value=["Sanitized errors"]):
                             with patch(
-                                "src.config.health.get_mcp_configuration_health", return_value={"healthy": False},
+                                "src.config.health.get_mcp_configuration_health",
+                                return_value={"healthy": False},
                             ):
                                 result = await checker.check_health()
 
