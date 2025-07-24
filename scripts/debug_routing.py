@@ -41,7 +41,7 @@ mcp_count = 0
 for i in range(10):
     decision = router._make_routing_decision(f"request_{i}", "orchestration")
     print(f"Request {i}: {decision.service} - {decision.reason}")
-    
+
     if decision.service == "openrouter":
         openrouter_count += 1
     else:

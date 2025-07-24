@@ -7,7 +7,6 @@ compatibility and end-to-end workflows.
 """
 
 import asyncio
-import contextlib
 import time
 
 import pytest
@@ -51,6 +50,7 @@ class TestVectorStoreHydeIntegration:
         return processor, enhanced_vector_store
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_end_to_end_query_processing(self, hyde_processor_with_enhanced_store):
         """Test complete end-to-end query processing with enhanced vector store."""
         processor, enhanced_store = hyde_processor_with_enhanced_store
@@ -99,7 +99,7 @@ class TestVectorStoreHydeIntegration:
                         "topic": "microservices",
                     },
                     collection="hyde_documents",
-                )
+                ),
             ]
         else:
             # Store real hypothetical documents in enhanced vector store
@@ -322,6 +322,7 @@ class TestVectorStoreHydeIntegration:
         assert metrics.avg_latency > 0
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_concurrent_hyde_processing(self, enhanced_vector_store):
         """Test concurrent HyDE processing with enhanced vector store."""
         # Create multiple HydeProcessor instances

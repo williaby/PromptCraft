@@ -31,8 +31,8 @@
     "python.testing.coverageArgs": [
         "--cov=src",
         "--cov-report=html",
-        "--cov-report=xml:reports/coverage/coverage.xml",
-        "--junitxml=reports/junit/junit.xml",
+        "--cov-report=xml:coverage.xml",
+        "--junitxml=reports/junit.xml",
         "--cov-report=term"
     ]
 }

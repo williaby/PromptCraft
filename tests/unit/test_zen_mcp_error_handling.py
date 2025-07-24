@@ -243,6 +243,7 @@ class TestCompositeResilienceHandler:
         assert result == "success"
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_handler_fallback_success(self):
         """Test handler with fallback function success."""
 
@@ -264,6 +265,7 @@ class TestCompositeResilienceHandler:
         assert result == "fallback_success"
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_handler_fallback_failure(self):
         """Test handler when both primary and fallback fail."""
 
@@ -358,6 +360,7 @@ class TestZenMCPIntegration:
         assert "metadata" in result
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_integration_enhance_prompt_fallback(self):
         """Test integration prompt enhancement with fallback."""
         # Use client with 100% failure rate

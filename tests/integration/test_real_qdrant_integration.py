@@ -83,8 +83,10 @@ class TestRealQdrantIntegration:
     async def test_qdrant_connection_lifecycle(self, qdrant_config, mock_qdrant_client):
         """Test complete Qdrant connection lifecycle."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             # Create Qdrant store
             store = QdrantVectorStore(qdrant_config)
 
@@ -115,9 +117,11 @@ class TestRealQdrantIntegration:
             assert store.get_connection_status() == ConnectionStatus.UNHEALTHY
 
         # Test connection error (server unreachable)
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
-            
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
+
             # Make the QdrantClient constructor itself raise the exception
             mock_client_class.side_effect = Exception("Connection timeout")
 
@@ -130,11 +134,14 @@ class TestRealQdrantIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_qdrant_health_check_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant health check with various server states."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -168,8 +175,10 @@ class TestRealQdrantIntegration:
     async def test_qdrant_document_operations_integration(self, qdrant_config, mock_qdrant_client, sample_documents):
         """Test Qdrant document CRUD operations."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -190,7 +199,7 @@ class TestRealQdrantIntegration:
             # Test document update
             updated_doc = sample_documents[0]
             updated_doc.content = "Updated content about Python caching"
-            
+
             with patch("src.core.vector_store.PointStruct", MagicMock()):
                 update_success = await store.update_document(updated_doc)
             assert update_success is True
@@ -212,8 +221,10 @@ class TestRealQdrantIntegration:
     async def test_qdrant_search_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant vector search functionality."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -248,14 +259,18 @@ class TestRealQdrantIntegration:
     async def test_qdrant_collection_management_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant collection management operations."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
             # Test collection creation
-            with patch("src.core.vector_store.VectorParams", MagicMock()), \
-                 patch("src.core.vector_store.Distance", MagicMock()):
+            with (
+                patch("src.core.vector_store.VectorParams", MagicMock()),
+                patch("src.core.vector_store.Distance", MagicMock()),
+            ):
                 collection_created = await store.create_collection("new_test_collection", 512)
             assert collection_created is True
 
@@ -284,8 +299,10 @@ class TestRealQdrantIntegration:
     async def test_qdrant_error_handling_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant error handling for various failure scenarios."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -323,8 +340,10 @@ class TestRealQdrantIntegration:
     async def test_vector_store_factory_qdrant_integration(self, qdrant_config):
         """Test VectorStoreFactory integration with Qdrant configuration."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -346,8 +365,10 @@ class TestRealQdrantIntegration:
     async def test_vector_store_context_manager_integration(self, qdrant_config, mock_qdrant_client):
         """Test vector store context manager with Qdrant."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             # Test context manager lifecycle
             async with vector_store_connection(qdrant_config) as store:
                 assert isinstance(store, QdrantVectorStore)
@@ -362,11 +383,14 @@ class TestRealQdrantIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_hyde_processor_qdrant_integration(self, qdrant_config):
         """Test HydeProcessor integration with real Qdrant vector store."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 
@@ -426,8 +450,10 @@ class TestRealQdrantIntegration:
         mock_qdrant_client.search.side_effect = realistic_search
         mock_qdrant_client.upsert.side_effect = realistic_upsert
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -475,6 +501,7 @@ class TestRealQdrantIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_qdrant_concurrent_operations_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant concurrent operations and connection pooling."""
 
@@ -484,14 +511,16 @@ class TestRealQdrantIntegration:
         def concurrent_search(*args, **kwargs):
             nonlocal call_count
             call_count += 1
-            time.sleep(0.1)  # Simulate processing time  
+            time.sleep(0.1)  # Simulate processing time
             return [MagicMock(id=f"doc_{call_count}", score=0.9, payload={"content": f"Result {call_count}"})]
 
         # Set up the mock to track calls properly
         mock_qdrant_client.search.side_effect = concurrent_search
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -542,8 +571,10 @@ class TestRealQdrantIntegration:
         mock_qdrant_client.upsert.side_effect = tracked_upsert
         mock_qdrant_client.delete.side_effect = tracked_delete
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -592,8 +623,10 @@ class TestRealQdrantIntegration:
         invalid_config = qdrant_config.copy()
         invalid_config["host"] = "invalid.host.name"
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
             mock_client_class.side_effect = Exception("Host not reachable")
 
             store = QdrantVectorStore(invalid_config)
@@ -605,8 +638,10 @@ class TestRealQdrantIntegration:
         invalid_port_config = qdrant_config.copy()
         invalid_port_config["port"] = 99999
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
             mock_client_class.side_effect = Exception("Connection refused")
 
             store = QdrantVectorStore(invalid_port_config)
@@ -627,8 +662,10 @@ class TestRealQdrantIntegration:
     async def test_qdrant_metrics_and_monitoring_integration(self, qdrant_config, mock_qdrant_client):
         """Test Qdrant metrics collection and monitoring."""
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client):
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_qdrant_client),
+        ):
             store = QdrantVectorStore(qdrant_config)
             await store.connect()
 
@@ -638,7 +675,7 @@ class TestRealQdrantIntegration:
                 limit=5,
                 collection="metrics_test",
             )
-            
+
             search_params_2 = SearchParameters(
                 embeddings=[[0.2] * DEFAULT_VECTOR_DIMENSIONS],  # Different embedding to avoid cache
                 limit=5,
@@ -666,7 +703,7 @@ class TestRealQdrantIntegration:
             assert metrics.total_latency > 0
             assert metrics.avg_latency > 0
             assert metrics.last_operation_time > 0
-            
+
             # Store initial error count for comparison
             initial_error_count = metrics.error_count
 

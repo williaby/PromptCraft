@@ -275,7 +275,7 @@ warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra --strict-markers --strict-config --cov=src --cov-branch --cov-report=term-missing:skip-covered --cov-report=html --cov-report=xml --junitxml=junit.xml -o junit_family=xunit2 -o junit_suite_name=PromptCraft -o junit_logging=no -o junit_log_passing_tests=false -m 'not slow' --tb=short --cov-fail-under=80 --reruns=2 --reruns-delay=1"
+addopts = "-ra --strict-markers --strict-config --cov=src --cov-branch --cov-report=term-missing:skip-covered --cov-report=html --cov-report=xml --junitxml=reports/junit.xml -o junit_family=xunit2 -o junit_suite_name=PromptCraft -o junit_logging=no -o junit_log_passing_tests=false -m 'not slow' --tb=short --cov-fail-under=80 --reruns=2 --reruns-delay=1"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
@@ -291,27 +291,27 @@ markers = [
     # Primary execution control markers
     "slow: genuinely slow tests (excluded from CI/CD and local development)",
     "fast: development cycle tests (for IDE integration)",
-    
+
     # Test pyramid layer taxonomy (for analysis and metrics)
     "unit: unit-level tests (pure functions/classes; no I/O, no network) - DEFAULT",
     "component: component-level tests (single bounded context incl. DB/container mocks)",
     "contract: consumer-driven contract tests (Pact consumer/provider verifications)",
     "integration: cross-service integration tests (multi-service / real DB / message bus)",
     "e2e: user-facing end-to-end tests (full user journey via HTTP/UI driver)",
-    
+
     # Non-functional test types (for analysis and selective execution)
     "perf: performance/load tests (benchmarks, stress, timing assertions)",
     "chaos: fault-injection/resilience tests (chaos engineering, fault tolerance)",
     "security: runtime security assertions (Bandit assertions, penetration tests)",
-    
+
     # Legacy compatibility markers
     "performance: legacy performance marker (mapped to 'perf' in analysis)",
     "stress: legacy stress marker (mapped to 'perf' in analysis)",
-    
+
     # Execution behavior markers
     "smoke: basic functionality validation tests",
     "no_parallel: tests that should not run in parallel",
-    
+
     # Component-specific markers
     "auth: authentication and authorization tests",
 ]
@@ -358,6 +358,7 @@ performance = [
 source = ["src"]
 branch = true
 parallel = true
+dynamic_context = "test_function"
 omit = [
     "*/tests/*",
     "*/test_*.py",

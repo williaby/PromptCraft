@@ -632,6 +632,7 @@ class TestCircuitBreakerIntegration:
     """Integration tests for circuit breaker with real scenarios."""
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_realistic_service_outage_scenario(self):
         """Test realistic service outage and recovery scenario."""
         # Configure circuit breaker for realistic scenario

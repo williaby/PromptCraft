@@ -56,8 +56,22 @@ class JWTValidator:
             JWTValidationError: If token validation fails
         """
         try:
+            # Validate token format first
+            if not token or not isinstance(token, str):
+                raise JWTValidationError("Invalid token format", "invalid_format")
+
+            token_parts = token.split(".")
+            if len(token_parts) != 3:
+                raise JWTValidationError("Invalid token format", "invalid_format")
+
             # Decode token header to get key ID
-            unverified_header = jwt.get_unverified_header(token)
+            try:
+                unverified_header = jwt.get_unverified_header(token)
+            except jwt.DecodeError as e:
+                raise JWTValidationError("Invalid token format", "invalid_format") from e
+            except Exception as e:
+                raise JWTValidationError("Invalid token format", "invalid_format") from e
+
             kid = unverified_header.get("kid")
 
             if not kid:
@@ -103,6 +117,21 @@ class JWTValidator:
             except jwt.ExpiredSignatureError as e:
                 logger.warning("JWT token has expired")
                 raise JWTValidationError("Token has expired", "expired_token") from e
+            except jwt.InvalidSignatureError as e:
+                logger.warning("JWT token signature verification failed")
+                raise JWTValidationError("Token signature verification failed", "invalid_signature") from e
+            except jwt.InvalidAudienceError as e:
+                logger.warning("JWT token audience validation failed")
+                raise JWTValidationError("Invalid token audience", "invalid_audience") from e
+            except jwt.InvalidIssuerError as e:
+                logger.warning("JWT token issuer validation failed")
+                raise JWTValidationError("Invalid token issuer", "invalid_issuer") from e
+            except jwt.InvalidKeyError as e:
+                logger.warning("JWT token key validation failed")
+                raise JWTValidationError("Unable to verify token signature", "invalid_key") from e
+            except jwt.MissingRequiredClaimError as e:
+                logger.warning(f"JWT token missing required claim: {e}")
+                raise JWTValidationError(f"Token missing required claim: {e}", "missing_claim") from e
             except jwt.InvalidTokenError as e:
                 logger.warning(f"JWT token validation failed: {e}")
                 raise JWTValidationError(f"Invalid token: {e}", "invalid_token") from e
