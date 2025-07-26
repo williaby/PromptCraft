@@ -257,11 +257,11 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         """
         import re
 
-        # Pattern to match code blocks with optional language specification
-        # Use greedy matching to capture content including nested backticks in strings
-        pattern = r"```(?:([\w-]+))?\n([\s\S]*)```"
-        matches = re.findall(pattern, content)
-
+        # Use a simpler and more reliable pattern to match complete code blocks
+        # Match opening ```, optional language, content, and closing ```
+        pattern = r"```(?:([\w-]+))?\s*\n(.*?)\n\s*```"
+        matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
+        
         code_blocks = []
         for i, (language, code) in enumerate(matches):
             code_content = code.strip()

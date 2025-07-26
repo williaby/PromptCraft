@@ -10,7 +10,7 @@ The PromptCraft Coverage Automation system has been refactored to implement the 
 
 - **Modular Architecture**: Broke down the monolithic `simplified_coverage_automation.py` (1,836 lines) into focused modules:
   - `watcher.py` - File detection and triggering (174 lines)
-  - `classifier.py` - Test type classification (385 lines)  
+  - `classifier.py` - Test type classification (385 lines)
   - `renderer.py` - Report generation (421 lines)
   - `cli.py` - Command-line interface (208 lines)
   - Supporting modules: `types.py`, `config.py`, `security.py`, `logging_utils.py`
@@ -208,7 +208,7 @@ The new system maintains full backward compatibility:
    ```python
    # Old (still works)
    from scripts.simplified_coverage_automation import SimplifiedCoverageAutomation
-   
+
    # New (recommended)
    from scripts.coverage_automation import CoverageAutomationCLI
    ```
@@ -268,7 +268,7 @@ Security violations are logged with full context:
 ### Component Responsibilities
 
 - **Config**: Test pattern loading, Codecov integration
-- **Watcher**: File monitoring, test context detection  
+- **Watcher**: File monitoring, test context detection
 - **Classifier**: Test type mapping, target analysis
 - **Renderer**: Report generation, HTML sanitization
 - **CLI**: User interface, workflow orchestration

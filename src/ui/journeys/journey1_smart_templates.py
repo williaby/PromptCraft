@@ -330,13 +330,19 @@ Please check file format and try again""",
                 "<div class='error'>No files processed due to error</div>",
             )
 
+
     def _create_mock_enhanced_prompt(self, input_text: str, reasoning_depth: str) -> str:
         """Create a mock enhanced prompt for demonstration with code snippet examples."""
         if not input_text.strip():
             return "Please provide input text or upload files to enhance."
 
-        # Extract the main task from input
-        task = input_text.strip()[:100] + "..." if len(input_text) > 100 else input_text.strip()
+        # Extract the main task from input - keep more of the content to include file data
+        if len(input_text) > 100:
+            # For longer content (likely includes files), take more context
+            first_line = input_text.split('\n')[0]
+            task = first_line if len(first_line) <= 100 else first_line[:100] + "..."
+        else:
+            task = input_text.strip()
 
         # Add code examples based on reasoning depth
         code_examples = ""
@@ -412,9 +418,78 @@ You are a professional communication specialist helping to create clear, effecti
 - Information is accurate and complete
 - Call-to-action is clear and specific{code_examples}
 
+## Full Context
+{input_text}
+
 ---
 
 *This enhanced prompt incorporates the C.R.E.A.T.E. framework for optimal results.*"""
+
+        return enhanced
+
+    def enhance_prompt_from_breakdown(
+        self,
+        original_prompt: str,
+        breakdown: dict[str, str],
+        file_sources: list[dict[str, Any]] = None,
+    ) -> str:
+        """
+        Enhanced prompt method that works with breakdown data (compatibility method).
+
+        Args:
+            original_prompt: The original prompt text
+            breakdown: C.R.E.A.T.E. breakdown dictionary
+            file_sources: Optional file sources
+
+        Returns:
+            Enhanced prompt string
+        """
+        # Create a basic enhanced prompt based on the breakdown
+        enhanced = f"""# Enhanced Prompt
+
+## Original Request
+{original_prompt}
+
+## Context Analysis
+{breakdown.get('context', 'Professional analysis context')}
+
+## Structured Approach
+Based on the breakdown analysis:
+- **Content Type**: {breakdown.get('content_type', 'text')}
+- **Complexity**: {breakdown.get('complexity', 'moderate')}
+- **Recommended Approach**: {breakdown.get('recommended_approach', 'systematic analysis')}
+
+## Enhanced Instructions
+Please provide a comprehensive response that addresses:
+1. The core request: {original_prompt[:100]}...
+2. Contextual considerations from the analysis
+3. Structured approach based on content type
+4. Clear, actionable outcomes
+
+"""
+
+        # Add file context if available
+        if file_sources:
+            enhanced += "## File Context\n"
+            for file_info in file_sources:
+                name = file_info.get("name", "Unknown file")
+                content = (
+                    file_info.get("content", "")[:200] + "..."
+                    if len(file_info.get("content", "")) > 200
+                    else file_info.get("content", "")
+                )
+                enhanced += f"- **{name}**: {content}\n"
+            enhanced += "\n"
+
+        enhanced += """## Quality Criteria
+- Address all aspects of the original request
+- Provide clear, actionable guidance
+- Maintain appropriate professional tone
+- Include relevant examples where helpful
+
+---
+
+*This enhanced prompt incorporates systematic analysis for optimal results.*"""
 
         return enhanced
 
@@ -506,7 +581,7 @@ You are a professional communication specialist helping to create clear, effecti
             <div style="margin: 4px 0; padding: 8px; background: white; border-radius: 4px; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>{status_icon} {file_info['name']}</strong>
+                        <strong>{status_icon} FILE: {file_info['name']}</strong>
                         <span style="color: #64748b; font-size: 12px;">({size_mb:.1f}MB, {file_info.get('type', 'unknown')})</span>
                     </div>
                     <div style="font-size: 12px; color: {color};">
@@ -1175,68 +1250,3 @@ Raw Content:
                 "<div class='error'>No files processed due to error</div>",
             )
 
-    def enhance_prompt(
-        self,
-        original_prompt: str,
-        breakdown: dict[str, str],
-        file_sources: list[dict[str, Any]] = None,
-    ) -> str:
-        """
-        Enhanced prompt method that matches test expectations.
-
-        Args:
-            original_prompt: The original prompt text
-            breakdown: C.R.E.A.T.E. breakdown dictionary
-            file_sources: Optional file sources
-
-        Returns:
-            Enhanced prompt string
-        """
-        # Create a basic enhanced prompt based on the breakdown
-        enhanced = f"""# Enhanced Prompt
-
-## Original Request
-{original_prompt}
-
-## Context Analysis
-{breakdown.get('context', 'Professional analysis context')}
-
-## Structured Approach
-Based on the breakdown analysis:
-- **Content Type**: {breakdown.get('content_type', 'text')}
-- **Complexity**: {breakdown.get('complexity', 'moderate')}
-- **Recommended Approach**: {breakdown.get('recommended_approach', 'systematic analysis')}
-
-## Enhanced Instructions
-Please provide a comprehensive response that addresses:
-1. The core request: {original_prompt[:100]}...
-2. Contextual considerations from the analysis
-3. Structured approach based on content type
-4. Clear, actionable outcomes
-
-"""
-
-        # Add file context if available
-        if file_sources:
-            enhanced += "## File Context\n"
-            for file_info in file_sources:
-                name = file_info.get("name", "Unknown file")
-                content = (
-                    file_info.get("content", "")[:200] + "..."
-                    if len(file_info.get("content", "")) > 200
-                    else file_info.get("content", "")
-                )
-                enhanced += f"- **{name}**: {content}\n"
-            enhanced += "\n"
-
-        enhanced += """## Quality Criteria
-- Address all aspects of the original request
-- Provide clear, actionable guidance
-- Maintain appropriate professional tone
-- Include relevant examples where helpful
-
----
-
-*This enhanced prompt incorporates systematic analysis for optimal results.*"""
-
-        return enhanced

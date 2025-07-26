@@ -190,7 +190,12 @@ class TestTypeSlicer:
         self.classify_all_tests(test_data)
 
         test_type_coverage = {}
-        for test_type in self.test_classifications.keys():
+        
+        # Generate coverage for all possible test types, not just those with junit entries
+        # This handles the case where VS Code junit.xml is incomplete
+        all_test_types = set(self.test_classifications.keys()) | set(self.TEST_TYPE_PATTERNS.keys())
+        
+        for test_type in all_test_types:
             test_type_coverage[test_type] = self.filter_coverage_by_test_type(coverage_data, test_type)
 
         return test_type_coverage
