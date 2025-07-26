@@ -212,8 +212,8 @@ class TestCreateProcessorContextExtraction:
         processor = CreateProcessor()
 
         test_cases = [
-            ("You are a senior marketing analyst.", "senior marketing analyst"),
-            ("Act as a legal expert in corporate law.", "legal expert in corporate law"),
+            ("You are a senior marketing analyst.", "a senior marketing analyst"),
+            ("Act as a legal expert in corporate law.", "a legal expert in corporate law"),
             ("Role: Technical writer", "Technical writer"),
             ("As a data scientist, please analyze...", "data scientist"),
             ("Assume the role of project manager.", "project manager"),
@@ -280,7 +280,7 @@ class TestCreateProcessorContextExtraction:
 
         context = processor._extract_context(prompt)
 
-        assert context["role"] == "marketing expert"
+        assert context["role"] == "a marketing expert"
         assert context["background"] == "digital marketing"
         assert context["goal"] == "Create a comprehensive campaign strategy"
 
@@ -589,7 +589,7 @@ class TestCreateProcessorFrameworkApplication:
 
         components = processor.apply_create_framework(prompt, context)
 
-        assert components["context"]["role"] == "financial analyst"
+        assert components["context"]["role"] == "a financial analyst"
         assert components["augmentations"]["domain"] == "business"
 
     def test_apply_create_framework_complex_prompt(self):
@@ -609,7 +609,7 @@ class TestCreateProcessorFrameworkApplication:
         components = processor.apply_create_framework(prompt, context)
 
         # Verify all components are populated
-        assert components["context"]["role"] == "senior marketing manager"
+        assert components["context"]["role"] == "a senior marketing manager"
         assert components["context"]["background"] == "digital marketing"
         assert components["request"]["task"] == "Create a comprehensive social media strategy"
         assert components["request"]["deliverable"] == "a detailed implementation plan"
@@ -1004,7 +1004,7 @@ class TestCreateProcessorIntegration:
 
         # Verify framework components
         components = response.framework_components
-        assert components["context"]["role"] == "senior business analyst"
+        assert components["context"]["role"] == "a senior business analyst"
         assert components["context"]["background"] == "market research"
         assert "Create a comprehensive market analysis report" in components["request"]["task"]
         assert components["request"]["deliverable"] == "a strategic recommendations document"

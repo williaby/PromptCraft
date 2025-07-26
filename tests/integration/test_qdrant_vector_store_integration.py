@@ -247,8 +247,8 @@ class TestQdrantVectorStoreIntegration:
             # Set up upsert mock to handle both sync and async usage patterns
             upsert_result = MagicMock(status="completed")
 
-            # Use AsyncMock for awaited calls - we'll handle sync calls in update separately
-            mock_client.upsert = AsyncMock(return_value=upsert_result)
+            # Use MagicMock since upsert is called synchronously in the vector store
+            mock_client.upsert = MagicMock(return_value=upsert_result)
 
             # Setup search mock results
             mock_search_hit_1 = MagicMock()
@@ -263,7 +263,10 @@ class TestQdrantVectorStoreIntegration:
             mock_search_hit_2.payload = {"content": "Async error handling", "metadata": {"language": "python"}}
             mock_search_hit_2.vector = [0.7, 0.8, 0.3] + [0.2] * (DEFAULT_VECTOR_DIMENSIONS - 3)
 
-            mock_client.search.return_value = [mock_search_hit_1, mock_search_hit_2]
+            # Set up search mock to return a coroutine since the vector store calls it with await
+            async def mock_search(*args, **kwargs):
+                return [mock_search_hit_1, mock_search_hit_2]
+            mock_client.search = mock_search
 
             # Mock connection and health check
             mock_collections = MagicMock()

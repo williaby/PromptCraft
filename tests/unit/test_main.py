@@ -1,8 +1,10 @@
 """Tests for the main FastAPI application module."""
 
-from unittest.mock import MagicMock, patch
+import logging
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import HTTPException, status
 from fastapi.testclient import TestClient
 
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
@@ -213,6 +215,545 @@ class TestLifespanEvents:
         with pytest.raises(RuntimeError):
             async with lifespan(mock_app):
                 pass
+
+
+class TestHealthCheckEndpoints:
+    """Test health check endpoints for comprehensive coverage."""
+
+    def setup_method(self) -> None:
+        """Set up test client."""
+        self.client = TestClient(app)
+
+    @patch("src.main.get_configuration_health_summary")
+    @patch("src.main.get_all_circuit_breakers")
+    def test_health_check_success(self, mock_circuit_breakers, mock_health_summary) -> None:
+        """Test successful health check endpoint."""
+        # Mock health summary to return healthy status
+        mock_health_summary.return_value = {
+            "healthy": True,
+            "environment": "test",
+            "version": "1.0.0",
+            "config_loaded": True,
+            "encryption_available": True,
+            "timestamp": "2025-01-01T00:00:00+00:00"
+        }
+        
+        # Mock circuit breakers
+        mock_breaker = MagicMock()
+        mock_breaker.get_health_status.return_value = {"healthy": True, "state": "closed"}
+        mock_circuit_breakers.return_value = {"test_breaker": mock_breaker}
+
+        response = self.client.get("/health")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert data["service"] == "promptcraft-hybrid"
+        assert "circuit_breakers" in data
+        assert data["healthy"] is True
+
+    @patch("src.main.get_configuration_health_summary")
+    @patch("src.main.get_all_circuit_breakers")
+    def test_health_check_unhealthy(self, mock_circuit_breakers, mock_health_summary) -> None:
+        """Test health check when service is unhealthy."""
+        mock_health_summary.return_value = {
+            "healthy": False,
+            "status": "degraded",
+            "environment": "test",
+            "version": "1.0.0"
+        }
+        mock_circuit_breakers.return_value = {}
+
+        response = self.client.get("/health")
+
+        assert response.status_code == 503
+        data = response.json()
+        # The security error handler processes HTTPException and returns structured error
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 503
+        assert "timestamp" in data
+        assert data["path"] == "/health"
+        assert "debug" in data
+
+    @patch("src.main.get_configuration_health_summary")
+    @patch("src.main.get_all_circuit_breakers")
+    def test_health_check_exception(self, mock_circuit_breakers, mock_health_summary) -> None:
+        """Test health check with unexpected exception."""
+        mock_health_summary.side_effect = RuntimeError("Unexpected error")
+        mock_circuit_breakers.return_value = {}
+
+        response = self.client.get("/health")
+
+        assert response.status_code == 500
+        data = response.json()
+        # The security error handler processes our custom HTTPException 
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert "timestamp" in data
+        assert data["path"] == "/health"
+
+    @patch("src.main.get_configuration_health_summary")
+    @patch("src.main.get_all_circuit_breakers")  
+    def test_health_check_http_exception_passthrough(self, mock_circuit_breakers, mock_health_summary) -> None:
+        """Test health check with HTTPException that should be re-raised."""
+        from fastapi import HTTPException
+        mock_health_summary.side_effect = HTTPException(status_code=503, detail="Service unavailable")
+        mock_circuit_breakers.return_value = {}
+
+        response = self.client.get("/health")
+
+        assert response.status_code == 503
+        data = response.json()
+        # HTTPExceptions are processed by the security error handler with original detail preserved
+        assert data["error"] == "Service unavailable"
+        assert data["status_code"] == 503
+        assert "timestamp" in data
+        assert data["path"] == "/health"
+        assert "debug" in data
+        assert data["debug"]["error_type"] == "HTTPException"
+
+    @patch("src.main.get_settings")
+    @patch("src.main.get_configuration_status")
+    def test_configuration_health_success(self, mock_config_status, mock_settings) -> None:
+        """Test successful configuration health check."""
+        from src.config.health import ConfigurationStatusModel
+        from datetime import datetime, UTC
+        
+        mock_settings_obj = ApplicationSettings()
+        mock_settings.return_value = mock_settings_obj
+        
+        # Create a proper ConfigurationStatusModel instance
+        mock_config_status.return_value = ConfigurationStatusModel(
+            environment="test",
+            version="1.0.0",
+            debug=True,
+            config_loaded=True,
+            encryption_enabled=True,
+            config_source="env_vars",
+            validation_status="passed",
+            validation_errors=[],
+            secrets_configured=2,
+            api_host="localhost",
+            api_port=8000,
+            timestamp=datetime.now(UTC)
+        )
+
+        response = self.client.get("/health/config")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["environment"] == "test"
+        assert data["config_loaded"] is True
+        assert data["config_healthy"] is True
+
+    @patch("src.main.get_settings")
+    def test_configuration_health_validation_error_debug(self, mock_settings) -> None:
+        """Test configuration health with validation error in debug mode."""
+        # First call raises ConfigurationValidationError
+        config_error = ConfigurationValidationError(
+            "Config error",
+            field_errors=["Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6"],
+            suggestions=["Fix 1", "Fix 2", "Fix 3", "Fix 4", "Fix 5", "Fix 6"]
+        )
+        
+        # Second call returns debug settings for debug mode check
+        mock_debug_settings = ApplicationSettings(debug=True)
+        mock_settings.side_effect = [config_error, mock_debug_settings]
+
+        response = self.client.get("/health/config")
+
+        assert response.status_code == 500
+        data = response.json()
+        # Error handler creates structured response with 'error', 'status_code', 'path', 'debug'
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert "debug" in data
+        assert data["debug"]["error_type"] == "HTTPException"
+
+    @patch("src.main.get_settings")
+    def test_configuration_health_validation_error_production(self, mock_settings) -> None:
+        """Test configuration health with validation error in production mode."""
+        # First call raises ConfigurationValidationError
+        config_error = ConfigurationValidationError(
+            "Config error", 
+            field_errors=["Error 1"], 
+            suggestions=["Fix 1"]
+        )
+        
+        # Second call raises exception for debug mode check (simulating production)
+        mock_settings.side_effect = [config_error, RuntimeError("Settings unavailable")]
+
+        response = self.client.get("/health/config")
+
+        assert response.status_code == 500
+        data = response.json()
+        # Error handler creates structured response without debug details in production
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert data["path"] == "/health/config"
+
+    @patch("src.main.get_settings")
+    def test_configuration_health_unexpected_error(self, mock_settings) -> None:
+        """Test configuration health with unexpected error."""
+        mock_settings.side_effect = RuntimeError("Unexpected error")
+
+        response = self.client.get("/health/config")
+
+        assert response.status_code == 500
+        data = response.json()
+        # Error handler creates structured response for unexpected errors
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert data["path"] == "/health/config"
+
+    @patch("src.main.get_mcp_configuration_health")
+    def test_mcp_health_check_success(self, mock_mcp_health) -> None:
+        """Test successful MCP health check."""
+        mock_mcp_health.return_value = {
+            "healthy": True,
+            "mcp_status": "connected"
+        }
+
+        response = self.client.get("/health/mcp")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert data["service"] == "mcp-integration"
+
+    @patch("src.main.get_mcp_configuration_health")
+    def test_mcp_health_check_unhealthy(self, mock_mcp_health) -> None:
+        """Test MCP health check when unhealthy."""
+        mock_mcp_health.return_value = {
+            "healthy": False,
+            "mcp_status": "disconnected"
+        }
+
+        response = self.client.get("/health/mcp")
+
+        assert response.status_code == 503
+        data = response.json()
+        # Error handler creates structured response for HTTP errors
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 503
+        assert data["path"] == "/health/mcp"
+
+    @patch("src.main.get_mcp_configuration_health")
+    def test_mcp_health_check_import_error(self, mock_mcp_health) -> None:
+        """Test MCP health check with ImportError."""
+        mock_mcp_health.side_effect = ImportError("MCP not available")
+
+        response = self.client.get("/health/mcp")
+
+        assert response.status_code == 503
+        data = response.json()
+        # Error handler creates structured response for HTTP errors
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 503
+        assert data["path"] == "/health/mcp"
+
+    @patch("src.main.get_mcp_configuration_health")
+    def test_mcp_health_check_exception(self, mock_mcp_health) -> None:
+        """Test MCP health check with unexpected exception."""
+        mock_mcp_health.side_effect = RuntimeError("Unexpected error")
+
+        response = self.client.get("/health/mcp")
+
+        assert response.status_code == 500
+        data = response.json()
+        # Error handler creates structured response for HTTP errors
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert data["path"] == "/health/mcp"
+
+    @patch("src.main.get_all_circuit_breakers")
+    def test_circuit_breaker_health_no_breakers(self, mock_circuit_breakers) -> None:
+        """Test circuit breaker health when no breakers are registered."""
+        mock_circuit_breakers.return_value = {}
+
+        response = self.client.get("/health/circuit-breakers")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "no_circuit_breakers"
+        assert data["message"] == "No circuit breakers registered"
+
+    @patch("src.main.get_all_circuit_breakers")
+    def test_circuit_breaker_health_all_healthy(self, mock_circuit_breakers) -> None:
+        """Test circuit breaker health when all breakers are healthy."""
+        mock_breaker1 = MagicMock()
+        mock_breaker1.get_health_status.return_value = {"healthy": True, "state": "closed"}
+        mock_breaker2 = MagicMock()
+        mock_breaker2.get_health_status.return_value = {"healthy": True, "state": "closed"}
+        
+        mock_circuit_breakers.return_value = {
+            "breaker1": mock_breaker1,
+            "breaker2": mock_breaker2
+        }
+
+        response = self.client.get("/health/circuit-breakers")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert data["overall_healthy"] is True
+        assert data["circuit_breaker_count"] == 2
+
+    @patch("src.main.get_all_circuit_breakers")
+    def test_circuit_breaker_health_degraded(self, mock_circuit_breakers) -> None:
+        """Test circuit breaker health when some breakers are unhealthy."""
+        mock_breaker1 = MagicMock()
+        mock_breaker1.get_health_status.return_value = {"healthy": True, "state": "closed"}
+        mock_breaker2 = MagicMock()
+        mock_breaker2.get_health_status.return_value = {"healthy": False, "state": "open"}
+        
+        mock_circuit_breakers.return_value = {
+            "breaker1": mock_breaker1,
+            "breaker2": mock_breaker2
+        }
+
+        response = self.client.get("/health/circuit-breakers")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "degraded"
+        assert data["overall_healthy"] is False
+
+    @patch("src.main.get_all_circuit_breakers")
+    def test_circuit_breaker_health_exception(self, mock_circuit_breakers) -> None:
+        """Test circuit breaker health with exception."""
+        mock_circuit_breakers.side_effect = RuntimeError("Breaker error")
+
+        response = self.client.get("/health/circuit-breakers")
+
+        assert response.status_code == 500
+        data = response.json()
+        # Error handler creates structured response for HTTP errors
+        assert data["error"] == "HTTP error"
+        assert data["status_code"] == 500
+        assert data["path"] == "/health/circuit-breakers"
+
+
+class TestAPIEndpoints:
+    """Test API endpoints for comprehensive coverage."""
+
+    def setup_method(self) -> None:
+        """Set up test client."""
+        self.client = TestClient(app)
+
+    @patch("src.main.audit_logger_instance")
+    def test_validate_input_success(self, mock_audit_logger) -> None:
+        """Test validate input endpoint with successful validation."""
+        test_data = {"text": "Test input"}
+        
+        response = self.client.post("/api/v1/validate", json=test_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["message"] == "Input validation successful"
+        assert data["sanitized_text"] == "Test input"
+        
+        # Verify audit logging was called
+        mock_audit_logger.log_api_event.assert_called_once()
+
+    def test_search_endpoint_success(self) -> None:
+        """Test search endpoint with valid parameters."""
+        response = self.client.get("/api/v1/search", params={
+            "search": "test",
+            "page": 1,
+            "limit": 10,
+            "sort": "name"
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert "query_params" in data
+        assert data["query_params"]["search"] == "test"
+        assert data["query_params"]["page"] == 1
+        assert data["query_params"]["limit"] == 10
+        assert data["query_params"]["sort"] == "name"
+
+
+class TestLifespanComprehensive:
+    """Test comprehensive lifespan coverage including audit logging."""
+
+    @patch("src.main.audit_logger_instance")
+    @patch("src.main.get_settings")
+    def test_lifespan_startup_audit_logging(self, mock_get_settings, mock_audit_logger) -> None:
+        """Test lifespan startup with audit event logging."""
+        mock_settings = ApplicationSettings(
+            app_name="Test App",
+            version="1.0.0",
+            environment="dev",
+            debug=True
+        )
+        mock_get_settings.return_value = mock_settings
+
+        mock_app = MagicMock()
+        mock_app.state = MagicMock()
+
+        # Use context manager to trigger lifespan events
+        try:
+            with TestClient(app) as client:
+                # Lifespan startup and shutdown happen during context manager
+                pass
+        except Exception:
+            # Some dependencies might not be available in test, ignore
+            pass
+
+        # Verify audit logging was called for startup
+        startup_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
+                        if "startup" in str(call).lower()]
+        assert len(startup_calls) > 0
+
+    @patch("src.main.audit_logger_instance")
+    @patch("src.main.get_settings")
+    async def test_lifespan_configuration_validation_error_audit(self, mock_get_settings, mock_audit_logger) -> None:
+        """Test lifespan with configuration validation error and audit logging."""
+        config_error = ConfigurationValidationError(
+            "Config error",
+            field_errors=["Error 1", "Error 2"],
+            suggestions=["Fix 1", "Fix 2"]
+        )
+        mock_get_settings.side_effect = config_error
+
+        mock_app = MagicMock()
+
+        # Test that ConfigurationValidationError is raised
+        with pytest.raises(ConfigurationValidationError):
+            async with lifespan(mock_app):
+                pass
+
+        # Verify audit logging was called for validation failure
+        validation_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
+                           if "validation" in str(call).lower()]
+        assert len(validation_calls) > 0
+
+    @patch("src.main.audit_logger_instance")
+    @patch("src.main.get_settings")
+    async def test_lifespan_unexpected_error_audit(self, mock_get_settings, mock_audit_logger) -> None:
+        """Test lifespan with unexpected error and audit logging."""
+        mock_get_settings.side_effect = RuntimeError("Unexpected error")
+
+        mock_app = MagicMock()
+
+        # Test that RuntimeError is raised
+        with pytest.raises(RuntimeError):
+            async with lifespan(mock_app):
+                pass
+
+        # Verify audit logging was called for startup failure
+        failure_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
+                        if "startup" in str(call).lower()]
+        assert len(failure_calls) > 0
+
+    @patch("src.main.audit_logger_instance")
+    def test_lifespan_shutdown_audit_logging(self, mock_audit_logger) -> None:
+        """Test lifespan shutdown audit logging."""
+        mock_app = MagicMock()
+        mock_app.state = MagicMock()
+
+        # Use normal lifespan flow
+        try:
+            with TestClient(app) as client:
+                pass
+        except Exception:
+            # Ignore dependency issues in test
+            pass
+
+        # Verify audit logging was called for shutdown
+        shutdown_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
+                         if "shutdown" in str(call).lower()]
+        assert len(shutdown_calls) > 0
+
+
+class TestCreateAppExceptionHandling:
+    """Test create_app exception handling scenarios for lines 144-151."""
+
+    @patch("src.main.get_settings")
+    def test_create_app_value_error_fallback(self, mock_get_settings) -> None:
+        """Test create_app with ValueError falls back to defaults."""
+        mock_get_settings.side_effect = ValueError("Settings format error")
+
+        app_instance = create_app()
+
+        # Should fallback to defaults
+        assert app_instance.title == "PromptCraft-Hybrid"
+        assert app_instance.version == "0.1.0"
+
+    @patch("src.main.get_settings")
+    def test_create_app_type_error_fallback(self, mock_get_settings) -> None:
+        """Test create_app with TypeError falls back to defaults."""
+        mock_get_settings.side_effect = TypeError("Type error in settings")
+
+        app_instance = create_app()
+
+        # Should fallback to defaults
+        assert app_instance.title == "PromptCraft-Hybrid"
+        assert app_instance.version == "0.1.0"
+
+    @patch("src.main.get_settings")
+    def test_create_app_attribute_error_fallback(self, mock_get_settings) -> None:
+        """Test create_app with AttributeError falls back to defaults."""
+        mock_get_settings.side_effect = AttributeError("Attribute error in settings")
+
+        app_instance = create_app()
+
+        # Should fallback to defaults
+        assert app_instance.title == "PromptCraft-Hybrid"
+        assert app_instance.version == "0.1.0"
+
+    @patch("src.main.get_settings")
+    def test_create_app_general_exception_fallback(self, mock_get_settings) -> None:
+        """Test create_app with general exception falls back to defaults."""
+        mock_get_settings.side_effect = Exception("General error")
+
+        app_instance = create_app()
+
+        # Should fallback to defaults
+        assert app_instance.title == "PromptCraft-Hybrid"
+        assert app_instance.version == "0.1.0"
+
+
+class TestRootEndpointFallback:
+    """Test root endpoint fallback behavior for lines 437-448."""
+
+    def setup_method(self) -> None:
+        """Set up test client."""
+        self.client = TestClient(app)
+
+    def test_root_endpoint_fallback_when_no_app_state(self) -> None:
+        """Test root endpoint fallback when app.state.settings is unavailable."""
+        # Ensure app state settings doesn't exist
+        if hasattr(app.state, "settings"):
+            delattr(app.state, "settings")
+
+        response = self.client.get("/")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["service"] == "PromptCraft-Hybrid"
+        assert data["version"] == "unknown"
+        assert data["environment"] == "unknown"
+        assert data["status"] == "running"
+
+
+class TestPingEndpoint:
+    """Test ping endpoint for line 464 coverage."""
+
+    def setup_method(self) -> None:
+        """Set up test client."""
+        self.client = TestClient(app)
+
+    def test_ping_endpoint_return_statement(self) -> None:
+        """Test ping endpoint return statement coverage."""
+        response = self.client.get("/ping")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "pong"
 
 
 class TestMainScriptExecution:

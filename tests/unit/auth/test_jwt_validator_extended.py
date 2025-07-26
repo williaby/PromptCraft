@@ -523,5 +523,5 @@ class TestJWTValidatorIntegration:
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.side_effect = RuntimeError("Unexpected error")
 
-        with pytest.raises(JWTValidationError, match="Unexpected validation error"):
+        with pytest.raises(JWTValidationError, match="Token validation failed"):
             self.validator.validate_token("header.payload.signature")

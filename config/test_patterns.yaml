@@ -1,0 +1,221 @@
+# Test Pattern Configuration for Enhanced Coverage Analysis
+# This file defines how test files are categorized and mapped to source files
+# Priority: Lower numbers = higher priority (most specific patterns first)
+
+test_types:
+  auth:
+    priority: 1
+    description: 'Authentication and authorization tests'
+    patterns: 
+      - 'tests/auth/'
+      - 'tests/unit/auth/'
+    validation:
+      max_execution_time: 5.0
+      allowed_imports:
+        - 'src.auth.*'
+        - 'src.config.*'
+        - 'pytest'
+        - 'unittest'
+      required_imports:
+        - 'src.auth'
+      security_checks:
+        - 'no_hardcoded_secrets'
+        - 'proper_encryption'
+  
+  security:
+    priority: 2
+    description: 'Security-focused tests'
+    patterns:
+      - 'tests/security/'
+      - 'tests/unit/test_security_*'
+    validation:
+      max_execution_time: 10.0
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'unittest'
+        - 'bandit'
+        - 'safety'
+      security_checks:
+        - 'no_hardcoded_secrets'
+        - 'input_validation'
+        - 'proper_encryption'
+  
+  integration:
+    priority: 3
+    description: 'Integration tests'
+    patterns:
+      - 'tests/integration/'
+    validation:
+      max_execution_time: 30.0
+      allowed_operations:
+        - 'database_access'
+        - 'external_api'
+        - 'file_system_read'
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'unittest'
+        - 'requests'
+        - 'httpx'
+  
+  performance:
+    priority: 4
+    description: 'Performance tests'
+    patterns:
+      - 'tests/performance/'
+    validation:
+      max_execution_time: 60.0
+      allowed_operations:
+        - 'performance_measurement'
+        - 'load_testing'
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'pytest-benchmark'
+        - 'locust'
+  
+  contract:
+    priority: 5
+    description: 'Contract tests'
+    patterns:
+      - 'tests/contract/'
+    validation:
+      max_execution_time: 15.0
+      allowed_operations:
+        - 'external_api'
+        - 'schema_validation'
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'pact'
+        - 'jsonschema'
+  
+  examples:
+    priority: 6
+    description: 'Example tests'
+    patterns:
+      - 'tests/examples/'
+    validation:
+      max_execution_time: 10.0
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'unittest'
+  
+  stress:
+    priority: 7
+    description: 'Stress tests'
+    patterns:
+      - 'tests/stress/'
+      - 'tests/performance/'  # Overlaps with performance
+    validation:
+      max_execution_time: 120.0
+      allowed_operations:
+        - 'stress_testing'
+        - 'load_testing'
+        - 'resource_exhaustion'
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'locust'
+        - 'multiprocessing'
+  
+  unit:
+    priority: 8  # Lowest priority - most general, catches everything
+    description: 'Unit tests'
+    patterns:
+      - 'tests/unit/'
+    exclusions:
+      - '*integration*'
+      - '*auth*'
+      - '*security*'
+      - '*performance*'
+    validation:
+      max_execution_time: 1.0
+      allowed_imports:
+        - 'src.*'
+        - 'pytest'
+        - 'unittest'
+        - 'mock'
+        - 'unittest.mock'
+      forbidden_operations:
+        - 'network_access'
+        - 'file_system_write'
+        - 'database_access'
+        - 'external_api'
+
+# Global configuration
+global:
+  security:
+    max_file_size_mb: 1  # Maximum test file size to analyze
+    allowed_file_extensions: ['.py']
+    path_validation: true
+    content_sanitization: true
+  
+  performance:
+    cache_size_test_mapping: 32
+    cache_size_file_analysis: 256
+    enable_caching: true
+  
+  validation:
+    strict_mode: false  # Set to true for strict validation
+    report_warnings: true
+    fail_on_security_violation: false
+
+# Codecov integration for unified local/remote views
+codecov_integration:
+  enabled: true
+  flag_mapping:
+    # Maps test types to Codecov flags for alignment
+    unit:
+      codecov_flag: "unit"
+      source_paths:
+        - "src/core/"
+        - "src/agents/"
+        - "src/config/"
+        - "src/utils/"
+        - "src/mcp_integration/"
+        - "src/ingestion/"
+    auth:
+      codecov_flag: "auth"
+      source_paths:
+        - "src/auth/"
+    integration:
+      codecov_flag: "integration" 
+      source_paths:
+        - "src/core/"
+        - "src/ui/"
+        - "src/mcp_integration/"
+    security:
+      codecov_flag: "security"
+      source_paths:
+        - "src/security/"
+    performance:
+      codecov_flag: "performance"
+      source_paths:
+        - "src/core/"
+        - "src/agents/"
+        - "src/mcp_integration/"
+    stress:
+      codecov_flag: "stress"
+      source_paths:
+        - "src/core/"
+        - "src/agents/"
+        - "src/mcp_integration/"
+    contract:
+      codecov_flag: "contract"
+      source_paths:
+        - "src/mcp_integration/"
+    examples:
+      codecov_flag: "examples"
+      source_paths:
+        - "examples/"
+  
+  status_targets:
+    # Align with codecov.yaml status targets
+    unit: 85.0
+    integration: 75.0
+    auth: 80.0
+    security: 80.0
+    default: 80.0

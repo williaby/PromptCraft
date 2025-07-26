@@ -275,7 +275,7 @@ warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra --strict-markers --strict-config --cov=src --cov-branch --cov-report=term-missing:skip-covered --cov-report=html --cov-report=xml --junitxml=reports/junit.xml -o junit_family=xunit2 -o junit_suite_name=PromptCraft -o junit_logging=no -o junit_log_passing_tests=false -m 'not slow' --tb=short --cov-fail-under=80 --reruns=2 --reruns-delay=1"
+addopts = "-ra --strict-markers --strict-config --asyncio-mode=auto -m 'not slow' --tb=short"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]

@@ -163,7 +163,7 @@ class TestCreateAgent:
         result = agent.generate_prompt(context, preferences)
 
         assert isinstance(result, str)
-        assert "Preferences: {}" in result
+        assert "Preferences:" not in result  # Empty dict is falsy, no preferences section
         assert str(context) in result
 
     def test_generate_prompt_complex_context(self):

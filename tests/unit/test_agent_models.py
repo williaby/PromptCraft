@@ -115,10 +115,22 @@ class TestAgentInput:
     def test_agent_input_security_content(self, security_test_inputs):
         """Test AgentInput with potentially malicious content."""
         for malicious_input in security_test_inputs:
-            # Should not raise validation errors - content should be accepted
-            # but will be sanitized/handled by the agent implementation
-            agent_input = AgentInput(content=malicious_input)
-            assert agent_input.content == malicious_input
+            try:
+                # Most malicious inputs should be accepted for downstream processing
+                agent_input = AgentInput(content=malicious_input)
+                assert agent_input.content == malicious_input
+            except ValidationError as e:
+                error_str = str(e)
+                # Some inputs should legitimately fail validation - this is correct security behavior
+                if malicious_input in ["", " ", "\t\n\r", "\r\n\r\n"]:
+                    # Empty/whitespace-only content should fail validation
+                    assert "Content cannot be empty or whitespace-only" in error_str
+                elif malicious_input is None:
+                    # None values should fail type validation
+                    assert "Input should be a valid string" in error_str
+                else:
+                    # Other malicious inputs should be accepted
+                    raise
 
     def test_agent_input_serialization(self, sample_agent_input):
         """Test AgentInput serialization."""

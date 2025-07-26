@@ -356,10 +356,15 @@ class TestQdrantVectorStore:
         store = QdrantVectorStore(qdrant_config)
         await store.connect()
 
-        # Mock search response
-        mock_response = Mock()
-        mock_response.points = [Mock(id="result1", payload={"content": "Result content", "metadata": {}}, score=0.95)]
-        mock_qdrant_client.search.return_value = mock_response
+        # Mock search response - return the points directly as an awaitable
+        from unittest.mock import AsyncMock
+        mock_hit = Mock()
+        mock_hit.id = "result1"
+        mock_hit.payload = {"content": "Result content", "metadata": {}}
+        mock_hit.score = 0.95
+        mock_hit.vector = None
+        
+        mock_qdrant_client.search = AsyncMock(return_value=[mock_hit])
 
         params = SearchParameters(embeddings=[[0.1] * qdrant_config["vector_size"]], limit=5)
         results = await store.search(params)
@@ -510,13 +515,15 @@ class TestErrorHandlingAndEdgeCases:
             # May raise dimension error or handle gracefully
             assert "dimension" in str(e).lower() or "embedding" in str(e).lower() or "validation" in str(e).lower()
 
-    async def test_empty_search_results(self, mock_store):
+    async def test_empty_search_results(self):
         """Test handling of empty search results."""
-        await mock_store.connect()
+        # Create store with no sample data
+        empty_store = EnhancedMockVectorStore(config={"initialize_sample_data": False})
+        await empty_store.connect()
 
         # Search with no stored documents
         params = SearchParameters(embeddings=[[0.1, 0.2]], limit=10)
-        results = await mock_store.search(params)
+        results = await empty_store.search(params)
 
         # Should return empty list or handle gracefully
         assert isinstance(results, list)

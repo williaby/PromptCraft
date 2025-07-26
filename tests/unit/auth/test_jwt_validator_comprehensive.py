@@ -69,6 +69,15 @@ class TestJWTValidatorTokenDecoding:
             "nbf": int(datetime.now(UTC).timestamp()),
         }
 
+    @pytest.fixture
+    def valid_jwt_token(self):
+        """Valid JWT token string for testing."""
+        # Create a properly formatted JWT token string with valid header
+        header = jwt.utils.base64url_encode(b'{"alg":"RS256","typ":"JWT","kid":"test-key-id"}')
+        payload = jwt.utils.base64url_encode(b'{"email":"test@example.com","sub":"user123"}')
+        signature = jwt.utils.base64url_encode(b"fake-signature")
+        return f"{header.decode()}.{payload.decode()}.{signature.decode()}"
+
     def test_validate_token_format_invalid_structure(self, validator):
         """Test validation with malformed token structure."""
         invalid_tokens = [
@@ -86,9 +95,9 @@ class TestJWTValidatorTokenDecoding:
 
     def test_validate_token_format_malformed_json(self, validator):
         """Test validation with malformed JSON in token parts."""
-        # Create token with invalid JSON payload
-        header = jwt.utils.base64url_encode(b'{"alg":"RS256","typ":"JWT"}')
-        payload = jwt.utils.base64url_encode(b"{invalid-json}")  # Malformed JSON
+        # Create token with invalid JSON header
+        header = jwt.utils.base64url_encode(b'{"alg":"RS256","typ":"JWT",invalid-json}')  # Malformed JSON
+        payload = jwt.utils.base64url_encode(b'{"email":"test@example.com"}')
         signature = jwt.utils.base64url_encode(b"fake-signature")
         malformed_token = f"{header.decode()}.{payload.decode()}.{signature.decode()}"
 
@@ -120,66 +129,66 @@ class TestJWTValidatorTokenDecoding:
             validator.validate_token(token_with_unknown_kid)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_expired_signature(self, mock_decode, validator):
+    def test_validate_token_expired_signature(self, mock_decode, validator, valid_jwt_token):
         """Test validation with expired token."""
         mock_decode.side_effect = ExpiredSignatureError("Token has expired")
 
         with pytest.raises(JWTValidationError, match="Token has expired"):
-            validator.validate_token("expired.token.format")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_invalid_signature(self, mock_decode, validator):
+    def test_validate_token_invalid_signature(self, mock_decode, validator, valid_jwt_token):
         """Test validation with invalid signature."""
         mock_decode.side_effect = InvalidSignatureError("Invalid signature")
 
         with pytest.raises(JWTValidationError, match="Token signature verification failed"):
-            validator.validate_token("invalid.signature.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_invalid_audience(self, mock_decode, validator):
+    def test_validate_token_invalid_audience(self, mock_decode, validator, valid_jwt_token):
         """Test validation with mismatched audience."""
         mock_decode.side_effect = InvalidAudienceError("Invalid audience")
 
         with pytest.raises(JWTValidationError, match="Invalid token audience"):
-            validator.validate_token("wrong.audience.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_invalid_issuer(self, mock_decode, validator):
+    def test_validate_token_invalid_issuer(self, mock_decode, validator, valid_jwt_token):
         """Test validation with mismatched issuer."""
         mock_decode.side_effect = InvalidIssuerError("Invalid issuer")
 
         with pytest.raises(JWTValidationError, match="Invalid token issuer"):
-            validator.validate_token("wrong.issuer.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_missing_email_claim(self, mock_decode, validator, valid_token_payload):
+    def test_validate_token_missing_email_claim(self, mock_decode, validator, valid_token_payload, valid_jwt_token):
         """Test validation when token is missing email claim."""
         payload_without_email = valid_token_payload.copy()
         del payload_without_email["email"]
         mock_decode.return_value = payload_without_email
 
-        with pytest.raises(JWTValidationError, match="Token missing required 'email' claim"):
-            validator.validate_token("missing.email.token")
+        with pytest.raises(JWTValidationError, match="JWT payload missing required 'email' claim"):
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_empty_email_claim(self, mock_decode, validator, valid_token_payload):
+    def test_validate_token_empty_email_claim(self, mock_decode, validator, valid_token_payload, valid_jwt_token):
         """Test validation when token has empty email claim."""
         payload_empty_email = valid_token_payload.copy()
         payload_empty_email["email"] = ""
         mock_decode.return_value = payload_empty_email
 
-        with pytest.raises(JWTValidationError, match="Token missing required 'email' claim"):
-            validator.validate_token("empty.email.token")
+        with pytest.raises(JWTValidationError, match="JWT payload missing required 'email' claim"):
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_none_email_claim(self, mock_decode, validator, valid_token_payload):
+    def test_validate_token_none_email_claim(self, mock_decode, validator, valid_token_payload, valid_jwt_token):
         """Test validation when token has None email claim."""
         payload_none_email = valid_token_payload.copy()
         payload_none_email["email"] = None
         mock_decode.return_value = payload_none_email
 
-        with pytest.raises(JWTValidationError, match="Token missing required 'email' claim"):
-            validator.validate_token("none.email.token")
+        with pytest.raises(JWTValidationError, match="JWT payload missing required 'email' claim"):
+            validator.validate_token(valid_jwt_token)
 
 
 @pytest.mark.unit
@@ -264,37 +273,44 @@ class TestJWTValidatorEmailWhitelist:
         assert validator.is_email_allowed("", whitelist) is False
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_email_whitelist_allowed(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_email_whitelist_allowed(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test successful validation with whitelisted email."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "user@example.com", "sub": "user123"}
 
         whitelist = ["user@example.com", "@company.org"]
-        result = validator.validate_token("valid.token", email_whitelist=whitelist)
+        result = validator.validate_token(valid_jwt_token, email_whitelist=whitelist)
 
         assert isinstance(result, AuthenticatedUser)
         assert result.email == "user@example.com"
         assert result.user_id == "user123"
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_email_whitelist_domain_allowed(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_email_whitelist_domain_allowed(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test successful validation with domain whitelisted email."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "anyone@company.org", "sub": "user456"}
 
         whitelist = ["@company.org"]
-        result = validator.validate_token("valid.token", email_whitelist=whitelist)
+        result = validator.validate_token(valid_jwt_token, email_whitelist=whitelist)
 
         assert isinstance(result, AuthenticatedUser)
         assert result.email == "anyone@company.org"
+        assert result.user_id == "user456"
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_email_whitelist_denied(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_email_whitelist_denied(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test validation failure with non-whitelisted email."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "denied@blocked.com", "sub": "user789"}
 
         whitelist = ["user@example.com", "@company.org"]
 
-        with pytest.raises(JWTValidationError, match="Email not authorized"):
-            validator.validate_token("valid.token", email_whitelist=whitelist)
+        with pytest.raises(JWTValidationError, match="Email .* not authorized"):
+            validator.validate_token(valid_jwt_token, email_whitelist=whitelist)
 
 
 @pytest.mark.unit
@@ -370,22 +386,26 @@ class TestJWTValidatorRoleDetermination:
             assert result == UserRole.USER
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_admin_role_assignment(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_admin_role_assignment(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test that admin roles are correctly assigned in validated user."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "admin@company.com", "sub": "admin123"}
 
-        result = validator.validate_token("valid.token")
+        result = validator.validate_token(valid_jwt_token)
 
         assert isinstance(result, AuthenticatedUser)
         assert result.role == UserRole.ADMIN
         assert result.email == "admin@company.com"
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_user_role_assignment(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_user_role_assignment(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test that user roles are correctly assigned in validated user."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "user@company.com", "sub": "user123"}
 
-        result = validator.validate_token("valid.token")
+        result = validator.validate_token(valid_jwt_token)
 
         assert isinstance(result, AuthenticatedUser)
         assert result.role == UserRole.USER
@@ -425,29 +445,31 @@ class TestJWTValidatorEdgeCases:
             validator.validate_token(unicode_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_unexpected_error(self, mock_decode, validator):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_unexpected_error(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test handling of unexpected errors during validation."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.side_effect = Exception("Unexpected error")
 
         with pytest.raises(JWTValidationError, match="Token validation failed"):
-            validator.validate_token("valid.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_none_payload(self, mock_decode, validator):
+    def test_validate_token_none_payload(self, mock_decode, validator, valid_jwt_token):
         """Test handling when decode returns None."""
         mock_decode.return_value = None
 
         with pytest.raises(JWTValidationError):
-            validator.validate_token("valid.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_jwks_client_error(self, mock_decode, validator):
+    def test_validate_token_jwks_client_error(self, mock_decode, validator, valid_jwt_token):
         """Test handling of JWKS client errors."""
         validator.jwks_client.get_key_by_kid.side_effect = Exception("JWKS error")
         mock_decode.side_effect = jwt.exceptions.InvalidTokenError("Key retrieval failed")
 
         with pytest.raises(JWTValidationError):
-            validator.validate_token("valid.token")
+            validator.validate_token(valid_jwt_token)
 
     def test_validator_configuration_edge_cases(self):
         """Test validator with edge case configurations."""
@@ -464,18 +486,18 @@ class TestJWTValidatorEdgeCases:
         assert validator.issuer == special_issuer
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_payload_type_errors(self, mock_decode, validator):
+    def test_validate_token_payload_type_errors(self, mock_decode, validator, valid_jwt_token):
         """Test handling of incorrect payload types."""
         # Test with string payload instead of dict
         mock_decode.return_value = "not-a-dict"
 
         with pytest.raises(JWTValidationError):
-            validator.validate_token("valid.token")
+            validator.validate_token(valid_jwt_token)
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_email_type_error(self, mock_decode, validator):
+    def test_validate_token_email_type_error(self, mock_decode, validator, valid_jwt_token):
         """Test handling when email claim is not a string."""
         mock_decode.return_value = {"email": 12345, "sub": "user123"}  # Integer instead of string
 
         with pytest.raises(JWTValidationError):
-            validator.validate_token("valid.token")
+            validator.validate_token(valid_jwt_token)

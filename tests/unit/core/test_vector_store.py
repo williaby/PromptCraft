@@ -9,10 +9,11 @@ Uses proper pytest markers for codecov integration per codecov.yml config compon
 
 import asyncio
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from src.core.performance_optimizer import clear_all_caches
 from src.core.vector_store import (
     CIRCUIT_BREAKER_THRESHOLD,
     CONNECTION_POOL_SIZE,
@@ -41,6 +42,14 @@ from src.core.vector_store import (
     VectorStoreType,
     vector_store_connection,
 )
+
+
+@pytest.fixture(autouse=True)
+def clear_caches():
+    """Clear all caches between tests to prevent test pollution."""
+    clear_all_caches()
+    yield
+    clear_all_caches()
 
 
 @pytest.mark.unit
@@ -683,9 +692,9 @@ class TestEnhancedMockVectorStore:
 
     def test_init_default_config(self):
         """Test initialization with default configuration."""
-        store = EnhancedMockVectorStore({})
+        store = EnhancedMockVectorStore({"initialize_sample_data": False})
 
-        assert store.config == {}
+        assert store.config == {"initialize_sample_data": False}
         assert store._documents == {}
         assert "default" in store._collections
         assert store._connected is False
@@ -838,18 +847,23 @@ class TestEnhancedMockVectorStore:
 
     async def test_search_circuit_breaker_open(self):
         """Test search when circuit breaker is open."""
-        store = EnhancedMockVectorStore({"simulate_latency": False})
+        store = EnhancedMockVectorStore({"simulate_latency": False, "initialize_sample_data": False})
         await store.connect()
 
-        # Force circuit breaker open
+        # Force circuit breaker open with failures above threshold
         store._circuit_breaker_open = True
         store._circuit_breaker_failures = CIRCUIT_BREAKER_THRESHOLD + 1
+
+        # Verify circuit breaker state before search
+        assert store._circuit_breaker_open is True
+        assert store._circuit_breaker_failures == CIRCUIT_BREAKER_THRESHOLD + 1
 
         embeddings = [[0.1] * DEFAULT_VECTOR_DIMENSIONS]
         params = SearchParameters(embeddings=embeddings)
 
         results = await store.search(params)
 
+        # Circuit breaker should prevent search and return empty results
         assert results == []
 
     async def test_insert_documents_success(self):
@@ -1139,8 +1153,12 @@ class TestEnhancedMockVectorStore:
 class TestQdrantVectorStore:
     """Test cases for QdrantVectorStore class."""
 
-    def test_init_default_config(self):
+    @patch("src.core.vector_store.ApplicationSettings")
+    def test_init_default_config(self, mock_settings_class):
         """Test initialization with default configuration."""
+        # Make ApplicationSettings raise an exception to trigger fallback values
+        mock_settings_class.side_effect = Exception("Settings not available")
+        
         store = QdrantVectorStore({})
 
         assert store._client is None
@@ -1278,7 +1296,7 @@ class TestQdrantVectorStore:
     async def test_search_success(self):
         """Test successful Qdrant search."""
         store = QdrantVectorStore({})
-        mock_client = Mock()
+        mock_client = AsyncMock()
 
         # Mock search results
         mock_hit = Mock()
@@ -1316,7 +1334,7 @@ class TestQdrantVectorStore:
 
         assert result.success_count == 0
         assert result.error_count == 1
-        assert "Client not available" in result.errors
+        assert "Client not available or circuit breaker open" in result.errors
 
     @pytest.mark.asyncio
     async def test_insert_documents_success(self):
@@ -1664,6 +1682,7 @@ class TestMockVectorStore:
         mock_doc2 = Mock()
         mock_doc2.content = "Test document 2"
         mock_doc2.embedding = [0.2] * DEFAULT_VECTOR_DIMENSIONS
+        mock_doc2.metadata = {"type": "test2"}
 
         docs = [mock_doc1, mock_doc2]
 

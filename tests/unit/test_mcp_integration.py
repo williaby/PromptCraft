@@ -3,6 +3,7 @@
 import json
 import tempfile
 from pathlib import Path
+from unittest import mock
 from unittest.mock import Mock
 
 import pytest
@@ -532,6 +533,15 @@ class TestParallelSubagentExecutor:
 
 class TestMCPHealthIntegration:
     """Test MCP health check integration."""
+    
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.config_manager = Mock(spec=MCPConfigurationManager)
+        self.mcp_client = Mock(spec=MCPClient)
+        self.executor = ParallelSubagentExecutor(
+            config_manager=self.config_manager,
+            mcp_client=self.mcp_client
+        )
 
     def test_docker_mcp_client_initialization(self):
         """Test Docker MCP client initialization."""
@@ -732,3 +742,98 @@ class TestMCPHealthIntegration:
 
         finally:
             config_path.unlink()
+
+    async def test_get_client_for_routing_scenarios(self):
+        """Test different routing scenarios for _select_optimal_client."""
+        # Test scenario: Basic client selection with tool that's not supported by docker
+        with mock.patch.object(self.executor.docker_client, 'is_available', return_value=True), \
+             mock.patch.object(self.executor.docker_client, 'supports_feature', return_value=False):
+            client, deployment = await self.executor._select_optimal_client("test_server", "test_tool")
+            # Should return fallback to self-hosted when docker doesn't support the tool
+            assert client is not None
+            assert deployment in ["docker", "self_hosted", "hybrid", "self_hosted_fallback", "docker_preferred"]
+        
+        # Test scenario: Docker not available, fallback to self-hosted
+        with mock.patch.object(self.executor.docker_client, 'is_available', return_value=False):
+            client, deployment = await self.executor._select_optimal_client("test_server")
+            # Should fallback to mcp_client when docker unavailable
+            assert deployment in ["self_hosted", "fallback", "self_hosted_fallback", "self_hosted_only"]
+            
+        # Test scenario: Exception handling during client selection
+        with mock.patch.object(self.executor.docker_client, 'is_available', side_effect=Exception("Docker error")):
+            client, deployment = await self.executor._select_optimal_client("test_server")
+            # Should handle exceptions gracefully
+            assert client is not None
+            assert deployment is not None
+
+    async def test_execute_independent_with_task_exceptions(self):
+        """Test _execute_independent with task execution exceptions."""
+        tasks = [
+            {"agent_id": "working_agent", "type": "analysis"},
+            {"agent_id": "failing_agent", "type": "validation"}
+        ]
+        
+        # Mock simulation to make one task fail
+        def mock_execution(task, timeout):
+            if task["agent_id"] == "failing_agent":
+                return ExecutionResult(agent_id="failing_agent", success=False, error="Task execution failed")
+            return ExecutionResult(agent_id=task["agent_id"], success=True, result={"status": "completed"})
+        
+        # Mock the executor to raise exception for one task
+        with mock.patch.object(self.executor, '_execute_single_subagent', side_effect=mock_execution):
+            result = await self.executor._execute_independent(tasks, timeout=30)
+            
+            # Should have results for both tasks - one success, one failure
+            assert len(result["results"]) == 2
+            success_count = sum(1 for r in result["results"] if r["success"])
+            failed_count = sum(1 for r in result["results"] if not r["success"])
+            assert success_count >= 1  # At least one should succeed
+            assert failed_count >= 1  # At least one should fail
+
+    async def test_execute_pipeline_with_failure(self):
+        """Test pipeline execution with step failure."""
+        tasks = [
+            {"agent_id": "step1", "type": "analysis"},
+            {"agent_id": "step2", "type": "validation", "depends_on": "step1"}
+        ]
+        
+        # Mock first step to fail 
+        def mock_execution(task, timeout):
+            if task["agent_id"] == "step1":
+                return ExecutionResult(agent_id="step1", success=False, error="Step 1 failed")
+            return ExecutionResult(agent_id=task["agent_id"], success=True, result={"status": "completed"})
+        
+        with mock.patch.object(self.executor, '_execute_single_subagent', side_effect=mock_execution):
+            result = await self.executor._execute_pipeline(tasks, timeout=30)
+            
+            # Pipeline should handle failures appropriately
+            assert "results" in result
+            assert len(result["results"]) >= 1
+
+    async def test_simulate_subagent_execution_enhanced_exception_handling(self):
+        """Test exception handling in simulation methods."""
+        task = {"agent_id": "error_agent", "type": "analysis"}
+        
+        # Mock routing to raise exception, and regular simulation to also raise exception
+        with mock.patch.object(self.executor, '_simulate_subagent_execution_with_routing', side_effect=Exception("Routing error")), \
+             mock.patch.object(self.executor, '_simulate_subagent_execution', side_effect=Exception("Simulation error")):
+            
+            # Test the actual method that exists - _execute_single_subagent
+            result = self.executor._execute_single_subagent(task, 30)
+            
+            # Should return failure result with error message or handle gracefully
+            assert result.agent_id == "error_agent"
+            # The result should indicate some form of handling occurred
+            assert result is not None
+
+    def test_simulate_subagent_execution_legacy_path(self):
+        """Test legacy execution path in _simulate_subagent_execution."""
+        # Test with task that doesn't match analysis/validation/generation patterns
+        legacy_task = {"agent_id": "legacy_agent", "type": "unknown_type"}
+        result = self.executor._simulate_subagent_execution(legacy_task)
+        
+        # Should handle unknown task types gracefully
+        assert "agent" in result or "agent_id" in result
+        assert "deployment" in result or "status" in result or "result" in result
+        # Should return some kind of valid response structure
+        assert isinstance(result, dict)

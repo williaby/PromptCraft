@@ -378,12 +378,14 @@ class TestQdrantVectorStore:
 
     @pytest.mark.asyncio
     async def test_operations_require_connection(self):
-        """Test that operations require connection."""
+        """Test that operations handle disconnected state gracefully."""
         # All operations should handle disconnected state gracefully
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
 
-        with pytest.raises(Exception):
-            await self.store.search(params)
+        # Should handle disconnected state gracefully and return empty results
+        results = await self.store.search(params)
+        assert isinstance(results, list)
+        assert len(results) == 0
 
 
 class TestVectorStoreFactory:

@@ -50,8 +50,8 @@ class TestBasicSessions:
         # Verify poetry install was called
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
-        # Verify pytest was called with default coverage args
-        mock_session.run.assert_any_call("pytest", "--cov", "--cov-report=term-missing")
+        # Verify pytest was called with default coverage args (updated implementation)
+        mock_session.run.assert_any_call("pytest", "--cov", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=80")
 
     def test_tests_session_custom_args(self, mock_session):
         """Test tests session with custom arguments."""
@@ -69,13 +69,16 @@ class TestBasicSessions:
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
-        # Verify pytest with unit test args
+        # Verify pytest with unit test args (updated implementation)
         mock_session.run.assert_any_call(
             "pytest",
+            "-m",
+            "unit",
             "--cov=src",
+            "--cov-branch",
             "--cov-report=xml:coverage-unit.xml",
+            "--cov-report=json:coverage-unit.json",
             "--cov-report=term-missing",
-            "tests/unit",
             "-v",
         )
 
@@ -85,8 +88,8 @@ class TestBasicSessions:
 
         noxfile.tests_unit(mock_session)
 
-        # Verify codecov upload was called
-        mock_session.run.assert_any_call("codecov", "-f", "coverage-unit.xml", "-F", "unit", external=True)
+        # Verify codecov upload was called (updated implementation)
+        mock_session.run.assert_any_call("codecov", "-f", "coverage-unit.xml", "-F", "unit", "-n", "unit-tests", external=True)
 
     def test_tests_unit_without_codecov_token(self, mock_session):
         """Test tests_unit session without CODECOV_TOKEN."""
@@ -105,13 +108,16 @@ class TestBasicSessions:
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
-        # Verify pytest with integration test args
+        # Verify pytest with integration test args (updated implementation)
         mock_session.run.assert_any_call(
             "pytest",
+            "-m",
+            "integration",
             "--cov=src",
+            "--cov-branch",
             "--cov-report=xml:coverage-integration.xml",
+            "--cov-report=json:coverage-integration.json",
             "--cov-report=term-missing",
-            "tests/integration",
             "-v",
         )
 
@@ -121,13 +127,15 @@ class TestBasicSessions:
 
         noxfile.tests_integration(mock_session)
 
-        # Verify codecov upload was called
+        # Verify codecov upload was called (updated implementation)
         mock_session.run.assert_any_call(
             "codecov",
             "-f",
             "coverage-integration.xml",
             "-F",
             "integration",
+            "-n",
+            "integration-tests",
             external=True,
         )
 
