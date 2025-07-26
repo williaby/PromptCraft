@@ -432,8 +432,12 @@ class PathBasedCoverageAnalyzer:
         self.log(f"  Generated {test_type} report: {report_file}")
 
     def _generate_test_type_html(self, analysis: TestTypeAnalysis, sorted_files: list[CoverageFileData]) -> str:
-        """Generate HTML content for a test type report."""
+        """Generate HTML content for a test type report with file:// URLs for file explorer compatibility."""
         coverage_class = self._get_coverage_class(analysis.coverage_percent)
+
+        # Get absolute paths for file:// URLs
+        by_type_index_absolute = (self.output_dir / "by-type" / "index.html").resolve()
+        standard_dir_absolute = (self.output_dir / "standard").resolve()
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -481,6 +485,10 @@ class PathBasedCoverageAnalyzer:
             background: #e8f4fd; border: 1px solid #b3d9ff; padding: 15px;
             border-radius: 5px; margin: 20px 0; font-size: 14px;
         }}
+        .file-explorer-note {{
+            background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px;
+            border-radius: 5px; margin: 10px 0; font-size: 12px; color: #856404;
+        }}
         .footer {{
             margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef;
             color: #666; font-size: 14px; text-align: center;
@@ -489,7 +497,11 @@ class PathBasedCoverageAnalyzer:
 </head>
 <body>
     <div class="container">
-        <a href="../index.html" class="back-link">← Back to All Test Types</a>
+        <a href="file://{by_type_index_absolute}" class="back-link">← Back to All Test Types</a>
+
+        <div class="file-explorer-note">
+            📁 <strong>File Explorer Compatible:</strong> All links use permanent file:// URLs for viewing without a web server
+        </div>
 
         <h1>{analysis.display_name} Coverage Report</h1>
 
@@ -528,10 +540,11 @@ class PathBasedCoverageAnalyzer:
             <tbody>"""
 
         for file_data in sorted_files:
-            # Create link to detailed coverage if available
+            # Create permanent file:// link to detailed coverage if available
             if file_data.detailed_link:
+                detailed_file_absolute = (standard_dir_absolute / file_data.detailed_link).resolve()
                 file_link = (
-                    f'<a href="../../standard/{file_data.detailed_link}" class="file-link">{file_data.file_path}</a>'
+                    f'<a href="file://{detailed_file_absolute}" class="file-link">{file_data.file_path}</a>'
                 )
             else:
                 file_link = file_data.file_path
@@ -553,7 +566,7 @@ class PathBasedCoverageAnalyzer:
         <div class="footer">
             <p>
                 Generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} •
-                Path-based classification analysis • No runtime overhead
+                Path-based classification analysis • No runtime overhead • File Explorer Compatible
             </p>
         </div>
     </div>
@@ -597,67 +610,78 @@ class PathBasedCoverageAnalyzer:
         return html_content
 
     def _generate_overview_index(self, test_analyses: dict[str, TestTypeAnalysis], by_type_dir: Path) -> None:
-        """Generate overview index of all test types."""
+        """Generate overview index of all test types with file:// URLs for file explorer compatibility."""
         index_file = by_type_dir / "index.html"
 
         # Filter and sort test types that have coverage data
         test_types_with_data = [(k, v) for k, v in test_analyses.items() if v.files]
         sorted_analyses = sorted(test_types_with_data, key=lambda x: x[1].coverage_percent, reverse=True)
 
-        html_content = """<!DOCTYPE html>
+        # Get absolute path for main dashboard
+        main_dashboard_absolute = (self.output_dir / "index.html").resolve()
+
+        html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Type Coverage Overview</title>
     <style>
-        body {
+        body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 20px; background: #f5f5f5; line-height: 1.6;
-        }
-        .container {
+        }}
+        .container {{
             max-width: 1200px; margin: 0 auto; background: white;
             padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 { color: #333; border-bottom: 3px solid #007acc; padding-bottom: 10px; }
-        .intro { background: #e8f4fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .summary-grid {
+        }}
+        h1 {{ color: #333; border-bottom: 3px solid #007acc; padding-bottom: 10px; }}
+        .intro {{ background: #e8f4fd; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+        .file-explorer-note {{
+            background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px;
+            border-radius: 5px; margin: 10px 0; font-size: 12px; color: #856404;
+        }}
+        .summary-grid {{
             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px; margin: 20px 0;
-        }
-        .summary-card {
+        }}
+        .summary-card {{
             background: #f8f9fa; border: 1px solid #e9ecef;
             border-radius: 8px; padding: 20px; text-align: center;
             transition: transform 0.2s ease;
-        }
-        .summary-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .summary-card h3 { margin: 0 0 10px 0; color: #007acc; }
-        .stat { font-size: 24px; font-weight: bold; margin: 10px 0; }
-        .coverage-high { color: #28a745; }
-        .coverage-medium { color: #ffc107; }
-        .coverage-low { color: #dc3545; }
-        .card-link {
+        }}
+        .summary-card:hover {{ transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }}
+        .summary-card h3 {{ margin: 0 0 10px 0; color: #007acc; }}
+        .stat {{ font-size: 24px; font-weight: bold; margin: 10px 0; }}
+        .coverage-high {{ color: #28a745; }}
+        .coverage-medium {{ color: #ffc107; }}
+        .coverage-low {{ color: #dc3545; }}
+        .card-link {{
             color: #007acc; text-decoration: none; font-weight: 500;
             display: inline-block; margin-top: 10px; padding: 8px 16px;
             border: 1px solid #007acc; border-radius: 4px; transition: all 0.2s ease;
-        }
-        .card-link:hover {
+        }}
+        .card-link:hover {{
             background: #007acc; color: white; text-decoration: none;
-        }
-        .back-link {
+        }}
+        .back-link {{
             display: inline-block; margin-bottom: 20px; padding: 8px 16px;
             background: #6c757d; color: white; text-decoration: none; border-radius: 4px;
-        }
-        .back-link:hover { background: #5a6268; color: white; }
-        .footer {
+        }}
+        .back-link:hover {{ background: #5a6268; color: white; }}
+        .footer {{
             margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef;
             color: #666; font-size: 14px; text-align: center;
-        }
+        }}
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="../index.html" class="back-link">← Back to Main Dashboard</a>
+        <a href="file://{main_dashboard_absolute}" class="back-link">← Back to Main Dashboard</a>
+
+        <div class="file-explorer-note">
+            📁 <strong>File Explorer Compatible:</strong> All links use permanent file:// URLs for viewing without a web server
+        </div>
 
         <h1>📊 Test Type Coverage Overview</h1>
 
@@ -674,6 +698,8 @@ class PathBasedCoverageAnalyzer:
 
         for test_type, analysis in sorted_analyses:
             coverage_class = self._get_coverage_class(analysis.coverage_percent)
+            # Create absolute file:// URL for each test type report
+            test_type_report_absolute = (by_type_dir / test_type / "index.html").resolve()
 
             html_content += f"""
             <div class="summary-card">
@@ -684,7 +710,7 @@ class PathBasedCoverageAnalyzer:
                     <strong>{analysis.estimated_test_count:,}</strong> tests estimated<br>
                     <strong>{analysis.total_covered:,}</strong> / {analysis.total_statements:,} statements
                 </p>
-                <a href="{test_type}/index.html" class="card-link">View Details →</a>
+                <a href="file://{test_type_report_absolute}" class="card-link">View Details →</a>
             </div>"""
 
         html_content += f"""
@@ -693,7 +719,7 @@ class PathBasedCoverageAnalyzer:
         <div class="footer">
             <p>
                 Generated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} •
-                Path-based intelligent classification • Zero test execution overhead
+                Path-based intelligent classification • Zero test execution overhead • File Explorer Compatible
             </p>
         </div>
     </div>
@@ -727,6 +753,10 @@ class PathBasedCoverageAnalyzer:
                 analysis.coverage_percent * len(analysis.files) for analysis in test_analyses.values()
             )
             overall_coverage = weighted_coverage / total_files
+
+        # Pre-calculate file paths to avoid inline operations in f-strings
+        standard_report_path = (self.output_dir / 'standard' / 'index.html').resolve()
+        by_type_report_path = (self.output_dir / 'by-type' / 'index.html').resolve()
 
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -801,25 +831,26 @@ class PathBasedCoverageAnalyzer:
         for test_type, analysis in test_analyses.items():
             if analysis.files:
                 coverage_class = self._get_coverage_class(analysis.coverage_percent)
+                test_type_absolute = (self.output_dir / "by-type" / test_type / "index.html").resolve()
                 html_content += f"""
             <div class="summary-card">
                 <h3>{analysis.display_name}</h3>
                 <div class="stat coverage-{coverage_class}">{analysis.coverage_percent:.1f}%</div>
                 <p>{analysis.estimated_test_count:,} tests estimated</p>
-                <a href="by-type/{test_type}/index.html" class="card-link">View Details →</a>
+                <a href="file://{test_type_absolute}" class="card-link">View Details →</a>
             </div>"""
 
-        html_content += f"""
+        html_content += """
         </div>
 
         <div class="reports-section">
             <h3>📋 Available Reports</h3>
             <div class="reports-grid">
-                <a href="standard/index.html" class="report-link">
+                <a href="file://{standard_report_path}" class="report-link">
                     <strong>📄 Standard Coverage Report</strong><br>
                     Traditional Coverage.py HTML report
                 </a>
-                <a href="by-type/index.html" class="report-link">
+                <a href="file://{by_type_report_path}" class="report-link">
                     <strong>🔍 Test Type Analysis</strong><br>
                     Path-based test type classification
                 </a>

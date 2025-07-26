@@ -136,12 +136,19 @@ class FastCoverageReportGenerator:
             self.renderer.save_html_file(by_type_html, by_type_file)
 
             # Generate detailed reports for each test type
-            for test_type, count in test_distribution.items():
-                if count > 0:
-                    type_coverage = test_type_coverage.get(test_type, {})
+            # Include all test types that have coverage, not just those with junit.xml entries
+            all_test_types = set(test_distribution.keys()) | set(test_type_coverage.keys())
+            
+            for test_type in all_test_types:
+                count = test_distribution.get(test_type, 0)
+                type_coverage = test_type_coverage.get(test_type, {})
+                
+                # Generate report if there's either test execution data OR coverage data
+                if count > 0 or (type_coverage and type_coverage.get("overall", {}).get("lines_covered", 0) > 0):
                     detail_html = self.renderer.generate_test_type_detail(test_type, type_coverage, count)
                     detail_file = by_type_dir / test_type / "index.html"
                     self.renderer.save_html_file(detail_html, detail_file)
+                    self.log(f"📊 Generated {test_type} detailed report")
 
             # Generate coverage gaps analysis report (bonus feature)
             self.log("🔎 Generating coverage analysis...")

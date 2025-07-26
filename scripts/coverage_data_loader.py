@@ -45,6 +45,26 @@ class CoverageDataLoader:
         coverage_xml = files["coverage_xml"]
 
         if not coverage_xml or not coverage_xml.exists():
+            # Check if we have .coverage binary file but no XML - VS Code integration issue
+            if (self.project_root / ".coverage").exists():
+                print("📊 VS Code generated .coverage but no XML - generating XML automatically...")
+                try:
+                    import subprocess
+                    result = subprocess.run(
+                        ["poetry", "run", "coverage", "xml"],
+                        cwd=self.project_root,
+                        check=True,
+                        capture_output=True,
+                        timeout=30
+                    )
+                    if self.canonical_coverage_xml.exists():
+                        print("✅ Generated coverage.xml from VS Code .coverage data")
+                        # Recursive call now that XML exists
+                        return self.load_coverage_data()
+                    else:
+                        print("⚠️  coverage xml command succeeded but no XML file found")
+                except Exception as e:
+                    print(f"⚠️  Could not generate coverage.xml: {e}")
             return None
 
         try:
