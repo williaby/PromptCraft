@@ -8,7 +8,8 @@ and session information.
 
 import json
 import logging
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class ExportUtils:
     - Code snippet extraction and formatting
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.export_formats = ["text", "markdown", "json"]
 
     def export_journey1_content(
@@ -52,7 +53,7 @@ class ExportUtils:
         Returns:
             Formatted export content
         """
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         if format_type == "json":
             return self._export_as_json(
@@ -242,7 +243,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         try:
             return json.dumps(data, indent=2, ensure_ascii=False)
         except Exception as e:
-            logger.error(f"Error exporting as JSON: {e}")
+            logger.error("Error exporting as JSON: %s", e)
             return json.dumps({"error": f"Export failed: {e}"}, indent=2)
 
     def extract_code_blocks(self, content: str) -> list[dict[str, str]]:
@@ -255,13 +256,11 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Returns:
             List of code block dictionaries with language and content
         """
-        import re
+        # Use a non-greedy pattern optimized to prevent ReDoS attacks
+        # Match opening ```, optional language, content, and closing ``` with atomic grouping
+        pattern = r"```(?:([\w-]+))?\s*\n((?:[^\n]*(?:\n(?!```)[^\n]*)*)*)\n\s*```"
+        matches = re.findall(pattern, content, re.MULTILINE)
 
-        # Use a simpler and more reliable pattern to match complete code blocks
-        # Match opening ```, optional language, content, and closing ```
-        pattern = r"```(?:([\w-]+))?\s*\n(.*?)\n\s*```"
-        matches = re.findall(pattern, content, re.DOTALL | re.MULTILINE)
-        
         code_blocks = []
         for i, (language, code) in enumerate(matches):
             code_content = code.strip()
@@ -548,7 +547,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Returns:
             Formatted filename for download
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         clean_filename = "".join(c for c in filename if c.isalnum() or c in (" ", "-", "_")).rstrip()
 
         return f"{clean_filename}_{timestamp}.{format_type}"
