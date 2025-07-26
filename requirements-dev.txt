@@ -192,6 +192,9 @@ brotli==1.1.0 ; python_version >= "3.11" and python_version < "3.13" \
 cachecontrol==0.14.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:73e7efec4b06b20d9267b441c1f733664f989fb8688391b670ca812d70795d11 \
     --hash=sha256:b35e44a3113f17d2a31c1e6b27b9de6d4405f84ae51baa8c1d3cc5b633010cae
+cachetools==6.1.0 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:1c7bb3cf9193deaf3508b7c5f2a79986c13ea38965c5adcff1f84519cf39163e \
+    --hash=sha256:b4c4f404392848db3ce7aac34950d17be4d864da4b8b66911008e430bc544587
 certifi==2025.6.15 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:2e0c7ce7cb5d8f8634ca55d2ba7e6ec2689a2fd6537d8dec1296a477a4910057 \
     --hash=sha256:d747aa5a8b9bbbb1bb8c22bb13e22bd1f18e9796defa16bab421f7f7a317323b
@@ -2014,6 +2017,9 @@ pytest-env==1.1.5 ; python_version >= "3.11" and python_version < "3.13" \
 pytest-mock==3.14.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:159e9edac4c451ce77a5cdb9fc5d1100708d2dd4ba3c3df572f14097351af80e \
     --hash=sha256:178aefcd11307d874b4cd3100344e7e2d888d9791a6a1d9bfe90fbc1b74fd1d0
+pytest-rerunfailures==15.1 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:c6040368abd7b8138c5b67288be17d6e5611b7368755ce0465dda0362c8ece80 \
+    --hash=sha256:f674c3594845aba8b23c78e99b1ff8068556cc6a8b277f728071fdc4f4b0b355
 pytest-timeout==2.4.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a \
     --hash=sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2
