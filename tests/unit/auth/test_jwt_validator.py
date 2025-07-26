@@ -67,7 +67,7 @@ class TestJWTValidatorValidateToken:
         validator = JWTValidator(jwks_client)
 
         # Mock token and key retrieval
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -98,7 +98,7 @@ class TestJWTValidatorValidateToken:
         validator = JWTValidator(jwks_client, audience=audience, issuer=issuer)
 
         # Mock token and key retrieval
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -145,7 +145,7 @@ class TestJWTValidatorValidateToken:
         validator = JWTValidator(jwks_client)
 
         # Mock token and key retrieval
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -173,7 +173,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
 
         with patch("jwt.get_unverified_header", return_value={}):  # No 'kid'
             with pytest.raises(JWTValidationError) as exc_info:
@@ -187,7 +187,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "nonexistent-key"
 
         with patch("jwt.get_unverified_header", return_value={"kid": kid}):
@@ -204,7 +204,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"invalid": "format"}
 
@@ -222,7 +222,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -242,7 +242,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -262,7 +262,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -288,7 +288,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -315,7 +315,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -344,7 +344,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -371,7 +371,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
 
         with patch("jwt.get_unverified_header", side_effect=RuntimeError("Unexpected error")):
             with pytest.raises(JWTValidationError) as exc_info:
@@ -385,7 +385,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -410,7 +410,7 @@ class TestJWTValidatorValidateToken:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "test-key-id"
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
@@ -668,7 +668,7 @@ class TestJWTValidatorValidateTokenFormat:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
 
         with patch("jwt.get_unverified_header", return_value={"alg": "RS256"}):
             result = validator.validate_token_format(token)
@@ -680,7 +680,7 @@ class TestJWTValidatorValidateTokenFormat:
         validator = JWTValidator(jwks_client)
 
         # Token with only 2 parts
-        token = "header.payload"
+        token = "header.payload"  # noqa: S105
 
         result = validator.validate_token_format(token)
         assert result is False
@@ -691,7 +691,7 @@ class TestJWTValidatorValidateTokenFormat:
         validator = JWTValidator(jwks_client)
 
         # Token with 4 parts
-        token = "header.payload.signature.extra"
+        token = "header.payload.signature.extra"  # noqa: S105
 
         result = validator.validate_token_format(token)
         assert result is False
@@ -701,7 +701,7 @@ class TestJWTValidatorValidateTokenFormat:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = ""
+        token = ""  # noqa: S105
 
         result = validator.validate_token_format(token)
         assert result is False
@@ -711,7 +711,7 @@ class TestJWTValidatorValidateTokenFormat:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "invalid.payload.signature"
+        token = "invalid.payload.signature"  # noqa: S105
 
         with patch("jwt.get_unverified_header", side_effect=jwt.DecodeError("Invalid header")):
             result = validator.validate_token_format(token)
@@ -722,7 +722,7 @@ class TestJWTValidatorValidateTokenFormat:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
 
         with patch("jwt.get_unverified_header", side_effect=RuntimeError("Unexpected error")):
             result = validator.validate_token_format(token)
@@ -740,7 +740,7 @@ class TestJWTValidatorIntegration:
         validator = JWTValidator(jwks_client, audience="my-app", issuer="https://test.cloudflareaccess.com")
 
         # Mock complete workflow
-        token = "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5In0.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJhdWQiOiJteS1hcHAiLCJpc3MiOiJodHRwczovL3Rlc3QuY2xvdWRmbGFyZWFjY2Vzcy5jb20iLCJleHAiOjEyMzQ1Njc4OTAsImlhdCI6MTIzNDU2NzgwMH0.signature"
+        token = "test-header.test-payload.test-signature"  # noqa: S105
         kid = "test-key"
 
         # Mock JWKS response
@@ -781,7 +781,7 @@ class TestJWTValidatorIntegration:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = "header.payload.signature"
+        token = "header.payload.signature"  # noqa: S105
         kid = "admin-key"
 
         # Mock JWKS response
@@ -846,7 +846,7 @@ class TestJWTValidatorIntegration:
         validator = JWTValidator(jwks_client)
 
         # Valid format
-        valid_token = "header.payload.signature"
+        valid_token = "header.payload.signature"  # noqa: S105
         with patch("jwt.get_unverified_header", return_value={"alg": "RS256"}):
             assert validator.validate_token_format(valid_token) is True
 

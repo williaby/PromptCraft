@@ -148,7 +148,15 @@ def fast(session):
 def metrics(session):
     """Generate test quality metrics dashboard."""
     session.run("poetry", "install", "--with", "dev", external=True)
-    session.run("python", "test_metrics_dashboard.py")
+
+    # Check if metrics dashboard script exists before running
+    import pathlib  # noqa: PLC0415
+
+    script_path = pathlib.Path("test_metrics_dashboard.py")
+    if script_path.exists():
+        session.run("python", "test_metrics_dashboard.py")
+    else:
+        session.log(f"Warning: {script_path} not found. Skipping metrics dashboard generation.")
 
 
 @nox.session(python=["3.11"])
