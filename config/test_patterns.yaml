@@ -6,7 +6,7 @@ test_types:
   auth:
     priority: 1
     description: 'Authentication and authorization tests'
-    patterns: 
+    patterns:
       - 'tests/auth/'
       - 'tests/unit/auth/'
     validation:
@@ -21,7 +21,7 @@ test_types:
       security_checks:
         - 'no_hardcoded_secrets'
         - 'proper_encryption'
-  
+
   security:
     priority: 2
     description: 'Security-focused tests'
@@ -40,7 +40,7 @@ test_types:
         - 'no_hardcoded_secrets'
         - 'input_validation'
         - 'proper_encryption'
-  
+
   integration:
     priority: 3
     description: 'Integration tests'
@@ -58,7 +58,7 @@ test_types:
         - 'unittest'
         - 'requests'
         - 'httpx'
-  
+
   performance:
     priority: 4
     description: 'Performance tests'
@@ -74,7 +74,7 @@ test_types:
         - 'pytest'
         - 'pytest-benchmark'
         - 'locust'
-  
+
   contract:
     priority: 5
     description: 'Contract tests'
@@ -90,7 +90,7 @@ test_types:
         - 'pytest'
         - 'pact'
         - 'jsonschema'
-  
+
   examples:
     priority: 6
     description: 'Example tests'
@@ -102,7 +102,7 @@ test_types:
         - 'src.*'
         - 'pytest'
         - 'unittest'
-  
+
   stress:
     priority: 7
     description: 'Stress tests'
@@ -120,7 +120,7 @@ test_types:
         - 'pytest'
         - 'locust'
         - 'multiprocessing'
-  
+
   unit:
     priority: 8  # Lowest priority - most general, catches everything
     description: 'Unit tests'
@@ -152,12 +152,12 @@ global:
     allowed_file_extensions: ['.py']
     path_validation: true
     content_sanitization: true
-  
+
   performance:
     cache_size_test_mapping: 32
     cache_size_file_analysis: 256
     enable_caching: true
-  
+
   validation:
     strict_mode: false  # Set to true for strict validation
     report_warnings: true
@@ -182,7 +182,7 @@ codecov_integration:
       source_paths:
         - "src/auth/"
     integration:
-      codecov_flag: "integration" 
+      codecov_flag: "integration"
       source_paths:
         - "src/core/"
         - "src/ui/"
@@ -211,7 +211,7 @@ codecov_integration:
       codecov_flag: "examples"
       source_paths:
         - "examples/"
-  
+
   status_targets:
     # Align with codecov.yaml status targets
     unit: 85.0

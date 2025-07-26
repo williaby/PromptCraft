@@ -51,7 +51,13 @@ class TestBasicSessions:
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
         # Verify pytest was called with default coverage args (updated implementation)
-        mock_session.run.assert_any_call("pytest", "--cov", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=80")
+        mock_session.run.assert_any_call(
+            "pytest",
+            "--cov",
+            "--cov-branch",
+            "--cov-report=term-missing",
+            "--cov-fail-under=80",
+        )
 
     def test_tests_session_custom_args(self, mock_session):
         """Test tests session with custom arguments."""
@@ -89,7 +95,16 @@ class TestBasicSessions:
         noxfile.tests_unit(mock_session)
 
         # Verify codecov upload was called (updated implementation)
-        mock_session.run.assert_any_call("codecov", "-f", "coverage-unit.xml", "-F", "unit", "-n", "unit-tests", external=True)
+        mock_session.run.assert_any_call(
+            "codecov",
+            "-f",
+            "coverage-unit.xml",
+            "-F",
+            "unit",
+            "-n",
+            "unit-tests",
+            external=True,
+        )
 
     def test_tests_unit_without_codecov_token(self, mock_session):
         """Test tests_unit session without CODECOV_TOKEN."""

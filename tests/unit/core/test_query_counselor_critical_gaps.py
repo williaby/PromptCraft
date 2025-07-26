@@ -67,10 +67,10 @@ class TestQueryTypeAndIntent:
     def test_query_intent_defaults(self):
         """Test QueryIntent with default values."""
         intent = QueryIntent(
-            query_type=QueryType.GENERAL_QUERY, 
-            confidence=0.7, 
-            complexity="simple", 
-            original_query="test"
+            query_type=QueryType.GENERAL_QUERY,
+            confidence=0.7,
+            complexity="simple",
+            original_query="test",
         )
 
         assert intent.query_type == QueryType.GENERAL_QUERY
@@ -258,9 +258,9 @@ class TestQueryCounselorInitialization:
         # The actual implementation doesn't have register_agent method
         # Instead, agents are pre-defined in _available_agents list
         # Test that the default agents are available
-        assert hasattr(counselor, '_available_agents')
+        assert hasattr(counselor, "_available_agents")
         assert len(counselor._available_agents) > 0
-        
+
         # Check that default agents exist
         agent_ids = [agent.agent_id for agent in counselor._available_agents]
         assert "create_agent" in agent_ids
@@ -324,7 +324,7 @@ class TestQueryAnalysisAndRouting:
             ("Analyze this code", QueryType.ANALYSIS_REQUEST),
             ("What is FastAPI?", QueryType.GENERAL_QUERY),
         ]
-        
+
         for query, expected_type in test_cases:
             intent = await counselor.analyze_intent(query)
             # Just verify we get a valid QueryType, the exact type may vary based on implementation
@@ -340,7 +340,9 @@ class TestQueryAnalysisAndRouting:
         expected_keywords = ["implement", "authentication", "fastapi", "redis", "caching"]
         for keyword in expected_keywords:
             # Keywords are extracted by basic word splitting in the actual implementation
-            assert any(keyword.lower() == k.lower() for k in intent.keywords), f"Expected keyword '{keyword}' not found in {intent.keywords}"
+            assert any(
+                keyword.lower() == k.lower() for k in intent.keywords
+            ), f"Expected keyword '{keyword}' not found in {intent.keywords}"
 
     async def test_calculate_complexity_score(self, counselor):
         """Test query complexity scoring via analyze_intent."""
@@ -353,7 +355,7 @@ class TestQueryAnalysisAndRouting:
         # The actual implementation stores complexity as a string, not a numeric score
         assert simple_intent.complexity in ["simple", "medium", "complex"]
         assert complex_intent.complexity in ["simple", "medium", "complex"]
-        
+
         # Complex query should have higher complexity
         complexity_order = {"simple": 1, "medium": 2, "complex": 3}
         assert complexity_order[complex_intent.complexity] >= complexity_order[simple_intent.complexity]
@@ -365,12 +367,12 @@ class TestQueryAnalysisAndRouting:
         python_intent = QueryIntent(
             query_type=QueryType.CREATE_ENHANCEMENT,
             confidence=0.8,
-            complexity="medium", 
+            complexity="medium",
             requires_agents=["create_agent"],
             context_needed=False,
             hyde_recommended=False,
             original_query="Create a Python function",
-            keywords=["python", "function"]
+            keywords=["python", "function"],
         )
 
         selection = await counselor.select_agents(python_intent)
@@ -384,7 +386,7 @@ class TestQueryAnalysisAndRouting:
         """Test agent matching via select_agents method."""
         # The actual implementation doesn't expose calculate_agent_match_score method
         # Instead, test that different query types get routed to appropriate agents
-        
+
         # High match query - should get create_agent
         high_match_intent = QueryIntent(
             query_type=QueryType.CREATE_ENHANCEMENT,
@@ -394,10 +396,10 @@ class TestQueryAnalysisAndRouting:
             context_needed=False,
             hyde_recommended=False,
             original_query="Create a Python web application",
-            keywords=["python", "web", "application"]
+            keywords=["python", "web", "application"],
         )
 
-        # Different query type - should get analysis_agent  
+        # Different query type - should get analysis_agent
         low_match_intent = QueryIntent(
             query_type=QueryType.ANALYSIS_REQUEST,
             confidence=0.8,
@@ -406,7 +408,7 @@ class TestQueryAnalysisAndRouting:
             context_needed=False,
             hyde_recommended=False,
             original_query="Analyze this code",
-            keywords=["analyze", "code"]
+            keywords=["analyze", "code"],
         )
 
         high_selection = await counselor.select_agents(high_match_intent)
@@ -565,7 +567,7 @@ class TestErrorHandlingAndEdgeCases:
             confidence=0.8,
             complexity="simple",
             requires_agents=["general_agent"],
-            original_query="test"
+            original_query="test",
         )
 
         # Should use default agents available in _available_agents
@@ -579,7 +581,7 @@ class TestErrorHandlingAndEdgeCases:
         """Test agent with empty capabilities."""
         # Test that default agents have capabilities
         available_agents = counselor._available_agents
-        
+
         # Find the general agent
         general_agent = next((a for a in available_agents if a.agent_type == "general"), None)
         assert general_agent is not None
@@ -590,7 +592,7 @@ class TestErrorHandlingAndEdgeCases:
         # Test that default agents have unique IDs
         available_agents = counselor._available_agents
         agent_ids = [agent.agent_id for agent in available_agents]
-        
+
         # Check for duplicates
         assert len(agent_ids) == len(set(agent_ids)), "Agent IDs should be unique"
 
@@ -598,7 +600,7 @@ class TestErrorHandlingAndEdgeCases:
         """Test validation of agent configurations."""
         # Test that confidence threshold is properly clamped
         assert 0.0 <= counselor.confidence_threshold <= 1.0
-        
+
         # Test that all default agents have valid configurations
         for agent in counselor._available_agents:
             assert agent.agent_id is not None and len(agent.agent_id) > 0
@@ -626,16 +628,16 @@ class TestErrorHandlingAndEdgeCases:
         # Test with various configuration parameters
         # The actual constructor doesn't take a generic config parameter
         # Test different valid initialization parameters
-        
+
         # Default configuration
         counselor1 = QueryCounselor(hyde_processor=hyde_processor)
         assert counselor1 is not None
         assert counselor1.confidence_threshold == 0.7  # Default
-        
+
         # Custom confidence threshold
         counselor2 = QueryCounselor(hyde_processor=hyde_processor, confidence_threshold=0.8)
         assert counselor2.confidence_threshold == 0.8
-        
+
         # Test clamping of confidence threshold
         counselor3 = QueryCounselor(hyde_processor=hyde_processor, confidence_threshold=1.5)
         assert counselor3.confidence_threshold == 1.0  # Should be clamped

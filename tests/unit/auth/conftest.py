@@ -52,33 +52,29 @@ def valid_jwt_payload():
 
 def create_jwt_token(payload: dict[str, Any], header: dict[str, Any] | None = None) -> str:
     """Create a properly formatted JWT token for testing.
-    
+
     Args:
         payload: JWT payload claims
         header: JWT header (defaults to standard RS256 header)
-        
+
     Returns:
         Formatted JWT token string
     """
     if header is None:
-        header = {
-            "alg": "RS256",
-            "typ": "JWT",
-            "kid": "test-key-id"
-        }
-    
+        header = {"alg": "RS256", "typ": "JWT", "kid": "test-key-id"}
+
     # Encode header and payload
-    header_encoded = base64.urlsafe_b64encode(
-        json.dumps(header, separators=(',', ':')).encode('utf-8')
-    ).decode('utf-8').rstrip('=')
-    
-    payload_encoded = base64.urlsafe_b64encode(
-        json.dumps(payload, separators=(',', ':')).encode('utf-8')
-    ).decode('utf-8').rstrip('=')
-    
+    header_encoded = (
+        base64.urlsafe_b64encode(json.dumps(header, separators=(",", ":")).encode("utf-8")).decode("utf-8").rstrip("=")
+    )
+
+    payload_encoded = (
+        base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode("utf-8")).decode("utf-8").rstrip("=")
+    )
+
     # Create fake signature
-    signature = base64.urlsafe_b64encode(b"fake-signature").decode('utf-8').rstrip('=')
-    
+    signature = base64.urlsafe_b64encode(b"fake-signature").decode("utf-8").rstrip("=")
+
     return f"{header_encoded}.{payload_encoded}.{signature}"
 
 

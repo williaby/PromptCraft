@@ -342,13 +342,17 @@ class SimplifiedCoverageAutomation:
         try:
             # First, combine coverage data files if needed
             subprocess.run(
-                ["poetry", "run", "coverage", "combine"], cwd=self.project_root, check=False,
+                ["poetry", "run", "coverage", "combine"],
+                cwd=self.project_root,
+                check=False,
             )  # Don't fail if no files to combine
 
             # Generate standard HTML report
             try:
                 subprocess.run(
-                    ["poetry", "run", "coverage", "html", "--directory", "htmlcov"], cwd=self.project_root, check=True,
+                    ["poetry", "run", "coverage", "html", "--directory", "htmlcov"],
+                    cwd=self.project_root,
+                    check=True,
                 )
             except subprocess.CalledProcessError as e:
                 # Check if HTML was still generated despite the error
@@ -394,7 +398,9 @@ class SimplifiedCoverageAutomation:
             return ""
 
     def _estimate_test_type_coverage(
-        self, coverage_data: dict[str, Any], contexts: set[str],
+        self,
+        coverage_data: dict[str, Any],
+        contexts: set[str],
     ) -> dict[str, dict[str, float]]:
         """Estimate coverage and branch coverage by test type based on file patterns."""
         # Type validation for critical inputs

@@ -31,7 +31,7 @@ from src.mcp_integration.mcp_client import (
     Response,
     WorkflowStep,
 )
-from src.utils.circuit_breaker import CircuitBreakerOpenError, CircuitBreakerState
+from src.utils.circuit_breaker import CircuitBreakerOpenError
 
 
 @pytest.fixture

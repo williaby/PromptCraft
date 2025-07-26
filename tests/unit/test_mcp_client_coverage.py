@@ -8,20 +8,20 @@ import asyncio
 import time
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 import httpx
+import pytest
 from tenacity import RetryError
 
 from src.mcp_integration.mcp_client import (
+    MCPAuthenticationError,
     MCPClientFactory,
     MCPClientInterface,
+    MCPConnectionError,
     MCPConnectionManager,
     MCPConnectionState,
     MCPError,
     MCPErrorType,
     MCPHealthStatus,
-    MCPAuthenticationError,
-    MCPConnectionError,
     MCPRateLimitError,
     MCPServiceUnavailableError,
     MCPTimeoutError,
@@ -31,7 +31,6 @@ from src.mcp_integration.mcp_client import (
     WorkflowStep,
     ZenMCPClient,
 )
-from src.config.settings import get_settings
 
 
 class TestMCPClientFactory:
@@ -149,13 +148,7 @@ class TestMockMCPClient:
     @pytest.mark.asyncio
     async def test_orchestrate_agents_service_unavailable(self, mock_client):
         """Test agent orchestration service unavailable."""
-        steps = [
-            WorkflowStep(
-                step_id="test1",
-                agent_id="agent1",
-                input_data={"task": "test"}
-            )
-        ]
+        steps = [WorkflowStep(step_id="test1", agent_id="agent1", input_data={"task": "test"})]
         with pytest.raises(MCPServiceUnavailableError):
             await mock_client.orchestrate_agents(steps)
 
@@ -183,10 +176,10 @@ class TestMockMCPClient:
         client.connection_state = MCPConnectionState.CONNECTED  # Set connected state
         # Force some errors to get degraded state - account for increment in health_check
         client.error_count = 1  # Will become 2 after increment, which is < DEGRADED_ERROR_THRESHOLD (3)
-        
+
         # Mock the _should_fail method to return True to trigger degraded path
         client._should_fail = lambda: True
-        
+
         health = await client.health_check()
         assert health.connection_state == MCPConnectionState.DEGRADED
 
@@ -195,12 +188,12 @@ class TestMockMCPClient:
         """Test health check with failed state."""
         client = MockMCPClient(simulate_failures=True)  # Enable failures
         client.connection_state = MCPConnectionState.CONNECTED  # Set connected state
-        # Force many errors to get failed state  
+        # Force many errors to get failed state
         client.error_count = 5  # Above threshold
-        
+
         # Mock the _should_fail method to return True to trigger failure path
         client._should_fail = lambda: True
-        
+
         health = await client.health_check()
         assert health.connection_state == MCPConnectionState.FAILED
 
@@ -241,7 +234,7 @@ class TestZenMCPClient:
 
             with pytest.raises(MCPAuthenticationError):
                 await zen_client.connect()
-            
+
             assert zen_client.connection_state == MCPConnectionState.FAILED
 
     @pytest.mark.asyncio
@@ -340,11 +333,13 @@ class TestZenMCPClient:
         """Test health check with HTTP error."""
         zen_client.session = AsyncMock()
         zen_client.connection_state = MCPConnectionState.CONNECTED
-        
+
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Server error", request=Mock(), response=mock_response
+            "Server error",
+            request=Mock(),
+            response=mock_response,
         )
         zen_client.session.get.return_value = mock_response
 
@@ -386,7 +381,10 @@ class TestZenMCPClient:
     async def test_validate_query_httpx_not_available(self, zen_client):
         """Test query validation when httpx not available."""
         with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(MCPServiceUnavailableError, match="Validation service unavailable: httpx is not installed"):
+            with pytest.raises(
+                MCPServiceUnavailableError,
+                match="Validation service unavailable: httpx is not installed",
+            ):
                 await zen_client.validate_query("test")
 
     @pytest.mark.asyncio
@@ -402,13 +400,13 @@ class TestZenMCPClient:
     async def test_validate_query_bad_request(self, zen_client):
         """Test query validation with bad request error."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.status_code = 400
         mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = {"error": "Invalid query", "details": {"field": "query"}}
         mock_response.text = "Bad Request"
-        
+
         error = httpx.HTTPStatusError("Bad request", request=Mock(), response=mock_response)
         zen_client.session.post.side_effect = error
 
@@ -419,11 +417,11 @@ class TestZenMCPClient:
     async def test_validate_query_service_unavailable(self, zen_client):
         """Test query validation service unavailable."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.status_code = 503
         mock_response.headers = {"Retry-After": "60"}
-        
+
         error = httpx.HTTPStatusError("Service unavailable", request=Mock(), response=mock_response)
         zen_client.session.post.side_effect = error
 
@@ -452,7 +450,7 @@ class TestZenMCPClient:
     async def test_validate_query_non_dict_response(self, zen_client):
         """Test query validation with non-dict response."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.json.return_value = "not a dict"
         zen_client.session.post.return_value = mock_response
@@ -481,13 +479,13 @@ class TestZenMCPClient:
     async def test_orchestrate_agents_authentication_error(self, zen_client):
         """Test orchestration with authentication error."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.status_code = 401
         mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = {"error": "invalid_token"}
         mock_response.text = "Unauthorized"
-        
+
         error = httpx.HTTPStatusError("Unauthorized", request=Mock(), response=mock_response)
         zen_client.session.post.side_effect = error
 
@@ -499,12 +497,12 @@ class TestZenMCPClient:
     async def test_orchestrate_agents_bad_request(self, zen_client):
         """Test orchestration with bad request."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.status_code = 400
         mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = {"message": "Invalid request"}
-        
+
         error = httpx.HTTPStatusError("Bad request", request=Mock(), response=mock_response)
         zen_client.session.post.side_effect = error
 
@@ -516,11 +514,11 @@ class TestZenMCPClient:
     async def test_orchestrate_agents_rate_limit(self, zen_client):
         """Test orchestration with rate limit."""
         zen_client.session = AsyncMock()
-        
+
         mock_response = Mock()
         mock_response.status_code = 429
         mock_response.headers = {"Retry-After": "60"}
-        
+
         error = httpx.HTTPStatusError("Rate limited", request=Mock(), response=mock_response)
         zen_client.session.post.side_effect = error
 
@@ -569,11 +567,13 @@ class TestZenMCPClient:
         """Test get capabilities with HTTP error (should return defaults)."""
         zen_client.session = AsyncMock()
         zen_client.connection_state = MCPConnectionState.CONNECTED
-        
+
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Server error", request=Mock(), response=mock_response
+            "Server error",
+            request=Mock(),
+            response=mock_response,
         )
         zen_client.session.get.return_value = mock_response
 
@@ -606,7 +606,7 @@ class TestZenMCPClient:
         """Test get capabilities with non-list response."""
         zen_client.session = AsyncMock()
         zen_client.connection_state = MCPConnectionState.CONNECTED
-        
+
         mock_response = Mock()
         mock_response.json.return_value = {"capabilities": "not a list"}
         zen_client.session.get.return_value = mock_response
@@ -637,7 +637,7 @@ class TestMCPConnectionManager:
     async def test_start_success(self, connection_manager, mock_client):
         """Test successful start."""
         mock_client.connect = AsyncMock(return_value=True)
-        
+
         result = await connection_manager.start()
         assert result is True
         mock_client.connect.assert_called_once()
@@ -646,7 +646,7 @@ class TestMCPConnectionManager:
     async def test_start_failure(self, connection_manager, mock_client):
         """Test start failure."""
         mock_client.connect = AsyncMock(side_effect=Exception("Connection failed"))
-        
+
         result = await connection_manager.start()
         assert result is False
 
@@ -654,11 +654,11 @@ class TestMCPConnectionManager:
     async def test_stop(self, connection_manager, mock_client):
         """Test stop."""
         mock_client.disconnect = AsyncMock()
-        
+
         # Start first to create health check task
         mock_client.connect = AsyncMock(return_value=True)
         await connection_manager.start()
-        
+
         # Now stop
         await connection_manager.stop()
         mock_client.disconnect.assert_called_once()
@@ -667,7 +667,7 @@ class TestMCPConnectionManager:
     async def test_execute_with_fallback_success(self, connection_manager, mock_client):
         """Test successful operation execution."""
         mock_client.health_check = AsyncMock(return_value={"status": "ok"})
-        
+
         result = await connection_manager.execute_with_fallback("health_check")
         assert result == {"status": "ok"}
         assert connection_manager.consecutive_failures == 0
@@ -676,7 +676,7 @@ class TestMCPConnectionManager:
     async def test_execute_with_fallback_failure(self, connection_manager, mock_client):
         """Test operation failure with fallback."""
         mock_client.health_check = AsyncMock(side_effect=Exception("Operation failed"))
-        
+
         result = await connection_manager.execute_with_fallback("health_check")
         assert result["fallback"] is True
         assert result["operation"] == "health_check"
@@ -688,7 +688,7 @@ class TestMCPConnectionManager:
         # Force circuit breaker open
         connection_manager.is_circuit_breaker_open = True
         connection_manager.circuit_breaker_open_time = time.time()
-        
+
         result = await connection_manager.execute_with_fallback("health_check")
         assert result["fallback"] is True
         assert result["error"] == "Circuit breaker open"
@@ -699,9 +699,9 @@ class TestMCPConnectionManager:
         # Set circuit breaker open in the past
         connection_manager.is_circuit_breaker_open = True
         connection_manager.circuit_breaker_open_time = time.time() - 1.0  # 1 second ago
-        
+
         mock_client.health_check = AsyncMock(return_value={"status": "ok"})
-        
+
         result = await connection_manager.execute_with_fallback("health_check")
         assert result == {"status": "ok"}
         assert connection_manager.is_circuit_breaker_open is False
@@ -710,11 +710,11 @@ class TestMCPConnectionManager:
     async def test_circuit_breaker_opens_on_failures(self, connection_manager, mock_client):
         """Test circuit breaker opens after max failures."""
         mock_client.health_check = AsyncMock(side_effect=Exception("Always fails"))
-        
+
         # Execute multiple times to trigger circuit breaker
         for _ in range(3):
             await connection_manager.execute_with_fallback("health_check")
-        
+
         assert connection_manager.is_circuit_breaker_open is True
         assert connection_manager.consecutive_failures >= connection_manager.max_consecutive_failures
 
@@ -746,23 +746,23 @@ class TestMCPConnectionManager:
         """Test health monitor handling failed state."""
         mock_client.connect = AsyncMock(return_value=True)
         mock_client.disconnect = AsyncMock()
-        
+
         # Mock health check to return failed state once
         failed_health = MCPHealthStatus(
             connection_state=MCPConnectionState.FAILED,
             error_count=5,
         )
         mock_client.health_check = AsyncMock(return_value=failed_health)
-        
+
         # Start the manager (this starts the health monitor)
         await connection_manager.start()
-        
+
         # Wait a bit for health monitor to run
         await asyncio.sleep(0.2)
-        
+
         # Stop to clean up
         await connection_manager.stop()
-        
+
         # Should have attempted reconnection
         assert mock_client.disconnect.call_count >= 1
         assert mock_client.connect.call_count >= 2  # Initial + reconnection

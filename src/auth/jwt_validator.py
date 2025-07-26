@@ -140,7 +140,7 @@ class JWTValidator:
             email = payload.get("email")
             if email is None:
                 raise JWTValidationError("JWT payload missing required 'email' claim", "missing_email")
-            
+
             if email == "":
                 raise JWTValidationError("JWT payload missing required 'email' claim", "missing_email")
 
@@ -220,15 +220,15 @@ class JWTValidator:
         """
         email_lower = email.lower()
         admin_prefixes = ["admin", "administrator", "root", "superuser", "owner"]
-        
+
         # Extract username part before @
         username = email_lower.split("@")[0]
-        
+
         # Check if username starts with any admin prefix
         for prefix in admin_prefixes:
             if username == prefix:  # Exact match for the username part
                 return UserRole.ADMIN
-        
+
         return UserRole.USER
 
     def _determine_user_role(self, email: str, payload: dict[str, Any]) -> UserRole:

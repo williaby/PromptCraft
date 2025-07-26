@@ -99,7 +99,10 @@ class CoverageAutomationCLI:
         finally:
             duration = time.time() - start_time
             self.perf_logger.log_operation_timing(
-                "run_automation", duration, force_run=force_run, watch_mode=watch_mode,
+                "run_automation",
+                duration,
+                force_run=force_run,
+                watch_mode=watch_mode,
             )
 
             self.logger.info(f"🏁 Automation completed in {duration:.2f} seconds")
@@ -181,14 +184,21 @@ For more information, see: https://github.com/your-org/PromptCraft
             # Check configuration
             if not self.config.config_path.exists():
                 self.logger.warning(
-                    "Configuration file not found, using fallback", config_path=str(self.config.config_path),
+                    "Configuration file not found, using fallback",
+                    config_path=str(self.config.config_path),
                 )
 
             # Validate Poetry environment
             try:
                 import subprocess
 
-                result = subprocess.run(["poetry", "--version"], check=False, capture_output=True, text=True, timeout=10)
+                result = subprocess.run(
+                    ["poetry", "--version"],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
                 if result.returncode != 0:
                     self.logger.error("Poetry not available or not working properly")
                     return False
@@ -209,7 +219,8 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="PromptCraft Coverage Automation v2.0", formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="PromptCraft Coverage Automation v2.0",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument("--force", action="store_true", help="Force report generation regardless of file timestamps")

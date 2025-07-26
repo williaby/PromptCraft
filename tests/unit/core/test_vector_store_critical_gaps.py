@@ -358,12 +358,13 @@ class TestQdrantVectorStore:
 
         # Mock search response - return the points directly as an awaitable
         from unittest.mock import AsyncMock
+
         mock_hit = Mock()
         mock_hit.id = "result1"
         mock_hit.payload = {"content": "Result content", "metadata": {}}
         mock_hit.score = 0.95
         mock_hit.vector = None
-        
+
         mock_qdrant_client.search = AsyncMock(return_value=[mock_hit])
 
         params = SearchParameters(embeddings=[[0.1] * qdrant_config["vector_size"]], limit=5)

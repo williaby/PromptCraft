@@ -330,7 +330,6 @@ Please check file format and try again""",
                 "<div class='error'>No files processed due to error</div>",
             )
 
-
     def _create_mock_enhanced_prompt(self, input_text: str, reasoning_depth: str) -> str:
         """Create a mock enhanced prompt for demonstration with code snippet examples."""
         if not input_text.strip():
@@ -339,7 +338,7 @@ Please check file format and try again""",
         # Extract the main task from input - keep more of the content to include file data
         if len(input_text) > 100:
             # For longer content (likely includes files), take more context
-            first_line = input_text.split('\n')[0]
+            first_line = input_text.split("\n")[0]
             task = first_line if len(first_line) <= 100 else first_line[:100] + "..."
         else:
             task = input_text.strip()
@@ -1249,4 +1248,3 @@ Raw Content:
                 f"<div class='error'>Error: {e}</div>",
                 "<div class='error'>No files processed due to error</div>",
             )
-

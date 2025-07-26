@@ -11,9 +11,14 @@ execution inefficiency.
 """
 
 import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    # Fallback to standard library with security note
+    import xml.etree.ElementTree as ET
 
 
 class CoverageDataLoader:

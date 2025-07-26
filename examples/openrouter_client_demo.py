@@ -99,7 +99,7 @@ async def demo_basic_functionality() -> None:
                 logger.warning("No responses received from workflow")
 
         except MCPError as e:
-            logger.warning("Workflow execution failed (expected without real API key): %s", e)
+            logger.warning("Workflow execution failed (expected without real API key): %s", str(e)[:100])
 
         # Health check
         logger.info("7. Performing health check...")

@@ -474,7 +474,7 @@ class MultiJourneyInterface(LoggerMixin):
         input_text = gr.Textbox(label="Input Text")
         enhance_button = gr.Button("Enhance")
         output_text = gr.Textbox(label="Output Text")
-        
+
         return {
             "input_text": input_text,
             "enhance_button": enhance_button,
@@ -486,7 +486,7 @@ class MultiJourneyInterface(LoggerMixin):
         search_input = gr.Textbox(label="Search Input")
         search_button = gr.Button("Search")
         results_output = gr.Textbox(label="Results Output")
-        
+
         return {
             "search_input": search_input,
             "search_button": search_button,
@@ -497,7 +497,7 @@ class MultiJourneyInterface(LoggerMixin):
         """Create Journey 3 tab components for testing."""
         launch_button = gr.Button("Launch IDE")
         status_display = gr.Markdown("Status: Ready")
-        
+
         return {
             "launch_button": launch_button,
             "status_display": status_display,
@@ -508,7 +508,7 @@ class MultiJourneyInterface(LoggerMixin):
         workflow_input = gr.Textbox(label="Workflow Input")
         free_mode_toggle = gr.Checkbox(label="Free Mode")
         execute_button = gr.Button("Execute")
-        
+
         return {
             "workflow_input": workflow_input,
             "free_mode_toggle": free_mode_toggle,
@@ -1664,26 +1664,26 @@ If this error persists:
         """Handle Journey 1 enhancement requests with rate limiting."""
         if not self.rate_limiter.check_request_rate(session_id):
             return "Rate limit exceeded. Please wait before making another request."
-        
+
         if not text_input:
             return "Error: Invalid input provided."
-        
+
         # Process the request (mock implementation for testing)
         return self._process_journey1(text_input, session_id)
-    
+
     def handle_journey2_search(self, query: str, session_id: str) -> str:
         """Handle Journey 2 search requests with rate limiting."""
         if not self.rate_limiter.check_request_rate(session_id):
             return "Rate limit exceeded. Please wait before making another request."
-        
+
         # Process the search (mock implementation for testing)
         return self._process_journey2_search(query, session_id)
-    
+
     def handle_file_upload(self, files: list, session_id: str) -> str:
         """Handle file upload requests with rate limiting."""
         if not self.rate_limiter.check_file_upload_rate(session_id):
             return "File upload rate limit exceeded. Please wait before uploading more files."
-        
+
         # Process the files (mock implementation for testing)
         return self._process_file_uploads(files, session_id)
 
@@ -1710,7 +1710,7 @@ If this error persists:
                 "last_activity": time.time(),
             }
             self.active_sessions[session_id] = True
-        
+
         return self.session_states[session_id]
 
     def update_session_activity(self, session_id: str) -> None:
@@ -1723,11 +1723,11 @@ If this error persists:
         """Clean up inactive sessions older than max_age seconds."""
         current_time = time.time()
         inactive_sessions = []
-        
+
         for session_id, state in self.session_states.items():
             if current_time - state["last_activity"] > max_age:
                 inactive_sessions.append(session_id)
-        
+
         for session_id in inactive_sessions:
             del self.session_states[session_id]
             if session_id in self.active_sessions:
@@ -1737,7 +1737,7 @@ If this error persists:
         """Get system status information."""
         total_requests = sum(state.get("request_count", 0) for state in self.session_states.values())
         uptime = time.time() - getattr(self, "_start_time", time.time())
-        
+
         return {
             "active_sessions": len(self.active_sessions),
             "total_requests": total_requests,
@@ -1760,7 +1760,7 @@ If this error persists:
         """Format content for copying as code."""
         if not content:
             return ""
-        
+
         # Simple formatting for copying
         return f"```{language}\n{content}\n```"
 
@@ -1768,34 +1768,35 @@ If this error persists:
         """Validate file based on name and size."""
         if not filename:
             return False, "No filename provided"
-        
+
         # Check file size - use 10MB limit for security (test expects 50MB to fail)
         max_size = 10 * 1024 * 1024  # 10MB
         if file_size >= max_size:
             return False, f"File too large: {file_size} bytes exceeds {max_size} bytes"
-        
+
         # Check file extension
         from pathlib import Path
+
         file_ext = Path(filename).suffix.lower()
         if file_ext not in self.settings.supported_file_types:
             return False, f"Unsupported file type: {file_ext}"
-        
+
         return True, "File is valid"
 
     def export_content(self, content: str, format_type: str) -> str:
         """Export content in specified format."""
         if not content:
             return ""
-        
+
         if format_type == "txt":
             return content
-        elif format_type == "md":
+        if format_type == "md":
             return f"# Exported Content\n\n{content}"
-        elif format_type == "json":
+        if format_type == "json":
             import json
+
             return json.dumps({"content": content}, indent=2)
-        else:
-            return content
+        return content
 
     def health_check(self) -> dict:
         """Perform health check and return status."""
@@ -1806,7 +1807,7 @@ If this error persists:
                 "session_manager": "healthy" if self.session_states is not None else "unhealthy",
                 "model_costs": "healthy" if self.model_costs else "unhealthy",
             }
-            
+
             # Overall health determination
             unhealthy_components = [k for k, v in components_status.items() if v == "unhealthy"]
             if len(unhealthy_components) == 0:
@@ -1815,7 +1816,7 @@ If this error persists:
                 overall_status = "degraded"
             else:
                 overall_status = "unhealthy"
-            
+
             return {
                 "status": overall_status,
                 "components": components_status,

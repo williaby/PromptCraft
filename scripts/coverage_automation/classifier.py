@@ -47,7 +47,9 @@ class TestTypeClassifier:
         )
 
     def estimate_test_type_coverage(
-        self, coverage_data: dict[str, Any], contexts: set[str],
+        self,
+        coverage_data: dict[str, Any],
+        contexts: set[str],
     ) -> dict[str, dict[str, float]]:
         """
         Estimate coverage and branch coverage by test type based on file patterns.
@@ -109,7 +111,9 @@ class TestTypeClassifier:
 
         finally:
             self.perf_logger.log_operation_timing(
-                "estimate_test_type_coverage", time.time() - start_time, context_count=len(contexts),
+                "estimate_test_type_coverage",
+                time.time() - start_time,
+                context_count=len(contexts),
             )
 
     def _get_codecov_aligned_patterns(self) -> dict[str, list[str]]:
@@ -203,7 +207,9 @@ class TestTypeClassifier:
 
         finally:
             self.perf_logger.log_operation_timing(
-                "get_test_target_mapping", time.time() - start_time, test_type=test_type,
+                "get_test_target_mapping",
+                time.time() - start_time,
+                test_type=test_type,
             )
 
     def _analyze_pattern_targets(self, pattern: str, tests_dir: Path) -> set[str]:

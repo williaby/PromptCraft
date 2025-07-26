@@ -1158,7 +1158,7 @@ class TestQdrantVectorStore:
         """Test initialization with default configuration."""
         # Make ApplicationSettings raise an exception to trigger fallback values
         mock_settings_class.side_effect = Exception("Settings not available")
-        
+
         store = QdrantVectorStore({})
 
         assert store._client is None

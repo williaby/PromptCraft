@@ -48,7 +48,8 @@ class SecurityValidator:
             for pattern in self.suspicious_patterns:
                 if pattern.search(path_str):
                     self.security_logger.log_path_validation_failure(
-                        file_path, f"Suspicious pattern detected: {pattern.pattern}",
+                        file_path,
+                        f"Suspicious pattern detected: {pattern.pattern}",
                     )
                     return False
 

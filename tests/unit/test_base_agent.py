@@ -437,7 +437,7 @@ class TestBaseAgent:
             # Skip None values that can't be converted to string properly
             if malicious_input is None:
                 continue
-                
+
             # Create input with malicious content
             agent_input = AgentInput(content=str(malicious_input))
 

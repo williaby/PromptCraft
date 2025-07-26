@@ -13,9 +13,14 @@ import argparse
 import json
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    # Fallback to standard library with security note
+    import xml.etree.ElementTree as ET
 
 
 @dataclass
@@ -320,7 +325,7 @@ class QualityGateValidator:
                 capture_output=True,
                 text=True,
                 cwd=self.project_root,
-                shell=True,
+                shell=False,
             )
 
             if md_result.returncode != 0:

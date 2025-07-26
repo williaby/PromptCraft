@@ -549,9 +549,9 @@ Regular paragraph text continues.
     def test_process_files_empty_list(self):
         """Test processing empty file list."""
         journey = Journey1SmartTemplates()
-        
+
         result = journey.process_files([])
-        
+
         assert result["files"] == []
         assert result["content"] == ""
         assert result["summary"] == "No files uploaded"
@@ -563,20 +563,20 @@ Regular paragraph text continues.
     def test_process_files_single_file(self):
         """Test processing a single file."""
         journey = Journey1SmartTemplates()
-        
+
         # Create a mock file object
         class MockFile:
             def __init__(self, name):
                 self.name = name
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("Test file content\nLine 2\nLine 3")
             temp_path = f.name
-        
+
         try:
             mock_file = MockFile(temp_path)
             result = journey.process_files([mock_file])
-            
+
             assert len(result["files"]) == 1
             assert result["file_count"] == 1
             assert result["supported_files"] == 1
@@ -590,43 +590,43 @@ Regular paragraph text continues.
     def test_process_files_multiple_files(self):
         """Test processing multiple files."""
         journey = Journey1SmartTemplates()
-        
+
         class MockFile:
             def __init__(self, name):
                 self.name = name
-        
+
         # Create multiple temporary files
         files_to_cleanup = []
         mock_files = []
-        
+
         try:
             # Create text file
             with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
                 f.write("Text content")
                 files_to_cleanup.append(f.name)
                 mock_files.append(MockFile(f.name))
-            
+
             # Create CSV file
             with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
                 f.write("name,age\nJohn,25")
                 files_to_cleanup.append(f.name)
                 mock_files.append(MockFile(f.name))
-            
+
             # Create unsupported file
             with tempfile.NamedTemporaryFile(mode="w", suffix=".xyz", delete=False) as f:
                 f.write("Unsupported content")
                 files_to_cleanup.append(f.name)
                 mock_files.append(MockFile(f.name))
-            
+
             result = journey.process_files(mock_files)
-            
+
             assert len(result["files"]) == 3
             assert result["file_count"] == 3
             assert result["supported_files"] == 2  # txt and csv are supported
             assert result["preview_available"] is True
             assert "Text content" in result["content"]
             assert "name,age" in result["content"]
-            
+
         finally:
             for file_path in files_to_cleanup:
                 Path(file_path).unlink()
@@ -634,15 +634,15 @@ Regular paragraph text continues.
     def test_process_files_error_handling(self):
         """Test file processing error handling."""
         journey = Journey1SmartTemplates()
-        
+
         class MockFile:
             def __init__(self, name):
                 self.name = name
-        
+
         # Test with non-existent file
         mock_file = MockFile("/nonexistent/file.txt")
         result = journey.process_files([mock_file])
-        
+
         assert len(result["files"]) == 1
         assert result["files"][0]["processing_status"] == "error"
         assert result["supported_files"] == 0
@@ -651,7 +651,7 @@ Regular paragraph text continues.
     def test_enhance_prompt_full_method(self):
         """Test the full enhance_prompt method with all parameters."""
         journey = Journey1SmartTemplates()
-        
+
         text_input = "Create a function to sort numbers"
         files = []
         model_mode = "standard"
@@ -659,16 +659,21 @@ Regular paragraph text continues.
         reasoning_depth = "detailed"
         search_tier = "basic"
         temperature = 0.7
-        
+
         result = journey.enhance_prompt(
-            text_input, files, model_mode, custom_model, 
-            reasoning_depth, search_tier, temperature
+            text_input,
+            files,
+            model_mode,
+            custom_model,
+            reasoning_depth,
+            search_tier,
+            temperature,
         )
-        
+
         # Should return 9 values
         assert len(result) == 9
         enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = result
-        
+
         assert len(enhanced) > 0
         assert "sort numbers" in enhanced.lower()
         assert len(context) > 0
@@ -678,143 +683,139 @@ Regular paragraph text continues.
     def test_enhance_prompt_different_models(self):
         """Test enhance_prompt with different model modes."""
         journey = Journey1SmartTemplates()
-        
+
         # Test custom model
-        result = journey.enhance_prompt(
-            "test input", [], "custom", "custom-model-name", 
-            "basic", "basic", 0.5
-        )
+        result = journey.enhance_prompt("test input", [], "custom", "custom-model-name", "basic", "basic", 0.5)
         assert "custom-model-name" in result[7]  # attribution
-        
+
         # Test free mode
-        result = journey.enhance_prompt(
-            "test input", [], "free_mode", "", 
-            "basic", "basic", 0.5
-        )
+        result = journey.enhance_prompt("test input", [], "free_mode", "", "basic", "basic", 0.5)
         assert "llama-4-maverick:free" in result[7]
-        
+
         # Test premium mode
-        result = journey.enhance_prompt(
-            "test input", [], "premium", "", 
-            "basic", "basic", 0.5
-        )
+        result = journey.enhance_prompt("test input", [], "premium", "", "basic", "basic", 0.5)
         assert "claude-3.5-sonnet" in result[7]
 
     def test_enhance_prompt_with_files(self):
         """Test enhance_prompt with file uploads."""
         journey = Journey1SmartTemplates()
-        
+
         class MockFile:
             def __init__(self, name):
                 self.name = name
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("File content for enhancement")
             temp_path = f.name
-        
+
         try:
             mock_file = MockFile(temp_path)
             result = journey.enhance_prompt(
-                "Analyze this file", [mock_file], "standard", "", 
-                "comprehensive", "basic", 0.7
+                "Analyze this file",
+                [mock_file],
+                "standard",
+                "",
+                "comprehensive",
+                "basic",
+                0.7,
             )
-            
-            enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = result
-            
+
+            enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = (
+                result
+            )
+
             assert "File content for enhancement" in enhanced
             assert "FILE:" in file_sources
             assert len(examples) > 0  # comprehensive mode should have code examples
-            
+
         finally:
             Path(temp_path).unlink()
 
     def test_enhance_prompt_error_handling(self):
         """Test enhance_prompt error handling."""
         journey = Journey1SmartTemplates()
-        
+
         # Test with file processing error by using invalid file path
         class MockFile:
             def __init__(self, name):
                 self.name = name
-        
+
         mock_file = MockFile("/invalid/path/file.txt")
-        
+
         # This should handle the error gracefully
-        result = journey.enhance_prompt(
-            "test", [mock_file], "standard", "", "basic", "basic", 0.5
-        )
-        
+        result = journey.enhance_prompt("test", [mock_file], "standard", "", "basic", "basic", 0.5)
+
         # Should still return 9 values even with errors
         assert len(result) == 9
 
     def test_copy_code_blocks(self):
         """Test copying code blocks functionality."""
         journey = Journey1SmartTemplates()
-        
+
         content_with_code = """
         Here's some code:
-        
+
         ```python
         def hello():
             print("Hello World")
         ```
-        
+
         And some more text.
         """
-        
+
         result = journey.copy_code_blocks(content_with_code)
         assert "Found" in result and "code blocks" in result
 
     def test_copy_code_blocks_no_code(self):
         """Test copying when no code blocks exist."""
         journey = Journey1SmartTemplates()
-        
+
         content_no_code = "This is just regular text with no code blocks."
-        
+
         result = journey.copy_code_blocks(content_no_code)
         assert "No code blocks found" in result
 
     def test_copy_as_markdown(self):
         """Test copying content as markdown."""
         journey = Journey1SmartTemplates()
-        
+
         test_content = "This is test content\nWith multiple lines\nAnd formatting"
-        
+
         result = journey.copy_as_markdown(test_content)
         assert "Copied" in result and "characters as markdown" in result
 
     def test_copy_as_markdown_empty(self):
         """Test copying empty content as markdown."""
         journey = Journey1SmartTemplates()
-        
+
         result = journey.copy_as_markdown("")
         assert "No content to copy" in result
 
     def test_copy_as_markdown_with_code_blocks(self):
         """Test copying content with code blocks as markdown."""
         journey = Journey1SmartTemplates()
-        
+
         content_with_code = """
         # Title
-        
+
         Some text here.
-        
+
         ```python
         def example():
             return "test"
         ```
         """
-        
+
         result = journey.copy_as_markdown(content_with_code)
         assert "code blocks preserved" in result
 
     def test_download_content(self):
         """Test download content preparation."""
         journey = Journey1SmartTemplates()
-        
+
         test_content = "Content to download"
         create_data = {"context": "test", "request": "test"}
-        
+
         result = journey.download_content(test_content, create_data)
         assert "Download prepared" in result
         assert str(len(test_content)) in result
@@ -822,7 +823,7 @@ Regular paragraph text continues.
     def test_validate_input_content_short_content(self):
         """Test validation of very short content."""
         journey = Journey1SmartTemplates()
-        
+
         # Test content that's too short
         short_content = "Hi"
         is_valid, message = journey.validate_input_content(short_content)
@@ -832,7 +833,7 @@ Regular paragraph text continues.
     def test_validate_input_content_null_bytes(self):
         """Test validation of content with null bytes."""
         journey = Journey1SmartTemplates()
-        
+
         # Test content with null bytes
         null_content = "Content with \x00 null bytes"
         is_valid, message = journey.validate_input_content(null_content)
@@ -842,12 +843,12 @@ Regular paragraph text continues.
     def test_extract_file_content_empty_path(self):
         """Test extract_file_content with empty path."""
         journey = Journey1SmartTemplates()
-        
+
         content, file_type = journey.extract_file_content("")
         assert "Error processing file" in content
         assert "No file path provided" in content
         assert file_type == "error"
-        
+
         # Test with whitespace-only path
         content, file_type = journey.extract_file_content("   ")
         assert "Error processing file" in content
@@ -856,7 +857,7 @@ Regular paragraph text continues.
     def test_process_csv_content_empty(self):
         """Test processing empty CSV content."""
         journey = Journey1SmartTemplates()
-        
+
         result = journey._process_csv_content("", "empty.csv")
         assert "empty.csv" in result
         assert "Content:" in result
@@ -864,9 +865,9 @@ Regular paragraph text continues.
     def test_process_json_content_error(self):
         """Test JSON processing with general error."""
         journey = Journey1SmartTemplates()
-        
+
         # Mock an error during JSON processing
-        with patch('json.loads', side_effect=Exception("General error")):
+        with patch("json.loads", side_effect=Exception("General error")):
             result = journey._process_json_content('{"valid": "json"}', "test.json")
             assert "Processing error" in result
             assert "General error" in result
@@ -874,7 +875,7 @@ Regular paragraph text continues.
     def test_analyze_content_structure_empty_content(self):
         """Test content analysis with empty content."""
         journey = Journey1SmartTemplates()
-        
+
         analysis = journey.analyze_content_structure("")
         assert analysis["content_type"] == "empty"
         assert analysis["complexity"] == "simple"
@@ -885,19 +886,19 @@ Regular paragraph text continues.
     def test_analyze_content_structure_javascript(self):
         """Test content analysis for JavaScript code."""
         journey = Journey1SmartTemplates()
-        
+
         js_content = """
         function greet(name) {
             console.log("Hello " + name);
         }
-        
+
         const app = {
             start: function() {
                 greet("World");
             }
         };
         """
-        
+
         analysis = journey.analyze_content_structure(js_content)
         assert analysis["content_type"] == "code"
         assert analysis["has_functions"] is True
@@ -907,7 +908,7 @@ Regular paragraph text continues.
     def test_analyze_content_structure_java(self):
         """Test content analysis for Java code."""
         journey = Journey1SmartTemplates()
-        
+
         java_content = """
         public class HelloWorld {
             public static void main(String[] args) {
@@ -915,7 +916,7 @@ Regular paragraph text continues.
             }
         }
         """
-        
+
         analysis = journey.analyze_content_structure(java_content)
         assert analysis["content_type"] == "code"
         assert analysis["has_classes"] is True
@@ -925,9 +926,9 @@ Regular paragraph text continues.
     def test_analyze_content_structure_json_data(self):
         """Test content analysis for JSON data."""
         journey = Journey1SmartTemplates()
-        
+
         json_content = '{"name": "test", "items": [1, 2, 3]}'
-        
+
         analysis = journey.analyze_content_structure(json_content)
         assert analysis["content_type"] == "data"
         assert analysis["language"] == "json"
@@ -936,9 +937,9 @@ Regular paragraph text continues.
     def test_get_file_metadata_with_error(self):
         """Test file metadata with general error."""
         journey = Journey1SmartTemplates()
-        
+
         # Mock an error during file stat
-        with patch('pathlib.Path.stat', side_effect=PermissionError("Access denied")):
+        with patch("pathlib.Path.stat", side_effect=PermissionError("Access denied")):
             metadata = journey.get_file_metadata("/some/file.txt")
             assert metadata["error"] == "Access denied"
             assert metadata["exists"] is False
@@ -947,15 +948,12 @@ Regular paragraph text continues.
     def test_create_breakdown_with_languages(self):
         """Test breakdown creation with language detection from files."""
         journey = Journey1SmartTemplates()
-        
+
         input_text = "Review this code"
-        file_sources = [
-            {"name": "script.py", "type": "python"},
-            {"name": "app.js", "type": "javascript"}
-        ]
-        
+        file_sources = [{"name": "script.py", "type": "python"}, {"name": "app.js", "type": "javascript"}]
+
         breakdown = journey.create_breakdown(input_text, file_sources)
-        
+
         assert "script.py" in breakdown["context"]
         assert "app.js" in breakdown["context"]
         assert "python" in breakdown["context"].lower()
@@ -963,32 +961,30 @@ Regular paragraph text continues.
     def test_enhance_prompt_full_duplicate_method(self):
         """Test the enhance_prompt_full method (lines 1083-1176)."""
         journey = Journey1SmartTemplates()
-        
-        result = journey.enhance_prompt_full(
-            "Test input", [], "free_mode", "", "comprehensive", "advanced", 0.8
-        )
-        
+
+        result = journey.enhance_prompt_full("Test input", [], "free_mode", "", "comprehensive", "advanced", 0.8)
+
         assert len(result) == 9
         enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = result
-        
+
         assert "llama-4-maverick:free" in attribution
         assert len(enhanced) > 0
 
     def test_enhance_prompt_method_at_line_1178(self):
         """Test the enhance_prompt method starting at line 1178."""
         journey = Journey1SmartTemplates()
-        
+
         original_prompt = "Write a calculator function"
         breakdown = {
             "context": "Programming context",
             "content_type": "code",
-            "complexity": "moderate", 
-            "recommended_approach": "step-by-step implementation"
+            "complexity": "moderate",
+            "recommended_approach": "step-by-step implementation",
         }
         file_sources = [{"name": "example.py", "content": "def example(): pass"}]
-        
+
         enhanced = journey.enhance_prompt_from_breakdown(original_prompt, breakdown, file_sources)
-        
+
         assert "calculator function" in enhanced.lower()
         assert "Programming context" in enhanced
         assert "example.py" in enhanced
@@ -997,11 +993,11 @@ Regular paragraph text continues.
     def test_estimate_processing_time_bounds(self):
         """Test processing time estimation bounds."""
         journey = Journey1SmartTemplates()
-        
+
         # Test minimum bound
         empty_time = journey.estimate_processing_time("")
         assert empty_time == 0.1
-        
+
         # Test maximum bound with very large content
         huge_content = "x" * 1000000  # 1M characters
         huge_time = journey.estimate_processing_time(huge_content)
@@ -1010,13 +1006,14 @@ Regular paragraph text continues.
     def test_estimate_processing_time_complexity_factors(self):
         """Test processing time with different complexity factors."""
         journey = Journey1SmartTemplates()
-        
+
         # Simple content
         simple_content = "Hello world"
         simple_time = journey.estimate_processing_time(simple_content)
-        
+
         # Complex code content
-        complex_content = """
+        complex_content = (
+            """
         def complex_function():
             # This is complex code with many lines
             for i in range(1000):
@@ -1024,7 +1021,9 @@ Regular paragraph text continues.
                     print(f"Even: {i}")
                 else:
                     print(f"Odd: {i}")
-        """ * 50  # Make it long enough to be complex
-        
+        """
+            * 50
+        )  # Make it long enough to be complex
+
         complex_time = journey.estimate_processing_time(complex_content)
         assert complex_time > simple_time

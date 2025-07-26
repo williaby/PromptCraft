@@ -220,7 +220,7 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     """Sanitize validation errors to remove sensitive information.
 
     Uses a two-stage hybrid approach recommended by security consensus:
-    1. High-risk patterns get full message replacement (schema protection)  
+    1. High-risk patterns get full message replacement (schema protection)
     2. Other messages get quote-level sanitization (context preservation)
 
     This balances maximum security for known sensitive patterns while
@@ -237,11 +237,26 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     # High-risk patterns that require full message replacement
     # These patterns reveal sensitive schema/validation information
     HIGH_RISK_PATTERNS = [
-        (re.compile(r"database\s+password.*(?:too\s+short|invalid|failed)", re.IGNORECASE), "Password configuration issue (details hidden)"),
-        (re.compile(r"api\s+key.*(?:invalid|failed|expired)", re.IGNORECASE), "API key configuration issue (details hidden)"),  
-        (re.compile(r"secret\s+key.*(?:must\s+not\s+contain|invalid|failed)", re.IGNORECASE), "Secret key configuration issue (details hidden)"),
-        (re.compile(r"jwt\s+secret.*(?:failed|invalid)", re.IGNORECASE), "JWT secret configuration issue (details hidden)"),
-        (re.compile(r"configuration\s+file.*(?:contains\s+errors|invalid)", re.IGNORECASE), "Configuration file path issue (path hidden)"),
+        (
+            re.compile(r"database\s+password.*(?:too\s+short|invalid|failed)", re.IGNORECASE),
+            "Password configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"api\s+key.*(?:invalid|failed|expired)", re.IGNORECASE),
+            "API key configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"secret\s+key.*(?:must\s+not\s+contain|invalid|failed)", re.IGNORECASE),
+            "Secret key configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"jwt\s+secret.*(?:failed|invalid)", re.IGNORECASE),
+            "JWT secret configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"configuration\s+file.*(?:contains\s+errors|invalid)", re.IGNORECASE),
+            "Configuration file path issue (path hidden)",
+        ),
     ]
 
     for error in errors:

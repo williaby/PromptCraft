@@ -288,7 +288,13 @@ class TestJWTValidatorEmailWhitelist:
 
     @patch("src.auth.jwt_validator.jwt.decode")
     @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
-    def test_validate_token_email_whitelist_domain_allowed(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
+    def test_validate_token_email_whitelist_domain_allowed(
+        self,
+        mock_from_jwk,
+        mock_decode,
+        validator,
+        valid_jwt_token,
+    ):
         """Test successful validation with domain whitelisted email."""
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "anyone@company.org", "sub": "user456"}

@@ -58,7 +58,8 @@ class VSCodeCoverageIntegration:
                 print("🔄 Generating coverage.xml from .coverage data...")
                 result = subprocess.run(
                     ["poetry", "run", "coverage", "xml", "-o", "coverage.xml"],
-                    check=False, cwd=self.project_root,
+                    check=False,
+                    cwd=self.project_root,
                     capture_output=True,
                     text=True,
                 )
@@ -79,7 +80,8 @@ class VSCodeCoverageIntegration:
                 print("🔄 Generating HTML coverage reports...")
                 result = subprocess.run(
                     ["poetry", "run", "coverage", "html", "-d", "htmlcov"],
-                    check=False, cwd=self.project_root,
+                    check=False,
+                    cwd=self.project_root,
                     capture_output=True,
                     text=True,
                 )
@@ -104,7 +106,8 @@ class VSCodeCoverageIntegration:
             print("🚀 Running new automation system (v2)...")
             result = subprocess.run(
                 [sys.executable, "scripts/simplified_coverage_automation_v2.py", "--force"],
-                check=False, cwd=self.project_root,
+                check=False,
+                cwd=self.project_root,
                 capture_output=True,
                 text=True,
                 timeout=45,
@@ -124,7 +127,8 @@ class VSCodeCoverageIntegration:
             print("🔄 Running original automation system...")
             result = subprocess.run(
                 [sys.executable, "scripts/simplified_coverage_automation.py", "--force"],
-                check=False, cwd=self.project_root,
+                check=False,
+                cwd=self.project_root,
                 capture_output=True,
                 text=True,
                 timeout=60,

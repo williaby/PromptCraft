@@ -266,6 +266,7 @@ class TestQdrantVectorStoreIntegration:
             # Set up search mock to return a coroutine since the vector store calls it with await
             async def mock_search(*args, **kwargs):
                 return [mock_search_hit_1, mock_search_hit_2]
+
             mock_client.search = mock_search
 
             # Mock connection and health check

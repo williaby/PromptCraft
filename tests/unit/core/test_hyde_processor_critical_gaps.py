@@ -14,7 +14,6 @@ Focuses on:
 """
 
 import asyncio
-from datetime import datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -102,7 +101,7 @@ class TestEnumsAndModels:
         """Test RankedResults data model."""
         # Import VectorSearchResult which is what RankedResults actually uses
         from src.core.vector_store import SearchResult as VectorSearchResult
-        
+
         results = [
             VectorSearchResult(
                 document_id="doc1",
@@ -111,7 +110,7 @@ class TestEnumsAndModels:
                 metadata={"rank_position": 1},
             ),
             VectorSearchResult(
-                document_id="doc2", 
+                document_id="doc2",
                 content="Second result",
                 score=0.8,
                 metadata={"rank_position": 2},
@@ -142,7 +141,7 @@ class TestEnumsAndModels:
             processing_strategy="direct_retrieval",
             confidence=0.85,
         )
-        
+
         hypothetical_docs = [
             HypotheticalDocument(
                 content="Python is a programming language",
@@ -185,10 +184,10 @@ class TestHydeProcessorConfig:
     def test_config_initialization_custom(self):
         """Test configuration with custom values."""
         from unittest.mock import Mock
-        
+
         mock_vector_store = Mock()
         mock_counselor = Mock()
-        
+
         config = HydeProcessorConfig(
             vector_store=mock_vector_store,
             query_counselor=mock_counselor,
@@ -206,10 +205,7 @@ class TestHydeProcessorConfig:
     def test_config_validation(self):
         """Test configuration validation."""
         # Valid configuration
-        config = HydeProcessorConfig(
-            specificity_threshold_high=85.0,
-            specificity_threshold_low=40.0
-        )
+        config = HydeProcessorConfig(specificity_threshold_high=85.0, specificity_threshold_low=40.0)
         assert config.specificity_threshold_high == 85.0
         assert config.specificity_threshold_low == 40.0
 
@@ -246,7 +242,7 @@ class TestMockQueryCounselor:
     def test_mock_counselor_initialization(self, mock_counselor):
         """Test MockQueryCounselor initialization."""
         # MockQueryCounselor is a simple class with just one async method
-        assert hasattr(mock_counselor, 'analyze_query_specificity')
+        assert hasattr(mock_counselor, "analyze_query_specificity")
         assert callable(mock_counselor.analyze_query_specificity)
 
     async def test_mock_counselor_analyze_query_specificity(self, mock_counselor):
@@ -298,10 +294,10 @@ class TestMockQueryCounselor:
         """Test specificity level determination."""
         # High specificity query (technical + long)
         high_query = "How to implement OAuth2 JWT authentication with refresh tokens in FastAPI production deployment"
-        
+
         # Low specificity query (vague + short)
         low_query = "Help me"
-        
+
         high_analysis = await mock_counselor.analyze_query_specificity(high_query)
         low_analysis = await mock_counselor.analyze_query_specificity(low_query)
 
@@ -312,7 +308,7 @@ class TestMockQueryCounselor:
             assert high_analysis.specificity_level == SpecificityLevel.MEDIUM
         else:
             assert high_analysis.specificity_level == SpecificityLevel.LOW
-            
+
         if low_analysis.specificity_score < 40:
             assert low_analysis.specificity_level == SpecificityLevel.LOW
             assert len(low_analysis.guiding_questions) > 0
@@ -320,9 +316,9 @@ class TestMockQueryCounselor:
     async def test_mock_counselor_guiding_questions(self, mock_counselor):
         """Test guiding questions for low specificity queries."""
         vague_query = "help"
-        
+
         analysis = await mock_counselor.analyze_query_specificity(vague_query)
-        
+
         # If it's low specificity, should have guiding questions
         if analysis.specificity_level == SpecificityLevel.LOW:
             assert len(analysis.guiding_questions) > 0
@@ -364,8 +360,8 @@ class TestHydeProcessorInitialization:
         assert processor.query_counselor == mock_query_counselor
         assert processor.vector_store == mock_vector_store
         # Verify initialization was successful
-        assert hasattr(processor, 'specificity_threshold_high')
-        assert hasattr(processor, 'specificity_threshold_low')
+        assert hasattr(processor, "specificity_threshold_high")
+        assert hasattr(processor, "specificity_threshold_low")
 
     def test_hyde_processor_init_with_config(self, mock_query_counselor, mock_vector_store):
         """Test HydeProcessor initialization with custom config."""
@@ -388,13 +384,13 @@ class TestHydeProcessorInitialization:
         """Test initialization parameter validation."""
         # HydeProcessor initializes with defaults when config components are None
         # This tests that it creates a proper config and handles None values gracefully
-        
+
         # Test with None config - should create defaults
         processor = HydeProcessor(config=None)
         assert processor.vector_store is not None
         assert processor.query_counselor is not None
         assert isinstance(processor.query_counselor, MockQueryCounselor)
-        
+
         # Test with config containing None values - should use defaults
         config = HydeProcessorConfig(vector_store=None, query_counselor=None)
         processor2 = HydeProcessor(config=config)
@@ -425,7 +421,7 @@ class TestQueryAnalysisAndProcessing:
         config = HydeProcessorConfig(
             query_counselor=mock_counselor,
             vector_store=mock_store,
-            enable_openrouter=False  # Disable OpenRouter to use mock generation
+            enable_openrouter=False,  # Disable OpenRouter to use mock generation
         )
 
         return HydeProcessor(config=config)
@@ -434,7 +430,7 @@ class TestQueryAnalysisAndProcessing:
         """Test query specificity analysis through query counselor."""
         test_queries = [
             ("Hi", 40.0),  # Very simple - should be low
-            ("What is Python?", 50.0),  # Simple question - medium  
+            ("What is Python?", 50.0),  # Simple question - medium
             ("How to implement authentication in FastAPI?", 60.0),  # Medium complexity
             (
                 "How do I build a scalable microservices architecture with event sourcing, CQRS, containerization, and monitoring?",
@@ -454,15 +450,15 @@ class TestQueryAnalysisAndProcessing:
         # Simple query
         simple_query = "What is Git?"
         simple_enhanced = await processor.three_tier_analysis(simple_query)
-        
+
         assert isinstance(simple_enhanced, EnhancedQuery)
         assert simple_enhanced.original_query == simple_query
         assert simple_enhanced.processing_strategy in ["direct_retrieval", "standard_hyde", "clarification_needed"]
 
-        # Complex query 
+        # Complex query
         complex_query = "How to implement a distributed system with microservices, event sourcing, and CQRS?"
         complex_enhanced = await processor.three_tier_analysis(complex_query)
-        
+
         assert isinstance(complex_enhanced, EnhancedQuery)
         assert complex_enhanced.original_query == complex_query
         assert complex_enhanced.processing_strategy in ["direct_retrieval", "standard_hyde", "clarification_needed"]
@@ -471,15 +467,18 @@ class TestQueryAnalysisAndProcessing:
         """Test that processing strategy is determined correctly."""
         # Test with different types of queries to ensure strategy assignment
         test_cases = [
-            ("Help", "clarification_needed"),  # Vague - low specificity  
+            ("Help", "clarification_needed"),  # Vague - low specificity
             ("What is Docker containers and virtualization?", "standard_hyde"),  # Medium - should generate docs
-            ("How to implement OAuth2 JWT authentication with refresh tokens in FastAPI production environment?", "direct_retrieval"),  # Specific - high specificity
+            (
+                "How to implement OAuth2 JWT authentication with refresh tokens in FastAPI production environment?",
+                "direct_retrieval",
+            ),  # Specific - high specificity
         ]
-        
+
         for query, expected_strategy in test_cases:
             enhanced = await processor.three_tier_analysis(query)
             assert enhanced.processing_strategy in ["direct_retrieval", "standard_hyde", "clarification_needed"]
-            
+
             # Check that hypothetical docs are generated for standard_hyde strategy
             if enhanced.processing_strategy == "standard_hyde":
                 assert len(enhanced.hypothetical_docs) > 0
@@ -502,7 +501,7 @@ class TestQueryAnalysisAndProcessing:
         # Both should return valid enhanced queries
         assert isinstance(general_enhanced, EnhancedQuery)
         assert isinstance(specific_enhanced, EnhancedQuery)
-        
+
         # Verify the analysis contains proper specificity information
         assert general_enhanced.specificity_analysis.specificity_score >= 0.0
         assert specific_enhanced.specificity_analysis.specificity_score >= 0.0
@@ -524,7 +523,7 @@ class TestHypotheticalDocumentGeneration:
         config = HydeProcessorConfig(
             query_counselor=mock_counselor,
             vector_store=mock_store,
-            enable_openrouter=False  # Disable OpenRouter to use mock generation
+            enable_openrouter=False,  # Disable OpenRouter to use mock generation
         )
 
         return HydeProcessor(config=config)
@@ -557,7 +556,7 @@ class TestHypotheticalDocumentGeneration:
 
         for query in queries:
             enhanced = await processor.three_tier_analysis(query)
-            
+
             # For standard_hyde strategy, hypothetical docs should be generated
             if enhanced.processing_strategy == "standard_hyde":
                 assert len(enhanced.hypothetical_docs) > 0
@@ -574,11 +573,11 @@ class TestHypotheticalDocumentGeneration:
         assert isinstance(enhanced, EnhancedQuery)
         assert enhanced.original_query == query
         assert enhanced.enhanced_query == query  # For now, enhanced_query is same as original
-        
+
         # Check if hypothetical docs were generated (depends on specificity)
         if enhanced.processing_strategy == "standard_hyde":
             assert len(enhanced.hypothetical_docs) > 0
-        
+
         assert enhanced.specificity_analysis.confidence > 0.0
 
     async def test_document_quality_filtering(self, processor):
@@ -607,7 +606,7 @@ class TestHypotheticalDocumentGeneration:
         # Should have reasonable deduplication (mock templates are unique by design)
         duplication_ratio = len(contents) / len(unique_contents) if unique_contents else 1
         assert duplication_ratio <= 2.0  # Allow some similarity but not excessive duplication
-        
+
         # In mock implementation, each document should be unique
         assert len(unique_contents) == len(contents)
 
@@ -625,7 +624,7 @@ class TestSearchAndRanking:
 
         # Mock search results using correct VectorSearchResult format
         from src.core.vector_store import SearchResult as VectorSearchResult
-        
+
         mock_results = [
             VectorSearchResult(
                 document_id="doc1",
@@ -653,7 +652,7 @@ class TestSearchAndRanking:
         config = HydeProcessorConfig(
             query_counselor=mock_counselor,
             vector_store=mock_store,
-            enable_openrouter=False  # Disable OpenRouter to use mock generation
+            enable_openrouter=False,  # Disable OpenRouter to use mock generation
         )
 
         return HydeProcessor(config=config)
@@ -661,7 +660,7 @@ class TestSearchAndRanking:
     async def test_search_with_enhanced_query(self, processor_with_results):
         """Test searching with enhanced query."""
         from src.core.vector_store import SearchResult as VectorSearchResult
-        
+
         query = "Python web development"
 
         results = await processor_with_results.process_query(query)
@@ -705,7 +704,7 @@ class TestSearchAndRanking:
         for i, result in enumerate(results.results):
             if i > 0:
                 # Each result should have score >= previous result's score (descending order)
-                assert result.score <= results.results[i-1].score
+                assert result.score <= results.results[i - 1].score
 
     async def test_search_metadata_preservation(self, processor_with_results):
         """Test that search preserves metadata from vector store."""
@@ -730,14 +729,14 @@ class TestErrorHandlingAndEdgeCases:
         """Create HydeProcessor for error testing."""
         mock_counselor = MockQueryCounselor()
         mock_store = Mock()
-        
+
         # Create config with OpenRouter disabled for testing
         config = HydeProcessorConfig(
             query_counselor=mock_counselor,
             vector_store=mock_store,
-            enable_openrouter=False  # Disable OpenRouter to use mock generation
+            enable_openrouter=False,  # Disable OpenRouter to use mock generation
         )
-        
+
         return HydeProcessor(config=config)
 
     async def test_empty_query_handling(self, processor):
@@ -774,11 +773,7 @@ class TestErrorHandlingAndEdgeCases:
         mock_store = Mock()
 
         # Create config with basic setup (HydeProcessorConfig doesn't have timeout field)
-        config = HydeProcessorConfig(
-            query_counselor=mock_counselor,
-            vector_store=mock_store,
-            enable_openrouter=False
-        )
+        config = HydeProcessorConfig(query_counselor=mock_counselor, vector_store=mock_store, enable_openrouter=False)
         processor = HydeProcessor(config=config)
 
         # Make search very slow to simulate timeout
@@ -807,11 +802,7 @@ class TestErrorHandlingAndEdgeCases:
         ]
 
         for valid_config in valid_configs:
-            config = HydeProcessorConfig(
-                query_counselor=mock_counselor,
-                vector_store=mock_store,
-                **valid_config
-            )
+            config = HydeProcessorConfig(query_counselor=mock_counselor, vector_store=mock_store, **valid_config)
             processor = HydeProcessor(config=config)
             # Should create processor successfully
             assert processor is not None

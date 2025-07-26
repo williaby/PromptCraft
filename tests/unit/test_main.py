@@ -1,10 +1,9 @@
 """Tests for the main FastAPI application module."""
 
-import logging
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
@@ -235,9 +234,9 @@ class TestHealthCheckEndpoints:
             "version": "1.0.0",
             "config_loaded": True,
             "encryption_available": True,
-            "timestamp": "2025-01-01T00:00:00+00:00"
+            "timestamp": "2025-01-01T00:00:00+00:00",
         }
-        
+
         # Mock circuit breakers
         mock_breaker = MagicMock()
         mock_breaker.get_health_status.return_value = {"healthy": True, "state": "closed"}
@@ -260,7 +259,7 @@ class TestHealthCheckEndpoints:
             "healthy": False,
             "status": "degraded",
             "environment": "test",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
         mock_circuit_breakers.return_value = {}
 
@@ -286,17 +285,17 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # The security error handler processes our custom HTTPException 
+        # The security error handler processes our custom HTTPException
         assert data["error"] == "HTTP error"
         assert data["status_code"] == 500
         assert "timestamp" in data
         assert data["path"] == "/health"
 
     @patch("src.main.get_configuration_health_summary")
-    @patch("src.main.get_all_circuit_breakers")  
+    @patch("src.main.get_all_circuit_breakers")
     def test_health_check_http_exception_passthrough(self, mock_circuit_breakers, mock_health_summary) -> None:
         """Test health check with HTTPException that should be re-raised."""
-        from fastapi import HTTPException
+
         mock_health_summary.side_effect = HTTPException(status_code=503, detail="Service unavailable")
         mock_circuit_breakers.return_value = {}
 
@@ -316,12 +315,13 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_configuration_status")
     def test_configuration_health_success(self, mock_config_status, mock_settings) -> None:
         """Test successful configuration health check."""
+        from datetime import UTC, datetime
+
         from src.config.health import ConfigurationStatusModel
-        from datetime import datetime, UTC
-        
+
         mock_settings_obj = ApplicationSettings()
         mock_settings.return_value = mock_settings_obj
-        
+
         # Create a proper ConfigurationStatusModel instance
         mock_config_status.return_value = ConfigurationStatusModel(
             environment="test",
@@ -335,7 +335,7 @@ class TestHealthCheckEndpoints:
             secrets_configured=2,
             api_host="localhost",
             api_port=8000,
-            timestamp=datetime.now(UTC)
+            timestamp=datetime.now(UTC),
         )
 
         response = self.client.get("/health/config")
@@ -353,9 +353,9 @@ class TestHealthCheckEndpoints:
         config_error = ConfigurationValidationError(
             "Config error",
             field_errors=["Error 1", "Error 2", "Error 3", "Error 4", "Error 5", "Error 6"],
-            suggestions=["Fix 1", "Fix 2", "Fix 3", "Fix 4", "Fix 5", "Fix 6"]
+            suggestions=["Fix 1", "Fix 2", "Fix 3", "Fix 4", "Fix 5", "Fix 6"],
         )
-        
+
         # Second call returns debug settings for debug mode check
         mock_debug_settings = ApplicationSettings(debug=True)
         mock_settings.side_effect = [config_error, mock_debug_settings]
@@ -374,12 +374,8 @@ class TestHealthCheckEndpoints:
     def test_configuration_health_validation_error_production(self, mock_settings) -> None:
         """Test configuration health with validation error in production mode."""
         # First call raises ConfigurationValidationError
-        config_error = ConfigurationValidationError(
-            "Config error", 
-            field_errors=["Error 1"], 
-            suggestions=["Fix 1"]
-        )
-        
+        config_error = ConfigurationValidationError("Config error", field_errors=["Error 1"], suggestions=["Fix 1"])
+
         # Second call raises exception for debug mode check (simulating production)
         mock_settings.side_effect = [config_error, RuntimeError("Settings unavailable")]
 
@@ -409,10 +405,7 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_success(self, mock_mcp_health) -> None:
         """Test successful MCP health check."""
-        mock_mcp_health.return_value = {
-            "healthy": True,
-            "mcp_status": "connected"
-        }
+        mock_mcp_health.return_value = {"healthy": True, "mcp_status": "connected"}
 
         response = self.client.get("/health/mcp")
 
@@ -424,10 +417,7 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_unhealthy(self, mock_mcp_health) -> None:
         """Test MCP health check when unhealthy."""
-        mock_mcp_health.return_value = {
-            "healthy": False,
-            "mcp_status": "disconnected"
-        }
+        mock_mcp_health.return_value = {"healthy": False, "mcp_status": "disconnected"}
 
         response = self.client.get("/health/mcp")
 
@@ -485,11 +475,8 @@ class TestHealthCheckEndpoints:
         mock_breaker1.get_health_status.return_value = {"healthy": True, "state": "closed"}
         mock_breaker2 = MagicMock()
         mock_breaker2.get_health_status.return_value = {"healthy": True, "state": "closed"}
-        
-        mock_circuit_breakers.return_value = {
-            "breaker1": mock_breaker1,
-            "breaker2": mock_breaker2
-        }
+
+        mock_circuit_breakers.return_value = {"breaker1": mock_breaker1, "breaker2": mock_breaker2}
 
         response = self.client.get("/health/circuit-breakers")
 
@@ -506,11 +493,8 @@ class TestHealthCheckEndpoints:
         mock_breaker1.get_health_status.return_value = {"healthy": True, "state": "closed"}
         mock_breaker2 = MagicMock()
         mock_breaker2.get_health_status.return_value = {"healthy": False, "state": "open"}
-        
-        mock_circuit_breakers.return_value = {
-            "breaker1": mock_breaker1,
-            "breaker2": mock_breaker2
-        }
+
+        mock_circuit_breakers.return_value = {"breaker1": mock_breaker1, "breaker2": mock_breaker2}
 
         response = self.client.get("/health/circuit-breakers")
 
@@ -545,7 +529,7 @@ class TestAPIEndpoints:
     def test_validate_input_success(self, mock_audit_logger) -> None:
         """Test validate input endpoint with successful validation."""
         test_data = {"text": "Test input"}
-        
+
         response = self.client.post("/api/v1/validate", json=test_data)
 
         assert response.status_code == 200
@@ -553,18 +537,13 @@ class TestAPIEndpoints:
         assert data["status"] == "success"
         assert data["message"] == "Input validation successful"
         assert data["sanitized_text"] == "Test input"
-        
+
         # Verify audit logging was called
         mock_audit_logger.log_api_event.assert_called_once()
 
     def test_search_endpoint_success(self) -> None:
         """Test search endpoint with valid parameters."""
-        response = self.client.get("/api/v1/search", params={
-            "search": "test",
-            "page": 1,
-            "limit": 10,
-            "sort": "name"
-        })
+        response = self.client.get("/api/v1/search", params={"search": "test", "page": 1, "limit": 10, "sort": "name"})
 
         assert response.status_code == 200
         data = response.json()
@@ -583,12 +562,7 @@ class TestLifespanComprehensive:
     @patch("src.main.get_settings")
     def test_lifespan_startup_audit_logging(self, mock_get_settings, mock_audit_logger) -> None:
         """Test lifespan startup with audit event logging."""
-        mock_settings = ApplicationSettings(
-            app_name="Test App",
-            version="1.0.0",
-            environment="dev",
-            debug=True
-        )
+        mock_settings = ApplicationSettings(app_name="Test App", version="1.0.0", environment="dev", debug=True)
         mock_get_settings.return_value = mock_settings
 
         mock_app = MagicMock()
@@ -604,8 +578,9 @@ class TestLifespanComprehensive:
             pass
 
         # Verify audit logging was called for startup
-        startup_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
-                        if "startup" in str(call).lower()]
+        startup_calls = [
+            call for call in mock_audit_logger.log_security_event.call_args_list if "startup" in str(call).lower()
+        ]
         assert len(startup_calls) > 0
 
     @patch("src.main.audit_logger_instance")
@@ -615,7 +590,7 @@ class TestLifespanComprehensive:
         config_error = ConfigurationValidationError(
             "Config error",
             field_errors=["Error 1", "Error 2"],
-            suggestions=["Fix 1", "Fix 2"]
+            suggestions=["Fix 1", "Fix 2"],
         )
         mock_get_settings.side_effect = config_error
 
@@ -627,8 +602,9 @@ class TestLifespanComprehensive:
                 pass
 
         # Verify audit logging was called for validation failure
-        validation_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
-                           if "validation" in str(call).lower()]
+        validation_calls = [
+            call for call in mock_audit_logger.log_security_event.call_args_list if "validation" in str(call).lower()
+        ]
         assert len(validation_calls) > 0
 
     @patch("src.main.audit_logger_instance")
@@ -645,8 +621,9 @@ class TestLifespanComprehensive:
                 pass
 
         # Verify audit logging was called for startup failure
-        failure_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
-                        if "startup" in str(call).lower()]
+        failure_calls = [
+            call for call in mock_audit_logger.log_security_event.call_args_list if "startup" in str(call).lower()
+        ]
         assert len(failure_calls) > 0
 
     @patch("src.main.audit_logger_instance")
@@ -664,8 +641,9 @@ class TestLifespanComprehensive:
             pass
 
         # Verify audit logging was called for shutdown
-        shutdown_calls = [call for call in mock_audit_logger.log_security_event.call_args_list 
-                         if "shutdown" in str(call).lower()]
+        shutdown_calls = [
+            call for call in mock_audit_logger.log_security_event.call_args_list if "shutdown" in str(call).lower()
+        ]
         assert len(shutdown_calls) > 0
 
 

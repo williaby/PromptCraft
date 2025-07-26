@@ -843,12 +843,15 @@ class TestGetMCPConfigurationHealth:
         mock_config_manager = Mock()
         mock_mcp_client = Mock()
         mock_parallel_executor = Mock()
-        
+
         # First ensure the imports are available (not None)
         with patch("src.config.health.MCPClient", mock_mcp_client):
             with patch("src.config.health.ParallelSubagentExecutor", mock_parallel_executor):
                 # Then patch the constructor to raise RuntimeError
-                with patch("src.config.health.MCPConfigurationManager", side_effect=RuntimeError("MCP initialization failed")):
+                with patch(
+                    "src.config.health.MCPConfigurationManager",
+                    side_effect=RuntimeError("MCP initialization failed"),
+                ):
                     result = await get_mcp_configuration_health()
 
                     assert result["healthy"] is False

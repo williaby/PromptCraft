@@ -32,7 +32,9 @@ class CoverageRenderer:
         self.test_types = self._build_test_type_mapping()
 
         self.logger.info(
-            "Coverage renderer initialized", project_root=str(project_root), test_types_count=len(self.test_types),
+            "Coverage renderer initialized",
+            project_root=str(project_root),
+            test_types_count=len(self.test_types),
         )
 
     def _build_test_type_mapping(self) -> dict[str, dict[str, str]]:
@@ -73,7 +75,9 @@ class CoverageRenderer:
 
         try:
             self.logger.info(
-                "Starting coverage report generation", context_count=len(used_contexts), contexts=sorted(used_contexts),
+                "Starting coverage report generation",
+                context_count=len(used_contexts),
+                contexts=sorted(used_contexts),
             )
 
             # First, combine coverage data files if needed
@@ -103,7 +107,9 @@ class CoverageRenderer:
 
         finally:
             self.perf_logger.log_operation_timing(
-                "generate_coverage_reports", time.time() - start_time, context_count=len(used_contexts),
+                "generate_coverage_reports",
+                time.time() - start_time,
+                context_count=len(used_contexts),
             )
 
     def _combine_coverage_files(self) -> None:
@@ -135,7 +141,9 @@ class CoverageRenderer:
         # Generate HTML report
         try:
             subprocess.run(
-                ["poetry", "run", "coverage", "html", "--directory", "htmlcov"], cwd=self.project_root, check=True,
+                ["poetry", "run", "coverage", "html", "--directory", "htmlcov"],
+                cwd=self.project_root,
+                check=True,
             )
 
             self.logger.debug("HTML coverage report generated successfully")
@@ -251,7 +259,8 @@ class CoverageRenderer:
                 if test_type in self.test_types:
                     info = self.test_types[test_type]
                     type_data = context.coverage_by_type.get(
-                        test_type, {"statement": 0, "branch": 0, "total_branches": 0},
+                        test_type,
+                        {"statement": 0, "branch": 0, "total_branches": 0},
                     )
 
                     # Sanitize all values
@@ -319,7 +328,9 @@ class CoverageRenderer:
             f.write(html_content)
 
         self.logger.debug(
-            "Enhanced HTML report written", html_path=str(html_path), context_count=len(context.test_types),
+            "Enhanced HTML report written",
+            html_path=str(html_path),
+            context_count=len(context.test_types),
         )
 
     def _generate_test_type_reports(self, coverage_data: dict[str, Any], used_contexts: set[str]) -> None:

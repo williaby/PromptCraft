@@ -49,13 +49,17 @@ class TestPatternConfig:
 
         except yaml.YAMLError as e:
             self.logger.error(
-                "Error parsing YAML config, using fallback", error=str(e), config_path=str(self.config_path),
+                "Error parsing YAML config, using fallback",
+                error=str(e),
+                config_path=str(self.config_path),
             )
             return self._get_fallback_config()
 
         except Exception as e:
             self.logger.error(
-                "Unexpected error loading config, using fallback", error=str(e), config_path=str(self.config_path),
+                "Unexpected error loading config, using fallback",
+                error=str(e),
+                config_path=str(self.config_path),
             )
             return self._get_fallback_config()
 

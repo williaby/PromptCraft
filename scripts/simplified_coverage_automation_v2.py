@@ -15,10 +15,10 @@ Key Improvements:
 Usage:
     # After running "Run Tests with Coverage" in VS Code:
     python scripts/simplified_coverage_automation_v2.py
-    
+
     # Force generation:
     python scripts/simplified_coverage_automation_v2.py --force
-    
+
     # Validate environment:
     python scripts/simplified_coverage_automation_v2.py --validate
 

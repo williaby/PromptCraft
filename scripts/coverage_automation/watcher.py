@@ -25,7 +25,9 @@ class CoverageWatcher:
         self.coverage_json_path = self.project_root / "coverage.json"
 
         self.logger.info(
-            "Coverage watcher initialized", coverage_file=str(self.coverage_file), project_root=str(self.project_root),
+            "Coverage watcher initialized",
+            coverage_file=str(self.coverage_file),
+            project_root=str(self.project_root),
         )
 
     def _find_coverage_file(self) -> Path:
@@ -110,7 +112,9 @@ class CoverageWatcher:
                 contexts.update(self._fallback_context_detection(test_dirs, current_time))
 
             self.logger.info(
-                "Coverage context detection completed", detected_contexts=sorted(contexts), context_count=len(contexts),
+                "Coverage context detection completed",
+                detected_contexts=sorted(contexts),
+                context_count=len(contexts),
             )
 
             return contexts
@@ -121,7 +125,9 @@ class CoverageWatcher:
 
         finally:
             self.perf_logger.log_operation_timing(
-                "get_coverage_contexts", time.time() - start_time, contexts_found=len(contexts),
+                "get_coverage_contexts",
+                time.time() - start_time,
+                contexts_found=len(contexts),
             )
 
     def _get_test_directories_from_config(self) -> dict:
@@ -240,7 +246,8 @@ class CoverageWatcher:
                 file_age = current_time - self.coverage_file.stat().st_mtime
                 if file_age < 7200:  # 2 hours
                     self.logger.debug(
-                        "Using fallback test type detection", coverage_file_age_seconds=round(file_age, 2),
+                        "Using fallback test type detection",
+                        coverage_file_age_seconds=round(file_age, 2),
                     )
                     # Add all test types that have directories
                     for test_type, test_dir in test_dirs.items():

@@ -5,24 +5,24 @@ This module provides common fixtures for testing UI components,
 including export utilities and other shared components.
 """
 
-import pytest
-from datetime import datetime
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture
 def mock_datetime():
     """Mock datetime.now() to return consistent timestamp for testing."""
     from unittest.mock import Mock
-    
-    with patch('src.ui.components.shared.export_utils.datetime') as mock_dt:
+
+    with patch("src.ui.components.shared.export_utils.datetime") as mock_dt:
         # Create a mock datetime object with proper method mocking
         mock_now = Mock()
         mock_now.isoformat.return_value = "2024-01-01T12:00:00"
         mock_now.strftime.return_value = "20240101_120000"
-        
+
         mock_dt.now.return_value = mock_now
-        
+
         yield mock_dt
 
 
@@ -37,34 +37,18 @@ def sample_export_data():
             "examples": "def factorial(n): return 1 if n <= 1 else n * factorial(n-1)",
             "augmentations": "Include input validation and documentation.",
             "tone_format": "Professional and educational with clear comments.",
-            "evaluation": "Test with various inputs including edge cases."
+            "evaluation": "Test with various inputs including edge cases.",
         },
-        "model_info": {
-            "model": "claude-3-5-sonnet-20241022",
-            "response_time": 1.234,
-            "cost": 0.0123
-        },
+        "model_info": {"model": "claude-3-5-sonnet-20241022", "response_time": 1.234, "cost": 0.0123},
         "file_sources": [
-            {
-                "name": "test_export.py",
-                "type": "python",
-                "size": 1024
-            },
-            {
-                "name": "utils.py", 
-                "type": "python",
-                "size": 2048
-            }
+            {"name": "test_export.py", "type": "python", "size": 1024},
+            {"name": "utils.py", "type": "python", "size": 2048},
         ],
-        "session_data": {
-            "total_cost": 0.0456,
-            "request_count": 3,
-            "avg_response_time": 1.567
-        }
+        "session_data": {"total_cost": 0.0456, "request_count": 3, "avg_response_time": 1.567},
     }
 
 
-@pytest.fixture 
+@pytest.fixture
 def complex_content_sample():
     """Complex content with multiple code blocks for testing extraction."""
     return '''Here's some Python code:
@@ -88,7 +72,7 @@ function processData(items) {
 Some SQL query:
 
 ```sql
-SELECT * FROM users 
+SELECT * FROM users
 WHERE active = true
 ORDER BY created_at DESC;
 ```
@@ -119,11 +103,11 @@ def sample_code_blocks():
             "comments": ["Test function docstring."],
             "has_functions": True,
             "complexity": "simple",
-            "preview": "def test_example()..."
+            "preview": "def test_example()...",
         },
         {
             "id": 2,
-            "language": "javascript", 
+            "language": "javascript",
             "content": """function getData() {
     // Fetch data from API
     return fetch('/api/data');
@@ -133,6 +117,6 @@ def sample_code_blocks():
             "comments": ["Fetch data from API"],
             "has_functions": True,
             "complexity": "simple",
-            "preview": "function getData() {"
-        }
+            "preview": "function getData() {",
+        },
     ]

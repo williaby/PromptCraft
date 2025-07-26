@@ -543,9 +543,7 @@ class PathBasedCoverageAnalyzer:
             # Create permanent file:// link to detailed coverage if available
             if file_data.detailed_link:
                 detailed_file_absolute = (standard_dir_absolute / file_data.detailed_link).resolve()
-                file_link = (
-                    f'<a href="file://{detailed_file_absolute}" class="file-link">{file_data.file_path}</a>'
-                )
+                file_link = f'<a href="file://{detailed_file_absolute}" class="file-link">{file_data.file_path}</a>'
             else:
                 file_link = file_data.file_path
 
@@ -755,8 +753,8 @@ class PathBasedCoverageAnalyzer:
             overall_coverage = weighted_coverage / total_files
 
         # Pre-calculate file paths to avoid inline operations in f-strings
-        standard_report_path = (self.output_dir / 'standard' / 'index.html').resolve()
-        by_type_report_path = (self.output_dir / 'by-type' / 'index.html').resolve()
+        standard_report_path = (self.output_dir / "standard" / "index.html").resolve()
+        by_type_report_path = (self.output_dir / "by-type" / "index.html").resolve()
 
         html_content = f"""<!DOCTYPE html>
 <html lang="en">

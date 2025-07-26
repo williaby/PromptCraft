@@ -168,8 +168,8 @@ class VectorDocument(BaseModel):
     id: str = Field(description="Unique document identifier")
     content: str = Field(description="Document content text")
     embedding: EmbeddingVector = Field(
-        default_factory=lambda: [0.0] * DEFAULT_VECTOR_DIMENSIONS, 
-        description="Vector embedding"
+        default_factory=lambda: [0.0] * DEFAULT_VECTOR_DIMENSIONS,
+        description="Vector embedding",
     )
     metadata: DocumentMetadata = Field(default_factory=dict, description="Document metadata")
     collection: str = Field(default="default", description="Collection name")
@@ -292,7 +292,7 @@ class AbstractVectorStore(ABC):
         if self._circuit_breaker_open and self._circuit_breaker_failures < CIRCUIT_BREAKER_THRESHOLD:
             self._circuit_breaker_open = False
             self.logger.info("Circuit breaker reset - failures below threshold")
-        
+
         if self._circuit_breaker_open:
             self.logger.warning("Circuit breaker is open, skipping %s operation", operation_name)
             return False
@@ -735,7 +735,7 @@ class QdrantVectorStore(AbstractVectorStore):
             default_port = 6333
             default_api_key = None
             default_timeout = DEFAULT_TIMEOUT
-            
+
         self._host = config.get("host", default_host)
         self._port = config.get("port", default_port)
         self._api_key = config.get("api_key", default_api_key)
@@ -824,9 +824,9 @@ class QdrantVectorStore(AbstractVectorStore):
                     query_filter=qdrant_filter,
                     score_threshold=parameters.score_threshold,
                 )
-                
+
                 # Handle potential coroutine from mocked client
-                if hasattr(search_result, '__await__'):
+                if hasattr(search_result, "__await__"):
                     search_result = await search_result
 
                 for hit in search_result:

@@ -8,6 +8,7 @@ vector operations and performance requirements.
 
 import asyncio
 import contextlib
+import os
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -654,7 +655,9 @@ class TestRealQdrantIntegration:
 
         # Should use defaults
         store = QdrantVectorStore(minimal_config)
-        assert store._host == "192.168.1.16"  # Default host
+        # Check for environment-specific host (CI uses localhost, production uses 192.168.1.16)
+        expected_host = "localhost" if os.getenv("CI_ENVIRONMENT") else "192.168.1.16"
+        assert store._host == expected_host  # Default host
         assert store._port == 6333  # Default port
 
     @pytest.mark.integration
