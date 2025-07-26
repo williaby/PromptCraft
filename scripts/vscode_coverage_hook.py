@@ -25,7 +25,7 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent
 sys.path.insert(0, str(scripts_dir))
 
-from generate_test_coverage_fast import FastCoverageReportGenerator
+from generate_test_coverage_fast import FastCoverageReportGenerator  # noqa: E402
 
 
 def check_coverage_contexts_enabled():
@@ -45,7 +45,7 @@ def check_coverage_contexts_enabled():
             if dynamic_context == "test_function":
                 print("✅ Coverage contexts enabled - real per-test coverage available")
                 return True
-            print("ℹ️  Coverage contexts not enabled - using simulation approach")
+            print("ℹ️  Coverage contexts not enabled - using simulation approach")  # noqa: RUF001
             return False
     except Exception as e:
         print(f"⚠️  Could not check coverage context configuration: {e}")
@@ -71,7 +71,7 @@ def wait_for_coverage_files(max_wait_seconds=5):
                 print(f"✅ Found fresh coverage data (coverage: {coverage_age:.1f}s, junit: {junit_age:.1f}s old)")
                 return True
 
-        time.sleep(0.5)
+        time.sleep(0.5)  # noqa: S110 - Coverage file availability polling interval
 
     print("⚠️  Coverage files not found or not recent - continuing anyway")
     return False

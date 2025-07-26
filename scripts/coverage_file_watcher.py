@@ -71,10 +71,7 @@ class CoverageFileWatcher:
             return False
 
         # Check if files were modified after last update
-        if latest_modification > self.last_update_time:
-            return True
-
-        return False
+        return latest_modification > self.last_update_time
 
     def regenerate_reports(self) -> bool:
         """Trigger coverage report regeneration."""
@@ -114,7 +111,7 @@ class CoverageFileWatcher:
         if self.pid_file.exists():
             self.pid_file.unlink()
 
-    def signal_handler(self, signum, frame):
+    def signal_handler(self, signum, frame):  # noqa: ARG002
         """Handle shutdown signals gracefully."""
         print(f"\n📴 Received signal {signum} - shutting down coverage watcher...")
         self.running = False
@@ -145,13 +142,13 @@ class CoverageFileWatcher:
         try:
             pid = int(self.pid_file.read_text().strip())
             os.kill(pid, signal.SIGTERM)
-            time.sleep(1)  # Give process time to shut down
+            time.sleep(1)  # noqa: S110 - Process shutdown coordination delay
 
             # Force kill if still running
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except OSError:
-                pass  # Process already dead
+            import contextlib
+
+            with contextlib.suppress(OSError):
+                os.kill(pid, signal.SIGKILL)  # Process already dead
 
             self.remove_pid_file()
             print("✅ Stopped existing coverage watcher")
@@ -168,7 +165,7 @@ class CoverageFileWatcher:
 
         if self.should_regenerate(current_timestamps):
             return self.regenerate_reports()
-        print("ℹ️  No coverage data changes detected")
+        print("ℹ️  No coverage data changes detected")  # noqa: RUF001
         return False
 
     def watch_continuously(self) -> None:
@@ -202,7 +199,7 @@ class CoverageFileWatcher:
                         self.regenerate_reports()
                     last_timestamps = current_timestamps
 
-                time.sleep(1)  # Check every second
+                time.sleep(1)  # noqa: S110 - File monitoring polling interval (1 second)
 
         except KeyboardInterrupt:
             self.signal_handler(signal.SIGINT, None)

@@ -627,6 +627,9 @@ if __name__ == "__main__":
 
     # Generate sample main index
     main_html = renderer.generate_main_index(test_coverage, test_distribution, test_type_coverage)
-    sample_file = Path("/tmp/test_main_index.html")
-    sample_file.write_text(main_html)
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp_file:
+        tmp_file.write(main_html)
+        sample_file = Path(tmp_file.name)
     print(f"✅ Test HTML generated: {sample_file}")

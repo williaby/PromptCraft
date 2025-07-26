@@ -21,7 +21,6 @@ def check_fresh_coverage_data():
     """Check if we have fresh coverage data from recent test run."""
     project_root = Path(__file__).parent.parent
     coverage_file = project_root / ".coverage"
-    coverage_xml = project_root / "coverage.xml"
 
     if not coverage_file.exists():
         return False, "No .coverage file found"
@@ -106,7 +105,7 @@ def main():
                             print("❌ Report generation failed")
                         last_mtime = current_mtime
 
-                time.sleep(5)
+                time.sleep(5)  # noqa: S110 - File watching polling interval (5 seconds)
         except KeyboardInterrupt:
             print("\n👋 Stopping coverage watcher")
             return
@@ -117,7 +116,7 @@ def main():
         print(f"📊 Coverage data status: {message}")
 
         if not fresh:
-            print("ℹ️  Use --force to update anyway")
+            print("ℹ️  Use --force to update anyway")  # noqa: RUF001
             return
 
     if run_coverage_automation():

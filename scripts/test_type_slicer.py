@@ -14,14 +14,14 @@ import re
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 class TestTypeSlicer:
     """Classifies tests by type and slices coverage data accordingly."""
 
     # Test type classification patterns (consensus-based approach)
-    TEST_TYPE_PATTERNS = {
+    TEST_TYPE_PATTERNS: ClassVar[dict[str, list[str]]] = {
         "unit": [
             r"tests[/\\]unit[/\\]",
             r"test_unit_",
@@ -256,6 +256,7 @@ class TestTypeSlicer:
                 return {}
 
             # Build query to get coverage for these specific contexts
+            # Use parameterized placeholders to prevent SQL injection
             context_placeholders = ",".join(["?" for _ in test_contexts])
             query = f"""
                 SELECT f.path, lb.numbits, c.context
@@ -263,7 +264,7 @@ class TestTypeSlicer:
                 JOIN file f ON lb.file_id = f.id
                 JOIN context c ON lb.context_id = c.id
                 WHERE c.context IN ({context_placeholders})
-            """
+            """  # noqa: S608 - Uses parameterized placeholders, not user input
 
             cursor.execute(query, test_contexts)
             results = cursor.fetchall()
@@ -400,7 +401,7 @@ if __name__ == "__main__":
 
         # Test coverage filtering
         if test_distribution:
-            sample_type = list(test_distribution.keys())[0]
+            sample_type = next(iter(test_distribution.keys()))
             filtered = slicer.filter_coverage_by_test_type(data["coverage"], sample_type)
             print(f"🔍 {sample_type} coverage: {filtered['overall']['percentage']:.1f}%")
     else:

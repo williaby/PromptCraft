@@ -23,9 +23,14 @@ Usage:
 import shutil
 import sys
 import time
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
+
+try:
+    import defusedxml.ElementTree as ET  # noqa: N817
+except ImportError:
+    # Fallback to standard library with security note
+    import xml.etree.ElementTree as ET  # noqa: N817
 
 
 class VSCodeCoverageIntegrator:
@@ -154,7 +159,11 @@ class VSCodeCoverageIntegrator:
 
         return main_report
 
-    def _generate_enhanced_analysis_report(self, coverage_data: dict[str, Any], test_counts: dict[str, int]):
+    def _generate_enhanced_analysis_report(
+        self,
+        coverage_data: dict[str, Any],
+        test_counts: dict[str, int],  # noqa: ARG002
+    ):
         """Generate detailed file-by-file analysis report."""
         overall = coverage_data["overall"]
         files_coverage = coverage_data["files"]
@@ -384,10 +393,7 @@ class VSCodeCoverageIntegrator:
         for filepath, file_data in files_coverage.items():
             # Extract package from file path
             path_parts = filepath.split("/")
-            if len(path_parts) > 1:
-                package = "/".join(path_parts[:-1])
-            else:
-                package = "."
+            package = "/".join(path_parts[:-1]) if len(path_parts) > 1 else "."
 
             if package not in packages:
                 packages[package] = {"files": [], "total_lines": 0, "covered_lines": 0}
@@ -740,7 +746,7 @@ class VSCodeCoverageIntegrator:
             print(f"✅ Found standard coverage report already in {self.reports_dir}")
             return True
 
-        print("ℹ️  No standard htmlcov found - VS Code may not have generated it yet")
+        print("ℹ️  No standard htmlcov found - VS Code may not have generated it yet")  # noqa: RUF001
         return False
 
     def run_integration(self) -> bool:

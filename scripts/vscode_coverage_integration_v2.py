@@ -153,7 +153,7 @@ class VSCodeCoverageIntegration:
         print(f"📊 Coverage status: {message}")
 
         if not fresh:
-            print("ℹ️ No fresh coverage data found")
+            print("ℹ️ No fresh coverage data found")  # noqa: RUF001
             return False
 
         # Ensure all needed files exist
@@ -192,7 +192,7 @@ class VSCodeCoverageIntegration:
                         last_mtime = current_mtime
                         print("\n👀 Resuming watch mode...")
 
-                time.sleep(2)  # Check every 2 seconds
+                time.sleep(2)  # noqa: S110 - Coverage file change monitoring interval
 
         except KeyboardInterrupt:
             print("\n👋 Stopping coverage watcher")
@@ -214,7 +214,7 @@ def main():
     elif args.manual or args.force:
         # Override age check if forced
         if args.force:
-            integration.is_fresh_coverage_data = lambda max_age=300: (True, "Forced update")
+            integration.is_fresh_coverage_data = lambda max_age=300: (True, "Forced update")  # noqa: ARG005
         integration.update_reports()
     else:
         integration.update_reports()

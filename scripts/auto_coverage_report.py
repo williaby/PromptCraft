@@ -65,12 +65,12 @@ def wait_for_vscode_completion(max_wait=10):
         # Check if we have the basic files VS Code should generate
         if files["coverage_xml"] and files["junit_xml"]:
             # Wait an additional second for file movement to complete
-            time.sleep(1)
+            time.sleep(1)  # noqa: S110 - Required for VS Code file synchronization
             print(f"✅ Coverage data detected after {i+1} seconds")
             return True
 
         print(f"   Checking... ({i+1}/{max_wait})")
-        time.sleep(1)
+        time.sleep(1)  # noqa: S110 - Polling interval for VS Code coverage generation
 
     print(f"⚠️  Timeout after {max_wait} seconds - proceeding with available data")
     return False
