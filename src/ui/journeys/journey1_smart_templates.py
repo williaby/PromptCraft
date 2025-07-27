@@ -27,7 +27,7 @@ class Journey1SmartTemplates(LoggerMixin):
     - Model attribution and cost tracking
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.supported_file_types = [".txt", ".md", ".pdf", ".docx", ".csv", ".json"]
         self.max_file_size = 10 * 1024 * 1024  # 10MB
@@ -430,7 +430,7 @@ You are a professional communication specialist helping to create clear, effecti
         self,
         original_prompt: str,
         breakdown: dict[str, str],
-        file_sources: list[dict[str, Any]] = None,
+        file_sources: list[dict[str, Any]] | None = None,
     ) -> str:
         """
         Enhanced prompt method that works with breakdown data (compatibility method).
@@ -975,7 +975,7 @@ Raw Content:
                 "error": str(e),
             }
 
-    def create_breakdown(self, input_text: str, file_sources: list[dict[str, Any]] = None) -> dict[str, str]:
+    def create_breakdown(self, input_text: str, file_sources: list[dict[str, Any]] | None = None) -> dict[str, str]:
         """
         Create a comprehensive breakdown of the input for processing using C.R.E.A.T.E. framework.
 

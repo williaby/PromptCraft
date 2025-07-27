@@ -257,7 +257,7 @@ class OpenRouterClient(MCPClientInterface):
             logger.error(f"Error during OpenRouter disconnect: {e}")
             return False
 
-    def health_check(self) -> MCPHealthStatus:
+    async def health_check(self) -> MCPHealthStatus:
         """
         Perform basic health check on OpenRouter connection.
 

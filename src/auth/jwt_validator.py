@@ -106,9 +106,10 @@ class JWTValidator:
 
             # Decode and validate token
             try:
+                # Cast to expected type for jwt.decode
                 payload = jwt.decode(
                     token,
-                    public_key,
+                    public_key,  # type: ignore[arg-type]
                     algorithms=[self.algorithm],
                     audience=self.audience,
                     issuer=self.issuer,

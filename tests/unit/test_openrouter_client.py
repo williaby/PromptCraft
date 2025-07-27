@@ -880,7 +880,7 @@ class TestOpenRouterClientAdditionalCoverage:
             assert "error" in validation
             assert "empty" in validation["error"].lower()
 
-    def test_health_check_healthy(self):
+    async def test_health_check_healthy(self):
         """Test health check when client is healthy."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
@@ -892,14 +892,14 @@ class TestOpenRouterClientAdditionalCoverage:
             client.error_count = 0
             client.last_successful_request = time.time() - 30  # 30 seconds ago
 
-            health = client.health_check()
+            health = await client.health_check()
 
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 0
             assert "HEALTHY" in health.metadata["status"]
             assert "healthy" in health.metadata["message"].lower()
 
-    def test_health_check_unhealthy_disconnected(self):
+    async def test_health_check_unhealthy_disconnected(self):
         """Test health check when client is disconnected."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
@@ -909,13 +909,13 @@ class TestOpenRouterClientAdditionalCoverage:
             client = OpenRouterClient()
             client.connection_state = MCPConnectionState.DISCONNECTED
 
-            health = client.health_check()
+            health = await client.health_check()
 
             assert health.connection_state == MCPConnectionState.DISCONNECTED
             assert "UNHEALTHY" in health.metadata["status"]
             assert "not connected" in health.metadata["message"].lower()
 
-    def test_health_check_degraded_high_errors(self):
+    async def test_health_check_degraded_high_errors(self):
         """Test health check when client has high error count."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
@@ -926,14 +926,14 @@ class TestOpenRouterClientAdditionalCoverage:
             client.connection_state = MCPConnectionState.CONNECTED
             client.error_count = 15  # High error count
 
-            health = client.health_check()
+            health = await client.health_check()
 
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 15
             assert "DEGRADED" in health.metadata["status"]
             assert "error count" in health.metadata["message"].lower()
 
-    def test_health_check_degraded_old_request(self):
+    async def test_health_check_degraded_old_request(self):
         """Test health check when last successful request is old."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
@@ -945,7 +945,7 @@ class TestOpenRouterClientAdditionalCoverage:
             client.error_count = 0
             client.last_successful_request = time.time() - 3700  # Over an hour ago
 
-            health = client.health_check()
+            health = await client.health_check()
 
             assert health.connection_state == MCPConnectionState.CONNECTED
             assert health.error_count == 0

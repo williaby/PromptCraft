@@ -51,7 +51,7 @@ class JWKSClient:
         cached_jwks = self._cache.get("jwks")
         if cached_jwks is not None:
             logger.debug("Retrieved JWKS from cache")
-            return cached_jwks
+            return dict(cached_jwks)  # Cast to dict to satisfy type checker
 
         # Fetch from endpoint
         try:
@@ -110,7 +110,7 @@ class JWKSClient:
         for key in jwks["keys"]:
             if key.get("kid") == kid:
                 logger.debug(f"Found key with kid: {kid}")
-                return key
+                return dict(key)  # Cast to dict to satisfy type checker
 
         logger.warning(f"Key with kid '{kid}' not found in JWKS")
         return None
