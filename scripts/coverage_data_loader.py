@@ -14,11 +14,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-try:
-    import defusedxml.ElementTree as ET
-except ImportError:
-    # Fallback to standard library with security note
-    import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET  # noqa: N817
 
 
 class CoverageDataLoader:
@@ -56,7 +52,9 @@ class CoverageDataLoader:
                 try:
                     import subprocess
 
-                    result = subprocess.run(
+                    # Security: Using hardcoded command with controlled arguments
+                    # No user input in command args, cwd restricted to project_root
+                    subprocess.run(  # noqa: S603
                         ["poetry", "run", "coverage", "xml"],
                         cwd=self.project_root,
                         check=True,

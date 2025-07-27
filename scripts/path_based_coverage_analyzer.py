@@ -439,6 +439,26 @@ class PathBasedCoverageAnalyzer:
         by_type_index_absolute = (self.output_dir / "by-type" / "index.html").resolve()
         standard_dir_absolute = (self.output_dir / "standard").resolve()
 
+        # Generate table rows first to avoid executable code in f-string template
+        table_rows = ""
+        for file_data in sorted_files:
+            # Create permanent file:// link to detailed coverage if available
+            if file_data.detailed_link:
+                detailed_file_absolute = (standard_dir_absolute / file_data.detailed_link).resolve()
+                file_link = f'<a href="file://{detailed_file_absolute}" class="file-link">{file_data.file_path}</a>'
+            else:
+                file_link = file_data.file_path
+
+            file_coverage_class = self._get_coverage_class(file_data.coverage_percent)
+
+            table_rows += f"""
+                <tr>
+                    <td>{file_link}</td>
+                    <td>{file_data.statements}</td>
+                    <td>{file_data.missing}</td>
+                    <td class="coverage-{file_coverage_class}">{file_data.coverage_percent:.1f}%</td>
+                </tr>"""
+
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -537,27 +557,7 @@ class PathBasedCoverageAnalyzer:
                     <th onclick="sortTable(3)">Coverage</th>
                 </tr>
             </thead>
-            <tbody>"""
-
-        for file_data in sorted_files:
-            # Create permanent file:// link to detailed coverage if available
-            if file_data.detailed_link:
-                detailed_file_absolute = (standard_dir_absolute / file_data.detailed_link).resolve()
-                file_link = f'<a href="file://{detailed_file_absolute}" class="file-link">{file_data.file_path}</a>'
-            else:
-                file_link = file_data.file_path
-
-            file_coverage_class = self._get_coverage_class(file_data.coverage_percent)
-
-            html_content += f"""
-                <tr>
-                    <td>{file_link}</td>
-                    <td>{file_data.statements}</td>
-                    <td>{file_data.missing}</td>
-                    <td class="coverage-{file_coverage_class}">{file_data.coverage_percent:.1f}%</td>
-                </tr>"""
-
-        html_content += f"""
+            <tbody>{table_rows}
             </tbody>
         </table>
 
@@ -604,8 +604,6 @@ class PathBasedCoverageAnalyzer:
     </script>
 </body>
 </html>"""
-
-        return html_content
 
     def _generate_overview_index(self, test_analyses: dict[str, TestTypeAnalysis], by_type_dir: Path) -> None:
         """Generate overview index of all test types with file:// URLs for file explorer compatibility."""
@@ -753,8 +751,8 @@ class PathBasedCoverageAnalyzer:
             overall_coverage = weighted_coverage / total_files
 
         # Pre-calculate file paths to avoid inline operations in f-strings
-        standard_report_path = (self.output_dir / "standard" / "index.html").resolve()
-        by_type_report_path = (self.output_dir / "by-type" / "index.html").resolve()
+        standard_report_path = (self.output_dir / "standard" / "index.html").resolve()  # noqa: F841
+        by_type_report_path = (self.output_dir / "by-type" / "index.html").resolve()  # noqa: F841
 
         html_content = f"""<!DOCTYPE html>
 <html lang="en">

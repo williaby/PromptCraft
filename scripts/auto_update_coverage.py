@@ -40,7 +40,8 @@ def run_coverage_automation():
     # Try the new v2 system first
     try:
         print("🚀 Running new modular automation system...")
-        result = subprocess.run(
+        # Security: Using sys.executable and hardcoded script path, cwd controlled
+        result = subprocess.run(  # noqa: S603
             [sys.executable, "scripts/simplified_coverage_automation_v2.py", "--force"],
             check=False,
             cwd=project_root,
@@ -58,7 +59,8 @@ def run_coverage_automation():
     # Fallback to original system
     try:
         print("🔄 Running original automation system...")
-        result = subprocess.run(
+        # Security: Using sys.executable and hardcoded script path, cwd controlled
+        result = subprocess.run(  # noqa: S603
             [sys.executable, "scripts/simplified_coverage_automation.py", "--force"],
             check=False,
             cwd=project_root,

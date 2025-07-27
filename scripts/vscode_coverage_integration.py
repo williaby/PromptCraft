@@ -26,11 +26,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-try:
-    import defusedxml.ElementTree as ET  # noqa: N817
-except ImportError:
-    # Fallback to standard library with security note
-    import xml.etree.ElementTree as ET  # noqa: N817
+from defusedxml import ElementTree as ET  # noqa: N817
 
 
 class VSCodeCoverageIntegrator:

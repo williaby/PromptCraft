@@ -257,14 +257,16 @@ class TestTypeSlicer:
 
             # Build query to get coverage for these specific contexts
             # Use parameterized placeholders to prevent SQL injection
-            context_placeholders = ",".join(["?" for _ in test_contexts])
-            query = f"""
-                SELECT f.path, lb.numbits, c.context
-                FROM line_bits lb
-                JOIN file f ON lb.file_id = f.id
-                JOIN context c ON lb.context_id = c.id
-                WHERE c.context IN ({context_placeholders})
-            """  # noqa: S608 - Uses parameterized placeholders, not user input
+            context_placeholders = ",".join("?" for _ in test_contexts)
+            # Build query safely - context_placeholders contains only "?" strings
+            query_base = (
+                "SELECT f.path, lb.numbits, c.context "
+                "FROM line_bits lb "
+                "JOIN file f ON lb.file_id = f.id "
+                "JOIN context c ON lb.context_id = c.id "
+                "WHERE c.context IN "
+            )
+            query = query_base + f"({context_placeholders})"  # noqa: S608
 
             cursor.execute(query, test_contexts)
             results = cursor.fetchall()

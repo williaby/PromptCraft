@@ -631,5 +631,6 @@ if __name__ == "__main__":
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as tmp_file:
         tmp_file.write(main_html)
+        tmp_file.flush()  # Ensure data is written to disk before accessing file
         sample_file = Path(tmp_file.name)
     print(f"✅ Test HTML generated: {sample_file}")

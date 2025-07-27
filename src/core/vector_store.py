@@ -167,6 +167,8 @@ class VectorDocument(BaseModel):
 
     id: str = Field(description="Unique document identifier")
     content: str = Field(description="Document content text")
+    # nosemgrep: python.lang.correctness.return-not-in-function
+    # False positive: lambda in Pydantic Field default_factory is valid syntax
     embedding: EmbeddingVector = Field(
         default_factory=lambda: [0.0] * DEFAULT_VECTOR_DIMENSIONS,
         description="Vector embedding",
@@ -1109,8 +1111,8 @@ class VectorStoreFactory:
         if isinstance(store_type, str):
             try:
                 store_type = VectorStoreType(store_type)
-            except ValueError:
-                raise ValueError(f"Unknown vector store type: {store_type}")
+            except ValueError as e:
+                raise ValueError(f"Unknown vector store type: {store_type}") from e
 
         if store_type == VectorStoreType.MOCK:
             return EnhancedMockVectorStore(config)
