@@ -190,6 +190,7 @@ For more information, see: https://github.com/your-org/PromptCraft
 
             # Validate Poetry environment
             try:
+                # Security: subprocess used for controlled CLI coverage commands - no user input processed
                 import subprocess
 
                 result = subprocess.run(

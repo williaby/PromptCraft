@@ -22,6 +22,8 @@ Usage:
 """
 
 import concurrent.futures
+
+# Security: subprocess used for controlled coverage enhancement operations - no user input processed
 import subprocess
 import sys
 from pathlib import Path

@@ -17,6 +17,8 @@ Usage:
 """
 
 import argparse
+
+# Security: subprocess used for controlled coverage workflow operations - no user input processed
 import subprocess
 import sys
 

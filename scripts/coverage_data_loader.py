@@ -50,6 +50,7 @@ class CoverageDataLoader:
             if (self.project_root / ".coverage").exists():
                 print("📊 VS Code generated .coverage but no XML - generating XML automatically...")
                 try:
+                    # Security: subprocess used for controlled coverage commands - no user input processed
                     import subprocess
 
                     # Security: Using hardcoded command with controlled arguments

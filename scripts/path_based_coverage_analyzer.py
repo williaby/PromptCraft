@@ -342,10 +342,8 @@ class PathBasedCoverageAnalyzer:
 
     def log(self, message: str) -> None:
         """Log message if verbose mode is enabled."""
-        if self.verbose:
-            print(message)
-        else:
-            print(message)  # For now, always print since this is the main output
+        # For now, always print since this is the main output
+        print(message)
 
     def analyze_coverage_by_test_types(self) -> dict[str, TestTypeAnalysis]:
         """Perform the main analysis to classify coverage by test types."""

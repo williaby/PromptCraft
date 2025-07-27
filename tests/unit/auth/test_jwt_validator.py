@@ -701,7 +701,7 @@ class TestJWTValidatorValidateTokenFormat:
         jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client)
 
-        token = ""  # noqa: S105
+        token = ""
 
         result = validator.validate_token_format(token)
         assert result is False

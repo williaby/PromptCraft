@@ -12,6 +12,8 @@ Usage:
 """
 
 import argparse
+
+# Security: subprocess used for controlled test type coverage generation - no user input processed
 import subprocess
 from pathlib import Path
 

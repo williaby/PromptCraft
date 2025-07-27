@@ -25,6 +25,8 @@ Usage:
 import argparse
 import os
 import signal
+
+# Security: subprocess used for controlled file monitoring operations - no user input processed
 import subprocess
 import sys
 import time

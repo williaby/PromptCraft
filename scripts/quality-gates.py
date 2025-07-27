@@ -16,11 +16,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    import defusedxml.ElementTree as ET  # noqa: N817
-except ImportError:
-    # Fallback to standard library with security note
-    import xml.etree.ElementTree as ET  # noqa: N817
+import defusedxml.ElementTree as ET  # noqa: N817
 
 
 @dataclass

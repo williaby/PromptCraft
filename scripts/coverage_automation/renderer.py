@@ -4,6 +4,8 @@ Handles generation of enhanced HTML reports with proper security.
 """
 
 import json
+
+# Security: subprocess used for controlled file processing commands - no user input processed
 import subprocess
 import time
 from datetime import datetime
@@ -422,7 +424,13 @@ class CoverageRenderer:
             "partial": total_partial,
         }
 
-    def _generate_test_type_html(self, test_type: str, info: dict, filtered_files: dict, totals: dict) -> str:
+    def _generate_test_type_html(
+        self,
+        test_type: str,  # noqa: ARG002
+        info: dict,
+        filtered_files: dict,  # noqa: ARG002
+        totals: dict,  # noqa: ARG002
+    ) -> str:
         """Generate HTML content for test type report with security."""
         # This is a simplified version - the full implementation would include
         # all the HTML generation with proper sanitization

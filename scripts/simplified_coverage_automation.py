@@ -18,6 +18,8 @@ Usage:
 
 import json
 import re
+
+# Security: subprocess used for controlled coverage automation - no user input processed
 import subprocess
 import time
 from dataclasses import dataclass
@@ -25,7 +27,7 @@ from datetime import datetime
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 
@@ -157,7 +159,7 @@ class SimplifiedCoverageAutomation:
     """Simplified coverage automation leveraging codecov.yaml structure."""
 
     # Compiled regex patterns for security and performance
-    COMPILED_PATTERNS = {
+    COMPILED_PATTERNS: ClassVar[dict[str, re.Pattern[str]]] = {
         # Hardened patterns with negative lookbehind to prevent conflicts
         "src_from_import": re.compile(r"from\s+src\.([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+"),
         "src_direct_import": re.compile(r"import\s+src\.([a-zA-Z_][a-zA-Z0-9_.]*?)(?:\s|$|,)"),
@@ -185,6 +187,7 @@ class SimplifiedCoverageAutomation:
             coverage_files = list(self.project_root.glob(".coverage.*"))
             if coverage_files:
                 # Use the most recent one
+                # nosemgrep: python.lang.correctness.return-in-init.return-in-init
                 self.coverage_file = max(coverage_files, key=lambda f: f.stat().st_mtime)
 
         # Test type mapping using configuration with display metadata
@@ -242,9 +245,9 @@ class SimplifiedCoverageAutomation:
                 raise TypeError(f"test_type must be str, got {type(value).__name__}: {value}")
             if name == "coverage_data" and not isinstance(value, dict):
                 raise TypeError(f"coverage_data must be dict, got {type(value).__name__}")
-            if name == "contexts" and not isinstance(value, (set, frozenset)):
+            if name == "contexts" and not isinstance(value, set | frozenset):
                 raise TypeError(f"contexts must be set or frozenset, got {type(value).__name__}")
-            if name == "file_path" and not isinstance(value, (str, Path)):
+            if name == "file_path" and not isinstance(value, str | Path):
                 raise TypeError(f"file_path must be str or Path, got {type(value).__name__}")
 
     def detect_vscode_coverage_run(self) -> bool:
@@ -366,7 +369,7 @@ class SimplifiedCoverageAutomation:
 
             # Generate JSON data for client-side filtering
             try:
-                json_result = subprocess.run(["poetry", "run", "coverage", "json"], cwd=self.project_root, check=True)
+                subprocess.run(["poetry", "run", "coverage", "json"], cwd=self.project_root, check=True)
             except subprocess.CalledProcessError as e:
                 # Check if JSON was still generated despite the error
                 coverage_json_path = self.project_root / "coverage.json"
@@ -516,11 +519,7 @@ class SimplifiedCoverageAutomation:
                     branch_coverage = type_data["branch"]
                     total_branches = type_data["total_branches"]
 
-                    coverage_class = (
-                        "coverage-high"
-                        if statement_coverage >= 80
-                        else "coverage-medium" if statement_coverage >= 60 else "coverage-low"
-                    )
+                    # Coverage class determined inline in template for direct use
 
                     branch_info = f" • {branch_coverage:.1f}% branches" if total_branches > 0 else ""
 
@@ -1149,8 +1148,6 @@ class SimplifiedCoverageAutomation:
 
                     # Also add CSS classes to table rows based on coverage
                     if coverage_data and "files" in coverage_data:
-                        files_data = coverage_data["files"]
-
                         # Update table rows with CSS classes
                         import re
 
@@ -1158,7 +1155,6 @@ class SimplifiedCoverageAutomation:
 
                         def update_row(match):
                             full_row = match.group(1)
-                            file_path = match.group(2)
                             coverage_str = match.group(3)
 
                             try:
@@ -1197,7 +1193,7 @@ class SimplifiedCoverageAutomation:
 
         return ""
 
-    @lru_cache(maxsize=32)
+    @lru_cache(maxsize=32)  # noqa: B019
     def _get_test_target_mapping(self, test_type: str) -> frozenset[str]:
         """
         Get the set of source files that are actually tested by the given test type.
@@ -1231,8 +1227,8 @@ class SimplifiedCoverageAutomation:
 
         return frozenset(test_targets)
 
-    @lru_cache(maxsize=256)
-    def _analyze_test_file_targets(self, test_file_path_str: str) -> frozenset[str]:
+    @lru_cache(maxsize=256)  # noqa: B019
+    def _analyze_test_file_targets(self, test_file_path_str: str) -> frozenset[str]:  # noqa: PLR0915
         """
         Analyze a test file to determine which source files it targets.
         This looks at import statements and test structure to infer targets.
@@ -1385,10 +1381,7 @@ class SimplifiedCoverageAutomation:
             return False
 
         # Only allow alphanumeric, dots, and underscores using compiled pattern
-        if not self.COMPILED_PATTERNS["valid_module"].match(import_path):
-            return False
-
-        return True
+        return bool(self.COMPILED_PATTERNS["valid_module"].match(import_path))
 
     def run_automation(self):
         """Main automation workflow."""
@@ -1463,7 +1456,7 @@ class SimplifiedCoverageAutomation:
 
         return failed_tests
 
-    def _generate_gap_analysis_html(self, files: dict, failed_tests: dict[str, list[str]]) -> str:
+    def _generate_gap_analysis_html(self, files: dict, failed_tests: dict[str, list[str]]) -> str:  # noqa: PLR0915
         """Generate the HTML content for test gap analysis with file-centric structure."""
 
         # File patterns by test type for analysis

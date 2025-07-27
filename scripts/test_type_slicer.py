@@ -267,8 +267,10 @@ class TestTypeSlicer:
                 "WHERE c.context IN "
             )
             query = query_base + f"({context_placeholders})"  # noqa: S608
-
-            cursor.execute(query, test_contexts)
+            cursor.execute(
+                query,
+                test_contexts,
+            )  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
             results = cursor.fetchall()
 
             # Process results to build file coverage data

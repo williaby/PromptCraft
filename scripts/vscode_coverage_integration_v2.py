@@ -17,6 +17,8 @@ Usage:
 """
 
 import argparse
+
+# Security: subprocess used for controlled VS Code coverage integration - no user input processed
 import subprocess
 import sys
 import time
