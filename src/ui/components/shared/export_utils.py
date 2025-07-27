@@ -8,7 +8,6 @@ and session information.
 
 import json
 import logging
-import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -246,7 +245,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             logger.error("Error exporting as JSON: %s", e)
             return json.dumps({"error": f"Export failed: {e}"}, indent=2)
 
-    def extract_code_blocks(self, content: str) -> list[dict[str, str]]:
+    def extract_code_blocks(self, content: str) -> list[dict[str, Any]]:
         """
         Extract code blocks from content with enhanced detection.
 
@@ -257,27 +256,37 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             List of code block dictionaries with language and content
         """
         # Use string operations instead of regex to prevent ReDoS attacks completely
-        # Split content on ``` and process pairs as code blocks
-        parts = content.split("```")
+        # Find all ``` positions and pair them as opening/closing delimiters
+        positions = []
+        start = 0
+        while True:
+            pos = content.find("```", start)
+            if pos == -1:
+                break
+            positions.append(pos)
+            start = pos + 3
+
         matches = []
-        
-        # Process pairs of ``` delimiters (odd indices are code blocks)
-        for i in range(1, len(parts), 2):
-            if i + 1 < len(parts):  # Ensure we have both opening and closing
-                block_content = parts[i]
-                lines = block_content.strip().split('\n', 1)
-                
+        # Process pairs of positions (opening and closing delimiters)
+        for i in range(0, len(positions) - 1, 2):
+            if i + 1 < len(positions):
+                start_pos = positions[i] + 3  # After opening ```
+                end_pos = positions[i + 1]  # Before closing ```
+                block_content = content[start_pos:end_pos]
+
+                lines = block_content.strip().split("\n", 1)
+
                 # First line might contain language, rest is code
                 if len(lines) > 1:
                     potential_lang = lines[0].strip()
                     code_content = lines[1]
                     # Simple validation: language should be alphanumeric/dash only
-                    if potential_lang and all(c.isalnum() or c in '-_' for c in potential_lang):
+                    if potential_lang and all(c.isalnum() or c in "-_" for c in potential_lang):
                         matches.append((potential_lang, code_content))
                     else:
-                        matches.append(('', block_content.strip()))
+                        matches.append(("", block_content.strip()))
                 else:
-                    matches.append(('', block_content.strip()))
+                    matches.append(("", block_content.strip()))
 
         code_blocks = []
         for i, (language, code) in enumerate(matches):
@@ -306,7 +315,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return code_blocks
 
-    def _detect_language(self, code: str) -> str:
+    def _detect_language(self, code: str) -> str:  # noqa: PLR0911
         """Detect programming language from code content."""
         # Simple language detection using string operations (safer than regex)
         code_lower = code.lower()
@@ -330,7 +339,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             return "yaml"
         return "text"
 
-    def _extract_comments(self, code: str, language: str) -> list[str]:
+    def _extract_comments(self, code: str, language: str) -> list[str]:  # noqa: PLR0912
         """Extract comments from code based on language."""
         comments = []
 
@@ -410,14 +419,20 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         if "import " in code:
             complexity_indicators += 1
 
+        # Complexity thresholds
+        SIMPLE_LINE_THRESHOLD = 10  # noqa: N806
+        COMPLEX_LINE_THRESHOLD = 20  # noqa: N806
+        MAX_SIMPLE_COMPLEXITY = 1  # noqa: N806
+        MAX_MODERATE_COMPLEXITY = 3  # noqa: N806
+
         # Assess based on lines and complexity indicators
-        if lines < 10 and complexity_indicators <= 1:
+        if lines < SIMPLE_LINE_THRESHOLD and complexity_indicators <= MAX_SIMPLE_COMPLEXITY:
             return "simple"
-        if lines >= 20 or complexity_indicators > 3:
+        if lines >= COMPLEX_LINE_THRESHOLD or complexity_indicators > MAX_MODERATE_COMPLEXITY:
             return "complex"
         return "moderate"
 
-    def format_code_blocks_for_export(self, code_blocks: list[dict[str, str]]) -> str:
+    def format_code_blocks_for_export(self, code_blocks: list[dict[str, Any]]) -> str:
         """
         Format code blocks for export with enhanced metadata.
 
@@ -446,7 +461,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 • Total blocks: {len(code_blocks)}
 • Total lines: {total_lines}
 • Languages: {', '.join(languages)}
-• Extracted: {len([b for b in code_blocks if b.get('has_functions')])} blocks with functions
+• Extracted: {len([b for b in code_blocks if b.get('has_functions', False)])} blocks with functions
 
 """
 
@@ -485,7 +500,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return export_content
 
-    def copy_code_as_markdown(self, code_blocks: list[dict[str, str]]) -> str:
+    def copy_code_as_markdown(self, code_blocks: list[dict[str, Any]]) -> str:
         """
         Format code blocks as markdown for copying with enhanced metadata.
 
@@ -553,7 +568,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return markdown_content.strip()
 
-    def prepare_download_file(self, content: str, filename: str, format_type: str = "txt") -> str:
+    def prepare_download_file(self, content: str, filename: str, format_type: str = "txt") -> str:  # noqa: ARG002
         """
         Prepare content for download.
 
