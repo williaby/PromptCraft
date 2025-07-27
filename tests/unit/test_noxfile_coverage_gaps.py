@@ -157,8 +157,10 @@ class TestNoxFileSessionsCoverageGaps:
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
-        # Verify metrics dashboard script execution
-        mock_session.run.assert_any_call("python", "test_metrics_dashboard.py")
+        # Verify warning log when test_metrics_dashboard.py doesn't exist
+        mock_session.log.assert_any_call(
+            "Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.",
+        )
 
     def test_tests_unit_session(self, mock_session):
         """Test tests_unit() session with 0% coverage."""
@@ -635,8 +637,12 @@ def test_noxfile_sessions_parametrized(session_name, session_func):
     # Verify poetry install was called for all sessions
     mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
 
-    # Verify at least one more command was executed
-    assert mock_session.run.call_count >= 2
+    # Verify at least one more command was executed (except metrics which is conditional)
+    if session_name == "metrics":
+        # metrics session may only run poetry install if test_metrics_dashboard.py doesn't exist
+        assert mock_session.run.call_count >= 1
+    else:
+        assert mock_session.run.call_count >= 2
 
 
 class TestNoxFileConstants:

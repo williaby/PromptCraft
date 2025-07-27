@@ -2606,6 +2606,9 @@ typer==0.16.0 ; python_version >= "3.11" and python_version < "3.13" \
 types-aiofiles==24.1.0.20250606 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:48f9e26d2738a21e0b0f19381f713dcdb852a36727da8414b1ada145d40a18fe \
     --hash=sha256:e568c53fb9017c80897a9aa15c74bf43b7ee90e412286ec1e0912b6e79301aee
+types-cachetools==6.1.0.20250717 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:4acc8e25de9f5f84dd176ea81dcffa7cb24393869bb2e59e692dfd0139a1e66f \
+    --hash=sha256:bba4b8d42262460d24e570097d2d9040e60311934603caa642efd971f3658ed0
 types-python-dateutil==2.9.0.20250516 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:13e80d6c9c47df23ad773d54b2826bd52dbbb41be87c3f339381c1700ad21ee5 \
     --hash=sha256:2b2b3f57f9c6a61fba26a9c0ffb9ea5681c9b83e69cd897c6b5f668d9c0cab93
