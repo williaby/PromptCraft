@@ -1668,8 +1668,15 @@ If this error persists:
         if not text_input:
             return "Error: Invalid input provided."
 
-        # Process the request (mock implementation for testing)
-        return self._process_journey1(text_input, session_id)
+        # Update session activity and request count
+        self.update_session_activity(session_id)
+
+        try:
+            # Process the request (mock implementation for testing)
+            return self._process_journey1(text_input, session_id)
+        except Exception as e:
+            # Graceful error handling for fallback scenarios
+            return f"Processing temporarily unavailable. Please try again later. Error: {e!s}"
 
     def handle_journey2_search(self, query: str, session_id: str) -> str:
         """Handle Journey 2 search requests with rate limiting."""
