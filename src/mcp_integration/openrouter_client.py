@@ -259,7 +259,39 @@ class OpenRouterClient(MCPClientInterface):
 
     async def health_check(self) -> MCPHealthStatus:
         """
-        Perform comprehensive health check on OpenRouter connection.
+        Perform basic health check on OpenRouter connection.
+
+        Returns:
+            MCPHealthStatus: Current health status and metrics
+        """
+        # Determine health status based on connection state and error count
+        if self.connection_state == MCPConnectionState.DISCONNECTED:
+            status = "UNHEALTHY"
+            message = "OpenRouter client is not connected"
+        elif self.error_count > 10:  # High error threshold
+            status = "DEGRADED"
+            message = f"OpenRouter client has high error count: {self.error_count}"
+        elif self.last_successful_request and (time.time() - self.last_successful_request) > 3600:  # 1 hour
+            status = "DEGRADED"
+            message = "Last successful request was over an hour ago"
+        else:
+            status = "HEALTHY"
+            message = "OpenRouter client is healthy"
+
+        return MCPHealthStatus(
+            connection_state=self.connection_state,
+            error_count=self.error_count,
+            last_successful_request=self.last_successful_request,
+            metadata={
+                "service": "openrouter",
+                "status": status,
+                "message": message,
+            },
+        )
+
+    async def async_health_check(self) -> MCPHealthStatus:
+        """
+        Perform comprehensive async health check on OpenRouter connection.
 
         Returns:
             MCPHealthStatus: Current health status and metrics
@@ -322,30 +354,55 @@ class OpenRouterClient(MCPClientInterface):
                 },
             )
 
-    async def validate_query(self, query: str) -> dict[str, Any]:
+    async def validate_query(self, query: str | None) -> dict[str, Any]:
         """
         Validate and sanitize user query for security.
 
         Args:
-            query: Raw user query string
+            query: Raw user query string (can be None)
 
         Returns:
             Dict containing validation results with keys:
                 - is_valid: bool
                 - sanitized_query: str
                 - potential_issues: List[str]
+                - error: str (if validation fails)
 
         Raises:
             MCPError: If validation service fails
         """
         try:
             potential_issues = []
+
+            # Handle None or empty queries
+            if query is None:
+                return {
+                    "is_valid": False,
+                    "sanitized_query": "",
+                    "potential_issues": ["Query is None"],
+                    "error": "Query cannot be empty or None",
+                }
+
+            if not query.strip():
+                return {
+                    "is_valid": False,
+                    "sanitized_query": "",
+                    "potential_issues": ["Query is empty"],
+                    "error": "Query cannot be empty or None",
+                }
+
             sanitized_query = query.strip()
 
             # Basic security validations
             if len(query) > MAX_QUERY_LENGTH:  # 50K character limit
                 potential_issues.append("Query length exceeds recommended limit")
                 sanitized_query = query[:MAX_QUERY_LENGTH]
+                return {
+                    "is_valid": False,
+                    "sanitized_query": sanitized_query,
+                    "potential_issues": potential_issues,
+                    "error": "Query is too long",
+                }
 
             # Check for potential injection patterns
             suspicious_patterns = [
@@ -374,11 +431,16 @@ class OpenRouterClient(MCPClientInterface):
 
             is_valid = len(potential_issues) == 0
 
-            return {
+            result = {
                 "is_valid": is_valid,
                 "sanitized_query": sanitized_query,
                 "potential_issues": potential_issues,
             }
+
+            if not is_valid:
+                result["error"] = "Query validation failed"
+
+            return result
 
         except Exception as e:
             logger.error(f"Query validation failed: {e}")

@@ -211,7 +211,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         self.error_count = 0
         self.last_successful_request: float | None = None
 
-        # Request tracking for round-robin
+        # Request tracking for round-robin and unique request IDs
         self._request_counter = 0
 
         self.logger.info(
@@ -416,7 +416,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Raises:
             MCPError: If validation fails on all services
         """
-        request_id = f"validate_{int(time.time() * 1000)}"
+        # Generate unique request ID using both timestamp and counter for rapid requests
+        self._request_counter += 1
+        request_id = f"validate_{int(time.time() * 1000)}_{self._request_counter}"
 
         # Make routing decision for validation
         routing_decision = self._make_routing_decision(request_id, "validation")
@@ -462,7 +464,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
             MCPError: If orchestration fails on all services
         """
         start_time = time.time()
-        request_id = f"orchestrate_{int(time.time() * 1000)}"
+        # Generate unique request ID using both timestamp and counter for rapid requests
+        self._request_counter += 1
+        request_id = f"orchestrate_{int(time.time() * 1000)}_{self._request_counter}"
 
         # Update metrics
         self.metrics.total_requests += 1
@@ -608,15 +612,22 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                         fallback_available=True,
                         request_id=request_id,
                     )
-            else:
-                # Route to MCP for remaining traffic
+                # OpenRouter unavailable, fallback to MCP for this gradual rollout request
                 return RoutingDecision(
                     service="mcp",
-                    reason=f"Gradual rollout: {hash_value} >= {self.openrouter_traffic_percentage}%",
-                    confidence=0.9,
-                    fallback_available=self._is_openrouter_available(),
+                    reason=f"Gradual rollout: {hash_value} < {self.openrouter_traffic_percentage}% but OpenRouter unavailable, using MCP fallback",
+                    confidence=0.7,
+                    fallback_available=False,
                     request_id=request_id,
                 )
+            # Route to MCP for remaining traffic
+            return RoutingDecision(
+                service="mcp",
+                reason=f"Gradual rollout: {hash_value} >= {self.openrouter_traffic_percentage}%",
+                confidence=0.9,
+                fallback_available=self._is_openrouter_available(),
+                request_id=request_id,
+            )
 
         # Apply routing strategy
         if self.strategy == RoutingStrategy.OPENROUTER_PRIMARY:
@@ -716,7 +727,6 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 fallback_available=True,
                 request_id=request_id,
             )
-        return None
 
     def _is_openrouter_available(self) -> bool:
         """Check if OpenRouter is available (circuit breaker and connection)."""

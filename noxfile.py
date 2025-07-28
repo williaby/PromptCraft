@@ -13,10 +13,150 @@ SRC_LOCATIONS = ["src", "tests", "noxfile.py", "scripts"]
 
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session):
-    """Run the test suite."""
-    args = session.posargs or ["--cov", "--cov-report=term-missing"]
+    """Run the full test suite (all layers)."""
+    args = session.posargs or ["--cov", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=80"]
     session.run("poetry", "install", "--with", "dev", external=True)
     session.run("pytest", *args)
+
+
+# ==========================================
+# LAYERED TESTING SESSIONS (Test Pyramid)
+# ==========================================
+
+
+@nox.session(python=PYTHON_VERSIONS)
+def unit(session):
+    """Run unit tests only (fast development cycle)."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "not component and not contract and not integration and not e2e and not perf and not chaos and not slow",
+        "--cov=src",
+        "--cov-branch",
+        "--cov-fail-under=80",
+        "-v",
+        *session.posargs,
+    )
+
+
+@nox.session
+def component(session):
+    """Run component tests (with mocks)."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "component",
+        "--cov=src",
+        "--cov-branch",
+        "--cov-fail-under=75",
+        "-v",
+        *session.posargs,
+    )
+
+
+@nox.session
+def integration(session):
+    """Run integration tests (slower, real services)."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "integration",
+        "--cov=src",
+        "--cov-branch",
+        "-v",
+        *session.posargs,
+    )
+
+
+@nox.session
+def e2e(session):
+    """Run end-to-end tests (full user journeys)."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "e2e",
+        "-v",
+        "--tb=short",
+        *session.posargs,
+    )
+
+
+@nox.session
+def perf(session):
+    """Run performance and load tests."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "perf or performance",  # Include legacy marker
+        "-v",
+        "--tb=short",
+        "--durations=10",
+        *session.posargs,
+    )
+
+
+@nox.session
+def security_tests(session):
+    """Run security assertion tests."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "security",
+        "-v",
+        *session.posargs,
+    )
+
+
+@nox.session
+def chaos_tests(session):
+    """Run chaos engineering tests."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "chaos",
+        "-v",
+        "--tb=short",
+        *session.posargs,
+    )
+
+
+@nox.session
+def fast(session):
+    """Fast development loop - exclude slow tests."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "not slow",
+        "--cov=src",
+        "--cov-branch",
+        "--cov-fail-under=75",  # Slightly lower for fast feedback
+        "--maxfail=5",
+        "-v",
+        *session.posargs,
+    )
+
+
+@nox.session
+def metrics(session):
+    """Generate test quality metrics dashboard."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+
+    # Check if metrics dashboard script exists before running
+    import pathlib  # noqa: PLC0415
+
+    script_path = pathlib.Path("test_metrics_dashboard.py")
+    if script_path.exists():
+        session.run("python", "test_metrics_dashboard.py")
+    else:
+        session.log(f"Warning: {script_path} not found. Skipping metrics dashboard generation.")
 
 
 @nox.session(python=["3.11"])
@@ -25,15 +165,18 @@ def tests_unit(session):
     session.run("poetry", "install", "--with", "dev", external=True)
     session.run(
         "pytest",
+        "-m",
+        "unit",
         "--cov=src",
+        "--cov-branch",
         "--cov-report=xml:coverage-unit.xml",
+        "--cov-report=json:coverage-unit.json",
         "--cov-report=term-missing",
-        "tests/unit",
         "-v",
     )
     # Upload to Codecov with unit flag if token is available
     if session.env.get("CODECOV_TOKEN"):
-        session.run("codecov", "-f", "coverage-unit.xml", "-F", "unit", external=True)
+        session.run("codecov", "-f", "coverage-unit.xml", "-F", "unit", "-n", "unit-tests", external=True)
 
 
 @nox.session(python=["3.11"])
@@ -42,15 +185,75 @@ def tests_integration(session):
     session.run("poetry", "install", "--with", "dev", external=True)
     session.run(
         "pytest",
+        "-m",
+        "integration",
         "--cov=src",
+        "--cov-branch",
         "--cov-report=xml:coverage-integration.xml",
+        "--cov-report=json:coverage-integration.json",
         "--cov-report=term-missing",
-        "tests/integration",
         "-v",
     )
     # Upload to Codecov with integration flag if token is available
     if session.env.get("CODECOV_TOKEN"):
-        session.run("codecov", "-f", "coverage-integration.xml", "-F", "integration", external=True)
+        session.run(
+            "codecov",
+            "-f",
+            "coverage-integration.xml",
+            "-F",
+            "integration",
+            "-n",
+            "integration-tests",
+            external=True,
+        )
+
+
+@nox.session(python=["3.11"])
+def tests_security(session):
+    """Run security tests with coverage flags for Codecov."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "security",
+        "--cov=src",
+        "--cov-branch",
+        "--cov-report=xml:coverage-security.xml",
+        "--cov-report=json:coverage-security.json",
+        "--cov-report=term-missing",
+        "-v",
+    )
+    # Upload to Codecov with security flag if token is available
+    if session.env.get("CODECOV_TOKEN"):
+        session.run("codecov", "-f", "coverage-security.xml", "-F", "security", "-n", "security-tests", external=True)
+
+
+@nox.session(python=["3.11"])
+def tests_fast(session):
+    """Run fast development cycle tests with coverage flags for Codecov."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run(
+        "pytest",
+        "-m",
+        "not slow",
+        "--cov=src",
+        "--cov-branch",
+        "--cov-report=xml:coverage-fast.xml",
+        "--cov-report=json:coverage-fast.json",
+        "--cov-report=term-missing",
+        "--maxfail=5",
+        "-v",
+    )
+    # Upload to Codecov with fast flag if token is available
+    if session.env.get("CODECOV_TOKEN"):
+        session.run("codecov", "-f", "coverage-fast.xml", "-F", "fast", "-n", "fast-tests", external=True)
+
+
+@nox.session(python=["3.11"])
+def codecov_analysis(session):
+    """Run comprehensive Codecov-enhanced test analysis."""
+    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("python", "codecov_analysis.py")
 
 
 @nox.session(python="3.11")

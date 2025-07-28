@@ -121,7 +121,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             True if path should be excluded, False otherwise
         """
         for excluded in self.excluded_paths:
-            if path.startswith(excluded):
+            # Exact match or prefix match with trailing slash
+            if path == excluded or path.startswith(excluded + "/"):
                 return True
         return False
 
@@ -302,6 +303,9 @@ def get_current_user(request: Request) -> AuthenticatedUser | None:
     Returns:
         AuthenticatedUser if authenticated, None otherwise
     """
+    # Handle case where request.state doesn't exist
+    if not hasattr(request, "state"):
+        return None
     return getattr(request.state, "authenticated_user", None)
 
 

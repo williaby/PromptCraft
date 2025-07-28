@@ -62,9 +62,11 @@ from src.core.vector_store import (
     AbstractVectorStore,
     EnhancedMockVectorStore,
     SearchParameters,
-    SearchResult as VectorSearchResult,
     SearchStrategy,
     VectorStoreFactory,
+)
+from src.core.vector_store import (
+    SearchResult as VectorSearchResult,
 )
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import WorkflowStep
@@ -225,7 +227,7 @@ class MockQueryCounselor:
 @dataclass
 class HydeProcessorConfig:
     """Configuration for HydeProcessor initialization."""
-    
+
     vector_store: "AbstractVectorStore | None" = None
     query_counselor: "MockQueryCounselor | None" = None
     specificity_threshold_high: float | None = None

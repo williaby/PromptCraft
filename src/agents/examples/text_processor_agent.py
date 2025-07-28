@@ -430,16 +430,18 @@ class TextProcessorAgent(BaseAgent):
         }
 
         words = text.lower().split()
-        positive_count = sum(1 for word in words if word in positive_words)
-        negative_count = sum(1 for word in words if word in negative_words)
+        # Clean punctuation from words before checking sentiment
+        cleaned_words = [word.strip(".,!?;:\"'()[]{}") for word in words]
+        positive_count = sum(1 for word in cleaned_words if word in positive_words)
+        negative_count = sum(1 for word in cleaned_words if word in negative_words)
 
         # Calculate sentiment score
         if positive_count > negative_count:
             sentiment = "positive"
-            score = min(0.9, 0.5 + (positive_count - negative_count) / len(words))
+            score = min(0.9, 0.5 + (positive_count - negative_count) / len(cleaned_words))
         elif negative_count > positive_count:
             sentiment = "negative"
-            score = max(0.1, 0.5 - (negative_count - positive_count) / len(words))
+            score = max(0.1, 0.5 - (negative_count - positive_count) / len(cleaned_words))
         else:
             sentiment = "neutral"
             score = 0.5
@@ -500,7 +502,7 @@ class TextProcessorAgent(BaseAgent):
         # Simplified Flesch Reading Ease approximation
         score = 206.835 - (1.015 * avg_sentence_length) - (84.6 * avg_word_length / 4.7)
 
-        return max(0, min(100, score))
+        return max(0.0, min(100.0, score))
 
     def _format_analysis(self, analysis: dict[str, Any]) -> str:
         """

@@ -64,6 +64,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from src.config.settings import ApplicationSettings
 from src.core.performance_optimizer import (
     cache_vector_search,
     monitor_performance,
@@ -166,7 +167,12 @@ class VectorDocument(BaseModel):
 
     id: str = Field(description="Unique document identifier")
     content: str = Field(description="Document content text")
-    embedding: EmbeddingVector = Field(description="Vector embedding")
+    # nosemgrep: python.lang.correctness.return-not-in-function
+    # False positive: lambda in Pydantic Field default_factory is valid syntax
+    embedding: EmbeddingVector = Field(
+        default_factory=lambda: [0.0] * DEFAULT_VECTOR_DIMENSIONS,
+        description="Vector embedding",
+    )
     metadata: DocumentMetadata = Field(default_factory=dict, description="Document metadata")
     collection: str = Field(default="default", description="Collection name")
     timestamp: float = Field(default_factory=time.time, description="Creation timestamp")
@@ -284,13 +290,14 @@ class AbstractVectorStore(ABC):
 
     async def _handle_circuit_breaker(self, operation_name: str) -> bool:
         """Check circuit breaker status before operations."""
-        if self._circuit_breaker_open:
-            if self._circuit_breaker_failures > CIRCUIT_BREAKER_THRESHOLD:
-                self.logger.warning("Circuit breaker is open, skipping %s operation", operation_name)
-                return False
-            # Try to reset circuit breaker
+        # Reset circuit breaker if failures are below threshold
+        if self._circuit_breaker_open and self._circuit_breaker_failures < CIRCUIT_BREAKER_THRESHOLD:
             self._circuit_breaker_open = False
-            self.logger.info("Attempting to reset circuit breaker for %s", operation_name)
+            self.logger.info("Circuit breaker reset - failures below threshold")
+
+        if self._circuit_breaker_open:
+            self.logger.warning("Circuit breaker is open, skipping %s operation", operation_name)
+            return False
         return True
 
     def _record_operation_success(self) -> None:
@@ -316,8 +323,9 @@ class EnhancedMockVectorStore(AbstractVectorStore):
     and comprehensive testing.
     """
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """Initialize enhanced mock vector store."""
+        config = config or {}
         super().__init__(config)
         self._documents: dict[str, VectorDocument] = {}
         self._collections: dict[str, dict[str, Any]] = {"default": {"vector_size": DEFAULT_VECTOR_DIMENSIONS}}
@@ -326,8 +334,9 @@ class EnhancedMockVectorStore(AbstractVectorStore):
         self._error_rate = config.get("error_rate", 0.0)  # 0-1 error probability
         self._base_latency = config.get("base_latency", 0.05)  # Base latency in seconds
 
-        # Pre-populate with realistic sample data
-        self._initialize_sample_data()
+        # Pre-populate with realistic sample data unless disabled
+        if config.get("initialize_sample_data", True):
+            self._initialize_sample_data()
 
     async def connect(self) -> None:
         """Simulate connection establishment."""
@@ -378,7 +387,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
     @cache_vector_search
     @monitor_performance("mock_vector_search")
     async def search(self, parameters: SearchParameters) -> list[SearchResult]:
-        """Perform mock vector search with realistic behavior."""        
+        """Perform mock vector search with realistic behavior."""
         if not await self._handle_circuit_breaker("search"):
             return []
 
@@ -579,6 +588,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
         doc_count = sum(1 for doc in self._documents.values() if doc.collection == collection_name)
 
         info = self._collections[collection_name].copy()
+        info["name"] = collection_name
         info["document_count"] = doc_count
         return info
 
@@ -666,6 +676,35 @@ class EnhancedMockVectorStore(AbstractVectorStore):
 
         return True
 
+    async def insert(self, documents: list[VectorDocument], collection: str = "default") -> BatchOperationResult:
+        """Legacy method for inserting documents."""
+        # Update collection for each document
+        for doc in documents:
+            doc.collection = collection
+        return await self.insert_documents(documents)
+
+    async def update(self, document: VectorDocument, collection: str = "default") -> bool:
+        """Legacy method for updating a document."""
+        document.collection = collection
+        return await self.update_document(document)
+
+    async def delete(self, document_ids: list[str], collection: str = "default") -> BatchOperationResult:
+        """Legacy method for deleting documents."""
+        return await self.delete_documents(document_ids, collection)
+
+    def is_connected(self) -> bool:
+        """Check if the store is connected."""
+        return self._connected
+
+    async def __aenter__(self) -> "EnhancedMockVectorStore":
+        """Async context manager entry."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit."""
+        await self.disconnect()
+
 
 class QdrantVectorStore(AbstractVectorStore):
     """
@@ -676,16 +715,33 @@ class QdrantVectorStore(AbstractVectorStore):
     production use with the external Qdrant instance at 192.168.1.16:6333.
     """
 
-    def __init__(self, config: dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """Initialize Qdrant vector store client."""
+        config = config or {}
         super().__init__(config)
         self._client: Any | None = None  # QdrantClient will be imported dynamically
         self._connection_pool: list[Any] = []
         self._pool_semaphore = asyncio.Semaphore(CONNECTION_POOL_SIZE)
-        self._host = config.get("host", "192.168.1.16")
-        self._port = config.get("port", 6333)
-        self._api_key = config.get("api_key")
-        self._timeout = config.get("timeout", DEFAULT_TIMEOUT)
+
+        # Use ApplicationSettings for configuration with config overrides
+        # Handle case where ApplicationSettings might not be available in tests
+        try:
+            settings = ApplicationSettings()
+            default_host = settings.qdrant_host
+            default_port = settings.qdrant_port
+            default_api_key = settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None
+            default_timeout = settings.qdrant_timeout
+        except Exception:
+            # Fallback for tests or when settings are not available
+            default_host = "192.168.1.16"
+            default_port = 6333
+            default_api_key = None
+            default_timeout = DEFAULT_TIMEOUT
+
+        self._host = config.get("host", default_host)
+        self._port = config.get("port", default_port)
+        self._api_key = config.get("api_key", default_api_key)
+        self._timeout = config.get("timeout", default_timeout)
 
     async def connect(self) -> None:
         """Establish connection to Qdrant server."""
@@ -744,7 +800,11 @@ class QdrantVectorStore(AbstractVectorStore):
     @monitor_performance("qdrant_vector_search")
     async def search(self, parameters: SearchParameters) -> list[SearchResult]:
         """Perform Qdrant vector search."""
-        if not self._client or not await self._handle_circuit_breaker("search"):
+        if not self._client:
+            self.logger.warning("QdrantVectorStore is not connected, returning empty results")
+            return []
+
+        if not await self._handle_circuit_breaker("search"):
             return []
 
         start_time = time.time()
@@ -766,6 +826,10 @@ class QdrantVectorStore(AbstractVectorStore):
                     query_filter=qdrant_filter,
                     score_threshold=parameters.score_threshold,
                 )
+
+                # Handle potential coroutine from mocked client
+                if hasattr(search_result, "__await__"):
+                    search_result = await search_result
 
                 for hit in search_result:
                     result = SearchResult(
@@ -850,7 +914,7 @@ class QdrantVectorStore(AbstractVectorStore):
                         points.append(point)
 
                     # Batch upload
-                    result = await self._client.upsert(collection_name=collection, points=points)
+                    result = self._client.upsert(collection_name=collection, points=points)
 
                     if result.status == "completed":
                         success_count += len(docs)
@@ -1028,6 +1092,63 @@ class VectorStoreFactory:
     """
 
     @staticmethod
+    def create_store(store_type: VectorStoreType | str, config: dict[str, Any] | None = None) -> AbstractVectorStore:
+        """
+        Create vector store instance by type.
+
+        Args:
+            store_type: Type of vector store to create
+            config: Optional configuration dictionary
+
+        Returns:
+            AbstractVectorStore: Configured vector store instance
+
+        Raises:
+            ValueError: If store type is invalid
+        """
+        config = config or {}
+
+        if isinstance(store_type, str):
+            try:
+                store_type = VectorStoreType(store_type)
+            except ValueError as e:
+                raise ValueError(f"Unknown vector store type: {store_type}") from e
+
+        if store_type == VectorStoreType.MOCK:
+            return EnhancedMockVectorStore(config)
+        if store_type == VectorStoreType.QDRANT:
+            return QdrantVectorStore(config)
+        raise ValueError(f"Unknown vector store type: {store_type}")
+
+    @staticmethod
+    def create_store_from_config(config: dict[str, Any] | None = None) -> AbstractVectorStore:
+        """
+        Create vector store instance from configuration.
+
+        Args:
+            config: Optional configuration dictionary
+
+        Returns:
+            AbstractVectorStore: Configured vector store instance
+        """
+        if config is None:
+            # Use ApplicationSettings for configuration
+            settings = ApplicationSettings()
+            store_type = settings.vector_store_type
+        else:
+            store_type = config.get("type", "auto")
+
+        if store_type == "auto":
+            store_type = VectorStoreFactory._detect_store_type(config or {})
+
+        return VectorStoreFactory.create_store(store_type, config)
+
+    @staticmethod
+    def get_supported_types() -> list[VectorStoreType]:
+        """Get list of supported vector store types."""
+        return list(VectorStoreType)
+
+    @staticmethod
     def create_vector_store(config: dict[str, Any]) -> AbstractVectorStore:
         """
         Create vector store instance based on configuration.
@@ -1100,8 +1221,17 @@ class MockVectorStore(EnhancedMockVectorStore):
         """Initialize compatibility mock vector store."""
         config = {"simulate_latency": True, "error_rate": 0.0, "base_latency": 0.05}
         super().__init__(config)
-        # Auto-connect for backward compatibility
-        self._auto_connect_task = asyncio.create_task(self.connect())
+        # Auto-connect immediately for compatibility (only if event loop is running)
+        try:
+            self._auto_connect_task = asyncio.create_task(self.connect())
+        except RuntimeError:
+            # No event loop running, will connect on first use
+            self._auto_connect_task = None
+
+    async def _ensure_connected(self) -> None:
+        """Ensure the store is connected, auto-connect if needed."""
+        if not self._connected:
+            await self.connect()
 
     async def search(self, parameters: SearchParameters | list[list[float]], limit: int = 5) -> list[SearchResult]:
         """
@@ -1114,6 +1244,8 @@ class MockVectorStore(EnhancedMockVectorStore):
         Returns:
             List of search results
         """
+        await self._ensure_connected()
+
         # Handle legacy interface: search(embeddings, limit=3)
         if isinstance(parameters, list):
             embeddings = parameters
@@ -1158,6 +1290,8 @@ class MockVectorStore(EnhancedMockVectorStore):
         Returns:
             bool: Success status
         """
+        await self._ensure_connected()
+
         try:
             # Convert HypotheticalDocument to VectorDocument
             vector_docs = []
@@ -1184,10 +1318,10 @@ VectorStore = MockVectorStore
 
 # Export main classes for external use
 __all__ = [
+    "DEFAULT_VECTOR_DIMENSIONS",
     "AbstractVectorStore",
     "BatchOperationResult",
     "ConnectionStatus",
-    "DEFAULT_VECTOR_DIMENSIONS",
     "EnhancedMockVectorStore",
     "HealthCheckResult",
     "MockVectorStore",  # Backward compatibility

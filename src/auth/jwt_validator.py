@@ -56,8 +56,22 @@ class JWTValidator:
             JWTValidationError: If token validation fails
         """
         try:
+            # Validate token format first
+            if not token or not isinstance(token, str):
+                raise JWTValidationError("Invalid token format", "invalid_format")
+
+            token_parts = token.split(".")
+            if len(token_parts) != 3:
+                raise JWTValidationError("Invalid token format", "invalid_format")
+
             # Decode token header to get key ID
-            unverified_header = jwt.get_unverified_header(token)
+            try:
+                unverified_header = jwt.get_unverified_header(token)
+            except jwt.DecodeError as e:
+                raise JWTValidationError("Invalid token format", "invalid_format") from e
+            except Exception as e:
+                raise JWTValidationError("Invalid token format", "invalid_format") from e
+
             kid = unverified_header.get("kid")
 
             if not kid:
@@ -92,9 +106,10 @@ class JWTValidator:
 
             # Decode and validate token
             try:
+                # Cast to expected type for jwt.decode
                 payload = jwt.decode(
                     token,
-                    public_key,
+                    public_key,  # type: ignore[arg-type]
                     algorithms=[self.algorithm],
                     audience=self.audience,
                     issuer=self.issuer,
@@ -103,20 +118,38 @@ class JWTValidator:
             except jwt.ExpiredSignatureError as e:
                 logger.warning("JWT token has expired")
                 raise JWTValidationError("Token has expired", "expired_token") from e
+            except jwt.InvalidSignatureError as e:
+                logger.warning("JWT token signature verification failed")
+                raise JWTValidationError("Token signature verification failed", "invalid_signature") from e
+            except jwt.InvalidAudienceError as e:
+                logger.warning("JWT token audience validation failed")
+                raise JWTValidationError("Invalid token audience", "invalid_audience") from e
+            except jwt.InvalidIssuerError as e:
+                logger.warning("JWT token issuer validation failed")
+                raise JWTValidationError("Invalid token issuer", "invalid_issuer") from e
+            except jwt.InvalidKeyError as e:
+                logger.warning("JWT token key validation failed")
+                raise JWTValidationError("Unable to verify token signature", "invalid_key") from e
+            except jwt.MissingRequiredClaimError as e:
+                logger.warning(f"JWT token missing required claim: {e}")
+                raise JWTValidationError(f"Token missing required claim: {e}", "missing_claim") from e
             except jwt.InvalidTokenError as e:
                 logger.warning(f"JWT token validation failed: {e}")
                 raise JWTValidationError(f"Invalid token: {e}", "invalid_token") from e
 
             # Extract and validate email from payload (CRITICAL: not from headers)
             email = payload.get("email")
-            if not email:
+            if email is None:
+                raise JWTValidationError("JWT payload missing required 'email' claim", "missing_email")
+
+            if email == "":
                 raise JWTValidationError("JWT payload missing required 'email' claim", "missing_email")
 
             if not isinstance(email, str) or "@" not in email:
                 raise JWTValidationError("Invalid email format in JWT payload", "invalid_email")
 
             # Validate email against whitelist if provided
-            if email_whitelist and not self._is_email_allowed(email, email_whitelist):
+            if email_whitelist and not self.is_email_allowed(email, email_whitelist):
                 logger.warning(f"Email '{email}' not in whitelist")
                 raise JWTValidationError(f"Email '{email}' not authorized", "email_not_authorized")
 
@@ -136,7 +169,7 @@ class JWTValidator:
             raise
         except Exception as e:
             logger.error(f"Unexpected error during JWT validation: {e}")
-            raise JWTValidationError(f"Unexpected validation error: {e}", "unknown_error") from e
+            raise JWTValidationError("Token validation failed", "unknown_error") from e
 
     def _is_email_allowed(self, email: str, email_whitelist: list[str]) -> bool:
         """Check if email is allowed based on whitelist.
@@ -163,6 +196,42 @@ class JWTValidator:
 
         return False
 
+    def is_email_allowed(self, email: str, email_whitelist: list[str] | None = None) -> bool:
+        """Check if email is allowed based on whitelist.
+
+        Args:
+            email: Email address to check
+            email_whitelist: List of allowed emails or domains
+
+        Returns:
+            True if email is allowed, False otherwise
+        """
+        if email_whitelist is None:
+            return True
+        return self._is_email_allowed(email, email_whitelist)
+
+    def determine_admin_role(self, email: str) -> UserRole:
+        """Determine if email should have admin role based on exact prefix matching.
+
+        Args:
+            email: User email address
+
+        Returns:
+            UserRole.ADMIN if email starts with admin keywords, UserRole.USER otherwise
+        """
+        email_lower = email.lower()
+        admin_prefixes = ["admin", "administrator", "root", "superuser", "owner"]
+
+        # Extract username part before @
+        username = email_lower.split("@")[0]
+
+        # Check if username starts with any admin prefix
+        for prefix in admin_prefixes:
+            if username == prefix:  # Exact match for the username part
+                return UserRole.ADMIN
+
+        return UserRole.USER
+
     def _determine_user_role(self, email: str, payload: dict[str, Any]) -> UserRole:
         """Determine user role based on email and JWT claims.
 
@@ -173,9 +242,9 @@ class JWTValidator:
         Returns:
             UserRole for the user
         """
-        # Basic role determination - can be enhanced later
-        # Check for admin indicators in email or claims
-        if any(admin_indicator in email.lower() for admin_indicator in ["admin", "owner"]):
+        # Use the public method for role determination
+        role_from_email = self.determine_admin_role(email)
+        if role_from_email == UserRole.ADMIN:
             return UserRole.ADMIN
 
         # Check for admin role in JWT claims (if Cloudflare provides it)

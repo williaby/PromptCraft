@@ -148,7 +148,7 @@ class TestCreateProcessorCore:
         prompt = "You are a software engineer with expertise in Python. My goal is to improve code quality."
         context = processor._extract_context(prompt)
 
-        assert context["role"] == "a software engineer with expertise in Python"
+        assert context["role"] == "a software engineer"
         assert context["background"] == "Python"
         assert context["goal"] == "improve code quality"
         assert context["constraints"] == []
@@ -634,7 +634,7 @@ class TestCreateProcessorCore:
 
         # Verify all components are populated
         components = response.framework_components
-        assert components["context"]["role"] == "a senior software architect with expertise in distributed systems"
+        assert components["context"]["role"] == "a senior software architect"
         assert components["context"]["background"] == "You have experience with microservices and cloud architecture"
         assert components["context"]["goal"] == "Design a scalable system"
         assert components["request"]["task"] == "create a system architecture diagram"

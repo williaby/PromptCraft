@@ -130,9 +130,9 @@ services:
       - ./configs/code-server:/home/coder/.config:rw
       - ./configs/mcp:/home/coder/.claude:rw
     command: |
-      code-server 
-        --bind-addr 0.0.0.0:8080 
-        --auth password 
+      code-server
+        --bind-addr 0.0.0.0:8080
+        --auth password
         --disable-telemetry
         --user-data-dir /home/coder/.config
         --extensions-dir /home/coder/.local/share/code-server/extensions
@@ -227,12 +227,12 @@ volumes:
 
 # Cloudflared Tunnel Integration Notes:
 # - All services bind to 127.0.0.1 (localhost) for cloudflared tunnel routing
-# - Gradio UI (port 7860): Journey 1, 2, 4 web interface  
+# - Gradio UI (port 7860): Journey 1, 2, 4 web interface
 # - FastAPI (port 8000): API endpoints and backend services
 # - Code-Server (port 8080): Journey 3 IDE integration
 # - Cloudflared tunnel handles authentication, SSL, and routing
 # - No nginx or OAuth2 proxy needed - tunnel provides unified access
-# 
+#
 # Example cloudflared config.yml:
 # ingress:
 #   - hostname: promptcraft.yourdomain.com

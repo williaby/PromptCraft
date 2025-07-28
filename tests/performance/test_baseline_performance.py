@@ -67,7 +67,8 @@ logger = logging.getLogger(__name__)
 # Test constants aligned with Week 1 requirements
 # Detect CI environment for more lenient thresholds
 import os
-IS_CI = os.getenv('CI', '').lower() in ('true', '1', 'yes') or os.getenv('GITHUB_ACTIONS', '').lower() == 'true'
+
+IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
 
 # Base thresholds - more lenient for CI environments
 BASELINE_SLA_RESPONSE_TIME = 5.0 if IS_CI else 2.0  # More lenient in CI
@@ -121,7 +122,7 @@ class BaselinePerformanceTestSuite:
             },
         )
         self.validator = PerformanceValidator(DEFAULT_THRESHOLDS)
-        
+
         # Initialize components with better error handling for CI
         try:
             self.query_counselor = QueryCounselor()
@@ -130,12 +131,13 @@ class BaselinePerformanceTestSuite:
             # Create a minimal mock for CI environments
             if IS_CI:
                 from unittest.mock import AsyncMock, MagicMock
+
                 self.query_counselor = AsyncMock()
                 self.query_counselor._available_agents = [MagicMock(agent_id="test_agent")]
                 self.query_counselor.mcp_client = None
             else:
                 raise
-        
+
         try:
             self.hyde_processor = HydeProcessor()
         except Exception as e:
@@ -143,10 +145,11 @@ class BaselinePerformanceTestSuite:
             # Create a minimal mock for CI environments
             if IS_CI:
                 from unittest.mock import AsyncMock, MagicMock
+
                 self.hyde_processor = AsyncMock()
             else:
                 raise
-        
+
         self.logger = logger
 
     async def test_query_counselor_baseline_performance(self) -> dict[str, Any]:
@@ -213,7 +216,7 @@ class BaselinePerformanceTestSuite:
                 original_query=query,
             )
             agent_selection = await self.query_counselor.select_agents(intent_for_orchestration)
-            
+
             # Convert AgentSelection to list of Agent objects
             selected_agents = []
             for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
@@ -367,7 +370,7 @@ class BaselinePerformanceTestSuite:
                     agent = next((a for a in self.query_counselor._available_agents if a.agent_id == agent_id), None)
                     if agent:
                         selected_agents.append(agent)
-                
+
                 responses = await self.query_counselor.orchestrate_workflow(selected_agents, query)
 
                 # Step 4: Response synthesis
@@ -378,7 +381,9 @@ class BaselinePerformanceTestSuite:
 
                 # Track success rate - be more lenient for mock environments
                 # If no MCP client, consider it successful if we got any response
-                if final_response.confidence > 0.1 or (self.query_counselor.mcp_client is None and final_response.content):
+                if final_response.confidence > 0.1 or (
+                    self.query_counselor.mcp_client is None and final_response.content
+                ):
                     workflow_success_count += 1
             except Exception as e:
                 self.logger.warning("Integrated workflow failed for query: %s, error: %s", query, str(e))
@@ -437,18 +442,19 @@ class BaselinePerformanceTestSuite:
                     agent = next((a for a in self.query_counselor._available_agents if a.agent_id == agent_id), None)
                     if agent:
                         selected_agents.append(agent)
-                
+
                 responses = await self.query_counselor.orchestrate_workflow(selected_agents, query)
                 final_response = await self.query_counselor.synthesize_response(responses)
 
                 processing_time = time.time() - start_time
 
                 # Determine success more leniently for mock environments
-                is_successful = (
-                    final_response.confidence > 0.1 or 
-                    (self.query_counselor.mcp_client is None and final_response.content and len(final_response.content) > 10)
+                is_successful = final_response.confidence > 0.1 or (
+                    self.query_counselor.mcp_client is None
+                    and final_response.content
+                    and len(final_response.content) > 10
                 )
-                
+
                 return {
                     "request_id": request_id,
                     "processing_time": processing_time,
@@ -508,7 +514,7 @@ class BaselinePerformanceTestSuite:
             if data["success_rate"] >= 90  # More lenient for CI
             and data["p95_processing_time"] <= BASELINE_SLA_RESPONSE_TIME
         ]
-        
+
         results["scalability_analysis"] = {
             "max_concurrent_capacity": max(compliant_levels) if compliant_levels else 1,  # Fallback to 1
             "throughput_scaling": {level: data["throughput_rps"] for level, data in concurrency_results.items()},
@@ -529,7 +535,7 @@ class BaselinePerformanceTestSuite:
 
         # Reduce memory test duration for CI
         test_duration = 20 if IS_CI else 60
-        
+
         results = {
             "component": "MemoryUsage",
             "test_duration_seconds": test_duration,
@@ -570,7 +576,7 @@ class BaselinePerformanceTestSuite:
                     agent = next((a for a in self.query_counselor._available_agents if a.agent_id == agent_id), None)
                     if agent:
                         selected_agents.append(agent)
-                
+
                 responses = await self.query_counselor.orchestrate_workflow(selected_agents, query)
                 await self.query_counselor.synthesize_response(responses)
             except Exception as e:
@@ -614,7 +620,7 @@ class BaselinePerformanceTestSuite:
 
         # More lenient memory analysis for CI environments
         memory_growth_threshold = 200 if IS_CI else 100  # More lenient in CI
-        
+
         results["memory_analysis"] = {
             "memory_stable": abs(final_memory - initial_memory) < memory_growth_threshold,
             "memory_within_limits": final_memory <= MAX_MEMORY_USAGE_MB,
@@ -712,7 +718,7 @@ async def test_query_counselor_baseline_performance(performance_test_suite):
     intent_threshold = BASELINE_SLA_RESPONSE_TIME
     agent_threshold = 2.0 if IS_CI else 0.5  # More lenient for CI
     orchestration_threshold = BASELINE_SLA_RESPONSE_TIME
-    
+
     assert (
         results["metrics"]["intent_analysis"]["p95"] < intent_threshold
     ), f"Intent analysis P95 ({results['metrics']['intent_analysis']['p95']:.3f}s) exceeds SLA ({intent_threshold}s)"

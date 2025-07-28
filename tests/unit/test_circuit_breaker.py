@@ -215,6 +215,7 @@ class TestCircuitBreakerStates:
         metrics = circuit_breaker.metrics
         assert metrics.rejected_requests == 1
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_half_open_recovery(self, circuit_breaker):
         """Test recovery through half-open state."""
@@ -631,6 +632,7 @@ class TestCircuitBreakerIntegration:
     """Integration tests for circuit breaker with real scenarios."""
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_realistic_service_outage_scenario(self):
         """Test realistic service outage and recovery scenario."""
         # Configure circuit breaker for realistic scenario

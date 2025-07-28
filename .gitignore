@@ -99,6 +99,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+junit.xml
 *.cover
 *.py,cover
 .hypothesis/
@@ -217,3 +218,6 @@ docs/planning/
 docs/zen/
 /site
 .serena/
+
+# Generated reports (organized)
+reports/

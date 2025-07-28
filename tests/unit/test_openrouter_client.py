@@ -218,6 +218,7 @@ class TestOpenRouterClientConnection:
                 # Verify session configuration
                 mock_session.get.assert_called_once_with("/models", timeout=10.0)
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_connect_authentication_failure(self):
         """Test connection failure due to authentication error."""
@@ -313,8 +314,8 @@ class TestOpenRouterClientHealthCheck:
     """Test OpenRouterClient health check functionality."""
 
     @pytest.mark.asyncio
-    async def test_health_check_healthy(self):
-        """Test health check with healthy status."""
+    async def test_async_health_check_healthy(self):
+        """Test async health check with healthy status."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
             patch("src.mcp_integration.openrouter_client.get_model_registry"),
@@ -334,7 +335,7 @@ class TestOpenRouterClientHealthCheck:
             mock_response.json.return_value = {"data": [{"id": "model1"}, {"id": "model2"}]}
             client.session.get.return_value = mock_response
 
-            health_status = await client.health_check()
+            health_status = await client.async_health_check()
 
             assert isinstance(health_status, MCPHealthStatus)
             assert health_status.connection_state == MCPConnectionState.CONNECTED
@@ -343,8 +344,8 @@ class TestOpenRouterClientHealthCheck:
             assert health_status.metadata["models_available"] == 2
 
     @pytest.mark.asyncio
-    async def test_health_check_degraded(self):
-        """Test health check with degraded status."""
+    async def test_async_health_check_degraded(self):
+        """Test async health check with degraded status."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
             patch("src.mcp_integration.openrouter_client.get_model_registry"),
@@ -362,15 +363,15 @@ class TestOpenRouterClientHealthCheck:
             mock_response.status_code = 503
             client.session.get.return_value = mock_response
 
-            health_status = await client.health_check()
+            health_status = await client.async_health_check()
 
             assert health_status.connection_state == MCPConnectionState.DEGRADED
             assert health_status.error_count == 2  # Incremented during health check
             assert health_status.metadata["error"] == "HTTP 503"
 
     @pytest.mark.asyncio
-    async def test_health_check_unhealthy(self):
-        """Test health check with unhealthy status."""
+    async def test_async_health_check_unhealthy(self):
+        """Test async health check with unhealthy status."""
         with (
             patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
             patch("src.mcp_integration.openrouter_client.get_model_registry"),
@@ -382,7 +383,7 @@ class TestOpenRouterClientHealthCheck:
             client.session = AsyncMock()
             client.session.get.side_effect = Exception("Connection failed")
 
-            health_status = await client.health_check()
+            health_status = await client.async_health_check()
 
             assert health_status.connection_state == MCPConnectionState.FAILED
             assert "Connection failed" in health_status.metadata["error"]
@@ -513,6 +514,7 @@ class TestOpenRouterClientOrchestration:
             assert response.confidence > 0.0
             assert "model_id" in response.metadata
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_orchestrate_agents_connection_error(self):
         """Test orchestration with connection error."""
@@ -821,3 +823,206 @@ class TestOpenRouterClientIntegration:
                 # Disconnect
                 disconnected = await client.disconnect()
                 assert disconnected is True
+
+
+# Additional comprehensive tests to improve coverage beyond 80%
+
+
+@pytest.mark.unit
+class TestOpenRouterClientAdditionalCoverage:
+    """Additional tests to ensure comprehensive coverage of OpenRouterClient."""
+
+    @pytest.mark.asyncio
+    async def test_query_validation_max_length(self):
+        """Test query validation for maximum length."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+
+            # Create query that exceeds max length
+            long_query = "x" * 60000  # Exceeds MAX_QUERY_LENGTH of 50000
+
+            validation = await client.validate_query(long_query)
+            assert validation["is_valid"] is False
+            assert "error" in validation
+            assert "too long" in validation["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_query_validation_empty_query(self):
+        """Test query validation for empty query."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+
+            validation = await client.validate_query("")
+            assert validation["is_valid"] is False
+            assert "error" in validation
+            assert "empty" in validation["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_query_validation_none_query(self):
+        """Test query validation for None query."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+
+            validation = await client.validate_query(None)
+            assert validation["is_valid"] is False
+            assert "error" in validation
+            assert "empty" in validation["error"].lower()
+
+    async def test_health_check_healthy(self):
+        """Test health check when client is healthy."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+            client.connection_state = MCPConnectionState.CONNECTED
+            client.error_count = 0
+            client.last_successful_request = time.time() - 30  # 30 seconds ago
+
+            health = await client.health_check()
+
+            assert health.connection_state == MCPConnectionState.CONNECTED
+            assert health.error_count == 0
+            assert "HEALTHY" in health.metadata["status"]
+            assert "healthy" in health.metadata["message"].lower()
+
+    async def test_health_check_unhealthy_disconnected(self):
+        """Test health check when client is disconnected."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+            client.connection_state = MCPConnectionState.DISCONNECTED
+
+            health = await client.health_check()
+
+            assert health.connection_state == MCPConnectionState.DISCONNECTED
+            assert "UNHEALTHY" in health.metadata["status"]
+            assert "not connected" in health.metadata["message"].lower()
+
+    async def test_health_check_degraded_high_errors(self):
+        """Test health check when client has high error count."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+            client.connection_state = MCPConnectionState.CONNECTED
+            client.error_count = 15  # High error count
+
+            health = await client.health_check()
+
+            assert health.connection_state == MCPConnectionState.CONNECTED
+            assert health.error_count == 15
+            assert "DEGRADED" in health.metadata["status"]
+            assert "error count" in health.metadata["message"].lower()
+
+    async def test_health_check_degraded_old_request(self):
+        """Test health check when last successful request is old."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+            client = OpenRouterClient()
+            client.connection_state = MCPConnectionState.CONNECTED
+            client.error_count = 0
+            client.last_successful_request = time.time() - 3700  # Over an hour ago
+
+            health = await client.health_check()
+
+            assert health.connection_state == MCPConnectionState.CONNECTED
+            assert health.error_count == 0
+            assert "DEGRADED" in health.metadata["status"]
+            assert "hour ago" in health.metadata["message"].lower()
+
+    def test_circuit_breaker_integration(self):
+        """Test circuit breaker integration."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+            patch("src.mcp_integration.openrouter_client.get_circuit_breaker") as mock_get_cb,
+        ):
+            mock_settings.return_value = create_mock_settings(circuit_breaker_enabled=True)
+            mock_circuit_breaker = Mock()
+            mock_get_cb.return_value = mock_circuit_breaker
+
+            client = OpenRouterClient()
+
+            # Verify circuit breaker is set up
+            assert client.circuit_breaker == mock_circuit_breaker
+            mock_get_cb.assert_called_once_with("openrouter", mock_settings.return_value)
+
+    def test_no_circuit_breaker_when_disabled(self):
+        """Test no circuit breaker when disabled in settings."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings(circuit_breaker_enabled=False)
+
+            client = OpenRouterClient()
+
+            # Verify no circuit breaker
+            assert client.circuit_breaker is None
+
+    def test_base_url_strip_trailing_slash(self):
+        """Test that base URL strips trailing slashes."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry"),
+        ):
+            mock_settings.return_value = create_mock_settings()
+
+            client = OpenRouterClient(base_url="https://api.example.com/v1/")
+
+            # Should strip trailing slash
+            assert client.base_url == "https://api.example.com/v1"
+
+    def test_model_capabilities_integration(self):
+        """Test integration with model capabilities."""
+        with (
+            patch("src.mcp_integration.openrouter_client.get_settings") as mock_settings,
+            patch("src.mcp_integration.openrouter_client.get_model_registry") as mock_registry,
+        ):
+            mock_settings.return_value = create_mock_settings()
+
+            # Mock model registry with capabilities using the correct interface
+            mock_registry_instance = Mock()
+            mock_capabilities = ModelCapabilities(
+                model_id="test_model",
+                display_name="Test Model",
+                provider="test",
+                category="free_general",
+                context_window=4096,
+                max_tokens_per_request=2048,
+                rate_limit_requests_per_minute=100,
+                supports_function_calling=True,
+                supports_vision=False,
+            )
+            mock_registry_instance.get_model_capabilities.return_value = mock_capabilities
+            mock_registry.return_value = mock_registry_instance
+
+            client = OpenRouterClient()
+
+            # Test capabilities retrieval
+            capabilities = client.model_registry.get_model_capabilities("test_model")
+            assert capabilities.context_window == 4096
+            assert capabilities.supports_function_calling is True
+            assert capabilities.supports_vision is False

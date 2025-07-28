@@ -51,7 +51,7 @@ class JWKSClient:
         cached_jwks = self._cache.get("jwks")
         if cached_jwks is not None:
             logger.debug("Retrieved JWKS from cache")
-            return cached_jwks
+            return dict(cached_jwks)  # Cast to dict to satisfy type checker
 
         # Fetch from endpoint
         try:
@@ -63,19 +63,23 @@ class JWKSClient:
 
             # Validate JWKS structure
             if not isinstance(jwks, dict) or "keys" not in jwks:
-                raise JWKSError("Invalid JWKS format: missing 'keys' field")
+                raise JWKSError("Invalid JWKS format: missing 'keys' field", "jwks_error")
 
             if not isinstance(jwks["keys"], list):
-                raise JWKSError("Invalid JWKS format: 'keys' must be a list")
+                raise JWKSError("Invalid JWKS format: 'keys' must be a list", "jwks_error")
 
             if not jwks["keys"]:
-                raise JWKSError("Invalid JWKS format: 'keys' list is empty")
+                raise JWKSError("Invalid JWKS format: 'keys' list is empty", "jwks_error")
 
             # Cache the JWKS
             self._cache["jwks"] = jwks
             logger.info(f"Successfully cached JWKS with {len(jwks['keys'])} keys")
 
             return jwks
+
+        except JWKSError:
+            # Re-raise JWKSError without modification
+            raise
 
         except httpx.TimeoutException as e:
             logger.error(f"Timeout fetching JWKS: {e}")
@@ -106,7 +110,7 @@ class JWKSClient:
         for key in jwks["keys"]:
             if key.get("kid") == kid:
                 logger.debug(f"Found key with kid: {kid}")
-                return key
+                return dict(key)  # Cast to dict to satisfy type checker
 
         logger.warning(f"Key with kid '{kid}' not found in JWKS")
         return None

@@ -253,7 +253,7 @@ async def demonstrate_http_endpoints() -> None:
 
     except (httpx.ConnectError, httpx.TimeoutException):
         console.print(
-            "i [dim]No live server detected. Start with 'poetry run python src/main.py' to test live endpoints.[/dim]",
+            "ℹ [dim]No live server detected. Start with 'poetry run python src/main.py' to test live endpoints.[/dim]",  # noqa: RUF001
         )
 
 

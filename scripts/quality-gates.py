@@ -13,9 +13,10 @@ import argparse
 import json
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+
+import defusedxml.ElementTree as ET  # noqa: N817
 
 
 @dataclass
@@ -128,7 +129,8 @@ class QualityGateValidator:
 
         try:
             # Run radon for complexity analysis
-            complexity_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            complexity_result = subprocess.run(  # noqa: S603
                 ["poetry", "run", "radon", "cc", "src", "--json"],
                 check=False,
                 capture_output=True,
@@ -154,7 +156,8 @@ class QualityGateValidator:
                     )
 
             # Run maintainability index
-            mi_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            mi_result = subprocess.run(  # noqa: S603
                 ["poetry", "run", "radon", "mi", "src", "--json"],
                 check=False,
                 capture_output=True,
@@ -184,7 +187,8 @@ class QualityGateValidator:
 
         try:
             # Run bandit security scan
-            bandit_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            bandit_result = subprocess.run(  # noqa: S603
                 ["poetry", "run", "bandit", "-r", "src", "-f", "json"],
                 check=False,
                 capture_output=True,
@@ -212,7 +216,8 @@ class QualityGateValidator:
                     )
 
             # Run safety check for vulnerabilities
-            safety_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            safety_result = subprocess.run(  # noqa: S603
                 ["poetry", "run", "safety", "check", "--json"],
                 check=False,
                 capture_output=True,
@@ -286,7 +291,8 @@ class QualityGateValidator:
 
         try:
             # Check docstring coverage
-            docstring_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            docstring_result = subprocess.run(  # noqa: S603
                 ["poetry", "run", "interrogate", "src", "--generate-badge", ".", "--badge-format", "svg"],
                 check=False,
                 capture_output=True,
@@ -314,13 +320,14 @@ class QualityGateValidator:
                             continue
 
             # Check markdown linting
-            md_result = subprocess.run(
+            # Security: Using hardcoded command with fixed args, cwd controlled
+            md_result = subprocess.run(  # noqa: S603
                 ["markdownlint", "**/*.md"],
                 check=False,
                 capture_output=True,
                 text=True,
                 cwd=self.project_root,
-                shell=True,
+                shell=False,
             )
 
             if md_result.returncode != 0:

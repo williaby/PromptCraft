@@ -933,15 +933,15 @@ class TestMainEndpoints:
             assert response.status_code == 422  # Validation error
 
     def test_query_params_validation_endpoint(self):
-        """Test query parameters validation endpoint (currently expects validation error)."""
+        """Test query parameters validation endpoint (now correctly implemented)."""
         with TestClient(app) as client:
-            # Note: This endpoint currently has a bug - it expects query params as body
-            # This should be fixed by using Depends() in the endpoint definition
+            # Note: This endpoint was fixed to properly use Depends() for query parameters
             response = client.get("/api/v1/search?search=test&page=1&limit=10")
-            # Currently returns 422 due to implementation issue
-            assert response.status_code == 422
+            # Now correctly returns 200 with validated parameters
+            assert response.status_code == 200
             data = response.json()
-            assert "error" in data
+            assert data["status"] == "success"
+            assert "query_params" in data
 
     def test_query_params_validation_invalid(self):
         """Test query parameters validation with invalid data."""
@@ -1731,10 +1731,13 @@ class TestMainApplicationEndpoints:
 
         # Valid parameters
         response = client.get("/api/v1/search?search=test&page=1&limit=10&sort=name:asc")
-        # This should return 422 due to current implementation expecting body
-        assert response.status_code == 422
+        # Now correctly returns 200 with properly implemented Depends() validation
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert "query_params" in data
 
-        # Invalid parameters should also return 422
+        # Invalid parameters should return 422 (validation error)
         response = client.get("/api/v1/search?page=0&limit=1000")  # Out of range
         assert response.status_code == 422
 
