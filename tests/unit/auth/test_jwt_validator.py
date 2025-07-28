@@ -79,16 +79,18 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token)
+            result = validator.validate_token(token)
 
-                    assert isinstance(result, AuthenticatedUser)
-                    assert result.email == "test@example.com"
-                    assert result.role == UserRole.USER
-                    assert result.jwt_claims == mock_payload
+            assert isinstance(result, AuthenticatedUser)
+            assert result.email == "test@example.com"
+            assert result.role == UserRole.USER
+            assert result.jwt_claims == mock_payload
 
     def test_validate_token_success_with_audience_issuer(self):
         """Test successful token validation with audience and issuer verification."""
@@ -112,32 +114,34 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload) as mock_decode,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload) as mock_decode:
-                    result = validator.validate_token(token)
+            result = validator.validate_token(token)
 
-                    assert isinstance(result, AuthenticatedUser)
-                    assert result.email == "test@example.com"
+            assert isinstance(result, AuthenticatedUser)
+            assert result.email == "test@example.com"
 
-                    # Verify jwt.decode was called with correct parameters
-                    mock_decode.assert_called_once_with(
-                        token,
-                        mock_public_key,
-                        algorithms=["RS256"],
-                        audience=audience,
-                        issuer=issuer,
-                        options={
-                            "verify_signature": True,
-                            "verify_exp": True,
-                            "verify_nbf": True,
-                            "verify_iat": True,
-                            "require": ["exp", "iat", "email"],
-                            "verify_aud": True,
-                            "verify_iss": True,
-                        },
-                    )
+            # Verify jwt.decode was called with correct parameters
+            mock_decode.assert_called_once_with(
+                token,
+                mock_public_key,
+                algorithms=["RS256"],
+                audience=audience,
+                issuer=issuer,
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_nbf": True,
+                    "verify_iat": True,
+                    "require": ["exp", "iat", "email"],
+                    "verify_aud": True,
+                    "verify_iss": True,
+                },
+            )
 
     def test_validate_token_success_with_email_whitelist(self):
         """Test successful token validation with email whitelist."""
@@ -159,14 +163,16 @@ class TestJWTValidatorValidateToken:
 
         email_whitelist = ["allowed@example.com", "@company.com"]
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token, email_whitelist=email_whitelist)
+            result = validator.validate_token(token, email_whitelist=email_whitelist)
 
-                    assert isinstance(result, AuthenticatedUser)
-                    assert result.email == "allowed@example.com"
+            assert isinstance(result, AuthenticatedUser)
+            assert result.email == "allowed@example.com"
 
     def test_validate_token_missing_kid_in_header(self):
         """Test token validation fails when 'kid' is missing from header."""
@@ -208,14 +214,16 @@ class TestJWTValidatorValidateToken:
         kid = "test-key-id"
         mock_key_dict = {"invalid": "format"}
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", side_effect=ValueError("Invalid JWK")),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", side_effect=ValueError("Invalid JWK")):
-                with pytest.raises(JWTValidationError) as exc_info:
-                    validator.validate_token(token)
+            validator.validate_token(token)
 
-                assert "Invalid JWK format" in str(exc_info.value)
-                assert exc_info.value.error_type == "invalid_jwk"
+        assert "Invalid JWK format" in str(exc_info.value)
+        assert exc_info.value.error_type == "invalid_jwk"
 
     def test_validate_token_expired_signature(self):
         """Test token validation fails when token is expired."""
@@ -227,15 +235,17 @@ class TestJWTValidatorValidateToken:
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", side_effect=ExpiredSignatureError("Token expired")),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", side_effect=ExpiredSignatureError("Token expired")):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token)
+            validator.validate_token(token)
 
-                    assert "Token has expired" in str(exc_info.value)
-                    assert exc_info.value.error_type == "expired_token"
+        assert "Token has expired" in str(exc_info.value)
+        assert exc_info.value.error_type == "expired_token"
 
     def test_validate_token_invalid_token(self):
         """Test token validation fails with invalid token."""
@@ -247,15 +257,17 @@ class TestJWTValidatorValidateToken:
         mock_key_dict = {"kid": kid, "kty": "RSA", "n": "test", "e": "AQAB"}
         mock_public_key = Mock()
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", side_effect=InvalidTokenError("Invalid signature")),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", side_effect=InvalidTokenError("Invalid signature")):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token)
+            validator.validate_token(token)
 
-                    assert "Invalid token" in str(exc_info.value)
-                    assert exc_info.value.error_type == "invalid_token"
+        assert "Invalid token" in str(exc_info.value)
+        assert exc_info.value.error_type == "invalid_token"
 
     def test_validate_token_missing_email_claim(self):
         """Test token validation fails when email claim is missing."""
@@ -273,15 +285,17 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token)
+            validator.validate_token(token)
 
-                    assert "JWT payload missing required 'email' claim" in str(exc_info.value)
-                    assert exc_info.value.error_type == "missing_email"
+        assert "JWT payload missing required 'email' claim" in str(exc_info.value)
+        assert exc_info.value.error_type == "missing_email"
 
     def test_validate_token_invalid_email_format(self):
         """Test token validation fails with invalid email format."""
@@ -300,15 +314,17 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token)
+            validator.validate_token(token)
 
-                    assert "Invalid email format in JWT payload" in str(exc_info.value)
-                    assert exc_info.value.error_type == "invalid_email"
+        assert "Invalid email format in JWT payload" in str(exc_info.value)
+        assert exc_info.value.error_type == "invalid_email"
 
     def test_validate_token_email_not_authorized(self):
         """Test token validation fails when email is not in whitelist."""
@@ -329,15 +345,17 @@ class TestJWTValidatorValidateToken:
 
         email_whitelist = ["@company.com", "allowed@example.com"]
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token, email_whitelist=email_whitelist)
+            validator.validate_token(token, email_whitelist=email_whitelist)
 
-                    assert "Email 'unauthorized@example.com' not authorized" in str(exc_info.value)
-                    assert exc_info.value.error_type == "email_not_authorized"
+        assert "Email 'unauthorized@example.com' not authorized" in str(exc_info.value)
+        assert exc_info.value.error_type == "email_not_authorized"
 
     def test_validate_token_non_string_email(self):
         """Test token validation fails when email is not a string."""
@@ -356,15 +374,17 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    with pytest.raises(JWTValidationError) as exc_info:
-                        validator.validate_token(token)
+            validator.validate_token(token)
 
-                    assert "Invalid email format in JWT payload" in str(exc_info.value)
-                    assert exc_info.value.error_type == "invalid_email"
+        assert "Invalid email format in JWT payload" in str(exc_info.value)
+        assert exc_info.value.error_type == "invalid_email"
 
     def test_validate_token_unexpected_error(self):
         """Test token validation handles unexpected errors."""
@@ -397,13 +417,15 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token)
+            result = validator.validate_token(token)
 
-                    assert result.role == UserRole.ADMIN
+            assert result.role == UserRole.ADMIN
 
     def test_validate_token_admin_role_from_groups(self):
         """Test admin role determination from groups claim."""
@@ -423,13 +445,15 @@ class TestJWTValidatorValidateToken:
             "iat": 1234567800,
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token)
+            result = validator.validate_token(token)
 
-                    assert result.role == UserRole.ADMIN
+            assert result.role == UserRole.ADMIN
 
 
 @pytest.mark.auth
@@ -761,20 +785,22 @@ class TestJWTValidatorIntegration:
 
         email_whitelist = ["@example.com", "allowed@test.com"]
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid, "alg": "RS256"}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid, "alg": "RS256"}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token, email_whitelist=email_whitelist)
+            result = validator.validate_token(token, email_whitelist=email_whitelist)
 
-                    # Verify successful validation
-                    assert isinstance(result, AuthenticatedUser)
-                    assert result.email == "test@example.com"
-                    assert result.role == UserRole.USER
-                    assert result.jwt_claims == mock_payload
+            # Verify successful validation
+            assert isinstance(result, AuthenticatedUser)
+            assert result.email == "test@example.com"
+            assert result.role == UserRole.USER
+            assert result.jwt_claims == mock_payload
 
-                    # Verify all methods were called correctly
-                    jwks_client.get_key_by_kid.assert_called_once_with(kid)
+            # Verify all methods were called correctly
+            jwks_client.get_key_by_kid.assert_called_once_with(kid)
 
     def test_complete_validation_workflow_admin_user(self):
         """Test complete JWT validation workflow for admin user."""
@@ -801,15 +827,17 @@ class TestJWTValidatorIntegration:
             "groups": ["users", "admin-staff", "developers"],
         }
 
-        with patch("jwt.get_unverified_header", return_value={"kid": kid}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": kid}),
+            patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key),
+            patch("jwt.decode", return_value=mock_payload),
+        ):
             jwks_client.get_key_by_kid.return_value = mock_key_dict
-            with patch.object(RSAAlgorithm, "from_jwk", return_value=mock_public_key):
-                with patch("jwt.decode", return_value=mock_payload):
-                    result = validator.validate_token(token)
+            result = validator.validate_token(token)
 
-                    # Should be admin due to both email and groups
-                    assert result.role == UserRole.ADMIN
-                    assert result.email == "admin@company.com"
+            # Should be admin due to both email and groups
+            assert result.role == UserRole.ADMIN
+            assert result.email == "admin@company.com"
 
     def test_complete_validation_workflow_multiple_failure_modes(self):
         """Test validation workflow handles multiple types of failures."""
@@ -833,12 +861,14 @@ class TestJWTValidatorIntegration:
 
         # Test 3: Invalid JWK
         token3 = "header.payload.signature"
-        with patch("jwt.get_unverified_header", return_value={"kid": "test"}):
+        with (
+            patch("jwt.get_unverified_header", return_value={"kid": "test"}),
+            patch.object(RSAAlgorithm, "from_jwk", side_effect=ValueError("Bad JWK")),
+            pytest.raises(JWTValidationError) as exc_info,
+        ):
             jwks_client.get_key_by_kid.return_value = {"invalid": "jwk"}
-            with patch.object(RSAAlgorithm, "from_jwk", side_effect=ValueError("Bad JWK")):
-                with pytest.raises(JWTValidationError) as exc_info:
-                    validator.validate_token(token3)
-                assert exc_info.value.error_type == "invalid_jwk"
+            validator.validate_token(token3)
+        assert exc_info.value.error_type == "invalid_jwk"
 
     def test_format_validation_integration(self):
         """Test format validation integration with different token formats."""

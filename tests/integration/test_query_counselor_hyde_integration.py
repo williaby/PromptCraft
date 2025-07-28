@@ -5,15 +5,16 @@ validating the complete query processing workflow with enhanced retrieval.
 """
 
 import asyncio
-import os
+import contextlib
 import sys
 import time
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.core.query_counselor import QueryCounselor
@@ -134,8 +135,7 @@ class TestQueryCounselorHydeIntegration:
             patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
         ):
             # Pass mock client directly to constructor to ensure proper injection
-            counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
-            return counselor
+            return QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -302,14 +302,13 @@ class TestQueryCounselorHydeIntegration:
             # Try to process the query directly which would trigger HyDE if recommended
             if intent.hyde_recommended and query_counselor.hyde_processor is not None:
                 # This should fail but be handled gracefully
-                try:
+                with contextlib.suppress(Exception):
                     await query_counselor.hyde_processor.process_query(query)
-                except Exception:
-                    pass  # Expected failure
 
         except Exception as e:
             # Should not propagate vector store errors
-            assert "Vector store connection failed" not in str(e)
+            if "Vector store connection failed" in str(e):
+                pytest.fail(f"Unexpected vector store error propagated: {e}")
 
         # Verify HyDE processor was attempted if hyde was recommended
         if intent.hyde_recommended:
@@ -515,11 +514,8 @@ class TestQueryCounselorHydeIntegration:
         intent = await query_counselor.analyze_intent(query)
 
         # Try HyDE processing (should fail)
-        try:
+        with contextlib.suppress(TimeoutError):
             await query_counselor.hyde_processor.process_query(query)
-        except TimeoutError:
-            # Expected failure, continue with original query
-            pass
 
         # Continue with original query
         agent_selection = await query_counselor.select_agents(intent)

@@ -11,16 +11,14 @@ import statistics
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-
-# CI environment detection for more lenient thresholds
-IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.core.hyde_processor import HydeProcessor
@@ -36,6 +34,9 @@ from src.core.vector_store import (
 from src.mcp_integration.config_manager import MCPConfigurationManager
 from src.mcp_integration.mcp_client import MCPConnectionState, ZenMCPClient
 from src.utils.performance_monitor import PerformanceMonitor
+
+# CI environment detection for more lenient thresholds
+IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
 
 
 class TestProductionReadiness:
@@ -230,7 +231,7 @@ class TestProductionReadiness:
                 ), f"95th percentile response time {p95_response_time:.2f}s exceeds {p95_threshold}s requirement"
 
                 # Verify performance metrics (CI-adapted)
-                metrics = performance_monitor.get_all_metrics()
+                performance_monitor.get_all_metrics()
                 metrics_threshold = 3.0 if IS_CI else 1.5
 
                 # Check timer metrics for query time
@@ -553,7 +554,7 @@ class TestProductionReadiness:
                             metric_type=MetricType.TIMER,
                         ),
                     )
-                    metrics = performance_monitor.get_all_metrics()
+                    performance_monitor.get_all_metrics()
                     # Check if timer stats for query_time exist
                     timer_stats = performance_monitor.get_timer_stats("query_time")
                     performance_monitoring_works = bool(timer_stats and "mean" in timer_stats)
