@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.constants import (
@@ -497,7 +497,7 @@ async def validate_input(request: Request, data: SecureTextInput) -> dict[str, A
 
 @app.get("/api/v1/search")
 @rate_limit(RateLimits.API_DEFAULT)
-async def search_endpoint(request: Request, params: SecureQueryParams) -> dict[str, Any]:  # noqa: ARG001
+async def search_endpoint(request: Request, params: SecureQueryParams = Depends()) -> dict[str, Any]:  # noqa: ARG001
     """Test endpoint for query parameter validation.
 
     This endpoint demonstrates secure query parameter handling

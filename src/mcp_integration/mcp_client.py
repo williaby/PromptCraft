@@ -56,7 +56,7 @@ from typing import Any
 try:
     import httpx
 except ImportError:
-    httpx = None
+    httpx = None  # type: ignore[assignment]
 
 from pydantic import BaseModel, Field
 from tenacity import (

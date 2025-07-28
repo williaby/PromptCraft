@@ -16,22 +16,23 @@
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "python.testing.pytestArgs": [
-        "tests",
-        "-v",
-        "--tb=short",
-        "--rootdir=${workspaceFolder}"
+        "-m",
+        "not slow and not performance and not stress"
     ],
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "python.testing.pytest.path": ["poetry", "run", "pytest"],
     "python.defaultInterpreterPath": ".venv/bin/python",
     "python.testing.cwd": "${workspaceFolder}",
     "python.envFile": "${workspaceFolder}/.env",
+    "python.terminal.activateEnvironment": false,
     "python.analysis.extraPaths": ["src"],
     "python.analysis.autoImportCompletions": true,
-    "python.testing.pytestPaths": [
-        "tests/examples",
-        "tests/unit/utils",
-        "tests/unit",
-        "tests"
+    "python.testing.coverageEnabled": true,
+    "python.testing.coverageArgs": [
+        "--cov=src",
+        "--cov-report=html",
+        "--cov-report=xml:coverage.xml",
+        "--junitxml=reports/junit.xml",
+        "--cov-report=term"
     ]
 }

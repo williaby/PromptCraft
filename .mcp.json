@@ -1,37 +1,8 @@
 {
-  "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
-    },
-    "git": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-git",
-        "--repository",
-        "/home/byron/dev/PromptCraft"
-      ]
-    },
-    "time": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-time"
-      ]
-    },
-    "serena": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "/home/byron/dev/PromptCraft"
-      ]
-    }
-  }
+  "version": "1.0",
+  "mcpServers": {},
+  "global_settings": {},
+  "parallel_execution": true,
+  "max_concurrent_servers": 5,
+  "health_check_interval": 60
 }

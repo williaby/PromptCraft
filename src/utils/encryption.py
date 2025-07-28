@@ -184,7 +184,9 @@ def initialize_encryption() -> None:
     except FileNotFoundError:
         # No encrypted env file found, which is okay for development
         # Log this as debug info to maintain visibility without cluttering logs
-        logging.getLogger(__name__).debug("No encrypted .env file found, continuing with standard environment variables")
+        logging.getLogger(__name__).debug(
+            "No encrypted .env file found, continuing with standard environment variables",
+        )
 
 
 if __name__ == "__main__":

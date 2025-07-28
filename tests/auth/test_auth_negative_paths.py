@@ -86,7 +86,7 @@ class TestAuthenticationNegativePaths:
             with pytest.raises(JWTValidationError) as exc_info:
                 jwt_validator.validate_token(tampered_token)
 
-            assert exc_info.value.error_type == "invalid_token"
+            assert exc_info.value.error_type == "invalid_signature"
 
     def test_expired_jwt_token(self, jwt_validator, mock_jwks_client):
         """Test handling of expired JWT tokens."""

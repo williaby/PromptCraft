@@ -148,7 +148,11 @@ class TestMCPConfigurationIntegration:
         with patch("src.config.settings.get_settings", return_value=test_settings):
             # Mock dependencies
             config_manager = MagicMock(spec=MCPConfigurationManager)
-            config_manager.get_parallel_execution_config.return_value = {"max_concurrent": 5, "enabled": True, "health_check_interval": 60}
+            config_manager.get_parallel_execution_config.return_value = {
+                "max_concurrent": 5,
+                "enabled": True,
+                "health_check_interval": 60,
+            }
 
             mcp_client = MagicMock(spec=MCPClient)
 
@@ -428,20 +432,20 @@ class TestMCPConfigurationIntegration:
             # Test Docker-related configuration from server configs
             enabled_servers = config_manager.get_enabled_servers()
             health_status = config_manager.get_health_status()
-            
+
             # Verify Docker-related configuration aspects
             assert isinstance(enabled_servers, list)
             assert isinstance(health_status, dict)
             assert "configuration_valid" in health_status
             assert "parallel_execution" in health_status
-            
+
             # Check if any server has Docker configuration
             for server_name in enabled_servers:
                 server_config = config_manager.get_server_config(server_name)
                 if server_config:
-                    assert hasattr(server_config, 'docker_compatible')
-                    assert hasattr(server_config, 'deployment_preference')
-                    assert hasattr(server_config, 'memory_requirement')
+                    assert hasattr(server_config, "docker_compatible")
+                    assert hasattr(server_config, "deployment_preference")
+                    assert hasattr(server_config, "memory_requirement")
 
     @pytest.mark.integration
     @pytest.mark.asyncio

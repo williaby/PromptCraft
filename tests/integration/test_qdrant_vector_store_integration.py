@@ -235,39 +235,45 @@ class TestQdrantVectorStoreIntegration:
         """Test Qdrant vector store operations with mocked client."""
 
         # Mock QDRANT_AVAILABLE to ensure QdrantVectorStore can be used
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), \
-             patch("src.core.vector_store.QdrantClient") as mock_client_class:
-            
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient") as mock_client_class,
+        ):
+
             store = QdrantVectorStore(qdrant_config)
             mock_client = MagicMock()  # QdrantClient is synchronous but some methods are awaited in the code
             mock_client_class.return_value = mock_client
-            
+
             # Set up upsert mock to handle both sync and async usage patterns
             upsert_result = MagicMock(status="completed")
-            
-            # Use AsyncMock for awaited calls - we'll handle sync calls in update separately
-            mock_client.upsert = AsyncMock(return_value=upsert_result)
-            
+
+            # Use MagicMock since upsert is called synchronously in the vector store
+            mock_client.upsert = MagicMock(return_value=upsert_result)
+
             # Setup search mock results
             mock_search_hit_1 = MagicMock()
             mock_search_hit_1.id = "doc_1"
             mock_search_hit_1.score = 0.95
             mock_search_hit_1.payload = {"content": "FastAPI authentication", "metadata": {"framework": "fastapi"}}
             mock_search_hit_1.vector = [0.8, 0.2, 0.9] + [0.1] * (DEFAULT_VECTOR_DIMENSIONS - 3)
-            
+
             mock_search_hit_2 = MagicMock()
             mock_search_hit_2.id = "doc_2"
             mock_search_hit_2.score = 0.88
             mock_search_hit_2.payload = {"content": "Async error handling", "metadata": {"language": "python"}}
             mock_search_hit_2.vector = [0.7, 0.8, 0.3] + [0.2] * (DEFAULT_VECTOR_DIMENSIONS - 3)
-            
-            mock_client.search.return_value = [mock_search_hit_1, mock_search_hit_2]
+
+            # Set up search mock to return a coroutine since the vector store calls it with await
+            async def mock_search(*args, **kwargs):
+                return [mock_search_hit_1, mock_search_hit_2]
+
+            mock_client.search = mock_search
 
             # Mock connection and health check
             mock_collections = MagicMock()
             mock_collections.collections = []
             mock_client.get_collections.return_value = mock_collections
-            
+
             # Setup for health check
             mock_client.get_collections.return_value = mock_collections
 
@@ -316,7 +322,7 @@ class TestQdrantVectorStoreIntegration:
 
             # Test document insertion
             # The mock_upsert is already set up to return completed status
-            
+
             # Ensure PointStruct is available for insertion
             with patch("src.core.vector_store.PointStruct", MagicMock()) as mock_point_struct:
                 batch_result = await store.insert_documents(sample_documents)
@@ -342,10 +348,10 @@ class TestQdrantVectorStoreIntegration:
             # The update_document method calls upsert synchronously (not awaited)
             # So we need to replace the async mock temporarily
             updated_doc = sample_documents[0]
-            
+
             # Replace with synchronous mock for update operation
             mock_client.upsert = MagicMock(return_value=upsert_result)
-            
+
             with patch("src.core.vector_store.PointStruct", MagicMock()):
                 update_success = await store.update_document(updated_doc)
             assert update_success is True

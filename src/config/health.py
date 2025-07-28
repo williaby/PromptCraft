@@ -219,7 +219,12 @@ def _determine_config_source(settings: ApplicationSettings) -> str:
 def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     """Sanitize validation errors to remove sensitive information.
 
-    Uses pre-compiled regex patterns for optimal performance.
+    Uses a two-stage hybrid approach recommended by security consensus:
+    1. High-risk patterns get full message replacement (schema protection)
+    2. Other messages get quote-level sanitization (context preservation)
+
+    This balances maximum security for known sensitive patterns while
+    preserving debugging context for general validation errors.
 
     Args:
         errors: List of validation error messages
@@ -229,24 +234,90 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     """
     sanitized = []
 
-    for error in errors:
-        sanitized_error = error
+    # High-risk patterns that require full message replacement
+    # These patterns reveal sensitive schema/validation information
+    HIGH_RISK_PATTERNS = [
+        (
+            re.compile(r"database\s+password.*(?:too\s+short|invalid|failed)", re.IGNORECASE),
+            "Password configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"api\s+key.*(?:invalid|failed|expired)", re.IGNORECASE),
+            "API key configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"secret\s+key.*(?:must\s+not\s+contain|invalid|failed)", re.IGNORECASE),
+            "Secret key configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"jwt\s+secret.*(?:failed|invalid)", re.IGNORECASE),
+            "JWT secret configuration issue (details hidden)",
+        ),
+        (
+            re.compile(r"configuration\s+file.*(?:contains\s+errors|invalid)", re.IGNORECASE),
+            "Configuration file path issue (path hidden)",
+        ),
+    ]
 
-        # Check for sensitive patterns using pre-compiled regex patterns
-        for compiled_pattern, replacement in _COMPILED_SENSITIVE_PATTERNS:
-            if compiled_pattern.search(error):
+    for error in errors:
+        original_error = error
+        sanitized_error = error
+        high_risk_matched = False
+
+        # Stage 1: Check for high-risk patterns first (full replacement)
+        for pattern, replacement in HIGH_RISK_PATTERNS:
+            if pattern.search(error):
                 sanitized_error = replacement
+                high_risk_matched = True
                 break
-        else:
-            # Check for file path patterns using pre-compiled patterns
-            for compiled_path_pattern in _COMPILED_FILE_PATH_PATTERNS:
-                if compiled_path_pattern.search(error):
-                    sanitized_error = "Configuration file path issue (path hidden)"
-                    break
-            else:
-                # If no pattern match, sanitize quoted values
-                sanitized_error = re.sub(r"'[^']*'", "'***'", sanitized_error)
-                sanitized_error = re.sub(r'"[^"]*"', '"***"', sanitized_error)
+
+        # Stage 2: If no high-risk pattern matched, apply quote-level sanitization
+        if not high_risk_matched:
+            # First, sanitize quoted values that might contain sensitive data
+            def is_sensitive_quoted_value(match):
+                value = match.group(1) if match.groups() else match.group(0)[1:-1]
+                # Don't sanitize short field names that look like identifiers
+                if len(value) <= 8 and "_" in value and value.islower() and value.isalnum() == False:
+                    return False
+                # Check if the quoted value looks like sensitive data or is just any value being quoted
+                sensitive_indicators = ["pass", "secret", "token", "auth", "credential"]
+                return any(indicator in value.lower() for indicator in sensitive_indicators) or len(value) > 8
+
+            # Replace quoted values that look sensitive
+            sanitized_error = re.sub(
+                r"'([^']*)'",
+                lambda m: "'***'" if is_sensitive_quoted_value(m) else m.group(0),
+                sanitized_error,
+            )
+            sanitized_error = re.sub(
+                r'"([^"]*)"',
+                lambda m: '"***"' if is_sensitive_quoted_value(m) else m.group(0),
+                sanitized_error,
+            )
+
+            # Check if quote sanitization modified the message
+            quote_sanitized = sanitized_error != original_error
+
+            # Only apply legacy pattern replacement if quote sanitization didn't handle it
+            if not quote_sanitized:
+                # Check for sensitive patterns using pre-compiled regex patterns
+                # Do pattern replacement for messages that contain sensitive terms
+                pattern_matched = False
+                # More selective pattern matching - avoid replacing whole messages for common field references
+                contains_field_reference = re.search(r"field\s+['\"]*(?:password|api_key|secret)", error, re.IGNORECASE)
+                if not contains_field_reference:
+                    for compiled_pattern, replacement in _COMPILED_SENSITIVE_PATTERNS:
+                        if compiled_pattern.search(error):
+                            sanitized_error = replacement
+                            pattern_matched = True
+                            break
+
+                # Check for file path patterns using pre-compiled patterns
+                if not pattern_matched and sanitized_error == original_error:
+                    for compiled_path_pattern in _COMPILED_FILE_PATH_PATTERNS:
+                        if compiled_path_pattern.search(error):
+                            sanitized_error = "Configuration file path issue (path hidden)"
+                            break
 
         sanitized.append(sanitized_error)
 

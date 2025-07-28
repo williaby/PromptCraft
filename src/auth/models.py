@@ -21,6 +21,11 @@ class AuthenticatedUser(BaseModel):
     role: UserRole = Field(default=UserRole.USER, description="User role")
     jwt_claims: dict[str, Any] = Field(..., description="All JWT claims")
 
+    @property
+    def user_id(self) -> str | None:
+        """Get user ID from JWT 'sub' claim."""
+        return self.jwt_claims.get("sub")
+
     class Config:
         """Pydantic configuration."""
 

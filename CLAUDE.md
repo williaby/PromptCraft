@@ -53,11 +53,57 @@ git config --get user.signingkey  # Must be configured for signed commits
 
 ### Testing
 
+The project uses a tiered testing approach to optimize development speed while maintaining comprehensive coverage.
+
+#### Test Performance Tiers
+
+**Fast Development Loop (< 1 minute)**
 ```bash
-# Run all tests with coverage
+# Core unit tests only - fastest feedback
+make test-fast
+# or
+poetry run pytest tests/unit/ tests/auth/ -m "not slow and not performance and not stress" --maxfail=3 --tb=short
+```
+
+**Pre-commit Validation (< 2 minutes)**
+```bash
+# Unit + auth + essential integration tests
+make test-pre-commit
+# or
+poetry run pytest tests/unit/ tests/auth/ tests/integration/ -m "not performance and not stress and not contract" --maxfail=5
+```
+
+**PR Validation (< 5 minutes)**
+```bash
+# All tests except performance/stress (CI default for PRs)
+make test-pr
+# or
+poetry run pytest -m "not performance and not stress" --maxfail=10
+```
+
+**Full Test Suite**
+```bash
+# Complete test suite including performance tests (main branch/scheduled)
 make test
 # or
 poetry run pytest -v --cov=src --cov-report=html --cov-report=term-missing
+```
+
+**Performance Tests Only**
+```bash
+# Run only performance and stress tests
+make test-performance
+# or
+poetry run pytest tests/performance/ -m "performance or stress" --tb=line
+```
+
+**Additional Test Commands**
+```bash
+# Smoke tests for basic functionality
+make test-smoke
+
+# Tests with detailed timing analysis
+make test-with-timing
 
 # Run specific test file
 poetry run pytest tests/unit/test_query_counselor.py -v
@@ -65,11 +111,39 @@ poetry run pytest tests/unit/test_query_counselor.py -v
 # Run with different Python version using nox
 nox -s tests -p 3.12
 
-# Run integration tests
+# Run integration tests only
 pytest tests/integration/ -v
 
 # Run unit tests only
 pytest tests/unit/ -v
+```
+
+#### Test Markers
+
+The project uses pytest markers to categorize tests:
+
+- `@pytest.mark.unit` - Unit tests (fast, isolated)
+- `@pytest.mark.integration` - Integration tests (moderate speed)
+- `@pytest.mark.performance` - Performance tests (slow, comprehensive)
+- `@pytest.mark.stress` - Stress tests (very slow)
+- `@pytest.mark.contract` - Contract tests (require external services)
+- `@pytest.mark.slow` - Any slow-running test
+- `@pytest.mark.fast` - Fast tests for development cycles
+- `@pytest.mark.smoke` - Basic functionality validation tests
+
+**Usage Examples:**
+```bash
+# Run only fast tests
+pytest -m "fast"
+
+# Exclude slow tests
+pytest -m "not slow"
+
+# Run only unit and integration tests
+pytest -m "unit or integration"
+
+# Exclude performance and stress tests
+pytest -m "not performance and not stress"
 ```
 
 ### Code Quality and Formatting
@@ -139,6 +213,26 @@ nox -s format
 # Clean up build artifacts
 nox -s clean
 ```
+
+### CI/CD Optimization
+
+The CI pipeline uses tiered testing for optimal performance:
+
+**Pull Request Workflow (15 minutes timeout)**
+- Runs `pytest -m "not performance and not stress"` for faster feedback
+- Excludes 24 performance tests and stress tests
+- Focuses on 1,936 core tests for validation
+
+**Main Branch/Scheduled Workflow (25 minutes timeout)**
+- Runs full test suite including performance tests
+- Generates detailed timing reports with `--durations=20`
+- Separate performance testing job for comprehensive validation
+
+**Test Distribution:**
+- Unit tests: 1,603 (fast, < 5 minutes)
+- Integration tests: 161 (moderate, < 3 minutes)
+- Performance tests: 24 (slow, excluded from PRs)
+- Auth/Security tests: 35 (fast, always included)
 
 ### Docker Development
 

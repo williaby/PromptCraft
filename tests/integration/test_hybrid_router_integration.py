@@ -178,7 +178,7 @@ class TestHybridRouterIntegration:
                 router = HybridRouter(
                     openrouter_client=mock_or_instance,
                     mcp_client=mock_mcp_client,
-                    strategy=RoutingStrategy.OPENROUTER_PRIMARY
+                    strategy=RoutingStrategy.OPENROUTER_PRIMARY,
                 )
 
                 # Test connection
@@ -210,12 +210,8 @@ class TestHybridRouterIntegration:
     async def test_gradual_rollout_traffic_distribution(self, mock_get_cb, mock_get_settings, mock_settings):
         """Test gradual rollout traffic distribution over multiple requests."""
         mock_settings.openrouter_traffic_percentage = 30  # 30% to OpenRouter
+        mock_settings.circuit_breaker_enabled = False  # Disable circuit breaker for consistent testing
         mock_get_settings.return_value = mock_settings
-
-        # Mock circuit breaker
-        circuit_breaker = MagicMock()
-        circuit_breaker.is_available.return_value = True
-        mock_get_cb.return_value = circuit_breaker
 
         # Create mock clients that track calls
         openrouter_calls = []
@@ -260,7 +256,8 @@ class TestHybridRouterIntegration:
         router = HybridRouter(
             openrouter_client=mock_openrouter,
             mcp_client=mock_mcp,
-            strategy=RoutingStrategy.ROUND_ROBIN,  # Use round robin for gradual rollout testing
+            strategy=RoutingStrategy.OPENROUTER_PRIMARY,  # Use primary strategy for gradual rollout testing
+            enable_gradual_rollout=True,  # Explicitly enable gradual rollout
         )
 
         await router.connect()
@@ -285,10 +282,10 @@ class TestHybridRouterIntegration:
 
         openrouter_percentage = (len(openrouter_calls) / total_calls) * 100
 
-        # Allow for some variance due to routing logic
-        # Round robin strategy alternates between services, so expect roughly 50/50 distribution
-        # with some variance due to the random hash component
-        assert 20 <= openrouter_percentage <= 80
+        # Allow for some variance due to hash-based routing
+        # With 30% traffic percentage, expect roughly 30% to OpenRouter with some variance
+        # Hash-based routing should be deterministic but allow for reasonable variance in test runs
+        assert 20 <= openrouter_percentage <= 40  # Allow ±10% variance for 30% target
 
         # Verify metrics
         assert router.metrics.total_requests == num_requests
