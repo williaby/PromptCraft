@@ -15,16 +15,16 @@ Test Coverage:
 - Model selection and cost tracking
 """
 
-import os
 import sys
 import time
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import gradio as gr
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.ui.multi_journey_interface import MultiJourneyInterface, RateLimiter
@@ -89,14 +89,15 @@ class TestGradioUIIntegration:
     @pytest.fixture
     def multi_journey_interface(self, ui_settings, mock_journey1_processor, mock_export_utils):
         """Create MultiJourneyInterface instance with mocked dependencies."""
-        with patch("src.config.settings.get_settings", return_value=ui_settings):
-            with patch(
+        with (
+            patch("src.config.settings.get_settings", return_value=ui_settings),
+            patch(
                 "src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates",
                 return_value=mock_journey1_processor,
-            ):
-                with patch("src.ui.components.shared.export_utils.ExportUtils", return_value=mock_export_utils):
-                    interface = MultiJourneyInterface()
-                    return interface
+            ),
+            patch("src.ui.components.shared.export_utils.ExportUtils", return_value=mock_export_utils),
+        ):
+            return MultiJourneyInterface()
 
     @pytest.mark.integration
     def test_multi_journey_interface_creation(self, multi_journey_interface):
@@ -127,8 +128,8 @@ class TestGradioUIIntegration:
 
         # Test that the interface can be launched (mock the launch)
         with patch.object(gradio_interface, "launch") as mock_launch:
-            gradio_interface.launch(server_name="0.0.0.0", server_port=7860, share=False)
-            mock_launch.assert_called_once_with(server_name="0.0.0.0", server_port=7860, share=False)
+            gradio_interface.launch(server_name="127.0.0.1", server_port=7860, share=False)
+            mock_launch.assert_called_once_with(server_name="127.0.0.1", server_port=7860, share=False)
 
     @pytest.mark.integration
     def test_journey1_create_framework_integration(self, multi_journey_interface):
@@ -171,7 +172,7 @@ class TestGradioUIIntegration:
         test_session_id = "test_session_123"
 
         # Test normal request rate limiting
-        for i in range(30):  # Max per minute
+        for _ in range(30):  # Max per minute
             assert rate_limiter.check_request_rate(test_session_id) is True
 
         # 31st request should be rate limited
@@ -248,11 +249,11 @@ class TestGradioUIIntegration:
         assert test_content in md_export
 
         # Test JSON export
+        import json
+
         json_export = multi_journey_interface.export_content(test_content, "json")
         assert "content" in json_export
         # Parse JSON to validate content properly
-        import json
-
         parsed_json = json.loads(json_export)
         assert "content" in parsed_json
         assert parsed_json["content"] == test_content
