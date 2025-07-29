@@ -1,7 +1,7 @@
 """Comprehensive tests for src/utils/logging_mixin.py module."""
 
 import logging
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 
@@ -69,7 +69,7 @@ class TestLoggerMixin:
             mock_logger.level = 0  # No level set
             mock_get_logger.return_value = mock_logger
 
-            component = TestComponent()
+            TestComponent()
 
             mock_logger.setLevel.assert_called_with(logging.INFO)
 
@@ -84,7 +84,7 @@ class TestLoggerMixin:
             mock_logger.level = logging.WARNING  # Existing level
             mock_get_logger.return_value = mock_logger
 
-            component = TestComponent()
+            TestComponent()
 
             # Should not call setLevel since level is already set
             assert not any(call[0][0] == logging.INFO for call in mock_logger.setLevel.call_args_list)
@@ -431,7 +431,7 @@ class TestStructuredLoggerMixin:
         component.log_structured(logging.INFO, "Test message")
 
         expected_context = {"component_id": "test_id", "component_class": "TestComponent"}
-        component.logger.log.assert_called_once_with(logging.INFO, "Test message - Context: %s", expected_context)
+        component.logger.log.assert_called_once_with(logging.INFO, "%s - Context: %s", "Test message", expected_context)
 
     def test_log_structured_with_event_type(self):
         """Test log_structured includes event type when provided."""
@@ -445,7 +445,7 @@ class TestStructuredLoggerMixin:
         component.log_structured(logging.INFO, "Test message", event_type="api_call")
 
         expected_context = {"component_id": "test_id", "component_class": "TestComponent", "event_type": "api_call"}
-        component.logger.log.assert_called_once_with(logging.INFO, "Test message - Context: %s", expected_context)
+        component.logger.log.assert_called_once_with(logging.INFO, "%s - Context: %s", "Test message", expected_context)
 
     def test_log_structured_with_kwargs(self):
         """Test log_structured includes kwargs in context."""
@@ -471,7 +471,7 @@ class TestStructuredLoggerMixin:
             "request_id": "req_123",
             "user_id": "user_456",
         }
-        component.logger.log.assert_called_once_with(logging.INFO, "Test message - Context: %s", expected_context)
+        component.logger.log.assert_called_once_with(logging.INFO, "%s - Context: %s", "Test message", expected_context)
 
     def test_log_api_call_minimal(self):
         """Test log_api_call with minimal parameters."""
@@ -493,7 +493,8 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "API call: GET /api/test - Context: %s",
+            "%s - Context: %s",
+            "API call: GET /api/test",
             expected_context,
         )
 
@@ -520,7 +521,8 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "API call: POST /api/test - Context: %s",
+            "%s - Context: %s",
+            "API call: POST /api/test",
             expected_context,
         )
 
@@ -545,7 +547,8 @@ class TestStructuredLoggerMixin:
         }
         component.logger.log.assert_called_once_with(
             logging.INFO,
-            "API call: PUT /api/test - Context: %s",
+            "%s - Context: %s",
+            "API call: PUT /api/test",
             expected_context,
         )
 
@@ -734,7 +737,6 @@ class TestEdgeCasesAndComplexScenarios:
 
         # Test with None context
         component.log_error_with_context(ValueError("test"), context=None)
-        from unittest.mock import ANY
 
         component.logger.error.assert_called_with(
             "Error%s: %s - Context: %s",
@@ -750,7 +752,7 @@ class TestEdgeCasesAndComplexScenarios:
 
 
 @pytest.mark.parametrize(
-    "logger_name,expected_name",
+    ("logger_name", "expected_name"),
     [
         ("simple", "promptcraft.simple"),
         ("component.name", "promptcraft.component.name"),
@@ -800,10 +802,10 @@ class TestRealWorldUsageScenarios:
         class APIService(StructuredLoggerMixin):
             def __init__(self, service_name, *args, **kwargs):
                 super().__init__(
+                    *args,
                     component_id=service_name,
                     correlation_id=None,
                     logger_name=f"api.{service_name}",
-                    *args,
                     **kwargs,
                 )
 
@@ -817,9 +819,10 @@ class TestRealWorldUsageScenarios:
         service.logger.log.assert_called_once()
         call_args = service.logger.log.call_args[0]
         assert call_args[0] == logging.INFO
-        assert call_args[1] == "API call: GET /api/users/123 - Context: %s"
+        assert call_args[1] == "%s - Context: %s"
+        assert call_args[2] == "API call: GET /api/users/123"
 
-        context = call_args[2]
+        context = call_args[3]
         assert context["component_id"] == "user_service"
         assert context["endpoint"] == "/api/users/123"
         assert context["method"] == "GET"
@@ -832,7 +835,7 @@ class TestRealWorldUsageScenarios:
 
         class StateMachine(LoggerMixin):
             def __init__(self, *args, **kwargs):
-                super().__init__(logger_name="state_machine", *args, **kwargs)
+                super().__init__(*args, logger_name="state_machine", **kwargs)
                 self.state = "idle"
 
             def transition_to(self, new_state, reason=None):
@@ -884,7 +887,7 @@ class TestRealWorldUsageScenarios:
         processor.logger.isEnabledFor.return_value = True
 
         # Simulate error scenario
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Data processing failed"):
             processor.process_data("data_123", "user_456")
 
         # Verify method entry logging
