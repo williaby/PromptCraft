@@ -438,4 +438,4 @@ def apply_accessibility_enhancements(_interface: gr.Blocks) -> gr.Blocks:
         )
         gr.HTML("</footer>")
 
-    return enhanced_interface
+    return cast(gr.Blocks, enhanced_interface)
