@@ -5,6 +5,8 @@ This module provides accessibility improvements to ensure WCAG 2.1 AA compliance
 for the multi-journey interface.
 """
 
+from typing import cast
+
 import gradio as gr
 
 
@@ -147,7 +149,7 @@ class AccessibilityEnhancer:
         def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
             """Convert hex color to RGB tuple."""
             hex_color = hex_color.lstrip("#")
-            return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+            return cast(tuple[int, int, int], tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4)))
 
         def get_luminance(rgb: tuple[int, int, int]) -> float:
             """Calculate relative luminance of RGB color."""
@@ -159,11 +161,11 @@ class AccessibilityEnhancer:
             high_gamma_power = 2.4
 
             def normalize(c: int) -> float:
-                c = c / 255.0
+                c_normalized: float = c / 255.0
                 return (
-                    c / low_gamma
-                    if c <= srgb_threshold
-                    else ((c + high_gamma_offset) / high_gamma_divisor) ** high_gamma_power
+                    c_normalized / low_gamma
+                    if c_normalized <= srgb_threshold
+                    else ((c_normalized + high_gamma_offset) / high_gamma_divisor) ** high_gamma_power
                 )
 
             r, g, b = map(normalize, rgb)
