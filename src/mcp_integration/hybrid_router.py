@@ -580,7 +580,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
         return sorted(capabilities)
 
-    def _make_routing_decision(  # noqa: PLR0911
+    def _make_routing_decision(  # noqa: PLR0911, RET503
         self,
         request_id: str,
         operation: str,
@@ -727,15 +727,6 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 fallback_available=True,
                 request_id=request_id,
             )
-
-        # Fallback for unknown strategy
-        return RoutingDecision(
-            service="mcp",
-            reason=f"Unknown routing strategy '{self.strategy}', defaulting to MCP",
-            confidence=0.5,
-            fallback_available=self._is_openrouter_available(),
-            request_id=request_id,
-        )
 
     def _is_openrouter_available(self) -> bool:
         """Check if OpenRouter is available (circuit breaker and connection)."""
