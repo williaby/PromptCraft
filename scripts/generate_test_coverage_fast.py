@@ -185,7 +185,7 @@ class FastCoverageReportGenerator:
                 self.log(f"✅ Integrated standard coverage report from {htmlcov_dir.name}")
                 return
 
-        self.log("ℹ️  No standard htmlcov found - reports will work without it")
+        self.log("INFO: No standard htmlcov found - reports will work without it")
 
     def run(self, force: bool = False) -> bool:
         """Run the complete coverage report generation workflow."""

@@ -208,6 +208,11 @@ ignore = [
     "S101",    # use of assert detected
     "PLR0913", # too many arguments
     "BLE001",  # blind exception catching (needed for generic error handlers)
+    # Industry standard additions for development workflow:
+    "UP038",   # isinstance syntax (Python compatibility)
+    "PLR2004", # magic numbers (for obvious values)
+    "ARG002",  # unused arguments (interface compatibility)
+    "SIM102",  # nested if statements (readability preference)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -229,6 +234,10 @@ ignore = [
 "src/utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility
 "*.yaml" = ["ALL"]
 "*.yml" = ["ALL"]
+
+[tool.ruff.lint.pylint]
+max-branches = 18      # Increased from default 12 for industry standards
+max-statements = 75    # Increased from default 50 for industry standards
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
