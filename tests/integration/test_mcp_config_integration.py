@@ -8,18 +8,19 @@ and configuration-driven behavior.
 import os
 import sys
 import tempfile
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.health import get_configuration_status, get_mcp_configuration_health
-from src.config.settings import ApplicationSettings
-from src.mcp_integration.client import MCPClient
+from src.config.settings import ApplicationSettings, validate_configuration_on_startup
+from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.config_manager import MCPConfigurationManager
-from src.mcp_integration.mcp_client import MCPClientFactory, ZenMCPClient
+from src.mcp_integration.mcp_client import MCPClientFactory, MCPConnectionError, ZenMCPClient
 from src.mcp_integration.parallel_executor import ParallelSubagentExecutor
 
 
@@ -60,7 +61,7 @@ class TestMCPConfigurationIntegration:
             temp_file = f.name
 
         yield temp_file
-        os.unlink(temp_file)
+        Path(temp_file).unlink()
 
     @pytest.mark.integration
     def test_settings_mcp_configuration_loading(self, test_settings):
@@ -170,35 +171,33 @@ class TestMCPConfigurationIntegration:
     async def test_mcp_health_check_configuration_integration(self, test_settings):
         """Test MCP health check with configuration integration."""
 
-        with patch("src.config.settings.get_settings", return_value=test_settings):
-            # Mock MCP components in the health module
-            with (
-                patch("src.config.health.MCPClient") as mock_client_class,
-                patch("src.config.health.MCPConfigurationManager") as mock_config_class,
-                patch("src.config.health.ParallelSubagentExecutor") as mock_executor_class,
-            ):
+        with (
+            patch("src.config.settings.get_settings", return_value=test_settings),
+            patch("src.config.health.MCPClient") as mock_client_class,
+            patch("src.config.health.MCPConfigurationManager") as mock_config_class,
+            patch("src.config.health.ParallelSubagentExecutor") as mock_executor_class,
+        ):
+            # Mock instances
+            mock_client = AsyncMock()
+            mock_client.health_check.return_value = {"overall_status": "healthy"}
+            mock_client_class.return_value = mock_client
 
-                # Mock instances
-                mock_client = AsyncMock()
-                mock_client.health_check.return_value = {"overall_status": "healthy"}
-                mock_client_class.return_value = mock_client
+            mock_config = MagicMock()
+            mock_config.get_health_status.return_value = {"configuration_valid": True}
+            mock_config_class.return_value = mock_config
 
-                mock_config = MagicMock()
-                mock_config.get_health_status.return_value = {"configuration_valid": True}
-                mock_config_class.return_value = mock_config
+            mock_executor = AsyncMock()
+            mock_executor.health_check.return_value = {"status": "healthy"}
+            mock_executor_class.return_value = mock_executor
 
-                mock_executor = AsyncMock()
-                mock_executor.health_check.return_value = {"status": "healthy"}
-                mock_executor_class.return_value = mock_executor
+            # Test MCP health check
+            health_status = await get_mcp_configuration_health()
 
-                # Test MCP health check
-                health_status = await get_mcp_configuration_health()
-
-                # Verify health check results
-                assert health_status["healthy"] is True
-                assert health_status["mcp_configuration"]["configuration_valid"] is True
-                assert health_status["mcp_client"]["overall_status"] == "healthy"
-                assert health_status["parallel_executor"]["status"] == "healthy"
+            # Verify health check results
+            assert health_status["healthy"] is True
+            assert health_status["mcp_configuration"]["configuration_valid"] is True
+            assert health_status["mcp_client"]["overall_status"] == "healthy"
+            assert health_status["parallel_executor"]["status"] == "healthy"
 
     @pytest.mark.integration
     def test_configuration_status_mcp_integration(self, test_settings):
@@ -365,7 +364,7 @@ class TestMCPConfigurationIntegration:
                 client = MCPClientFactory.create_from_settings(test_settings)
 
                 # Test error handling
-                with pytest.raises(Exception):
+                with pytest.raises((MCPClientError, MCPConnectionError, ConnectionError, RuntimeError)):
                     await client.connect()
 
                 # Verify client state
@@ -493,8 +492,6 @@ class TestMCPConfigurationIntegration:
         """Test configuration validation with MCP components."""
 
         with patch("src.config.settings.get_settings", return_value=test_settings):
-            from src.config.settings import validate_configuration_on_startup
-
             # Should not raise exception with valid MCP configuration
             try:
                 validate_configuration_on_startup(test_settings)
