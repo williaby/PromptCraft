@@ -887,7 +887,7 @@ class TestRealWorldUsageScenarios:
         processor.logger.isEnabledFor.return_value = True
 
         # Simulate error scenario
-        with pytest.raises(ValueError, match="Data processing failed"):
+        with pytest.raises(ValueError, match="Invalid data format"):
             processor.process_data("data_123", "user_456")
 
         # Verify method entry logging
