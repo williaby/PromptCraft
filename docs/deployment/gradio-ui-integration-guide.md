@@ -12,7 +12,9 @@ purpose: "Comprehensive deployment guide for integrating the validated Gradio UI
 
 ## Overview
 
-This guide provides step-by-step instructions for deploying and integrating the validated Gradio UI implementation (`multi_journey_interface.py`) with the Phase 1 PromptCraft-Hybrid infrastructure. The deployment includes integration with Zen MCP Server, external services, and comprehensive validation procedures.
+This guide provides step-by-step instructions for deploying and integrating the validated Gradio UI implementation
+(`multi_journey_interface.py`) with the Phase 1 PromptCraft-Hybrid infrastructure. The deployment includes integration
+with Zen MCP Server, external services, and comprehensive validation procedures.
 
 ## Prerequisites
 
@@ -586,6 +588,7 @@ netstat -tlnp | grep -E "(7860|3000|6333)"
 **Symptoms**: Service fails to start, connection refused on port 7860
 
 **Diagnosis**:
+
 ```bash
 # Check port availability
 sudo lsof -i :7860
@@ -598,6 +601,7 @@ poetry run python -c "from src.config.settings import ApplicationSettings; print
 ```
 
 **Solutions**:
+
 1. Ensure port 7860 is available
 2. Check environment variables are set correctly
 3. Verify all dependencies are installed
@@ -608,6 +612,7 @@ poetry run python -c "from src.config.settings import ApplicationSettings; print
 **Symptoms**: UI loads but queries fail with MCP connection errors
 
 **Diagnosis**:
+
 ```bash
 # Check MCP server status
 curl -f http://localhost:3000/health
@@ -620,6 +625,7 @@ docker network inspect promptcraft_promptcraft
 ```
 
 **Solutions**:
+
 1. Restart MCP server containers
 2. Verify network configuration
 3. Check MCP server logs
@@ -630,6 +636,7 @@ docker network inspect promptcraft_promptcraft
 **Symptoms**: Slow response times, high resource usage
 
 **Diagnosis**:
+
 ```bash
 # Check system resources
 top
@@ -644,6 +651,7 @@ poetry run python -m cProfile scripts/deploy_gradio_ui.py
 ```
 
 **Solutions**:
+
 1. Increase system resources
 2. Optimize query processing
 3. Enable caching
@@ -654,6 +662,7 @@ poetry run python -m cProfile scripts/deploy_gradio_ui.py
 **Symptoms**: Legitimate users getting rate limited
 
 **Diagnosis**:
+
 ```bash
 # Check rate limiting logs
 grep "rate.limit" /var/log/promptcraft/app.log
@@ -663,6 +672,7 @@ grep -r "RATE_LIMIT" .env*
 ```
 
 **Solutions**:
+
 1. Adjust rate limiting thresholds
 2. Implement user-based rate limiting
 3. Add rate limiting bypass for trusted IPs
@@ -718,6 +728,7 @@ docker-compose -f docker-compose.phase1-ui.yml restart
 ### Recommended Optimizations
 
 1. **Enable Response Caching**
+
    ```python
    # Add to configuration
    PROMPTCRAFT_CACHE_ENABLED="true"
@@ -725,6 +736,7 @@ docker-compose -f docker-compose.phase1-ui.yml restart
    ```
 
 2. **Optimize Resource Allocation**
+
    ```yaml
    # In docker-compose.yml
    deploy:
@@ -738,6 +750,7 @@ docker-compose -f docker-compose.phase1-ui.yml restart
    ```
 
 3. **Enable Compression**
+
    ```bash
    # Nginx compression
    gzip on;
@@ -765,6 +778,9 @@ watch -n 30 'systemctl status promptcraft-ui.service'
 
 ## Conclusion
 
-This deployment guide provides comprehensive instructions for successfully integrating the validated Gradio UI implementation with the Phase 1 infrastructure. Following these procedures ensures a stable, secure, and performant deployment that meets all acceptance criteria specified in the implementation plan.
+This deployment guide provides comprehensive instructions for successfully integrating the validated Gradio UI
+implementation with the Phase 1 infrastructure. Following these procedures ensures a stable, secure, and performant
+deployment that meets all acceptance criteria specified in the implementation plan.
 
-For ongoing maintenance and monitoring, refer to the troubleshooting section and establish regular backup procedures. The deployment is designed to be scalable and ready for Phase 2 enhancements.
+For ongoing maintenance and monitoring, refer to the troubleshooting section and establish regular backup
+procedures. The deployment is designed to be scalable and ready for Phase 2 enhancements.
