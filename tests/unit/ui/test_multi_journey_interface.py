@@ -10,6 +10,7 @@ import time
 from unittest.mock import Mock, patch
 
 import gradio as gr
+import gradio.exceptions
 import pytest
 
 from src.ui.multi_journey_interface import MultiJourneyInterface, RateLimiter
@@ -882,9 +883,9 @@ class TestMultiJourneyInterfaceExtended:
         # Test non-archive file
         interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # noqa: S108 # Should not raise
 
-        # Test archive file
+        # Test archive file - mock at the source module level for better CI compatibility
         with (
-            patch("pathlib.Path.stat") as mock_stat,
+            patch("src.ui.multi_journey_interface.Path.stat") as mock_stat,
             patch.object(interface, "_check_archive_bomb_heuristics") as mock_check,
         ):
             mock_stat.return_value.st_size = 1000
@@ -892,9 +893,11 @@ class TestMultiJourneyInterfaceExtended:
             mock_check.assert_called_once()
 
         # Test archive bomb detection failure
+        # Accept both gr.Error and gradio.exceptions.Error for version compatibility
+        gradio_error_classes = (gr.Error, gradio.exceptions.Error)
         with (
-            patch("pathlib.Path.stat", side_effect=Exception("File error")),
-            pytest.raises(gr.Error, match="Security Error: Unable to analyze archive file safely"),
+            patch("src.ui.multi_journey_interface.Path.stat", side_effect=Exception("File error")),
+            pytest.raises(gradio_error_classes, match="Security Error: Unable to analyze archive file safely"),
         ):
             interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
 
