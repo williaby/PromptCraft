@@ -448,7 +448,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 f"Query validation failed on all services: {e}",
                 MCPErrorType.VALIDATION_ERROR,
                 {"routing_decision": routing_decision.to_dict()},
-            )
+            ) from e
 
     async def orchestrate_agents(self, workflow_steps: list[WorkflowStep]) -> list[Response]:
         """
@@ -534,7 +534,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
             raise MCPServiceUnavailableError(
                 f"Orchestration failed on all services: {e}",
                 details={"routing_decision": routing_decision.to_dict()},
-            )
+            ) from e
 
     async def get_capabilities(self) -> list[str]:
         """
@@ -580,7 +580,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
         return sorted(capabilities)
 
-    def _make_routing_decision(
+    def _make_routing_decision(  # noqa: PLR0911, RET503
         self,
         request_id: str,
         operation: str,

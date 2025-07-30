@@ -236,7 +236,7 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
 
     # High-risk patterns that require full message replacement
     # These patterns reveal sensitive schema/validation information
-    HIGH_RISK_PATTERNS = [
+    high_risk_patterns = [
         (
             re.compile(r"database\s+password.*(?:too\s+short|invalid|failed)", re.IGNORECASE),
             "Password configuration issue (details hidden)",
@@ -265,7 +265,7 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
         high_risk_matched = False
 
         # Stage 1: Check for high-risk patterns first (full replacement)
-        for pattern, replacement in HIGH_RISK_PATTERNS:
+        for pattern, replacement in high_risk_patterns:
             if pattern.search(error):
                 sanitized_error = replacement
                 high_risk_matched = True
@@ -274,10 +274,10 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
         # Stage 2: If no high-risk pattern matched, apply quote-level sanitization
         if not high_risk_matched:
             # First, sanitize quoted values that might contain sensitive data
-            def is_sensitive_quoted_value(match):
+            def is_sensitive_quoted_value(match: re.Match[str]) -> bool:
                 value = match.group(1) if match.groups() else match.group(0)[1:-1]
                 # Don't sanitize short field names that look like identifiers
-                if len(value) <= 8 and "_" in value and value.islower() and value.isalnum() == False:
+                if len(value) <= 8 and "_" in value and value.islower() and value.isalnum() is False:
                     return False
                 # Check if the quoted value looks like sensitive data or is just any value being quoted
                 sensitive_indicators = ["pass", "secret", "token", "auth", "credential"]

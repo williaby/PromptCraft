@@ -42,7 +42,11 @@ class JWTValidator:
         self.issuer = issuer
         self.algorithm = algorithm
 
-    def validate_token(self, token: str, email_whitelist: list[str] | None = None) -> AuthenticatedUser:
+    def validate_token(  # noqa: PLR0912
+        self,
+        token: str,
+        email_whitelist: list[str] | None = None,
+    ) -> AuthenticatedUser:
         """Validate JWT token and extract user information.
 
         Args:

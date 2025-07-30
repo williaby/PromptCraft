@@ -11,15 +11,28 @@ Implements comprehensive file upload, OpenRouter model selection,
 and code snippet copying functionality.
 """
 
+import gzip
+import json
 import logging
+import mimetypes
+import signal
+import tarfile
 import time
+import zipfile
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 import gradio as gr
 
+try:
+    import magic
+except ImportError:
+    magic = None
+
 from src.config.settings import ApplicationSettings
+from src.ui.components.shared.export_utils import ExportUtils
+from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
 from src.utils.logging_mixin import LoggerMixin
 
 # Configure logging
@@ -41,7 +54,7 @@ class RateLimiter:
         max_requests_per_minute: int = 30,
         max_requests_per_hour: int = 200,
         max_file_uploads_per_hour: int = 50,
-    ):
+    ) -> None:
         self.max_requests_per_minute = max_requests_per_minute
         self.max_requests_per_hour = max_requests_per_hour
         self.max_file_uploads_per_hour = max_file_uploads_per_hour
@@ -179,13 +192,22 @@ class MultiJourneyInterface(LoggerMixin):
     - Session management and data persistence
     """
 
-    def __init__(self):
+    # Constants
+    MAX_TEXT_INPUT_SIZE = 50000  # 50KB text limit
+    MIN_RESULT_FIELDS = 9  # Minimum fields in result validation
+    MAX_PREVIEW_CHARS = 250  # Maximum characters in preview
+    MAX_SUMMARY_CHARS = 100  # Maximum characters in summary
+    MAX_FALLBACK_CHARS = 500  # Maximum characters in fallback
+    MAX_REQUEST_CHARS = 200  # Maximum characters in request
+    MAX_TIMEOUT_CHARS = 300  # Maximum characters in timeout
+    MAX_TIMEOUT_REQUEST_CHARS = 150  # Maximum characters in timeout request
+    MIN_ARCHIVE_SIZE_BYTES = 100  # Minimum expected archive size to avoid bombs
+    TIMEOUT_SECONDS = 30  # Processing timeout in seconds
+
+    def __init__(self) -> None:
         super().__init__()
         self.settings = ApplicationSettings()
         # Remove shared instance variables that cause session corruption
-        # self.session_state = {}  # REMOVED: Shared between users
-        # self.current_journey = "journey_1"  # REMOVED: Shared between users
-        # self.session_cost = 0.0  # REMOVED: Shared between users
         self.model_costs = self._load_model_costs()
 
         # Rate limiting configuration
@@ -423,7 +445,7 @@ class MultiJourneyInterface(LoggerMixin):
             )
 
             # Header
-            header = self._create_header()
+            self._create_header()
 
             # Model Selection Panel
             with gr.Row():
@@ -432,23 +454,23 @@ class MultiJourneyInterface(LoggerMixin):
                 with gr.Column(scale=2):
                     custom_model_selector = self._create_custom_model_selector()
                 with gr.Column(scale=2):
-                    cost_tracker = self._create_cost_tracker()
+                    self._create_cost_tracker()
 
             # Journey Navigation Tabs
-            with gr.Tab("📝 Journey 1: Smart Templates") as journey1_tab:
+            with gr.Tab("📝 Journey 1: Smart Templates"):
                 self._create_journey1_interface(model_selector, custom_model_selector, session_state)
 
-            with gr.Tab("🔍 Journey 2: Intelligent Search") as journey2_tab:
+            with gr.Tab("🔍 Journey 2: Intelligent Search"):
                 self._create_journey2_interface()
 
-            with gr.Tab("💻 Journey 3: IDE Integration") as journey3_tab:
+            with gr.Tab("💻 Journey 3: IDE Integration"):
                 self._create_journey3_interface()
 
-            with gr.Tab("🤖 Journey 4: Autonomous Workflows") as journey4_tab:
+            with gr.Tab("🤖 Journey 4: Autonomous Workflows"):
                 self._create_journey4_interface()
 
             # Footer
-            footer = gr.HTML(
+            gr.HTML(
                 """
             <div style="margin-top: 32px; padding: 16px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -469,7 +491,7 @@ class MultiJourneyInterface(LoggerMixin):
 
         return interface
 
-    def _create_journey1_tab(self):
+    def _create_journey1_tab(self) -> dict[str, Any]:
         """Create Journey 1 tab components for testing."""
         input_text = gr.Textbox(label="Input Text")
         enhance_button = gr.Button("Enhance")
@@ -481,7 +503,7 @@ class MultiJourneyInterface(LoggerMixin):
             "output_text": output_text,
         }
 
-    def _create_journey2_tab(self):
+    def _create_journey2_tab(self) -> dict[str, Any]:
         """Create Journey 2 tab components for testing."""
         search_input = gr.Textbox(label="Search Input")
         search_button = gr.Button("Search")
@@ -493,7 +515,7 @@ class MultiJourneyInterface(LoggerMixin):
             "results_output": results_output,
         }
 
-    def _create_journey3_tab(self):
+    def _create_journey3_tab(self) -> dict[str, Any]:
         """Create Journey 3 tab components for testing."""
         launch_button = gr.Button("Launch IDE")
         status_display = gr.Markdown("Status: Ready")
@@ -503,7 +525,7 @@ class MultiJourneyInterface(LoggerMixin):
             "status_display": status_display,
         }
 
-    def _create_journey4_tab(self):
+    def _create_journey4_tab(self) -> dict[str, Any]:
         """Create Journey 4 tab components for testing."""
         workflow_input = gr.Textbox(label="Workflow Input")
         free_mode_toggle = gr.Checkbox(label="Free Mode")
@@ -515,11 +537,14 @@ class MultiJourneyInterface(LoggerMixin):
             "execute_button": execute_button,
         }
 
-    def _create_journey1_interface(self, model_selector, custom_model_selector, session_state):
+    def _create_journey1_interface(
+        self,
+        model_selector: Any,
+        custom_model_selector: Any,
+        session_state: dict[str, Any],
+    ) -> None:
         """Create Journey 1: Smart Templates interface with enhanced file upload."""
         # Initialize Journey 1 processor
-        from src.ui.components.shared.export_utils import ExportUtils
-        from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
 
         journey1_processor = Journey1SmartTemplates()
         export_utils = ExportUtils()
@@ -540,7 +565,7 @@ class MultiJourneyInterface(LoggerMixin):
                 gr.Markdown("### 📝 What would you like to enhance?")
 
                 # Input method selector
-                input_method = gr.Radio(
+                gr.Radio(
                     choices=["✏️ Text Input", "📁 File Upload", "🔗 URL Input", "📋 Clipboard"],
                     value="✏️ Text Input",
                     label="Input Method",
@@ -586,7 +611,7 @@ class MultiJourneyInterface(LoggerMixin):
                     enhance_btn = gr.Button("🚀 Enhance Prompt", variant="primary", scale=2)
                     clear_btn = gr.Button("🗑️ Clear All", scale=1)
                     example_btn = gr.Button("📋 Load Example", scale=1)
-                    save_btn = gr.Button("💾 Save Template", scale=1)
+                    gr.Button("💾 Save Template", scale=1)
 
             # Output Section
             with gr.Group():
@@ -659,13 +684,13 @@ class MultiJourneyInterface(LoggerMixin):
                     copy_all_btn = gr.Button("📋 Copy All", variant="primary")
                     copy_code_btn = gr.Button("📝 Copy Code Blocks")
                     download_btn = gr.Button("💾 Download")
-                    regenerate_btn = gr.Button("🔄 Regenerate")
+                    gr.Button("🔄 Regenerate")
 
                 # Feedback section
                 with gr.Row():
-                    thumbs_up = gr.Button("👍", scale=1)
-                    thumbs_down = gr.Button("👎", scale=1)
-                    feedback_comment = gr.Textbox(
+                    gr.Button("👍", scale=1)
+                    gr.Button("👎", scale=1)
+                    gr.Textbox(
                         placeholder="Optional feedback comment...",
                         label="Feedback",
                         lines=1,
@@ -674,19 +699,16 @@ class MultiJourneyInterface(LoggerMixin):
 
             # Event handlers
             def handle_enhancement(
-                text_input,
-                files,
-                model_mode,
-                custom_model,
-                reasoning_depth,
-                search_tier,
-                temperature,
-                session_state,
-            ):
+                text_input: str,
+                files: list[Any],
+                model_mode: str,
+                custom_model: str,
+                reasoning_depth: str,
+                search_tier: str,
+                temperature: float,
+                session_state: dict[str, Any],
+            ) -> tuple[str, ...]:
                 """Handle the enhancement process with comprehensive security validation."""
-                import os
-                import time
-                from pathlib import Path
 
                 try:
                     # Initialize session if needed
@@ -720,7 +742,7 @@ class MultiJourneyInterface(LoggerMixin):
                     # Validate custom model selection
                     if custom_model and custom_model not in self.model_costs:
                         # Fallback to default if invalid model selected
-                        self.logger.warning(f"Invalid model selected: {custom_model}, falling back to gpt-4o-mini")
+                        self.logger.warning("Invalid model selected: %s, falling back to gpt-4o-mini", custom_model)
                         custom_model = "gpt-4o-mini"
 
                     # 2. FILE COUNT VALIDATION
@@ -740,7 +762,7 @@ class MultiJourneyInterface(LoggerMixin):
                                 # Get file info
                                 if hasattr(file, "name") and file.name:
                                     file_path = file.name
-                                    file_size = os.path.getsize(file_path)
+                                    file_size = Path(file_path).stat().st_size
                                     file_name = Path(file_path).name
                                     file_ext = Path(file_path).suffix.lower()
 
@@ -793,7 +815,7 @@ class MultiJourneyInterface(LoggerMixin):
                                     total_size += file_size
 
                             except OSError as e:
-                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {e!s}")
+                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {e!s}") from e
 
                         # Total size validation (additional safety check)
                         max_total_size = self.settings.max_file_size * self.settings.max_files
@@ -809,7 +831,7 @@ class MultiJourneyInterface(LoggerMixin):
                         files = processed_files
 
                     # 4. TEXT INPUT VALIDATION
-                    if text_input and len(text_input) > 50000:  # 50KB text limit
+                    if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:
                         raise gr.Error(
                             f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
                             f"Maximum 50,000 characters allowed. Please shorten your text.",
@@ -828,14 +850,12 @@ class MultiJourneyInterface(LoggerMixin):
                     # 6. PROCESS WITH VALIDATED INPUTS AND COMPREHENSIVE ERROR HANDLING
                     try:
                         # Add timeout and processing constraints
-                        import signal
-
-                        def timeout_handler(signum, frame):
+                        def timeout_handler(_signum: int, _frame: Any) -> NoReturn:
                             raise TimeoutError("Processing timeout exceeded")
 
                         # Set processing timeout (30 seconds)
                         signal.signal(signal.SIGALRM, timeout_handler)
-                        signal.alarm(30)
+                        signal.alarm(self.TIMEOUT_SECONDS)
 
                         try:
                             result = journey1_processor.enhance_prompt(
@@ -852,12 +872,12 @@ class MultiJourneyInterface(LoggerMixin):
                             signal.alarm(0)
 
                         # Validate result structure
-                        if not result or len(result) < 9:
+                        if not result or len(result) < self.MIN_RESULT_FIELDS:
                             # Fallback to safe default result
                             result = self._create_fallback_result(text_input, custom_model)
 
                         # Return results with updated session state
-                        return result + (session_state,)
+                        return (*result, session_state)
 
                     except TimeoutError:
                         # Handle processing timeout
@@ -867,11 +887,11 @@ class MultiJourneyInterface(LoggerMixin):
                         )  # Minimal cost for timeout
 
                         fallback_result = self._create_timeout_fallback_result(text_input, custom_model)
-                        return fallback_result + (session_state,)
+                        return (*fallback_result, session_state)
 
                     except Exception as processing_error:
                         # Handle processing errors with fallback
-                        self.logger.error(f"Processing error: {processing_error}")
+                        self.logger.error("Processing error: %s", processing_error)
                         session_state["request_count"] = session_state.get("request_count", 0) + 1
                         session_state["total_cost"] = (
                             session_state.get("total_cost", 0.0) + 0.001
@@ -883,28 +903,36 @@ class MultiJourneyInterface(LoggerMixin):
                             custom_model,
                             str(processing_error),
                         )
-                        return fallback_result + (session_state,)
+                        return (*fallback_result, session_state)
 
                 except gr.Error:
                     # Re-raise Gradio errors (these are user-facing)
                     raise
                 except Exception as e:
                     # Log unexpected errors and show user-friendly message
-                    self.logger.error(f"Unexpected error in file processing: {e}")
+                    self.logger.error("Unexpected error in file processing: %s", e)
                     raise gr.Error(
                         "❌ Processing Error: An unexpected error occurred while processing your request. "
                         "Please try again or contact support if the problem persists.",
-                    )
+                    ) from e
 
-            def handle_copy_code(content):
+            def handle_copy_code(content: str) -> str:
                 """Handle code block copying."""
                 return journey1_processor.copy_code_blocks(content)
 
-            def handle_copy_markdown(content):
+            def handle_copy_markdown(content: str) -> str:
                 """Handle markdown copying."""
                 return journey1_processor.copy_as_markdown(content)
 
-            def handle_download(enhanced_prompt, context, request, examples, augmentations, tone_format, evaluation):
+            def handle_download(
+                enhanced_prompt: str,
+                context: str,
+                request: str,
+                examples: str,
+                augmentations: str,
+                tone_format: str,
+                evaluation: str,
+            ) -> tuple[str, str]:
                 """Handle download functionality."""
                 create_breakdown = {
                     "context": context,
@@ -929,11 +957,11 @@ class MultiJourneyInterface(LoggerMixin):
                     "markdown",
                 )
 
-            def load_example():
+            def load_example() -> str:
                 """Load example content."""
                 return "Write a professional email to inform team members about a project delay. The delay is due to unexpected technical challenges with the database integration. We need to extend the deadline by 2 weeks and reassure the team that we're working on a solution."
 
-            def clear_all():
+            def clear_all() -> tuple[str, ...]:
                 """Clear all inputs and outputs."""
                 return ("", None, "", "", "", "", "", "", "", "")
 
@@ -1000,7 +1028,7 @@ class MultiJourneyInterface(LoggerMixin):
                 ],
             )
 
-    def _create_journey2_interface(self):
+    def _create_journey2_interface(self) -> None:
         """Create Journey 2: Intelligent Search interface."""
         with gr.Column():
             gr.HTML(
@@ -1017,7 +1045,7 @@ class MultiJourneyInterface(LoggerMixin):
                 "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 2 requires the HyDE processor and vector database integration.</p>",
             )
 
-    def _create_journey3_interface(self):
+    def _create_journey3_interface(self) -> None:
         """Create Journey 3: IDE Integration interface."""
         with gr.Column():
             gr.HTML(
@@ -1034,7 +1062,7 @@ class MultiJourneyInterface(LoggerMixin):
                 "<p style='color: #64748b; font-style: italic;'>This interface will be implemented in the next phase as Journey 3 requires the Code-Server deployment and workspace integration.</p>",
             )
 
-    def _create_journey4_interface(self):
+    def _create_journey4_interface(self) -> None:
         """Create Journey 4: Autonomous Workflows interface."""
         with gr.Column():
             gr.HTML(
@@ -1122,7 +1150,7 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If text input exceeds limits
         """
-        if text_input and len(text_input) > 50000:  # 50KB text limit
+        if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:
             raise gr.Error(
                 f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
                 f"Maximum 50,000 characters allowed. Please shorten your text.",
@@ -1167,15 +1195,16 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If content validation fails
         """
         try:
-            import mimetypes
-
-            import magic
 
             # Content-based MIME detection using magic numbers
             try:
-                detected_mime = magic.from_file(file_path, mime=True)
+                if magic is not None:
+                    detected_mime = magic.from_file(file_path, mime=True)
+                else:
+                    self.logger.warning("python-magic not available, using fallback MIME detection")
+                    detected_mime = "application/octet-stream"
             except Exception as e:
-                self.logger.warning(f"Magic content detection failed: {e}")
+                self.logger.warning("Magic content detection failed: %s", e)
                 detected_mime = "application/octet-stream"  # Fallback for unknown content
 
             # Extension-based MIME guessing (existing method)
@@ -1191,16 +1220,15 @@ class MultiJourneyInterface(LoggerMixin):
         except ImportError:
             # Fallback if python-magic not available
             self.logger.warning("python-magic not available, falling back to basic MIME detection")
-            import mimetypes
 
             guessed_mime, _ = mimetypes.guess_type(file_path)
             return guessed_mime or "application/octet-stream", guessed_mime or "application/octet-stream"
         except Exception as e:
-            self.logger.error(f"File content validation failed: {e}")
+            self.logger.error("File content validation failed: %s", e)
             raise gr.Error(
                 "❌ Security Error: Unable to validate file content safely. "
                 "File may be corrupted or use unsupported format.",
-            )
+            ) from e
 
     def _check_for_content_anomalies(self, file_path: str, detected_mime: str, file_ext: str) -> None:
         """
@@ -1251,7 +1279,6 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
-        import os
 
         # Only check files that could be compressed archives
         archive_mimes = [
@@ -1272,18 +1299,18 @@ class MultiJourneyInterface(LoggerMixin):
 
         if is_archive:
             try:
-                file_size = os.path.getsize(file_path)
+                file_size = Path(file_path).stat().st_size
 
                 # Archive bomb heuristics
                 self._check_archive_bomb_heuristics(file_path, file_size, detected_mime)
 
             except Exception as e:
-                self.logger.warning(f"Archive bomb detection failed: {e}")
+                self.logger.warning("Archive bomb detection failed: %s", e)
                 # Fail safe - if we can't analyze, treat as suspicious
                 raise gr.Error(
                     "❌ Security Error: Unable to analyze archive file safely. "
                     "For security reasons, this file cannot be processed.",
-                )
+                ) from e
 
     def _check_archive_bomb_heuristics(self, file_path: str, file_size: int, detected_mime: str) -> None:
         """
@@ -1305,7 +1332,7 @@ class MultiJourneyInterface(LoggerMixin):
 
         # Heuristic 2: Size-based checks (regardless of format)
         # If a very small file claims to be an archive, it's suspicious
-        if file_size < 100:  # Less than 100 bytes
+        if file_size < self.MIN_ARCHIVE_SIZE_BYTES:
             raise gr.Error(
                 f"❌ Security Error: Archive file is suspiciously small ({file_size} bytes). "
                 f"This could be an archive bomb designed to expand enormously when extracted.",
@@ -1323,19 +1350,16 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If ZIP bomb characteristics are detected
         """
         try:
-            import zipfile
-
             # Safe limits for ZIP analysis
-            MAX_FILES_TO_CHECK = 10
-            MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100MB total uncompressed
-            MAX_COMPRESSION_RATIO = 1000  # 1000:1 compression ratio is suspicious
+            max_files_to_check = 10
+            max_uncompressed_size = 100 * 1024 * 1024  # 100MB total uncompressed
+            max_compression_ratio = 1000  # 1000:1 compression ratio is suspicious
 
             with zipfile.ZipFile(file_path, "r") as zip_file:
                 total_uncompressed = 0
-                files_checked = 0
 
-                for info in zip_file.filelist:
-                    if files_checked >= MAX_FILES_TO_CHECK:
+                for files_checked, info in enumerate(zip_file.filelist):
+                    if files_checked >= max_files_to_check:
                         break
 
                     compressed_size = info.compress_size
@@ -1344,7 +1368,7 @@ class MultiJourneyInterface(LoggerMixin):
                     # Check individual file compression ratio
                     if compressed_size > 0:  # Avoid division by zero
                         ratio = uncompressed_size / compressed_size
-                        if ratio > MAX_COMPRESSION_RATIO:
+                        if ratio > max_compression_ratio:
                             raise gr.Error(
                                 f"❌ Security Error: Archive contains file '{info.filename}' "
                                 f"with suspicious compression ratio ({ratio:.0f}:1). "
@@ -1352,35 +1376,34 @@ class MultiJourneyInterface(LoggerMixin):
                             )
 
                     total_uncompressed += uncompressed_size
-                    files_checked += 1
 
                     # Check if total uncompressed size is too large
-                    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                    if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed expansion is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB. "
+                            f"Maximum allowed expansion is {max_uncompressed_size / (1024*1024):.0f}MB. "
                             f"This could be an archive bomb.",
                         )
 
                 # Overall compression ratio check
                 if file_size > 0:
                     overall_ratio = total_uncompressed / file_size
-                    if overall_ratio > MAX_COMPRESSION_RATIO:
+                    if overall_ratio > max_compression_ratio:
                         raise gr.Error(
                             f"❌ Security Error: Archive has suspicious overall compression ratio "
                             f"({overall_ratio:.0f}:1). This indicates a potential archive bomb.",
                         )
 
-        except zipfile.BadZipFile:
+        except zipfile.BadZipFile as e:
             raise gr.Error(
                 "❌ Security Error: File appears to be a corrupted or malicious ZIP archive.",
-            )
+            ) from e
         except Exception as e:
-            self.logger.warning(f"ZIP bomb detection failed: {e}")
+            self.logger.warning("ZIP bomb detection failed: %s", e)
             # Conservative approach - block if we can't safely analyze
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze ZIP archive. File blocked as a security precaution.",
-            )
+            ) from e
 
     def _check_tar_gzip_bomb_heuristics(self, file_path: str, file_size: int) -> None:
         """
@@ -1394,12 +1417,9 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If archive bomb characteristics are detected
         """
         try:
-            import gzip
-            import tarfile
-
             # Conservative limits for TAR/GZIP analysis
-            MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50MB total uncompressed
-            MAX_COMPRESSION_RATIO = 500  # 500:1 compression ratio limit
+            max_uncompressed_size = 50 * 1024 * 1024  # 50MB total uncompressed
+            max_compression_ratio = 500  # 500:1 compression ratio limit
 
             # Try to analyze as tarfile first
             try:
@@ -1416,7 +1436,7 @@ class MultiJourneyInterface(LoggerMixin):
                             files_checked += 1
 
                             # Check if individual file is too large
-                            if member.size > MAX_UNCOMPRESSED_SIZE:
+                            if member.size > max_uncompressed_size:
                                 raise gr.Error(
                                     f"❌ Security Error: Archive contains file '{member.name}' "
                                     f"that would expand to {member.size / (1024*1024):.1f}MB. "
@@ -1424,16 +1444,16 @@ class MultiJourneyInterface(LoggerMixin):
                                 )
 
                     # Check overall expansion
-                    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                    if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB.",
+                            f"Maximum allowed is {max_uncompressed_size / (1024*1024):.0f}MB.",
                         )
 
                     # Check compression ratio
                     if file_size > 0:
                         ratio = total_uncompressed / file_size
-                        if ratio > MAX_COMPRESSION_RATIO:
+                        if ratio > max_compression_ratio:
                             raise gr.Error(
                                 f"❌ Security Error: Archive has suspicious compression ratio "
                                 f"({ratio:.0f}:1). This indicates a potential archive bomb.",
@@ -1447,19 +1467,19 @@ class MultiJourneyInterface(LoggerMixin):
                     if len(chunk) == 1024:  # File has more content
                         # Estimate based on sample
                         estimated_uncompressed = file_size * 1000  # Conservative estimate
-                        if estimated_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                        if estimated_uncompressed > max_uncompressed_size:
                             raise gr.Error(
                                 "❌ Security Error: GZIP file appears to have excessive compression. "
                                 "This could be a compression bomb.",
-                            )
+                            ) from None
 
         except Exception as e:
-            self.logger.warning(f"TAR/GZIP bomb detection failed: {e}")
+            self.logger.warning("TAR/GZIP bomb detection failed: %s", e)
             # Conservative approach - block if analysis fails
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze compressed archive. "
                 "File blocked as a security precaution.",
-            )
+            ) from None
 
     def _process_file_safely(self, file_path: str, file_size: int, chunk_size: int = 8192) -> str:
         """
@@ -1482,9 +1502,8 @@ class MultiJourneyInterface(LoggerMixin):
 
             if file_size > memory_limit:
                 # For large files, read first chunk only and truncate
-                with open(file_path, encoding="utf-8", errors="ignore") as file:
+                with Path(file_path).open(encoding="utf-8", errors="ignore") as file:
                     content_chunks = []
-                    bytes_read = 0
                     # Reserve space for truncation message
                     truncation_msg = f"\n\n[FILE TRUNCATED - Original size: {file_size / (1024 * 1024):.1f}MB, showing first 5MB for memory safety]"
                     msg_size = len(truncation_msg.encode("utf-8"))
@@ -1521,7 +1540,7 @@ class MultiJourneyInterface(LoggerMixin):
                     return content
             else:
                 # For smaller files, read normally but with error handling
-                with open(file_path, encoding="utf-8", errors="ignore") as file:
+                with Path(file_path).open(encoding="utf-8", errors="ignore") as file:
                     return file.read()
 
         except UnicodeDecodeError:
@@ -1529,29 +1548,29 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ File Error: File appears to be binary or uses unsupported encoding. "
                 "Please ensure file is in UTF-8 text format.",
-            )
+            ) from None
         except MemoryError:
             # Handle memory exhaustion
             raise gr.Error(
                 "❌ Memory Error: File is too large to process safely. "
                 "Please upload a smaller file (under 5MB recommended).",
-            )
+            ) from None
         except OSError as e:
             # Handle file system errors
-            raise gr.Error(f"❌ File Error: Unable to read file. {e!s}")
+            raise gr.Error(f"❌ File Error: Unable to read file. {e!s}") from e
         except Exception as e:
             # Handle unexpected errors
-            self.logger.error(f"Unexpected error processing file {file_path}: {e}")
+            self.logger.error("Unexpected error processing file %s: %s", file_path, e)
             raise gr.Error(
                 "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
-            )
+            ) from None
 
     def _create_fallback_result(self, text_input: str, model: str) -> tuple:
         """Create fallback result when normal processing fails."""
         fallback_prompt = f"""
 **Enhanced Prompt (Fallback Mode)**
 
-Your original input: {text_input[:500]}{"..." if len(text_input) > 500 else ""}
+Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_input) > self.MAX_FALLBACK_CHARS else ""}
 
 **Note**: The advanced enhancement system is temporarily unavailable. Here's a basic structure to help you proceed:
 
@@ -1559,7 +1578,7 @@ Your original input: {text_input[:500]}{"..." if len(text_input) > 500 else ""}
 Please provide more context about your specific goals and requirements.
 
 ## Request
-{text_input[:200]}{"..." if len(text_input) > 200 else ""}
+{text_input[:self.MAX_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_REQUEST_CHARS else ""}
 
 ## Suggested Next Steps
 1. Clarify your specific objectives
@@ -1574,7 +1593,7 @@ Please provide more context about your specific goals and requirements.
         return (
             fallback_prompt,  # enhanced_prompt
             "Basic context analysis - please specify your role and goals",  # context_analysis
-            f"Request: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "Examples will be provided when system is fully available",  # examples_section
             "Advanced frameworks temporarily unavailable",  # augmentations_section
             "Please specify your preferred tone and format",  # tone_format
@@ -1588,7 +1607,7 @@ Please provide more context about your specific goals and requirements.
         timeout_prompt = f"""
 **Enhanced Prompt (Timeout Recovery)**
 
-Your request: {text_input[:300]}{"..." if len(text_input) > 300 else ""}
+Your request: {text_input[:self.MAX_TIMEOUT_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_CHARS else ""}
 
 **⏱️ Processing Timeout Notice**: Your request is complex and requires more processing time than currently available.
 
@@ -1599,7 +1618,7 @@ To get faster results, try:
 3. **Clear context**: Provide essential background only
 
 ## Quick Enhancement
-Your core request appears to be: {text_input[:150]}{"..." if len(text_input) > 150 else ""}
+Your core request appears to be: {text_input[:self.MAX_TIMEOUT_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_REQUEST_CHARS else ""}
 
 Consider refining this to be more specific and actionable.
 
@@ -1610,7 +1629,7 @@ Consider refining this to be more specific and actionable.
         return (
             timeout_prompt,  # enhanced_prompt
             "⏱️ Timeout - please provide more focused context",  # context_analysis
-            f"Simplified request needed: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Simplified request needed: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "⏱️ Examples unavailable due to timeout - try simpler request",  # examples_section
             "⏱️ Advanced processing unavailable - reduce complexity",  # augmentations_section
             "Suggest concise, direct communication style",  # tone_format
@@ -1619,17 +1638,17 @@ Consider refining this to be more specific and actionable.
             '<div id="file-sources">⏱️ File processing timeout - try fewer/smaller files</div>',  # file_sources
         )
 
-    def _create_error_fallback_result(self, text_input: str, model: str, error_msg: str) -> tuple:
+    def _create_error_fallback_result(self, text_input: str, model: str, _error_msg: str) -> tuple:
         """Create fallback result when processing encounters an error."""
         error_prompt = f"""
 **Enhanced Prompt (Error Recovery)**
 
-Your input: {text_input[:250]}{"..." if len(text_input) > 250 else ""}
+Your input: {text_input[:self.MAX_PREVIEW_CHARS]}{"..." if len(text_input) > self.MAX_PREVIEW_CHARS else ""}
 
 **🔧 System Recovery Mode**: An error occurred during processing, but we've created this basic enhancement to help you proceed.
 
 ## Basic Structure
-**Objective**: {text_input[:100]}{"..." if len(text_input) > 100 else ""}
+**Objective**: {text_input[:self.MAX_SUMMARY_CHARS]}{"..." if len(text_input) > self.MAX_SUMMARY_CHARS else ""}
 
 **Recommended approach**:
 1. Define clear, specific goals
@@ -1650,7 +1669,7 @@ If this error persists:
         return (
             error_prompt,  # enhanced_prompt
             "🔧 Error recovery - basic context structure provided",  # context_analysis
-            f"Core request: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Core request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "🔧 Examples temporarily unavailable - error recovery mode",  # examples_section
             "🔧 Advanced features unavailable - contact support if persistent",  # augmentations_section
             "Clear, direct communication recommended",  # tone_format
@@ -1668,8 +1687,15 @@ If this error persists:
         if not text_input:
             return "Error: Invalid input provided."
 
-        # Process the request (mock implementation for testing)
-        return self._process_journey1(text_input, session_id)
+        # Update session activity and request count
+        self.update_session_activity(session_id)
+
+        try:
+            # Process the request (mock implementation for testing)
+            return self._process_journey1(text_input, session_id)
+        except Exception as e:
+            # Graceful error handling for fallback scenarios
+            return f"Processing temporarily unavailable. Please try again later. Error: {e!s}"
 
     def handle_journey2_search(self, query: str, session_id: str) -> str:
         """Handle Journey 2 search requests with rate limiting."""
@@ -1687,15 +1713,15 @@ If this error persists:
         # Process the files (mock implementation for testing)
         return self._process_file_uploads(files, session_id)
 
-    def _process_journey1(self, text_input: str, session_id: str) -> str:
+    def _process_journey1(self, text_input: str, _session_id: str) -> str:
         """Process Journey 1 enhancement (mock implementation)."""
         return f"Enhanced prompt for: {text_input[:50]}..."
 
-    def _process_journey2_search(self, query: str, session_id: str) -> str:
+    def _process_journey2_search(self, query: str, _session_id: str) -> str:
         """Process Journey 2 search (mock implementation)."""
         return f"Search results for: {query}"
 
-    def _process_file_uploads(self, files: list, session_id: str) -> str:
+    def _process_file_uploads(self, files: list, _session_id: str) -> str:
         """Process file uploads (mock implementation)."""
         return f"Files processed successfully: {len(files)} files"
 
@@ -1775,7 +1801,6 @@ If this error persists:
             return False, f"File too large: {file_size} bytes exceeds {max_size} bytes"
 
         # Check file extension
-        from pathlib import Path
 
         file_ext = Path(filename).suffix.lower()
         if file_ext not in self.settings.supported_file_types:
@@ -1793,7 +1818,6 @@ If this error persists:
         if format_type == "md":
             return f"# Exported Content\n\n{content}"
         if format_type == "json":
-            import json
 
             return json.dumps({"content": content}, indent=2)
         return content
@@ -1823,7 +1847,7 @@ If this error persists:
                 "timestamp": time.time(),
             }
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
+            self.logger.error("Health check failed: %s", e)
             return {
                 "status": "unhealthy",
                 "components": {"error": str(e)},
@@ -1839,4 +1863,4 @@ def create_app() -> gr.Blocks:
 
 if __name__ == "__main__":
     app = create_app()
-    app.launch(server_name="0.0.0.0", server_port=7860, share=False, debug=True)
+    app.launch(server_name="127.0.0.1", server_port=7860, share=False, debug=True)

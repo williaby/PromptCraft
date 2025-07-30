@@ -210,7 +210,7 @@ class OpenRouterClient(MCPClientInterface):
                             "OpenRouter API key authentication failed",
                             error_code="INVALID_API_KEY",
                             details={"status_code": e.response.status_code},
-                        )
+                        ) from e
                     self.connection_state = MCPConnectionState.DEGRADED
                     logger.warning(f"OpenRouter connection test failed: {e}")
                     return False
