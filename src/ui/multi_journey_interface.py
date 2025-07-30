@@ -1583,7 +1583,6 @@ class MultiJourneyInterface(LoggerMixin):
 **Enhanced Prompt (Fallback Mode)**
 
 Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_input) > self.MAX_FALLBACK_CHARS else ""}
-Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_input) > self.MAX_FALLBACK_CHARS else ""}
 
 **Note**: The advanced enhancement system is temporarily unavailable. Here's a basic structure to help you proceed:
 
@@ -1591,7 +1590,6 @@ Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_in
 Please provide more context about your specific goals and requirements.
 
 ## Request
-{text_input[:self.MAX_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_REQUEST_CHARS else ""}
 {text_input[:self.MAX_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_REQUEST_CHARS else ""}
 
 ## Suggested Next Steps
@@ -1608,7 +1606,6 @@ Please provide more context about your specific goals and requirements.
             fallback_prompt,  # enhanced_prompt
             "Basic context analysis - please specify your role and goals",  # context_analysis
             f"Request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
-            f"Request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "Examples will be provided when system is fully available",  # examples_section
             "Advanced frameworks temporarily unavailable",  # augmentations_section
             "Please specify your preferred tone and format",  # tone_format
@@ -1623,7 +1620,6 @@ Please provide more context about your specific goals and requirements.
 **Enhanced Prompt (Timeout Recovery)**
 
 Your request: {text_input[:self.MAX_TIMEOUT_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_CHARS else ""}
-Your request: {text_input[:self.MAX_TIMEOUT_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_CHARS else ""}
 
 **⏱️ Processing Timeout Notice**: Your request is complex and requires more processing time than currently available.
 
@@ -1635,7 +1631,6 @@ To get faster results, try:
 
 ## Quick Enhancement
 Your core request appears to be: {text_input[:self.MAX_TIMEOUT_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_REQUEST_CHARS else ""}
-Your core request appears to be: {text_input[:self.MAX_TIMEOUT_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_REQUEST_CHARS else ""}
 
 Consider refining this to be more specific and actionable.
 
@@ -1646,7 +1641,6 @@ Consider refining this to be more specific and actionable.
         return (
             timeout_prompt,  # enhanced_prompt
             "⏱️ Timeout - please provide more focused context",  # context_analysis
-            f"Simplified request needed: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             f"Simplified request needed: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "⏱️ Examples unavailable due to timeout - try simpler request",  # examples_section
             "⏱️ Advanced processing unavailable - reduce complexity",  # augmentations_section
@@ -1662,12 +1656,10 @@ Consider refining this to be more specific and actionable.
 **Enhanced Prompt (Error Recovery)**
 
 Your input: {text_input[:self.MAX_PREVIEW_CHARS]}{"..." if len(text_input) > self.MAX_PREVIEW_CHARS else ""}
-Your input: {text_input[:self.MAX_PREVIEW_CHARS]}{"..." if len(text_input) > self.MAX_PREVIEW_CHARS else ""}
 
 **🔧 System Recovery Mode**: An error occurred during processing, but we've created this basic enhancement to help you proceed.
 
 ## Basic Structure
-**Objective**: {text_input[:self.MAX_SUMMARY_CHARS]}{"..." if len(text_input) > self.MAX_SUMMARY_CHARS else ""}
 **Objective**: {text_input[:self.MAX_SUMMARY_CHARS]}{"..." if len(text_input) > self.MAX_SUMMARY_CHARS else ""}
 
 **Recommended approach**:
@@ -1689,7 +1681,6 @@ If this error persists:
         return (
             error_prompt,  # enhanced_prompt
             "🔧 Error recovery - basic context structure provided",  # context_analysis
-            f"Core request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             f"Core request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "🔧 Examples temporarily unavailable - error recovery mode",  # examples_section
             "🔧 Advanced features unavailable - contact support if persistent",  # augmentations_section
