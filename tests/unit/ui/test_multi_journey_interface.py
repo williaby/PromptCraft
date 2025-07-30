@@ -894,7 +894,7 @@ class TestMultiJourneyInterfaceExtended:
         # Test archive bomb detection failure
         with (
             patch("pathlib.Path.stat", side_effect=Exception("File error")),
-            pytest.raises(gr.Error, match="Unable to analyze archive file"),
+            pytest.raises(gr.Error, match="Security Error: Unable to analyze archive file safely"),
         ):
             interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
 
