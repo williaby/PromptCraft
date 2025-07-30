@@ -580,7 +580,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
         return sorted(capabilities)
 
-    def _make_routing_decision(  # noqa: PLR0911, RET503
+    def _make_routing_decision(  # noqa: PLR0911
         self,
         request_id: str,
         operation: str,
