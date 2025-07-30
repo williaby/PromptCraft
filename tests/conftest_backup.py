@@ -202,7 +202,7 @@ def create_vscode_navigation_index(test_types: set[str]):
     """Create lightweight navigation index for VS Code integration."""
 
     # Check if detailed reports exist and are current
-    detailed_reports_status = check_detailed_reports_status()
+    check_detailed_reports_status()
 
     html_content = f"""
     <!DOCTYPE html>
@@ -315,7 +315,7 @@ def generate_test_type_reports(test_types: set[str]):
             # Create temp directory for junit files
             Path("reports/temp").mkdir(parents=True, exist_ok=True)
 
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())
+            subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())
 
             # Add custom header to the HTML report
             html_file = output_dir / test_type / "index.html"

@@ -731,7 +731,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         # Fallback for unknown strategies
         return RoutingDecision(
             service="mcp",
-            reason="Unknown strategy, defaulting to MCP",
+            reason=f"Unknown strategy {self.strategy}, defaulting to MCP",
             confidence=0.5,
             fallback_available=self._is_openrouter_available(),
             request_id=request_id,

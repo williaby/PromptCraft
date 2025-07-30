@@ -11,15 +11,29 @@ Implements comprehensive file upload, OpenRouter model selection,
 and code snippet copying functionality.
 """
 
+import gzip
+import json
 import logging
+import mimetypes
+import os
+import signal
+import tarfile
 import time
+import zipfile
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any
 
 import gradio as gr
 
+try:
+    import magic
+except ImportError:
+    magic = None
+
 from src.config.settings import ApplicationSettings
+from src.ui.components.shared.export_utils import ExportUtils
+from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
 from src.utils.logging_mixin import LoggerMixin
 
 # Configure logging
@@ -518,9 +532,6 @@ class MultiJourneyInterface(LoggerMixin):
     def _create_journey1_interface(self, model_selector, custom_model_selector, session_state):
         """Create Journey 1: Smart Templates interface with enhanced file upload."""
         # Initialize Journey 1 processor
-        from src.ui.components.shared.export_utils import ExportUtils
-        from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
-
         journey1_processor = Journey1SmartTemplates()
         export_utils = ExportUtils()
 
@@ -659,13 +670,13 @@ class MultiJourneyInterface(LoggerMixin):
                     copy_all_btn = gr.Button("📋 Copy All", variant="primary")
                     copy_code_btn = gr.Button("📝 Copy Code Blocks")
                     download_btn = gr.Button("💾 Download")
-                    regenerate_btn = gr.Button("🔄 Regenerate")
+                    gr.Button("🔄 Regenerate")
 
                 # Feedback section
                 with gr.Row():
-                    thumbs_up = gr.Button("👍", scale=1)
-                    thumbs_down = gr.Button("👎", scale=1)
-                    feedback_comment = gr.Textbox(
+                    gr.Button("👍", scale=1)
+                    gr.Button("👎", scale=1)
+                    gr.Textbox(
                         placeholder="Optional feedback comment...",
                         label="Feedback",
                         lines=1,
@@ -684,10 +695,6 @@ class MultiJourneyInterface(LoggerMixin):
                 session_state,
             ):
                 """Handle the enhancement process with comprehensive security validation."""
-                import os
-                import time
-                from pathlib import Path
-
                 try:
                     # Initialize session if needed
                     if session_state.get("session_start_time") is None:
@@ -828,8 +835,6 @@ class MultiJourneyInterface(LoggerMixin):
                     # 6. PROCESS WITH VALIDATED INPUTS AND COMPREHENSIVE ERROR HANDLING
                     try:
                         # Add timeout and processing constraints
-                        import signal
-
                         def timeout_handler(signum, frame):
                             raise TimeoutError("Processing timeout exceeded")
 
@@ -1167,9 +1172,6 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If content validation fails
         """
         try:
-            import mimetypes
-
-            import magic
 
             # Content-based MIME detection using magic numbers
             try:
@@ -1191,8 +1193,6 @@ class MultiJourneyInterface(LoggerMixin):
         except ImportError:
             # Fallback if python-magic not available
             self.logger.warning("python-magic not available, falling back to basic MIME detection")
-            import mimetypes
-
             guessed_mime, _ = mimetypes.guess_type(file_path)
             return guessed_mime or "application/octet-stream", guessed_mime or "application/octet-stream"
         except Exception as e:
@@ -1251,8 +1251,6 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
-        import os
-
         # Only check files that could be compressed archives
         archive_mimes = [
             "application/zip",
@@ -1323,8 +1321,6 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If ZIP bomb characteristics are detected
         """
         try:
-            import zipfile
-
             # Safe limits for ZIP analysis
             MAX_FILES_TO_CHECK = 10
             MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100MB total uncompressed
@@ -1394,9 +1390,6 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If archive bomb characteristics are detected
         """
         try:
-            import gzip
-            import tarfile
-
             # Conservative limits for TAR/GZIP analysis
             MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50MB total uncompressed
             MAX_COMPRESSION_RATIO = 500  # 500:1 compression ratio limit
@@ -1484,7 +1477,6 @@ class MultiJourneyInterface(LoggerMixin):
                 # For large files, read first chunk only and truncate
                 with open(file_path, encoding="utf-8", errors="ignore") as file:
                     content_chunks = []
-                    bytes_read = 0
                     # Reserve space for truncation message
                     truncation_msg = f"\n\n[FILE TRUNCATED - Original size: {file_size / (1024 * 1024):.1f}MB, showing first 5MB for memory safety]"
                     msg_size = len(truncation_msg.encode("utf-8"))
@@ -1775,8 +1767,6 @@ If this error persists:
             return False, f"File too large: {file_size} bytes exceeds {max_size} bytes"
 
         # Check file extension
-        from pathlib import Path
-
         file_ext = Path(filename).suffix.lower()
         if file_ext not in self.settings.supported_file_types:
             return False, f"Unsupported file type: {file_ext}"
@@ -1793,8 +1783,6 @@ If this error persists:
         if format_type == "md":
             return f"# Exported Content\n\n{content}"
         if format_type == "json":
-            import json
-
             return json.dumps({"content": content}, indent=2)
         return content
 

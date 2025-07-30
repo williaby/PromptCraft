@@ -275,8 +275,6 @@ class TestConfigDemo:
         # This is important for the import to work
 
         # Check if the path modification logic is present in the module
-        expected_path = str(Path(__file__).parent.parent.parent / "src")
-
         # The actual path modification happens during import, so we test the logic
         demo_file_path = Path(__file__).parent.parent.parent / "examples" / "config_demo.py"
         assert demo_file_path.exists(), "config_demo.py should exist"

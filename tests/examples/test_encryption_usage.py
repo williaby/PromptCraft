@@ -319,7 +319,7 @@ class TestMainFunction:
         if module_name == "__main__":
             # Simulate main execution
             logging.basicConfig(level=logging.INFO, format="%(message)s")
-            logger = logging.getLogger("examples.encryption_usage")
+            logging.getLogger("examples.encryption_usage")
 
             # Execute the main logic
             create_example_env_files()
