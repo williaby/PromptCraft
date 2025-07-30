@@ -508,7 +508,7 @@ global:
     classifier = TestTypeClassifier(tmp_path, config)
 
     # Test target mapping
-    targets = classifier.get_test_target_mapping("unit")
+    _ = classifier.get_test_target_mapping("unit")
     # Should find the target file through import analysis
 
     # Test coverage estimation

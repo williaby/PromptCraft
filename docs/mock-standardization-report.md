@@ -7,10 +7,12 @@ This report documents the findings and fixes for cross-cutting mock issues acros
 ### Issues Identified and Fixed
 
 #### 1. Logic Issue: Role Extraction Regex (Fixed ✅)
+
 - **File**: `src/core/create_processor_core.py`
 - **Issue**: Regex pattern in `_extract_context()` was capturing articles ("a") in role extraction
 - **Test Failure**: `test_extract_context_role_patterns` expected "senior marketing analyst" but got "a senior marketing analyst"
 - **Fix**: Updated regex patterns to handle articles correctly:
+
   ```python
   # Before
   r"(?:you are|act as|role:|as a) (.*?)(?:\.|,|$)"
@@ -21,10 +23,12 @@ This report documents the findings and fixes for cross-cutting mock issues acros
   ```
 
 #### 2. Logic Issue: Complexity Assessment Thresholds (Fixed ✅)
+
 - **File**: `src/ui/components/shared/export_utils.py`
 - **Issue**: Complexity assessment logic had incorrect thresholds for "complex" classification
 - **Test Failure**: `test_assess_complexity_complex` expected "complex" but got "moderate" for 25-line code
 - **Fix**: Updated threshold logic:
+
   ```python
   # Before
   if lines < 10 and complexity_indicators <= 1:
@@ -60,6 +64,7 @@ This report documents the findings and fixes for cross-cutting mock issues acros
 ### Best Practices Observed
 
 #### 1. Fixture-Based Mock Configuration
+
 ```python
 @pytest.fixture
 def mock_base_agent() -> Mock:
@@ -74,6 +79,7 @@ def mock_base_agent() -> Mock:
 ```
 
 #### 2. Dual-Usage Mock Pattern
+
 ```python
 # For methods that can be both sync and async
 from tests.utils.mock_helpers import create_dual_usage_mock
@@ -84,6 +90,7 @@ mock_client.upsert = create_dual_usage_mock(mock_result)
 ```
 
 #### 3. Consistent Mock Assertions
+
 ```python
 # Use standard assertion patterns
 mock_method.assert_called_once()
@@ -102,11 +109,13 @@ assert mock_method.call_count == expected_count
 ## Test Stability Improvements
 
 ### Fixes Applied
+
 - ✅ Fixed 2 regex/logic issues causing test failures
 - ✅ Verified mock patterns are consistent across auth, agents, and config modules
 - ✅ Confirmed existing mock helpers work correctly for dual-usage patterns
 
 ### Areas of Success
+
 - **Auth Module**: 159/159 tests passing with good mock patterns
 - **Agents Module**: 83/83 tests passing with effective fixtures
 - **Config Module**: 48/48 tests passing with proper async mocking

@@ -314,9 +314,8 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_health_check_httpx_not_available(self, zen_client):
         """Test health check when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(RetryError):
-                await zen_client.health_check()
+        with patch("src.mcp_integration.mcp_client.httpx", None), pytest.raises(RetryError):
+            await zen_client.health_check()
 
     @pytest.mark.asyncio
     async def test_health_check_not_connected(self, zen_client):
@@ -380,12 +379,14 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_validate_query_httpx_not_available(self, zen_client):
         """Test query validation when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(
+        with (
+            patch("src.mcp_integration.mcp_client.httpx", None),
+            pytest.raises(
                 MCPServiceUnavailableError,
                 match="Validation service unavailable: httpx is not installed",
-            ):
-                await zen_client.validate_query("test")
+            ),
+        ):
+            await zen_client.validate_query("test")
 
     @pytest.mark.asyncio
     async def test_validate_query_not_connected(self, zen_client):
@@ -462,9 +463,8 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_orchestrate_agents_httpx_not_available(self, zen_client):
         """Test orchestration when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(RetryError):
-                await zen_client.orchestrate_agents([])
+        with patch("src.mcp_integration.mcp_client.httpx", None), pytest.raises(RetryError):
+            await zen_client.orchestrate_agents([])
 
     @pytest.mark.asyncio
     async def test_orchestrate_agents_not_connected(self, zen_client):

@@ -38,7 +38,7 @@ class TestQueryProcessingBenchmarks:
 
         def generate_mock_embedding():
             # Simulate embedding generation (mock CPU-intensive operation)
-            text = "This is a sample text for embedding generation"
+            "This is a sample text for embedding generation"
             # Simulate processing time
             time.sleep(0.001)  # 1ms simulation
             return [0.1 * i for i in range(384)]  # Mock 384-dim embedding

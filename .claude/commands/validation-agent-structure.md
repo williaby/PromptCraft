@@ -20,6 +20,7 @@ Comprehensive validation of agent directory structure, naming consistency, and i
 ## Directory Structure Requirements
 
 ### Required Knowledge Base Files
+
 ```
 knowledge/{agent_id}/
 ├── README.md                    # Agent overview (required)
@@ -29,6 +30,7 @@ knowledge/{agent_id}/
 ```
 
 ### Required Implementation Files
+
 ```
 src/agents/
 ├── {agent_id}.py               # Python implementation (required)
@@ -46,21 +48,25 @@ tests/
 ### 1. Naming Convention Validation
 
 **Agent ID Format**: `{agent_id}` must be snake_case
+
 - ✅ Valid: `security_agent`, `tax_preparation_agent`, `web_dev_agent`
 - ❌ Invalid: `SecurityAgent`, `security-agent`, `securityAgent`
 
 **Directory Names**: Must match agent_id exactly
+
 - Knowledge directory: `/knowledge/{agent_id}/`
 - Python file: `src/agents/{agent_id}.py`
 - Test file: `test_{agent_id}.py`
 
 **File Names**: Must be kebab-case.md
+
 - ✅ Valid: `auth-best-practices.md`, `core-capabilities.md`
 - ❌ Invalid: `Auth_Best_Practices.md`, `coreCapabilities.md`
 
 ### 2. YAML Front Matter Validation
 
 Each knowledge file must have:
+
 ```yaml
 ---
 title: [Human readable title]
@@ -73,6 +79,7 @@ purpose: [Single sentence with period.]
 ```
 
 **Critical Checks**:
+
 - `agent_id` field matches directory name exactly
 - `title` matches H1 heading in file
 - `status` is one of approved values
@@ -82,6 +89,7 @@ purpose: [Single sentence with period.]
 ### 3. Agent Class Validation
 
 **Python Class Requirements**:
+
 ```python
 class {AgentId}Agent(BaseAgent):  # PascalCase + "Agent" suffix
     def __init__(self, config: Dict[str, Any]):
@@ -90,6 +98,7 @@ class {AgentId}Agent(BaseAgent):  # PascalCase + "Agent" suffix
 ```
 
 **Required Methods**:
+
 - `__init__(self, config)` - Proper initialization
 - `process_query(self, query, context)` - Core processing
 - `get_capabilities(self)` - Capability listing
@@ -97,6 +106,7 @@ class {AgentId}Agent(BaseAgent):  # PascalCase + "Agent" suffix
 ### 4. Registry Integration Validation
 
 Check `src/agents/registry.py` contains:
+
 ```python
 "{agent_id}": {
     "class": "{AgentId}Agent",
@@ -113,12 +123,14 @@ Check `src/agents/registry.py` contains:
 ### 5. Content Structure Validation
 
 **Heading Hierarchy**: All knowledge files must follow:
+
 - H1 (`#`): Document title only
 - H2 (`##`): Major sections
 - H3 (`###`): Atomic knowledge chunks
 - H4+ (`####`): **PROHIBITED** - breaks RAG chunking
 
 **Atomic Chunk Requirements**:
+
 - Each H3 section must be self-contained
 - No forward references to other sections
 - Complete context within the chunk
@@ -127,11 +139,13 @@ Check `src/agents/registry.py` contains:
 ### 6. Cross-Reference Validation
 
 **Internal Links**: Check all markdown links
+
 - Knowledge files linking to other knowledge files
 - README references to knowledge files
 - Agent overview cross-references
 
 **Registry References**: Verify
+
 - Python class matches registry entry
 - Module path is correct
 - Qdrant collection name matches
@@ -178,6 +192,7 @@ Overall: 75% (15/20 checks passed)
 ## Specific Validation Rules
 
 ### Knowledge Base Rules
+
 1. **Minimum Files**: agent-overview.md and core-capabilities.md required
 2. **YAML Consistency**: agent_id must match directory in ALL files
 3. **Heading Depth**: No H4 or deeper headings allowed
@@ -185,6 +200,7 @@ Overall: 75% (15/20 checks passed)
 5. **Self-Containment**: Each H3 section must be understandable alone
 
 ### Implementation Rules
+
 1. **Class Naming**: Must be {AgentId}Agent in PascalCase
 2. **Inheritance**: Must inherit from BaseAgent
 3. **Agent ID**: self.agent_id must match directory name
@@ -192,6 +208,7 @@ Overall: 75% (15/20 checks passed)
 5. **Test Coverage**: Basic test file must exist
 
 ### Integration Rules
+
 1. **Import Path**: Agent must be importable via registry module path
 2. **Qdrant Collection**: Collection name must match agent_id
 3. **Knowledge Path**: Registry knowledge_base path must be valid

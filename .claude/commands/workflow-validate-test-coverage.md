@@ -55,12 +55,14 @@ Comprehensive test coverage analysis for phase and issue work: $ARGUMENTS
 Provide a comprehensive test coverage report with the following sections:
 
 ### 1. Executive Summary
+
 - Total files analyzed
 - Overall test coverage percentage
 - Number of files with missing/inadequate tests
 - Critical gaps requiring immediate attention
 
 ### 2. File-by-File Analysis
+
 For each file modified/created in this phase and issue:
 
 ```
@@ -76,17 +78,20 @@ For each file modified/created in this phase and issue:
 ```
 
 ### 3. Test Gap Analysis
+
 - **Critical Gaps**: Files/functions requiring immediate test coverage
 - **Quality Gaps**: Existing tests needing improvement
 - **Type Gaps**: Missing test categories (unit, integration, etc.)
 
 ### 4. Implementation Recommendations
+
 - Priority order for addressing test gaps
 - Specific test scenarios to implement
 - Suggested test markers and organization
 - Integration with existing test infrastructure
 
 ### 5. Validation Checklist
+
 ```
 Pre-Commit Test Coverage Checklist:
 - [ ] All new files have minimum 80% coverage

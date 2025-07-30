@@ -40,6 +40,22 @@ from src.utils.logging_mixin import LoggerMixin
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Input validation constants
+MAX_TEXT_INPUT_LENGTH = 50000  # Maximum characters allowed for text input
+MAX_FILE_CONTENT_SIZE = 50000  # Maximum characters for file content processing
+MIN_COMPRESSION_RATIO = 9  # Minimum compression ratio to flag as potential zip bomb
+MAX_ARCHIVE_MEMBERS = 100  # Maximum number of files allowed in archive
+MIN_RESULT_LENGTH = 9  # Minimum expected result tuple length for validation
+MIN_ARCHIVE_SIZE = 100  # Minimum reasonable size for archive files (bytes)
+MAX_ARCHIVE_ANALYSIS_FILES = 10  # Maximum files to analyze in archive bomb detection
+COMPRESSION_SAMPLE_SIZE = 1024  # Size of sample chunk for compression analysis (bytes)
+FALLBACK_PREVIEW_LENGTH = 500  # Characters to show in fallback mode
+REQUEST_PREVIEW_LENGTH = 200  # Characters to show in request previews
+BRIEF_PREVIEW_LENGTH = 100  # Characters for brief content previews
+TIMEOUT_PREVIEW_LENGTH = 300  # Characters for timeout recovery previews
+OBJECTIVE_PREVIEW_LENGTH = 150  # Characters for objective previews
+ERROR_RECOVERY_PREVIEW_LENGTH = 250  # Characters for error recovery previews
+
 
 class RateLimiter:
     """
@@ -727,7 +743,7 @@ class MultiJourneyInterface(LoggerMixin):
                     # Validate custom model selection
                     if custom_model and custom_model not in self.model_costs:
                         # Fallback to default if invalid model selected
-                        self.logger.warning(f"Invalid model selected: {custom_model}, falling back to gpt-4o-mini")
+                        self.logger.warning("Invalid model selected: %s, falling back to gpt-4o-mini", custom_model)
                         custom_model = "gpt-4o-mini"
 
                     # 2. FILE COUNT VALIDATION
@@ -816,10 +832,10 @@ class MultiJourneyInterface(LoggerMixin):
                         files = processed_files
 
                     # 4. TEXT INPUT VALIDATION
-                    if text_input and len(text_input) > 50000:  # 50KB text limit
+                    if text_input and len(text_input) > MAX_TEXT_INPUT_LENGTH:  # 50KB text limit
                         raise gr.Error(
                             f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
-                            f"Maximum 50,000 characters allowed. Please shorten your text.",
+                            f"Maximum {MAX_TEXT_INPUT_LENGTH:,} characters allowed. Please shorten your text.",
                         )
 
                     # 5. UPDATE SESSION TRACKING
@@ -857,7 +873,7 @@ class MultiJourneyInterface(LoggerMixin):
                             signal.alarm(0)
 
                         # Validate result structure
-                        if not result or len(result) < 9:
+                        if not result or len(result) < MIN_RESULT_LENGTH:
                             # Fallback to safe default result
                             result = self._create_fallback_result(text_input, custom_model)
 
@@ -876,7 +892,7 @@ class MultiJourneyInterface(LoggerMixin):
 
                     except Exception as processing_error:
                         # Handle processing errors with fallback
-                        self.logger.error(f"Processing error: {processing_error}")
+                        self.logger.error("Processing error: %s", processing_error)
                         session_state["request_count"] = session_state.get("request_count", 0) + 1
                         session_state["total_cost"] = (
                             session_state.get("total_cost", 0.0) + 0.001
@@ -895,7 +911,7 @@ class MultiJourneyInterface(LoggerMixin):
                     raise
                 except Exception as e:
                     # Log unexpected errors and show user-friendly message
-                    self.logger.error(f"Unexpected error in file processing: {e}")
+                    self.logger.error("Unexpected error in file processing: %s", e)
                     raise gr.Error(
                         "❌ Processing Error: An unexpected error occurred while processing your request. "
                         "Please try again or contact support if the problem persists.",
@@ -1127,7 +1143,7 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If text input exceeds limits
         """
-        if text_input and len(text_input) > 50000:  # 50KB text limit
+        if text_input and len(text_input) > MAX_TEXT_INPUT_LENGTH:  # 50KB text limit
             raise gr.Error(
                 f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
                 f"Maximum 50,000 characters allowed. Please shorten your text.",
@@ -1177,7 +1193,7 @@ class MultiJourneyInterface(LoggerMixin):
             try:
                 detected_mime = magic.from_file(file_path, mime=True)
             except Exception as e:
-                self.logger.warning(f"Magic content detection failed: {e}")
+                self.logger.warning("Magic content detection failed: %s", e)
                 detected_mime = "application/octet-stream"  # Fallback for unknown content
 
             # Extension-based MIME guessing (existing method)
@@ -1196,7 +1212,7 @@ class MultiJourneyInterface(LoggerMixin):
             guessed_mime, _ = mimetypes.guess_type(file_path)
             return guessed_mime or "application/octet-stream", guessed_mime or "application/octet-stream"
         except Exception as e:
-            self.logger.error(f"File content validation failed: {e}")
+            self.logger.error("File content validation failed: %s", e)
             raise gr.Error(
                 "❌ Security Error: Unable to validate file content safely. "
                 "File may be corrupted or use unsupported format.",
@@ -1276,7 +1292,7 @@ class MultiJourneyInterface(LoggerMixin):
                 self._check_archive_bomb_heuristics(file_path, file_size, detected_mime)
 
             except Exception as e:
-                self.logger.warning(f"Archive bomb detection failed: {e}")
+                self.logger.warning("Archive bomb detection failed: %s", e)
                 # Fail safe - if we can't analyze, treat as suspicious
                 raise gr.Error(
                     "❌ Security Error: Unable to analyze archive file safely. "
@@ -1303,7 +1319,7 @@ class MultiJourneyInterface(LoggerMixin):
 
         # Heuristic 2: Size-based checks (regardless of format)
         # If a very small file claims to be an archive, it's suspicious
-        if file_size < 100:  # Less than 100 bytes
+        if file_size < MIN_ARCHIVE_SIZE:  # Less than 100 bytes
             raise gr.Error(
                 f"❌ Security Error: Archive file is suspiciously small ({file_size} bytes). "
                 f"This could be an archive bomb designed to expand enormously when extracted.",
@@ -1372,7 +1388,7 @@ class MultiJourneyInterface(LoggerMixin):
                 "❌ Security Error: File appears to be a corrupted or malicious ZIP archive.",
             ) from None
         except Exception as e:
-            self.logger.warning(f"ZIP bomb detection failed: {e}")
+            self.logger.warning("ZIP bomb detection failed: %s", e)
             # Conservative approach - block if we can't safely analyze
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze ZIP archive. File blocked as a security precaution.",
@@ -1401,7 +1417,7 @@ class MultiJourneyInterface(LoggerMixin):
                     files_checked = 0
 
                     for member in tar_file.getmembers():
-                        if files_checked >= 10:  # Limit analysis to first 10 files
+                        if files_checked >= MAX_ARCHIVE_ANALYSIS_FILES:  # Limit analysis to first 10 files
                             break
 
                         if member.isfile():
@@ -1436,8 +1452,8 @@ class MultiJourneyInterface(LoggerMixin):
                 # If not a valid TAR, try GZIP
                 with gzip.open(file_path, "rb") as gz_file:
                     # Read first chunk to estimate compression
-                    chunk = gz_file.read(1024)  # Read 1KB sample
-                    if len(chunk) == 1024:  # File has more content
+                    chunk = gz_file.read(COMPRESSION_SAMPLE_SIZE)  # Read 1KB sample
+                    if len(chunk) == COMPRESSION_SAMPLE_SIZE:  # File has more content
                         # Estimate based on sample
                         estimated_uncompressed = file_size * 1000  # Conservative estimate
                         if estimated_uncompressed > MAX_UNCOMPRESSED_SIZE:
@@ -1447,7 +1463,7 @@ class MultiJourneyInterface(LoggerMixin):
                             ) from None
 
         except Exception as e:
-            self.logger.warning(f"TAR/GZIP bomb detection failed: {e}")
+            self.logger.warning("TAR/GZIP bomb detection failed: %s", e)
             # Conservative approach - block if analysis fails
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze compressed archive. "
@@ -1533,7 +1549,7 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(f"❌ File Error: Unable to read file. {e!s}") from e
         except Exception as e:
             # Handle unexpected errors
-            self.logger.error(f"Unexpected error processing file {file_path}: {e}")
+            self.logger.error("Unexpected error processing file %s: %s", file_path, e)
             raise gr.Error(
                 "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
             ) from e
@@ -1543,7 +1559,7 @@ class MultiJourneyInterface(LoggerMixin):
         fallback_prompt = f"""
 **Enhanced Prompt (Fallback Mode)**
 
-Your original input: {text_input[:500]}{"..." if len(text_input) > 500 else ""}
+Your original input: {text_input[:FALLBACK_PREVIEW_LENGTH]}{"..." if len(text_input) > FALLBACK_PREVIEW_LENGTH else ""}
 
 **Note**: The advanced enhancement system is temporarily unavailable. Here's a basic structure to help you proceed:
 
@@ -1551,7 +1567,7 @@ Your original input: {text_input[:500]}{"..." if len(text_input) > 500 else ""}
 Please provide more context about your specific goals and requirements.
 
 ## Request
-{text_input[:200]}{"..." if len(text_input) > 200 else ""}
+{text_input[:REQUEST_PREVIEW_LENGTH]}{"..." if len(text_input) > REQUEST_PREVIEW_LENGTH else ""}
 
 ## Suggested Next Steps
 1. Clarify your specific objectives
@@ -1566,7 +1582,7 @@ Please provide more context about your specific goals and requirements.
         return (
             fallback_prompt,  # enhanced_prompt
             "Basic context analysis - please specify your role and goals",  # context_analysis
-            f"Request: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Request: {text_input[:BRIEF_PREVIEW_LENGTH]}{'...' if len(text_input) > BRIEF_PREVIEW_LENGTH else ''}",  # request_specification
             "Examples will be provided when system is fully available",  # examples_section
             "Advanced frameworks temporarily unavailable",  # augmentations_section
             "Please specify your preferred tone and format",  # tone_format
@@ -1580,7 +1596,7 @@ Please provide more context about your specific goals and requirements.
         timeout_prompt = f"""
 **Enhanced Prompt (Timeout Recovery)**
 
-Your request: {text_input[:300]}{"..." if len(text_input) > 300 else ""}
+Your request: {text_input[:TIMEOUT_PREVIEW_LENGTH]}{"..." if len(text_input) > TIMEOUT_PREVIEW_LENGTH else ""}
 
 **⏱️ Processing Timeout Notice**: Your request is complex and requires more processing time than currently available.
 
@@ -1591,7 +1607,7 @@ To get faster results, try:
 3. **Clear context**: Provide essential background only
 
 ## Quick Enhancement
-Your core request appears to be: {text_input[:150]}{"..." if len(text_input) > 150 else ""}
+Your core request appears to be: {text_input[:OBJECTIVE_PREVIEW_LENGTH]}{"..." if len(text_input) > OBJECTIVE_PREVIEW_LENGTH else ""}
 
 Consider refining this to be more specific and actionable.
 
@@ -1602,7 +1618,7 @@ Consider refining this to be more specific and actionable.
         return (
             timeout_prompt,  # enhanced_prompt
             "⏱️ Timeout - please provide more focused context",  # context_analysis
-            f"Simplified request needed: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Simplified request needed: {text_input[:BRIEF_PREVIEW_LENGTH]}{'...' if len(text_input) > BRIEF_PREVIEW_LENGTH else ''}",  # request_specification
             "⏱️ Examples unavailable due to timeout - try simpler request",  # examples_section
             "⏱️ Advanced processing unavailable - reduce complexity",  # augmentations_section
             "Suggest concise, direct communication style",  # tone_format
@@ -1616,12 +1632,12 @@ Consider refining this to be more specific and actionable.
         error_prompt = f"""
 **Enhanced Prompt (Error Recovery)**
 
-Your input: {text_input[:250]}{"..." if len(text_input) > 250 else ""}
+Your input: {text_input[:ERROR_RECOVERY_PREVIEW_LENGTH]}{"..." if len(text_input) > ERROR_RECOVERY_PREVIEW_LENGTH else ""}
 
 **🔧 System Recovery Mode**: An error occurred during processing, but we've created this basic enhancement to help you proceed.
 
 ## Basic Structure
-**Objective**: {text_input[:100]}{"..." if len(text_input) > 100 else ""}
+**Objective**: {text_input[:BRIEF_PREVIEW_LENGTH]}{"..." if len(text_input) > BRIEF_PREVIEW_LENGTH else ""}
 
 **Recommended approach**:
 1. Define clear, specific goals
@@ -1642,7 +1658,7 @@ If this error persists:
         return (
             error_prompt,  # enhanced_prompt
             "🔧 Error recovery - basic context structure provided",  # context_analysis
-            f"Core request: {text_input[:100]}{'...' if len(text_input) > 100 else ''}",  # request_specification
+            f"Core request: {text_input[:BRIEF_PREVIEW_LENGTH]}{'...' if len(text_input) > BRIEF_PREVIEW_LENGTH else ''}",  # request_specification
             "🔧 Examples temporarily unavailable - error recovery mode",  # examples_section
             "🔧 Advanced features unavailable - contact support if persistent",  # augmentations_section
             "Clear, direct communication recommended",  # tone_format
@@ -1811,7 +1827,7 @@ If this error persists:
                 "timestamp": time.time(),
             }
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}")
+            self.logger.error("Health check failed: %s", e)
             return {
                 "status": "unhealthy",
                 "components": {"error": str(e)},

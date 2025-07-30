@@ -1351,7 +1351,7 @@ class TestQdrantVectorStore:
 
         # Mock collection existence check
         with patch.object(store, "_ensure_collection_exists", return_value=None):
-            with patch("src.core.vector_store.PointStruct") as mock_point_struct:
+            with patch("src.core.vector_store.PointStruct"):
                 docs = [
                     VectorDocument(
                         id="test_doc",
@@ -1389,7 +1389,7 @@ class TestQdrantVectorStore:
 
         store._client = mock_client
 
-        with patch("src.core.vector_store.PointStruct") as mock_point_struct:
+        with patch("src.core.vector_store.PointStruct"):
             doc = VectorDocument(id="test", content="test", embedding=[0.1])
             result = await store.update_document(doc)
 
@@ -1441,12 +1441,14 @@ class TestQdrantVectorStore:
         mock_client = Mock()
         store._client = mock_client
 
-        with patch("src.core.vector_store.VectorParams") as mock_vector_params:
-            with patch("src.core.vector_store.Distance") as mock_distance:
-                result = await store.create_collection("test_collection", 512)
+        with (
+            patch("src.core.vector_store.VectorParams"),
+            patch("src.core.vector_store.Distance"),
+        ):
+            result = await store.create_collection("test_collection", 512)
 
-                assert result is True
-                mock_client.create_collection.assert_called_once()
+            assert result is True
+            mock_client.create_collection.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_list_collections_no_client(self):

@@ -718,13 +718,13 @@ class TestMultiJourneyInterfaceExtended:
         # Test custom mode - should return visible dropdown
         with patch("src.ui.multi_journey_interface.gr.Dropdown") as mock_dropdown:
             mock_dropdown.return_value = Mock()
-            result = interface._on_model_selector_change("custom")
+            interface._on_model_selector_change("custom")
             mock_dropdown.assert_called_with(visible=True)
 
         # Test other modes - should return invisible dropdown
         with patch("src.ui.multi_journey_interface.gr.Dropdown") as mock_dropdown:
             mock_dropdown.return_value = Mock()
-            result = interface._on_model_selector_change("standard")
+            interface._on_model_selector_change("standard")
             mock_dropdown.assert_called_with(visible=False)
 
     def test_calculate_cost(self):
@@ -1038,7 +1038,7 @@ class TestMultiJourneyInterfaceExtended:
         assert "uptime" in status
         assert status["active_sessions"] >= 3
         assert status["total_requests"] >= 3
-        assert isinstance(status["uptime"], (int, float))
+        assert isinstance(status["uptime"], int | float)
 
     def test_utility_methods_comprehensive(self):
         """Test utility methods for comprehensive coverage."""

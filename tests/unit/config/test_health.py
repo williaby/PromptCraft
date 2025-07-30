@@ -218,16 +218,18 @@ class TestHealthChecker:
         # Mock MCP health
         mock_mcp_health = {"healthy": True, "status": "operational"}
 
-        with patch("src.config.health.get_configuration_status", return_value=mock_status):
-            with patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health):
-                result = await checker.check_health()
+        with (
+            patch("src.config.health.get_configuration_status", return_value=mock_status),
+            patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health),
+        ):
+            result = await checker.check_health()
 
-                assert result["healthy"] is True
-                assert "configuration" in result
-                assert "mcp" in result
-                assert "timestamp" in result
-                assert result["configuration"]["config_healthy"] is True
-                assert result["mcp"]["healthy"] is True
+            assert result["healthy"] is True
+            assert "configuration" in result
+            assert "mcp" in result
+            assert "timestamp" in result
+            assert result["configuration"]["config_healthy"] is True
+            assert result["mcp"]["healthy"] is True
 
     @pytest.mark.asyncio
     async def test_check_health_config_unhealthy(self):
@@ -243,11 +245,13 @@ class TestHealthChecker:
         # Mock healthy MCP
         mock_mcp_health = {"healthy": True, "status": "operational"}
 
-        with patch("src.config.health.get_configuration_status", return_value=mock_status):
-            with patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health):
-                result = await checker.check_health()
+        with (
+            patch("src.config.health.get_configuration_status", return_value=mock_status),
+            patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health),
+        ):
+            result = await checker.check_health()
 
-                assert result["healthy"] is False
+            assert result["healthy"] is False
 
     @pytest.mark.asyncio
     async def test_check_health_mcp_unhealthy(self):
@@ -263,11 +267,13 @@ class TestHealthChecker:
         # Mock unhealthy MCP
         mock_mcp_health = {"healthy": False, "error": "MCP service unavailable"}
 
-        with patch("src.config.health.get_configuration_status", return_value=mock_status):
-            with patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health):
-                result = await checker.check_health()
+        with (
+            patch("src.config.health.get_configuration_status", return_value=mock_status),
+            patch("src.config.health.get_mcp_configuration_health", return_value=mock_mcp_health),
+        ):
+            result = await checker.check_health()
 
-                assert result["healthy"] is False
+            assert result["healthy"] is False
 
     @pytest.mark.asyncio
     async def test_check_health_exception(self):
@@ -368,14 +374,12 @@ class TestDetermineConfigSource:
         settings.environment = "test"
 
         # Clear environment variables
-        with patch.dict(os.environ, {}, clear=True):
-            # Mock file existence
-            with patch.object(Path, "exists") as mock_exists:
-                mock_exists.return_value = True
+        with patch.dict(os.environ, {}, clear=True), patch.object(Path, "exists") as mock_exists:
+            mock_exists.return_value = True
 
-                source = _determine_config_source(settings)
+            source = _determine_config_source(settings)
 
-                assert source == "env_files"
+            assert source == "env_files"
 
     def test_determine_source_defaults(self):
         """Test config source determination with defaults."""
@@ -383,11 +387,10 @@ class TestDetermineConfigSource:
         settings.environment = "test"
 
         # Clear environment variables and no env files
-        with patch.dict(os.environ, {}, clear=True):
-            with patch.object(Path, "exists", return_value=False):
-                source = _determine_config_source(settings)
+        with patch.dict(os.environ, {}, clear=True), patch.object(Path, "exists", return_value=False):
+            source = _determine_config_source(settings)
 
-                assert source == "defaults"
+            assert source == "defaults"
 
     def test_determine_source_partial_env_vars(self):
         """Test config source determination with partial env vars."""
@@ -395,30 +398,30 @@ class TestDetermineConfigSource:
         settings.environment = "test"
 
         # Only set one environment variable
-        with patch.dict(os.environ, {"PROMPTCRAFT_DEBUG": "true"}, clear=True):
-            with patch.object(Path, "exists", return_value=False):
-                source = _determine_config_source(settings)
+        with (
+            patch.dict(os.environ, {"PROMPTCRAFT_DEBUG": "true"}, clear=True),
+            patch.object(Path, "exists", return_value=False),
+        ):
+            source = _determine_config_source(settings)
 
-                assert source == "env_vars"
+            assert source == "env_vars"
 
     def test_determine_source_specific_env_file_patterns(self):
         """Test config source determination checks specific env file patterns."""
         settings = Mock(spec=ApplicationSettings)
         settings.environment = "production"
 
-        with patch.dict(os.environ, {}, clear=True):
-            # Mock path construction and file existence
-            with patch.object(Path, "exists") as mock_exists:
+        with patch.dict(os.environ, {}, clear=True), patch.object(Path, "exists") as mock_exists:
 
-                def exists_side_effect():
-                    # Return True for .env.production.gpg file
-                    return True
+            def exists_side_effect():
+                # Return True for .env.production.gpg file
+                return True
 
-                mock_exists.side_effect = exists_side_effect
+            mock_exists.side_effect = exists_side_effect
 
-                source = _determine_config_source(settings)
+            source = _determine_config_source(settings)
 
-                assert source == "env_files"
+            assert source == "env_files"
 
 
 @pytest.mark.unit
@@ -473,11 +476,13 @@ class TestSanitizeValidationErrors:
         mock_file_pattern = Mock()
         mock_file_pattern.search.return_value = True
 
-        with patch("src.config.health._COMPILED_SENSITIVE_PATTERNS", [(mock_sensitive_pattern, "SENSITIVE")]):
-            with patch("src.config.health._COMPILED_FILE_PATH_PATTERNS", [mock_file_pattern]):
-                result = _sanitize_validation_errors(errors)
+        with (
+            patch("src.config.health._COMPILED_SENSITIVE_PATTERNS", [(mock_sensitive_pattern, "SENSITIVE")]),
+            patch("src.config.health._COMPILED_FILE_PATH_PATTERNS", [mock_file_pattern]),
+        ):
+            result = _sanitize_validation_errors(errors)
 
-                assert result == ["Configuration file path issue (path hidden)"]
+            assert result == ["Configuration file path issue (path hidden)"]
 
     def test_sanitize_multiple_errors(self):
         """Test sanitization of multiple errors with different patterns."""
@@ -517,24 +522,26 @@ class TestGetConfigurationStatus:
         settings.api_host = "localhost"
         settings.api_port = 8000
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=3):
-                with patch("src.config.health._determine_config_source", return_value="env_vars"):
-                    with patch("src.config.health.validate_configuration_on_startup"):
-                        status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=3),
+            patch("src.config.health._determine_config_source", return_value="env_vars"),
+            patch("src.config.health.validate_configuration_on_startup"),
+        ):
+            status = get_configuration_status(settings)
 
-                        assert status.environment == "test"
-                        assert status.version == "1.0.0"
-                        assert status.debug is False
-                        assert status.config_loaded is True
-                        assert status.encryption_enabled is True
-                        assert status.config_source == "env_vars"
-                        assert status.validation_status == "passed"
-                        assert status.validation_errors == []
-                        assert status.secrets_configured == 3
-                        assert status.api_host == "localhost"
-                        assert status.api_port == 8000
-                        assert status.config_healthy is True
+            assert status.environment == "test"
+            assert status.version == "1.0.0"
+            assert status.debug is False
+            assert status.config_loaded is True
+            assert status.encryption_enabled is True
+            assert status.config_source == "env_vars"
+            assert status.validation_status == "passed"
+            assert status.validation_errors == []
+            assert status.secrets_configured == 3
+            assert status.api_host == "localhost"
+            assert status.api_port == 8000
+            assert status.config_healthy is True
 
     def test_get_status_validation_error(self):
         """Test getting configuration status with validation errors."""
@@ -551,16 +558,18 @@ class TestGetConfigurationStatus:
             ["Field 'password' invalid", "Missing required field"],
         )
 
-        with patch("src.config.health.validate_encryption_available", return_value=False):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch("src.config.health.validate_configuration_on_startup", side_effect=validation_error):
-                        with patch("src.config.health._sanitize_validation_errors", return_value=["Sanitized error"]):
-                            status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=False),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=validation_error),
+            patch("src.config.health._sanitize_validation_errors", return_value=["Sanitized error"]),
+        ):
+            status = get_configuration_status(settings)
 
-                            assert status.validation_status == "failed"
-                            assert status.validation_errors == ["Sanitized error"]
-                            assert status.config_healthy is False
+            assert status.validation_status == "failed"
+            assert status.validation_errors == ["Sanitized error"]
+            assert status.config_healthy is False
 
     def test_get_status_value_error(self):
         """Test getting configuration status with ValueError."""
@@ -571,18 +580,17 @@ class TestGetConfigurationStatus:
         settings.api_host = "localhost"
         settings.api_port = 8000
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch(
-                        "src.config.health.validate_configuration_on_startup",
-                        side_effect=ValueError("Format error"),
-                    ):
-                        status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=ValueError("Format error")),
+        ):
+            status = get_configuration_status(settings)
 
-                        assert status.validation_status == "failed"
-                        assert status.validation_errors == ["Configuration format error"]
-                        assert status.config_healthy is False
+            assert status.validation_status == "failed"
+            assert status.validation_errors == ["Configuration format error"]
+            assert status.config_healthy is False
 
     def test_get_status_type_error(self):
         """Test getting configuration status with TypeError."""
@@ -593,17 +601,16 @@ class TestGetConfigurationStatus:
         settings.api_host = "localhost"
         settings.api_port = 8000
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch(
-                        "src.config.health.validate_configuration_on_startup",
-                        side_effect=TypeError("Type error"),
-                    ):
-                        status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=TypeError("Type error")),
+        ):
+            status = get_configuration_status(settings)
 
-                        assert status.validation_status == "failed"
-                        assert status.validation_errors == ["Configuration format error"]
+            assert status.validation_status == "failed"
+            assert status.validation_errors == ["Configuration format error"]
 
     def test_get_status_attribute_error(self):
         """Test getting configuration status with AttributeError."""
@@ -614,17 +621,16 @@ class TestGetConfigurationStatus:
         settings.api_host = "localhost"
         settings.api_port = 8000
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch(
-                        "src.config.health.validate_configuration_on_startup",
-                        side_effect=AttributeError("Attribute error"),
-                    ):
-                        status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=AttributeError("Attribute error")),
+        ):
+            status = get_configuration_status(settings)
 
-                        assert status.validation_status == "failed"
-                        assert status.validation_errors == ["Configuration format error"]
+            assert status.validation_status == "failed"
+            assert status.validation_errors == ["Configuration format error"]
 
     def test_get_status_unexpected_exception(self):
         """Test getting configuration status with unexpected exception."""
@@ -635,15 +641,14 @@ class TestGetConfigurationStatus:
         settings.api_host = "localhost"
         settings.api_port = 8000
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch(
-                        "src.config.health.validate_configuration_on_startup",
-                        side_effect=RuntimeError("Unexpected error"),
-                    ):
-                        with pytest.raises(RuntimeError):
-                            get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=RuntimeError("Unexpected error")),
+        ):
+            with pytest.raises(RuntimeError):
+                get_configuration_status(settings)
 
 
 @pytest.mark.unit
@@ -840,7 +845,7 @@ class TestGetMCPConfigurationHealth:
     async def test_mcp_health_runtime_error(self):
         """Test MCP health check with runtime error."""
         # Create mock classes to ensure they're not None
-        mock_config_manager = Mock()
+        Mock()
         mock_mcp_client = Mock()
         mock_parallel_executor = Mock()
 

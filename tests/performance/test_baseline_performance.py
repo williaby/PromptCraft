@@ -197,7 +197,7 @@ class BaselinePerformanceTestSuite:
 
             start_time = time.time()
             try:
-                agents = await self.query_counselor.select_agents(intent)
+                await self.query_counselor.select_agents(intent)
                 duration = time.time() - start_time
                 agent_selection_times.append(duration)
             except Exception as e:

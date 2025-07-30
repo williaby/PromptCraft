@@ -18,6 +18,7 @@ Create Qdrant collection schemas and configurations for agent knowledge bases: $
 ## Qdrant Collection Configuration
 
 ### Base Collection Schema
+
 ```python
 # config/qdrant_collections.py
 
@@ -71,6 +72,7 @@ COLLECTION_CONFIGS = {
 ### Agent-Specific Optimizations
 
 #### High-Volume Agents (>1000 documents)
+
 ```python
 "{agent_id}": {
     "vector_config": {
@@ -99,6 +101,7 @@ COLLECTION_CONFIGS = {
 ```
 
 #### Low-Volume Agents (<100 documents)
+
 ```python
 "{agent_id}": {
     "vector_config": {
@@ -121,6 +124,7 @@ COLLECTION_CONFIGS = {
 ```
 
 #### Real-Time Agents (frequent updates)
+
 ```python
 "{agent_id}": {
     "vector_config": {
@@ -149,6 +153,7 @@ COLLECTION_CONFIGS = {
 ## Blue-Green Deployment Configuration
 
 ### Collection Naming Strategy
+
 ```python
 # Blue-Green Collection Names
 BLUE_GREEN_CONFIG = {
@@ -174,6 +179,7 @@ DEPLOYMENT_STATES = {
 ```
 
 ### Deployment Scripts
+
 ```python
 # deployment/qdrant_deploy.py
 
@@ -214,6 +220,7 @@ async def deploy_agent_collection(agent_id: str, deployment_state: str):
 ## Integration Configurations
 
 ### MCP Server Integration
+
 ```python
 # src/mcp_integration/qdrant_config.py
 
@@ -239,6 +246,7 @@ AGENT_COLLECTION_MAPPING = {
 ```
 
 ### Ingestion Pipeline Configuration
+
 ```python
 # src/ingestion/pipeline_config.py
 
@@ -275,6 +283,7 @@ INGESTION_CONFIGS = {
 ## Performance Monitoring Configuration
 
 ### Collection Metrics
+
 ```python
 # monitoring/qdrant_metrics.py
 
@@ -306,6 +315,7 @@ COLLECTION_METRICS = {
 ## Required Output Format
 
 ### Complete Schema Package
+
 ```markdown
 # Qdrant Schema Generation Report
 
@@ -330,18 +340,21 @@ COLLECTION_CONFIGS["{agent_id}"] = {
 ```
 
 ### Blue-Green Deployment
+
 - **Blue Collection**: {agent_id}_blue
 - **Green Collection**: {agent_id}_green
 - **Production Alias**: {agent_id}_production
 - **Staging Alias**: {agent_id}_staging
 
 ### Integration Points
+
 - **MCP Server Config**: Updated with collection mapping
 - **Ingestion Pipeline**: Configured for knowledge/{agent_id}/ directory
 - **Search Parameters**: Optimized for agent domain
 - **Monitoring**: Performance targets and alerting setup
 
 ### Deployment Commands
+
 ```bash
 # Create collections
 python scripts/create_qdrant_collection.py {agent_id}
@@ -354,10 +367,12 @@ python scripts/validate_collection.py {agent_id}_production
 ```
 
 ### Optimization Rationale
+
 - **Collection Size**: {estimated_size} documents
 - **Memory Strategy**: {on_disk_reasoning}
 - **Index Configuration**: {index_reasoning}
 - **Performance Targets**: {performance_reasoning}
+
 ```
 
 ## Validation and Testing

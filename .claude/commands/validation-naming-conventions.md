@@ -17,6 +17,7 @@ Check entire project or specific directory for naming convention compliance per 
 ## Naming Convention Rules by Component
 
 ### Core Components
+
 | Component | Convention | Pattern | Example |
 |-----------|------------|---------|---------|
 | Agent ID | snake_case | `[a-z][a-z0-9_]*` | `security_agent`, `tax_prep_agent` |
@@ -25,6 +26,7 @@ Check entire project or specific directory for naming convention compliance per 
 | Knowledge Files | kebab-case.md | `[a-z][a-z0-9-]*.md` | `auth-best-practices.md` |
 
 ### Code & Files
+
 | Component | Convention | Pattern | Example |
 |-----------|------------|---------|---------|
 | Python Files | snake_case.py | `[a-z][a-z0-9_]*.py` | `query_counselor.py` |
@@ -35,6 +37,7 @@ Check entire project or specific directory for naming convention compliance per 
 | Test Files | test_snake_case.py | `test_[a-z][a-z0-9_]*.py` | `test_security_agent.py` |
 
 ### Infrastructure & Deployment
+
 | Component | Convention | Pattern | Example |
 |-----------|------------|---------|---------|
 | Docker Services | kebab-case | `[a-z][a-z0-9-]*` | `gradio-ui`, `zen-mcp-server` |
@@ -42,12 +45,14 @@ Check entire project or specific directory for naming convention compliance per 
 | Configuration Files | snake_case.ext | `[a-z][a-z0-9_]*.yaml` | `agents_config.yaml` |
 
 ### Git & Development
+
 | Component | Convention | Pattern | Example |
 |-----------|------------|---------|---------|
 | Git Branches | kebab-case with prefixes | `(feature\|bugfix\|hotfix)/[a-z0-9-]*` | `feature/add-security-agent` |
 | Git Tags | v + semver | `v[0-9]+\.[0-9]+\.[0-9]+` | `v1.2.3`, `v2.0.0-beta.1` |
 
 ### API & Web
+
 | Component | Convention | Pattern | Example |
 |-----------|------------|---------|---------|
 | REST Endpoints | kebab-case, plural | `/api/v[0-9]+/[a-z][a-z0-9-]*` | `/api/v1/agents`, `/api/v1/claude-md` |
@@ -57,12 +62,14 @@ Check entire project or specific directory for naming convention compliance per 
 ## Validation Logic
 
 ### Directory Structure Analysis
+
 1. **Agent Directories**: Validate `/knowledge/{agent_id}/` naming
 2. **Source Files**: Check `src/` hierarchy for Python naming
 3. **Test Files**: Validate test file naming and organization
 4. **Configuration Files**: Check config file naming patterns
 
 ### Cross-Reference Validation
+
 1. **Agent ID Consistency**: Verify agent_id matches across:
    - Knowledge folder name
    - YAML front matter
@@ -74,6 +81,7 @@ Check entire project or specific directory for naming convention compliance per 
 3. **Configuration References**: Validate config file references use correct names
 
 ### Pattern Matching Implementation
+
 ```regex
 # Agent ID Pattern
 ^[a-z][a-z0-9_]*$
@@ -97,18 +105,21 @@ Check entire project or specific directory for naming convention compliance per 
 ## Validation Categories
 
 ### Critical Violations (Must Fix)
+
 - Agent ID inconsistency across components
 - Python class naming violates PascalCase
 - Import paths don't match file names
 - Configuration references broken due to naming
 
 ### Standard Violations (Should Fix)
+
 - File names don't follow case conventions
 - Function/method names violate snake_case
 - Constants not in UPPER_SNAKE_CASE
 - Test files don't follow naming pattern
 
 ### Style Violations (Consider Fixing)
+
 - Inconsistent spacing in compound names
 - Non-descriptive single-letter variables
 - Overly long names that could be simplified
@@ -173,6 +184,7 @@ Check entire project or specific directory for naming convention compliance per 
    ```
 
 2. **Priority 2 (Standard)**:
+
    ```bash
    # Fix file naming
    mv knowledge/security_agent/Auth_Best_Practices.md knowledge/security_agent/auth-best-practices.md
@@ -182,6 +194,7 @@ Check entire project or specific directory for naming convention compliance per 
 3. **Priority 3 (Style)**:
    - Review variable naming in loops
    - Consider expanding abbreviated method names
+
 ```
 
 ## Validation Scope Options

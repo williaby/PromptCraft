@@ -388,9 +388,6 @@ class TestVectorStoreErrorHandling:
         await store.connect()
 
         # Attempt operations with errors
-        embeddings = [[0.5] * DEFAULT_VECTOR_DIMENSIONS]
-        params = SearchParameters(embeddings=embeddings, collection="default")
-
         success_count = 0
         error_count = 0
 
@@ -420,9 +417,6 @@ class TestVectorStoreErrorHandling:
         config = {"error_rate": 1.0}  # Always error
         store = EnhancedMockVectorStore(config)
         await store.connect()
-
-        embeddings = [[0.5] * DEFAULT_VECTOR_DIMENSIONS]
-        params = SearchParameters(embeddings=embeddings, collection="default")
 
         # Trigger circuit breaker by causing enough failures
         # Use different embeddings to avoid caching

@@ -4,11 +4,18 @@ Automatically generates test-type-specific coverage reports.
 """
 
 import json
+import shutil
 import subprocess
 import sys
+import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
+
+from src.agents.base_agent import BaseAgent
+from src.agents.models import AgentConfig, AgentInput, AgentOutput
+from src.agents.registry import AgentRegistry
 
 # Coverage hook functionality integrated directly to avoid plugin conflicts
 
@@ -94,8 +101,6 @@ def pytest_sessionfinish(session, exitstatus):
 
 def trigger_automatic_coverage_reports():
     """Trigger automatic coverage report generation (user's primary request)."""
-    import time
-
     # Small delay to allow coverage files to be written
     time.sleep(0.5)
 
@@ -148,8 +153,6 @@ def generate_lightweight_reports(test_types: set[str]):
         if Path("htmlcov").exists():
             standard_dir = Path("reports/coverage/standard")
             if standard_dir.exists():
-                import shutil
-
                 shutil.rmtree(standard_dir)
             Path("htmlcov").rename(standard_dir)
             print("  📋 Organized standard coverage: reports/coverage/standard/")
@@ -158,8 +161,6 @@ def generate_lightweight_reports(test_types: set[str]):
         if Path("htmlcov-by-type").exists():
             by_type_dir = Path("reports/coverage/by-type")
             if by_type_dir.exists():
-                import shutil
-
                 shutil.rmtree(by_type_dir)
             Path("htmlcov-by-type").rename(by_type_dir)
             print("  📋 Organized detailed coverage: reports/coverage/by-type/")
@@ -369,8 +370,6 @@ def add_custom_header(html_file: Path, description: str, test_type: str, test_pa
 def extract_coverage_percentage(xml_file: Path) -> dict[str, float]:
     """Extract coverage percentage from XML report."""
     try:
-        import xml.etree.ElementTree as ET
-
         tree = ET.parse(xml_file)
         root = tree.getroot()
 
@@ -476,8 +475,6 @@ def fresh_agent_registry():
     Yields:
         AgentRegistry: Fresh registry instance for the test
     """
-    from src.agents.registry import AgentRegistry
-
     registry = AgentRegistry()
     yield registry
     # Cleanup: clear all registrations to prevent state leakage
@@ -495,8 +492,6 @@ def mock_agent_class():
     Returns:
         Type[BaseAgent]: Mock agent class suitable for testing
     """
-    from src.agents.base_agent import BaseAgent
-    from src.agents.models import AgentOutput
 
     class MockTestAgent(BaseAgent):
         """Mock agent class for testing purposes."""
@@ -601,7 +596,6 @@ def security_test_inputs():
 # Performance Testing Fixtures
 # These fixtures support comprehensive performance and edge case testing across unit, integration, and security tests.
 
-import time
 from typing import Any
 
 
@@ -737,8 +731,6 @@ def sample_agent_input():
     Returns:
         AgentInput: Sample agent input with comprehensive data
     """
-    from src.agents.models import AgentInput
-
     return AgentInput(
         content="This is a test input for the agent",
         context={"language": "python", "framework": "fastapi", "content_type": "text", "priority": "normal"},
@@ -757,8 +749,6 @@ def sample_agent_output():
     Returns:
         AgentOutput: Sample agent output with comprehensive data
     """
-    from src.agents.models import AgentOutput
-
     return AgentOutput(
         content="This is a test output from the agent",
         metadata={"analysis_type": "security", "rules_checked": 10, "issues_found": 0, "processing_stage": "complete"},
@@ -780,8 +770,6 @@ def sample_agent_config_model():
     Returns:
         AgentConfig: Sample agent config with comprehensive data
     """
-    from src.agents.models import AgentConfig
-
     return AgentConfig(
         agent_id="test_agent",
         name="Test Agent",

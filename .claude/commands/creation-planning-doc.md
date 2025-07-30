@@ -19,8 +19,10 @@ Create new planning documents with proper structure, front matter, and cross-ref
 ## Document Types and Templates
 
 ### Architecture Documents (ADR, Technical Specifications)
+
 **Purpose**: Technical decisions, system design, architectural patterns
 **Template Sections**:
+
 - Problem Statement / Context
 - Decision Drivers / Requirements
 - Considered Options
@@ -29,8 +31,10 @@ Create new planning documents with proper structure, front matter, and cross-ref
 - Implementation Notes
 
 ### Process Documents (Workflows, Procedures)
+
 **Purpose**: Operational procedures, development workflows, team processes
 **Template Sections**:
+
 - Process Overview
 - Prerequisites / Requirements
 - Step-by-Step Procedures
@@ -39,8 +43,10 @@ Create new planning documents with proper structure, front matter, and cross-ref
 - Related Processes
 
 ### Runbook Documents (Operational Guides)
+
 **Purpose**: Deployment guides, maintenance procedures, incident response
 **Template Sections**:
+
 - Overview / Purpose
 - Prerequisites
 - Detailed Procedures
@@ -49,8 +55,10 @@ Create new planning documents with proper structure, front matter, and cross-ref
 - Monitoring / Alerting
 
 ### Planning Documents (Project Plans, Roadmaps)
+
 **Purpose**: Project planning, timelines, resource allocation, roadmaps
 **Template Sections**:
+
 - Executive Summary
 - Objectives / Goals
 - Scope / Deliverables
@@ -61,6 +69,7 @@ Create new planning documents with proper structure, front matter, and cross-ref
 ## Front Matter Templates
 
 ### Architecture Document Front Matter
+
 ```yaml
 ---
 title: {Document Title}
@@ -76,6 +85,7 @@ stakeholders: ["{role1}", "{role2}"]
 ```
 
 ### Process Document Front Matter
+
 ```yaml
 ---
 title: {Document Title}
@@ -91,6 +101,7 @@ review_frequency: "{monthly|quarterly|annually}"
 ```
 
 ### Runbook Document Front Matter
+
 ```yaml
 ---
 title: {Document Title}
@@ -106,6 +117,7 @@ required_access: ["{system1}", "{system2}"]
 ```
 
 ### Planning Document Front Matter
+
 ```yaml
 ---
 title: {Document Title}
@@ -123,6 +135,7 @@ stakeholders: ["{role1}", "{role2}"]
 ## Content Templates
 
 ### Architecture Document Template
+
 ```markdown
 # {Document Title}
 
@@ -182,6 +195,7 @@ Describe the current situation and why a decision is needed.
 ```
 
 ### Process Document Template
+
 ```markdown
 # {Document Title}
 
@@ -244,12 +258,14 @@ Define what is and isn't covered by this process.
 ## File Naming Convention
 
 Generate filename from document title:
+
 1. Convert to lowercase
 2. Replace spaces with hyphens
 3. Remove special characters
 4. Add .md extension
 
 **Examples**:
+
 - "API Gateway Strategy" → `api-gateway-strategy.md`
 - "Security Implementation Plan" → `security-implementation-plan.md`
 - "Database Migration Runbook" → `database-migration-runbook.md`
@@ -257,14 +273,18 @@ Generate filename from document title:
 ## Cross-Reference Integration
 
 ### Automatic Cross-References
+
 Based on document type and content, suggest links to:
+
 - **Architecture docs**: Link to related ADRs and technical specs
 - **Process docs**: Link to upstream/downstream processes
 - **Runbooks**: Link to related procedures and monitoring
 - **Planning docs**: Link to implementation documents and dependencies
 
 ### Standard References
+
 All planning documents should reference:
+
 - [Project Hub](./project-hub.md) - Main project navigation
 - [Development Guidelines](./development.md) - Standards and conventions
 - [Architecture Overview](./ADR.md) - Technical context

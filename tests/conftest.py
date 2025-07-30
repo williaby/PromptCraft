@@ -8,6 +8,10 @@ import os
 
 import pytest
 
+from src.agents.base_agent import BaseAgent
+from src.agents.models import AgentConfig, AgentInput, AgentOutput
+from src.agents.registry import AgentRegistry
+
 
 def pytest_runtest_setup(item):
     """Set coverage context based on test path to match codecov flags."""
@@ -92,8 +96,6 @@ def fresh_agent_registry():
     Yields:
         AgentRegistry: Fresh registry instance for the test
     """
-    from src.agents.registry import AgentRegistry
-
     registry = AgentRegistry()
     yield registry
     # Cleanup: clear all registrations to prevent state leakage
@@ -111,8 +113,6 @@ def mock_agent_class():
     Returns:
         Type[BaseAgent]: Mock agent class suitable for testing
     """
-    from src.agents.base_agent import BaseAgent
-    from src.agents.models import AgentOutput
 
     class MockTestAgent(BaseAgent):
         """Mock agent class for testing purposes."""
@@ -350,8 +350,6 @@ def sample_agent_input():
     Returns:
         AgentInput: Sample agent input with comprehensive data
     """
-    from src.agents.models import AgentInput
-
     return AgentInput(
         content="This is a test input for the agent",
         context={"language": "python", "framework": "fastapi", "content_type": "text", "priority": "normal"},
@@ -370,8 +368,6 @@ def sample_agent_output():
     Returns:
         AgentOutput: Sample agent output with comprehensive data
     """
-    from src.agents.models import AgentOutput
-
     return AgentOutput(
         content="This is a test output from the agent",
         metadata={"analysis_type": "security", "rules_checked": 10, "issues_found": 0, "processing_stage": "complete"},
@@ -393,8 +389,6 @@ def sample_agent_config_model():
     Returns:
         AgentConfig: Sample agent config with comprehensive data
     """
-    from src.agents.models import AgentConfig
-
     return AgentConfig(
         agent_id="test_agent",
         name="Test Agent",

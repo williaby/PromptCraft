@@ -69,7 +69,7 @@ class TestLoggerMixin:
             mock_logger.level = 0  # No level set
             mock_get_logger.return_value = mock_logger
 
-            component = TestComponent()
+            TestComponent()
 
             mock_logger.setLevel.assert_called_with(logging.INFO)
 
@@ -84,7 +84,7 @@ class TestLoggerMixin:
             mock_logger.level = logging.WARNING  # Existing level
             mock_get_logger.return_value = mock_logger
 
-            component = TestComponent()
+            TestComponent()
 
             # Should not call setLevel since level is already set
             assert not any(call[0][0] == logging.INFO for call in mock_logger.setLevel.call_args_list)

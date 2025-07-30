@@ -5,6 +5,7 @@ This guide helps you migrate from the previous configuration approach to the new
 ## Overview
 
 The new configuration system provides:
+
 - Type-safe settings with Pydantic validation
 - Environment-specific configuration loading
 - Encrypted secrets management
@@ -30,6 +31,7 @@ Run `poetry install` to install dependencies.
 ### 2. Replace Old Configuration
 
 #### Before (Old Approach)
+
 ```python
 # config.py
 import os
@@ -41,6 +43,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "default-secret")
 ```
 
 #### After (New Approach)
+
 ```python
 # Use the centralized configuration
 from src.config import get_settings
@@ -59,6 +62,7 @@ secret_key = settings.secret_key.get_secret_value() if settings.secret_key else 
 Add the `PROMPTCRAFT_` prefix to all environment variables:
 
 #### Before
+
 ```bash
 export API_HOST=0.0.0.0
 export API_PORT=8080
@@ -67,6 +71,7 @@ export SECRET_KEY=my-secret-key
 ```
 
 #### After
+
 ```bash
 export PROMPTCRAFT_API_HOST=0.0.0.0
 export PROMPTCRAFT_API_PORT=8080
@@ -96,6 +101,7 @@ PROMPTCRAFT_SECRET_KEY=production-secret-key
 ### 5. Update Application Startup
 
 #### Before
+
 ```python
 # main.py
 import os
@@ -113,6 +119,7 @@ if __name__ == "__main__":
 ```
 
 #### After
+
 ```python
 # main.py
 from fastapi import FastAPI
@@ -176,11 +183,13 @@ async def health_check():
 ### Issue 2: Type Conversion Errors
 
 **Before**: Manual type conversion
+
 ```python
 port = int(os.getenv("PORT", "8000"))
 ```
 
 **After**: Automatic type conversion with validation
+
 ```python
 api_port: int = Field(default=8000, ge=1, le=65535)
 ```
@@ -188,11 +197,13 @@ api_port: int = Field(default=8000, ge=1, le=65535)
 ### Issue 3: Secret Handling
 
 **Before**: Plain text secrets
+
 ```python
 secret = os.getenv("SECRET_KEY")
 ```
 
 **After**: Protected secrets with SecretStr
+
 ```python
 secret_key: SecretStr = Field(default=None)
 # Access with: settings.secret_key.get_secret_value()
@@ -201,11 +212,13 @@ secret_key: SecretStr = Field(default=None)
 ## Testing Your Migration
 
 1. **Verify Configuration Loading**
+
 ```bash
 poetry run python examples/config_demo.py
 ```
 
 2. **Check Health Endpoints**
+
 ```bash
 # Start the application
 poetry run python src/main.py
@@ -215,6 +228,7 @@ curl http://localhost:8000/health
 ```
 
 3. **Validate Environment Detection**
+
 ```bash
 # Test different environments
 PROMPTCRAFT_ENVIRONMENT=staging poetry run python examples/config_demo.py

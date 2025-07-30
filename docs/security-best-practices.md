@@ -9,6 +9,7 @@ This guide outlines security best practices for the PromptCraft configuration sy
 ### 1. Never Commit Secrets to Version Control
 
 **❌ DON'T:**
+
 ```bash
 # .env file committed to git
 PROMPTCRAFT_SECRET_KEY=super-secret-production-key
@@ -16,6 +17,7 @@ PROMPTCRAFT_API_KEY=sk-1234567890abcdef
 ```
 
 **✅ DO:**
+
 ```bash
 # .env.example file (safe to commit)
 PROMPTCRAFT_SECRET_KEY=your-secret-key-here
@@ -31,6 +33,7 @@ PROMPTCRAFT_API_KEY=your-api-key-here
 ### 2. Use Encrypted Files for Production Secrets
 
 **✅ RECOMMENDED:**
+
 ```bash
 # Create encrypted environment file
 echo "PROMPTCRAFT_SECRET_KEY=prod-secret" | gpg --encrypt --armor -r your@email.com > .env.prod.gpg
@@ -42,16 +45,19 @@ export PROMPTCRAFT_ENCRYPTED_ENV_FILE=/path/to/.env.prod.gpg
 ### 3. Environment-Specific Secret Management
 
 **Development:**
+
 - Use dummy/development secrets
 - Store in local `.env` files (git-ignored)
 - No encryption required
 
 **Staging:**
+
 - Use staging-specific secrets
 - Encrypted files recommended
 - Minimal production-like secrets
 
 **Production:**
+
 - Always use encrypted storage
 - Rotate secrets regularly
 - Never use development secrets
@@ -528,6 +534,7 @@ monitor.log_configuration_access("secret_access", True, {"user": "api"})
 ### 1. Secret Compromise Response
 
 **Immediate Actions:**
+
 1. **Rotate compromised secrets immediately**
 2. **Revoke access tokens/API keys**
 3. **Update encrypted files with new secrets**

@@ -67,7 +67,7 @@ class TestTypeClassifier:
             # Type validation for critical inputs
             if not isinstance(coverage_data, dict):
                 raise TypeError(f"coverage_data must be dict, got {type(coverage_data).__name__}")
-            if not isinstance(contexts, (set, frozenset)):
+            if not isinstance(contexts, set | frozenset):
                 raise TypeError(f"contexts must be set or frozenset, got {type(contexts).__name__}")
 
             coverage_by_type = {}

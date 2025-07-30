@@ -12,6 +12,7 @@ version: "1.0"
 Interactive command discovery and smart suggestion system: $ARGUMENTS
 
 ## Usage Options
+
 - `"I need to [description]"` - Natural language command suggestion
 - `auto` - Context-aware suggestions based on current git status
 - `category [workflow|validation|creation|migration|meta]` - Browse commands by category
@@ -20,6 +21,7 @@ Interactive command discovery and smart suggestion system: $ARGUMENTS
 ## Interactive Command Discovery
 
 ### Natural Language Queries
+
 Describe what you need to do and get smart command suggestions:
 
 ```bash
@@ -31,12 +33,14 @@ Describe what you need to do and get smart command suggestions:
 ```
 
 **Expected Responses**:
+
 - **Link fixing**: Suggests `/project:meta-fix-links docs/planning/filename.md`
 - **Knowledge creation**: Suggests `/project:creation-knowledge-file security [topic] [subtopic]`
 - **Agent validation**: Suggests `/project:validation-agent-structure knowledge/agent_name/`
 - **Issue resolution**: Suggests `/project:workflow-resolve-issue standard phase X issue Y`
 
 ### Context-Aware Suggestions
+
 Get recommendations based on your current development context:
 
 ```bash
@@ -44,6 +48,7 @@ Get recommendations based on your current development context:
 ```
 
 **Context Analysis**:
+
 - **Modified .md files**: Suggests validation commands
 - **New branch with issue**: Suggests workflow commands
 - **Modified knowledge files**: Suggests validation and migration commands
@@ -51,6 +56,7 @@ Get recommendations based on your current development context:
 - **Uncommitted changes**: Suggests validation-precommit
 
 ### Category Browsing
+
 Explore commands by category with examples:
 
 ```bash
@@ -65,18 +71,21 @@ Explore commands by category with examples:
 ## Smart Suggestion Logic
 
 ### Based on File Types
+
 - **`.md` files**: Document validation, link fixing, front matter validation
 - **Knowledge files**: Knowledge chunk validation, agent structure validation
 - **Planning docs**: Planning doc standardization, lint checking
 - **Python files**: Pre-commit validation, naming convention checks
 
 ### Based on Git Status
+
 - **New branch**: Issue resolution workflow
 - **Modified files**: Validation commands appropriate to file types
 - **Untracked files**: Creation commands for proper structure
 - **Merge conflicts**: Link fixing and validation commands
 
 ### Based on Directory Context
+
 - **`knowledge/` directory**: Knowledge file operations, agent validation
 - **`docs/planning/` directory**: Planning document operations, link fixing
 - **`src/` directory**: Code validation, naming convention checks
@@ -91,6 +100,7 @@ Explore commands by category with examples:
 **Common Task Shortcuts**:
 
 ### Daily Development Tasks
+
 ```bash
 # Before committing any changes
 /project:validation-precommit
@@ -105,6 +115,7 @@ Explore commands by category with examples:
 ```
 
 ### Issue Resolution Workflow
+
 ```bash
 # Quick issue resolution (30-45 min)
 /project:workflow-resolve-issue quick phase X issue Y
@@ -118,6 +129,7 @@ Explore commands by category with examples:
 ```
 
 ### Quality Assurance
+
 ```bash
 # Validate agent structures
 /project:validation-agent-structure knowledge/[agent_name]/
@@ -132,24 +144,29 @@ Explore commands by category with examples:
 ## Advanced Features
 
 ### Command Chaining Suggestions
+
 Based on your query, suggest sequences of commands:
 
 **Example**: "I need to create and validate a new agent"
 **Suggested Sequence**:
+
 1. `/project:creation-agent-skeleton [agent_name] "[description]"`
 2. `/project:validation-agent-structure knowledge/[agent_name]/`
 3. `/project:validation-naming-conventions knowledge/[agent_name]/`
 
 ### Error Recovery Assistance
+
 When commands fail, suggest recovery actions:
 
 **Example**: Link validation fails
 **Suggested Recovery**:
+
 1. `/project:meta-fix-links [failing_file.md]`
 2. `/project:validation-lint-doc [failing_file.md]`
 3. Re-run original command
 
 ### Progressive Disclosure
+
 Start with simple suggestions and offer more advanced options:
 
 **Level 1**: Basic command suggestion
@@ -213,6 +230,7 @@ After running the recommended command, you might want to:
 ## Integration
 
 This command integrates with:
+
 - **Git status analysis** for context-aware suggestions
 - **File type detection** for appropriate command recommendations
 - **Project standards** from CLAUDE.md for accurate guidance

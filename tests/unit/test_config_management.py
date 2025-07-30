@@ -18,8 +18,9 @@ import pytest
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
+import src.config.settings
 from src.config.constants import (
     CORS_ORIGINS_BY_ENVIRONMENT,
     FILE_PATH_PATTERNS,
@@ -73,6 +74,7 @@ from src.config.settings import (
     validate_field_requirements_by_environment,
 )
 from src.config.validation import validate_configuration_on_startup
+from src.utils.encryption import EncryptionError, GPGError
 
 
 class TestApplicationSettings:
@@ -166,8 +168,6 @@ class TestApplicationSettings:
 
     def test_secret_field_validation(self):
         """Test secret field validation."""
-        from pydantic import SecretStr
-
         # Test valid secret
         settings = ApplicationSettings(
             database_password=SecretStr("valid_password"),
@@ -261,8 +261,6 @@ class TestConfigurationValidation:
 
     def test_validate_encryption_available(self):
         """Test encryption availability validation."""
-        from src.utils.encryption import EncryptionError
-
         # Mock encryption validation - success case
         with patch("src.config.settings.validate_environment_keys") as mock_validate:
             mock_validate.return_value = True
@@ -275,8 +273,6 @@ class TestConfigurationValidation:
 
     def test_validate_configuration_on_startup(self):
         """Test configuration validation on startup."""
-        from pydantic import SecretStr
-
         # Test valid configuration
         settings = ApplicationSettings(environment="dev", debug=True, secret_key=SecretStr("dev_secret"))
 
@@ -431,8 +427,6 @@ PROMPTCRAFT_EMPTY=
 
     def test_load_encrypted_env_file_error(self):
         """Test loading encrypted file with error."""
-        from src.utils.encryption import GPGError
-
         with tempfile.TemporaryDirectory() as tmp_dir:
             encrypted_file = Path(tmp_dir) / ".env.gpg"
             encrypted_file.write_text("encrypted_content")
@@ -480,8 +474,6 @@ class TestUtilityFunctions:
 
     def test_log_configuration_status(self):
         """Test configuration status logging."""
-        from pydantic import SecretStr
-
         settings = ApplicationSettings(
             environment="dev",
             app_name="Test App",
@@ -528,15 +520,11 @@ class TestSettingsFactory:
     def setUp(self):
         """Set up test environment."""
         # Clear global settings
-        import src.config.settings
-
         src.config.settings._settings = None
 
     def tearDown(self):
         """Clean up test environment."""
         # Clear global settings
-        import src.config.settings
-
         src.config.settings._settings = None
 
     def test_get_settings_singleton(self):
@@ -561,7 +549,6 @@ class TestSettingsFactory:
                 # Create a mock ValidationError by creating a real validation error
                 # with invalid input to trigger the same code path
                 try:
-                    from pydantic import BaseModel, Field
 
                     class MockModel(BaseModel):
                         api_port: int = Field(gt=0, le=65535)
@@ -648,8 +635,6 @@ class TestConfigurationHealthChecks:
 
     def test_count_configured_secrets(self):
         """Test counting configured secrets."""
-        from pydantic import SecretStr
-
         # Create settings with specific secrets, isolating from environment
         with patch.dict(os.environ, {}, clear=True):
             settings = ApplicationSettings(
@@ -710,8 +695,6 @@ class TestConfigurationHealthChecks:
 
     def test_get_configuration_status(self):
         """Test getting configuration status."""
-        from pydantic import SecretStr
-
         # Create settings with specific secrets, isolating from environment
         with patch.dict(os.environ, {}, clear=True):
             settings = ApplicationSettings(
@@ -1144,8 +1127,6 @@ PROMPTCRAFT_SECRET_KEY=test_secret_key
                 with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
                     with patch("src.config.settings.validate_environment_keys"):
                         # Clear global settings completely
-                        import src.config.settings
-
                         # Reset all cached settings
                         src.config.settings._settings = None
                         if hasattr(src.config.settings, "_cached_settings"):
@@ -1198,8 +1179,6 @@ PROMPTCRAFT_API_PORT=70000
                 with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
                     with patch("src.config.settings.validate_environment_keys"):
                         # Clear global settings
-                        import src.config.settings
-
                         src.config.settings._settings = None
 
                         with pytest.raises((ConfigurationValidationError, ValidationError)) as exc_info:
@@ -1224,8 +1203,6 @@ PROMPTCRAFT_API_PORT=70000
 
     def test_configuration_health_check_integration(self):
         """Test configuration health check integration."""
-        from pydantic import SecretStr
-
         settings = ApplicationSettings(
             environment="staging",
             version="1.0.0",

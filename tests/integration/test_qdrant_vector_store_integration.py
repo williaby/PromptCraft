@@ -324,7 +324,7 @@ class TestQdrantVectorStoreIntegration:
             # The mock_upsert is already set up to return completed status
 
             # Ensure PointStruct is available for insertion
-            with patch("src.core.vector_store.PointStruct", MagicMock()) as mock_point_struct:
+            with patch("src.core.vector_store.PointStruct", MagicMock()):
                 batch_result = await store.insert_documents(sample_documents)
                 assert batch_result.success_count == 3
                 assert batch_result.error_count == 0

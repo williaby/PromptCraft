@@ -22,15 +22,20 @@ Usage:
     python test_consensus_model_connectivity.py --model=O3
 """
 
+import argparse
 import asyncio
 import json
 import logging
 import sys
+import traceback
 from dataclasses import dataclass
 from typing import Any
 
 from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.model_registry import get_model_registry
+
+# Constants for consensus workflow requirements
+MIN_CONSENSUS_MODELS = 2  # Minimum models required for consensus decisions
 
 
 @dataclass
@@ -125,7 +130,7 @@ class ConsensusModelTester:
             self.logger.info("MCP Client initialized successfully")
             return True
         except Exception as e:
-            self.logger.error(f"Failed to initialize MCP client: {e}")
+            self.logger.error("Failed to initialize MCP client: %s", e)
             return False
 
     async def test_model_connectivity(self, model: ConsensusModel) -> dict[str, Any]:
@@ -152,7 +157,7 @@ class ConsensusModelTester:
             "alternative_suggestions": [],
         }
 
-        self.logger.info(f"Testing connectivity to {model.name} ({model.openrouter_id})")
+        self.logger.info("Testing connectivity to %s (%s)", model.name, model.openrouter_id)
 
         try:
             # Check if model is configured in registry
@@ -160,10 +165,10 @@ class ConsensusModelTester:
             if capabilities:
                 result["registry_configured"] = True
                 result["status"] = "configured"
-                self.logger.debug(f"Model {model.name} found in registry")
+                self.logger.debug("Model %s found in registry", model.name)
             else:
                 result["status"] = "not_configured"
-                self.logger.warning(f"Model {model.name} not found in registry")
+                self.logger.warning("Model %s not found in registry", model.name)
 
                 # Suggest alternatives
                 alternatives = self._find_alternative_models(model)
@@ -179,7 +184,7 @@ class ConsensusModelTester:
         except Exception as e:
             result["status"] = "error"
             result["error_message"] = str(e)
-            self.logger.error(f"Error testing {model.name}: {e}")
+            self.logger.error("Error testing %s: %s", model.name, e)
 
         return result
 
@@ -223,20 +228,20 @@ class ConsensusModelTester:
                 connectivity_result["response_received"] = True
                 connectivity_result["response_content"] = response
 
-                self.logger.info(f"✅ Successfully connected to {model.name}")
+                self.logger.info("✅ Successfully connected to %s", model.name)
 
                 # Disconnect after test
                 self.mcp_client.disconnect_server(server_name)
             else:
                 connectivity_result["error_message"] = f"Failed to connect to {server_name}"
-                self.logger.warning(f"❌ Failed to connect to {model.name}")
+                self.logger.warning("❌ Failed to connect to %s", model.name)
 
         except MCPClientError as e:
             connectivity_result["error_message"] = f"MCP Error: {e!s}"
-            self.logger.error(f"❌ MCP error for {model.name}: {e}")
+            self.logger.error("❌ MCP error for %s: %s", model.name, e)
         except Exception as e:
             connectivity_result["error_message"] = f"Unexpected error: {e!s}"
-            self.logger.error(f"❌ Unexpected error for {model.name}: {e}")
+            self.logger.error("❌ Unexpected error for %s: %s", model.name, e)
 
         return connectivity_result
 
@@ -265,7 +270,7 @@ class ConsensusModelTester:
                 alternatives = fallback_chain[:3]
 
         except Exception as e:
-            self.logger.warning(f"Error finding alternatives for {model.name}: {e}")
+            self.logger.warning("Error finding alternatives for %s: %s", model.name, e)
 
         return alternatives
 
@@ -290,7 +295,7 @@ class ConsensusModelTester:
         if specific_model:
             models_to_test = [m for m in CONSENSUS_MODELS if m.name.lower() == specific_model.lower()]
             if not models_to_test:
-                self.logger.error(f"Model '{specific_model}' not found in consensus models")
+                self.logger.error("Model '%s' not found in consensus models", specific_model)
                 return {"error": f"Model '{specific_model}' not found"}
 
         # Test each model
@@ -333,7 +338,7 @@ class ConsensusModelTester:
             "error_models": error_models,
             "standard_models_accessible": f"{accessible_standard}/{len(standard_models)}",
             "escalation_models_accessible": f"{accessible_escalation}/{len(escalation_models)}",
-            "consensus_workflow_ready": accessible_standard >= 2,  # Need at least 2 for consensus
+            "consensus_workflow_ready": accessible_standard >= MIN_CONSENSUS_MODELS,  # Need at least 2 for consensus
             "escalation_available": accessible_escalation > 0,
             "recommendations": self._generate_recommendations(),
         }
@@ -353,7 +358,7 @@ class ConsensusModelTester:
             recommendations.append("❌ No consensus models accessible - check MCP server configuration")
             recommendations.append("🔧 Verify OpenRouter API key is configured")
             recommendations.append("🔧 Check network connectivity to OpenRouter endpoints")
-        elif accessible_count < 2:
+        elif accessible_count < MIN_CONSENSUS_MODELS:
             recommendations.append("⚠️ Only 1 model accessible - consensus requires at least 2 models")
             recommendations.append("🔧 Configure additional models or check connectivity")
         else:
@@ -418,8 +423,6 @@ class ConsensusModelTester:
 
 async def main():
     """Main entry point for the connectivity test."""
-    import argparse
-
     parser = argparse.ArgumentParser(description="Test consensus model connectivity")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     parser.add_argument("--model", "-m", help="Test specific model only")
@@ -440,7 +443,7 @@ async def main():
             tester.print_results(results)
 
         # Exit with appropriate code
-        if results.get("summary", {}).get("accessible_models", 0) >= 2:
+        if results.get("summary", {}).get("accessible_models", 0) >= MIN_CONSENSUS_MODELS:
             sys.exit(0)  # Success - consensus ready
         else:
             sys.exit(1)  # Failure - insufficient models accessible
@@ -451,8 +454,6 @@ async def main():
     except Exception as e:
         print(f"\nFatal error: {e}")
         if args.verbose:
-            import traceback
-
             traceback.print_exc()
         sys.exit(1)
 

@@ -2,11 +2,14 @@
 
 ## Overview
 
-This document describes the new **path-based coverage analysis** approach that provides the same detailed test-type specific coverage insights as the previous `--cov-context=test` method, but without the significant performance overhead.
+This document describes the new **path-based coverage analysis** approach that provides the same detailed
+test-type specific coverage insights as the previous `--cov-context=test` method, but without the significant
+performance overhead.
 
 ## The Problem
 
 The original enhanced coverage reports used Coverage.py's `--cov-context=test` feature, which:
+
 - ❌ **5x performance penalty** - Tests slowed from ~3.6s to 7+ seconds
 - ❌ **Runtime overhead** - Context tracking during every test execution
 - ❌ **Collection slowdown** - Pytest discovery and setup significantly slower
@@ -23,18 +26,21 @@ The original enhanced coverage reports used Coverage.py's `--cov-context=test` f
 ## How It Works
 
 ### 1. Fast Test Execution
+
 ```bash
 # Standard coverage collection (no --cov-context overhead)
 poetry run pytest --cov=src --cov-report=html --cov-report=xml
 ```
 
 ### 2. Intelligent Post-Processing
+
 ```bash
 # Path-based analysis extracts same insights
 python scripts/path_based_coverage_analyzer.py
 ```
 
 ### 3. Same Rich Reports
+
 - Test-type specific coverage breakdowns
 - Detailed file-level analysis
 - Interactive sortable HTML reports
@@ -45,31 +51,37 @@ python scripts/path_based_coverage_analyzer.py
 The path-based classifier uses intelligent heuristics to determine which test types cover which files:
 
 ### Unit Tests (🧪)
+
 - **Covers**: Core business logic (`src/core/`, `src/agents/`, `src/utils/`)
 - **Excludes**: Integration points, main entry points
 - **Estimated**: ~3,250 tests
 
 ### Auth Tests (🔐)
+
 - **Covers**: Authentication system (`src/auth/`, JWT, middleware)
 - **Patterns**: `*jwt*`, `*authentication*`, `*token*`
 - **Estimated**: ~320 tests
 
 ### Security Tests (🛡️)
+
 - **Covers**: Security modules (`src/security/`, crypto, validation)
 - **Patterns**: `*crypto*`, `*hash*`, `*audit*`
 - **Estimated**: ~160 tests
 
 ### Integration Tests (🔗)
+
 - **Covers**: API integration (`src/mcp_integration/`, `src/api/`)
 - **Patterns**: `*client*`, `*router*`, `*integration*`
 - **Estimated**: ~150 tests
 
 ### Performance Tests (🏃‍♂️)
+
 - **Covers**: Performance-critical code
 - **Patterns**: `*performance*`, `*optimization*`, `*cache*`
 - **Estimated**: ~60 tests
 
 ### Stress Tests (💪)
+
 - **Covers**: Resilience and fault tolerance
 - **Patterns**: `*resilience*`, `*retry*`, `*timeout*`
 - **Estimated**: ~30 tests
@@ -77,6 +89,7 @@ The path-based classifier uses intelligent heuristics to determine which test ty
 ## Usage
 
 ### Quick Start
+
 ```bash
 # Complete fast workflow (tests + analysis)
 python scripts/fast_coverage_workflow.py
@@ -89,6 +102,7 @@ python scripts/fast_coverage_workflow.py --tests-only
 ```
 
 ### Manual Analysis
+
 ```bash
 # Run tests with standard coverage
 make test  # or poetry run pytest --cov=src
@@ -119,16 +133,19 @@ The path-based approach is compatible with VS Code's "Run Tests with Coverage":
 ## Benefits
 
 ### For Developers
+
 - **Faster feedback loop** - Tests run at normal speed
 - **Same insights** - No loss of test-type analysis detail
 - **Better experience** - No waiting for slow test collection
 
 ### For CI/CD
+
 - **Faster builds** - Reduced test execution time
 - **Resource efficiency** - Less CPU overhead during testing
 - **Same coverage gates** - All quality standards maintained
 
 ### For Analysis
+
 - **Intelligent classification** - Uses domain knowledge of project structure
 - **Flexible patterns** - Easy to adjust classification rules
 - **Rich reporting** - Same interactive HTML reports
@@ -139,12 +156,14 @@ The path-based approach is compatible with VS Code's "Run Tests with Coverage":
 ### From Context-Based to Path-Based
 
 1. **Remove `--cov-context=test`** from pytest configuration:
+
    ```toml
    # In pyproject.toml [tool.pytest.ini_options]
    addopts = "--cov=src --cov-report=html"  # Remove --cov-context=test
    ```
 
 2. **Update VS Code settings** to remove duplicate context flags:
+
    ```json
    {
      "python.testing.coverageArgs": [
@@ -156,6 +175,7 @@ The path-based approach is compatible with VS Code's "Run Tests with Coverage":
    ```
 
 3. **Use new workflow**:
+
    ```bash
    # Replace old context-based approach
    python scripts/fast_coverage_workflow.py
@@ -183,6 +203,7 @@ self.test_types = {
 ## Troubleshooting
 
 ### No Coverage Data Found
+
 ```bash
 # Ensure standard coverage report exists
 ls reports/coverage/standard/index.html
@@ -192,12 +213,14 @@ poetry run pytest --cov=src --cov-report=html:reports/coverage/standard
 ```
 
 ### Classification Issues
+
 ```bash
 # Run with verbose output to see classification details
 python scripts/path_based_coverage_analyzer.py --verbose
 ```
 
 ### Report Generation Problems
+
 ```bash
 # Check dependencies
 pip install beautifulsoup4
@@ -222,4 +245,5 @@ The path-based coverage analysis approach provides:
 3. **Workflow compatibility** - Integrates with existing tools
 4. **Intelligence enhancement** - Smarter classification using domain knowledge
 
-This solution eliminates the trade-off between speed and insight, providing both fast test execution and comprehensive coverage analysis.
+This solution eliminates the trade-off between speed and insight, providing both fast test execution and
+comprehensive coverage analysis.

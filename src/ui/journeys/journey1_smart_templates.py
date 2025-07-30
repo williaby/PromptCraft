@@ -16,6 +16,22 @@ from src.utils.logging_mixin import LoggerMixin
 
 logger = logging.getLogger(__name__)
 
+# File content preview constants
+CONTENT_PREVIEW_LENGTH = 2000  # Maximum characters to show in content preview
+MIN_INPUT_LENGTH_FOR_TRUNCATION = 100  # Minimum input length before truncating for summary
+MAX_TASK_LINE_LENGTH = 100  # Maximum length for task line display
+FILE_SOURCE_PREVIEW_LENGTH = 200  # Maximum characters for file source preview
+TASK_SUMMARY_MAX_LENGTH = 50  # Maximum characters for task summary display
+HEADER_LINE_MAX_LENGTH = 60  # Maximum length for lines that could be headers
+CSV_PREVIEW_COLUMN_LIMIT = 5  # Maximum number of columns to show in CSV preview
+SIMPLE_CONTENT_LINE_THRESHOLD = 50  # Maximum lines for simple content complexity
+SIMPLE_CONTENT_CHAR_THRESHOLD = 2000  # Maximum characters for simple content complexity
+MODERATE_CONTENT_LINE_THRESHOLD = 200  # Maximum lines for moderate content complexity
+COMPLEX_CONTENT_CHAR_THRESHOLD = 10000  # Maximum characters for moderate content complexity
+CONTENT_FOCUS_PREVIEW_LENGTH = 100  # Maximum characters for content focus preview
+MAX_CONTENT_LENGTH = 50000  # Maximum characters allowed for content validation
+MIN_CONTENT_LENGTH = 10  # Minimum characters required for meaningful content
+
 
 class Journey1SmartTemplates(LoggerMixin):
     """
@@ -113,7 +129,7 @@ Please convert to a supported format for processing""",
             )
 
         except Exception as e:
-            logger.error(f"Error extracting content from {file_path}: {e}")
+            logger.error("Error extracting content from %s: %s", file_path, e)
             file_name = Path(file_path).name if file_path else "unknown"
 
             # Check if it's a file not found error
@@ -181,7 +197,9 @@ Please check file format and try again""",
                     "type": file_type,
                     "size": file_size,
                     "size_mb": file_size / (1024 * 1024),
-                    "content": content[:2000] + "..." if len(content) > 2000 else content,  # Increased preview length
+                    "content": (
+                        content[:CONTENT_PREVIEW_LENGTH] + "..." if len(content) > CONTENT_PREVIEW_LENGTH else content
+                    ),
                     "full_content": content,
                     "is_supported": is_supported,
                     "processing_status": "success" if not content.startswith("[Error") else "error",
@@ -197,7 +215,7 @@ Please check file format and try again""",
                 combined_content += f"{separator}{file_header}{'='*60}\\n{content}"
 
             except Exception as e:
-                logger.error(f"Error processing file {i+1}: {e}")
+                logger.error("Error processing file %d: %s", i + 1, e)
                 errors.append(f"File {i+1}: {e!s}")
 
                 # Add error file info
@@ -319,7 +337,7 @@ Please check file format and try again""",
             )
 
         except Exception as e:
-            logger.error(f"Error enhancing prompt: {e}")
+            logger.error("Error enhancing prompt: %s", e)
             return (
                 f"Error processing request: {e}",
                 "",
@@ -338,10 +356,10 @@ Please check file format and try again""",
             return "Please provide input text or upload files to enhance."
 
         # Extract the main task from input - keep more of the content to include file data
-        if len(input_text) > 100:
+        if len(input_text) > MIN_INPUT_LENGTH_FOR_TRUNCATION:
             # For longer content (likely includes files), take more context
             first_line = input_text.split("\n")[0]
-            task = first_line if len(first_line) <= 100 else first_line[:100] + "..."
+            task = first_line if len(first_line) <= MAX_TASK_LINE_LENGTH else first_line[:MAX_TASK_LINE_LENGTH] + "..."
         else:
             task = input_text.strip()
 
@@ -475,8 +493,8 @@ Please provide a comprehensive response that addresses:
             for file_info in file_sources:
                 name = file_info.get("name", "Unknown file")
                 content = (
-                    file_info.get("content", "")[:200] + "..."
-                    if len(file_info.get("content", "")) > 200
+                    file_info.get("content", "")[:FILE_SOURCE_PREVIEW_LENGTH] + "..."
+                    if len(file_info.get("content", "")) > FILE_SOURCE_PREVIEW_LENGTH
                     else file_info.get("content", "")
                 )
                 enhanced += f"- **{name}**: {content}\n"
@@ -496,7 +514,11 @@ Please provide a comprehensive response that addresses:
 
     def _create_mock_create_breakdown(self, input_text: str) -> dict[str, str]:
         """Create a mock C.R.E.A.T.E. framework breakdown with enhanced details."""
-        task = input_text.strip()[:50] + "..." if len(input_text) > 50 else input_text.strip()
+        task = (
+            input_text.strip()[:TASK_SUMMARY_MAX_LENGTH] + "..."
+            if len(input_text) > TASK_SUMMARY_MAX_LENGTH
+            else input_text.strip()
+        )
 
         return {
             "context": f"""**Professional Communication Analysis**
@@ -650,7 +672,7 @@ Please provide a comprehensive response that addresses:
             # Add markdown formatting for headers if not already present
             if line.strip() and not line.startswith("#") and not line.startswith("*") and not line.startswith("-"):
                 # Check if it might be a title/header (short line followed by content)
-                if len(line.strip()) < 60 and line.strip().endswith(":"):
+                if len(line.strip()) < HEADER_LINE_MAX_LENGTH and line.strip().endswith(":"):
                     formatted_lines.append(f"## {line.strip()}")
                 else:
                     formatted_lines.append(line)
@@ -703,7 +725,7 @@ Please provide a comprehensive response that addresses:
 CSV Data Structure Analysis
 - Total rows: {total_lines}
 - Columns: {column_count}
-- Headers: {', '.join(col.strip() for col in columns[:5])}{"..." if column_count > 5 else ""}
+- Headers: {', '.join(col.strip() for col in columns[:CSV_PREVIEW_COLUMN_LIMIT])}{"..." if column_count > CSV_PREVIEW_COLUMN_LIMIT else ""}
 - {total_lines} rows detected
 - {column_count} columns detected"""
 
@@ -729,8 +751,8 @@ Full Content:
             # Analyze structure
             data_type = type(data).__name__
             if isinstance(data, dict):
-                keys = list(data.keys())[:5]
-                structure_info = f"Object with {len(data)} keys: {', '.join(keys)}{'...' if len(data) > 5 else ''}"
+                keys = list(data.keys())[:CSV_PREVIEW_COLUMN_LIMIT]
+                structure_info = f"Object with {len(data)} keys: {', '.join(keys)}{'...' if len(data) > CSV_PREVIEW_COLUMN_LIMIT else ''}"
             elif isinstance(data, list):
                 structure_info = f"Array with {len(data)} items"
                 if len(data) > 0:
@@ -767,7 +789,7 @@ Raw Content:
 {content}"""
 
         except Exception as e:
-            logger.error(f"Error processing JSON content: {e}")
+            logger.error("Error processing JSON content: %s", e)
             return f"""[JSON Data: {filename}]
 JSON Data Structure Analysis
 Status: Processing error
@@ -894,9 +916,9 @@ Raw Content:
 
         # Assess complexity
         complexity = "simple"
-        if line_count > 50 or char_count > 2000:
+        if line_count > SIMPLE_CONTENT_LINE_THRESHOLD or char_count > SIMPLE_CONTENT_CHAR_THRESHOLD:
             complexity = "moderate"
-        if line_count > 200 or char_count > 10000:
+        if line_count > MODERATE_CONTENT_LINE_THRESHOLD or char_count > COMPLEX_CONTENT_CHAR_THRESHOLD:
             complexity = "complex"
 
         return {
@@ -1042,7 +1064,7 @@ Raw Content:
 
         request = f"""**Processing Request**
 • Primary objective: {approach}
-• Content focus: {input_text[:100]}{'...' if len(input_text) > 100 else ''}
+• Content focus: {input_text[:CONTENT_FOCUS_PREVIEW_LENGTH]}{'...' if len(input_text) > CONTENT_FOCUS_PREVIEW_LENGTH else ''}
 • Expected deliverable: Enhanced content with improved structure and clarity
 • Quality criteria: Professional, clear, actionable, and contextually appropriate"""
 
@@ -1134,16 +1156,22 @@ Raw Content:
             return False, "Content is empty. Please provide input text or upload files."
 
         # Check content length - needs to fail for very long content
-        if len(content) > 50000:  # Reduced limit to 50KB for testing
-            return False, f"Content is too long ({len(content)} characters). Maximum allowed is 50,000 characters."
+        if len(content) > MAX_CONTENT_LENGTH:  # Reduced limit to 50KB for testing
+            return (
+                False,
+                f"Content is too long ({len(content)} characters). Maximum allowed is {MAX_CONTENT_LENGTH:,} characters.",
+            )
 
         # Check for potentially problematic content
         if content.count("\x00") > 0:
             return False, "Content contains null bytes. Please check file encoding."
 
         # Check minimum content requirements
-        if len(content.strip()) < 10:
-            return False, "Content is too short. Please provide at least 10 characters of meaningful content."
+        if len(content.strip()) < MIN_CONTENT_LENGTH:
+            return (
+                False,
+                f"Content is too short. Please provide at least {MIN_CONTENT_LENGTH} characters of meaningful content.",
+            )
 
         return True, "Content is valid for processing"
 
@@ -1229,7 +1257,7 @@ Raw Content:
             )
 
         except Exception as e:
-            logger.error(f"Error enhancing prompt: {e}")
+            logger.error("Error enhancing prompt: %s", e)
             return (
                 f"Error processing request: {e}",
                 "",
