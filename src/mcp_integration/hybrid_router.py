@@ -448,7 +448,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 f"Query validation failed on all services: {e}",
                 MCPErrorType.VALIDATION_ERROR,
                 {"routing_decision": routing_decision.to_dict()},
-            )
+            ) from e
 
     async def orchestrate_agents(self, workflow_steps: list[WorkflowStep]) -> list[Response]:
         """
@@ -534,7 +534,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
             raise MCPServiceUnavailableError(
                 f"Orchestration failed on all services: {e}",
                 details={"routing_decision": routing_decision.to_dict()},
-            )
+            ) from e
 
     async def get_capabilities(self) -> list[str]:
         """
@@ -727,6 +727,15 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 fallback_available=True,
                 request_id=request_id,
             )
+
+        # Fallback for unknown strategies
+        return RoutingDecision(
+            service="mcp",
+            reason="Unknown strategy, defaulting to MCP",
+            confidence=0.5,
+            fallback_available=self._is_openrouter_available(),
+            request_id=request_id,
+        )
 
     def _is_openrouter_available(self) -> bool:
         """Check if OpenRouter is available (circuit breaker and connection)."""

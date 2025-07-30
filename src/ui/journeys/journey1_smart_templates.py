@@ -5,11 +5,13 @@ This module implements the C.R.E.A.T.E. framework interface for prompt enhanceme
 with file upload support, model selection, and code snippet copying.
 """
 
+import json
 import logging
 import time
 from pathlib import Path
 from typing import Any
 
+from src.ui.components.shared.export_utils import ExportUtils
 from src.utils.logging_mixin import LoggerMixin
 
 logger = logging.getLogger(__name__)
@@ -612,9 +614,6 @@ Please provide a comprehensive response that addresses:
 
     def copy_code_blocks(self, content: str) -> str:
         """Extract and format code blocks for copying with enhanced functionality."""
-        # Import the export utils for code block extraction
-        from src.ui.components.shared.export_utils import ExportUtils
-
         export_utils = ExportUtils()
 
         # Extract code blocks
@@ -633,9 +632,6 @@ Please provide a comprehensive response that addresses:
         """Copy content as markdown preserving formatting with enhanced features."""
         if not content or not content.strip():
             return "No content to copy as markdown."
-
-        # Import the export utils for markdown formatting
-        from src.ui.components.shared.export_utils import ExportUtils
 
         export_utils = ExportUtils()
 
@@ -662,7 +658,7 @@ Please provide a comprehensive response that addresses:
                 formatted_lines.append(line)
 
         formatted_content = "\n".join(formatted_lines)
-        return f"Copied {len(content)} characters as markdown (formatted): {len(formatted_lines)} lines"
+        return f"Copied {len(formatted_content)} characters as markdown (formatted): {len(formatted_lines)} lines"
 
     def download_content(self, content: str, create_data: dict[str, str]) -> str:
         """Prepare content for download."""
@@ -728,8 +724,6 @@ Full Content:
     def _process_json_content(self, content: str, filename: str) -> str:
         """Process JSON content with structure analysis."""
         try:
-            import json
-
             data = json.loads(content)
 
             # Analyze structure
@@ -1007,7 +1001,6 @@ Raw Content:
         file_context = ""
         if file_sources:
             file_names = [f.get("name", "unknown") for f in file_sources]
-            file_types = [f.get("type", "unknown") for f in file_sources]
             # Include language detection from file extensions or types
             languages = []
             for f in file_sources:

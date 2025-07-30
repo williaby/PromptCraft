@@ -423,7 +423,7 @@ class MultiJourneyInterface(LoggerMixin):
             )
 
             # Header
-            header = self._create_header()
+            self._create_header()
 
             # Model Selection Panel
             with gr.Row():
@@ -432,23 +432,23 @@ class MultiJourneyInterface(LoggerMixin):
                 with gr.Column(scale=2):
                     custom_model_selector = self._create_custom_model_selector()
                 with gr.Column(scale=2):
-                    cost_tracker = self._create_cost_tracker()
+                    self._create_cost_tracker()
 
             # Journey Navigation Tabs
-            with gr.Tab("📝 Journey 1: Smart Templates") as journey1_tab:
+            with gr.Tab("📝 Journey 1: Smart Templates"):
                 self._create_journey1_interface(model_selector, custom_model_selector, session_state)
 
-            with gr.Tab("🔍 Journey 2: Intelligent Search") as journey2_tab:
+            with gr.Tab("🔍 Journey 2: Intelligent Search"):
                 self._create_journey2_interface()
 
-            with gr.Tab("💻 Journey 3: IDE Integration") as journey3_tab:
+            with gr.Tab("💻 Journey 3: IDE Integration"):
                 self._create_journey3_interface()
 
-            with gr.Tab("🤖 Journey 4: Autonomous Workflows") as journey4_tab:
+            with gr.Tab("🤖 Journey 4: Autonomous Workflows"):
                 self._create_journey4_interface()
 
             # Footer
-            footer = gr.HTML(
+            gr.HTML(
                 """
             <div style="margin-top: 32px; padding: 16px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -540,7 +540,7 @@ class MultiJourneyInterface(LoggerMixin):
                 gr.Markdown("### 📝 What would you like to enhance?")
 
                 # Input method selector
-                input_method = gr.Radio(
+                gr.Radio(
                     choices=["✏️ Text Input", "📁 File Upload", "🔗 URL Input", "📋 Clipboard"],
                     value="✏️ Text Input",
                     label="Input Method",
@@ -586,7 +586,7 @@ class MultiJourneyInterface(LoggerMixin):
                     enhance_btn = gr.Button("🚀 Enhance Prompt", variant="primary", scale=2)
                     clear_btn = gr.Button("🗑️ Clear All", scale=1)
                     example_btn = gr.Button("📋 Load Example", scale=1)
-                    save_btn = gr.Button("💾 Save Template", scale=1)
+                    gr.Button("💾 Save Template", scale=1)
 
             # Output Section
             with gr.Group():
@@ -793,7 +793,7 @@ class MultiJourneyInterface(LoggerMixin):
                                     total_size += file_size
 
                             except OSError as e:
-                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {e!s}")
+                                raise gr.Error(f"❌ File Error: Unable to access file. Error: {e!s}") from e
 
                         # Total size validation (additional safety check)
                         max_total_size = self.settings.max_file_size * self.settings.max_files
@@ -894,7 +894,7 @@ class MultiJourneyInterface(LoggerMixin):
                     raise gr.Error(
                         "❌ Processing Error: An unexpected error occurred while processing your request. "
                         "Please try again or contact support if the problem persists.",
-                    )
+                    ) from e
 
             def handle_copy_code(content):
                 """Handle code block copying."""
@@ -1200,7 +1200,7 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ Security Error: Unable to validate file content safely. "
                 "File may be corrupted or use unsupported format.",
-            )
+            ) from e
 
     def _check_for_content_anomalies(self, file_path: str, detected_mime: str, file_ext: str) -> None:
         """
@@ -1283,7 +1283,7 @@ class MultiJourneyInterface(LoggerMixin):
                 raise gr.Error(
                     "❌ Security Error: Unable to analyze archive file safely. "
                     "For security reasons, this file cannot be processed.",
-                )
+                ) from e
 
     def _check_archive_bomb_heuristics(self, file_path: str, file_size: int, detected_mime: str) -> None:
         """
@@ -1374,13 +1374,13 @@ class MultiJourneyInterface(LoggerMixin):
         except zipfile.BadZipFile:
             raise gr.Error(
                 "❌ Security Error: File appears to be a corrupted or malicious ZIP archive.",
-            )
+            ) from None
         except Exception as e:
             self.logger.warning(f"ZIP bomb detection failed: {e}")
             # Conservative approach - block if we can't safely analyze
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze ZIP archive. File blocked as a security precaution.",
-            )
+            ) from e
 
     def _check_tar_gzip_bomb_heuristics(self, file_path: str, file_size: int) -> None:
         """
@@ -1451,7 +1451,7 @@ class MultiJourneyInterface(LoggerMixin):
                             raise gr.Error(
                                 "❌ Security Error: GZIP file appears to have excessive compression. "
                                 "This could be a compression bomb.",
-                            )
+                            ) from None
 
         except Exception as e:
             self.logger.warning(f"TAR/GZIP bomb detection failed: {e}")
@@ -1459,7 +1459,7 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze compressed archive. "
                 "File blocked as a security precaution.",
-            )
+            ) from e
 
     def _process_file_safely(self, file_path: str, file_size: int, chunk_size: int = 8192) -> str:
         """
@@ -1529,22 +1529,22 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ File Error: File appears to be binary or uses unsupported encoding. "
                 "Please ensure file is in UTF-8 text format.",
-            )
+            ) from None
         except MemoryError:
             # Handle memory exhaustion
             raise gr.Error(
                 "❌ Memory Error: File is too large to process safely. "
                 "Please upload a smaller file (under 5MB recommended).",
-            )
+            ) from None
         except OSError as e:
             # Handle file system errors
-            raise gr.Error(f"❌ File Error: Unable to read file. {e!s}")
+            raise gr.Error(f"❌ File Error: Unable to read file. {e!s}") from e
         except Exception as e:
             # Handle unexpected errors
             self.logger.error(f"Unexpected error processing file {file_path}: {e}")
             raise gr.Error(
                 "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
-            )
+            ) from e
 
     def _create_fallback_result(self, text_input: str, model: str) -> tuple:
         """Create fallback result when normal processing fails."""

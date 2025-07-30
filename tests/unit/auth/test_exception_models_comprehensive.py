@@ -232,7 +232,7 @@ class TestExceptionModelsIntegration:
         auth_error = AuthenticationError("Auth error", 401)
 
         # They should be different types
-        assert type(jwks_error) != type(auth_error)
+        assert not isinstance(jwks_error, type(auth_error))
         assert not isinstance(jwks_error, AuthenticationError)
         assert not isinstance(auth_error, JWKSError)
 
@@ -252,7 +252,7 @@ class TestExceptionModelsIntegration:
             try:
                 simulate_jwks_operation()
             except JWKSError:
-                raise AuthenticationError("Authentication service unavailable", 503)
+                raise AuthenticationError("Authentication service unavailable", 503) from None
 
         # Test the error propagation
         with pytest.raises(AuthenticationError) as exc_info:
