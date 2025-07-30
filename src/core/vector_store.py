@@ -750,7 +750,14 @@ class QdrantVectorStore(AbstractVectorStore):
                 self.logger.error("qdrant-client not available. Using mock implementation.")
                 raise RuntimeError("Qdrant client not available")
 
-            self._client = QdrantClient(host=self._host, port=self._port, api_key=self._api_key, timeout=self._timeout)
+            # Only create a new client if one doesn't exist (allows mocking in tests)
+            if self._client is None:
+                self._client = QdrantClient(
+                    host=self._host,
+                    port=self._port,
+                    api_key=self._api_key,
+                    timeout=self._timeout,
+                )
 
             # Test connection
             self._client.get_collections()

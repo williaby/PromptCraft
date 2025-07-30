@@ -92,7 +92,7 @@ class TestAuthenticatedUser:
 
         # Cannot be used in sets without custom __hash__
         with pytest.raises(TypeError):
-            user_set = {user1}
+            {user1}  # noqa: B018
 
     def test_string_representation(self):
         """Test string representation of AuthenticatedUser."""
@@ -221,13 +221,13 @@ class TestUserRole:
 
     def test_enum_invalid_value(self):
         """Test that invalid enum values raise ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="is not a valid UserRole"):
             UserRole("invalid_role")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="is not a valid UserRole"):
             UserRole("moderator")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="is not a valid UserRole"):
             UserRole("")
 
     def test_enum_iteration(self):

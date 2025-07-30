@@ -5,7 +5,6 @@ Analyzes test files to determine their target source files and test types.
 
 import re
 import time
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -164,7 +163,6 @@ class TestTypeClassifier:
 
         return {"statement": statement_coverage, "branch": branch_coverage, "total_branches": total_branches}
 
-    @lru_cache(maxsize=32)
     def get_test_target_mapping(self, test_type: str) -> frozenset[str]:
         """
         Get the set of source files that are actually tested by the given test type.
@@ -232,7 +230,6 @@ class TestTypeClassifier:
 
         return targets
 
-    @lru_cache(maxsize=256)
     def analyze_test_file_targets(self, test_file_path_str: str) -> frozenset[str]:
         """
         Analyze a test file to determine which source files it targets.

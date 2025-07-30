@@ -6,6 +6,7 @@ query processing, and configuration management.
 """
 
 import asyncio
+import logging
 import sys
 import time
 from pathlib import Path
@@ -366,14 +367,17 @@ class TestComprehensiveErrorHandling:
             mock_client.get_collections.side_effect = ResponseHandlingException("Connection refused")
 
             # The error should be caught and handled by QdrantVectorStore
-            try:
+            # Since the store may handle the error internally, we test both scenarios
+            with pytest.raises(
+                (ResponseHandlingException, AssertionError),
+                match="Connection refused|Connection status.*UNHEALTHY",
+            ):
                 await store.connect()
-                # If no exception was raised, check that connection status reflects the failure
-                assert store.get_connection_status() == ConnectionStatus.UNHEALTHY
-            except Exception as e:
-                # If an exception was raised, verify it's the expected type
-                assert "Connection refused" in str(e) or isinstance(e, ResponseHandlingException)
-                assert store.get_connection_status() == ConnectionStatus.UNHEALTHY
+
+            # Check connection status after the exception
+            assert (
+                store.get_connection_status() == ConnectionStatus.UNHEALTHY
+            ), "Connection status should be UNHEALTHY after connection failure"
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -384,6 +388,11 @@ class TestComprehensiveErrorHandling:
             # Mock failing MCP client
             mock_mcp_client = AsyncMock()
             mock_mcp_client.connect.side_effect = MCPConnectionError("Connection failed")
+            mock_mcp_client.validate_query.return_value = {
+                "is_valid": True,
+                "sanitized_query": "Test query with failing components",
+            }
+            mock_mcp_client.orchestrate_agents.side_effect = MCPConnectionError("Connection failed")
 
             # Mock failing HyDE processor
             mock_hyde_processor = AsyncMock()
@@ -397,20 +406,30 @@ class TestComprehensiveErrorHandling:
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
 
-                # Test QueryCounselor initialization with failing components
-                counselor = QueryCounselor()
+                # Test QueryCounselor with failing MCP client
+                counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
-                # Test graceful degradation
                 query = "Test query with failing components"
 
-                # Should handle MCP client failure gracefully
-                try:
-                    intent = await counselor.analyze_intent(query)
-                    # Should still return some intent even with failures
-                    assert intent is not None
-                except Exception as e:
-                    # If it fails, should be a controlled failure
-                    assert "Connection failed" in str(e) or "Vector store unavailable" in str(e)
+                # analyze_intent should work (it's local rule-based analysis)
+                intent = await counselor.analyze_intent(query)
+                assert intent.query_type is not None
+
+                # But orchestration should handle MCP failures gracefully
+                agent_selection = await counselor.select_agents(intent)
+                selected_agents = []
+                for agent_id in agent_selection.primary_agents + agent_selection.secondary_agents:
+                    agent = next((a for a in counselor._available_agents if a.agent_id == agent_id), None)
+                    if agent:
+                        selected_agents.append(agent)
+
+                # orchestrate_workflow should handle MCP failure gracefully and return error responses
+                responses = await counselor.orchestrate_workflow(selected_agents, query, intent)
+
+                # Should return error responses, not raise exceptions
+                assert len(responses) > 0
+                assert all(not response.success for response in responses)
+                assert any("Connection failed" in str(response.error_message) for response in responses)
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -427,8 +446,9 @@ class TestComprehensiveErrorHandling:
         for _ in range(3):
             try:
                 await circuit_breaker.execute(failing_function)
-            except Exception:
+            except Exception as e:
                 # Expected to fail - circuit breaker should open after failures
+                logging.debug("Circuit breaker test failure (expected): %s", e)
                 continue
 
         # Should transition to OPEN state
@@ -451,9 +471,9 @@ class TestComprehensiveErrorHandling:
             result = await circuit_breaker.execute(success_function)
             # If it succeeds, verify it works
             assert result == "success" or circuit_breaker.state.value in ["closed", "half_open"]
-        except Exception:
+        except Exception as e:
             # May still be in transition state, which is acceptable
-            pass
+            logging.debug("Circuit breaker state transition exception (acceptable): %s", e)
 
     @pytest.mark.integration
     @pytest.mark.asyncio

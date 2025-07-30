@@ -10,6 +10,7 @@ import time
 from unittest.mock import Mock, patch
 
 import gradio as gr
+import gradio.exceptions
 import pytest
 
 from src.ui.multi_journey_interface import MultiJourneyInterface, RateLimiter
@@ -45,7 +46,7 @@ class TestRateLimiter:
         assert limiter.check_request_rate(session_id) is True
 
         # Multiple requests within limits should be allowed
-        for i in range(5):
+        for _i in range(5):
             assert limiter.check_request_rate(session_id) is True
 
     def test_check_request_rate_minute_limit_exceeded(self):
@@ -54,7 +55,7 @@ class TestRateLimiter:
         session_id = "test_session_2"
 
         # First 3 requests should be allowed
-        for i in range(3):
+        for _i in range(3):
             assert limiter.check_request_rate(session_id) is True
 
         # 4th request should be denied
@@ -66,7 +67,7 @@ class TestRateLimiter:
         session_id = "test_session_3"
 
         # First 5 requests should be allowed
-        for i in range(5):
+        for _i in range(5):
             assert limiter.check_request_rate(session_id) is True
 
         # 6th request should be denied
@@ -78,7 +79,7 @@ class TestRateLimiter:
         session_id = "test_session_4"
 
         # First few uploads should be allowed
-        for i in range(5):
+        for _i in range(5):
             assert limiter.check_file_upload_rate(session_id) is True
 
     def test_check_file_upload_rate_limit_exceeded(self):
@@ -87,7 +88,7 @@ class TestRateLimiter:
         session_id = "test_session_5"
 
         # First 3 uploads should be allowed
-        for i in range(3):
+        for _i in range(3):
             assert limiter.check_file_upload_rate(session_id) is True
 
         # 4th upload should be denied
@@ -718,13 +719,13 @@ class TestMultiJourneyInterfaceExtended:
         # Test custom mode - should return visible dropdown
         with patch("src.ui.multi_journey_interface.gr.Dropdown") as mock_dropdown:
             mock_dropdown.return_value = Mock()
-            result = interface._on_model_selector_change("custom")
+            interface._on_model_selector_change("custom")
             mock_dropdown.assert_called_with(visible=True)
 
         # Test other modes - should return invisible dropdown
         with patch("src.ui.multi_journey_interface.gr.Dropdown") as mock_dropdown:
             mock_dropdown.return_value = Mock()
-            result = interface._on_model_selector_change("standard")
+            interface._on_model_selector_change("standard")
             mock_dropdown.assert_called_with(visible=False)
 
     def test_calculate_cost(self):
@@ -841,7 +842,7 @@ class TestMultiJourneyInterfaceExtended:
         # Mock the method call directly to test coverage
         with patch.object(interface, "_validate_file_content_and_mime") as mock_validate:
             mock_validate.return_value = ("text/plain", "text/plain")
-            detected, guessed = mock_validate("/tmp/test.txt", ".txt")
+            detected, guessed = mock_validate("/tmp/test.txt", ".txt")  # noqa: S108
             assert detected == "text/plain"
             assert guessed == "text/plain"
 
@@ -849,9 +850,9 @@ class TestMultiJourneyInterfaceExtended:
         with patch.object(interface, "_validate_file_content_and_mime") as mock_validate:
             mock_validate.side_effect = Exception("Validation error")
             try:
-                mock_validate("/tmp/test.txt", ".txt")
+                mock_validate("/tmp/test.txt", ".txt")  # noqa: S108
             except Exception as e:
-                assert "Validation error" in str(e)
+                assert "Validation error" in str(e)  # noqa: PT017 # Testing error message content
 
     def test_check_for_content_anomalies(self):
         """Test content anomaly detection for missing lines 1205-1235."""
@@ -859,35 +860,47 @@ class TestMultiJourneyInterfaceExtended:
 
         # Test safe content
         with patch.object(interface, "_detect_archive_bombs"):
-            interface._check_for_content_anomalies("/tmp/test.txt", "text/plain", ".txt")
+            interface._check_for_content_anomalies("/tmp/test.txt", "text/plain", ".txt")  # noqa: S108
 
         # Test suspicious content - zip in text file
-        with patch.object(interface, "_detect_archive_bombs"):
-            with pytest.raises(gr.Error, match="polyglot or contains suspicious content"):
-                interface._check_for_content_anomalies("/tmp/test.txt", "application/zip", ".txt")
+        with (
+            patch.object(interface, "_detect_archive_bombs"),
+            pytest.raises(gr.Error, match="polyglot or contains suspicious content"),
+        ):
+            interface._check_for_content_anomalies("/tmp/test.txt", "application/zip", ".txt")  # noqa: S108
 
         # Test executable content in text file
-        with patch.object(interface, "_detect_archive_bombs"):
-            with pytest.raises(gr.Error, match="polyglot or contains suspicious content"):
-                interface._check_for_content_anomalies("/tmp/test.txt", "application/x-executable", ".md")
+        with (
+            patch.object(interface, "_detect_archive_bombs"),
+            pytest.raises(gr.Error, match="polyglot or contains suspicious content"),
+        ):
+            interface._check_for_content_anomalies("/tmp/test.txt", "application/x-executable", ".md")  # noqa: S108
 
     def test_detect_archive_bombs(self):
         """Test archive bomb detection for missing lines 1240-1286."""
         interface = MultiJourneyInterface()
 
         # Test non-archive file
-        interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # Should not raise
+        interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # noqa: S108 # Should not raise
 
-        # Test archive file
-        with patch("os.path.getsize", return_value=1000):
-            with patch.object(interface, "_check_archive_bomb_heuristics") as mock_check:
-                interface._detect_archive_bombs("/tmp/test.zip", "application/zip")
-                mock_check.assert_called_once()
+        # Test archive file - mock Path in the module where it's imported
+        with (
+            patch("src.ui.multi_journey_interface.Path") as mock_path_class,
+            patch.object(interface, "_check_archive_bomb_heuristics") as mock_check,
+        ):
+            mock_path_instance = mock_path_class.return_value
+            mock_path_instance.stat.return_value.st_size = 1000
+            interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
+            mock_check.assert_called_once()
 
-        # Test archive bomb detection failure
-        with patch("os.path.getsize", side_effect=Exception("File error")):
-            with pytest.raises(gr.Error, match="Unable to analyze archive file"):
-                interface._detect_archive_bombs("/tmp/test.zip", "application/zip")
+        # Test archive bomb detection failure - simulate CI environment where magic is None
+        with (
+            patch("src.ui.multi_journey_interface.magic", None),  # Simulate CI environment
+            patch("src.ui.multi_journey_interface.Path") as mock_path_class,
+        ):
+            mock_path_class.return_value.stat.side_effect = Exception("File error")
+            with pytest.raises(gr.Error, match="Security Error: Unable to analyze archive file safely"):
+                interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
 
     def test_check_archive_bomb_heuristics(self):
         """Test archive bomb heuristics for missing lines 1288-1312."""
@@ -896,14 +909,14 @@ class TestMultiJourneyInterfaceExtended:
         # Mock the method to test coverage
         with patch.object(interface, "_check_archive_bomb_heuristics") as mock_method:
             mock_method.return_value = None  # Normal case
-            mock_method("/tmp/test.zip", 1000, "application/zip")
+            mock_method("/tmp/test.zip", 1000, "application/zip")  # noqa: S108
             mock_method.assert_called_once()
 
         # Test error case
         with patch.object(interface, "_check_archive_bomb_heuristics") as mock_method:
             mock_method.side_effect = gr.Error("Archive file is suspiciously small")
             with pytest.raises(gr.Error, match="Archive file is suspiciously small"):
-                mock_method("/tmp/test.zip", 50, "application/zip")
+                mock_method("/tmp/test.zip", 50, "application/zip")  # noqa: S108
 
     def test_check_zip_bomb_heuristics(self):
         """Test ZIP bomb heuristic checks for missing lines 1314-1383."""
@@ -912,20 +925,20 @@ class TestMultiJourneyInterfaceExtended:
         # Mock the method to test coverage without file operations
         with patch.object(interface, "_check_zip_bomb_heuristics") as mock_method:
             mock_method.return_value = None  # Normal case
-            mock_method("/tmp/test.zip", 150)
+            mock_method("/tmp/test.zip", 150)  # noqa: S108
             mock_method.assert_called_once()
 
         # Test error case
         with patch.object(interface, "_check_zip_bomb_heuristics") as mock_method:
             mock_method.side_effect = gr.Error("suspicious compression ratio")
             with pytest.raises(gr.Error, match="suspicious compression ratio"):
-                mock_method("/tmp/test.zip", 150)
+                mock_method("/tmp/test.zip", 150)  # noqa: S108
 
         # Test corruption case
         with patch.object(interface, "_check_zip_bomb_heuristics") as mock_method:
             mock_method.side_effect = gr.Error("corrupted or malicious ZIP")
             with pytest.raises(gr.Error, match="corrupted or malicious ZIP"):
-                mock_method("/tmp/test.zip", 150)
+                mock_method("/tmp/test.zip", 150)  # noqa: S108
 
     def test_check_tar_gzip_bomb_heuristics(self):
         """Test TAR/GZIP bomb heuristic checks for missing lines 1385-1462."""
@@ -934,14 +947,14 @@ class TestMultiJourneyInterfaceExtended:
         # Mock the method to test coverage without file operations
         with patch.object(interface, "_check_tar_gzip_bomb_heuristics") as mock_method:
             mock_method.return_value = None  # Normal case
-            mock_method("/tmp/test.tar", 500)
+            mock_method("/tmp/test.tar", 500)  # noqa: S108
             mock_method.assert_called_once()
 
         # Test error case
         with patch.object(interface, "_check_tar_gzip_bomb_heuristics") as mock_method:
             mock_method.side_effect = gr.Error("would expand to huge size. This could be an archive bomb")
             with pytest.raises(gr.Error, match="would expand to .* This could be an archive bomb"):
-                mock_method("/tmp/test.tar", 500)
+                mock_method("/tmp/test.tar", 500)  # noqa: S108
 
     def test_process_file_safely(self):
         """Test safe file processing for missing lines 1464-1547."""
@@ -950,20 +963,20 @@ class TestMultiJourneyInterfaceExtended:
         # Mock the method to test coverage
         with patch.object(interface, "_process_file_safely") as mock_method:
             mock_method.return_value = "This is test content"
-            result = mock_method("/tmp/test.txt", 100)
+            result = mock_method("/tmp/test.txt", 100)  # noqa: S108
             assert result == "This is test content"
 
         # Test error cases
         with patch.object(interface, "_process_file_safely") as mock_method:
             mock_method.side_effect = gr.Error("File appears to be binary")
             with pytest.raises(gr.Error, match="File appears to be binary"):
-                mock_method("/tmp/binary.txt", 1000)
+                mock_method("/tmp/binary.txt", 1000)  # noqa: S108
 
         # Test memory error case
         with patch.object(interface, "_process_file_safely") as mock_method:
             mock_method.side_effect = gr.Error("File is too large to process")
             with pytest.raises(gr.Error, match="File is too large to process"):
-                mock_method("/tmp/huge.txt", 1000)
+                mock_method("/tmp/huge.txt", 1000)  # noqa: S108
 
     def test_fallback_result_creation(self):
         """Test fallback result creation for missing lines 1549-1660."""
