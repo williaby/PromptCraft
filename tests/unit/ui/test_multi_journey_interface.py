@@ -883,23 +883,23 @@ class TestMultiJourneyInterfaceExtended:
         # Test non-archive file
         interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # noqa: S108 # Should not raise
 
-        # Test archive file - mock at the source module level for better CI compatibility
+        # Test archive file - mock the Path class where it's imported
         with (
-            patch("src.ui.multi_journey_interface.Path.stat") as mock_stat,
+            patch("src.ui.multi_journey_interface.Path") as mock_path_class,
             patch.object(interface, "_check_archive_bomb_heuristics") as mock_check,
         ):
-            mock_stat.return_value.st_size = 1000
+            mock_path_instance = mock_path_class.return_value
+            mock_path_instance.stat.return_value.st_size = 1000
             interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
             mock_check.assert_called_once()
 
         # Test archive bomb detection failure
         # Accept both gr.Error and gradio.exceptions.Error for version compatibility
         gradio_error_classes = (gr.Error, gradio.exceptions.Error)
-        with (
-            patch("src.ui.multi_journey_interface.Path.stat", side_effect=Exception("File error")),
-            pytest.raises(gradio_error_classes, match="Security Error: Unable to analyze archive file safely"),
-        ):
-            interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
+        with patch("src.ui.multi_journey_interface.Path") as mock_path_class:
+            mock_path_class.return_value.stat.side_effect = Exception("File error")
+            with pytest.raises(gradio_error_classes, match="Security Error: Unable to analyze archive file safely"):
+                interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
 
     def test_check_archive_bomb_heuristics(self):
         """Test archive bomb heuristics for missing lines 1288-1312."""
