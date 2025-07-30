@@ -728,8 +728,8 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 request_id=request_id,
             )
 
-        # Fallback for unknown strategies
-        return RoutingDecision(
+        # Fallback for unknown strategies (defensive programming for future enum additions)
+        return RoutingDecision(  # type: ignore[unreachable]
             service="mcp",
             reason=f"Unknown strategy {self.strategy}, defaulting to MCP",
             confidence=0.5,
