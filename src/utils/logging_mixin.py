@@ -256,7 +256,7 @@ class StructuredLoggerMixin(LoggerMixin):
         if event_type:
             context["event_type"] = event_type
 
-        self.logger.log(level, message + " - Context: %s", context)
+        self.logger.log(level, "%s - Context: %s", message, context)
 
     def log_api_call(
         self,

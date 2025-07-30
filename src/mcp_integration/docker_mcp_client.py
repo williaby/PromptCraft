@@ -116,7 +116,7 @@ class DockerMCPClient(LoggerMixin):
         self.authenticated_services[server_name] = True
         return True
 
-    async def call_tool(self, server_name: str, tool: str, params: dict[str, Any]) -> dict[str, Any]:  # noqa: ARG002
+    async def call_tool(self, server_name: str, tool: str, params: dict[str, Any]) -> dict[str, Any]:
         """Call tool on Docker-deployed MCP server.
 
         Args:

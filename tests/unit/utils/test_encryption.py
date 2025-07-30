@@ -1,7 +1,7 @@
 """Comprehensive tests for src/utils/encryption.py module."""
 
-import os
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -275,7 +275,7 @@ class TestDecryptEnvFile:
         result = decrypt_env_file("encrypted-content", "secret-passphrase")
 
         assert result == "TEST_VAR=value"
-        mock_gpg.decrypt.assert_called_once_with("encrypted-content", passphrase="secret-passphrase")
+        mock_gpg.decrypt.assert_called_once_with("encrypted-content", passphrase="secret-passphrase")  # noqa: S106
 
     @patch("src.utils.encryption.gnupg.GPG")
     def test_decryption_failure(self, mock_gpg_class):
@@ -322,7 +322,7 @@ class TestLoadEncryptedEnv:
             assert result == {"TEST_VAR": "value", "ANOTHER_VAR": "another_value"}
             mock_decrypt.assert_called_once_with("encrypted-content")
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_env_with_quotes(self, mock_decrypt):
@@ -338,7 +338,7 @@ class TestLoadEncryptedEnv:
 
             assert result == {"QUOTED_VAR": "quoted value", "SINGLE_QUOTED": "single quoted"}
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_env_with_comments_and_empty_lines(self, mock_decrypt):
@@ -360,7 +360,7 @@ class TestLoadEncryptedEnv:
 
             assert result == {"VALID_VAR": "value", "ANOTHER_VAR": "another_value"}
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_env_with_equals_in_value(self, mock_decrypt):
@@ -376,7 +376,7 @@ class TestLoadEncryptedEnv:
 
             assert result == {"URL": "https://example.com?param=value&other=data"}
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_env_skips_invalid_lines(self, mock_decrypt):
@@ -396,7 +396,7 @@ class TestLoadEncryptedEnv:
 
             assert result == {"VALID_VAR": "value", "ANOTHER_VAR": "another_value"}
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.decrypt_env_file")
     def test_load_encrypted_env_propagates_gpg_error(self, mock_decrypt):
@@ -411,7 +411,7 @@ class TestLoadEncryptedEnv:
             with pytest.raises(GPGError, match="Decryption failed"):
                 load_encrypted_env(temp_path)
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
 
 class TestInitializeEncryption:
@@ -468,14 +468,14 @@ class TestMainScriptExecution:
     @patch("builtins.print")
     def test_main_script_success(self, mock_print, mock_exit, mock_validate):
         """Test main script execution on successful validation."""
-        # Test the main script logic directly by executing the relevant code
-        from src.utils.encryption import validate_environment_keys
-
+        # Simulate the main script logic
         try:
-            validate_environment_keys()
-            print("✓ All required keys are present and configured")
-        except EncryptionError:
-            pass  # Would call sys.exit(1) in real script
+            mock_validate.return_value = None  # Successful validation
+            mock_validate()  # Call the mocked function
+            mock_print("✓ All required keys are present and configured")
+        except EncryptionError as e:
+            mock_print(f"✗ Key validation failed: {e}")
+            mock_exit(1)
 
         mock_validate.assert_called()
         mock_print.assert_called_with("✓ All required keys are present and configured")
@@ -487,14 +487,12 @@ class TestMainScriptExecution:
         """Test main script execution on validation failure."""
         mock_validate.side_effect = EncryptionError("Test validation error")
 
-        # Test the main script logic directly
-        from src.utils.encryption import validate_environment_keys
-
+        # Simulate the main script logic
         try:
-            validate_environment_keys()
-            print("✓ All required keys are present and configured")
+            mock_validate()  # This will raise EncryptionError due to side_effect
+            mock_print("✓ All required keys are present and configured")
         except EncryptionError as e:
-            print(f"✗ Key validation failed: {e}")
+            mock_print(f"✗ Key validation failed: {e}")
             mock_exit(1)
 
         mock_validate.assert_called()
@@ -537,7 +535,7 @@ class TestEdgeCasesAndComplexScenarios:
 
             assert result == {"SPECIAL_VAR": "value with spaces & symbols!@#$%"}
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.utils.encryption.gnupg.GPG")
     def test_encrypt_with_multiple_recipients(self, mock_gpg_class):
@@ -578,7 +576,7 @@ class TestEdgeCasesAndComplexScenarios:
 
 
 @pytest.mark.parametrize(
-    "env_content,expected_vars",
+    ("env_content", "expected_vars"),
     [
         ("VAR1=value1\nVAR2=value2", {"VAR1": "value1", "VAR2": "value2"}),
         ("VAR_WITH_UNDERSCORE=value", {"VAR_WITH_UNDERSCORE": "value"}),
@@ -600,7 +598,7 @@ def test_load_env_parametrized(mock_decrypt, env_content, expected_vars):
         result = load_encrypted_env(temp_path)
         assert result == expected_vars
     finally:
-        os.unlink(temp_path)
+        Path(temp_path).unlink()
 
 
 class TestSecurityAndErrorHandling:

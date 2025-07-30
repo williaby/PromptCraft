@@ -10,6 +10,7 @@ import asyncio
 import time
 
 import pytest
+from qdrant_client.http.exceptions import ResponseHandlingException
 
 from src.core.hyde_processor import (
     HydeProcessor,
@@ -388,6 +389,7 @@ class TestVectorStoreErrorHandling:
         await store.connect()
 
         # Attempt operations with errors
+
         success_count = 0
         error_count = 0
 
@@ -457,12 +459,13 @@ class TestVectorStoreErrorHandling:
             assert isinstance(store, QdrantVectorStore)
 
             # Connection should fail gracefully
-            with pytest.raises(Exception):
+            with pytest.raises((ConnectionError, RuntimeError, ResponseHandlingException)):
                 await store.connect()
 
-        except Exception as e:
+        except (ConnectionError, RuntimeError, ResponseHandlingException) as e:
             # Expected behavior for missing Qdrant client
-            assert "not available" in str(e) or "Qdrant" in str(e)
+            error_msg = str(e)
+            assert "not available" in error_msg or "Qdrant" in error_msg
 
 
 class TestVectorStoreConfigurationIntegration:

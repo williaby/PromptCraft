@@ -319,7 +319,7 @@ class QueryCounselor:
 
     @cache_query_analysis
     @monitor_performance("analyze_intent")
-    async def analyze_intent(self, query: str) -> QueryIntent:  # noqa: PLR0915
+    async def analyze_intent(self, query: str) -> QueryIntent:
         """
         Analyze query intent and classify the type of request.
 
