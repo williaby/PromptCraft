@@ -11,11 +11,14 @@ Implements comprehensive file upload, OpenRouter model selection,
 and code snippet copying functionality.
 """
 
+import gzip
 import json
 import logging
 import mimetypes
 import signal
+import tarfile
 import time
+import zipfile
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, NoReturn
@@ -1195,7 +1198,11 @@ class MultiJourneyInterface(LoggerMixin):
 
             # Content-based MIME detection using magic numbers
             try:
-                detected_mime = magic.from_file(file_path, mime=True)
+                if magic is not None:
+                    detected_mime = magic.from_file(file_path, mime=True)
+                else:
+                    self.logger.warning("python-magic not available, using fallback MIME detection")
+                    detected_mime = "application/octet-stream"
             except Exception as e:
                 self.logger.warning("Magic content detection failed: %s", e)
                 detected_mime = "application/octet-stream"  # Fallback for unknown content
@@ -1272,7 +1279,6 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
-        import os
 
         # Only check files that could be compressed archives
         archive_mimes = [
@@ -1293,7 +1299,7 @@ class MultiJourneyInterface(LoggerMixin):
 
         if is_archive:
             try:
-                file_size = os.path.getsize(file_path)
+                file_size = Path(file_path).stat().st_size
 
                 # Archive bomb heuristics
                 self._check_archive_bomb_heuristics(file_path, file_size, detected_mime)
@@ -1344,19 +1350,16 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If ZIP bomb characteristics are detected
         """
         try:
-            import zipfile
-
             # Safe limits for ZIP analysis
-            MAX_FILES_TO_CHECK = 10
-            MAX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024  # 100MB total uncompressed
-            MAX_COMPRESSION_RATIO = 1000  # 1000:1 compression ratio is suspicious
+            max_files_to_check = 10
+            max_uncompressed_size = 100 * 1024 * 1024  # 100MB total uncompressed
+            max_compression_ratio = 1000  # 1000:1 compression ratio is suspicious
 
             with zipfile.ZipFile(file_path, "r") as zip_file:
                 total_uncompressed = 0
-                files_checked = 0
 
-                for info in zip_file.filelist:
-                    if files_checked >= MAX_FILES_TO_CHECK:
+                for files_checked, info in enumerate(zip_file.filelist):
+                    if files_checked >= max_files_to_check:
                         break
 
                     compressed_size = info.compress_size
@@ -1365,7 +1368,7 @@ class MultiJourneyInterface(LoggerMixin):
                     # Check individual file compression ratio
                     if compressed_size > 0:  # Avoid division by zero
                         ratio = uncompressed_size / compressed_size
-                        if ratio > MAX_COMPRESSION_RATIO:
+                        if ratio > max_compression_ratio:
                             raise gr.Error(
                                 f"❌ Security Error: Archive contains file '{info.filename}' "
                                 f"with suspicious compression ratio ({ratio:.0f}:1). "
@@ -1373,20 +1376,19 @@ class MultiJourneyInterface(LoggerMixin):
                             )
 
                     total_uncompressed += uncompressed_size
-                    files_checked += 1
 
                     # Check if total uncompressed size is too large
-                    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                    if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed expansion is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB. "
+                            f"Maximum allowed expansion is {max_uncompressed_size / (1024*1024):.0f}MB. "
                             f"This could be an archive bomb.",
                         )
 
                 # Overall compression ratio check
                 if file_size > 0:
                     overall_ratio = total_uncompressed / file_size
-                    if overall_ratio > MAX_COMPRESSION_RATIO:
+                    if overall_ratio > max_compression_ratio:
                         raise gr.Error(
                             f"❌ Security Error: Archive has suspicious overall compression ratio "
                             f"({overall_ratio:.0f}:1). This indicates a potential archive bomb.",
@@ -1415,12 +1417,9 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If archive bomb characteristics are detected
         """
         try:
-            import gzip
-            import tarfile
-
             # Conservative limits for TAR/GZIP analysis
-            MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50MB total uncompressed
-            MAX_COMPRESSION_RATIO = 500  # 500:1 compression ratio limit
+            max_uncompressed_size = 50 * 1024 * 1024  # 50MB total uncompressed
+            max_compression_ratio = 500  # 500:1 compression ratio limit
 
             # Try to analyze as tarfile first
             try:
@@ -1437,7 +1436,7 @@ class MultiJourneyInterface(LoggerMixin):
                             files_checked += 1
 
                             # Check if individual file is too large
-                            if member.size > MAX_UNCOMPRESSED_SIZE:
+                            if member.size > max_uncompressed_size:
                                 raise gr.Error(
                                     f"❌ Security Error: Archive contains file '{member.name}' "
                                     f"that would expand to {member.size / (1024*1024):.1f}MB. "
@@ -1445,16 +1444,16 @@ class MultiJourneyInterface(LoggerMixin):
                                 )
 
                     # Check overall expansion
-                    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                    if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
                             f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed is {MAX_UNCOMPRESSED_SIZE / (1024*1024):.0f}MB.",
+                            f"Maximum allowed is {max_uncompressed_size / (1024*1024):.0f}MB.",
                         )
 
                     # Check compression ratio
                     if file_size > 0:
                         ratio = total_uncompressed / file_size
-                        if ratio > MAX_COMPRESSION_RATIO:
+                        if ratio > max_compression_ratio:
                             raise gr.Error(
                                 f"❌ Security Error: Archive has suspicious compression ratio "
                                 f"({ratio:.0f}:1). This indicates a potential archive bomb.",
@@ -1468,19 +1467,19 @@ class MultiJourneyInterface(LoggerMixin):
                     if len(chunk) == 1024:  # File has more content
                         # Estimate based on sample
                         estimated_uncompressed = file_size * 1000  # Conservative estimate
-                        if estimated_uncompressed > MAX_UNCOMPRESSED_SIZE:
+                        if estimated_uncompressed > max_uncompressed_size:
                             raise gr.Error(
                                 "❌ Security Error: GZIP file appears to have excessive compression. "
                                 "This could be a compression bomb.",
-                            )
+                            ) from None
 
         except Exception as e:
-            self.logger.warning(f"TAR/GZIP bomb detection failed: {e}")
+            self.logger.warning("TAR/GZIP bomb detection failed: %s", e)
             # Conservative approach - block if analysis fails
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze compressed archive. "
                 "File blocked as a security precaution.",
-            )
+            ) from None
 
     def _process_file_safely(self, file_path: str, file_size: int, chunk_size: int = 8192) -> str:
         """
@@ -1503,9 +1502,8 @@ class MultiJourneyInterface(LoggerMixin):
 
             if file_size > memory_limit:
                 # For large files, read first chunk only and truncate
-                with open(file_path, encoding="utf-8", errors="ignore") as file:
+                with Path(file_path).open(encoding="utf-8", errors="ignore") as file:
                     content_chunks = []
-                    bytes_read = 0
                     # Reserve space for truncation message
                     truncation_msg = f"\n\n[FILE TRUNCATED - Original size: {file_size / (1024 * 1024):.1f}MB, showing first 5MB for memory safety]"
                     msg_size = len(truncation_msg.encode("utf-8"))
@@ -1542,7 +1540,7 @@ class MultiJourneyInterface(LoggerMixin):
                     return content
             else:
                 # For smaller files, read normally but with error handling
-                with open(file_path, encoding="utf-8", errors="ignore") as file:
+                with Path(file_path).open(encoding="utf-8", errors="ignore") as file:
                     return file.read()
 
         except UnicodeDecodeError:
@@ -1550,22 +1548,22 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ File Error: File appears to be binary or uses unsupported encoding. "
                 "Please ensure file is in UTF-8 text format.",
-            )
+            ) from None
         except MemoryError:
             # Handle memory exhaustion
             raise gr.Error(
                 "❌ Memory Error: File is too large to process safely. "
                 "Please upload a smaller file (under 5MB recommended).",
-            )
+            ) from None
         except OSError as e:
             # Handle file system errors
             raise gr.Error(f"❌ File Error: Unable to read file. {e!s}") from e
         except Exception as e:
             # Handle unexpected errors
-            self.logger.error(f"Unexpected error processing file {file_path}: {e}")
+            self.logger.error("Unexpected error processing file %s: %s", file_path, e)
             raise gr.Error(
                 "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
-            )
+            ) from None
 
     def _create_fallback_result(self, text_input: str, model: str) -> tuple:
         """Create fallback result when normal processing fails."""

@@ -893,8 +893,11 @@ class TestMultiJourneyInterfaceExtended:
             interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
             mock_check.assert_called_once()
 
-        # Test archive bomb detection failure
-        with patch("src.ui.multi_journey_interface.Path") as mock_path_class:
+        # Test archive bomb detection failure - simulate CI environment where magic is None
+        with (
+            patch("src.ui.multi_journey_interface.magic", None),  # Simulate CI environment
+            patch("src.ui.multi_journey_interface.Path") as mock_path_class,
+        ):
             mock_path_class.return_value.stat.side_effect = Exception("File error")
             with pytest.raises(gr.Error, match="Security Error: Unable to analyze archive file safely"):
                 interface._detect_archive_bombs("/tmp/test.zip", "application/zip")  # noqa: S108
@@ -1142,7 +1145,7 @@ class TestMultiJourneyInterfaceExtended:
 
     def test_create_app_function(self):
         """Test the create_app function for missing lines 1833-1836."""
-        from src.ui.multi_journey_interface import create_app  # noqa: PLC0415
+        from src.ui.multi_journey_interface import create_app
 
         with patch("src.ui.multi_journey_interface.MultiJourneyInterface") as mock_interface_class:
             mock_interface = Mock()
