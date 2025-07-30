@@ -186,8 +186,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --no-cache-dir -r requirements-ci.txt
-          poetry install --sync --only-root
+          # Install all dependencies in Poetry's virtual environment for security scanning
+          poetry install --sync
 
       - name: Start Redis service for testing
         run: |
@@ -280,9 +280,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Install from pre-generated requirements for faster setup
-          python -m pip install --no-cache-dir -r requirements-ci.txt
-          poetry install --sync --only-root
+          # Install all dependencies including dev dependencies in Poetry's virtual environment
+          poetry install --sync
 
       - name: Install MyPy type stubs
         run: |
