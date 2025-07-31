@@ -65,6 +65,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Ensure Poetry is available in current session
+          export PATH="$HOME/.local/bin:$PATH"
 
       # Enhanced caching strategy
       - name: Cache Poetry and dependencies
@@ -141,6 +143,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="$HOME/.local/bin:$PATH"
           poetry config virtualenvs.in-project true
 
       # Fast MyPy with pre-cached stubs
@@ -233,6 +237,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
 
       # Skip system dependencies - use mocking instead
       - name: Fast security checks
