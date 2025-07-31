@@ -68,9 +68,9 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           # Verify Poetry is available
           which poetry || echo "Poetry not found in PATH"
-          $HOME/.local/bin/poetry config virtualenvs.create true
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
-          $HOME/.local/bin/poetry self add poetry-plugin-export
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry self add poetry-plugin-export
 
       # Enhanced caching strategy
       - name: Cache Poetry and dependencies
@@ -87,7 +87,7 @@ jobs:
       - name: Install dependencies (Fast)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          $HOME/.local/bin/poetry install --sync --no-interaction
+          poetry install --sync --no-interaction
 
       # Pre-install and cache MyPy stubs globally
       - name: Cache MyPy stubs globally
@@ -102,8 +102,8 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           echo "🔧 Pre-installing MyPy stubs for all jobs"
-          $HOME/.local/bin/poetry run python -m pip install types-requests types-pyyaml types-redis types-python-dateutil
-          $HOME/.local/bin/poetry run mypy --install-types --non-interactive --cache-dir=${{ env.MYPY_CACHE_DIR }} src/ || true
+          poetry run python -m pip install types-requests types-pyyaml types-redis types-python-dateutil
+          poetry run mypy --install-types --non-interactive --cache-dir=${{ env.MYPY_CACHE_DIR }} src/ || true
 
   # Parallel unit test jobs by Python version
   unit-tests:
@@ -123,7 +123,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Restore Poetry cache
+      # Always install Poetry fresh (fast and reliable)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.in-project true
+          poetry --version
+
+      # Restore dependency cache (optional - helps with speed)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -131,16 +141,8 @@ jobs:
             ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          fail-on-cache-miss: true
-
-      - name: Quick Poetry setup
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify and use full path for reliability
-          which poetry || echo "Using full path: $HOME/.local/bin/poetry"
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
 
       - name: Restore MyPy cache
         uses: actions/cache/restore@v4
@@ -154,7 +156,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           echo "🧪 Running unit tests with function-level coverage"
           echo "Note: Individual test suites have lower coverage by design - combined coverage is verified separately"
-          $HOME/.local/bin/poetry run pytest -v \
+          poetry run pytest -v \
             --cov=src \
             --cov-report=xml:coverage-unit-${{ matrix.python-version }}.xml \
             --cov-report=term-missing \
@@ -205,7 +207,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Restore Poetry cache
+      # Always install Poetry fresh (fast and reliable)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.in-project true
+          poetry --version
+
+      # Restore dependency cache (optional - helps with speed)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -213,16 +225,8 @@ jobs:
             ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          fail-on-cache-miss: true
-
-      - name: Quick Poetry setup
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify and use full path for reliability
-          which poetry || echo "Using full path: $HOME/.local/bin/poetry"
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
 
       - name: Install system dependencies (minimal)
         run: |
@@ -236,7 +240,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           echo "🔗 Running integration tests with function-level coverage"
           echo "Note: Individual test suites have lower coverage by design - combined coverage is verified separately"
-          $HOME/.local/bin/poetry run pytest -v \
+          poetry run pytest -v \
             --cov=src \
             --cov-report=xml:coverage-integration-${{ matrix.python-version }}.xml \
             --cov-report=term-missing \
@@ -287,7 +291,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Restore Poetry cache
+      # Always install Poetry fresh (fast and reliable)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.in-project true
+          poetry --version
+
+      # Restore dependency cache (optional - helps with speed)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -295,16 +309,8 @@ jobs:
             ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          fail-on-cache-miss: true
-
-      - name: Quick Poetry setup
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify and use full path for reliability
-          which poetry || echo "Using full path: $HOME/.local/bin/poetry"
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
 
       # Auth tests with preserved dynamic_context coverage
       - name: Run auth tests with coverage
@@ -312,7 +318,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           echo "🔐 Running auth tests with function-level coverage"
           echo "Note: Individual test suites have lower coverage by design - combined coverage is verified separately"
-          $HOME/.local/bin/poetry run pytest -v \
+          poetry run pytest -v \
             --cov=src \
             --cov-report=xml:coverage-auth-${{ matrix.python-version }}.xml \
             --cov-report=html:htmlcov-auth-${{ matrix.python-version }} \
@@ -361,7 +367,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Restore Poetry cache
+      # Always install Poetry fresh (fast and reliable)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.in-project true
+          poetry --version
+
+      # Restore dependency cache (optional - helps with speed)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -369,16 +385,8 @@ jobs:
             ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          fail-on-cache-miss: true
-
-      - name: Quick Poetry setup
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify and use full path for reliability
-          which poetry || echo "Using full path: $HOME/.local/bin/poetry"
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
 
       - name: Restore MyPy cache
         uses: actions/cache/restore@v4
@@ -391,15 +399,15 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           echo "🔍 Running MyPy with cached stubs"
-          $HOME/.local/bin/poetry run mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
+          poetry run mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
 
       # Fast linting
       - name: Run linting (Fast)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           echo "🧹 Running linting checks"
-          $HOME/.local/bin/poetry run black . --check --fast
-          $HOME/.local/bin/poetry run ruff check . --no-cache
+          poetry run black . --check --fast
+          poetry run ruff check . --no-cache
 
   # Optional security scan (runs in parallel)
   security-scan:
@@ -416,7 +424,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Restore Poetry cache
+      # Always install Poetry fresh (fast and reliable)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.in-project true
+          poetry --version
+
+      # Restore dependency cache (optional - helps with speed)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -424,23 +442,15 @@ jobs:
             ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          fail-on-cache-miss: true
-
-      - name: Quick Poetry setup
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify and use full path for reliability
-          which poetry || echo "Using full path: $HOME/.local/bin/poetry"
-          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
 
       - name: Fast security checks
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           echo "🔒 Running security scans"
-          $HOME/.local/bin/poetry run safety check || echo "Safety check completed with findings"
-          $HOME/.local/bin/poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
+          poetry run safety check || echo "Safety check completed with findings"
+          poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
 
   # Success check
   ci-success:
