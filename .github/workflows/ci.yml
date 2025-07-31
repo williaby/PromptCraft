@@ -65,6 +65,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
 
       # Enhanced caching strategy
       - name: Cache Poetry and dependencies
@@ -80,12 +81,14 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry self add poetry-plugin-export
 
       - name: Install dependencies (Fast)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
       # Pre-install and cache MyPy stubs globally
@@ -99,6 +102,7 @@ jobs:
 
       - name: Pre-install MyPy stubs
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🔧 Pre-installing MyPy stubs for all jobs"
           poetry run python -m pip install types-requests types-pyyaml types-redis types-python-dateutil
           poetry run mypy --install-types --non-interactive --cache-dir=${{ env.MYPY_CACHE_DIR }} src/ || true
@@ -146,6 +150,7 @@ jobs:
       # Unit tests with preserved dynamic_context coverage
       - name: Run unit tests with coverage
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🧪 Running unit tests with function-level coverage"
           poetry run pytest -v \
             --cov=src \
@@ -223,6 +228,7 @@ jobs:
       # Integration tests with preserved dynamic_context coverage
       - name: Run integration tests with coverage
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🔗 Running integration tests with function-level coverage"
           poetry run pytest -v \
             --cov=src \
@@ -294,6 +300,7 @@ jobs:
       # Auth tests with preserved dynamic_context coverage
       - name: Run auth tests with coverage
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🔐 Running auth tests with function-level coverage"
           poetry run pytest -v \
             --cov=src \
@@ -369,12 +376,14 @@ jobs:
       # Fast type checking with pre-cached stubs
       - name: Run type checking (Fast)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🔍 Running MyPy with cached stubs"
           poetry run mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
 
       # Fast linting
       - name: Run linting (Fast)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🧹 Running linting checks"
           poetry run black . --check --fast
           poetry run ruff check . --no-cache
@@ -411,6 +420,7 @@ jobs:
 
       - name: Fast security checks
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "🔒 Running security scans"
           poetry run safety check || echo "Safety check completed with findings"
           poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
