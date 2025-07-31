@@ -155,8 +155,9 @@ class TestJWTValidatorCoverage:
         mock_jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client=mock_jwks_client)
 
-        # Valid JWT format (3 parts separated by dots) - Test token from jwt.io examples
-        valid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"  # noqa: S105 # gitguardian:ignore
+        # Valid JWT format (3 parts separated by dots) - Synthetic test token for format validation
+        # This is a test-only JWT with fake/test data - NOT a real secret
+        valid_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZXN0IjoidGVzdCIsImV4cCI6OTk5OTk5OTk5OX0.test_signature_not_real"  # noqa: S105
 
         assert validator.validate_token_format(valid_token) is True
 
