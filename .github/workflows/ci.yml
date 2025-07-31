@@ -144,6 +144,12 @@ jobs:
           restore-keys: |
             poetry-deps-${{ runner.os }}-
 
+      # Install dependencies (fast if cached)
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry install --sync --no-interaction
+
       - name: Restore MyPy cache
         uses: actions/cache/restore@v4
         with:
@@ -387,6 +393,12 @@ jobs:
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |
             poetry-deps-${{ runner.os }}-
+
+      # Install dependencies (fast if cached)
+      - name: Install dependencies
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry install --sync --no-interaction
 
       - name: Restore MyPy cache
         uses: actions/cache/restore@v4
