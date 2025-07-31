@@ -287,27 +287,55 @@ jobs:
         run: |
           poetry run mypy --install-types --non-interactive src/ || true
 
-      - name: Run all tests with combined coverage
+      - name: Run unit tests with coverage
         run: |
-          echo "🧪 Running all non-performance tests with combined coverage"
+          echo "🧪 Running unit tests with coverage"
           poetry run pytest -v \
             --cov=src \
-            --cov-report=xml:coverage.xml \
-            --cov-report=html:htmlcov \
+            --cov-report=xml:coverage-unit.xml \
             --cov-report=term-missing \
-            --junitxml=junit-combined-${{ matrix.python-version }}.xml \
+            --junitxml=junit-unit-${{ matrix.python-version }}.xml \
             -o junit_family=xunit2 \
-            -o junit_suite_name=PromptCraft-Combined-${{ matrix.python-version }} \
+            -o junit_suite_name=PromptCraft-Unit-${{ matrix.python-version }} \
             --tb=short \
             --maxfail=10 \
-            tests/unit/ tests/integration/ tests/auth/
+            tests/unit/
+
+      - name: Run integration tests with coverage
+        run: |
+          echo "🔗 Running integration tests with coverage"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-integration.xml \
+            --cov-report=term-missing \
+            --junitxml=junit-integration-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Integration-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=5 \
+            tests/integration/
+
+      - name: Run auth tests with coverage
+        run: |
+          echo "🔐 Running auth tests with coverage"
+          poetry run pytest -v \
+            --cov=src \
+            --cov-report=xml:coverage-auth.xml \
+            --cov-report=html:htmlcov \
+            --cov-report=term-missing \
+            --junitxml=junit-auth-${{ matrix.python-version }}.xml \
+            -o junit_family=xunit2 \
+            -o junit_suite_name=PromptCraft-Auth-${{ matrix.python-version }} \
+            --tb=short \
+            --maxfail=5 \
+            tests/auth/
 
       - name: Verify coverage meets requirements
         run: |
           echo "📊 Checking coverage requirements"
-          # Extract coverage percentage from coverage.xml
-          if [ -f coverage.xml ]; then
-            COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage.xml'); root = tree.getroot(); line_rate = float(root.attrib['line-rate']); percentage = line_rate * 100; print(f'{percentage:.2f}')")
+          # Extract coverage percentage from auth coverage (most recent)
+          if [ -f coverage-auth.xml ]; then
+            COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('coverage-auth.xml'); root = tree.getroot(); line_rate = float(root.attrib['line-rate']); percentage = line_rate * 100; print(f'{percentage:.2f}')")
             echo "Total coverage: ${COVERAGE}%"
 
             # Check if coverage meets minimum requirement (25% for CI)
@@ -318,7 +346,7 @@ jobs:
               echo "✅ PASS Coverage requirement met: ${COVERAGE}% >= 25.0%"
             fi
           else
-            echo "❌ FAIL No coverage.xml file found"
+            echo "❌ FAIL No coverage-auth.xml file found"
             exit 1
           fi
 
@@ -371,18 +399,47 @@ jobs:
           name: test-results-${{ matrix.python-version }}
           path: |
             junit-*-${{ matrix.python-version }}.xml
-            coverage.xml
+            coverage-*.xml
             htmlcov/
 
-      - name: Upload combined test coverage to Codecov
+      - name: Upload unit test coverage to Codecov
         uses: codecov/codecov-action@v4
         if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
         with:
-          file: ./coverage.xml
+          file: ./coverage-unit.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
-          flags: combined
-          name: Combined Tests (Python ${{ matrix.python-version }})
+          flags: unit
+          name: Unit Tests (Python ${{ matrix.python-version }})
+          verbose: true
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload integration test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-integration.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: integration
+          name: Integration Tests (Python ${{ matrix.python-version }})
+          verbose: true
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload auth test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
+        with:
+          file: ./coverage-auth.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: auth
+          name: Auth Tests (Python ${{ matrix.python-version }})
+          verbose: true
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

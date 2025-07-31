@@ -390,7 +390,7 @@ class TestRealMCPIntegration:
             assert counselor.mcp_client is not None
             assert isinstance(counselor.mcp_client, MockMCPClient)
 
-            # MockMCPClient doesn't need connection
+            # MockMCPClient is already initialized and ready
 
             # Test query processing
             query = "Create a secure authentication system"
