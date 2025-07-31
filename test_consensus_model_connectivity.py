@@ -46,9 +46,9 @@ class ConsensusModel:
     openrouter_id: str
     category: str
     is_escalation: bool = False
-    expected_capabilities: list[str] = None
+    expected_capabilities: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.expected_capabilities is None:
             self.expected_capabilities = []
 
@@ -101,7 +101,7 @@ CONSENSUS_MODELS = [
 class ConsensusModelTester:
     """Tests connectivity to consensus models for multi-model workflow validation."""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False) -> None:
         """Initialize the tester.
 
         Args:
@@ -109,7 +109,7 @@ class ConsensusModelTester:
         """
         self.verbose = verbose
         self.logger = self._setup_logging()
-        self.mcp_client = None
+        self.mcp_client: MCPClient | None = None
         self.model_registry = get_model_registry()
         self.results: dict[str, dict[str, Any]] = {}
 
@@ -180,6 +180,7 @@ class ConsensusModelTester:
                 result.update(connectivity_result)
             else:
                 result["error_message"] = "MCP client not initialized"
+                return result
 
         except Exception as e:
             result["status"] = "error"
@@ -197,7 +198,7 @@ class ConsensusModelTester:
         Returns:
             Dictionary with connectivity results
         """
-        connectivity_result = {
+        connectivity_result: dict[str, Any] = {
             "connectivity": False,
             "response_received": False,
             "response_content": None,
@@ -219,6 +220,10 @@ class ConsensusModelTester:
             server_name = f"{model.name.lower().replace(' ', '_')}_server"
 
             # Check if we can establish connection
+            if self.mcp_client is None:
+                connectivity_result["error_message"] = "MCP client not initialized"
+                return connectivity_result
+
             connected = await self.mcp_client.connect_server(server_name)
             if connected:
                 connectivity_result["connectivity"] = True
@@ -274,7 +279,7 @@ class ConsensusModelTester:
 
         return alternatives
 
-    async def run_full_test(self, specific_model: str = None) -> dict[str, Any]:
+    async def run_full_test(self, specific_model: str | None = None) -> dict[str, Any]:
         """Run connectivity tests for all consensus models.
 
         Args:
@@ -421,7 +426,7 @@ class ConsensusModelTester:
         print("\n" + "=" * 80)
 
 
-async def main():
+async def main() -> None:
     """Main entry point for the connectivity test."""
     parser = argparse.ArgumentParser(description="Test consensus model connectivity")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")

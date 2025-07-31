@@ -4,7 +4,10 @@ Automatically sets coverage contexts based on test directory structure
 to match codecov.yaml flags for consistency.
 """
 
+import json
 import os
+import time
+from typing import Any
 
 import pytest
 
@@ -75,11 +78,6 @@ def coverage_contexts():
     # At the end of the session, you could log or use the contexts
     print(f"\nCoverage contexts used: {sorted(contexts)}")
 
-
-# Import required modules for fixtures
-import json
-import time
-from typing import Any
 
 # Agent Testing Fixtures
 # These fixtures support comprehensive agent system testing across unit, integration, and security tests.
@@ -194,7 +192,7 @@ def security_test_inputs():
         "\\x00\\x01\\x02\\x03",  # Binary data
         "\\r\\n\\r\\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script
+        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
         "🚀🔥💻",  # Emojis
         "\\ufeff",  # BOM character
         # Empty and whitespace edge cases
@@ -418,7 +416,7 @@ def sample_agent_config(sample_agent_config_model):
     base_config = sample_agent_config_model.model_dump()
 
     # Extract the nested config and merge with top-level fields for BaseAgent compatibility
-    agent_config = {
+    return {
         "agent_id": base_config["agent_id"],
         "name": base_config["name"],
         "description": base_config["description"],
@@ -426,5 +424,3 @@ def sample_agent_config(sample_agent_config_model):
         # Flatten the nested config for BaseAgent compatibility
         **base_config["config"],
     }
-
-    return agent_config

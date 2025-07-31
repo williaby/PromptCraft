@@ -264,7 +264,7 @@ class TestStartupValidation:
         if not success:
             # Log errors for debugging
             for error in errors:
-                print(f"System validation error: {error}")  # noqa: T201
+                print(f"System validation error: {error}")
 
         # At minimum, Python version should be OK since tests are running
         assert success or any("Python" in error for error in errors)

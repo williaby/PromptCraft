@@ -5,6 +5,7 @@ This module provides comprehensive test coverage for the Journey1SmartTemplates 
 testing file content extraction, C.R.E.A.T.E. framework functionality, and UI integration.
 """
 
+import contextlib
 import json
 import tempfile
 from pathlib import Path
@@ -478,7 +479,7 @@ Regular paragraph text continues.
             assert result is None or isinstance(result, str)
         except Exception as e:
             # Expected in test environment without clipboard access
-            assert "clipboard" in str(e).lower() or "not supported" in str(e).lower()
+            assert "clipboard" in str(e).lower() or "not supported" in str(e).lower()  # noqa: PT017
 
     def test_get_supported_formats(self):
         """Test getting supported file formats."""
@@ -532,10 +533,8 @@ Regular paragraph text continues.
         journey = Journey1SmartTemplates()
 
         # Test with None inputs
-        try:
+        with contextlib.suppress(TypeError, AttributeError):
             journey.analyze_content_structure(None)
-        except (TypeError, AttributeError):
-            pass  # Expected behavior
 
         # Test with invalid file paths
         content, file_type = journey.extract_file_content("")
@@ -764,7 +763,8 @@ Regular paragraph text continues.
         """
 
         result = journey.copy_code_blocks(content_with_code)
-        assert "Found" in result and "code blocks" in result
+        assert "Found" in result
+        assert "code blocks" in result
 
     def test_copy_code_blocks_no_code(self):
         """Test copying when no code blocks exist."""
@@ -782,7 +782,8 @@ Regular paragraph text continues.
         test_content = "This is test content\nWith multiple lines\nAnd formatting"
 
         result = journey.copy_as_markdown(test_content)
-        assert "Copied" in result and "characters as markdown" in result
+        assert "Copied" in result
+        assert "characters as markdown" in result
 
     def test_copy_as_markdown_empty(self):
         """Test copying empty content as markdown."""

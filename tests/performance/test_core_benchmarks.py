@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -272,9 +272,7 @@ class TestConcurrencyBenchmarks:
             }
 
             # Calculate total elements
-            total = sum(len(lst) for lst in data["lists"]) + len(data["dicts"]) + len(data["strings"])
-
-            return total
+            return sum(len(lst) for lst in data["lists"]) + len(data["dicts"]) + len(data["strings"])
 
         result = benchmark(allocate_memory)
         assert result > 0

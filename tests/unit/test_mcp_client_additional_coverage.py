@@ -201,9 +201,11 @@ class TestMCPClient:
 
             message = {"type": "test", "data": "hello"}
 
-            with patch("asyncio.get_event_loop", side_effect=Exception("Loop failed")):
-                with pytest.raises(MCPClientError, match="Message send failed"):
-                    await client.send_message("test-server", message)
+            with (
+                patch("asyncio.get_event_loop", side_effect=Exception("Loop failed")),
+                pytest.raises(MCPClientError, match="Message send failed"),
+            ):
+                await client.send_message("test-server", message)
 
     def test_get_connected_servers(self):
         """Test getting list of connected servers."""
@@ -500,11 +502,13 @@ class TestMCPConfigurationManager:
             manager = MCPConfigurationManager()
             manager.configuration = MCPConfigurationBundle(mcpServers={})
 
-            with patch.object(Path, "open", mock_open()) as mock_file:
-                with patch.object(Path, "exists", return_value=False):
-                    result = manager.save_configuration(backup_current=False)
-                    assert result is True
-                    mock_file.assert_called_once()
+            with (
+                patch.object(Path, "open", mock_open()) as mock_file,
+                patch.object(Path, "exists", return_value=False),
+            ):
+                result = manager.save_configuration(backup_current=False)
+                assert result is True
+                mock_file.assert_called_once()
 
     def test_save_configuration_with_backup(self):
         """Test configuration saving with backup."""
@@ -512,11 +516,14 @@ class TestMCPConfigurationManager:
             manager = MCPConfigurationManager()
             manager.configuration = MCPConfigurationBundle(mcpServers={})
 
-            with patch("builtins.open", mock_open()), patch("pathlib.Path.exists", return_value=True):
-                with patch("pathlib.Path.rename") as mock_rename:
-                    result = manager.save_configuration(backup_current=True)
-                    assert result is True
-                    mock_rename.assert_called_once()
+            with (
+                patch("builtins.open", mock_open()),
+                patch("pathlib.Path.exists", return_value=True),
+                patch("pathlib.Path.rename") as mock_rename,
+            ):
+                result = manager.save_configuration(backup_current=True)
+                assert result is True
+                mock_rename.assert_called_once()
 
     def test_save_configuration_no_config(self):
         """Test saving when no configuration is loaded."""
@@ -537,11 +544,13 @@ class TestMCPConfigurationManager:
             manager.configuration = MCPConfigurationBundle(mcpServers={})
 
             # Mock the pathlib Path.open method to raise exception
-            with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
-                with patch.object(manager, "logger") as mock_logger:
-                    result = manager.save_configuration(backup_current=False)
-                    assert result is False
-                    mock_logger.error.assert_called()
+            with (
+                patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")),
+                patch.object(manager, "logger") as mock_logger,
+            ):
+                result = manager.save_configuration(backup_current=False)
+                assert result is False
+                mock_logger.error.assert_called()
 
     def test_get_server_config_success(self):
         """Test getting server configuration."""

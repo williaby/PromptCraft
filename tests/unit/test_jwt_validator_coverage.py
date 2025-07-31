@@ -156,7 +156,7 @@ class TestJWTValidatorCoverage:
         validator = JWTValidator(jwks_client=mock_jwks_client)
 
         # Valid JWT format (3 parts separated by dots)
-        valid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        valid_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"  # noqa: S105
 
         assert validator.validate_token_format(valid_token) is True
 
@@ -168,7 +168,7 @@ class TestJWTValidatorCoverage:
         validator = JWTValidator(jwks_client=mock_jwks_client)
 
         # Invalid - only 2 parts
-        invalid_token = "header.payload"
+        invalid_token = "header.payload"  # noqa: S105
 
         assert validator.validate_token_format(invalid_token) is False
 
@@ -180,6 +180,6 @@ class TestJWTValidatorCoverage:
         validator = JWTValidator(jwks_client=mock_jwks_client)
 
         # Invalid - malformed base64
-        invalid_token = "invalid.invalid.invalid"
+        invalid_token = "invalid.invalid.invalid"  # noqa: S105
 
         assert validator.validate_token_format(invalid_token) is False

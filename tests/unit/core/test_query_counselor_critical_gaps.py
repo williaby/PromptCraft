@@ -14,6 +14,7 @@ Focuses on:
 """
 
 import asyncio
+import contextlib
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -306,7 +307,7 @@ class TestQueryAnalysisAndRouting:
             ("Implement authentication", QueryType.IMPLEMENTATION),
         ]
 
-        for query_text, expected_type in test_cases:
+        for query_text, _expected_type in test_cases:
             intent = await counselor.analyze_intent(query_text)
 
             assert isinstance(intent, QueryIntent)
@@ -325,7 +326,7 @@ class TestQueryAnalysisAndRouting:
             ("What is FastAPI?", QueryType.GENERAL_QUERY),
         ]
 
-        for query, expected_type in test_cases:
+        for query, _expected_type in test_cases:
             intent = await counselor.analyze_intent(query)
             # Just verify we get a valid QueryType, the exact type may vary based on implementation
             assert isinstance(intent.query_type, QueryType)
@@ -448,11 +449,10 @@ class TestQueryProcessingWorkflow:
     @pytest.fixture
     def counselor(self, mock_hyde_processor, mock_vector_store):
         """Create QueryCounselor with mocked dependencies."""
-        counselor = QueryCounselor(hyde_processor=mock_hyde_processor)
+        return QueryCounselor(hyde_processor=mock_hyde_processor)
 
         # The actual implementation has pre-defined agents in _available_agents
         # No need to register additional agents
-        return counselor
 
     async def test_process_query_end_to_end(self, counselor, mock_hyde_processor, mock_vector_store):
         """Test complete query processing workflow."""
@@ -603,8 +603,10 @@ class TestErrorHandlingAndEdgeCases:
 
         # Test that all default agents have valid configurations
         for agent in counselor._available_agents:
-            assert agent.agent_id is not None and len(agent.agent_id) > 0
-            assert agent.agent_type is not None and len(agent.agent_type) > 0
+            assert agent.agent_id is not None
+            assert len(agent.agent_id) > 0
+            assert agent.agent_type is not None
+            assert len(agent.agent_type) > 0
             assert isinstance(agent.capabilities, list)
             assert 0.0 <= agent.load_factor <= 1.0
 
@@ -613,10 +615,8 @@ class TestErrorHandlingAndEdgeCases:
         # Simulate resource-intensive operation
         query = "Complex query requiring cleanup"
 
-        try:
+        with contextlib.suppress(Exception):
             await counselor.process_query(query)
-        except Exception:
-            pass
 
         # Should have proper cleanup (placeholder for actual cleanup verification)
         assert True

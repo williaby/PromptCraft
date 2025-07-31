@@ -677,7 +677,7 @@ class TestHybridRouterIntegration:
         openrouter_state["should_fail"] = True
         mcp_state["should_fail"] = True
 
-        with pytest.raises(Exception):  # Should raise MCPServiceUnavailableError
+        with pytest.raises(Exception, match="Orchestration failed on all services"):
             await router.orchestrate_agents(workflow_steps)
 
         assert router.metrics.failed_routes == 1

@@ -646,9 +646,9 @@ class TestGetConfigurationStatus:
             patch("src.config.health._count_configured_secrets", return_value=0),
             patch("src.config.health._determine_config_source", return_value="defaults"),
             patch("src.config.health.validate_configuration_on_startup", side_effect=RuntimeError("Unexpected error")),
+            pytest.raises(RuntimeError),
         ):
-            with pytest.raises(RuntimeError):
-                get_configuration_status(settings)
+            get_configuration_status(settings)
 
 
 @pytest.mark.unit
@@ -666,17 +666,19 @@ class TestGetConfigurationHealthSummary:
         mock_status.encryption_enabled = True
         mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
-        with patch("src.config.health.get_settings", return_value=mock_settings):
-            with patch("src.config.health.get_configuration_status", return_value=mock_status):
-                summary = get_configuration_health_summary()
+        with (
+            patch("src.config.health.get_settings", return_value=mock_settings),
+            patch("src.config.health.get_configuration_status", return_value=mock_status),
+        ):
+            summary = get_configuration_health_summary()
 
-                assert summary["healthy"] is True
-                assert summary["environment"] == "test"
-                assert summary["version"] == "1.0.0"
-                assert summary["config_loaded"] is True
-                assert summary["encryption_available"] is True
-                assert "timestamp" in summary
-                assert "2024-01-01T12:00:00" in summary["timestamp"]
+            assert summary["healthy"] is True
+            assert summary["environment"] == "test"
+            assert summary["version"] == "1.0.0"
+            assert summary["config_loaded"] is True
+            assert summary["encryption_available"] is True
+            assert "timestamp" in summary
+            assert "2024-01-01T12:00:00" in summary["timestamp"]
 
     def test_get_health_summary_unhealthy(self):
         """Test getting health summary when unhealthy."""
@@ -689,13 +691,15 @@ class TestGetConfigurationHealthSummary:
         mock_status.encryption_enabled = False
         mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
-        with patch("src.config.health.get_settings", return_value=mock_settings):
-            with patch("src.config.health.get_configuration_status", return_value=mock_status):
-                summary = get_configuration_health_summary()
+        with (
+            patch("src.config.health.get_settings", return_value=mock_settings),
+            patch("src.config.health.get_configuration_status", return_value=mock_status),
+        ):
+            summary = get_configuration_health_summary()
 
-                assert summary["healthy"] is False
-                assert summary["config_loaded"] is False
-                assert summary["encryption_available"] is False
+            assert summary["healthy"] is False
+            assert summary["config_loaded"] is False
+            assert summary["encryption_available"] is False
 
     def test_get_health_summary_value_error(self):
         """Test getting health summary with ValueError."""
@@ -752,16 +756,18 @@ class TestGetMCPConfigurationHealth:
         mock_mcp_client.health_check = AsyncMock(return_value=client_health)
         mock_parallel_executor.health_check = AsyncMock(return_value=executor_health)
 
-        with patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager):
-            with patch("src.config.health.MCPClient", return_value=mock_mcp_client):
-                with patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager),
+            patch("src.config.health.MCPClient", return_value=mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is True
-                    assert result["mcp_configuration"] == config_health
-                    assert result["mcp_client"] == client_health
-                    assert result["parallel_executor"] == executor_health
-                    assert "timestamp" in result
+            assert result["healthy"] is True
+            assert result["mcp_configuration"] == config_health
+            assert result["mcp_client"] == client_health
+            assert result["parallel_executor"] == executor_health
+            assert "timestamp" in result
 
     @pytest.mark.asyncio
     async def test_mcp_health_config_invalid(self):
@@ -778,12 +784,14 @@ class TestGetMCPConfigurationHealth:
         mock_mcp_client.health_check = AsyncMock(return_value=client_health)
         mock_parallel_executor.health_check = AsyncMock(return_value=executor_health)
 
-        with patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager):
-            with patch("src.config.health.MCPClient", return_value=mock_mcp_client):
-                with patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager),
+            patch("src.config.health.MCPClient", return_value=mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is False
+            assert result["healthy"] is False
 
     @pytest.mark.asyncio
     async def test_mcp_health_client_unhealthy(self):
@@ -800,12 +808,14 @@ class TestGetMCPConfigurationHealth:
         mock_mcp_client.health_check = AsyncMock(return_value=client_health)
         mock_parallel_executor.health_check = AsyncMock(return_value=executor_health)
 
-        with patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager):
-            with patch("src.config.health.MCPClient", return_value=mock_mcp_client):
-                with patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager),
+            patch("src.config.health.MCPClient", return_value=mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is False
+            assert result["healthy"] is False
 
     @pytest.mark.asyncio
     async def test_mcp_health_executor_unhealthy(self):
@@ -822,24 +832,28 @@ class TestGetMCPConfigurationHealth:
         mock_mcp_client.health_check = AsyncMock(return_value=client_health)
         mock_parallel_executor.health_check = AsyncMock(return_value=executor_health)
 
-        with patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager):
-            with patch("src.config.health.MCPClient", return_value=mock_mcp_client):
-                with patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager),
+            patch("src.config.health.MCPClient", return_value=mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is False
+            assert result["healthy"] is False
 
     @pytest.mark.asyncio
     async def test_mcp_health_import_error(self):
         """Test MCP health check with import error (components not available)."""
-        with patch("src.config.health.MCPClient", None):
-            with patch("src.config.health.MCPConfigurationManager", None):
-                with patch("src.config.health.ParallelSubagentExecutor", None):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPClient", None),
+            patch("src.config.health.MCPConfigurationManager", None),
+            patch("src.config.health.ParallelSubagentExecutor", None),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is False
-                    assert "MCP integration not available" in result["error"]
-                    assert "timestamp" in result
+            assert result["healthy"] is False
+            assert "MCP integration not available" in result["error"]
+            assert "timestamp" in result
 
     @pytest.mark.asyncio
     async def test_mcp_health_runtime_error(self):
@@ -850,18 +864,19 @@ class TestGetMCPConfigurationHealth:
         mock_parallel_executor = Mock()
 
         # First ensure the imports are available (not None)
-        with patch("src.config.health.MCPClient", mock_mcp_client):
-            with patch("src.config.health.ParallelSubagentExecutor", mock_parallel_executor):
-                # Then patch the constructor to raise RuntimeError
-                with patch(
-                    "src.config.health.MCPConfigurationManager",
-                    side_effect=RuntimeError("MCP initialization failed"),
-                ):
-                    result = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPClient", mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", mock_parallel_executor),
+            patch(
+                "src.config.health.MCPConfigurationManager",
+                side_effect=RuntimeError("MCP initialization failed"),
+            ),
+        ):
+            result = await get_mcp_configuration_health()
 
-                    assert result["healthy"] is False
-                    assert "MCP health check failed" in result["error"]
-                    assert "timestamp" in result
+            assert result["healthy"] is False
+            assert "MCP health check failed" in result["error"]
+            assert "timestamp" in result
 
 
 @pytest.mark.unit
@@ -881,18 +896,20 @@ class TestIntegrationScenarios:
         checker = HealthChecker(settings)
 
         # Mock all dependencies as healthy
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=5):
-                with patch("src.config.health._determine_config_source", return_value="env_vars"):
-                    with patch("src.config.health.validate_configuration_on_startup"):
-                        with patch("src.config.health.get_mcp_configuration_health", return_value={"healthy": True}):
-                            result = await checker.check_health()
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=5),
+            patch("src.config.health._determine_config_source", return_value="env_vars"),
+            patch("src.config.health.validate_configuration_on_startup"),
+            patch("src.config.health.get_mcp_configuration_health", return_value={"healthy": True}),
+        ):
+            result = await checker.check_health()
 
-                            assert result["healthy"] is True
-                            assert result["configuration"]["environment"] == "production"
-                            assert result["configuration"]["config_healthy"] is True
-                            assert result["mcp"]["healthy"] is True
-                            assert "timestamp" in result
+            assert result["healthy"] is True
+            assert result["configuration"]["environment"] == "production"
+            assert result["configuration"]["config_healthy"] is True
+            assert result["mcp"]["healthy"] is True
+            assert "timestamp" in result
 
     @pytest.mark.asyncio
     async def test_complete_health_check_workflow_unhealthy(self):
@@ -912,21 +929,23 @@ class TestIntegrationScenarios:
             ["Database connection failed", "Missing API key"],
         )
 
-        with patch("src.config.health.validate_encryption_available", return_value=False):
-            with patch("src.config.health._count_configured_secrets", return_value=0):
-                with patch("src.config.health._determine_config_source", return_value="defaults"):
-                    with patch("src.config.health.validate_configuration_on_startup", side_effect=validation_error):
-                        with patch("src.config.health._sanitize_validation_errors", return_value=["Sanitized errors"]):
-                            with patch(
-                                "src.config.health.get_mcp_configuration_health",
-                                return_value={"healthy": False},
-                            ):
-                                result = await checker.check_health()
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=False),
+            patch("src.config.health._count_configured_secrets", return_value=0),
+            patch("src.config.health._determine_config_source", return_value="defaults"),
+            patch("src.config.health.validate_configuration_on_startup", side_effect=validation_error),
+            patch("src.config.health._sanitize_validation_errors", return_value=["Sanitized errors"]),
+            patch(
+                "src.config.health.get_mcp_configuration_health",
+                return_value={"healthy": False},
+            ),
+        ):
+            result = await checker.check_health()
 
-                                assert result["healthy"] is False
-                                assert result["configuration"]["config_healthy"] is False
-                                assert result["configuration"]["validation_status"] == "failed"
-                                assert result["mcp"]["healthy"] is False
+            assert result["healthy"] is False
+            assert result["configuration"]["config_healthy"] is False
+            assert result["configuration"]["validation_status"] == "failed"
+            assert result["mcp"]["healthy"] is False
 
     def test_configuration_status_model_integration(self):
         """Test integration between configuration status and model serialization."""
@@ -937,28 +956,32 @@ class TestIntegrationScenarios:
         settings.api_host = "staging.example.com"
         settings.api_port = 8080
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health._count_configured_secrets", return_value=2):
-                with patch("src.config.health._determine_config_source", return_value="env_files"):
-                    with patch("src.config.health.validate_configuration_on_startup"):
-                        status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health._count_configured_secrets", return_value=2),
+            patch("src.config.health._determine_config_source", return_value="env_files"),
+            patch("src.config.health.validate_configuration_on_startup"),
+        ):
+            status = get_configuration_status(settings)
 
-                        # Test model properties
-                        assert status.config_healthy is True
-                        assert status.environment == "staging"
-                        assert status.encryption_enabled is True
-                        assert status.secrets_configured == 2
+            # Test model properties
+            assert status.config_healthy is True
+            assert status.environment == "staging"
+            assert status.encryption_enabled is True
+            assert status.secrets_configured == 2
 
-                        # Test serialization
-                        data = status.model_dump()
-                        assert data["config_healthy"] is True
-                        assert "timestamp" in data
+            # Test serialization
+            data = status.model_dump()
+            assert data["config_healthy"] is True
+            assert "timestamp" in data
 
-                        # Test health summary integration
-                        with patch("src.config.health.get_settings", return_value=settings):
-                            with patch("src.config.health.get_configuration_status", return_value=status):
-                                summary = get_configuration_health_summary()
+            # Test health summary integration
+            with (
+                patch("src.config.health.get_settings", return_value=settings),
+                patch("src.config.health.get_configuration_status", return_value=status),
+            ):
+                summary = get_configuration_health_summary()
 
-                                assert summary["healthy"] is True
-                                assert summary["environment"] == "staging"
-                                assert summary["version"] == "1.5.0"
+                assert summary["healthy"] is True
+                assert summary["environment"] == "staging"
+                assert summary["version"] == "1.5.0"

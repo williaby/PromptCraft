@@ -6,15 +6,15 @@ and performance requirements.
 """
 
 import asyncio
-import os
 import sys
 import time
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.core.vector_store import (
     DEFAULT_VECTOR_DIMENSIONS,
@@ -231,7 +231,12 @@ class TestQdrantVectorStoreIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_qdrant_vector_store_mocked_operations(self, qdrant_config, sample_documents, sample_search_params):
+    async def test_qdrant_vector_store_mocked_operations(  # noqa: PLR0915
+        self,
+        qdrant_config,
+        sample_documents,
+        sample_search_params,
+    ):
         """Test Qdrant vector store operations with mocked client."""
 
         # Mock QDRANT_AVAILABLE to ensure QdrantVectorStore can be used
@@ -422,7 +427,8 @@ class TestQdrantVectorStoreIntegration:
         # With 80% error rate, we should expect at least some failures, but due to randomness
         # we'll be more tolerant - either some failures OR success rate should be affected
         # The test mainly ensures error handling works, not exact error rate statistics
-        assert failure_count >= 0 and success_count >= 0  # Just ensure both counters work
+        assert failure_count >= 0
+        assert success_count >= 0
         assert failure_count + success_count == 10  # Ensure all attempts were counted
 
         # Test metrics error counting

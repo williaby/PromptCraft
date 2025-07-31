@@ -322,7 +322,7 @@ class TestEdgeCases:
                 # Mock logging.basicConfig to avoid setup
                 with patch("logging.basicConfig"):
                     # Simulate calling the main block
-                    import src.utils.setup_validator  # noqa: PLC0415
+                    import src.utils.setup_validator
 
                     # Call the main block logic directly
                     success = src.utils.setup_validator.validate_startup_configuration()
@@ -346,7 +346,7 @@ class TestEdgeCases:
                 # Mock logging.basicConfig to avoid setup
                 with patch("logging.basicConfig"):
                     # Simulate calling the main block
-                    import src.utils.setup_validator  # noqa: PLC0415
+                    import src.utils.setup_validator
 
                     # Call the main block logic directly
                     success = src.utils.setup_validator.validate_startup_configuration()

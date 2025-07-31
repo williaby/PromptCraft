@@ -214,9 +214,11 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_connect_httpx_not_available(self, zen_client):
         """Test connection when httpx is not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(MCPConnectionError, match="Connection failed: httpx is not installed"):
-                await zen_client.connect()
+        with (
+            patch("src.mcp_integration.mcp_client.httpx", None),
+            pytest.raises(MCPConnectionError, match="Connection failed: httpx is not installed"),
+        ):
+            await zen_client.connect()
 
     @pytest.mark.asyncio
     async def test_connect_authentication_error(self, zen_client):
@@ -549,9 +551,11 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_get_capabilities_httpx_not_available(self, zen_client):
         """Test get capabilities when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None):
-            with pytest.raises(MCPConnectionError, match="Capabilities query failed: httpx is not installed"):
-                await zen_client.get_capabilities()
+        with (
+            patch("src.mcp_integration.mcp_client.httpx", None),
+            pytest.raises(MCPConnectionError, match="Capabilities query failed: httpx is not installed"),
+        ):
+            await zen_client.get_capabilities()
 
     @pytest.mark.asyncio
     async def test_get_capabilities_not_connected(self, zen_client):

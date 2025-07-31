@@ -121,7 +121,7 @@ class TestConfigDemo:
         mock_settings.version = "1.0.0"
         mock_settings.environment = "prod"
         mock_settings.debug = False
-        mock_settings.api_host = "0.0.0.0"
+        mock_settings.api_host = "0.0.0.0"  # noqa: S104
         mock_settings.api_port = 80
         mock_get_settings.return_value = mock_settings
 
@@ -265,7 +265,7 @@ class TestConfigDemo:
             "🔧 Development mode active - verbose logging enabled",
         ]
 
-        for i, pattern in enumerate(expected_patterns):
+        for _i, pattern in enumerate(expected_patterns):
             matching_log = next((call for call in log_calls if pattern in call), None)
             assert matching_log is not None, f"Expected log pattern not found: {pattern}"
 

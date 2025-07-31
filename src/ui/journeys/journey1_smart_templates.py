@@ -51,7 +51,7 @@ class Journey1SmartTemplates(LoggerMixin):
         self.max_file_size = 10 * 1024 * 1024  # 10MB
         self.max_files = 5
 
-    def extract_file_content(self, file_path: str) -> tuple[str, str]:
+    def extract_file_content(self, file_path: str) -> tuple[str, str]:  # noqa: PLR0911
         """
         Extract content from uploaded file with enhanced processing.
 
@@ -76,7 +76,7 @@ Please provide a valid file path""",
             file_extension = file_path_obj.suffix.lower()
 
             if file_extension in [".txt", ".md"]:
-                with open(file_path, encoding="utf-8", errors="ignore") as f:
+                with file_path_obj.open(encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Clean up common formatting issues
                 content = self._clean_text_content(content)
@@ -107,14 +107,14 @@ Content preview not available - please convert to text format""",
                 )
 
             if file_extension == ".csv":
-                with open(file_path, encoding="utf-8", errors="ignore") as f:
+                with file_path_obj.open(encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Enhanced CSV processing with structure analysis
                 processed_content = self._process_csv_content(content, file_path_obj.name)
                 return processed_content, file_extension
 
             if file_extension == ".json":
-                with open(file_path, encoding="utf-8", errors="ignore") as f:
+                with file_path_obj.open(encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                 # Enhanced JSON processing with structure analysis
                 processed_content = self._process_json_content(content, file_path_obj.name)
@@ -178,10 +178,7 @@ Please check file format and try again""",
         errors = []
 
         for i, file_obj in enumerate(files[: self.max_files]):  # Limit to max files
-            if hasattr(file_obj, "name"):
-                file_path = file_obj.name
-            else:
-                file_path = str(file_obj)
+            file_path = file_obj.name if hasattr(file_obj, "name") else str(file_obj)
 
             try:
                 content, file_type = self.extract_file_content(file_path)
@@ -410,7 +407,7 @@ Tone: Professional yet approachable
 Format: Clear headings, bullet points, specific timelines
 ```"""
 
-        enhanced = f"""# Enhanced Prompt
+        return f"""# Enhanced Prompt
 
 ## Task Context
 You are a professional communication specialist helping to create clear, effective content.
@@ -443,8 +440,6 @@ You are a professional communication specialist helping to create clear, effecti
 ---
 
 *This enhanced prompt incorporates the C.R.E.A.T.E. framework for optimal results.*"""
-
-        return enhanced
 
     def enhance_prompt_from_breakdown(
         self,

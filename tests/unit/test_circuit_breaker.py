@@ -6,7 +6,7 @@ external service failures with configurable thresholds and recovery.
 
 import asyncio
 import threading
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -186,12 +186,12 @@ class TestCircuitBreakerStates:
 
         # First 2 failures should keep circuit closed
         for _i in range(2):
-            with pytest.raises(Exception):
+            with pytest.raises(Exception, match="Service unavailable"):
                 circuit_breaker.call_sync(failing_func)
             assert circuit_breaker.state == CircuitBreakerState.CLOSED
 
         # Third failure should open the circuit
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Service unavailable"):
             circuit_breaker.call_sync(failing_func)
         assert circuit_breaker.state == CircuitBreakerState.OPEN
 
@@ -283,7 +283,7 @@ class TestCircuitBreakerStates:
                 for i in range(10):
 
                     def test_func():
-                        return f"worker_{worker_id}_call_{i}"
+                        return f"worker_{worker_id}_call_{i}"  # noqa: B023
 
                     result = circuit_breaker.call_sync(test_func)
                     results.append(result)
@@ -303,7 +303,7 @@ class TestCircuitBreakerStates:
 
         # Verify results
         assert len(errors) == 0
-        assert len(results) == 50  # 5 workers × 10 calls each
+        assert len(results) == 50  # 5 workers x 10 calls each
 
         metrics = circuit_breaker.metrics
         assert metrics.total_requests == 50
@@ -317,7 +317,7 @@ class TestCircuitBreakerStates:
         def failing_func():
             raise Exception("Failure")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Failure"):
             circuit_breaker.call_sync(failing_func)
 
         # Reset and verify
@@ -398,7 +398,7 @@ class TestCircuitBreakerRetries:
             call_count += 1
             raise Exception(f"Failure {call_count}")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Failure"):
             await circuit_breaker.call_async(always_failing_func)
 
         # Should have tried: initial + 3 retries = 4 total
@@ -596,7 +596,7 @@ class TestCircuitBreakerErrors:
     def test_circuit_breaker_error_creation(self):
         """Test CircuitBreakerError creation."""
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         error = CircuitBreakerError(
             "Test error",
             CircuitBreakerState.OPEN,
@@ -612,7 +612,7 @@ class TestCircuitBreakerErrors:
     def test_circuit_breaker_open_error_creation(self):
         """Test CircuitBreakerOpenError creation."""
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         recovery_time = now + timedelta(seconds=60)
 
         error = CircuitBreakerOpenError(
@@ -670,7 +670,7 @@ class TestCircuitBreakerIntegration:
 
         # Multiple failures should open the circuit
         for _i in range(3):
-            with pytest.raises(Exception):
+            with pytest.raises(Exception, match="Service error"):
                 await circuit_breaker.call_async(simulated_service_call)
 
         assert circuit_breaker.state == CircuitBreakerState.OPEN

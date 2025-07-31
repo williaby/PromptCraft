@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 
@@ -73,7 +73,6 @@ from src.config.settings import (
     validate_encryption_available,
     validate_field_requirements_by_environment,
 )
-from src.config.validation import validate_configuration_on_startup
 from src.utils.encryption import EncryptionError, GPGError
 
 
@@ -88,7 +87,7 @@ class TestApplicationSettings:
         assert settings.version == "0.1.0"
         assert settings.environment == "dev"
         assert settings.debug is True
-        assert settings.api_host == "0.0.0.0"
+        assert settings.api_host == "0.0.0.0"  # noqa: S104
         assert settings.api_port == 8000
         assert settings.mcp_server_url == "http://localhost:3000"
         assert settings.mcp_timeout == 30.0
@@ -251,7 +250,7 @@ class TestConfigurationValidation:
 
     def test_validate_general_security(self):
         """Test general security validation."""
-        settings = ApplicationSettings(environment="dev", api_host="0.0.0.0", api_port=80)
+        settings = ApplicationSettings(environment="dev", api_host="0.0.0.0", api_port=80)  # noqa: S104
 
         errors, suggestions = _validate_general_security(settings)
 
@@ -330,7 +329,7 @@ class TestConfigurationValidation:
         assert len(suggestions) == 3
         assert any("port between 1-65535" in s for s in suggestions)
         assert any("PROMPTCRAFT_ENVIRONMENT" in s for s in suggestions)
-        assert any("0.0.0.0" in s for s in suggestions)
+        assert any("0.0.0.0" in s for s in suggestions)  # noqa: S104
 
 
 class TestEnvironmentDetection:
@@ -352,18 +351,19 @@ class TestEnvironmentDetection:
             env_file = Path(tmp_dir) / ".env"
             env_file.write_text("PROMPTCRAFT_ENVIRONMENT=staging\nOTHER_VAR=value")
 
-            with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
-                with patch.dict(os.environ, {}, clear=True):
-                    env = _detect_environment()
-                    assert env == "staging"
+            with (
+                patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)),
+                patch.dict(os.environ, {}, clear=True),
+            ):
+                env = _detect_environment()
+                assert env == "staging"
 
     def test_detect_environment_default(self):
         """Test environment detection default fallback."""
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("src.config.settings._get_project_root") as mock_root:
-                mock_root.return_value = Path("/nonexistent")
-                env = _detect_environment()
-                assert env == "dev"
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._get_project_root") as mock_root:
+            mock_root.return_value = Path("/nonexistent")
+            env = _detect_environment()
+            assert env == "dev"
 
     def test_get_project_root(self):
         """Test project root detection."""
@@ -448,15 +448,17 @@ PROMPTCRAFT_EMPTY=
             env_specific = Path(tmp_dir) / ".env.dev"
             env_specific.write_text("PROMPTCRAFT_APP_NAME=Dev App\nPROMPTCRAFT_DEBUG=true")
 
-            with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
-                with patch("src.config.settings._detect_environment", return_value="dev"):
-                    with patch("src.config.settings.load_encrypted_env", side_effect=Exception("No encryption")):
-                        env_vars = _env_file_settings()
+            with (
+                patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)),
+                patch("src.config.settings._detect_environment", return_value="dev"),
+                patch("src.config.settings.load_encrypted_env", side_effect=Exception("No encryption")),
+            ):
+                env_vars = _env_file_settings()
 
-                        # Environment-specific should override base
-                        assert env_vars["app_name"] == "Dev App"
-                        assert env_vars["version"] == "1.0.0"  # From base
-                        assert env_vars["debug"] == "true"  # From env-specific
+                # Environment-specific should override base
+                assert env_vars["app_name"] == "Dev App"
+                assert env_vars["version"] == "1.0.0"  # From base
+                assert env_vars["debug"] == "true"  # From env-specific
 
 
 class TestUtilityFunctions:
@@ -544,26 +546,28 @@ class TestSettingsFactory:
         """Test settings loading with validation error."""
         self.setUp()
 
-        with patch("src.config.settings.validate_encryption_available", return_value=False):
-            with patch("src.config.settings.ApplicationSettings") as mock_settings:
-                # Create a mock ValidationError by creating a real validation error
-                # with invalid input to trigger the same code path
-                try:
+        with (
+            patch("src.config.settings.validate_encryption_available", return_value=False),
+            patch("src.config.settings.ApplicationSettings") as mock_settings,
+        ):
+            # Create a mock ValidationError by creating a real validation error
+            # with invalid input to trigger the same code path
+            try:
 
-                    class MockModel(BaseModel):
-                        api_port: int = Field(gt=0, le=65535)
+                class MockModel(BaseModel):
+                    api_port: int = Field(gt=0, le=65535)
 
-                    # This will create a real ValidationError
-                    MockModel(api_port=-1)  # Invalid port to trigger error
-                except ValidationError as e:
-                    mock_settings.side_effect = e
+                # This will create a real ValidationError
+                MockModel(api_port=-1)  # Invalid port to trigger error
+            except ValidationError as e:
+                mock_settings.side_effect = e
 
-                with pytest.raises(ConfigurationValidationError) as exc_info:
-                    get_settings()
+            with pytest.raises(ConfigurationValidationError) as exc_info:
+                get_settings()
 
-                error = exc_info.value
-                assert "Configuration field validation failed" in str(error)
-                assert len(error.field_errors) > 0
+            error = exc_info.value
+            assert "Configuration field validation failed" in str(error)
+            assert len(error.field_errors) > 0
 
         self.tearDown()
 
@@ -705,68 +709,74 @@ class TestConfigurationHealthChecks:
                 api_key=SecretStr("test_api_key"),
             )
 
-            with patch("src.config.health.validate_encryption_available", return_value=True):
-                with patch("src.config.health.validate_configuration_on_startup"):
-                    status = get_configuration_status(settings)
+            with (
+                patch("src.config.health.validate_encryption_available", return_value=True),
+                patch("src.config.health.validate_configuration_on_startup"),
+            ):
+                status = get_configuration_status(settings)
 
-                    assert isinstance(status, ConfigurationStatusModel)
-                    assert status.environment == "dev"
-                    assert status.version == "1.0.0"
-                    assert status.debug is True
-                    assert status.config_loaded is True
-                    assert status.encryption_enabled is True
-                    assert status.validation_status == "passed"
-                    assert status.secrets_configured == 2
-                    assert status.config_healthy is True
+                assert isinstance(status, ConfigurationStatusModel)
+                assert status.environment == "dev"
+                assert status.version == "1.0.0"
+                assert status.debug is True
+                assert status.config_loaded is True
+                assert status.encryption_enabled is True
+                assert status.validation_status == "passed"
+                assert status.secrets_configured == 2
+                assert status.config_healthy is True
 
     def test_get_configuration_status_with_errors(self):
         """Test getting configuration status with validation errors."""
         settings = ApplicationSettings(environment="prod", debug=True)
 
-        with patch("src.config.health.validate_encryption_available", return_value=False):
-            with patch("src.config.health.validate_configuration_on_startup") as mock_validate:
-                mock_validate.side_effect = ConfigurationValidationError(
-                    "Test error",
-                    field_errors=["Debug mode enabled in production"],
-                    suggestions=["Set debug=false"],
-                )
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=False),
+            patch("src.config.health.validate_configuration_on_startup") as mock_validate,
+        ):
+            mock_validate.side_effect = ConfigurationValidationError(
+                "Test error",
+                field_errors=["Debug mode enabled in production"],
+                suggestions=["Set debug=false"],
+            )
 
-                status = get_configuration_status(settings)
+            status = get_configuration_status(settings)
 
-                assert status.validation_status == "failed"
-                assert len(status.validation_errors) > 0
-                assert status.config_healthy is False
+            assert status.validation_status == "failed"
+            assert len(status.validation_errors) > 0
+            assert status.config_healthy is False
 
     def test_get_configuration_health_summary(self):
         """Test getting configuration health summary."""
-        with patch("src.config.health.get_settings") as mock_get_settings:
-            with patch("src.config.health.get_configuration_status") as mock_get_status:
-                mock_settings = ApplicationSettings(environment="dev", version="1.0.0")
-                mock_get_settings.return_value = mock_settings
+        with (
+            patch("src.config.health.get_settings") as mock_get_settings,
+            patch("src.config.health.get_configuration_status") as mock_get_status,
+        ):
+            mock_settings = ApplicationSettings(environment="dev", version="1.0.0")
+            mock_get_settings.return_value = mock_settings
 
-                mock_status = ConfigurationStatusModel(
-                    environment="dev",
-                    version="1.0.0",
-                    debug=True,
-                    config_loaded=True,
-                    encryption_enabled=True,
-                    config_source="env_vars",
-                    validation_status="passed",
-                    validation_errors=[],
-                    secrets_configured=2,
-                    api_host="localhost",
-                    api_port=8000,
-                )
-                mock_get_status.return_value = mock_status
+            mock_status = ConfigurationStatusModel(
+                environment="dev",
+                version="1.0.0",
+                debug=True,
+                config_loaded=True,
+                encryption_enabled=True,
+                config_source="env_vars",
+                validation_status="passed",
+                validation_errors=[],
+                secrets_configured=2,
+                api_host="localhost",
+                api_port=8000,
+            )
+            mock_get_status.return_value = mock_status
 
-                summary = get_configuration_health_summary()
+            summary = get_configuration_health_summary()
 
-                assert summary["healthy"] is True
-                assert summary["environment"] == "dev"
-                assert summary["version"] == "1.0.0"
-                assert summary["config_loaded"] is True
-                assert summary["encryption_available"] is True
-                assert "timestamp" in summary
+            assert summary["healthy"] is True
+            assert summary["environment"] == "dev"
+            assert summary["version"] == "1.0.0"
+            assert summary["config_loaded"] is True
+            assert summary["encryption_available"] is True
+            assert "timestamp" in summary
 
     def test_get_configuration_health_summary_error(self):
         """Test configuration health summary with error."""
@@ -802,31 +812,35 @@ class TestConfigurationHealthChecks:
         mock_parallel_executor = Mock()
         mock_parallel_executor.health_check = AsyncMock(return_value={"status": "healthy"})
 
-        with patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager):
-            with patch("src.config.health.MCPClient", return_value=mock_mcp_client):
-                with patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor):
-                    health = await get_mcp_configuration_health()
+        with (
+            patch("src.config.health.MCPConfigurationManager", return_value=mock_config_manager),
+            patch("src.config.health.MCPClient", return_value=mock_mcp_client),
+            patch("src.config.health.ParallelSubagentExecutor", return_value=mock_parallel_executor),
+        ):
+            health = await get_mcp_configuration_health()
 
-                    assert health["healthy"] is True
-                    assert "mcp_configuration" in health
-                    assert "mcp_client" in health
-                    assert "parallel_executor" in health
-                    assert "timestamp" in health
+            assert health["healthy"] is True
+            assert "mcp_configuration" in health
+            assert "mcp_client" in health
+            assert "parallel_executor" in health
+            assert "timestamp" in health
 
     @pytest.mark.asyncio
     async def test_get_mcp_configuration_health_failure(self):
         """Test MCP configuration health check failure."""
         # Mock all MCP components as available (not None)
-        with patch("src.config.health.MCPConfigurationManager", Mock()) as mock_manager:
-            with patch("src.config.health.MCPClient", Mock()):
-                with patch("src.config.health.ParallelSubagentExecutor", Mock()):
-                    mock_manager.side_effect = Exception("MCP initialization failed")
+        with (
+            patch("src.config.health.MCPConfigurationManager", Mock()) as mock_manager,
+            patch("src.config.health.MCPClient", Mock()),
+            patch("src.config.health.ParallelSubagentExecutor", Mock()),
+        ):
+            mock_manager.side_effect = Exception("MCP initialization failed")
 
-                    health = await get_mcp_configuration_health()
+            health = await get_mcp_configuration_health()
 
-                    assert health["healthy"] is False
-                    assert "MCP health check failed" in health["error"]
-                    assert "timestamp" in health
+            assert health["healthy"] is False
+            assert "MCP health check failed" in health["error"]
+            assert "timestamp" in health
 
 
 class TestPerformanceConfiguration:
@@ -989,38 +1003,40 @@ class TestPerformanceConfiguration:
 
     def test_get_optimization_recommendations(self):
         """Test performance optimization recommendations."""
-        with patch("src.config.performance_config.get_performance_config") as mock_get_config:
-            with patch("src.config.performance_config.get_settings") as mock_get_settings:
-                mock_config = PerformanceConfig()
-                mock_get_config.return_value = mock_config
+        with (
+            patch("src.config.performance_config.get_performance_config") as mock_get_config,
+            patch("src.config.performance_config.get_settings") as mock_get_settings,
+        ):
+            mock_config = PerformanceConfig()
+            mock_get_config.return_value = mock_config
 
-                # Test development recommendations
-                mock_settings = ApplicationSettings(environment="dev")
-                mock_get_settings.return_value = mock_settings
+            # Test development recommendations
+            mock_settings = ApplicationSettings(environment="dev")
+            mock_get_settings.return_value = mock_settings
 
-                recommendations = get_optimization_recommendations()
+            recommendations = get_optimization_recommendations()
 
-                assert "caching" in recommendations
-                assert "monitoring" in recommendations
-                assert "connections" in recommendations
-                assert "response_time" in recommendations
-                assert "batching" in recommendations
-                assert "concurrency" in recommendations
+            assert "caching" in recommendations
+            assert "monitoring" in recommendations
+            assert "connections" in recommendations
+            assert "response_time" in recommendations
+            assert "batching" in recommendations
+            assert "concurrency" in recommendations
 
-                assert "Enable all caches for realistic testing" in recommendations["caching"]
-                assert "Use detailed performance monitoring" in recommendations["monitoring"]
-                assert "Use smaller connection pools" in recommendations["connections"]
+            assert "Enable all caches for realistic testing" in recommendations["caching"]
+            assert "Use detailed performance monitoring" in recommendations["monitoring"]
+            assert "Use smaller connection pools" in recommendations["connections"]
 
-                # Test production recommendations
-                mock_settings = ApplicationSettings(environment="prod")
-                mock_get_settings.return_value = mock_settings
+            # Test production recommendations
+            mock_settings = ApplicationSettings(environment="prod")
+            mock_get_settings.return_value = mock_settings
 
-                recommendations = get_optimization_recommendations()
+            recommendations = get_optimization_recommendations()
 
-                assert "Maximize cache sizes and TTL" in recommendations["caching"]
-                assert "Enable alerts for performance degradation" in recommendations["monitoring"]
-                assert "Use maximum connection pooling" in recommendations["connections"]
-                assert "optimization" in recommendations
+            assert "Maximize cache sizes and TTL" in recommendations["caching"]
+            assert "Enable alerts for performance degradation" in recommendations["monitoring"]
+            assert "Use maximum connection pooling" in recommendations["connections"]
+            assert "optimization" in recommendations
 
     def test_operation_thresholds(self):
         """Test operation thresholds constants."""
@@ -1122,42 +1138,43 @@ PROMPTCRAFT_SECRET_KEY=test_secret_key
             env_file.write_text(env_content)
 
             # Isolate from environment variables
-            with patch.dict(os.environ, {}, clear=True):
-                # Mock project root to use temp directory
-                with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
-                    with patch("src.config.settings.validate_environment_keys"):
-                        # Clear global settings completely
-                        # Reset all cached settings
-                        src.config.settings._settings = None
-                        if hasattr(src.config.settings, "_cached_settings"):
-                            src.config.settings._cached_settings = None
+            with (
+                patch.dict(os.environ, {}, clear=True),
+                patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)),
+                patch("src.config.settings.validate_environment_keys"),
+            ):
+                # Clear global settings completely
+                # Reset all cached settings
+                src.config.settings._settings = None
+                if hasattr(src.config.settings, "_cached_settings"):
+                    src.config.settings._cached_settings = None
 
-                        # Force reload from the temporary directory
-                        settings = src.config.settings.ApplicationSettings(
-                            _env_file=env_file,
-                            _env_file_encoding="utf-8",
-                        )
+                # Force reload from the temporary directory
+                settings = src.config.settings.ApplicationSettings(
+                    _env_file=env_file,
+                    _env_file_encoding="utf-8",
+                )
 
-                        assert settings.app_name == "Integration Test App"
-                        assert settings.version == "1.0.0"
-                        assert settings.environment == "dev"
-                        assert settings.debug is True
-                    assert settings.api_host == "localhost"
-                    assert settings.api_port == 8000
-                    assert settings.secret_key.get_secret_value() == "test_secret_key"
+                assert settings.app_name == "Integration Test App"
+                assert settings.version == "1.0.0"
+                assert settings.environment == "dev"
+                assert settings.debug is True
+                assert settings.api_host == "localhost"
+                assert settings.api_port == 8000
+                assert settings.secret_key.get_secret_value() == "test_secret_key"
 
-                    # Test health check
-                    status = get_configuration_status(settings)
-                    assert status.config_healthy is True
-                    assert status.environment == "dev"
-                    assert status.version == "1.0.0"
+                # Test health check
+                status = get_configuration_status(settings)
+                assert status.config_healthy is True
+                assert status.environment == "dev"
+                assert status.version == "1.0.0"
 
-                    # Test performance config
-                    perf_config = get_performance_config()
-                    assert perf_config.max_response_time_ms == 3000  # Dev setting
+                # Test performance config
+                perf_config = get_performance_config()
+                assert perf_config.max_response_time_ms == 3000  # Dev setting
 
-                    # Clean up
-                    src.config.settings._settings = None
+                # Clean up
+                src.config.settings._settings = None
 
     def test_configuration_with_validation_errors(self):
         """Test configuration with validation errors."""
@@ -1175,31 +1192,33 @@ PROMPTCRAFT_API_PORT=70000
             env_file.write_text(env_content)
 
             # Isolate from environment variables
-            with patch.dict(os.environ, {}, clear=True):
-                with patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)):
-                    with patch("src.config.settings.validate_environment_keys"):
-                        # Clear global settings
-                        src.config.settings._settings = None
+            with (
+                patch.dict(os.environ, {}, clear=True),
+                patch("src.config.settings._get_project_root", return_value=Path(tmp_dir)),
+                patch("src.config.settings.validate_environment_keys"),
+            ):
+                # Clear global settings
+                src.config.settings._settings = None
 
-                        with pytest.raises((ConfigurationValidationError, ValidationError)) as exc_info:
-                            # Create settings directly from the env file to force validation
-                            settings = src.config.settings.ApplicationSettings(
-                                _env_file=env_file,
-                                _env_file_encoding="utf-8",
-                            )
-                            # Force validation
-                            validate_configuration_on_startup(settings)
+                with pytest.raises((ConfigurationValidationError, ValidationError)) as exc_info:
+                    # Create settings directly from the env file to force validation
+                    validate_configuration_on_startup(
+                        src.config.settings.ApplicationSettings(
+                            _env_file=env_file,
+                            _env_file_encoding="utf-8",
+                        ),
+                    )
 
-                        error = exc_info.value
-                        if isinstance(error, ConfigurationValidationError):
-                            assert len(error.field_errors) > 0
-                            assert len(error.suggestions) > 0
-                        else:
-                            # Pydantic ValidationError
-                            assert len(error.errors()) > 0
+                error = exc_info.value
+                if isinstance(error, ConfigurationValidationError):
+                    assert len(error.field_errors) > 0
+                    assert len(error.suggestions) > 0
+                else:
+                    # Pydantic ValidationError
+                    assert len(error.errors()) > 0
 
-                    # Clean up
-                    src.config.settings._settings = None
+                # Clean up
+                src.config.settings._settings = None
 
     def test_configuration_health_check_integration(self):
         """Test configuration health check integration."""
@@ -1208,29 +1227,31 @@ PROMPTCRAFT_API_PORT=70000
             version="1.0.0",
             debug=False,
             secret_key=SecretStr("staging_secret"),
-            api_host="0.0.0.0",
+            api_host="0.0.0.0",  # noqa: S104
             api_port=8000,
         )
 
-        with patch("src.config.health.validate_encryption_available", return_value=True):
-            with patch("src.config.health.validate_configuration_on_startup"):
-                status = get_configuration_status(settings)
+        with (
+            patch("src.config.health.validate_encryption_available", return_value=True),
+            patch("src.config.health.validate_configuration_on_startup"),
+        ):
+            status = get_configuration_status(settings)
 
-                assert status.config_healthy is True
-                assert status.environment == "staging"
-                assert status.secrets_configured >= 1
-                assert status.encryption_enabled is True
-                assert status.validation_status == "passed"
+            assert status.config_healthy is True
+            assert status.environment == "staging"
+            assert status.secrets_configured >= 1
+            assert status.encryption_enabled is True
+            assert status.validation_status == "passed"
 
-                # Test health summary
-                with patch("src.config.health.get_settings", return_value=settings):
-                    summary = get_configuration_health_summary()
+            # Test health summary
+            with patch("src.config.health.get_settings", return_value=settings):
+                summary = get_configuration_health_summary()
 
-                    assert summary["healthy"] is True
-                    assert summary["environment"] == "staging"
-                    assert summary["version"] == "1.0.0"
-                    assert summary["config_loaded"] is True
-                    assert summary["encryption_available"] is True
+                assert summary["healthy"] is True
+                assert summary["environment"] == "staging"
+                assert summary["version"] == "1.0.0"
+                assert summary["config_loaded"] is True
+                assert summary["encryption_available"] is True
 
     def test_performance_config_integration(self):
         """Test performance configuration integration."""

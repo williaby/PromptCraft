@@ -359,7 +359,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "cf.jwt.token"
+        assert token == "cf.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_authorization_header(self):
         """Test JWT token extraction from Authorization header."""
@@ -378,7 +378,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "auth.jwt.token"
+        assert token == "auth.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_custom_header(self):
         """Test JWT token extraction from custom header."""
@@ -397,7 +397,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "custom.jwt.token"
+        assert token == "custom.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_priority_order(self):
         """Test token extraction priority: Cloudflare > Authorization > Custom."""
@@ -423,7 +423,7 @@ class TestAuthenticationMiddleware:
         token = middleware._extract_jwt_token(request)
 
         # Should prioritize Cloudflare header
-        assert token == "cf.jwt.token"
+        assert token == "cf.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_invalid_authorization_format(self):
         """Test token extraction with invalid Authorization header format."""
@@ -630,7 +630,7 @@ class TestCreateRateLimiter:
     def test_rate_limit_key_func_unknown_strategy(self):
         """Test that unknown strategy is rejected by validation."""
         # This should raise a validation error due to Pydantic validation
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(Exception, match="ValidationError|validation"):  # Pydantic ValidationError
             AuthenticationConfig(
                 cloudflare_access_enabled=True,
                 cloudflare_team_domain="test",
@@ -975,4 +975,4 @@ class TestIntegrationScenarios:
         token = middleware._extract_jwt_token(request)
 
         # Should prioritize Cloudflare header
-        assert token == "cf.token"
+        assert token == "cf.token"  # noqa: S105

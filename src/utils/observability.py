@@ -334,14 +334,14 @@ def get_metrics_collector() -> "AgentMetrics":
     return _metrics_collector
 
 
-def trace_agent_operation(operation_name: str) -> Callable:  # noqa: PLR0915
+def trace_agent_operation(operation_name: str) -> Callable:
     """Decorator for tracing agent operations.
 
     Args:
         operation_name: Name of the operation to trace
     """
 
-    def decorator(func: Callable) -> Callable:  # noqa: PLR0915
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             instrumentor = get_instrumentor()

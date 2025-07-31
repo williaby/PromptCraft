@@ -264,7 +264,10 @@ class TestAuthenticationConfigMethods:
         """Test get_jwks_url raises error when no configuration provided."""
         config = AuthenticationConfig(cloudflare_team_domain="", cloudflare_jwks_url="")
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(
+            ValueError,
+            match="Either cloudflare_jwks_url or cloudflare_team_domain must be configured",
+        ) as exc_info:
             config.get_jwks_url()
 
         assert "Either cloudflare_jwks_url or cloudflare_team_domain must be configured" in str(exc_info.value)
