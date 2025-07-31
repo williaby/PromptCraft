@@ -201,7 +201,7 @@ app = create_app()
 
 @app.get("/health", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def health_check(_request: Request) -> dict[str, Any]:
+async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     """Simple health check endpoint for basic monitoring.
 
     This endpoint provides a quick health status without detailed
@@ -256,7 +256,7 @@ async def health_check(_request: Request) -> dict[str, Any]:
 
 @app.get("/health/config", response_model=ConfigurationStatusModel)
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def configuration_health(_request: Request) -> ConfigurationStatusModel:
+async def configuration_health(request: Request) -> ConfigurationStatusModel:  # noqa: ARG001
     """Detailed configuration health check endpoint.
 
     This endpoint provides comprehensive configuration status information
@@ -310,7 +310,7 @@ async def configuration_health(_request: Request) -> ConfigurationStatusModel:
 
 @app.get("/health/mcp", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def mcp_health_check(_request: Request) -> dict[str, Any]:
+async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     """MCP configuration and parallel execution health check endpoint.
 
     This endpoint provides health status for MCP server configuration,
@@ -369,7 +369,7 @@ async def mcp_health_check(_request: Request) -> dict[str, Any]:
 
 @app.get("/health/circuit-breakers", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def circuit_breaker_health_check(_request: Request) -> dict[str, Any]:
+async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     """Circuit breaker health check endpoint.
 
     This endpoint provides detailed status information for all registered
@@ -428,7 +428,7 @@ async def circuit_breaker_health_check(_request: Request) -> dict[str, Any]:
 
 @app.get("/")
 @rate_limit(RateLimits.PUBLIC_READ)
-async def root(_request: Request) -> dict[str, str]:
+async def root(request: Request) -> dict[str, str]:  # noqa: ARG001
     """Root endpoint providing basic application information.
 
     Returns:
@@ -455,7 +455,7 @@ async def root(_request: Request) -> dict[str, str]:
 
 @app.get("/ping")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def ping(_request: Request) -> dict[str, str]:
+async def ping(request: Request) -> dict[str, str]:  # noqa: ARG001
     """Simple ping endpoint for load balancer checks.
 
     Returns:
@@ -497,7 +497,7 @@ async def validate_input(request: Request, data: SecureTextInput) -> dict[str, A
 
 @app.get("/api/v1/search")
 @rate_limit(RateLimits.API_DEFAULT)
-async def search_endpoint(_request: Request, params: SecureQueryParams = Depends()) -> dict[str, Any]:
+async def search_endpoint(request: Request, params: SecureQueryParams = Depends()) -> dict[str, Any]:  # noqa: ARG001
     """Test endpoint for query parameter validation.
 
     This endpoint demonstrates secure query parameter handling
