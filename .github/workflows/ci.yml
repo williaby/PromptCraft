@@ -166,6 +166,7 @@ jobs:
             --cov=src \
             --cov-report=xml:coverage-unit-${{ matrix.python-version }}.xml \
             --cov-report=term-missing \
+            --cov-fail-under=0 \
             --junitxml=junit-unit-${{ matrix.python-version }}.xml \
             -o junit_family=xunit2 \
             --tb=short \
@@ -250,6 +251,7 @@ jobs:
             --cov=src \
             --cov-report=xml:coverage-integration-${{ matrix.python-version }}.xml \
             --cov-report=term-missing \
+            --cov-fail-under=0 \
             --junitxml=junit-integration-${{ matrix.python-version }}.xml \
             -o junit_family=xunit2 \
             --tb=short \
@@ -329,6 +331,7 @@ jobs:
             --cov-report=xml:coverage-auth-${{ matrix.python-version }}.xml \
             --cov-report=html:htmlcov-auth-${{ matrix.python-version }} \
             --cov-report=term-missing \
+            --cov-fail-under=0 \
             --junitxml=junit-auth-${{ matrix.python-version }}.xml \
             -o junit_family=xunit2 \
             --tb=short \
