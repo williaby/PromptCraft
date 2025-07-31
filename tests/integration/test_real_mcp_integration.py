@@ -391,7 +391,6 @@ class TestRealMCPIntegration:
             assert isinstance(counselor.mcp_client, MockMCPClient)
 
             # MockMCPClient doesn't need connection
-            # await counselor.mcp_client.connect()
 
             # Test query processing
             query = "Create a secure authentication system"

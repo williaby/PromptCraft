@@ -5,6 +5,7 @@ This test file ensures that jwt_validator.py gets proper coverage measurement.
 
 from unittest.mock import Mock
 
+import jwt
 import pytest
 
 from src.auth.jwks_client import JWKSClient
@@ -155,9 +156,10 @@ class TestJWTValidatorCoverage:
         mock_jwks_client = Mock(spec=JWKSClient)
         validator = JWTValidator(jwks_client=mock_jwks_client)
 
-        # Valid JWT format (3 parts separated by dots) - Synthetic test token for format validation
-        # This is a test-only JWT with fake/test data - NOT a real secret
-        valid_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0ZXN0IjoidGVzdCIsImV4cCI6OTk5OTk5OTk5OX0.test_signature_not_real"  # noqa: S105
+        # Generate a valid JWT token dynamically for format validation
+        # This eliminates GitGuardian false positives from static JWT patterns
+        test_payload = {"test": "test", "exp": 9999999999}
+        valid_token = jwt.encode(test_payload, "fake-secret-for-testing", algorithm="HS256")
 
         assert validator.validate_token_format(valid_token) is True
 
