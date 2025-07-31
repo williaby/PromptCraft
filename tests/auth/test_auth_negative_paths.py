@@ -68,10 +68,12 @@ class TestAuthenticationNegativePaths:
             "e": "AQAB",
         }
 
-        # Token with tampered signature
-        tampered_token = (
-            "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20ifQ.tampered_signature"
-        )
+        # Create token with tampered signature using dynamic generation
+        test_payload = {"email": "test@example.com", "typ": "JWT", "alg": "RS256"}
+        valid_token = jwt.encode(test_payload, "fake-secret-for-testing", algorithm="HS256")
+        # Manually tamper with signature part to simulate tampering
+        parts = valid_token.split(".")
+        tampered_token = f"{parts[0]}.{parts[1]}.tampered_signature"
 
         with (
             patch("jwt.get_unverified_header") as mock_header,
