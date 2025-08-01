@@ -283,6 +283,58 @@ class ApplicationSettings(BaseSettings):
         description="Complete database connection URL (sensitive - never logged)",
     )
 
+    # PostgreSQL Database Configuration for AUTH-1
+    db_host: str = Field(
+        default="192.168.1.16",
+        description="PostgreSQL database host address",
+    )
+
+    db_port: int = Field(
+        default=5435,
+        description="PostgreSQL database port number",
+    )
+
+    db_name: str = Field(
+        default="promptcraft_auth",
+        description="PostgreSQL database name",
+    )
+
+    db_user: str = Field(
+        default="promptcraft_user",
+        description="PostgreSQL database user",
+    )
+
+    db_password: SecretStr | None = Field(
+        default=None,
+        description="PostgreSQL database password (sensitive - never logged)",
+    )
+
+    # Database Connection Pool Configuration
+    db_pool_size: int = Field(
+        default=5,
+        description="Database connection pool size",
+    )
+
+    db_pool_max_overflow: int = Field(
+        default=10,
+        description="Maximum overflow connections beyond pool size",
+    )
+
+    db_pool_timeout: float = Field(
+        default=30.0,
+        description="Database connection pool timeout in seconds",
+    )
+
+    db_pool_recycle: int = Field(
+        default=3600,
+        description="Database connection recycle time in seconds",
+    )
+
+    db_echo: bool = Field(
+        default=False,
+        description="Whether to echo SQL queries for debugging",
+    )
+
     # API Keys and Secrets (sensitive values)
     api_key: SecretStr | None = Field(
         default=None,

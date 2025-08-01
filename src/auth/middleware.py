@@ -8,6 +8,7 @@ This module provides FastAPI middleware for JWT-based authentication with:
 """
 
 import logging
+import time
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -16,7 +17,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from sqlalchemy import func, select, update
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.database import DatabaseError, get_database_manager
+from src.database.models import AuthenticationEvent, UserSession
 
 from .config import AuthenticationConfig
 from .jwks_client import JWKSClient
@@ -35,6 +40,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         config: AuthenticationConfig,
         jwt_validator: JWTValidator,
         excluded_paths: list[str] | None = None,
+        database_enabled: bool = True,
     ) -> None:
         """Initialize authentication middleware.
 
@@ -43,10 +49,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             config: Authentication configuration
             jwt_validator: JWT validator instance
             excluded_paths: List of paths to exclude from authentication
+            database_enabled: Whether database integration is enabled
         """
         super().__init__(app)
         self.config = config
         self.jwt_validator = jwt_validator
+        self.database_enabled = database_enabled
         self.excluded_paths = excluded_paths or [
             "/health",
             "/metrics",
@@ -65,6 +73,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         Returns:
             HTTP response
         """
+        start_time = time.time()
+
         # Skip authentication for excluded paths
         if self._is_excluded_path(request.url.path):
             return await call_next(request)
@@ -76,7 +86,15 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         try:
             # Extract and validate JWT token
+            jwt_start = time.time()
             authenticated_user = await self._authenticate_request(request)
+            jwt_time = (time.time() - jwt_start) * 1000  # Convert to milliseconds
+
+            # Database session tracking (if enabled)
+            db_start = time.time()
+            if self.database_enabled:
+                await self._update_user_session(authenticated_user, request)
+            db_time = (time.time() - db_start) * 1000  # Convert to milliseconds
 
             # Inject user context into request state
             request.state.authenticated_user = authenticated_user
@@ -87,6 +105,18 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             if self.config.auth_logging_enabled:
                 logger.info(f"Authenticated user: {authenticated_user.email} with role: {authenticated_user.role}")
 
+            # Database event logging (if enabled)
+            if self.database_enabled:
+                total_time = (time.time() - start_time) * 1000
+                await self._log_authentication_event(
+                    authenticated_user,
+                    request,
+                    True,
+                    jwt_time,
+                    db_time,
+                    total_time,
+                )
+
             # Proceed to next middleware/endpoint
             return await call_next(request)
 
@@ -95,12 +125,38 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             if self.config.auth_logging_enabled:
                 logger.warning(f"Authentication failed: {e.message}")
 
+            # Database event logging for failures (if enabled)
+            if self.database_enabled:
+                total_time = (time.time() - start_time) * 1000
+                await self._log_authentication_event(
+                    None,
+                    request,
+                    False,
+                    0,
+                    0,
+                    total_time,
+                    str(e),
+                )
+
             # Return 401 response
             return self._create_auth_error_response(e)
 
         except Exception as e:
             # Log unexpected errors
             logger.error(f"Unexpected error in authentication middleware: {e}")
+
+            # Database event logging for errors (if enabled)
+            if self.database_enabled:
+                total_time = (time.time() - start_time) * 1000
+                await self._log_authentication_event(
+                    None,
+                    request,
+                    False,
+                    0,
+                    0,
+                    total_time,
+                    str(e),
+                )
 
             # Return 500 response for unexpected errors
             return JSONResponse(
@@ -206,6 +262,169 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             content=content,
         )
 
+    async def _update_user_session(self, authenticated_user: AuthenticatedUser, request: Request) -> None:
+        """Update user session in database with graceful degradation.
+
+        Args:
+            authenticated_user: Authenticated user information
+            request: HTTP request for context
+        """
+        if not self.database_enabled:
+            return
+
+        try:
+            db_manager = await get_database_manager()
+            async with db_manager.get_session() as session:
+
+                # Extract Cloudflare subject from JWT claims
+                cloudflare_sub = authenticated_user.jwt_claims.get("sub", "unknown")
+
+                # Try to find existing session
+                stmt = select(UserSession).where(UserSession.email == authenticated_user.email)
+                result = await session.execute(stmt)
+                existing_session = result.scalar_one_or_none()
+
+                if existing_session:
+                    # Update existing session
+                    update_stmt = (
+                        update(UserSession)
+                        .where(
+                            UserSession.email == authenticated_user.email,
+                        )
+                        .values(
+                            session_count=UserSession.session_count + 1,
+                            last_seen=func.now(),
+                            cloudflare_sub=cloudflare_sub,
+                        )
+                    )
+                    await session.execute(update_stmt)
+                else:
+                    # Create new session
+                    new_session = UserSession(
+                        email=authenticated_user.email,
+                        cloudflare_sub=cloudflare_sub,
+                        session_count=1,
+                        preferences={},
+                        user_metadata={},
+                    )
+                    session.add(new_session)
+
+                await session.commit()
+
+        except DatabaseError as e:
+            # Log database errors but don't fail authentication
+            logger.warning(f"Database session update failed (graceful degradation): {e}")
+        except Exception as e:
+            # Log unexpected errors but don't fail authentication
+            logger.warning(f"Unexpected error updating session (graceful degradation): {e}")
+
+    async def _log_authentication_event(
+        self,
+        authenticated_user: AuthenticatedUser | None,
+        request: Request,
+        success: bool,
+        jwt_time_ms: float,
+        db_time_ms: float,
+        total_time_ms: float,
+        error_message: str | None = None,
+    ) -> None:
+        """Log authentication event to database with graceful degradation.
+
+        Args:
+            authenticated_user: Authenticated user (None for failures)
+            request: HTTP request for context
+            success: Whether authentication was successful
+            jwt_time_ms: JWT validation time in milliseconds
+            db_time_ms: Database operation time in milliseconds
+            total_time_ms: Total processing time in milliseconds
+            error_message: Error message for failed attempts
+        """
+        if not self.database_enabled:
+            return
+
+        try:
+            db_manager = await get_database_manager()
+
+            async with db_manager.get_session() as session:
+
+                # Extract request information
+                user_email = authenticated_user.email if authenticated_user else "unknown"
+                ip_address = self._get_client_ip(request)
+                user_agent = request.headers.get("User-Agent")
+                cloudflare_ray_id = request.headers.get("CF-Ray")
+
+                # Determine event type
+                event_type = "login" if success else "failed_login"
+
+                # Build performance metrics
+                performance_metrics = {
+                    "jwt_validation_ms": round(jwt_time_ms, 2),
+                    "database_operation_ms": round(db_time_ms, 2),
+                    "total_processing_ms": round(total_time_ms, 2),
+                    "timestamp": time.time(),
+                }
+
+                # Build error details if applicable
+                error_details = None
+                if not success and error_message:
+                    error_details = {
+                        "error_message": error_message,
+                        "request_path": str(request.url.path),
+                        "request_method": request.method,
+                    }
+
+                # Create authentication event
+                auth_event = AuthenticationEvent(
+                    user_email=user_email,
+                    event_type=event_type,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    cloudflare_ray_id=cloudflare_ray_id,
+                    success=success,
+                    error_details=error_details,
+                    performance_metrics=performance_metrics,
+                )
+
+                session.add(auth_event)
+                await session.commit()
+
+        except DatabaseError as e:
+            # Log database errors but don't fail authentication
+            logger.warning(f"Database event logging failed (graceful degradation): {e}")
+        except Exception as e:
+            # Log unexpected errors but don't fail authentication
+            logger.warning(f"Unexpected error logging event (graceful degradation): {e}")
+
+    def _get_client_ip(self, request: Request) -> str | None:
+        """Extract client IP address from request headers.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            Client IP address or None if not available
+        """
+        # Check Cloudflare headers first
+        cf_connecting_ip = request.headers.get("CF-Connecting-IP")
+        if cf_connecting_ip:
+            return cf_connecting_ip
+
+        # Check standard forwarded headers
+        x_forwarded_for = request.headers.get("X-Forwarded-For")
+        if x_forwarded_for:
+            # Take the first IP in the chain
+            return x_forwarded_for.split(",")[0].strip()
+
+        x_real_ip = request.headers.get("X-Real-IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Fallback to client host
+        if hasattr(request, "client") and request.client:
+            return request.client.host
+
+        return None
+
 
 def create_rate_limiter(config: AuthenticationConfig) -> Limiter:
     """Create rate limiter for authentication endpoints.
@@ -245,12 +464,14 @@ def create_rate_limiter(config: AuthenticationConfig) -> Limiter:
 def setup_authentication(
     app: FastAPI,
     config: AuthenticationConfig,
+    database_enabled: bool = True,
 ) -> tuple[AuthenticationMiddleware, Limiter]:
     """Setup authentication middleware and rate limiting for FastAPI app.
 
     Args:
         app: FastAPI application instance
         config: Authentication configuration
+        database_enabled: Whether database integration is enabled
 
     Returns:
         Tuple of (AuthenticationMiddleware, Limiter) instances
@@ -276,6 +497,7 @@ def setup_authentication(
         app=app,
         config=config,
         jwt_validator=jwt_validator,
+        database_enabled=database_enabled,
     )
 
     # Create rate limiter

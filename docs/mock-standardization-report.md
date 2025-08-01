@@ -10,7 +10,8 @@ This report documents the findings and fixes for cross-cutting mock issues acros
 
 - **File**: `src/core/create_processor_core.py`
 - **Issue**: Regex pattern in `_extract_context()` was capturing articles ("a") in role extraction
-- **Test Failure**: `test_extract_context_role_patterns` expected "senior marketing analyst" but got "a senior marketing analyst"
+- **Test Failure**: `test_extract_context_role_patterns` expected "senior marketing analyst" but got
+  "a senior marketing analyst"
 - **Fix**: Updated regex patterns to handle articles correctly:
 
   ```python
@@ -49,15 +50,18 @@ This report documents the findings and fixes for cross-cutting mock issues acros
 
 ### Key Findings
 
-1. **Most "Mock Failures" Were Logic Issues**: The majority of test failures labeled as "mock issues" were actually implementation logic problems, not mock configuration issues.
+1. **Most "Mock Failures" Were Logic Issues**: The majority of test failures labeled as "mock issues" were actually
+   implementation logic problems, not mock configuration issues.
 
-2. **Existing Mock Patterns Are Working Well**: Analysis of auth, agents, and other modules showed consistent, working mock patterns:
+2. **Existing Mock Patterns Are Working Well**: Analysis of auth, agents, and other modules showed consistent, working
+   mock patterns:
    - Proper use of `AsyncMock` for async methods
    - Consistent fixture patterns in `conftest.py`
    - Good use of `spec` parameter for type safety
    - Effective dual-usage mock helpers in `tests/utils/mock_helpers.py`
 
-3. **Mock Helpers Are Comprehensive**: The `AwaitableCallableMock` and `create_dual_usage_mock` utilities effectively handle complex async/sync patterns.
+3. **Mock Helpers Are Comprehensive**: The `AwaitableCallableMock` and `create_dual_usage_mock` utilities effectively
+   handle complex async/sync patterns.
 
 ## Mock Pattern Standardization Recommendations
 
@@ -130,11 +134,14 @@ assert mock_method.call_count == expected_count
 
 ## Conclusion
 
-The investigation revealed that the reported "16 mock failures" were primarily logic and implementation issues rather than mock configuration problems. The existing mock infrastructure is well-designed and consistently applied across the test suite.
+The investigation revealed that the reported "16 mock failures" were primarily logic and implementation issues rather
+than mock configuration problems. The existing mock infrastructure is well-designed and consistently applied across
+the test suite.
 
 **Total Issues Fixed**: 2 logic issues
 **Mock Configuration Issues**: 0 (none found)
 **Test Modules Validated**: 7+ modules with 100% pass rate
 **Mock Pattern Consistency**: High across all examined modules
 
-The test suite demonstrates excellent mock standardization with comprehensive fixtures, proper async/sync handling, and effective helper utilities.
+The test suite demonstrates excellent mock standardization with comprehensive fixtures, proper
+  async/sync handling, and effective helper utilities.

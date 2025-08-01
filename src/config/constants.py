@@ -9,6 +9,7 @@ to maintain consistency and reduce maintenance burden.
 SECRET_FIELD_NAMES = [
     "database_password",
     "database_url",
+    "db_password",
     "api_key",
     "secret_key",
     "azure_openai_api_key",

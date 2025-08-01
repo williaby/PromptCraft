@@ -217,7 +217,7 @@ secret_key: SecretStr = Field(default=None)
 poetry run python examples/config_demo.py
 ```
 
-2. **Check Health Endpoints**
+1. **Check Health Endpoints**
 
 ```bash
 # Start the application
@@ -227,7 +227,7 @@ poetry run python src/main.py
 curl http://localhost:8000/health
 ```
 
-3. **Validate Environment Detection**
+1. **Validate Environment Detection**
 
 ```bash
 # Test different environments

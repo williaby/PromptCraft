@@ -1,10 +1,13 @@
 # Vector Store Integration Guide
 
-This guide provides comprehensive documentation for the vector store integration system in PromptCraft-Hybrid, including abstract interfaces, mock implementations, and real Qdrant integration.
+This guide provides comprehensive documentation for the vector store integration system in PromptCraft-Hybrid, including
+abstract interfaces, mock implementations, and real Qdrant integration.
 
 ## Overview
 
-The vector store system provides a pluggable architecture that enables seamless switching between mock and real vector database implementations. This design supports development with mock data while preparing for production Qdrant integration at 192.168.1.16:6333.
+The vector store system provides a pluggable architecture that enables seamless switching between mock and real vector
+database implementations. This design supports development with mock data while preparing for production Qdrant
+integration at 192.168.1.16:6333.
 
 ## Architecture
 
