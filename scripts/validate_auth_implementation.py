@@ -478,7 +478,9 @@ class AcceptanceCriteriaValidator:
                 return {
                     "passed": True,
                     "description": "Comprehensive testing coverage",
-                    "details": f"Performance tests: {len(perf_test_coverage)}, Integration tests: {len(int_test_coverage)}",
+                    "details": (
+                        f"Performance tests: {len(perf_test_coverage)}, Integration tests: {len(int_test_coverage)}"
+                    ),
                 }
             return {
                 "passed": False,

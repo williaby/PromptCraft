@@ -59,8 +59,8 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
         return request
 
     @pytest.fixture
-    def mock_database_manager(self):
-        """Mock database manager for testing."""
+    def mock_database_manager_and_session(self):
+        """Mock database manager and session for testing."""
         manager = AsyncMock()
         session = AsyncMock()
 
@@ -115,7 +115,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
             jwt_claims={"sub": "test-sub-123", "email": "test@example.com"},
         )
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             await middleware._update_user_session(authenticated_user, mock_request)
@@ -220,7 +220,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
             jwt_claims={"sub": "test-sub", "email": "test@example.com"},
         )
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             await middleware._log_authentication_event(
@@ -247,7 +247,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
             database_enabled=True,
         )
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             await middleware._log_authentication_event(
@@ -419,7 +419,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             response = await middleware.dispatch(mock_request, mock_call_next)
@@ -453,7 +453,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             response = await middleware.dispatch(mock_request, mock_call_next)
@@ -478,7 +478,7 @@ class TestAuthenticationMiddlewareDatabaseIntegration:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager()
+        mock_manager, mock_session = self.mock_database_manager_and_session()
 
         # Mock time.time to control timing
         start_time = 1000.0
