@@ -327,8 +327,7 @@ class TestJWTValidatorRoleDetermination:
     @pytest.fixture
     def mock_jwks_client(self):
         """Create mock JWKS client."""
-        client = Mock(spec=JWKSClient)
-        return client
+        return Mock(spec=JWKSClient)
 
     @pytest.fixture
     def validator(self, mock_jwks_client):
@@ -438,14 +437,14 @@ class TestJWTValidatorEdgeCases:
     def test_validate_token_extremely_long_token(self, validator):
         """Test validation with extremely long token."""
         # Create a very long token (simulating potential DoS)
-        long_token = "a" * 10000 + ".b" * 10000 + ".c" * 10000
+        long_token = "a" * 10000 + ".b" * 10000 + ".c"
 
         with pytest.raises(JWTValidationError):
             validator.validate_token(long_token)
 
     def test_validate_token_unicode_characters(self, validator):
         """Test validation with unicode characters in token."""
-        unicode_token = "émojis🚀.and.ünïcödé"
+        unicode_token = "émojis🚀.and.ünïcödé"  # noqa: S105
 
         with pytest.raises(JWTValidationError):
             validator.validate_token(unicode_token)

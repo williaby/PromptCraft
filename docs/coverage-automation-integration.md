@@ -1,6 +1,7 @@
 # Coverage Automation Integration
 
-This document describes the complete coverage automation system that automatically updates coverage reports when VS Code runs tests.
+This document describes the complete coverage automation system that automatically updates coverage reports when
+VS Code runs tests.
 
 ## System Overview
 
@@ -29,12 +30,14 @@ This eliminates the >100% simulation artifacts and provides actual per-test-type
 **Location:** `scripts/vscode_coverage_hook.py`
 
 **Features:**
+
 - Detects if coverage contexts are enabled
 - Waits for fresh coverage data from VS Code
 - Automatically generates all coverage reports
 - Provides context-aware feedback
 
 **Usage:**
+
 ```bash
 # Manual execution
 python scripts/vscode_coverage_hook.py
@@ -47,6 +50,7 @@ python scripts/vscode_coverage_hook.py
 **Location:** `.vscode/tasks.json`
 
 **Available Tasks:**
+
 1. **Update Coverage Reports** - Run enhanced coverage hook
 2. **Start Coverage File Watcher** - Begin background monitoring
 3. **Stop Coverage File Watcher** - End background monitoring
@@ -58,12 +62,14 @@ python scripts/vscode_coverage_hook.py
 **Location:** `scripts/coverage_file_watcher.py`
 
 **Features:**
+
 - Background monitoring of `coverage.xml` and `reports/junit.xml`
 - Debounced updates (2-second delay to avoid rapid regeneration)
 - Process management with PID files
 - Graceful shutdown handling
 
 **Usage:**
+
 ```bash
 # Start background monitoring
 python scripts/coverage_file_watcher.py --daemon
@@ -91,11 +97,13 @@ python scripts/coverage_file_watcher.py --stop
 ### Real Coverage Data vs Simulation
 
 **Before (Simulation):**
+
 - Unit tests: 102.0% (1.2x multiplier)
 - Auth tests: 33.9% (0.4x multiplier)
 - Results were artificially adjusted
 
 **After (Real Coverage Contexts):**
+
 - Auth tests: 1.8% (actual coverage from 351 tests)
 - Unit tests: Real coverage when run
 - Data directly from coverage.py contexts
@@ -103,19 +111,25 @@ python scripts/coverage_file_watcher.py --stop
 ## Usage Recommendations
 
 ### Option 1: Manual Control (Recommended)
+
 Use VS Code Tasks for controlled updates:
+
 1. Run tests with coverage in VS Code
 2. `Ctrl+Shift+P` → "Tasks: Run Task" → "Update Coverage Reports"
 3. Reports update with real coverage data
 
 ### Option 2: Background Automation
+
 Use file watcher for continuous updates:
+
 1. `python scripts/coverage_file_watcher.py --daemon`
 2. Reports update automatically after any VS Code test run
 3. `python scripts/coverage_file_watcher.py --stop` when done
 
 ### Option 3: Direct Hook Execution
+
 Run the hook script directly:
+
 ```bash
 python scripts/vscode_coverage_hook.py
 ```
@@ -123,25 +137,30 @@ python scripts/vscode_coverage_hook.py
 ## Configuration Files Updated
 
 ### pyproject.toml
+
 - ✅ Added `dynamic_context = "test_function"` for real coverage contexts
 - ✅ Updated `--junitxml=reports/junit.xml` path
 
 ### .vscode/settings.json
+
 - ✅ Updated `--junitxml=reports/junit.xml` for VS Code consistency
 
 ### .vscode/tasks.json
+
 - ✅ Added three coverage automation tasks
 - ✅ Proper presentation and execution settings
 
 ## Current System Status
 
 ### Coverage Data (Auth Tests Only)
+
 - **Overall Coverage:** 4.5% (386 / 8,586 lines)
 - **Auth Test Coverage:** 1.8% (153 / 8,586 lines, 351 tests)
 - **Real Data Source:** Coverage contexts with `test_function` tracking
 - **No More >100% Coverage:** Simulation multipliers eliminated
 
 ### Automation Features
+
 - ✅ **VS Code Integration:** Works with "Run Tests with Coverage" button
 - ✅ **Real Coverage Contexts:** Actual per-test coverage measurement
 - ✅ **Background Monitoring:** Optional file watcher daemon
@@ -152,6 +171,7 @@ python scripts/vscode_coverage_hook.py
 ## Next Steps
 
 1. **Run full test suite** with coverage to get comprehensive data:
+
    ```bash
    poetry run pytest -v --cov=src --cov-report=html --cov-report=xml --junitxml=reports/junit.xml
    ```
@@ -163,4 +183,5 @@ python scripts/vscode_coverage_hook.py
 
 3. **Monitor coverage contexts** effectiveness with real per-test data
 
-The system now provides both automatic coverage updates and real per-test coverage measurement, eliminating the >100% simulation artifacts while maintaining the sophisticated reporting capabilities.
+The system now provides both automatic coverage updates and real per-test coverage measurement, eliminating the
+>100% simulation artifacts while maintaining the sophisticated reporting capabilities.

@@ -42,7 +42,7 @@ def validate_environment_keys() -> None:
 
     # Validate SSH key
     try:
-        result = subprocess.run(  # nosec B603, B607
+        result = subprocess.run(  # nosec B603, B607, S607
             ["ssh-add", "-l"],  # noqa: S607
             capture_output=True,
             text=True,
@@ -57,7 +57,7 @@ def validate_environment_keys() -> None:
 
     # Validate Git signing configuration
     try:
-        result = subprocess.run(  # nosec B603, B607
+        result = subprocess.run(  # nosec B603, B607, S607
             ["git", "config", "--get", "user.signingkey"],  # noqa: S607
             capture_output=True,
             text=True,
@@ -193,7 +193,5 @@ if __name__ == "__main__":
     # Quick validation script
     try:
         validate_environment_keys()
-        print("✓ All required keys are present and configured")  # noqa: T201
-    except EncryptionError as e:
-        print(f"✗ Key validation failed: {e}")  # noqa: T201
+    except EncryptionError:
         sys.exit(1)

@@ -12,6 +12,7 @@ version: "2.0"
 Systematically resolve any project issue through modular workflow orchestration: $ARGUMENTS
 
 ## Usage Options
+
 - `quick phase X issue Y` - Essential workflow steps only (30-45 min)
 - `standard phase X issue Y` - Full workflow with validation (60-90 min)
 - `expert phase X issue Y` - Minimal prompts for experienced users (15-30 min)
@@ -21,28 +22,36 @@ Systematically resolve any project issue through modular workflow orchestration:
 This orchestrator executes the following workflow components in sequence:
 
 ### 1. Scope Analysis (`/project:workflow-scope-analysis`)
+
 **Purpose**: Define issue boundaries and prevent scope creep
+
 - Analyzes issue definition and acceptance criteria
 - Creates scope boundary documentation
 - Identifies dependencies and unclear requirements
 - **Estimated Time**: 10-15 minutes
 
 ### 2. Plan Validation (`/project:workflow-plan-validation`)
+
 **Purpose**: Create and validate implementation plan
+
 - Develops action plan aligned with acceptance criteria
 - Validates scope boundaries and removes scope creep
 - Optional IT manager consultation via Zen
 - **Estimated Time**: 10-15 minutes
 
 ### 3. Implementation (`/project:workflow-implementation`)
+
 **Purpose**: Execute approved plan with quality standards
+
 - Implements solution using subagents and MCP orchestration
 - Follows security best practices and coding standards
 - Maintains progress tracking and scope adherence
 - **Estimated Time**: Variable based on issue complexity
 
 ### 4. Review Cycle (`/project:workflow-review-cycle`)
+
 **Purpose**: Comprehensive testing and multi-agent validation
+
 - Pre-commit validation and quality gate checks
 - Multi-agent review (O3 testing, Gemini review)
 - Consensus validation and final approval
@@ -51,6 +60,7 @@ This orchestrator executes the following workflow components in sequence:
 ## Workflow Execution
 
 ### Quick Mode (`quick`)
+
 ```bash
 /project:workflow-scope-analysis quick phase X issue Y
 /project:workflow-implementation quick phase X issue Y
@@ -58,6 +68,7 @@ This orchestrator executes the following workflow components in sequence:
 ```
 
 ### Standard Mode (`standard`)
+
 ```bash
 /project:workflow-scope-analysis phase X issue Y
 /project:workflow-plan-validation phase X issue Y
@@ -66,6 +77,7 @@ This orchestrator executes the following workflow components in sequence:
 ```
 
 ### Expert Mode (`expert`)
+
 ```bash
 /project:workflow-scope-analysis detailed phase X issue Y
 /project:workflow-plan-validation expert phase X issue Y
@@ -85,6 +97,7 @@ Each workflow component produces specific deliverables:
 ## User Approval Gates
 
 **CRITICAL**: The workflow includes mandatory user approval points:
+
 - After scope analysis (for boundary confirmation)
 - After plan validation (before implementation begins)
 - After review cycle (for final acceptance)
@@ -100,6 +113,7 @@ Each workflow component produces specific deliverables:
 ## Development Philosophy Integration
 
 All workflow components follow the project's core principles:
+
 - **Reuse First**: Leverage existing solutions from ledgerbase, FISProject, .github
 - **Configure Don't Build**: Use Zen MCP Server, Heimdall MCP Server, AssuredOSS packages
 - **Focus on Unique Value**: Build only PromptCraft-specific functionality

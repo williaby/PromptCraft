@@ -262,7 +262,7 @@ codecov_integration:
         }
 
         coverage_json = tmp_path / "coverage.json"
-        with open(coverage_json, "w") as f:
+        with coverage_json.open("w") as f:
             json.dump(coverage_data, f)
 
         # Create minimal config
@@ -314,7 +314,7 @@ class TestStructuredLogging:
         security_logger = get_security_logger()
 
         # Test security violation logging
-        test_path = Path("/tmp/test.py")
+        test_path = Path("/tmp/test.py")  # noqa: S108
         security_logger.log_path_validation_failure(test_path, "test violation")
 
         # Check security log format
@@ -372,7 +372,7 @@ global:
         """Test main automation workflow maintains compatibility."""
         # Setup mocks
         mock_detect.return_value = True
-        mock_generate.return_value = "/tmp/report.html"
+        mock_generate.return_value = "/tmp/report.html"  # noqa: S108
 
         # Create CLI and test workflow
         cli = CoverageAutomationCLI(tmp_path)
@@ -500,7 +500,7 @@ global:
     }
 
     coverage_json = tmp_path / "coverage.json"
-    with open(coverage_json, "w") as f:
+    with coverage_json.open("w") as f:
         json.dump(coverage_data, f)
 
     # Test full component interaction
@@ -508,7 +508,7 @@ global:
     classifier = TestTypeClassifier(tmp_path, config)
 
     # Test target mapping
-    targets = classifier.get_test_target_mapping("unit")
+    _ = classifier.get_test_target_mapping("unit")
     # Should find the target file through import analysis
 
     # Test coverage estimation

@@ -211,7 +211,7 @@ class TestMCPConfigurationManagerCoverage:
             assert result is True
 
             # Verify the file was updated
-            with open(config_path) as f:
+            with config_path.open() as f:
                 saved_data = json.load(f)
                 assert "save-test" in saved_data["mcpServers"]
 
@@ -240,33 +240,37 @@ class TestMCPConfigurationManagerCoverage:
         import json
 
         # Test JSON decode error and backup loading
-        with patch("pathlib.Path.exists", side_effect=[True, True]):  # Main exists, backup exists
-            with patch("builtins.open", mock_open(read_data="invalid json")):
-                with patch(
-                    "src.mcp_integration.config_manager.json.load",
-                    side_effect=[
-                        json.JSONDecodeError("Invalid", "doc", 0),  # Main config fails
-                        {"mcpServers": {"backup": {"command": "backup-cmd"}}},  # Backup succeeds
-                    ],
-                ):
-                    manager = MCPConfigurationManager()
-                    # Should load backup configuration
-                    assert manager.configuration is not None
+        with (
+            patch("pathlib.Path.exists", side_effect=[True, True]),  # Main exists, backup exists
+            patch("builtins.open", mock_open(read_data="invalid json")),
+            patch(
+                "src.mcp_integration.config_manager.json.load",
+                side_effect=[
+                    json.JSONDecodeError("Invalid", "doc", 0),  # Main config fails
+                    {"mcpServers": {"backup": {"command": "backup-cmd"}}},  # Backup succeeds
+                ],
+            ),
+        ):
+            manager = MCPConfigurationManager()
+            # Should load backup configuration
+            assert manager.configuration is not None
 
         # Test both main and backup config failing
-        with patch("pathlib.Path.exists", side_effect=[True, True]):
-            with patch("builtins.open", mock_open(read_data="invalid json")):
-                with patch(
-                    "src.mcp_integration.config_manager.json.load",
-                    side_effect=[
-                        json.JSONDecodeError("Invalid", "doc", 0),  # Main config fails
-                        json.JSONDecodeError("Invalid", "doc", 0),  # Backup also fails
-                    ],
-                ):
-                    manager = MCPConfigurationManager()
-                    # Should create default configuration
-                    assert manager.configuration is not None
-                    assert len(manager.configuration.mcp_servers) == 0
+        with (
+            patch("pathlib.Path.exists", side_effect=[True, True]),
+            patch("builtins.open", mock_open(read_data="invalid json")),
+            patch(
+                "src.mcp_integration.config_manager.json.load",
+                side_effect=[
+                    json.JSONDecodeError("Invalid", "doc", 0),  # Main config fails
+                    json.JSONDecodeError("Invalid", "doc", 0),  # Backup also fails
+                ],
+            ),
+        ):
+            manager = MCPConfigurationManager()
+            # Should create default configuration
+            assert manager.configuration is not None
+            assert len(manager.configuration.mcp_servers) == 0
 
     def test_config_manager_save_errors(self):
         """Test config manager save error scenarios."""
@@ -407,7 +411,7 @@ class TestMCPServerConfigCoverage:
     def test_server_config_validation_error(self):
         """Test server config validation errors."""
         # Test with neither command nor transport
-        with pytest.raises(Exception):  # ValidationError from Pydantic
+        with pytest.raises(Exception, match="ValidationError|validation"):  # ValidationError from Pydantic
             MCPServerConfig()
 
 

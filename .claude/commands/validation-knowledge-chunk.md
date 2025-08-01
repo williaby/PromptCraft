@@ -18,7 +18,9 @@ Ensure H3 sections are truly atomic, self-contained, and optimized for RAG retri
 ## Atomic Knowledge Chunk Requirements
 
 ### Self-Containment Rules
+
 Each H3 section must be **completely understandable in isolation**:
+
 - ✅ **Complete Context**: All necessary background information included
 - ✅ **No Forward References**: Doesn't rely on content from later sections
 - ✅ **No Backward Dependencies**: Doesn't assume reader has read previous sections
@@ -26,7 +28,9 @@ Each H3 section must be **completely understandable in isolation**:
 - ✅ **Clear Scope**: Clearly defined topic boundary
 
 ### Content Completeness Standards
+
 Every H3 chunk should include:
+
 - **Topic Introduction**: What this section covers
 - **Context/Background**: Why this information matters
 - **Core Content**: The actual knowledge or instructions
@@ -34,7 +38,9 @@ Every H3 chunk should include:
 - **Key Takeaways**: Critical points to remember
 
 ### RAG Optimization Criteria
+
 Content must be optimized for vector search retrieval:
+
 - **Descriptive Headers**: H3 titles clearly indicate content
 - **Keyword Rich**: Includes relevant technical terms naturally
 - **Semantic Clarity**: Concepts explained in clear, searchable language
@@ -44,6 +50,7 @@ Content must be optimized for vector search retrieval:
 ## Validation Checks
 
 ### 1. Heading Structure Validation
+
 ```markdown
 # Document Title                    ✅ Exactly one H1
 ## Major Section                   ✅ H2 for grouping topics
@@ -52,23 +59,29 @@ Content must be optimized for vector search retrieval:
 ```
 
 ### 2. Self-Containment Analysis
+
 **Forward Reference Detection**:
+
 - ❌ "As we'll see in the next section..."
 - ❌ "The implementation details follow..."
 - ❌ "This will be covered later..."
 
 **Backward Dependency Detection**:
+
 - ❌ "As mentioned earlier..."
 - ❌ "Using the previous configuration..."
 - ❌ "Building on our earlier example..."
 
 **Assumption Detection**:
+
 - ❌ Assumes reader knows previous context
 - ❌ References variables/concepts not defined in chunk
 - ❌ Continues explanations from other sections
 
 ### 3. Content Completeness Check
+
 **Required Elements**:
+
 - [ ] **Context Setting**: Why this topic matters
 - [ ] **Complete Explanation**: Full concept coverage
 - [ ] **Practical Application**: How to use this knowledge
@@ -76,13 +89,16 @@ Content must be optimized for vector search retrieval:
 - [ ] **Error Handling**: Common issues and solutions
 
 **Missing Context Indicators**:
+
 - Undefined acronyms or technical terms
 - Code snippets without setup context
 - Procedures without prerequisites
 - Examples without explanation
 
 ### 4. RAG Retrieval Optimization
+
 **Optimal Chunk Characteristics**:
+
 - **Length**: 200-800 words (optimal for embeddings)
 - **Structure**: Clear topic progression
 - **Terminology**: Consistent use of keywords
@@ -90,6 +106,7 @@ Content must be optimized for vector search retrieval:
 - **Actionability**: Provides usable information
 
 **Query Match Assessment**:
+
 - Would users naturally search for this content?
 - Does the H3 title match expected search terms?
 - Are key concepts mentioned in searchable language?
@@ -98,6 +115,7 @@ Content must be optimized for vector search retrieval:
 ## Common Anti-Patterns
 
 ### 1. Context Dependencies
+
 ```markdown
 ❌ BAD - References other sections:
 ### JWT Token Validation
@@ -110,6 +128,7 @@ First, obtain your secret key from your application configuration...
 ```
 
 ### 2. Incomplete Context
+
 ```markdown
 ❌ BAD - Missing setup:
 ### Running Database Migrations
@@ -119,17 +138,22 @@ python manage.py migrate
 ```
 
 ✅ GOOD - Complete context:
+
 ### Running Database Migrations
+
 Database migrations update your database schema to match model changes.
 Before running migrations, ensure you have:
+
 - Virtual environment activated
 - Database connection configured
 - Django settings properly configured
 
 Execute migrations with:
+
 ```bash
 python manage.py migrate
 ```
+
 ```
 
 ### 3. Overly Granular Sections
@@ -212,6 +236,7 @@ settings, and initializing the client connection...
    ```
 
 2. **Error Handling Section**:
+
    ```markdown
    ### OAuth2 Error Handling and Recovery
 
@@ -223,17 +248,20 @@ settings, and initializing the client connection...
    ```
 
 ### 📈 CHUNK QUALITY SCORES
+
 - **Atomic Compliance**: 75% (6/8 chunks)
 - **RAG Optimization**: 87% (7/8 chunks)
 - **Context Completeness**: 62% (5/8 chunks)
 - **Overall Quality**: 75%
 
 ### 💡 RECOMMENDATIONS
+
 1. Combine related granular sections into comprehensive chunks
 2. Add missing context to dependent sections
 3. Include concrete examples in abstract sections
 4. Use more specific, searchable section titles
 5. Ensure each chunk answers complete user questions
+
 ```
 
 ## Validation Scope

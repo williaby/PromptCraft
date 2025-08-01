@@ -852,7 +852,7 @@ class TestMultiJourneyInterfaceExtended:
             try:
                 mock_validate("/tmp/test.txt", ".txt")  # noqa: S108
             except Exception as e:
-                assert "Validation error" in str(e)  # noqa: PT017 # Testing error message content
+                assert "Validation error" in str(e)  # Testing error message content  # noqa: PT017
 
     def test_check_for_content_anomalies(self):
         """Test content anomaly detection for missing lines 1205-1235."""
@@ -881,7 +881,7 @@ class TestMultiJourneyInterfaceExtended:
         interface = MultiJourneyInterface()
 
         # Test non-archive file
-        interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # noqa: S108 # Should not raise
+        interface._detect_archive_bombs("/tmp/test.txt", "text/plain")  # Should not raise  # noqa: S108
 
         # Test archive file - mock Path in the module where it's imported
         with (
@@ -1051,7 +1051,7 @@ class TestMultiJourneyInterfaceExtended:
         assert "uptime" in status
         assert status["active_sessions"] >= 3
         assert status["total_requests"] >= 3
-        assert isinstance(status["uptime"], (int, float))
+        assert isinstance(status["uptime"], int | float)
 
     def test_utility_methods_comprehensive(self):
         """Test utility methods for comprehensive coverage."""

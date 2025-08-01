@@ -6,15 +6,15 @@ and error handling.
 """
 
 import asyncio
-import os
 import sys
 import time
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.agents.base_agent import BaseAgent, BaseAgentType
 from src.agents.exceptions import (

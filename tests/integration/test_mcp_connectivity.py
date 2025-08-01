@@ -15,6 +15,7 @@ Test Coverage:
 """
 
 import asyncio
+import contextlib
 import logging
 import sys
 import time
@@ -224,48 +225,49 @@ class TestMCPConnectivity:
     @pytest.fixture
     def mcp_integration_interface(self, mcp_settings, mock_zen_mcp_server, mock_qdrant_service, mock_azure_ai_service):
         """Create UI interface with mocked MCP and external services."""
-        with patch("src.config.settings.get_settings", return_value=mcp_settings):
+        with (
+            patch("src.config.settings.get_settings", return_value=mcp_settings),
+            patch("src.mcp_integration.mcp_client.MCPClient") as mock_zen_client,
+            patch("httpx.AsyncClient") as mock_http_client,
+            patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates"),
+            patch("src.ui.components.shared.export_utils.ExportUtils"),
+        ):
             # Mock MCP server integration
-            with patch("src.mcp_integration.mcp_client.MCPClient") as mock_zen_client:
-                mock_zen_instance = Mock()
-                mock_zen_instance.connect = mock_zen_mcp_server.connect
-                mock_zen_instance.disconnect = mock_zen_mcp_server.disconnect
-                mock_zen_instance.send_request = mock_zen_mcp_server.send_request
-                mock_zen_client.return_value = mock_zen_instance
+            mock_zen_instance = Mock()
+            mock_zen_instance.connect = mock_zen_mcp_server.connect
+            mock_zen_instance.disconnect = mock_zen_mcp_server.disconnect
+            mock_zen_instance.send_request = mock_zen_mcp_server.send_request
+            mock_zen_client.return_value = mock_zen_instance
 
-                # Mock external services
-                with patch("httpx.AsyncClient") as mock_http_client:
+            # Mock external services
+            async def mock_get(url, **kwargs):
+                if QDRANT_HEALTH_ENDPOINT in url:
+                    return Mock(json=lambda: mock_qdrant_service.health_check(), status_code=200)
+                return Mock(json=lambda: {"status": "ok"}, status_code=200)
 
-                    async def mock_get(url, **kwargs):
-                        if QDRANT_HEALTH_ENDPOINT in url:
-                            return Mock(json=lambda: mock_qdrant_service.health_check(), status_code=200)
-                        return Mock(json=lambda: {"status": "ok"}, status_code=200)
+            async def mock_post(url, **kwargs):
+                if "openai" in url:
+                    return Mock(
+                        json=lambda: mock_azure_ai_service.make_request(kwargs.get("json", {})),
+                        status_code=200,
+                    )
+                return Mock(json=lambda: {"status": "ok"}, status_code=200)
 
-                    async def mock_post(url, **kwargs):
-                        if "openai" in url:
-                            return Mock(
-                                json=lambda: mock_azure_ai_service.make_request(kwargs.get("json", {})),
-                                status_code=200,
-                            )
-                        return Mock(json=lambda: {"status": "ok"}, status_code=200)
+            mock_http_instance = Mock()
+            mock_http_instance.get = mock_get
+            mock_http_instance.post = mock_post
+            mock_http_client.return_value.__aenter__ = AsyncMock(return_value=mock_http_instance)
+            mock_http_client.return_value.__aexit__ = AsyncMock(return_value=None)
 
-                    mock_http_instance = Mock()
-                    mock_http_instance.get = mock_get
-                    mock_http_instance.post = mock_post
-                    mock_http_client.return_value.__aenter__ = AsyncMock(return_value=mock_http_instance)
-                    mock_http_client.return_value.__aexit__ = AsyncMock(return_value=None)
+            # Mock Journey processors
+            interface = MultiJourneyInterface()
 
-                    # Mock Journey processors
-                    with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates"):
-                        with patch("src.ui.components.shared.export_utils.ExportUtils"):
-                            interface = MultiJourneyInterface()
+            # Attach mock services for testing access
+            interface._mock_zen_mcp = mock_zen_mcp_server
+            interface._mock_qdrant = mock_qdrant_service
+            interface._mock_azure_ai = mock_azure_ai_service
 
-                            # Attach mock services for testing access
-                            interface._mock_zen_mcp = mock_zen_mcp_server
-                            interface._mock_qdrant = mock_qdrant_service
-                            interface._mock_azure_ai = mock_azure_ai_service
-
-                            return interface
+            return interface
 
     @pytest.mark.integration
     async def test_zen_mcp_server_connectivity(self, mcp_integration_interface):
@@ -476,7 +478,7 @@ class TestMCPConnectivity:
 
         # Verify all requests succeeded
         assert len(responses) == 5
-        for i, response in enumerate(responses):
+        for _i, response in enumerate(responses):
             assert response["result"] is not None
             assert "Mock orchestration response" in response["result"]
 
@@ -525,7 +527,6 @@ class TestMCPConnectivity:
     @pytest.mark.integration
     async def test_service_fallback_mechanisms(self, mcp_integration_interface):
         """Test fallback mechanisms when primary services fail."""
-        zen_mcp = mcp_integration_interface._mock_zen_mcp
         qdrant_service = mcp_integration_interface._mock_qdrant
 
         # Test primary service failure with fallback
@@ -641,10 +642,8 @@ class TestMCPConnectivity:
         assert "Mock orchestration response" in response["result"]
 
         # Verify error tracking
-        try:
+        with contextlib.suppress(httpx.ConnectError):
             await qdrant_service.health_check()
-        except httpx.ConnectError:
-            pass  # Expected failure
 
         assert qdrant_service.error_count == 1
 

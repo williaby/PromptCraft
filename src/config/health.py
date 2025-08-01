@@ -47,6 +47,9 @@ _COMPILED_SENSITIVE_PATTERNS = [
 
 _COMPILED_FILE_PATH_PATTERNS = [re.compile(pattern) for pattern in FILE_PATH_PATTERNS]
 
+# Threshold for determining if a field name or value might be sensitive data
+_SENSITIVE_DATA_LENGTH_THRESHOLD = 8
+
 logger = logging.getLogger(__name__)
 
 
@@ -277,11 +280,19 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
             def is_sensitive_quoted_value(match: re.Match[str]) -> bool:
                 value = match.group(1) if match.groups() else match.group(0)[1:-1]
                 # Don't sanitize short field names that look like identifiers
-                if len(value) <= 8 and "_" in value and value.islower() and value.isalnum() is False:
+                if (
+                    len(value) <= _SENSITIVE_DATA_LENGTH_THRESHOLD
+                    and "_" in value
+                    and value.islower()
+                    and value.isalnum() is False
+                ):
                     return False
                 # Check if the quoted value looks like sensitive data or is just any value being quoted
                 sensitive_indicators = ["pass", "secret", "token", "auth", "credential"]
-                return any(indicator in value.lower() for indicator in sensitive_indicators) or len(value) > 8
+                return (
+                    any(indicator in value.lower() for indicator in sensitive_indicators)
+                    or len(value) > _SENSITIVE_DATA_LENGTH_THRESHOLD
+                )
 
             # Replace quoted values that look sensitive
             sanitized_error = re.sub(

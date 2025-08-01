@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document outlines best practices for agent registration, naming conventions, and organizational standards for the PromptCraft Agent System. Following these guidelines ensures consistency, maintainability, and discoverability across the agent ecosystem.
+This document outlines best practices for agent registration, naming conventions, and organizational standards for the
+PromptCraft Agent System. Following these guidelines ensures consistency, maintainability, and discoverability across
+the agent ecosystem.
 
 ## Naming Conventions
 
@@ -85,7 +87,7 @@ Agent implementations should be organized in appropriately named files:
 
 #### File Structure
 
-```
+```text
 src/agents/
 ├── base_agent.py           # Base agent implementation
 ├── registry.py             # Agent registry
@@ -197,7 +199,7 @@ Organize agents into logical categories based on their primary function:
 
 ### Directory Structure
 
-```
+```text
 src/agents/
 ├── core/                   # Core processing agents
 │   ├── text_processor.py
@@ -819,4 +821,5 @@ class ExampleAgent(BaseAgent):
 
 ---
 
-*This document is part of the PromptCraft Agent System documentation suite. For updates and additional information, refer to the main documentation repository.*
+*This document is part of the PromptCraft Agent System documentation suite. For updates and additional information,
+refer to the main documentation repository.*

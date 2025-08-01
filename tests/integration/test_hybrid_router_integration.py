@@ -155,54 +155,56 @@ class TestHybridRouterIntegration:
         )
 
         # Create HybridRouter with mocked clients
-        with patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_or_class:
-            with patch("src.mcp_integration.mcp_client.ZenMCPClient") as mock_mcp_class:
-                mock_or_instance = MagicMock()
-                mock_or_instance.connect = AsyncMock(return_value=True)
-                mock_or_instance.connection_state = MCPConnectionState.CONNECTED
-                mock_or_instance.orchestrate_agents = AsyncMock(
-                    return_value=[
-                        Response(
-                            agent_id="test_agent",
-                            content="OpenRouter response",
-                            metadata={"service": "openrouter"},
-                            confidence=0.9,
-                            processing_time=0.1,
-                            success=True,
-                        ),
-                    ],
-                )
-                mock_or_class.return_value = mock_or_instance
-                mock_mcp_class.return_value = mock_mcp_client
-
-                router = HybridRouter(
-                    openrouter_client=mock_or_instance,
-                    mcp_client=mock_mcp_client,
-                    strategy=RoutingStrategy.OPENROUTER_PRIMARY,
-                )
-
-                # Test connection
-                await router.connect()
-                assert router.connection_state == MCPConnectionState.CONNECTED
-
-                # Test orchestration
-                workflow_steps = [
-                    WorkflowStep(
-                        step_id="integration_test_step",
+        with (
+            patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_or_class,
+            patch("src.mcp_integration.mcp_client.ZenMCPClient") as mock_mcp_class,
+        ):
+            mock_or_instance = MagicMock()
+            mock_or_instance.connect = AsyncMock(return_value=True)
+            mock_or_instance.connection_state = MCPConnectionState.CONNECTED
+            mock_or_instance.orchestrate_agents = AsyncMock(
+                return_value=[
+                    Response(
                         agent_id="test_agent",
-                        input_data={"query": "Integration test query", "task_type": "general"},
-                        timeout_seconds=30.0,
+                        content="OpenRouter response",
+                        metadata={"service": "openrouter"},
+                        confidence=0.9,
+                        processing_time=0.1,
+                        success=True,
                     ),
-                ]
+                ],
+            )
+            mock_or_class.return_value = mock_or_instance
+            mock_mcp_class.return_value = mock_mcp_client
 
-                responses = await router.orchestrate_agents(workflow_steps)
+            router = HybridRouter(
+                openrouter_client=mock_or_instance,
+                mcp_client=mock_mcp_client,
+                strategy=RoutingStrategy.OPENROUTER_PRIMARY,
+            )
 
-                # Verify results
-                assert len(responses) == 1
-                assert responses[0].success is True
-                assert responses[0].agent_id == "test_agent"
-                assert router.metrics.total_requests == 1
-                assert router.metrics.successful_routes == 1
+            # Test connection
+            await router.connect()
+            assert router.connection_state == MCPConnectionState.CONNECTED
+
+            # Test orchestration
+            workflow_steps = [
+                WorkflowStep(
+                    step_id="integration_test_step",
+                    agent_id="test_agent",
+                    input_data={"query": "Integration test query", "task_type": "general"},
+                    timeout_seconds=30.0,
+                ),
+            ]
+
+            responses = await router.orchestrate_agents(workflow_steps)
+
+            # Verify results
+            assert len(responses) == 1
+            assert responses[0].success is True
+            assert responses[0].agent_id == "test_agent"
+            assert router.metrics.total_requests == 1
+            assert router.metrics.successful_routes == 1
 
     @pytest.mark.asyncio
     @patch("src.mcp_integration.hybrid_router.get_settings")
@@ -675,7 +677,7 @@ class TestHybridRouterIntegration:
         openrouter_state["should_fail"] = True
         mcp_state["should_fail"] = True
 
-        with pytest.raises(Exception):  # Should raise MCPServiceUnavailableError
+        with pytest.raises(Exception, match="Orchestration failed on all services"):
             await router.orchestrate_agents(workflow_steps)
 
         assert router.metrics.failed_routes == 1

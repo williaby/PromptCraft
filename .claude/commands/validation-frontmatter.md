@@ -5,7 +5,9 @@ Validate and fix YAML front matter in: $ARGUMENTS
 ## Validation Rules
 
 ### Knowledge Files (`/knowledge/` directory)
+
 Required YAML front matter structure:
+
 ```yaml
 ---
 title: [String - must match H1 heading exactly]
@@ -18,7 +20,9 @@ purpose: [Single sentence ending with period]
 ```
 
 ### Planning Documents (`/docs/planning/` directory)
+
 Required YAML front matter structure:
+
 ```yaml
 ---
 title: [String - must match H1 heading exactly]
@@ -62,9 +66,11 @@ purpose: [Single sentence ending with period]
 ```
 
 ## ✅ Valid Fields
+
 - [List fields that pass validation]
 
 ## ❌ Issues Found
+
 - **Missing Field**: [field_name] is required but missing
 - **Title Mismatch**: YAML title "[yaml_title]" does not match H1 "[h1_title]"
 - **Agent ID Mismatch**: YAML agent_id "[yaml_id]" does not match folder "[folder_name]"
@@ -72,6 +78,7 @@ purpose: [Single sentence ending with period]
 - **Invalid Purpose**: Must be single sentence ending with period
 
 ## 🔧 Corrected Front Matter
+
 ```yaml
 ---
 title: [Corrected title]
@@ -86,14 +93,17 @@ purpose: [Corrected single sentence ending with period]
 ```
 
 ## 📝 Additional Recommendations
+
 - [Any suggestions for improving metadata quality]
 
 ## Summary
+
 - **File Type**: [knowledge|planning|general]
 - **Fields Checked**: [number]
 - **Valid Fields**: [number]
 - **Issues Found**: [number]
 - **Status**: [PASS|FAIL]
+
 ```
 
 ## Instructions

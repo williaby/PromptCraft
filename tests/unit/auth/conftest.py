@@ -12,7 +12,7 @@ from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_jwks_client():
     """Create mock JWKS client with valid key data."""
     client = Mock(spec=JWKSClient)
@@ -26,7 +26,7 @@ def mock_jwks_client():
     return client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def jwt_validator(mock_jwks_client):
     """Create JWT validator instance with mock client."""
     return JWTValidator(
@@ -36,7 +36,7 @@ def jwt_validator(mock_jwks_client):
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def valid_jwt_payload():
     """Valid JWT payload for testing."""
     return {

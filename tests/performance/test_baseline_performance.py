@@ -38,6 +38,7 @@ Complexity: O(n*m) where n is number of test scenarios and m is component comple
 
 import asyncio
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
@@ -66,8 +67,6 @@ logger = logging.getLogger(__name__)
 
 # Test constants aligned with Week 1 requirements
 # Detect CI environment for more lenient thresholds
-import os
-
 IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
 
 # Base thresholds - more lenient for CI environments
@@ -171,8 +170,8 @@ class BaselinePerformanceTestSuite:
 
         # Test intent analysis performance
         intent_analysis_times = []
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
-            query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
+            query = ALL_TEST_QUERIES[_i % len(ALL_TEST_QUERIES)]
 
             start_time = time.time()
             try:
@@ -185,7 +184,7 @@ class BaselinePerformanceTestSuite:
 
         # Test agent selection performance
         agent_selection_times = []
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
             # Create mock intent for testing
             intent = QueryIntent(
                 query_type=QueryType.CREATE_ENHANCEMENT,
@@ -197,7 +196,7 @@ class BaselinePerformanceTestSuite:
 
             start_time = time.time()
             try:
-                agents = await self.query_counselor.select_agents(intent)
+                await self.query_counselor.select_agents(intent)
                 duration = time.time() - start_time
                 agent_selection_times.append(duration)
             except Exception as e:
@@ -206,8 +205,8 @@ class BaselinePerformanceTestSuite:
 
         # Test workflow orchestration performance
         orchestration_times = []
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
-            query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
+            query = ALL_TEST_QUERIES[_i % len(ALL_TEST_QUERIES)]
             intent_for_orchestration = QueryIntent(
                 query_type=QueryType.GENERAL_QUERY,
                 confidence=0.7,
@@ -268,8 +267,8 @@ class BaselinePerformanceTestSuite:
         analysis_times = []
         specificity_distribution = {"high": 0, "medium": 0, "low": 0}
 
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
-            query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
+            query = ALL_TEST_QUERIES[_i % len(ALL_TEST_QUERIES)]
 
             start_time = time.time()
             try:
@@ -300,8 +299,8 @@ class BaselinePerformanceTestSuite:
 
         # Test full query processing pipeline
         processing_times = []
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
-            query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
+            query = ALL_TEST_QUERIES[_i % len(ALL_TEST_QUERIES)]
 
             start_time = time.time()
             try:
@@ -349,8 +348,8 @@ class BaselinePerformanceTestSuite:
         hyde_usage_count = 0
         workflow_success_count = 0
 
-        for i in range(PERFORMANCE_TEST_ITERATIONS):
-            query = ALL_TEST_QUERIES[i % len(ALL_TEST_QUERIES)]
+        for _i in range(PERFORMANCE_TEST_ITERATIONS):
+            query = ALL_TEST_QUERIES[_i % len(ALL_TEST_QUERIES)]
 
             start_time = time.time()
             try:

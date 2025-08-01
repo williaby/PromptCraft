@@ -5,6 +5,7 @@ This module provides utilities to handle complex mocking scenarios where
 methods are sometimes awaited and sometimes called synchronously.
 """
 
+import contextlib
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -133,10 +134,8 @@ class AwaitableResult:
         # Copy all attributes from the original value
         for attr_name in dir(value):
             if not attr_name.startswith("_"):
-                try:
+                with contextlib.suppress(AttributeError, TypeError):
                     setattr(self, attr_name, getattr(value, attr_name))
-                except (AttributeError, TypeError):
-                    pass
 
     def __getattr__(self, name):
         """Delegate any missing attributes to the wrapped value."""

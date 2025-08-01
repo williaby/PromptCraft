@@ -1764,7 +1764,7 @@ class TestMainScriptExecution:
                 pass  # Expected due to configuration error
             except Exception as e:
                 # Expected - configuration errors should be handled gracefully
-                print(f"Expected configuration error: {e}")  # noqa: T201
+                print(f"Expected configuration error: {e}")
 
     def test_main_script_os_error(self):
         """Test main script handling of OS errors."""

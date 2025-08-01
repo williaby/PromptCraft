@@ -420,15 +420,15 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             complexity_indicators += 1
 
         # Complexity thresholds
-        SIMPLE_LINE_THRESHOLD = 10  # noqa: N806
-        COMPLEX_LINE_THRESHOLD = 20  # noqa: N806
-        MAX_SIMPLE_COMPLEXITY = 1  # noqa: N806
-        MAX_MODERATE_COMPLEXITY = 3  # noqa: N806
+        simple_line_threshold = 10
+        complex_line_threshold = 20
+        max_simple_complexity = 1
+        max_moderate_complexity = 3
 
         # Assess based on lines and complexity indicators
-        if lines < SIMPLE_LINE_THRESHOLD and complexity_indicators <= MAX_SIMPLE_COMPLEXITY:
+        if lines < simple_line_threshold and complexity_indicators <= max_simple_complexity:
             return "simple"
-        if lines >= COMPLEX_LINE_THRESHOLD or complexity_indicators > MAX_MODERATE_COMPLEXITY:
+        if lines >= complex_line_threshold or complexity_indicators > max_moderate_complexity:
             return "complex"
         return "moderate"
 
@@ -568,7 +568,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return markdown_content.strip()
 
-    def prepare_download_file(self, content: str, filename: str, format_type: str = "txt") -> str:  # noqa: ARG002
+    def prepare_download_file(self, content: str, filename: str, format_type: str = "txt") -> str:
         """
         Prepare content for download.
 

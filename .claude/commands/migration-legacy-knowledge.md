@@ -19,6 +19,7 @@ Migrate old knowledge files to new format with modern front matter, heading stru
 ## Legacy Format Patterns
 
 ### Legacy ANCHOR System (Pre-2024)
+
 ```markdown
 # Old Format
 ### ANCHOR-QR-1: Quick Reference Overview
@@ -32,6 +33,7 @@ Migrate old knowledge files to new format with modern front matter, heading stru
 ```
 
 ### Legacy Front Matter (Incomplete)
+
 ```yaml
 # Old Format
 ---
@@ -51,6 +53,7 @@ purpose: To provide comprehensive security implementation patterns.
 ```
 
 ### Legacy Link Formats
+
 ```markdown
 # Old Format
 See [ANCHOR-QR-2](#anchor-qr-2)
@@ -64,7 +67,9 @@ Reference: knowledge/security_agent/security-patterns.md
 ## Conversion Rules
 
 ### 1. Heading Structure Modernization
+
 **ANCHOR Reference Removal**:
+
 ```markdown
 # Convert ANCHOR-XX-# format
 ### ANCHOR-QR-1: Topic Name → ### Topic Name
@@ -72,12 +77,15 @@ Reference: knowledge/security_agent/security-patterns.md
 ```
 
 **Heading Hierarchy Validation**:
+
 - Ensure single H1 document title
 - Convert deep nesting (H4+) to H3 atomic chunks
 - Group related H3 sections under appropriate H2 headings
 
 ### 2. Front Matter Generation
+
 **Analyze Content for Metadata**:
+
 ```python
 def extract_legacy_metadata(content: str) -> dict:
     """Extract metadata from legacy content."""
@@ -100,6 +108,7 @@ def extract_legacy_metadata(content: str) -> dict:
 ```
 
 **Content Domain Classification**:
+
 ```python
 DOMAIN_PATTERNS = {
     'security_agent': [
@@ -118,7 +127,9 @@ DOMAIN_PATTERNS = {
 ```
 
 ### 3. Link Modernization
+
 **Internal Link Updates**:
+
 ```markdown
 # Legacy anchor links
 [See Section 2](#anchor-qr-2) → [See Implementation](#implementation)
@@ -131,12 +142,15 @@ DOMAIN_PATTERNS = {
 ```
 
 **Cross-Reference Resolution**:
+
 - Identify broken links and suggest modern equivalents
 - Update cross-agent references to use proper paths
 - Convert legacy documentation links to current structure
 
 ### 4. Content Restructuring
+
 **Atomic Chunk Creation**:
+
 ```markdown
 # Legacy: Long sections with sub-sections
 ## Security Implementation
@@ -167,20 +181,25 @@ authorization issues, and security exceptions...
 ## Conversion Process
 
 ### 1. Content Analysis Phase
+
 **Structure Assessment**:
+
 - Count heading levels and identify deep nesting
 - Locate ANCHOR references and legacy patterns
 - Analyze content organization and flow
 - Identify agent domain alignment
 
 **Link Inventory**:
+
 - Catalog all internal and external links
 - Identify broken or outdated references
 - Map legacy paths to modern equivalents
 - Check cross-reference validity
 
 ### 2. Metadata Generation Phase
+
 **YAML Front Matter Creation**:
+
 ```yaml
 ---
 title: {extracted_or_generated_title}
@@ -195,26 +214,32 @@ conversion_date: {current_date}
 ```
 
 **Agent Classification Logic**:
+
 1. Analyze content keywords and terminology
 2. Check existing agent domain expertise
 3. Consider content complexity and scope
 4. Default to most relevant agent or create_agent
 
 ### 3. Content Restructuring Phase
+
 **Heading Modernization**:
+
 - Remove ANCHOR-XX-# prefixes
 - Restructure deep nesting into atomic H3 chunks
 - Ensure each H3 section is self-contained
 - Group related concepts under H2 sections
 
 **Content Optimization**:
+
 - Break up large sections into atomic chunks
 - Add missing context to isolated procedures
 - Include examples and implementation details
 - Ensure RAG-friendly content structure
 
 ### 4. Link Resolution Phase
+
 **Reference Updates**:
+
 - Convert ANCHOR links to modern heading links
 - Update file paths to current knowledge base structure
 - Fix broken external links where possible
@@ -223,6 +248,7 @@ conversion_date: {current_date}
 ## Required Output Format
 
 ### Conversion Report
+
 ```markdown
 # Legacy Knowledge Conversion Report
 
@@ -258,18 +284,21 @@ conversion_date: 2024-01-15
 ```
 
 #### Link Modernization
+
 - ✅ Updated 12 internal ANCHOR links
 - ✅ Fixed 3 broken relative path links
 - ✅ Converted 2 legacy documentation references
-- ⚠️ 1 external link requires validation: https://old-domain.com/guide
+- ⚠️ 1 external link requires validation: <https://old-domain.com/guide>
 
 #### Content Restructuring
+
 - ✅ Split "Security Setup" into 3 atomic chunks
 - ✅ Enhanced "Error Handling" with complete context
 - ✅ Added implementation examples to abstract concepts
 - ✅ Ensured all H3 sections are self-contained
 
 ### Validation Results
+
 - [ ] YAML front matter is valid
 - [ ] All heading levels appropriate (H1-H3 only)
 - [ ] Internal links resolve correctly
@@ -277,20 +306,24 @@ conversion_date: 2024-01-15
 - [ ] Agent domain alignment confirmed
 
 ### Post-Conversion Actions Required
+
 1. **Manual Review**: Advanced Configuration section needs domain expert review
-2. **Link Validation**: Verify external link: https://old-domain.com/guide
+2. **Link Validation**: Verify external link: <https://old-domain.com/guide>
 3. **Content Enhancement**: Consider adding more examples to OAuth section
 4. **Agent Integration**: Update security_agent knowledge index
 
 ### Quality Metrics
+
 - **Heading Compliance**: 100% (12/12 sections follow H3 atomic pattern)
 - **Link Health**: 94% (15/16 links functional)
 - **Content Completeness**: 85% (most sections self-contained)
 - **Agent Alignment**: 95% (strong security domain fit)
 
 ### Backup Information
+
 **Original File Backup**: `.conversion-backups/2024-01-15/security-guide.md.backup`
 **Rollback Available**: Yes, full restoration possible
+
 ```
 
 ### Content Quality Assessment
@@ -316,12 +349,14 @@ conversion_date: 2024-01-15
 ## Batch Conversion Support
 
 ### Directory-Level Conversion
+
 ```bash
 # Convert entire legacy directory
 /project:convert-legacy-knowledge knowledge/legacy-docs/ security_agent
 ```
 
 **Batch Processing**:
+
 - Analyze content relationships between files
 - Maintain cross-references during conversion
 - Generate consistent agent assignments

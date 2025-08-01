@@ -17,7 +17,9 @@ Perform comprehensive document linting and compliance checking with automatic co
 ## File Type Detection and Rules
 
 ### Knowledge Files (`knowledge/` directory)
+
 **Auto-Corrections Applied**:
+
 - Generate complete YAML front matter with agent_id from directory
 - Fix H1 duplicates (keep only document title)
 - Convert H4+ headings to H3 (preserve content)
@@ -25,37 +27,45 @@ Perform comprehensive document linting and compliance checking with automatic co
 - Fix line length and formatting issues
 
 **Manual Review Flagged**:
+
 - agent_id inconsistency with directory name
 - Content atomicity violations (H3 sections not self-contained)
 - Document scope too broad (suggest splitting)
 - Missing cross-references to related agents
 
 ### Planning Documents (`docs/planning/` directory)
+
 **Auto-Corrections Applied**:
+
 - Generate planning-specific YAML front matter
 - Fix H1/H4+ heading structure issues
 - Apply markdownlint auto-fixes
 - Standardize component field based on content analysis
 
 **Manual Review Flagged**:
+
 - Document scope mixing (planning + technical implementation)
 - Missing stakeholder identification
 - Content structure reorganization suggestions
 - Cross-reference opportunities with related planning docs
 
 ### General Documentation (other locations)
+
 **Auto-Corrections Applied**:
+
 - Basic YAML front matter (if beneficial)
 - Critical heading structure fixes
 - Essential markdownlint violations
 
 **Manual Review Flagged**:
+
 - File location appropriateness
 - Naming convention compliance
 
 ## Auto-Correction Capabilities
 
 ### 1. YAML Front Matter Auto-Generation
+
 ```python
 # Knowledge file example
 def generate_knowledge_frontmatter(file_path: str, content: str) -> dict:
@@ -89,6 +99,7 @@ def generate_planning_frontmatter(file_path: str, content: str) -> dict:
 ```
 
 ### 2. Heading Structure Auto-Fixes
+
 ```markdown
 # Auto-corrections applied:
 
@@ -112,6 +123,7 @@ def generate_planning_frontmatter(file_path: str, content: str) -> dict:
 ```
 
 ### 3. Markdownlint Auto-Fixes
+
 - **MD013**: Line length violations (wrap at 120 chars)
 - **MD022**: Heading spacing (add blank lines)
 - **MD025**: Multiple H1 (keep only first)
@@ -120,6 +132,7 @@ def generate_planning_frontmatter(file_path: str, content: str) -> dict:
 - **MD046**: Code block consistency
 
 ### 4. Advanced Link Validation
+
 ```python
 def validate_and_suggest_links(content: str, file_path: str) -> dict:
     broken_links = find_broken_links(content)
@@ -144,6 +157,7 @@ def validate_and_suggest_links(content: str, file_path: str) -> dict:
 ## Content Analysis and Recommendations
 
 ### Document Scope Analysis (docs/ and knowledge/ only)
+
 ```python
 def analyze_document_scope(content: str, file_type: str) -> dict:
     analysis = {
@@ -175,6 +189,7 @@ def analyze_document_scope(content: str, file_type: str) -> dict:
 ```
 
 ### File Naming Convention Validation
+
 ```python
 def validate_file_naming(file_path: str) -> dict:
     issues = []
@@ -241,6 +256,7 @@ Please provide constructive feedback and recommendations for improvement. Do not
 ## Required Output Format
 
 ### 1. Auto-Corrected File Content
+
 ```markdown
 ---
 [Generated/corrected YAML front matter]
@@ -256,6 +272,7 @@ Please provide constructive feedback and recommendations for improvement. Do not
 ```
 
 ### 2. Manual Review Report
+
 ```markdown
 # Document Linting Report
 
@@ -328,11 +345,13 @@ Please provide constructive feedback and recommendations for improvement. Do not
 ## Validation Scope Restrictions
 
 ### Auto-Correction Scope
+
 - **docs/**: Full auto-correction capabilities
 - **knowledge/**: Full auto-correction capabilities
 - **Other locations**: Limited to critical fixes only
 
 ### Content Analysis Scope
+
 - **Document splitting suggestions**: docs/ and knowledge/ only
 - **Content structure analysis**: docs/ and knowledge/ only
 - **File naming validation**: All locations (flagged, not corrected)

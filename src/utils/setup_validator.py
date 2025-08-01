@@ -41,7 +41,7 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
 
     # Python version check
     if sys.version_info < (3, 11):  # noqa: UP036
-        errors.append(f"Python 3.11+ required, found {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}")
+        errors.append(f"Python 3.11+ required, but found Python {sys.version_info[0]}.{sys.version_info[1]}")
 
     if gnupg is None:
         errors.append("python-gnupg package not available - required for encryption")
@@ -79,7 +79,7 @@ def validate_environment_setup() -> tuple[bool, list[str], list[str]]:
     return len(errors) == 0, errors, warnings
 
 
-def validate_startup_configuration(  # noqa: PLR0912
+def validate_startup_configuration(
     settings: ApplicationSettings | None = None,
 ) -> bool:
     """Perform complete startup validation with detailed reporting.

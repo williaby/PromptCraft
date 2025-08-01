@@ -13,12 +13,14 @@ PROJECT_ROOT/reports/junit.xml
 ## Configuration Files Updated
 
 ### 1. pyproject.toml (Primary pytest configuration)
+
 ```toml
 [tool.pytest.ini_options]
 addopts = "--junitxml=reports/junit.xml ..."
 ```
 
 ### 2. VS Code settings.json (IDE test integration)
+
 ```json
 "python.testing.coverageArgs": [
     "--junitxml=reports/junit.xml",
@@ -27,6 +29,7 @@ addopts = "--junitxml=reports/junit.xml ..."
 ```
 
 ### 3. Coverage System Scripts
+
 - `scripts/coverage_data_loader.py`
 - `scripts/vscode_coverage_integration.py`
 
@@ -35,11 +38,13 @@ All updated to use `self.canonical_junit_xml = self.project_root / "reports" / "
 ## What Was Fixed
 
 **Before:**
+
 - `./junit.xml` (pytest default)
 - `./reports/junit/junit.xml` (VS Code setting)
 - `./reports/coverage/junit.xml` (legacy location)
 
 **After:**
+
 - `./reports/junit.xml` (single canonical location)
 
 ## Important Notes
@@ -52,12 +57,14 @@ All updated to use `self.canonical_junit_xml = self.project_root / "reports" / "
 ## Verification
 
 To verify single junit.xml location:
+
 ```bash
 find . -name "junit.xml" -type f
 # Should only show: ./reports/junit.xml
 ```
 
 To test coverage system with canonical paths:
+
 ```bash
 python scripts/generate_test_coverage_fast.py
 # Should load data from ./reports/junit.xml successfully

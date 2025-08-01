@@ -95,6 +95,10 @@ OPENROUTER_CHAT_ENDPOINT = "/chat/completions"
 DEFAULT_SITE_URL = "https://promptcraft.io"
 DEFAULT_APP_NAME = "PromptCraft-Hybrid"
 
+# Health monitoring constants
+HIGH_ERROR_THRESHOLD = 10  # Maximum error count before status becomes DEGRADED
+STALE_REQUEST_TIMEOUT = 3600  # 1 hour in seconds - when to consider requests stale
+
 
 class OpenRouterClient(MCPClientInterface):
     """
@@ -268,10 +272,10 @@ class OpenRouterClient(MCPClientInterface):
         if self.connection_state == MCPConnectionState.DISCONNECTED:
             status = "UNHEALTHY"
             message = "OpenRouter client is not connected"
-        elif self.error_count > 10:  # High error threshold
+        elif self.error_count > HIGH_ERROR_THRESHOLD:
             status = "DEGRADED"
             message = f"OpenRouter client has high error count: {self.error_count}"
-        elif self.last_successful_request and (time.time() - self.last_successful_request) > 3600:  # 1 hour
+        elif self.last_successful_request and (time.time() - self.last_successful_request) > STALE_REQUEST_TIMEOUT:
             status = "DEGRADED"
             message = "Last successful request was over an hour ago"
         else:

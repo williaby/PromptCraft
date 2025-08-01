@@ -465,8 +465,8 @@ class TestAgentRegistry:
     def test_global_agent_registry_singleton(self):
         """Test that global agent_registry is a singleton."""
         # pylint: disable=import-outside-toplevel
-        from src.agents.registry import agent_registry as registry1  # noqa: PLC0415
-        from src.agents.registry import agent_registry as registry2  # noqa: PLC0415
+        from src.agents.registry import agent_registry as registry1
+        from src.agents.registry import agent_registry as registry2
 
         # Should be the same instance
         assert registry1 is registry2

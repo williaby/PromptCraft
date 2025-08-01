@@ -39,6 +39,22 @@ from src.utils.logging_mixin import LoggerMixin
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Input validation constants
+MAX_TEXT_INPUT_LENGTH = 50000  # Maximum characters allowed for text input
+MAX_FILE_CONTENT_SIZE = 50000  # Maximum characters for file content processing
+MIN_COMPRESSION_RATIO = 9  # Minimum compression ratio to flag as potential zip bomb
+MAX_ARCHIVE_MEMBERS = 100  # Maximum number of files allowed in archive
+MIN_RESULT_LENGTH = 9  # Minimum expected result tuple length for validation
+MIN_ARCHIVE_SIZE = 100  # Minimum reasonable size for archive files (bytes)
+MAX_ARCHIVE_ANALYSIS_FILES = 10  # Maximum files to analyze in archive bomb detection
+COMPRESSION_SAMPLE_SIZE = 1024  # Size of sample chunk for compression analysis (bytes)
+FALLBACK_PREVIEW_LENGTH = 500  # Characters to show in fallback mode
+REQUEST_PREVIEW_LENGTH = 200  # Characters to show in request previews
+BRIEF_PREVIEW_LENGTH = 100  # Characters for brief content previews
+TIMEOUT_PREVIEW_LENGTH = 300  # Characters for timeout recovery previews
+OBJECTIVE_PREVIEW_LENGTH = 150  # Characters for objective previews
+ERROR_RECOVERY_PREVIEW_LENGTH = 250  # Characters for error recovery previews
+
 
 class RateLimiter:
     """
@@ -545,7 +561,6 @@ class MultiJourneyInterface(LoggerMixin):
     ) -> None:
         """Create Journey 1: Smart Templates interface with enhanced file upload."""
         # Initialize Journey 1 processor
-
         journey1_processor = Journey1SmartTemplates()
         export_utils = ExportUtils()
 
@@ -709,7 +724,6 @@ class MultiJourneyInterface(LoggerMixin):
                 session_state: dict[str, Any],
             ) -> tuple[str, ...]:
                 """Handle the enhancement process with comprehensive security validation."""
-
                 try:
                     # Initialize session if needed
                     if session_state.get("session_start_time") is None:
@@ -831,10 +845,10 @@ class MultiJourneyInterface(LoggerMixin):
                         files = processed_files
 
                     # 4. TEXT INPUT VALIDATION
-                    if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:
+                    if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:  # 50KB text limit
                         raise gr.Error(
                             f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
-                            f"Maximum 50,000 characters allowed. Please shorten your text.",
+                            f"Maximum {self.MAX_TEXT_INPUT_SIZE:,} characters allowed. Please shorten your text.",
                         )
 
                     # 5. UPDATE SESSION TRACKING
@@ -1150,7 +1164,7 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If text input exceeds limits
         """
-        if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:
+        if text_input and len(text_input) > self.MAX_TEXT_INPUT_SIZE:  # 50KB text limit
             raise gr.Error(
                 f"❌ Input Error: Text input is too long ({len(text_input)} characters). "
                 f"Maximum 50,000 characters allowed. Please shorten your text.",
@@ -1220,7 +1234,6 @@ class MultiJourneyInterface(LoggerMixin):
         except ImportError:
             # Fallback if python-magic not available
             self.logger.warning("python-magic not available, falling back to basic MIME detection")
-
             guessed_mime, _ = mimetypes.guess_type(file_path)
             return guessed_mime or "application/octet-stream", guessed_mime or "application/octet-stream"
         except Exception as e:
@@ -1279,7 +1292,6 @@ class MultiJourneyInterface(LoggerMixin):
         Raises:
             gr.Error: If archive bomb characteristics are detected
         """
-
         # Only check files that could be compressed archives
         archive_mimes = [
             "application/zip",
@@ -1332,7 +1344,7 @@ class MultiJourneyInterface(LoggerMixin):
 
         # Heuristic 2: Size-based checks (regardless of format)
         # If a very small file claims to be an archive, it's suspicious
-        if file_size < self.MIN_ARCHIVE_SIZE_BYTES:
+        if file_size < self.MIN_ARCHIVE_SIZE_BYTES:  # Less than 100 bytes
             raise gr.Error(
                 f"❌ Security Error: Archive file is suspiciously small ({file_size} bytes). "
                 f"This could be an archive bomb designed to expand enormously when extracted.",
@@ -1428,7 +1440,7 @@ class MultiJourneyInterface(LoggerMixin):
                     files_checked = 0
 
                     for member in tar_file.getmembers():
-                        if files_checked >= 10:  # Limit analysis to first 10 files
+                        if files_checked >= MAX_ARCHIVE_ANALYSIS_FILES:  # Limit analysis to first 10 files
                             break
 
                         if member.isfile():
@@ -1463,8 +1475,8 @@ class MultiJourneyInterface(LoggerMixin):
                 # If not a valid TAR, try GZIP
                 with gzip.open(file_path, "rb") as gz_file:
                     # Read first chunk to estimate compression
-                    chunk = gz_file.read(1024)  # Read 1KB sample
-                    if len(chunk) == 1024:  # File has more content
+                    chunk = gz_file.read(COMPRESSION_SAMPLE_SIZE)  # Read 1KB sample
+                    if len(chunk) == COMPRESSION_SAMPLE_SIZE:  # File has more content
                         # Estimate based on sample
                         estimated_uncompressed = file_size * 1000  # Conservative estimate
                         if estimated_uncompressed > max_uncompressed_size:
@@ -1479,7 +1491,7 @@ class MultiJourneyInterface(LoggerMixin):
             raise gr.Error(
                 "❌ Security Error: Unable to safely analyze compressed archive. "
                 "File blocked as a security precaution.",
-            ) from None
+            ) from e
 
     def _process_file_safely(self, file_path: str, file_size: int, chunk_size: int = 8192) -> str:
         """
@@ -1563,7 +1575,7 @@ class MultiJourneyInterface(LoggerMixin):
             self.logger.error("Unexpected error processing file %s: %s", file_path, e)
             raise gr.Error(
                 "❌ Processing Error: Unable to process file safely. Please try again or contact support.",
-            ) from None
+            ) from e
 
     def _create_fallback_result(self, text_input: str, model: str) -> tuple:
         """Create fallback result when normal processing fails."""
@@ -1801,7 +1813,6 @@ If this error persists:
             return False, f"File too large: {file_size} bytes exceeds {max_size} bytes"
 
         # Check file extension
-
         file_ext = Path(filename).suffix.lower()
         if file_ext not in self.settings.supported_file_types:
             return False, f"Unsupported file type: {file_ext}"
@@ -1818,7 +1829,6 @@ If this error persists:
         if format_type == "md":
             return f"# Exported Content\n\n{content}"
         if format_type == "json":
-
             return json.dumps({"content": content}, indent=2)
         return content
 

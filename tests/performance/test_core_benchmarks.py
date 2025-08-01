@@ -2,7 +2,7 @@
 
 import json
 import time
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -38,7 +38,7 @@ class TestQueryProcessingBenchmarks:
 
         def generate_mock_embedding():
             # Simulate embedding generation (mock CPU-intensive operation)
-            text = "This is a sample text for embedding generation"
+            "This is a sample text for embedding generation"
             # Simulate processing time
             time.sleep(0.001)  # 1ms simulation
             return [0.1 * i for i in range(384)]  # Mock 384-dim embedding
@@ -272,9 +272,7 @@ class TestConcurrencyBenchmarks:
             }
 
             # Calculate total elements
-            total = sum(len(lst) for lst in data["lists"]) + len(data["dicts"]) + len(data["strings"])
-
-            return total
+            return sum(len(lst) for lst in data["lists"]) + len(data["dicts"]) + len(data["strings"])
 
         result = benchmark(allocate_memory)
         assert result > 0

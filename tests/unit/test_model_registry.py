@@ -6,6 +6,7 @@ and integration with environment variables. Ensures 80% coverage requirement.
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -241,7 +242,7 @@ class TestModelRegistry:
             temp_path = f.name
 
         yield temp_path
-        os.unlink(temp_path)
+        Path(temp_path).unlink()
 
     @patch("src.mcp_integration.model_registry.get_settings")
     def test_registry_initialization_with_config_file(self, mock_get_settings, temp_config_file):
@@ -282,7 +283,7 @@ class TestModelRegistry:
             # Should fall back to default models
             assert len(registry._models) > 0
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.mcp_integration.model_registry.get_settings")
     def test_get_model_capabilities(self, mock_get_settings, temp_config_file):
@@ -578,7 +579,7 @@ class TestEdgeCases:
             # Should fall back to default models
             assert len(registry._models) > 0
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.mcp_integration.model_registry.get_settings")
     def test_malformed_model_in_config(self, mock_get_settings):
@@ -613,7 +614,7 @@ class TestEdgeCases:
             assert "valid/model:free" in registry._models
             assert "invalid/model" not in registry._models
         finally:
-            os.unlink(temp_path)
+            Path(temp_path).unlink()
 
     @patch("src.mcp_integration.model_registry.get_settings")
     def test_select_best_model_no_candidates(self, mock_get_settings):

@@ -174,7 +174,7 @@ class HTMLSanitizer:
         Sanitize coverage percentage for safe HTML display.
         """
         # Ensure value is within reasonable bounds
-        if not isinstance(value, (int, float)):
+        if not isinstance(value, int | float):
             return "0.0"
 
         clamped_value = max(0.0, min(100.0, float(value)))

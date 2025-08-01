@@ -30,7 +30,7 @@ try:
     if not PACT_STANDALONE_INSTALLED:
         # Try alternative method to find pact tools
         try:
-            subprocess.run(["pact-mock-service", "--help"], capture_output=True, check=True, timeout=5)
+            subprocess.run(["/usr/local/bin/pact-mock-service", "--help"], capture_output=True, check=True, timeout=5)
             PACT_STANDALONE_INSTALLED = True
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
             PACT_STANDALONE_INSTALLED = False

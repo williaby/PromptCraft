@@ -263,7 +263,7 @@ class ApplicationSettings(BaseSettings):
     )
 
     api_host: str = Field(
-        default="0.0.0.0",  # noqa: S104 # nosec B104 # Intentional bind to all interfaces for development
+        default="0.0.0.0",  # nosec B104 # Intentional bind to all interfaces for development  # noqa: S104
         description="Host address for the API server",
     )
 
@@ -649,7 +649,7 @@ class ApplicationSettings(BaseSettings):
 
         # Allow common special cases
         if v in (
-            "0.0.0.0",  # noqa: S104 # nosec B104 # Valid development host binding
+            "0.0.0.0",  # nosec B104 # Valid development host binding  # noqa: S104
             "localhost",
             "127.0.0.1",
         ):
@@ -1054,7 +1054,7 @@ def _validate_general_security(
 
     # Validate host/port combination makes sense
     if (
-        settings.api_host == "0.0.0.0"  # noqa: S104 # nosec B104 # Intentional bind to all interfaces
+        settings.api_host == "0.0.0.0"  # nosec B104 # Intentional bind to all interfaces  # noqa: S104
         and settings.environment == "dev"
         and settings.api_port < PRIVILEGED_PORT_THRESHOLD
     ):
@@ -1188,7 +1188,7 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
         >>> if settings.database_password:
         ...     print("Database password is configured (value hidden)")
     """
-    global _settings  # noqa: PLW0603 # Singleton pattern requires global state
+    global _settings  # Singleton pattern requires global state  # noqa: PLW0603
     logger = logging.getLogger(__name__)
 
     if _settings is None:
@@ -1256,7 +1256,7 @@ def reload_settings(validate_on_startup: bool = True) -> ApplicationSettings:
     Raises:
         ConfigurationValidationError: If configuration validation fails
     """
-    global _settings  # noqa: PLW0603 # Singleton pattern requires global state
+    global _settings  # Singleton pattern requires global state  # noqa: PLW0603
     logger = logging.getLogger(__name__)
     logger.info("Reloading configuration...")
     _settings = None

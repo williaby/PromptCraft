@@ -475,7 +475,7 @@ class TestQueryAnalysisAndProcessing:
             ),  # Specific - high specificity
         ]
 
-        for query, expected_strategy in test_cases:
+        for query, _expected_strategy in test_cases:
             enhanced = await processor.three_tier_analysis(query)
             assert enhanced.processing_strategy in ["direct_retrieval", "standard_hyde", "clarification_needed"]
 

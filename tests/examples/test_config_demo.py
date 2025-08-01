@@ -121,7 +121,7 @@ class TestConfigDemo:
         mock_settings.version = "1.0.0"
         mock_settings.environment = "prod"
         mock_settings.debug = False
-        mock_settings.api_host = "0.0.0.0"
+        mock_settings.api_host = "0.0.0.0"  # noqa: S104
         mock_settings.api_port = 80
         mock_get_settings.return_value = mock_settings
 
@@ -265,7 +265,7 @@ class TestConfigDemo:
             "🔧 Development mode active - verbose logging enabled",
         ]
 
-        for i, pattern in enumerate(expected_patterns):
+        for _i, pattern in enumerate(expected_patterns):
             matching_log = next((call for call in log_calls if pattern in call), None)
             assert matching_log is not None, f"Expected log pattern not found: {pattern}"
 
@@ -275,8 +275,6 @@ class TestConfigDemo:
         # This is important for the import to work
 
         # Check if the path modification logic is present in the module
-        expected_path = str(Path(__file__).parent.parent.parent / "src")
-
         # The actual path modification happens during import, so we test the logic
         demo_file_path = Path(__file__).parent.parent.parent / "examples" / "config_demo.py"
         assert demo_file_path.exists(), "config_demo.py should exist"

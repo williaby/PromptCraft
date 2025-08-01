@@ -4,6 +4,7 @@ Tests for core vector store implementation.
 This module tests the actual vector store classes and interfaces to improve coverage.
 """
 
+import contextlib
 from unittest.mock import Mock, patch
 
 import pytest
@@ -419,7 +420,7 @@ class TestVectorStoreFactory:
 
     def test_invalid_store_type(self):
         """Test handling invalid store type."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Unsupported vector store type|invalid"):
             VectorStoreFactory.create_store("invalid_type")
 
     def test_get_supported_types(self):
@@ -465,15 +466,11 @@ class TestVectorStoreErrorHandling:
         params = SearchParameters(embeddings=[[0.1, 0.2, 0.3]])
 
         # These should not crash but may return empty results or handle gracefully
-        try:
+        with contextlib.suppress(Exception):
             await self.store.search(params)
-        except Exception:
-            pass  # Expected for some implementations
 
-        try:
+        with contextlib.suppress(Exception):
             await self.store.list_collections()
-        except Exception:
-            pass  # Expected for some implementations
 
     @pytest.mark.asyncio
     async def test_invalid_collection_operations(self):
@@ -495,10 +492,8 @@ class TestVectorStoreErrorHandling:
         initial_errors = self.store.metrics.error_count
 
         # Try an operation that might fail
-        try:
+        with contextlib.suppress(Exception):
             await self.store.search(SearchParameters(embeddings=[[0.1, 0.2, 0.3]], collection="nonexistent"))
-        except Exception:
-            pass
 
         # Error count might increase depending on implementation
         assert self.store.metrics.error_count >= initial_errors

@@ -12,10 +12,8 @@ import sys
 from pathlib import Path
 
 
-def run_command(command: list[str], description: str) -> bool:
+def run_command(command: list[str], _description: str) -> bool:
     """Run a command and return its result."""
-    print(f"\n🔍 {description}")  # noqa: T201
-    print(f"Command: {' '.join(command)}")  # noqa: T201
 
     try:
         result = subprocess.run(  # noqa: S603
@@ -26,40 +24,31 @@ def run_command(command: list[str], description: str) -> bool:
             cwd=Path.cwd(),
         )  # nosec B603
 
-        print(f"Exit code: {result.returncode}")  # noqa: T201
         if result.stdout:
-            print(f"STDOUT:\n{result.stdout}")  # noqa: T201
+            pass
         if result.stderr:
-            print(f"STDERR:\n{result.stderr}")  # noqa: T201
+            pass
 
         return result.returncode == 0
-    except Exception as e:
-        print(f"Error running command: {e}")  # noqa: T201
+    except Exception:
         return False
 
 
 def main() -> bool:
     """Main verification function."""
-    print("🧪 VS Code Python Test Integration Verification")  # noqa: T201
-    print("=" * 50)  # noqa: T201
 
     # Get project root
-    project_root = Path.cwd()
+    Path.cwd()
     venv_path = "/home/byron/.cache/pypoetry/virtualenvs/promptcraft-hybrid-ww18U7e4-py3.11"
     pytest_path = f"{venv_path}/bin/pytest"
     python_path = f"{venv_path}/bin/python"
 
     # Check paths exist
-    print(f"📁 Project root: {project_root}")  # noqa: T201
-    print(f"🐍 Python path: {python_path}")  # noqa: T201
-    print(f"🧪 Pytest path: {pytest_path}")  # noqa: T201
 
     if not Path(python_path).exists():
-        print("❌ Python executable not found!")  # noqa: T201
         return False
 
     if not Path(pytest_path).exists():
-        print("❌ Pytest executable not found!")  # noqa: T201
         return False
 
     # Test 1: Python version
@@ -91,8 +80,6 @@ def main() -> bool:
     )
 
     # Summary
-    print("\n📊 Summary")  # noqa: T201
-    print("=" * 20)  # noqa: T201
     results = [
         ("Python version check", success1),
         ("Pytest version check", success2),
@@ -101,22 +88,11 @@ def main() -> bool:
     ]
 
     all_passed = True
-    for test_name, passed in results:
-        status = "✅ PASS" if passed else "❌ FAIL"
-        print(f"{status} {test_name}")  # noqa: T201
+    for _test_name, passed in results:
         if not passed:
             all_passed = False
 
-    if all_passed:
-        print("\n🎉 All tests passed! VS Code should be able to discover and run tests.")  # noqa: T201
-        print("\nNext steps:")  # noqa: T201
-        print("1. Reload VS Code window (Ctrl+Shift+P -> 'Developer: Reload Window')")  # noqa: T201
-        print("2. Open Test Explorer (Ctrl+Shift+P -> 'Test: Focus on Test Explorer View')")  # noqa: T201
-        print("3. Tests should appear in the Test Explorer")  # noqa: T201
-        print("4. You can run individual tests by clicking the play button")  # noqa: T201
-        return True
-    print("\n❌ Some tests failed. Check the error messages above.")  # noqa: T201
-    return False
+    return bool(all_passed)
 
 
 if __name__ == "__main__":

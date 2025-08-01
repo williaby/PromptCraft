@@ -1,11 +1,8 @@
 """Tests for time_utils module."""
 
-# ruff: noqa: UP017
-
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from src.utils.time_utils import (
-    UTC,
     __all__,
     format_datetime,
     from_timestamp,
@@ -23,7 +20,7 @@ class TestTimeUtils:
     def test_utc_now(self):
         """Test utc_now function."""
         now = utc_now()
-        assert now.tzinfo == timezone.utc
+        assert now.tzinfo == UTC
         assert isinstance(now, datetime)
 
     def test_utc_timestamp(self):
@@ -35,7 +32,7 @@ class TestTimeUtils:
     def test_to_utc_datetime(self):
         """Test to_utc_datetime function."""
         dt = to_utc_datetime(2024, 1, 1, 12, 0, 0)
-        assert dt.tzinfo == timezone.utc
+        assert dt.tzinfo == UTC
         assert dt.year == 2024
         assert dt.month == 1
         assert dt.day == 1
@@ -46,7 +43,7 @@ class TestTimeUtils:
     def test_to_utc_datetime_with_defaults(self):
         """Test to_utc_datetime with default parameters."""
         dt = to_utc_datetime(2024, 1, 1)
-        assert dt.tzinfo == timezone.utc
+        assert dt.tzinfo == UTC
         assert dt.hour == 0
         assert dt.minute == 0
         assert dt.second == 0
@@ -57,7 +54,7 @@ class TestTimeUtils:
         # 2022-01-01 00:00:00 UTC
         timestamp = 1640995200
         dt = from_timestamp(timestamp)
-        assert dt.tzinfo == timezone.utc
+        assert dt.tzinfo == UTC
         assert dt.year == 2022
         assert dt.month == 1
         assert dt.day == 1
@@ -82,7 +79,7 @@ class TestTimeUtils:
         assert isinstance(timestamp, float)
 
         # Should be treated as UTC
-        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         expected_timestamp = dt_utc.timestamp()
         assert timestamp == expected_timestamp
 
@@ -120,7 +117,7 @@ class TestTimeUtils:
         """Test parse_iso_datetime function."""
         iso_string = "2024-01-01T12:00:00+00:00"
         dt = parse_iso_datetime(iso_string)
-        assert dt.tzinfo == timezone.utc
+        assert dt.tzinfo == UTC
         assert dt.year == 2024
         assert dt.month == 1
         assert dt.day == 1
@@ -130,7 +127,7 @@ class TestTimeUtils:
         """Test parse_iso_datetime with Z suffix."""
         iso_string = "2024-01-01T12:00:00Z"
         dt = parse_iso_datetime(iso_string)
-        assert dt.tzinfo == timezone.utc
+        assert dt.tzinfo == UTC
         assert dt.year == 2024
         assert dt.month == 1
         assert dt.day == 1
@@ -138,7 +135,7 @@ class TestTimeUtils:
 
     def test_utc_constant(self):
         """Test UTC constant."""
-        assert timezone.utc == UTC
+        assert UTC is UTC  # noqa: PLR0124
 
     def test_all_exports(self):
         """Test that all public API functions are exported."""
@@ -171,13 +168,13 @@ class TestTimeUtils:
         """Test that all functions maintain UTC timezone consistency."""
         # Test that all datetime-returning functions return UTC
         now = utc_now()
-        assert now.tzinfo == timezone.utc
+        assert now.tzinfo == UTC
 
         dt_from_components = to_utc_datetime(2024, 1, 1)
-        assert dt_from_components.tzinfo == timezone.utc
+        assert dt_from_components.tzinfo == UTC
 
         dt_from_timestamp = from_timestamp(1640995200)
-        assert dt_from_timestamp.tzinfo == timezone.utc
+        assert dt_from_timestamp.tzinfo == UTC
 
         dt_from_iso = parse_iso_datetime("2024-01-01T12:00:00Z")
-        assert dt_from_iso.tzinfo == timezone.utc
+        assert dt_from_iso.tzinfo == UTC

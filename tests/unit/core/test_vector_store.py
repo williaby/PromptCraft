@@ -1144,9 +1144,11 @@ class TestEnhancedMockVectorStore:
         store = EnhancedMockVectorStore({"error_rate": 1.0})
 
         # Mock random to always return a value that triggers error
-        with patch("src.utils.secure_random.secure_random.random", return_value=0.0):
-            with pytest.raises(RuntimeError, match="Simulated error in test_operation"):
-                await store._maybe_simulate_error("test_operation", probability=1.0)
+        with (
+            patch("src.utils.secure_random.secure_random.random", return_value=0.0),
+            pytest.raises(RuntimeError, match="Simulated error in test_operation"),
+        ):
+            await store._maybe_simulate_error("test_operation", probability=1.0)
 
 
 @pytest.mark.unit
@@ -1184,9 +1186,11 @@ class TestQdrantVectorStore:
         """Test connection when Qdrant is not available."""
         store = QdrantVectorStore({})
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", False):
-            with pytest.raises(RuntimeError, match="Qdrant client not available"):
-                await store.connect()
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", False),
+            pytest.raises(RuntimeError, match="Qdrant client not available"),
+        ):
+            await store.connect()
 
     @pytest.mark.asyncio
     async def test_connect_success(self):
@@ -1196,25 +1200,29 @@ class TestQdrantVectorStore:
         mock_client = Mock()
         mock_client.get_collections.return_value = Mock(collections=[])
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True):
-            with patch("src.core.vector_store.QdrantClient", return_value=mock_client):
-                await store.connect()
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", return_value=mock_client),
+        ):
+            await store.connect()
 
-                assert store._client is mock_client
-                assert store._connection_status == ConnectionStatus.HEALTHY
-                mock_client.get_collections.assert_called_once()
+            assert store._client is mock_client
+            assert store._connection_status == ConnectionStatus.HEALTHY
+            mock_client.get_collections.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_connect_failure(self):
         """Test connection failure to Qdrant."""
         store = QdrantVectorStore({})
 
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True):
-            with patch("src.core.vector_store.QdrantClient", side_effect=Exception("Connection failed")):
-                with pytest.raises(Exception, match="Connection failed"):
-                    await store.connect()
+        with (
+            patch("src.core.vector_store.QDRANT_AVAILABLE", True),
+            patch("src.core.vector_store.QdrantClient", side_effect=Exception("Connection failed")),
+            pytest.raises(Exception, match="Connection failed"),
+        ):
+            await store.connect()
 
-                assert store._connection_status == ConnectionStatus.UNHEALTHY
+        assert store._connection_status == ConnectionStatus.UNHEALTHY
 
     @pytest.mark.asyncio
     async def test_disconnect(self):
@@ -1350,22 +1358,24 @@ class TestQdrantVectorStore:
         store._client = mock_client
 
         # Mock collection existence check
-        with patch.object(store, "_ensure_collection_exists", return_value=None):
-            with patch("src.core.vector_store.PointStruct") as mock_point_struct:
-                docs = [
-                    VectorDocument(
-                        id="test_doc",
-                        content="Test content",
-                        embedding=[0.1, 0.2],
-                        collection="test_collection",
-                    ),
-                ]
+        with (
+            patch.object(store, "_ensure_collection_exists", return_value=None),
+            patch("src.core.vector_store.PointStruct"),
+        ):
+            docs = [
+                VectorDocument(
+                    id="test_doc",
+                    content="Test content",
+                    embedding=[0.1, 0.2],
+                    collection="test_collection",
+                ),
+            ]
 
-                result = await store.insert_documents(docs)
+            result = await store.insert_documents(docs)
 
-                assert result.success_count == 1
-                assert result.error_count == 0
-                mock_client.upsert.assert_called_once()
+            assert result.success_count == 1
+            assert result.error_count == 0
+            mock_client.upsert.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_update_document_no_client(self):
@@ -1389,7 +1399,7 @@ class TestQdrantVectorStore:
 
         store._client = mock_client
 
-        with patch("src.core.vector_store.PointStruct") as mock_point_struct:
+        with patch("src.core.vector_store.PointStruct"):
             doc = VectorDocument(id="test", content="test", embedding=[0.1])
             result = await store.update_document(doc)
 
@@ -1441,12 +1451,14 @@ class TestQdrantVectorStore:
         mock_client = Mock()
         store._client = mock_client
 
-        with patch("src.core.vector_store.VectorParams") as mock_vector_params:
-            with patch("src.core.vector_store.Distance") as mock_distance:
-                result = await store.create_collection("test_collection", 512)
+        with (
+            patch("src.core.vector_store.VectorParams"),
+            patch("src.core.vector_store.Distance"),
+        ):
+            result = await store.create_collection("test_collection", 512)
 
-                assert result is True
-                mock_client.create_collection.assert_called_once()
+            assert result is True
+            mock_client.create_collection.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_list_collections_no_client(self):

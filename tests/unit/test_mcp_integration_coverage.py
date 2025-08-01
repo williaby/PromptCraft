@@ -59,9 +59,9 @@ class TestMCPClient:
         with (
             patch.object(Path, "exists", return_value=True),
             patch.object(Path, "open", mock_open(read_data="invalid json")),
+            pytest.raises(MCPClientError),
         ):
-            with pytest.raises(MCPClientError):
-                MCPClient()
+            MCPClient()
 
     @pytest.mark.asyncio
     async def test_connect_server_success(self):
@@ -347,10 +347,9 @@ class TestMCPConfigurationManager:
             manager = MCPConfigurationManager()
             manager.configuration = MCPConfigurationBundle(mcpServers={})
 
-            with patch("builtins.open", mock_open()) as mock_file:
-                with patch("pathlib.Path.exists", return_value=False):
-                    result = manager.save_configuration(backup_current=False)
-                    assert result is True
+            with patch("builtins.open", mock_open()), patch("pathlib.Path.exists", return_value=False):
+                result = manager.save_configuration(backup_current=False)
+                assert result is True
 
     def test_save_configuration_no_config(self):
         """Test saving when no configuration is loaded."""

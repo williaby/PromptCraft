@@ -4,9 +4,16 @@ Automatically sets coverage contexts based on test directory structure
 to match codecov.yaml flags for consistency.
 """
 
+import json
 import os
+import time
+from typing import Any
 
 import pytest
+
+from src.agents.base_agent import BaseAgent
+from src.agents.models import AgentConfig, AgentInput, AgentOutput
+from src.agents.registry import AgentRegistry
 
 
 def pytest_runtest_setup(item):
@@ -72,11 +79,6 @@ def coverage_contexts():
     print(f"\nCoverage contexts used: {sorted(contexts)}")
 
 
-# Import required modules for fixtures
-import json
-import time
-from typing import Any
-
 # Agent Testing Fixtures
 # These fixtures support comprehensive agent system testing across unit, integration, and security tests.
 
@@ -92,8 +94,6 @@ def fresh_agent_registry():
     Yields:
         AgentRegistry: Fresh registry instance for the test
     """
-    from src.agents.registry import AgentRegistry
-
     registry = AgentRegistry()
     yield registry
     # Cleanup: clear all registrations to prevent state leakage
@@ -111,8 +111,6 @@ def mock_agent_class():
     Returns:
         Type[BaseAgent]: Mock agent class suitable for testing
     """
-    from src.agents.base_agent import BaseAgent
-    from src.agents.models import AgentOutput
 
     class MockTestAgent(BaseAgent):
         """Mock agent class for testing purposes."""
@@ -194,7 +192,7 @@ def security_test_inputs():
         "\\x00\\x01\\x02\\x03",  # Binary data
         "\\r\\n\\r\\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script
+        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
         "🚀🔥💻",  # Emojis
         "\\ufeff",  # BOM character
         # Empty and whitespace edge cases
@@ -350,8 +348,6 @@ def sample_agent_input():
     Returns:
         AgentInput: Sample agent input with comprehensive data
     """
-    from src.agents.models import AgentInput
-
     return AgentInput(
         content="This is a test input for the agent",
         context={"language": "python", "framework": "fastapi", "content_type": "text", "priority": "normal"},
@@ -370,8 +366,6 @@ def sample_agent_output():
     Returns:
         AgentOutput: Sample agent output with comprehensive data
     """
-    from src.agents.models import AgentOutput
-
     return AgentOutput(
         content="This is a test output from the agent",
         metadata={"analysis_type": "security", "rules_checked": 10, "issues_found": 0, "processing_stage": "complete"},
@@ -393,8 +387,6 @@ def sample_agent_config_model():
     Returns:
         AgentConfig: Sample agent config with comprehensive data
     """
-    from src.agents.models import AgentConfig
-
     return AgentConfig(
         agent_id="test_agent",
         name="Test Agent",
@@ -424,7 +416,7 @@ def sample_agent_config(sample_agent_config_model):
     base_config = sample_agent_config_model.model_dump()
 
     # Extract the nested config and merge with top-level fields for BaseAgent compatibility
-    agent_config = {
+    return {
         "agent_id": base_config["agent_id"],
         "name": base_config["name"],
         "description": base_config["description"],
@@ -432,5 +424,3 @@ def sample_agent_config(sample_agent_config_model):
         # Flatten the nested config for BaseAgent compatibility
         **base_config["config"],
     }
-
-    return agent_config

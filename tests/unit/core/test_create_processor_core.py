@@ -52,7 +52,7 @@ class TestCreateProcessor:
             mock_logger = Mock()
             mock_get_logger.return_value = mock_logger
 
-            processor = CreateProcessor(config)
+            CreateProcessor(config)
 
             # Should call setLevel with the correct level
             mock_logger.setLevel.assert_called_once()
