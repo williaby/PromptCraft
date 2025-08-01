@@ -209,8 +209,6 @@ ignore = [
     "E501",    # line too long (handled by black)
     "B008",    # do not perform function calls in argument defaults
     "C901",    # too complex
-    "ANN101",  # missing type annotation for self
-    "ANN102",  # missing type annotation for cls
     "ANN401",  # dynamically typed expressions (Any)
     "S101",    # use of assert detected
     "PLR0913", # too many arguments
@@ -355,43 +353,8 @@ markers = [
     "auth: authentication and authorization tests",
 ]
 
-# Test execution profiles for different scenarios
-[tool.pytest.profiles]
-# Fast development loop (< 1 minute)
-fast = [
-    "tests/unit/",
-    "tests/auth/",
-    "-m", "not slow and not performance and not stress",
-    "--maxfail=3",
-    "--tb=short"
-]
-
-# Pre-commit validation (< 2 minutes)
-pre-commit = [
-    "tests/unit/",
-    "tests/auth/",
-    "tests/integration/",
-    "-m", "not performance and not stress and not contract",
-    "--maxfail=5"
-]
-
-# PR validation (< 5 minutes)
-pr = [
-    "-m", "not performance and not stress",
-    "--maxfail=10"
-]
-
-# Full suite (scheduled/main branch)
-full = [
-    "--durations=20"
-]
-
-# Performance tests only
-performance = [
-    "tests/performance/",
-    "-m", "performance or stress",
-    "--tb=line"
-]
+# Note: Test execution profiles are implemented via Makefile and noxfile.py
+# See CLAUDE.md for available test commands and execution strategies
 
 [tool.coverage.run]
 source = ["src"]
@@ -430,7 +393,7 @@ output = "coverage.xml"
 [tool.bandit]
 targets = ["src"]
 exclude_dirs = ["tests", "scripts"]
-skips = ["B101", "B404"]
+skips = ["B101", "B601"]
 
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"]

@@ -338,7 +338,11 @@ jobs:
 
           for coverage_file in coverage-unit.xml coverage-integration.xml coverage-auth.xml; do
             if [ -f "$coverage_file" ]; then
-              COVERAGE=$(python -c "import xml.etree.ElementTree as ET; tree = ET.parse('$coverage_file'); root = tree.getroot(); line_rate = float(root.attrib['line-rate']); percentage = line_rate * 100; print(f'{percentage:.2f}')")
+              COVERAGE=$(
+                python -c "import xml.etree.ElementTree as ET; tree = ET.parse('$coverage_file'); \
+                           root = tree.getroot(); line_rate = float(root.attrib['line-rate']); \
+                           percentage = line_rate * 100; print(f'{percentage:.2f}')"
+              )
               echo "$coverage_file: ${COVERAGE}%"
             else
               echo "⚠️  $coverage_file not found"
@@ -443,7 +447,9 @@ jobs:
 
       - name: Upload performance test coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+        if: >
+          ${{ env.CODECOV_TOKEN != '' }} && !cancelled() &&
+          (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
         with:
           file: ./coverage-performance.xml
           fail_ci_if_error: false
@@ -457,7 +463,9 @@ jobs:
 
       - name: Upload stress test coverage to Codecov
         uses: codecov/codecov-action@v4
-        if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled() && (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
+        if: >
+          ${{ env.CODECOV_TOKEN != '' }} && !cancelled() &&
+          (github.ref == 'refs/heads/main' || github.event_name == 'schedule')
         with:
           file: ./coverage-stress.xml
           fail_ci_if_error: false

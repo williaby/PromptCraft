@@ -6,7 +6,7 @@
 
 **Solution**: All test configurations now use a single canonical location for junit.xml:
 
-```
+```text
 PROJECT_ROOT/reports/junit.xml
 ```
 

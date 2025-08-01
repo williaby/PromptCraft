@@ -2,7 +2,8 @@
 
 ## Overview
 
-This guide outlines security best practices for the PromptCraft configuration system, focusing on protecting sensitive data, preventing leaks, and maintaining security across different environments.
+This guide outlines security best practices for the PromptCraft configuration system, focusing on protecting
+sensitive data, preventing leaks, and maintaining security across different environments.
 
 ## Secret Management
 
@@ -805,4 +806,5 @@ class SecurityReviewSchedule:
         ]
 ```
 
-Remember: Security is an ongoing process, not a one-time setup. Regularly review and update these practices as your application and threat landscape evolve.
+Remember: Security is an ongoing process, not a one-time setup. Regularly review and update these practices as your
+application and threat landscape evolve.
