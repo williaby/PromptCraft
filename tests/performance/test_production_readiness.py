@@ -937,8 +937,8 @@ class TestProductionReadiness:
                 # More lenient threshold for CI environments where timing is less predictable
                 if IS_CI:
                     # In CI, timing is highly variable - focus on ensuring recovery doesn't degrade significantly
-                    # Allow negative improvement up to -10% in CI, but still expect some recovery
-                    improvement_threshold = -0.10  # Allow up to 10% degradation in CI due to variable timing
+                    # Allow minimal negative improvement in CI, but still expect some recovery
+                    improvement_threshold = -0.05  # Allow up to 5% degradation in CI due to variable timing
                     assert (
                         recovery_improvement > improvement_threshold
                     ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (CI allows timing variation)"
@@ -954,9 +954,11 @@ class TestProductionReadiness:
                         recovery_vs_light < 2.0
                     ), f"Recovery time should be within 200% of light load baseline (was {recovery_vs_light:.2%}) - CI timing is highly variable"
                 else:
-                    # Local environment with mocked services - timing is unpredictable
-                    # Just verify recovery isn't catastrophically worse
-                    improvement_threshold = -0.50  # Allow up to 50% degradation in mock environment
+                    # Local environment with mocked services - timing is unpredictable but should still show improvement
+                    # Use balanced threshold: stricter than before (50%->30%) but accounts for mock unpredictability
+                    improvement_threshold = (
+                        -0.30
+                    )  # Allow up to 30% degradation in mock environment (was 50%, now more meaningful)
                     assert (
                         recovery_improvement > improvement_threshold
                     ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (mock env allows major variation)"
