@@ -4,7 +4,8 @@ This document provides guidance on using the new abstract MCP client interface i
 
 ## Overview
 
-The MCP client interface provides a unified abstraction for integrating with MCP (Model Context Protocol) servers, with support for both development mock clients and production Zen MCP Server integration.
+The MCP client interface provides a unified abstraction for integrating with MCP (Model Context Protocol) servers,
+with support for both development mock clients and production Zen MCP Server integration.
 
 ## Key Components
 
