@@ -182,6 +182,7 @@ jobs:
           flags: unit
           name: Unit Tests (Python ${{ matrix.python-version }})
           verbose: true
+          slug: williaby/PromptCraft
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -266,6 +267,7 @@ jobs:
           flags: integration
           name: Integration Tests (Python ${{ matrix.python-version }})
           verbose: true
+          slug: williaby/PromptCraft
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -345,6 +347,7 @@ jobs:
           flags: auth
           name: Auth Tests (Python ${{ matrix.python-version }})
           verbose: true
+          slug: williaby/PromptCraft
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -488,5 +491,33 @@ jobs:
             echo "integration-tests: ${{ needs.integration-tests.result }}"
             echo "auth-tests: ${{ needs.auth-tests.result }}"
             echo "quality-checks: ${{ needs.quality-checks.result }}"
+            exit 1
+          fi
+
+  # Required status check for branch protection
+  ci-test:
+    name: CI / Test
+    runs-on: ubuntu-latest
+    needs: [setup-optimized, unit-tests, integration-tests, auth-tests, quality-checks, security-scan]
+    if: always()
+    steps:
+      - name: Validate all test jobs
+        run: |
+          if [[ "${{ needs.setup-optimized.result }}" == "success" && \
+                "${{ needs.unit-tests.result }}" == "success" && \
+                "${{ needs.integration-tests.result }}" == "success" && \
+                "${{ needs.auth-tests.result }}" == "success" && \
+                "${{ needs.quality-checks.result }}" == "success" && \
+                "${{ needs.security-scan.result }}" == "success" ]]; then
+            echo "✅ All CI test jobs passed successfully"
+            echo "📊 Codecov carryforward flags enabled for unified coverage reporting"
+          else
+            echo "❌ One or more CI test jobs failed"
+            echo "setup-optimized: ${{ needs.setup-optimized.result }}"
+            echo "unit-tests: ${{ needs.unit-tests.result }}"
+            echo "integration-tests: ${{ needs.integration-tests.result }}"
+            echo "auth-tests: ${{ needs.auth-tests.result }}"
+            echo "quality-checks: ${{ needs.quality-checks.result }}"
+            echo "security-scan: ${{ needs.security-scan.result }}"
             exit 1
           fi
