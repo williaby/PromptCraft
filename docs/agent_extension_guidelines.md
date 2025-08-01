@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document provides comprehensive guidelines for external teams to extend the PromptCraft Agent System with custom agents. The system is designed to be modular, extensible, and maintainable, following established patterns and conventions.
+This document provides comprehensive guidelines for external teams to extend the PromptCraft Agent System with custom
+agents. The system is designed to be modular, extensible, and maintainable, following established patterns and
+conventions.
 
 ## Architecture Overview
 
@@ -653,4 +655,5 @@ All custom agents must be compatible with the PromptCraft license terms.
 
 ---
 
-*This document is maintained by the PromptCraft Agent System team. For questions or clarifications, please open an issue or contact the maintainers.*
+*This document is maintained by the PromptCraft Agent System team. For questions or clarifications, please open an
+issue or contact the maintainers.*

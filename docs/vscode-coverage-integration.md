@@ -2,7 +2,8 @@
 
 ## Overview
 
-The coverage automation system is now **fully automated** - no manual intervention required when VS Code runs "Run Tests with Coverage".
+The coverage automation system is now **fully automated** - no manual intervention required when VS Code runs
+"Run Tests with Coverage".
 
 ## How It Works
 
@@ -118,7 +119,8 @@ The system is **complete and fully functional**. Users can now:
 3. **View fresh coverage data** immediately after test runs
 4. **See all test types** with real per-test coverage measurement
 
-The automation goal has been **fully achieved** - coverage reports update automatically when VS Code runs tests, providing real per-test coverage data without any manual intervention.
+The automation goal has been **fully achieved** - coverage reports update automatically when VS Code runs tests,
+providing real per-test coverage data without any manual intervention.
 
 ## Workflow Integration
 
@@ -168,7 +170,7 @@ dynamic_context = "test_function"
 
 ## File Structure
 
-```
+```text
 reports/coverage/
 ├── index.html                    # Main coverage overview
 ├── by-type/                      # Test type analysis
@@ -203,4 +205,5 @@ pytest_plugins = ["pytest_plugins.coverage_hook_plugin"]
 # Plugin will show error message if hook fails
 ```
 
-This integration provides the fully automated workflow where VS Code test runs automatically generate detailed HTML coverage reports with zero manual intervention required.
+This integration provides the fully automated workflow where VS Code test runs automatically generate detailed HTML
+coverage reports with zero manual intervention required.
