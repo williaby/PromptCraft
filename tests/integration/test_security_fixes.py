@@ -5,9 +5,9 @@ Tests the critical security vulnerabilities and functionality bugs identified
 by the multi-agent review and fixed in the remediation process.
 """
 
-import os
 import tempfile
 import time
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import gradio as gr
@@ -55,7 +55,7 @@ class TestSecurityFixes:
                 with pytest.raises(gr.Error, match="Security Error.*exceeds.*size limit"):
                     self.interface._validate_files([mock_file])
             finally:
-                os.unlink(tmp_file.name)
+                Path(tmp_file.name).unlink()
 
     def test_file_type_validation(self):
         """Test that only supported file types are allowed."""
@@ -71,7 +71,7 @@ class TestSecurityFixes:
                 with pytest.raises(gr.Error, match="Security Error.*unsupported type"):
                     self.interface._validate_files([mock_file])
             finally:
-                os.unlink(tmp_file.name)
+                Path(tmp_file.name).unlink()
 
     def test_memory_safe_file_processing(self):
         """Test that large files are processed safely with memory bounds."""
@@ -87,7 +87,7 @@ class TestSecurityFixes:
                 assert "FILE TRUNCATED" in result
                 assert len(result.encode()) <= 5 * 1024 * 1024  # Within memory limit
             finally:
-                os.unlink(tmp_file.name)
+                Path(tmp_file.name).unlink()
 
     def test_mime_type_validation(self):
         """Test MIME type security validation."""
@@ -133,7 +133,7 @@ class TestSecurityEnhancements:
                 detected_mime, guessed_mime = self.interface._validate_file_content_and_mime(tmp_file.name, ".txt")
                 assert "text" in detected_mime.lower() or detected_mime == "application/octet-stream"
             finally:
-                os.unlink(tmp_file.name)
+                Path(tmp_file.name).unlink()
 
     def test_rate_limiting_functionality(self):
         """Test rate limiting implementation."""
@@ -170,7 +170,7 @@ class TestSecurityEnhancements:
                 # Should not fail for normal files
                 pytest.fail(f"Archive bomb detection failed for normal file: {e}")
             finally:
-                os.unlink(tmp_file.name)
+                Path(tmp_file.name).unlink()
 
     def test_zip_bomb_detection_safe_analysis(self):
         """Test ZIP bomb detection with safe analysis limits."""
@@ -184,13 +184,13 @@ class TestSecurityEnhancements:
 
             try:
                 # Should not raise exception for normal ZIP
-                file_size = os.path.getsize(tmp_zip.name)
+                file_size = Path(tmp_zip.name).stat().st_size
                 self.interface._check_zip_bomb_heuristics(tmp_zip.name, file_size)
             except Exception as e:
                 # Should not fail for normal ZIP files
                 pytest.fail(f"ZIP bomb detection failed for normal ZIP: {e}")
             finally:
-                os.unlink(tmp_zip.name)
+                Path(tmp_zip.name).unlink()
 
     def test_archive_mime_type_detection(self):
         """Test that archive MIME types are properly detected."""
@@ -233,7 +233,7 @@ class TestSecurityEnhancements:
                     with pytest.raises(gr.Error, match="polyglot.*suspicious content"):
                         self.interface._check_for_content_anomalies(tmp_file.name, detected_mime, file_ext)
                 finally:
-                    os.unlink(tmp_file.name)
+                    Path(tmp_file.name).unlink()
 
 
 class TestFunctionalityFixes:

@@ -251,7 +251,7 @@ class ModelRegistry:
                 self._load_default_models()
                 return
 
-            with open(self._config_path, encoding="utf-8") as f:
+            with self._config_path.open(encoding="utf-8") as f:
                 config_data = yaml.safe_load(f)
 
             if not config_data or "models" not in config_data:
@@ -603,7 +603,7 @@ def get_model_registry() -> ModelRegistry:
     Returns:
         Singleton ModelRegistry instance
     """
-    global _global_registry
+    global _global_registry  # noqa: PLW0603
     if _global_registry is None:
         _global_registry = ModelRegistry()
     return _global_registry
@@ -611,7 +611,7 @@ def get_model_registry() -> ModelRegistry:
 
 def reload_model_registry() -> None:
     """Reload global ModelRegistry configuration."""
-    global _global_registry
+    global _global_registry  # noqa: PLW0603
     if _global_registry is not None:
         _global_registry.reload_config()
     else:
@@ -620,5 +620,5 @@ def reload_model_registry() -> None:
 
 def clear_model_registry() -> None:
     """Clear global ModelRegistry (for testing)."""
-    global _global_registry
+    global _global_registry  # noqa: PLW0603
     _global_registry = None

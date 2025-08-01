@@ -425,11 +425,13 @@ if result.errors:
 For production deployment with external Qdrant at 192.168.1.16:6333:
 
 1. **Install Qdrant Client**:
+
    ```bash
    poetry add qdrant-client
    ```
 
 2. **Configuration**:
+
    ```python
    import os
 
@@ -443,6 +445,7 @@ For production deployment with external Qdrant at 192.168.1.16:6333:
    ```
 
 3. **Health Monitoring**:
+
    ```python
    # Regular health checks
    async def monitor_vector_store(store):

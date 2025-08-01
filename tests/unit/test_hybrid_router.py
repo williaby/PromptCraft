@@ -923,7 +923,7 @@ class TestMetricsAndMonitoring:
         assert hybrid_router.openrouter_traffic_percentage != initial_percentage
 
         # Test invalid percentage
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="percentage|100|invalid"):
             hybrid_router.set_traffic_percentage(150)
 
 

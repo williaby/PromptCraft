@@ -15,6 +15,7 @@ Standardize docs/planning/*.md files with proper front matter, linting complianc
 ## Front Matter Standards by Document Type
 
 ### Architecture Documents (ADR, technical specs)
+
 ```yaml
 ---
 title: [Document Title]
@@ -28,6 +29,7 @@ purpose: [Single sentence describing architectural decision or specification.]
 ```
 
 ### Planning Documents (project plans, timelines, runbooks)
+
 ```yaml
 ---
 title: [Document Title]
@@ -41,6 +43,7 @@ purpose: [Single sentence describing planning objective.]
 ```
 
 ### Process Documents (contributing, setup guides)
+
 ```yaml
 ---
 title: [Document Title]
@@ -56,12 +59,14 @@ purpose: [Single sentence describing process or workflow.]
 ## Validation Rules
 
 ### Heading Structure
+
 - **H1 (`#`)**: Document title only - must match front matter title
 - **H2 (`##`)**: Major sections
 - **H3 (`###`)**: Subsections and detailed topics
 - **H4+ prohibited**: Breaks document consistency
 
 ### Content Standards
+
 - Line length: Max 120 characters
 - Proper list formatting with consistent indentation
 - Table formatting with proper alignment
@@ -69,6 +74,7 @@ purpose: [Single sentence describing process or workflow.]
 - Consistent spacing around headings and sections
 
 ### Link Standards
+
 - Internal links: Use relative paths from repository root
 - External links: Use full URLs with https://
 - Reference links: Use descriptive text, not "click here"

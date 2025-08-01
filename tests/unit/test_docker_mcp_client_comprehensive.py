@@ -277,7 +277,7 @@ class TestDockerMCPClientComprehensive:
         assert "sequential-thinking" in health["servers"]
 
         # Test each server's capabilities in health check
-        for server_name, server_caps in health["servers"].items():
+        for _server_name, server_caps in health["servers"].items():
             assert server_caps["available"] is True
             assert server_caps["deployment"] == "docker_toolkit"
             assert server_caps["authenticated"] is False
@@ -382,7 +382,7 @@ class TestDockerMCPClientComprehensive:
 
         start_time = time.time()
         tasks = []
-        for i in range(10):
+        for _i in range(10):
             task = docker_client.is_available("github-basic")
             tasks.append(task)
 
@@ -541,7 +541,7 @@ class TestDockerMCPClientComprehensive:
         assert len(servers) == 3
 
         # Test that all servers have required fields
-        for server_name, server_info in servers.items():
+        for _server_name, server_info in servers.items():
             assert "status" in server_info
             assert "memory_limit" in server_info
             assert "features" in server_info

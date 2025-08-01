@@ -150,9 +150,7 @@ def metrics(session):
     session.run("poetry", "install", "--with", "dev", external=True)
 
     # Check if metrics dashboard script exists before running
-    import pathlib  # noqa: PLC0415
-
-    script_path = pathlib.Path("test_metrics_dashboard.py")
+    script_path = Path("test_metrics_dashboard.py")
     if script_path.exists():
         session.run("python", "test_metrics_dashboard.py")
     else:

@@ -4,11 +4,19 @@ Automatically generates test-type-specific coverage reports.
 """
 
 import json
+import shutil
 import subprocess
 import sys
+import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+from src.agents.base_agent import BaseAgent
+from src.agents.models import AgentConfig, AgentInput, AgentOutput
+from src.agents.registry import AgentRegistry
 
 # Coverage hook functionality integrated directly to avoid plugin conflicts
 
@@ -18,7 +26,7 @@ executed_test_types: set[str] = set()
 
 def pytest_runtest_protocol(item, nextitem):
     """Hook called for each test to track test types by path and markers."""
-    global executed_test_types
+    global executed_test_types  # noqa: PLW0602
 
     # Extract markers from the test item
     markers = [marker.name for marker in item.iter_markers()]
@@ -59,7 +67,7 @@ def pytest_runtest_protocol(item, nextitem):
 
 def pytest_sessionfinish(session, exitstatus):
     """Hook called after all tests are completed."""
-    global executed_test_types
+    global executed_test_types  # noqa: PLW0602
 
     # Enhanced coverage detection for VS Code integration
     coverage_enabled = (
@@ -94,8 +102,6 @@ def pytest_sessionfinish(session, exitstatus):
 
 def trigger_automatic_coverage_reports():
     """Trigger automatic coverage report generation (user's primary request)."""
-    import time
-
     # Small delay to allow coverage files to be written
     time.sleep(0.5)
 
@@ -109,7 +115,7 @@ def trigger_automatic_coverage_reports():
 
     try:
         # Execute the coverage report generator with quieter output but still show key info
-        result = subprocess.run(
+        result = subprocess.run(  # noqa: S603
             [sys.executable, str(hook_script), "--quiet"],
             check=False,
             capture_output=True,
@@ -148,8 +154,6 @@ def generate_lightweight_reports(test_types: set[str]):
         if Path("htmlcov").exists():
             standard_dir = Path("reports/coverage/standard")
             if standard_dir.exists():
-                import shutil
-
                 shutil.rmtree(standard_dir)
             Path("htmlcov").rename(standard_dir)
             print("  📋 Organized standard coverage: reports/coverage/standard/")
@@ -158,8 +162,6 @@ def generate_lightweight_reports(test_types: set[str]):
         if Path("htmlcov-by-type").exists():
             by_type_dir = Path("reports/coverage/by-type")
             if by_type_dir.exists():
-                import shutil
-
                 shutil.rmtree(by_type_dir)
             Path("htmlcov-by-type").rename(by_type_dir)
             print("  📋 Organized detailed coverage: reports/coverage/by-type/")
@@ -202,7 +204,7 @@ def create_vscode_navigation_index(test_types: set[str]):
     """Create lightweight navigation index for VS Code integration."""
 
     # Check if detailed reports exist and are current
-    detailed_reports_status = check_detailed_reports_status()
+    check_detailed_reports_status()
 
     html_content = f"""
     <!DOCTYPE html>
@@ -315,7 +317,7 @@ def generate_test_type_reports(test_types: set[str]):
             # Create temp directory for junit files
             Path("reports/temp").mkdir(parents=True, exist_ok=True)
 
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())
+            subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())  # noqa: S603
 
             # Add custom header to the HTML report
             html_file = output_dir / test_type / "index.html"
@@ -369,9 +371,7 @@ def add_custom_header(html_file: Path, description: str, test_type: str, test_pa
 def extract_coverage_percentage(xml_file: Path) -> dict[str, float]:
     """Extract coverage percentage from XML report."""
     try:
-        import xml.etree.ElementTree as ET
-
-        tree = ET.parse(xml_file)
+        tree = ET.parse(xml_file)  # noqa: S314
         root = tree.getroot()
 
         return {
@@ -457,7 +457,7 @@ def generate_navigation_index(output_dir: Path, reports: list, coverage_summary:
 # Reset test types at the start of each session
 def pytest_sessionstart(session):
     """Reset tracking at the start of each test session."""
-    global executed_test_types
+    global executed_test_types  # noqa: PLW0602
     executed_test_types.clear()
 
 
@@ -476,8 +476,6 @@ def fresh_agent_registry():
     Yields:
         AgentRegistry: Fresh registry instance for the test
     """
-    from src.agents.registry import AgentRegistry
-
     registry = AgentRegistry()
     yield registry
     # Cleanup: clear all registrations to prevent state leakage
@@ -495,8 +493,6 @@ def mock_agent_class():
     Returns:
         Type[BaseAgent]: Mock agent class suitable for testing
     """
-    from src.agents.base_agent import BaseAgent
-    from src.agents.models import AgentOutput
 
     class MockTestAgent(BaseAgent):
         """Mock agent class for testing purposes."""
@@ -578,7 +574,7 @@ def security_test_inputs():
         "\x00\x01\x02\x03",  # Binary data
         "\r\n\r\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script
+        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
         "🚀🔥💻",  # Emojis
         "\ufeff",  # BOM character
         # Empty and whitespace edge cases
@@ -600,9 +596,6 @@ def security_test_inputs():
 
 # Performance Testing Fixtures
 # These fixtures support comprehensive performance and edge case testing across unit, integration, and security tests.
-
-import time
-from typing import Any
 
 
 class PerformanceMetrics:
@@ -737,8 +730,6 @@ def sample_agent_input():
     Returns:
         AgentInput: Sample agent input with comprehensive data
     """
-    from src.agents.models import AgentInput
-
     return AgentInput(
         content="This is a test input for the agent",
         context={"language": "python", "framework": "fastapi", "content_type": "text", "priority": "normal"},
@@ -757,8 +748,6 @@ def sample_agent_output():
     Returns:
         AgentOutput: Sample agent output with comprehensive data
     """
-    from src.agents.models import AgentOutput
-
     return AgentOutput(
         content="This is a test output from the agent",
         metadata={"analysis_type": "security", "rules_checked": 10, "issues_found": 0, "processing_stage": "complete"},
@@ -780,8 +769,6 @@ def sample_agent_config_model():
     Returns:
         AgentConfig: Sample agent config with comprehensive data
     """
-    from src.agents.models import AgentConfig
-
     return AgentConfig(
         agent_id="test_agent",
         name="Test Agent",
@@ -811,7 +798,7 @@ def sample_agent_config(sample_agent_config_model):
     base_config = sample_agent_config_model.model_dump()
 
     # Extract the nested config and merge with top-level fields for BaseAgent compatibility
-    agent_config = {
+    return {
         "agent_id": base_config["agent_id"],
         "name": base_config["name"],
         "description": base_config["description"],
@@ -819,5 +806,3 @@ def sample_agent_config(sample_agent_config_model):
         # Flatten the nested config for BaseAgent compatibility
         **base_config["config"],
     }
-
-    return agent_config

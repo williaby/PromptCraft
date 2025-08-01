@@ -7,15 +7,19 @@
 Get the application settings using a singleton pattern.
 
 **Parameters:**
+
 - `validate_on_startup` (bool): Whether to validate configuration on load. Default: True
 
 **Returns:**
+
 - `ApplicationSettings`: The application configuration instance
 
 **Raises:**
+
 - `ConfigurationValidationError`: If validation fails
 
 **Example:**
+
 ```python
 from src.config import get_settings
 
@@ -28,12 +32,15 @@ print(f"Environment: {settings.environment}")
 Force reload settings from environment and files.
 
 **Parameters:**
+
 - `validate_on_startup` (bool): Whether to validate configuration on load. Default: True
 
 **Returns:**
+
 - `ApplicationSettings`: New application configuration instance
 
 **Example:**
+
 ```python
 from src.config import reload_settings
 
@@ -51,12 +58,15 @@ settings = reload_settings()
 Generate comprehensive configuration status for health monitoring.
 
 **Parameters:**
+
 - `settings` (ApplicationSettings): The settings instance to analyze
 
 **Returns:**
+
 - `ConfigurationStatusModel`: Detailed configuration status
 
 **Example:**
+
 ```python
 from src.config import get_settings, get_configuration_status
 
@@ -72,9 +82,11 @@ print(f"Secrets configured: {status.secrets_configured}")
 Get a simplified health summary for quick checks.
 
 **Returns:**
+
 - `dict`: Basic health information
 
 **Example:**
+
 ```python
 from src.config import get_configuration_health_summary
 
@@ -107,6 +119,7 @@ Main application configuration model.
 | `encryption_key` | SecretStr | None | Data encryption key |
 
 **Configuration:**
+
 - Environment prefix: `PROMPTCRAFT_`
 - Case sensitive: No
 - Extra fields: Forbidden
@@ -140,11 +153,13 @@ Configuration status for health checks.
 Raised when configuration validation fails.
 
 **Attributes:**
+
 - `message` (str): Error description
 - `field_errors` (list[str]): Specific field validation errors
 - `suggestions` (list[str]): Helpful suggestions for fixing
 
 **Example:**
+
 ```python
 from src.config import ConfigurationValidationError
 
@@ -163,6 +178,7 @@ except ConfigurationValidationError as e:
 Simple health check endpoint for monitoring.
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -177,6 +193,7 @@ Simple health check endpoint for monitoring.
 ```
 
 **Status Codes:**
+
 - `200`: Service is healthy
 - `503`: Service is unhealthy
 - `500`: Health check failed
@@ -186,6 +203,7 @@ Simple health check endpoint for monitoring.
 Detailed configuration status endpoint.
 
 **Response:**
+
 ```json
 {
   "environment": "prod",
@@ -205,6 +223,7 @@ Detailed configuration status endpoint.
 ```
 
 **Status Codes:**
+
 - `200`: Configuration status retrieved
 - `500`: Configuration check failed
 
@@ -213,6 +232,7 @@ Detailed configuration status endpoint.
 Simple ping endpoint for load balancers.
 
 **Response:**
+
 ```json
 {
   "message": "pong"
@@ -224,6 +244,7 @@ Simple ping endpoint for load balancers.
 Root endpoint with application information.
 
 **Response:**
+
 ```json
 {
   "service": "PromptCraft-Hybrid",
@@ -239,11 +260,13 @@ Root endpoint with application information.
 All configuration can be set via environment variables with the `PROMPTCRAFT_` prefix.
 
 ### Format
+
 ```bash
 PROMPTCRAFT_<SETTING_NAME>=value
 ```
 
 ### Examples
+
 ```bash
 # Basic settings
 PROMPTCRAFT_ENVIRONMENT=prod
@@ -269,6 +292,7 @@ PROMPTCRAFT_ALLOWED_ORIGINS='["https://app.com", "https://api.com"]'
 4. `.env` (plaintext base config)
 
 ### File Format
+
 ```bash
 # .env file example
 PROMPTCRAFT_APP_NAME=MyApp
@@ -312,6 +336,7 @@ class ApplicationSettings(BaseSettings):
 ### Secret Protection
 
 All sensitive values use `SecretStr`:
+
 - Values are not displayed in logs
 - String representation shows `**********`
 - Access with `.get_secret_value()`
@@ -319,6 +344,7 @@ All sensitive values use `SecretStr`:
 ### Health Check Safety
 
 Health endpoints never expose:
+
 - Actual secret values
 - File system paths
 - Internal error details
@@ -327,6 +353,7 @@ Health endpoints never expose:
 ### Encryption Support
 
 When GPG encryption is available:
+
 - `.env.{environment}.gpg` files are automatically decrypted
 - Encryption status shown in health checks
 - No plaintext secrets on disk
@@ -334,6 +361,7 @@ When GPG encryption is available:
 ## Examples
 
 ### Basic Configuration Access
+
 ```python
 from src.config import get_settings
 
@@ -355,6 +383,7 @@ if settings.api_key:
 ```
 
 ### Health Check Integration
+
 ```python
 from fastapi import FastAPI, HTTPException
 from src.config import get_configuration_health_summary
@@ -370,6 +399,7 @@ async def health():
 ```
 
 ### Environment-Specific Behavior
+
 ```python
 from src.config import get_settings
 

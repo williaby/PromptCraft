@@ -296,12 +296,8 @@ class CircuitBreaker:
                 return True
             return False
 
-        if self._metrics.current_state == CircuitBreakerState.HALF_OPEN:
-            # Allow limited requests to test recovery
-            return True
-
-        # This line is reachable for any future state additions
-        return False  # type: ignore[unreachable]
+        # Allow limited requests to test recovery in HALF_OPEN state
+        return self._metrics.current_state == CircuitBreakerState.HALF_OPEN
 
     def _record_success(self) -> None:
         """Record a successful operation."""

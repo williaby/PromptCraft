@@ -1,6 +1,7 @@
 """Comprehensive tests for noxfile.py sessions and functions."""
 
 # Import the noxfile module
+import contextlib
 import sys
 from pathlib import Path
 from unittest.mock import Mock, call, patch
@@ -226,8 +227,7 @@ class TestSecuritySessions:
     @pytest.fixture
     def mock_session(self):
         """Create a mock nox session."""
-        session = Mock(spec=Session)
-        return session
+        return Mock(spec=Session)
 
     def test_security_session(self, mock_session):
         """Test security session functionality."""
@@ -248,8 +248,7 @@ class TestDocumentationSessions:
     @pytest.fixture
     def mock_session(self):
         """Create a mock nox session."""
-        session = Mock(spec=Session)
-        return session
+        return Mock(spec=Session)
 
     def test_docs_session(self, mock_session):
         """Test docs session functionality."""
@@ -269,14 +268,13 @@ class TestDependencyManagement:
     @pytest.fixture
     def mock_session(self):
         """Create a mock nox session."""
-        session = Mock(spec=Session)
-        return session
+        return Mock(spec=Session)
 
     @patch("noxfile.Path")
     def test_deps_session(self, mock_path, mock_session):
         """Test deps session functionality."""
         # Mock temporary directory creation with context manager
-        temp_dir = "/tmp/test"
+        temp_dir = "/tmp/test"  # noqa: S108
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock
@@ -312,8 +310,7 @@ class TestPreCommitSession:
     @pytest.fixture
     def mock_session(self):
         """Create a mock nox session."""
-        session = Mock(spec=Session)
-        return session
+        return Mock(spec=Session)
 
     def test_pre_commit_session(self, mock_session):
         """Test pre_commit session functionality."""
@@ -531,7 +528,7 @@ class TestEdgeCasesAndErrorHandling:
         mock_session.run.side_effect = Exception("Command failed")
 
         # Test that sessions don't crash on run failures
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Command failed"):
             noxfile.tests(mock_session)
 
     def test_empty_posargs_handling(self, mock_session):
@@ -555,10 +552,20 @@ class TestEdgeCasesAndErrorHandling:
         """Test deps session handles Path errors gracefully."""
         # Mock Path.cwd() to raise an exception
         mock_path.cwd.side_effect = Exception("Path error")
-        mock_session.create_tmp.return_value = "/tmp/test"
+        mock_session.create_tmp.return_value = "/tmp/test"  # noqa: S108
+
+        # Create a proper context manager mock for chdir
+        class MockContextManager:
+            def __enter__(self):
+                return "/tmp/test"  # noqa: S108
+
+            def __exit__(self, *args):
+                return None
+
+        mock_session.chdir.return_value = MockContextManager()
 
         # Should handle the path error without crashing
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Path error"):
             noxfile.deps(mock_session)
 
 
@@ -612,7 +619,7 @@ class TestSessionIntegration:
 
 
 @pytest.mark.parametrize(
-    "session_function,expected_installs",
+    ("session_function", "expected_installs"),
     [
         (noxfile.tests, 1),
         (noxfile.tests_unit, 1),
@@ -636,13 +643,11 @@ def test_all_sessions_install_dependencies(session_function, expected_installs):
     mock_session.env = {}
     mock_session.log = Mock()
     mock_session.error = Mock()
-    mock_session.create_tmp = Mock(return_value="/tmp/test")
+    mock_session.create_tmp = Mock(return_value="/tmp/test")  # noqa: S108
 
     # Handle exceptions for sessions that might fail
-    try:
+    with contextlib.suppress(Exception):
         session_function(mock_session)
-    except Exception:
-        pass  # Some sessions may fail due to missing external dependencies
 
     # Verify poetry install was called
     install_calls = [call for call in mock_session.run.call_args_list if "poetry" in call[0] and "install" in call[0]]
@@ -782,7 +787,7 @@ class TestComplexScenarios:
     def test_temporary_directory_usage(self, mock_mkdtemp):
         """Test sessions that use temporary directories."""
         mock_session = Mock(spec=Session)
-        temp_dir = "/tmp/nox-test-123"
+        temp_dir = "/tmp/nox-test-123"  # noqa: S108
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock for chdir

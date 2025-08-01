@@ -39,6 +39,7 @@ tests/
 ## File Templates
 
 ### Knowledge Base README Template
+
 ```markdown
 # {Agent Name} Knowledge Base
 
@@ -67,6 +68,7 @@ This agent integrates with:
 ```
 
 ### Agent Overview Template
+
 ```yaml
 ---
 title: {Agent Name} Overview
@@ -107,6 +109,7 @@ Provide guidelines for optimal agent usage.
 ```
 
 ### Python Agent Class Template
+
 ```python
 """
 {Agent Name} implementation.

@@ -570,7 +570,7 @@ class TestLifespanComprehensive:
 
         # Use context manager to trigger lifespan events
         try:
-            with TestClient(app) as client:
+            with TestClient(app):
                 # Lifespan startup and shutdown happen during context manager
                 pass
         except Exception:
@@ -634,7 +634,7 @@ class TestLifespanComprehensive:
 
         # Use normal lifespan flow
         try:
-            with TestClient(app) as client:
+            with TestClient(app):
                 pass
         except Exception:
             # Ignore dependency issues in test

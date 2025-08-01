@@ -288,7 +288,7 @@ class TestGradioUIIntegration:
         # This tests the setup for accessibility features
 
         # Verify custom CSS includes accessibility considerations
-        custom_css = gradio_interface.css if hasattr(gradio_interface, "css") else ""
+        gradio_interface.css if hasattr(gradio_interface, "css") else ""
 
         # Test for basic accessibility patterns in the interface structure
         # This is a foundational test - full WCAG 2.1 AA compliance would need browser testing
@@ -367,7 +367,7 @@ class TestGradioUIIntegration:
 
             except Exception as e:
                 # Security errors should be handled gracefully
-                assert "Security Error" in str(e) or "Invalid input" in str(e)
+                assert "Security Error" in str(e) or "Invalid input" in str(e)  # noqa: PT017
 
     @pytest.mark.integration
     def test_performance_requirements_validation(self, multi_journey_interface):
@@ -445,7 +445,7 @@ class TestGradioUIIntegration:
             assert response is not None
 
         # Verify session isolation
-        for i, session_id in enumerate(sessions):
+        for _i, session_id in enumerate(sessions):
             session_state = multi_journey_interface.get_session_state(session_id)
             assert session_state["session_id"] == session_id
             assert session_state["request_count"] >= 1
@@ -488,7 +488,7 @@ class TestRateLimiterIntegration:
         session_id = "sliding_window_test"
 
         # Test requests within limits
-        for i in range(5):
+        for _i in range(5):
             assert rate_limiter.check_request_rate(session_id) is True
 
         # Exceed minute limit

@@ -22,7 +22,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
@@ -199,14 +199,15 @@ class TestUILoadPerformance:
     @pytest.fixture
     def ui_interface_for_load_testing(self, performance_settings, mock_journey1_processor_fast):
         """Create UI interface optimized for load testing."""
-        with patch("src.config.settings.get_settings", return_value=performance_settings):
-            with patch(
+        with (
+            patch("src.config.settings.get_settings", return_value=performance_settings),
+            patch(
                 "src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates",
                 return_value=mock_journey1_processor_fast,
-            ):
-                with patch("src.ui.components.shared.export_utils.ExportUtils"):
-                    interface = MultiJourneyInterface()
-                    return interface
+            ),
+            patch("src.ui.components.shared.export_utils.ExportUtils"),
+        ):
+            return MultiJourneyInterface()
 
     @pytest.mark.performance
     def test_concurrent_user_load_basic(self, ui_interface_for_load_testing):
@@ -232,10 +233,10 @@ class TestUILoadPerformance:
 
         # Log performance summary
         logger.info("Basic Load Test Results:")
-        logger.info(f"  Users: {MIN_CONCURRENT_USERS}")
-        logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
-        logger.info(f"  P95 Response Time: {metrics['response_time_p95']:.2f}s")
-        logger.info(f"  Throughput: {metrics['throughput_rps']:.2f} RPS")
+        logger.info("  Users: %d", MIN_CONCURRENT_USERS)
+        logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
+        logger.info("  P95 Response Time: %.2fs", metrics["response_time_p95"])
+        logger.info("  Throughput: %.2f RPS", metrics["throughput_rps"])
 
     @pytest.mark.performance
     def test_concurrent_user_load_maximum(self, ui_interface_for_load_testing):
@@ -261,11 +262,11 @@ class TestUILoadPerformance:
 
         # Log performance summary
         logger.info("Maximum Load Test Results:")
-        logger.info(f"  Users: {MAX_CONCURRENT_USERS}")
-        logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
-        logger.info(f"  P95 Response Time: {metrics['response_time_p95']:.2f}s")
-        logger.info(f"  Throughput: {metrics['throughput_rps']:.2f} RPS")
-        logger.info(f"  Rate Limit Hits: {metrics['rate_limit_hits']}")
+        logger.info("  Users: %d", MAX_CONCURRENT_USERS)
+        logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
+        logger.info("  P95 Response Time: %.2fs", metrics["response_time_p95"])
+        logger.info("  Throughput: %.2f RPS", metrics["throughput_rps"])
+        logger.info("  Rate Limit Hits: %d", metrics["rate_limit_hits"])
 
     @pytest.mark.performance
     def test_sustained_load_performance(self, ui_interface_for_load_testing):
@@ -290,10 +291,10 @@ class TestUILoadPerformance:
 
         # Log sustained performance summary
         logger.info("Sustained Load Test Results:")
-        logger.info(f"  Duration: {metrics['test_duration']:.1f}s")
-        logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
-        logger.info(f"  Average Throughput: {metrics['throughput_rps']:.2f} RPS")
-        logger.info(f"  Memory Growth: {metrics.get('memory_growth_mb', 0):.1f}MB")
+        logger.info("  Duration: %.1fs", metrics["test_duration"])
+        logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
+        logger.info("  Average Throughput: %.2f RPS", metrics["throughput_rps"])
+        logger.info("  Memory Growth: %.1fMB", metrics.get("memory_growth_mb", 0))
 
     @pytest.mark.performance
     def test_rate_limiting_effectiveness_under_load(self, ui_interface_for_load_testing):
@@ -319,11 +320,12 @@ class TestUILoadPerformance:
 
         # Log rate limiting results
         logger.info("Rate Limiting Test Results:")
-        logger.info(f"  Total Requests: {metrics['total_requests']}")
-        logger.info(f"  Rate Limit Hits: {metrics['rate_limit_hits']}")
-        logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
+        logger.info("  Total Requests: %d", metrics["total_requests"])
+        logger.info("  Rate Limit Hits: %d", metrics["rate_limit_hits"])
+        logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
         logger.info(
-            f"  Rate Limit Effectiveness: {(metrics['rate_limit_hits'] / metrics['total_requests'] * 100):.1f}%",
+            "  Rate Limit Effectiveness: %.1f%%",
+            (metrics["rate_limit_hits"] / metrics["total_requests"] * 100),
         )
 
     @pytest.mark.performance
@@ -352,10 +354,10 @@ class TestUILoadPerformance:
 
         # Log memory usage results
         logger.info("Memory Usage Test Results:")
-        logger.info(f"  Initial Memory: {initial_memory:.1f}MB")
-        logger.info(f"  Final Memory: {final_memory:.1f}MB")
-        logger.info(f"  Total Growth: {total_growth:.1f}MB")
-        logger.info(f"  Peak Memory: {metrics.get('memory_max_mb', final_memory):.1f}MB")
+        logger.info("  Initial Memory: %.1fMB", initial_memory)
+        logger.info("  Final Memory: %.1fMB", final_memory)
+        logger.info("  Total Growth: %.1fMB", total_growth)
+        logger.info("  Peak Memory: %.1fMB", metrics.get("memory_max_mb", final_memory))
 
     @pytest.mark.performance
     def test_response_time_distribution_analysis(self, ui_interface_for_load_testing):
@@ -389,11 +391,11 @@ class TestUILoadPerformance:
             ), f"P95 response time too high for {scenario_name}"
 
             # Log scenario results
-            logger.info(f"Response Time Analysis - {scenario_name}:")
-            logger.info(f"  P50: {metrics['response_time_p50']:.2f}s")
-            logger.info(f"  P95: {metrics['response_time_p95']:.2f}s")
-            logger.info(f"  P99: {metrics['response_time_p99']:.2f}s")
-            logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
+            logger.info("Response Time Analysis - %s:", scenario_name)
+            logger.info("  P50: %.2fs", metrics["response_time_p50"])
+            logger.info("  P95: %.2fs", metrics["response_time_p95"])
+            logger.info("  P99: %.2fs", metrics["response_time_p99"])
+            logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
 
         # Compare scenarios
         simple_p95 = results[f"{MIN_CONCURRENT_USERS}users_simple"]["response_time_p95"]
@@ -428,10 +430,10 @@ class TestUILoadPerformance:
             if is_stable:
                 max_stable_users = num_users
 
-            logger.info(f"Scalability Test - {num_users} users:")
-            logger.info(f"  Success Rate: {metrics['success_rate']:.1f}%")
-            logger.info(f"  P95 Response Time: {metrics['response_time_p95']:.2f}s")
-            logger.info(f"  Stable: {is_stable}")
+            logger.info("Scalability Test - %d users:", num_users)
+            logger.info("  Success Rate: %.1f%%", metrics["success_rate"])
+            logger.info("  P95 Response Time: %.2fs", metrics["response_time_p95"])
+            logger.info("  Stable: %s", is_stable)
 
             # Stop if performance degrades significantly
             if not is_stable and num_users > MIN_CONCURRENT_USERS:
@@ -442,7 +444,7 @@ class TestUILoadPerformance:
             max_stable_users >= MIN_CONCURRENT_USERS
         ), f"UI cannot handle minimum {MIN_CONCURRENT_USERS} concurrent users stably"
 
-        logger.info(f"Maximum Stable Concurrent Users: {max_stable_users}")
+        logger.info("Maximum Stable Concurrent Users: %d", max_stable_users)
 
     def _run_concurrent_load_test(
         self,
@@ -514,10 +516,10 @@ class TestUILoadPerformance:
             for future in as_completed(future_to_user):
                 user_id = future_to_user[future]
                 try:
-                    user_results = future.result()
+                    future.result()
                     # Results are already processed in simulate_user_session
                 except Exception as e:
-                    logger.error(f"User {user_id} session failed: {e}")
+                    logger.error("User %d session failed: %s", user_id, e)
                     metrics.add_failure()
 
         metrics.end_time = time.time()
@@ -559,7 +561,7 @@ class TestUILoadPerformance:
 
                 except Exception as e:
                     metrics.add_failure()
-                    logger.warning(f"Sustained load request failed: {e}")
+                    logger.warning("Sustained load request failed: %s", e)
 
                 request_count += 1
 
@@ -584,7 +586,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error(f"Sustained user load failed: {e}")
+                    logger.error("Sustained user load failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()
@@ -635,7 +637,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error(f"Aggressive user session failed: {e}")
+                    logger.error("Aggressive user session failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()
@@ -699,11 +701,11 @@ class TestUILoadPerformance:
             user_futures = [executor.submit(memory_intensive_user, user_id) for user_id in range(num_users)]
 
             # Wait for completion
-            for future in as_completed([monitor_future] + user_futures):
+            for future in as_completed([monitor_future, *user_futures]):
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error(f"Memory test component failed: {e}")
+                    logger.error("Memory test component failed: %s", e)
 
         # Force garbage collection and final memory measurement
         gc.collect()
@@ -726,7 +728,7 @@ class TestUILoadPerformance:
             """User focused on response time measurement."""
             session_id = f"{test_name}_rt_user_{user_id}"
 
-            for i, request_text in enumerate(request_types):
+            for _i, request_text in enumerate(request_types):
                 start_time = time.time()
                 try:
                     response = ui_interface.handle_journey1_request(request_text, session_id)
@@ -754,7 +756,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error(f"Response time user failed: {e}")
+                    logger.error("Response time user failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()

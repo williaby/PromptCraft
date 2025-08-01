@@ -310,12 +310,12 @@ class TestRealQdrantIntegration:
             # Test search error handling
             mock_qdrant_client.search.side_effect = Exception("Search service temporarily unavailable")
 
-            with pytest.raises(Exception):
-                search_params = SearchParameters(
-                    embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS],
-                    limit=5,
-                    collection="test_collection",
-                )
+            search_params = SearchParameters(
+                embeddings=[[0.1] * DEFAULT_VECTOR_DIMENSIONS],
+                limit=5,
+                collection="test_collection",
+            )
+            with pytest.raises(Exception, match="Search service temporarily unavailable"):
                 await store.search(search_params)
 
             # Verify error metrics were updated

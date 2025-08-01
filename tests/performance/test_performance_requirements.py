@@ -8,7 +8,6 @@ meet the strict 2-second response time requirement under various load conditions
 import asyncio
 import time
 from statistics import mean, stdev
-from typing import List
 
 import pytest
 

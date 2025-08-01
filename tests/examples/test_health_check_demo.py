@@ -86,7 +86,7 @@ class TestDemonstrateConfigurationStatus:
         mock_status.config_source = "encrypted"
         mock_status.validation_status = "errors"
         mock_status.secrets_configured = 5
-        mock_status.api_host = "0.0.0.0"
+        mock_status.api_host = "0.0.0.0"  # noqa: S104
         mock_status.api_port = 80
         mock_status.config_healthy = False
         mock_status.validation_errors = ["Missing secret key", "Invalid database URL"]
@@ -368,7 +368,7 @@ class TestDemonstrateSecurityFeatures:
         assert "jwt_secret_key" in call_kwargs
 
         # All should be SecretStr instances
-        for key, value in call_kwargs.items():
+        for _key, value in call_kwargs.items():
             assert isinstance(value, SecretStr)
 
         # Should indicate security is maintained

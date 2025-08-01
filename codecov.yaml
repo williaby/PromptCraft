@@ -7,10 +7,16 @@ codecov:
   ci:
     - github
   branch: main
-  max_report_age: "12h"
+  max_report_age: "24h"  # Increased for better historical coverage
   notify:
-    after_n_builds: 1  # Reduced from 2 to 1 for faster PR feedback
-    wait_for_ci: false  # Don't wait for all CI to complete before posting
+    after_n_builds: 2  # Wait for both Python versions to upload
+    wait_for_ci: true   # Wait for CI to stabilize comparisons
+  require_ci_to_pass: false  # Allow uploads even if CI hasn't completed
+  # Handle missing base commits gracefully
+  assume_all_flags: false  # Only process flags that are uploaded
+  # Improve commit comparison
+  disable_default_path_fixes: false
+  strict_yaml_branch: main
 
 coverage:
   precision: 2
@@ -20,32 +26,19 @@ coverage:
   status:
     project:
       default:
-        target: 80%
-        threshold: 5%
+        # Primary blocking check - combines all parallel test results
+        target: auto  # Compare against base commit (main branch)
+        threshold: 1%  # Allow 1% drop without failing
         if_not_found: success
-        only_pulls: false
-        flags:
-          - unit
-          - auth
-          - integration
-          - security
-      unit:
-        target: 85%
-        threshold: 5%
-        flags:
-          - unit
-      integration:
-        target: 75%
-        threshold: 5%
-        flags:
-          - integration
-
+        informational: false  # This is blocking
     patch:
       default:
-        target: 80%
-        threshold: 5%
+        # Ensure new code has good coverage
+        target: 85%
+        threshold: 2%
         if_not_found: success
         only_pulls: true
+        informational: false  # This is blocking
 
   ignore:
     - "tests/"
@@ -73,6 +66,7 @@ coverage:
     - "pyproject.toml"
 
 # Component definitions for different parts of the codebase
+# Components provide automatic groupings based on file paths and flags
 component_management:
   individual_components:
     - component_id: core
@@ -90,12 +84,22 @@ component_management:
       flag_regexes:
         - unit
 
+    - component_id: auth
+      name: "Authentication & Security"
+      paths:
+        - src/auth/
+        - src/security/
+      flag_regexes:
+        - auth
+        - unit
+
     - component_id: config
       name: "Configuration Management"
       paths:
         - src/config/
       flag_regexes:
         - unit
+        - auth
 
     - component_id: utils
       name: "Utility Modules"
@@ -103,12 +107,21 @@ component_management:
         - src/utils/
       flag_regexes:
         - unit
+        - auth
 
     - component_id: ui
       name: "User Interface"
       paths:
         - src/ui/
       flag_regexes:
+        - integration
+
+    - component_id: api
+      name: "API Layer"
+      paths:
+        - src/api/
+      flag_regexes:
+        - unit
         - integration
 
     - component_id: mcp_integration
@@ -119,76 +132,25 @@ component_management:
         - unit
         - integration
 
-    - component_id: ingestion
-      name: "Knowledge Ingestion"
-      paths:
-        - src/ingestion/
-      flag_regexes:
-        - unit
-
-# Flag definitions for different test types
+# Flag definitions for different test types with carryforward enabled
+# This is the KEY to solving the coverage discrepancy
 flags:
+  # Main flags aligned with test structure - all with carryforward enabled
   unit:
     paths:
-      - src/core/
-      - src/agents/
-      - src/config/
-      - src/utils/
-      - src/mcp_integration/
-      - src/ingestion/
-    carryforward: true
-    carryforward_mode: all
+      - src/  # Measure all source code for comprehensive comparison
+    carryforward: true  # CRITICAL: This enables intelligent merging of partial reports
 
   auth:
     paths:
-      - src/auth/
-    carryforward: true
-    carryforward_mode: all
+      - src/  # Measure all source code for comprehensive comparison
+    carryforward: true  # CRITICAL: This enables intelligent merging of partial reports
 
   integration:
     paths:
-      - src/core/
-      - src/ui/
-      - src/mcp_integration/
-    carryforward: true
-    carryforward_mode: all
+      - src/  # Measure all source code for comprehensive comparison
+    carryforward: true  # CRITICAL: This enables intelligent merging of partial reports
 
-  security:
-    paths:
-      - src/security/
-    carryforward: true
-    carryforward_mode: all
-
-  performance:
-    paths:
-      - src/core/
-      - src/agents/
-      - src/mcp_integration/
-    carryforward: false
-
-  stress:
-    paths:
-      - src/core/
-      - src/agents/
-      - src/mcp_integration/
-    carryforward: false
-
-  contract:
-    paths:
-      - src/mcp_integration/
-    carryforward: false
-
-  examples:
-    paths:
-      - examples/
-    carryforward: false
-
-  mutation:
-    paths:
-      - src/core/
-      - src/agents/
-      - src/config/
-    carryforward: false
 
 # Parser configurations for Python coverage reports
 parsers:
@@ -204,15 +166,20 @@ parsers:
 
 # Comment configuration for PR updates
 comment:
-  layout: "reach, diff, flags, files"
+  layout: "reach, diff, flags, files, footer"
   behavior: default
   require_changes: false
-  require_base: false
+  require_base: false  # Don't require base commit for comparison
   require_head: true
   branches:
     - main
     - develop
     - "feature/*"
+    - "fix/*"
+  # Show which flags were carried forward for transparency
+  show_carryforward_flags: true
+  # Additional flag visibility settings
+  after_n_builds: 1  # Reduce wait time for flag processing
 
 # Pull request settings (commented - not supported in current Codecov API)
 # pull_request_only_files:

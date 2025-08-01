@@ -359,7 +359,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "cf.jwt.token"
+        assert token == "cf.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_authorization_header(self):
         """Test JWT token extraction from Authorization header."""
@@ -378,7 +378,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "auth.jwt.token"
+        assert token == "auth.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_custom_header(self):
         """Test JWT token extraction from custom header."""
@@ -397,7 +397,7 @@ class TestAuthenticationMiddleware:
 
         token = middleware._extract_jwt_token(request)
 
-        assert token == "custom.jwt.token"
+        assert token == "custom.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_priority_order(self):
         """Test token extraction priority: Cloudflare > Authorization > Custom."""
@@ -423,7 +423,7 @@ class TestAuthenticationMiddleware:
         token = middleware._extract_jwt_token(request)
 
         # Should prioritize Cloudflare header
-        assert token == "cf.jwt.token"
+        assert token == "cf.jwt.token"  # noqa: S105
 
     def test_extract_jwt_token_invalid_authorization_format(self):
         """Test token extraction with invalid Authorization header format."""
@@ -630,7 +630,7 @@ class TestCreateRateLimiter:
     def test_rate_limit_key_func_unknown_strategy(self):
         """Test that unknown strategy is rejected by validation."""
         # This should raise a validation error due to Pydantic validation
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(Exception, match="ValidationError|validation"):  # Pydantic ValidationError
             AuthenticationConfig(
                 cloudflare_access_enabled=True,
                 cloudflare_team_domain="test",
@@ -653,33 +653,35 @@ class TestSetupAuthentication:
             rate_limiting_enabled=False,
         )
 
-        with patch("src.auth.middleware.JWKSClient") as mock_jwks_client:
-            with patch("src.auth.middleware.JWTValidator") as mock_jwt_validator:
-                mock_jwks_instance = Mock()
-                mock_jwks_client.return_value = mock_jwks_instance
-                mock_validator_instance = Mock()
-                mock_jwt_validator.return_value = mock_validator_instance
+        with (
+            patch("src.auth.middleware.JWKSClient") as mock_jwks_client,
+            patch("src.auth.middleware.JWTValidator") as mock_jwt_validator,
+        ):
+            mock_jwks_instance = Mock()
+            mock_jwks_client.return_value = mock_jwks_instance
+            mock_validator_instance = Mock()
+            mock_jwt_validator.return_value = mock_validator_instance
 
-                auth_middleware, limiter = setup_authentication(app, config)
+            auth_middleware, limiter = setup_authentication(app, config)
 
-                assert isinstance(auth_middleware, AuthenticationMiddleware)
-                assert isinstance(limiter, Limiter)
+            assert isinstance(auth_middleware, AuthenticationMiddleware)
+            assert isinstance(limiter, Limiter)
 
-                # Verify JWKS client creation
-                mock_jwks_client.assert_called_once_with(
-                    jwks_url=config.get_jwks_url(),
-                    cache_ttl=config.jwks_cache_ttl,
-                    max_cache_size=config.jwks_cache_max_size,
-                    timeout=config.jwks_timeout,
-                )
+            # Verify JWKS client creation
+            mock_jwks_client.assert_called_once_with(
+                jwks_url=config.get_jwks_url(),
+                cache_ttl=config.jwks_cache_ttl,
+                max_cache_size=config.jwks_cache_max_size,
+                timeout=config.jwks_timeout,
+            )
 
-                # Verify JWT validator creation
-                mock_jwt_validator.assert_called_once_with(
-                    jwks_client=mock_jwks_instance,
-                    audience=config.cloudflare_audience,
-                    issuer=config.cloudflare_issuer,
-                    algorithm=config.jwt_algorithm,
-                )
+            # Verify JWT validator creation
+            mock_jwt_validator.assert_called_once_with(
+                jwks_client=mock_jwks_instance,
+                audience=config.cloudflare_audience,
+                issuer=config.cloudflare_issuer,
+                algorithm=config.jwt_algorithm,
+            )
 
     def test_setup_authentication_with_rate_limiting(self):
         """Test authentication setup with rate limiting enabled."""
@@ -691,19 +693,21 @@ class TestSetupAuthentication:
             rate_limiting_enabled=True,
         )
 
-        with patch("src.auth.middleware.JWKSClient"):
-            with patch("src.auth.middleware.JWTValidator"):
-                with patch.object(app, "add_middleware") as mock_add_middleware:
-                    with patch.object(app, "add_exception_handler") as mock_add_handler:
-                        auth_middleware, limiter = setup_authentication(app, config)
+        with (
+            patch("src.auth.middleware.JWKSClient"),
+            patch("src.auth.middleware.JWTValidator"),
+            patch.object(app, "add_middleware") as mock_add_middleware,
+            patch.object(app, "add_exception_handler") as mock_add_handler,
+        ):
+            auth_middleware, limiter = setup_authentication(app, config)
 
-                        # Verify middleware was added
-                        assert mock_add_middleware.call_count >= 1
+            # Verify middleware was added
+            assert mock_add_middleware.call_count >= 1
 
-                        # Verify rate limiting setup
-                        assert hasattr(app.state, "limiter")
-                        assert app.state.limiter == limiter
-                        mock_add_handler.assert_called_once()
+            # Verify rate limiting setup
+            assert hasattr(app.state, "limiter")
+            assert app.state.limiter == limiter
+            mock_add_handler.assert_called_once()
 
     def test_setup_authentication_without_rate_limiting(self):
         """Test authentication setup without rate limiting."""
@@ -715,20 +719,22 @@ class TestSetupAuthentication:
             rate_limiting_enabled=False,
         )
 
-        with patch("src.auth.middleware.JWKSClient"):
-            with patch("src.auth.middleware.JWTValidator"):
-                with patch.object(app, "add_middleware") as mock_add_middleware:
-                    with patch.object(app, "add_exception_handler") as mock_add_handler:
-                        auth_middleware, limiter = setup_authentication(app, config)
+        with (
+            patch("src.auth.middleware.JWKSClient"),
+            patch("src.auth.middleware.JWTValidator"),
+            patch.object(app, "add_middleware") as mock_add_middleware,
+            patch.object(app, "add_exception_handler") as mock_add_handler,
+        ):
+            auth_middleware, limiter = setup_authentication(app, config)
 
-                        # Verify only authentication middleware was added
-                        # (not SlowAPI middleware)
-                        middleware_calls = [call[0][0] for call in mock_add_middleware.call_args_list]
-                        assert AuthenticationMiddleware in [type(call) for call in middleware_calls]
-                        assert SlowAPIMiddleware not in [type(call) for call in middleware_calls]
+            # Verify only authentication middleware was added
+            # (not SlowAPI middleware)
+            middleware_calls = [call[0][0] for call in mock_add_middleware.call_args_list]
+            assert AuthenticationMiddleware in [type(call) for call in middleware_calls]
+            assert SlowAPIMiddleware not in [type(call) for call in middleware_calls]
 
-                        # Verify no rate limit exception handler was added
-                        mock_add_handler.assert_not_called()
+            # Verify no rate limit exception handler was added
+            mock_add_handler.assert_not_called()
 
 
 @pytest.mark.auth
@@ -969,4 +975,4 @@ class TestIntegrationScenarios:
         token = middleware._extract_jwt_token(request)
 
         # Should prioritize Cloudflare header
-        assert token == "cf.token"
+        assert token == "cf.token"  # noqa: S105

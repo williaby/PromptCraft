@@ -525,5 +525,6 @@ class TestAccessibilityEnhancerEdgeCases:
         for key, value in landmarks.items():
             assert isinstance(key, str)
             assert isinstance(value, str)
-            assert "<" in value and ">" in value  # Basic HTML tag check
+            assert "<" in value
+            assert ">" in value
             assert "role=" in value  # Should have role attribute

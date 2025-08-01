@@ -1,7 +1,7 @@
 """Test validation for pytest-xdist and pytest-rerunfailures configuration."""
 
 import os
-import random
+import secrets
 import time
 
 import pytest
@@ -46,8 +46,8 @@ class TestParallelExecution:
     @pytest.mark.fast
     def test_independent_calculations(self):
         """Test independent calculations that can run in parallel."""
-        x = random.randint(1, 100)
-        y = random.randint(1, 100)
+        x = secrets.randbelow(100) + 1  # Range 1-100
+        y = secrets.randbelow(100) + 1  # Range 1-100
         assert x + y == y + x  # Commutative property
 
 

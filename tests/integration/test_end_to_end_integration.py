@@ -6,15 +6,15 @@ ensuring all components work together seamlessly in realistic scenarios.
 """
 
 import asyncio
-import os
 import sys
 import time
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.health import HealthChecker
 from src.config.settings import ApplicationSettings
@@ -549,7 +549,7 @@ class TestEndToEndIntegration:
                     except Exception as e:
                         failed_queries += 1
                         # Should be controlled failures
-                        assert isinstance(e, MCPTimeoutError | RuntimeError)
+                        assert isinstance(e, MCPTimeoutError | RuntimeError)  # noqa: PT017
 
                 # Verify system resilience
                 assert successful_queries > 0, "No queries succeeded - system not resilient"
@@ -875,7 +875,11 @@ class TestEndToEndIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_end_to_end_real_world_scenario(self, full_system_settings, sample_knowledge_documents):
+    async def test_end_to_end_real_world_scenario(  # noqa: PLR0915
+        self,
+        full_system_settings,
+        sample_knowledge_documents,
+    ):
         """Test end-to-end processing with realistic user scenarios."""
 
         with patch("src.config.settings.get_settings", return_value=full_system_settings):

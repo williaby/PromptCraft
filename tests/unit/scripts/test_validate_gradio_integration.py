@@ -105,9 +105,7 @@ class TestValidateMultiJourneyInterface:
             def hasattr_side_effect(obj, name):
                 if name == "MultiJourneyInterface":
                     return False  # Missing this class
-                if name == "RateLimiter":
-                    return True
-                return False
+                return name == "RateLimiter"
 
             mock_hasattr.side_effect = hasattr_side_effect
 

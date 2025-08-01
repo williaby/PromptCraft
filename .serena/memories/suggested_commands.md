@@ -1,6 +1,7 @@
 # Essential Development Commands
 
 ## Setup and Installation
+
 ```bash
 # Complete development setup
 make setup
@@ -13,6 +14,7 @@ poetry run pre-commit install
 ```
 
 ## Testing
+
 ```bash
 # Run all tests with coverage
 make test
@@ -28,6 +30,7 @@ poetry run pytest tests/integration/ -v -m integration
 ```
 
 ## Code Quality and Formatting
+
 ```bash
 # Format code
 make format
@@ -49,6 +52,7 @@ make pre-commit
 ```
 
 ## Security Checks
+
 ```bash
 # Run security scans
 make security
@@ -61,6 +65,7 @@ nox -s security
 ```
 
 ## Development Environment
+
 ```bash
 # Start development environment
 make dev
@@ -74,6 +79,7 @@ docker build -t promptcraft-hybrid .
 ```
 
 ## Utility Commands
+
 ```bash
 # Clean build artifacts
 make clean
@@ -89,6 +95,7 @@ poetry run python src/utils/encryption.py
 ```
 
 ## Claude Code Slash Commands
+
 ```bash
 # List available commands
 /project:list-commands

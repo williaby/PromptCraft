@@ -20,7 +20,9 @@ Perform comprehensive pre-commit validation and compliance checking with automat
 ## Pre-commit Hook Coverage
 
 ### Universal Hooks (All Files)
+
 **Auto-Corrections Applied**:
+
 - **trailing-whitespace**: Remove trailing whitespace from all lines
 - **end-of-file-fixer**: Ensure files end with newline
 - **check-case-conflict**: Flag case conflicts (manual review)
@@ -29,53 +31,69 @@ Perform comprehensive pre-commit validation and compliance checking with automat
 - **mixed-line-ending**: Standardize line endings to LF
 
 **Manual Review Flagged**:
+
 - **check-added-large-files**: Files over 1000KB (suggest alternatives)
 - **detect-private-key**: Private key detection (security critical)
 
 ### File-Type Specific Hooks
 
 #### Python Files (.py)
+
 **Auto-Corrections Applied**:
+
 - **black**: Code formatting (88 character line length)
 - **ruff --fix**: Auto-fixable linting violations
 - **debug-statements**: Remove debug imports and statements
 
 **Manual Review Flagged**:
+
 - **mypy**: Type checking errors (exclude tests/)
 - **bandit**: Security vulnerabilities (following pyproject.toml config)
 - **ruff --exit-non-zero-on-fix**: Non-auto-fixable linting issues
 
 #### Structured Data Files
+
 **Auto-Corrections Applied**:
+
 - **check-yaml**: Fix YAML syntax (with --allow-multiple-documents)
 - **check-json**: Fix JSON syntax and formatting
 - **check-toml**: Fix TOML syntax and formatting
 - **check-xml**: Fix XML syntax and formatting
 
 **Manual Review Flagged**:
+
 - Complex structural issues requiring content understanding
 
 #### Markdown Files (.md)
+
 **Auto-Corrections Applied**:
+
 - **markdownlint**: Apply --config .markdownlint.json auto-fixes
 - Line length, heading spacing, list formatting
 
 **Manual Review Flagged**:
+
 - Content structure violations requiring human judgment
 
 #### YAML Files (.yml, .yaml)
+
 **Auto-Corrections Applied**:
+
 - **yamllint**: Apply -c .yamllint.yml auto-fixes
 - Indentation, line length, syntax corrections
 
 **Manual Review Flagged**:
+
 - Complex configuration issues
 
 #### Poetry & Dependencies
+
 **Auto-Corrections Applied**:
+
 - **poetry-check**: Basic pyproject.toml validation
 
 **Manual Review Flagged**:
+
 - **poetry-lock**: Lock file inconsistencies (requires --no-update)
 - Dependency version conflicts
 - Virtual environment issues
@@ -83,6 +101,7 @@ Perform comprehensive pre-commit validation and compliance checking with automat
 ## Commit Readiness Implementation
 
 ### 1. Test Coverage Validation
+
 ```python
 def validate_test_coverage(file_path: str) -> dict:
     """Validate test coverage meets 80% minimum requirement."""
@@ -117,6 +136,7 @@ def get_corresponding_test_file(file_path: str) -> str:
 ```
 
 ### 2. Git Environment Validation
+
 ```python
 def validate_git_environment() -> dict:
     """Validate GPG and SSH keys for CLAUDE.md compliance."""
@@ -171,6 +191,7 @@ def check_ssh_keys() -> dict:
 ```
 
 ### 3. Knowledge Base Validation
+
 ```python
 def validate_knowledge_base_compliance(file_path: str, content: str) -> dict:
     """Validate C.R.E.A.T.E. framework and atomic structure."""
@@ -226,6 +247,7 @@ def validate_create_framework(content: str) -> dict:
 ```
 
 ### 4. Commit Message Generation
+
 ```python
 def generate_commit_message(file_path: str, changes_summary: dict) -> str:
     """Generate conventional commit message based on file changes."""
@@ -291,6 +313,7 @@ def determine_scope(file_path: str) -> str:
 ```
 
 ### 5. CI/CD Impact Analysis
+
 ```python
 def analyze_cicd_impact(file_path: str) -> dict:
     """Analyze CI/CD pipeline impact of file changes."""
@@ -335,6 +358,7 @@ def check_breaking_change_risk(file_path: str) -> str:
 ## Auto-Correction Implementation
 
 ### 1. Hook Detection and Filtering
+
 ```python
 def get_applicable_hooks(file_path: str) -> list:
     """Determine which pre-commit hooks apply to the given file."""
@@ -369,6 +393,7 @@ def get_applicable_hooks(file_path: str) -> list:
 ```
 
 ### 2. Safe Auto-Correction Categories
+
 ```python
 SAFE_AUTO_FIXES = {
     # Formatting (no logic impact)
@@ -404,6 +429,7 @@ MANUAL_REVIEW_REQUIRED = {
 ```
 
 ### 3. Hook-Specific Validation Logic
+
 ```python
 def validate_python_file(content: str, file_path: str) -> dict:
     """Comprehensive Python file validation."""
@@ -466,6 +492,7 @@ def validate_yaml_file(content: str, file_path: str) -> dict:
 ```
 
 ### 4. Universal File Fixes
+
 ```python
 def apply_universal_fixes(content: str) -> tuple[str, list]:
     """Apply universal pre-commit fixes to any file."""
@@ -490,6 +517,7 @@ def apply_universal_fixes(content: str) -> tuple[str, list]:
 ## Security and Critical Issue Detection
 
 ### Security Hook Analysis
+
 ```python
 def analyze_security_issues(file_path: str, content: str) -> dict:
     """Comprehensive security analysis using bandit and private key detection."""
@@ -526,6 +554,7 @@ def analyze_security_issues(file_path: str, content: str) -> dict:
 ```
 
 ### Type Checking Analysis
+
 ```python
 def analyze_type_issues(file_path: str) -> dict:
     """MyPy type checking with actionable suggestions."""
@@ -556,6 +585,7 @@ def analyze_type_issues(file_path: str) -> dict:
 ## Required Output Format
 
 ### 1. Auto-Corrected File Content
+
 ```markdown
 [Only provide corrected content if auto-fixes were applied]
 
@@ -568,6 +598,7 @@ def analyze_type_issues(file_path: str) -> dict:
 ```
 
 ### 2. Pre-commit Compliance Report
+
 ```markdown
 # Pre-commit Validation Report
 
@@ -660,6 +691,7 @@ def analyze_type_issues(file_path: str) -> dict:
 
 #### Commit Message Suggestion
 ```
+
 feat(core): implement query processing validation
 
 - Add pre-commit validation for query_counselor.py
@@ -669,6 +701,7 @@ feat(core): implement query processing validation
 🤖 Generated with [Claude Code](https://claude.ai/code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+
 ```
 
 #### CI/CD Impact Analysis
@@ -717,12 +750,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Validation Scope and Limitations
 
 ### Auto-Correction Scope
+
 - **Safe formatting changes**: Always applied automatically
 - **Syntax fixes**: Applied when no logic impact
 - **Import cleanup**: Remove unused imports only
 - **Whitespace/newlines**: Universal fixes applied
 
 ### Manual Review Required
+
 - **Security vulnerabilities**: Never auto-fix (require human review)
 - **Type errors**: Complex logic requires developer understanding
 - **Dependency conflicts**: May require version strategy decisions
@@ -730,6 +765,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **Complex refactoring**: Function complexity, naming, structure
 
 ### Hook Configuration Respect
+
 - All validations follow exact configurations from:
   - `pyproject.toml` (Black, Ruff, MyPy, Bandit settings)
   - `.markdownlint.json` (Markdown rules)

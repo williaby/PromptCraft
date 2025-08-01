@@ -316,24 +316,24 @@ class TestMainFunction:
         # Import and execute main
         from examples.encryption_usage import __name__ as module_name
 
-        if module_name == "__main__":
-            # Simulate main execution
-            logging.basicConfig(level=logging.INFO, format="%(message)s")
-            logger = logging.getLogger("examples.encryption_usage")
-
-            # Execute the main logic
-            create_example_env_files()
-            demonstrate_settings_usage()
-            demonstrate_encryption_workflow()
-            demonstrate_development_setup()
-
-        # Test individual function calls - import and call directly
+        # Import all functions first
         from examples.encryption_usage import (
             create_example_env_files,
             demonstrate_development_setup,
             demonstrate_encryption_workflow,
             demonstrate_settings_usage,
         )
+
+        if module_name == "__main__":
+            # Simulate main execution
+            logging.basicConfig(level=logging.INFO, format="%(message)s")
+            logging.getLogger("examples.encryption_usage")
+
+            # Execute the main logic - functions now available
+            create_example_env_files()
+            demonstrate_settings_usage()
+            demonstrate_encryption_workflow()
+            demonstrate_development_setup()
 
         create_example_env_files()
         demonstrate_settings_usage()
@@ -441,5 +441,5 @@ class TestSecurityAndBestPractices:
 
         for category, secret_types in secret_categories.items():
             for secret_type in secret_types:
-                matching_keys = [key for key in env_vars.keys() if secret_type in key]
+                matching_keys = [key for key in env_vars if secret_type in key]
                 assert len(matching_keys) > 0, f"No {secret_type} found for {category} category"
