@@ -72,7 +72,7 @@ class TestAuthMiddlewareDatabase:
         # Mock database token lookup
         mock_token = MagicMock(spec=ServiceToken)
         mock_token.id = "token-uuid"
-        mock_token.token_name = "test-api-token"
+        mock_token.token_name = "test-api-token"  # noqa: S105
         mock_token.is_active = True
         mock_token.is_expired = False
         mock_token.usage_count = 5
@@ -157,7 +157,7 @@ class TestAuthMiddlewareDatabase:
         # Mock expired token
         mock_token = MagicMock(spec=ServiceToken)
         mock_token.id = "expired-token-uuid"
-        mock_token.token_name = "expired-api-token"
+        mock_token.token_name = "expired-api-token"  # noqa: S105
         mock_token.is_active = True
         mock_token.is_expired = True  # Token is expired
         mock_token.is_valid = False  # Not valid due to expiration
@@ -200,7 +200,7 @@ class TestAuthMiddlewareDatabase:
         # Mock inactive token
         mock_token = MagicMock(spec=ServiceToken)
         mock_token.id = "inactive-token-uuid"
-        mock_token.token_name = "inactive-api-token"
+        mock_token.token_name = "inactive-api-token"  # noqa: S105
         mock_token.is_active = False  # Token is inactive
         mock_token.is_expired = False
         mock_token.is_valid = False  # Not valid due to being inactive
@@ -263,7 +263,7 @@ class TestAuthMiddlewareDatabase:
         """Test that service tokens are properly hashed for database lookup."""
         import hashlib
 
-        raw_token = "sk_test_raw_token_value"
+        raw_token = "sk_test_raw_token_value"  # noqa: S105
         expected_hash = hashlib.sha256(raw_token.encode()).hexdigest()
 
         # Test hash generation directly (no internal method exists)
@@ -291,7 +291,7 @@ class TestAuthMiddlewareDatabase:
         # Mock token with rich metadata
         mock_token = MagicMock(spec=ServiceToken)
         mock_token.id = "metadata-token-uuid"
-        mock_token.token_name = "metadata-api-token"
+        mock_token.token_name = "metadata-api-token"  # noqa: S105
         mock_token.is_active = True
         mock_token.is_expired = False
         mock_token.is_valid = True
@@ -367,7 +367,7 @@ class TestAuthMiddlewareDatabase:
         # Mock token
         mock_token = MagicMock(spec=ServiceToken)
         mock_token.id = "analytics-token-uuid"
-        mock_token.token_name = "analytics-api-token"
+        mock_token.token_name = "analytics-api-token"  # noqa: S105
         mock_token.is_active = True
         mock_token.is_expired = False
         mock_token.is_valid = True
@@ -389,13 +389,13 @@ class TestAuthMiddlewareDatabase:
 
             mock_get_db.return_value = mock_async_generator()
 
-            # Track time before request
-            before_request = datetime.now(UTC)
+            # Track time before request (for potential performance testing)
+            _before_request = datetime.now(UTC)
 
             result = await auth_middleware.dispatch(request, call_next)
 
-            # Track time after request
-            after_request = datetime.now(UTC)
+            # Track time after request (for potential performance testing)
+            _after_request = datetime.now(UTC)
 
             # Should proceed successfully
             call_next.assert_called_once_with(request)

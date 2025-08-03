@@ -7,7 +7,7 @@ This module defines database models for:
 """
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import TIMESTAMP, Boolean, Integer, String, func
@@ -99,7 +99,7 @@ class ServiceToken(Base):
         """Check if token is expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at.replace(tzinfo=None)
+        return datetime.now(UTC) > self.expires_at.replace(tzinfo=None)
 
     @property
     def is_valid(self) -> bool:

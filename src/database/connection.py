@@ -106,8 +106,8 @@ class DatabaseManager:
         database = getattr(self.settings, "db_name", "promptcraft")
         username = getattr(self.settings, "db_user", "promptcraft_app")
 
-        password = ""
-        if hasattr(self.settings, 'database_password') and self.settings.database_password:
+        password = ""  # nosec B105
+        if self.settings.database_password:
             password = self.settings.database_password.get_secret_value()
 
         return f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}"
@@ -127,9 +127,8 @@ class DatabaseManager:
         if not self._session_factory:
             await self.initialize()
 
-        if not self._session_factory:
-            raise DatabaseConnectionError("Database session factory not available")
-
+        # MyPy check: _session_factory is guaranteed to be initialized after initialize() call
+        assert self._session_factory is not None
         async with self._session_factory() as session:
             try:
                 yield session
@@ -161,6 +160,24 @@ class DatabaseManager:
         except Exception as e:
             logger.error("Database health check failed: %s", e)
             return {"status": "unhealthy", "error": str(e)}
+
+    async def get_pool_status(self) -> dict:
+        """Get connection pool status."""
+        if not self._is_initialized:
+            return {"status": "not_initialized"}
+
+        return {
+            "status": "initialized",
+            "pool_size": getattr(self._engine.pool, "size", 0) if self._engine else 0,
+            "checked_in": getattr(self._engine.pool, "checkedin", 0) if self._engine else 0,
+            "checked_out": getattr(self._engine.pool, "checkedout", 0) if self._engine else 0,
+        }
+
+    # Alias for compatibility with tests
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Alias for get_session for test compatibility."""
+        async with self.get_session() as session:
+            yield session
 
 
 # Global database manager instance

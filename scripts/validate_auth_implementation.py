@@ -282,9 +282,9 @@ class AuthImplementationValidator:
 
     def print_summary(self) -> bool:
         """Print validation summary and return overall success."""
-        logger.info("\n" + "=" * 80)
+        logger.info("\n%s", "=" * 80)
         logger.info("AUTH-2 IMPLEMENTATION VALIDATION SUMMARY")
-        logger.info("=" * 80)
+        logger.info("%s", "=" * 80)
 
         passed_count = sum(1 for result in self.validation_results if result["passed"])
         total_count = len(self.validation_results)
@@ -324,7 +324,7 @@ class AuthImplementationValidator:
     async def run_all_validations(self) -> bool:
         """Run all validation tests."""
         logger.info("Starting AUTH-2 implementation validation...")
-        logger.info("=" * 80)
+        logger.info("%s", "=" * 80)
 
         try:
             await self.validate_database_configuration()
