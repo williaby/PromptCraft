@@ -11,15 +11,13 @@ This module provides async database connection management with:
 
 import asyncio
 import logging
-import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.pool import NullPool
 
 from src.config.settings import get_settings
 
@@ -97,7 +95,7 @@ class DatabaseManager:
     async def _build_database_url(self) -> str:
         """Build database URL from configuration."""
         # Use database_url if provided
-        if hasattr(self.settings, 'database_url') and self.settings.database_url:
+        if hasattr(self.settings, "database_url") and self.settings.database_url:
             return self.settings.database_url.get_secret_value()
 
         # Build URL from components
@@ -186,7 +184,7 @@ _db_manager: DatabaseManager | None = None
 
 def get_database_manager() -> DatabaseManager:
     """Get the global database manager instance."""
-    global _db_manager
+    global _db_manager  # noqa: PLW0603
     if _db_manager is None:
         _db_manager = DatabaseManager()
     return _db_manager

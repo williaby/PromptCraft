@@ -25,7 +25,9 @@ from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.database import DatabaseError, get_database_manager
+from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
+
 from .config import AuthenticationConfig
 from .jwks_client import JWKSClient
 from .jwt_validator import JWTValidator
@@ -37,7 +39,7 @@ logger = logging.getLogger(__name__)
 class ServiceTokenUser:
     """Represents an authenticated service token user."""
 
-    def __init__(self, token_id: str, token_name: str, metadata: dict, usage_count: int = 0):
+    def __init__(self, token_id: str, token_name: str, metadata: dict, usage_count: int = 0) -> None:
         """Initialize service token user.
 
         Args:
@@ -175,7 +177,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     request,
                     event_type="auth_error",
                     success=False,
-                    error_details={"error": str(e), "message": getattr(e, 'message', str(e))},
+                    error_details={"error": str(e), "message": getattr(e, "message", str(e))},
                 )
 
             # Return 401 response
@@ -567,7 +569,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Log unexpected errors but don't fail authentication
             logger.warning(f"Unexpected error updating session (graceful degradation): {e}")
-
 
     def _get_client_ip(self, request: Request) -> str | None:
         """Extract client IP address from request headers.
