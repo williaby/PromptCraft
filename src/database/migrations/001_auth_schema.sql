@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS service_tokens (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Flexible metadata storage
-    metadata JSONB NULL,
+    token_metadata JSONB NULL,
 
     -- Constraints
     CONSTRAINT valid_expiration_date CHECK (expires_at IS NULL OR expires_at > created_at),
@@ -47,7 +47,7 @@ COMMENT ON COLUMN service_tokens.last_used IS 'Timestamp when token was last use
 COMMENT ON COLUMN service_tokens.expires_at IS 'Token expiration timestamp (null for non-expiring tokens)';
 COMMENT ON COLUMN service_tokens.usage_count IS 'Number of times token has been used';
 COMMENT ON COLUMN service_tokens.is_active IS 'Whether the token is currently active';
-COMMENT ON COLUMN service_tokens.metadata IS 'Additional token metadata (permissions, client info, etc.)';
+COMMENT ON COLUMN service_tokens.token_metadata IS 'Additional token metadata (permissions, client info, etc.)';
 
 -- Create indexes for optimal query performance
 CREATE INDEX IF NOT EXISTS idx_service_tokens_token_hash ON service_tokens(token_hash);

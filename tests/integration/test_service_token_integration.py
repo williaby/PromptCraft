@@ -12,7 +12,7 @@ Tests cover:
 import asyncio
 import hashlib
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -25,10 +25,36 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 
 @pytest.fixture
 async def db_session():
-    """Create test database session."""
-    # Skip SQLite integration tests - use mock instead
-    # SQLite doesn't support JSONB type used in our PostgreSQL models
-    pytest.skip("Service token integration tests require PostgreSQL features (JSONB)")
+    """Create mock database session for integration testing."""
+    # Use mock session to simulate PostgreSQL behavior without actual database
+    session_mock = MagicMock()
+
+    # Mock async context manager behavior
+    async def mock_execute(query, params=None):
+        """Mock database query execution."""
+        mock_result = MagicMock()
+
+        # Simulate different query results based on query content
+        if "SELECT" in str(query) and "service_tokens" in str(query):
+            # Mock service token query result
+            mock_record = MagicMock()
+            mock_record.id = 1
+            mock_record.token_name = "test-token"
+            mock_record.token_metadata = {"permissions": ["read"]}
+            mock_record.usage_count = 0
+            mock_record.is_active = True
+            mock_record.is_expired = False
+            mock_result.fetchone.return_value = mock_record
+        else:
+            mock_result.fetchone.return_value = None
+
+        return mock_result
+
+    session_mock.execute = mock_execute
+    session_mock.commit = AsyncMock()
+    session_mock.add = MagicMock()
+
+    return session_mock
 
 
 @pytest.fixture

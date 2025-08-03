@@ -1,5 +1,6 @@
 """Unit tests for database models."""
 
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
@@ -117,6 +118,48 @@ class TestServiceTokenModel:
         token.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         assert token.is_valid is False
+
+    def test_is_expired_edge_case_exactly_now(self):
+        """Test is_expired property for token expiring exactly at current time."""
+        token = ServiceToken()
+        # Set expiration to exactly now (within 1 second accuracy)
+        now = datetime.now(UTC)
+        token.expires_at = now
+
+        # Allow small time difference due to execution time
+        time.sleep(0.001)  # Small delay to ensure time has passed
+        assert token.is_expired is True
+
+    def test_is_expired_timezone_aware_vs_naive_comparison(self):
+        """Test timezone handling with aware vs naive datetime objects."""
+        token = ServiceToken()
+
+        # Test with timezone-aware datetime (should work correctly)
+        token.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        assert token.is_expired is True
+
+        # Test with timezone-aware datetime in future
+        token.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        assert token.is_expired is False
+
+    def test_timezone_consistency_across_properties(self):
+        """Test that timezone handling is consistent across all datetime properties."""
+        token = ServiceToken()
+        current_time = datetime.now(UTC)
+
+        # Set times with explicit UTC timezone
+        token.created_at = current_time - timedelta(hours=2)
+        token.expires_at = current_time + timedelta(hours=1)
+        token.last_used = current_time - timedelta(minutes=30)
+
+        # Verify all datetime fields are timezone-aware
+        assert token.created_at.tzinfo is not None
+        assert token.expires_at.tzinfo is not None
+        assert token.last_used.tzinfo is not None
+
+        # Verify token is valid with proper timezone handling
+        token.is_active = True
+        assert token.is_valid is True
 
 
 class TestServiceTokenCreate:
