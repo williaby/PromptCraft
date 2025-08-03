@@ -19,6 +19,13 @@ SECRET_FIELD_NAMES = [
     "openrouter_api_key",
 ]
 
+# Database configuration defaults
+DATABASE_DEFAULT_HOST = "192.168.1.16"
+DATABASE_DEFAULT_PORT = 5432
+DATABASE_DEFAULT_NAME = "promptcraft"
+DATABASE_DEFAULT_USERNAME = "promptcraft"
+DATABASE_DEFAULT_TIMEOUT = 30.0
+
 # Qdrant configuration defaults
 QDRANT_DEFAULT_HOST = "192.168.1.16"
 QDRANT_DEFAULT_PORT = 6333
