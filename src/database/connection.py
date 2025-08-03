@@ -205,3 +205,9 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     db_manager = get_database_manager()
     async with db_manager.get_session() as session:
         yield session
+
+
+async def database_health_check() -> dict[str, Any]:
+    """Perform database health check (legacy compatibility)."""
+    db_manager = get_database_manager()
+    return await db_manager.health_check()

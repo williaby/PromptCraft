@@ -171,15 +171,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Database event logging for failures (if enabled)
             if self.database_enabled:
-                total_time = (time.time() - start_time) * 1000
                 await self._log_authentication_event(
-                    None,
                     request,
-                    False,
-                    0,
-                    0,
-                    total_time,
-                    str(e),
+                    event_type="auth_error",
+                    success=False,
+                    error_details={"error": str(e), "message": getattr(e, 'message', str(e))},
                 )
 
             # Return 401 response
@@ -572,82 +568,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             # Log unexpected errors but don't fail authentication
             logger.warning(f"Unexpected error updating session (graceful degradation): {e}")
 
-    async def _log_authentication_event(
-        self,
-        authenticated_user: AuthenticatedUser | None,
-        request: Request,
-        success: bool,
-        jwt_time_ms: float,
-        db_time_ms: float,
-        total_time_ms: float,
-        error_message: str | None = None,
-    ) -> None:
-        """Log authentication event to database with graceful degradation.
-
-        Args:
-            authenticated_user: Authenticated user (None for failures)
-            request: HTTP request for context
-            success: Whether authentication was successful
-            jwt_time_ms: JWT validation time in milliseconds
-            db_time_ms: Database operation time in milliseconds
-            total_time_ms: Total processing time in milliseconds
-            error_message: Error message for failed attempts
-        """
-        if not self.database_enabled:
-            return
-
-        try:
-            db_manager = await get_database_manager()
-
-            async with db_manager.get_session() as session:
-
-                # Extract request information
-                user_email = authenticated_user.email if authenticated_user else "unknown"
-                ip_address = self._get_client_ip(request)
-                user_agent = request.headers.get("User-Agent")
-                cloudflare_ray_id = request.headers.get("CF-Ray")
-
-                # Determine event type
-                event_type = "login" if success else "failed_login"
-
-                # Build performance metrics
-                performance_metrics = {
-                    "jwt_validation_ms": round(jwt_time_ms, 2),
-                    "database_operation_ms": round(db_time_ms, 2),
-                    "total_processing_ms": round(total_time_ms, 2),
-                    "timestamp": time.time(),
-                }
-
-                # Build error details if applicable
-                error_details = None
-                if not success and error_message:
-                    error_details = {
-                        "error_message": error_message,
-                        "request_path": str(request.url.path),
-                        "request_method": request.method,
-                    }
-
-                # Create authentication event
-                auth_event = AuthenticationEvent(
-                    user_email=user_email,
-                    event_type=event_type,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    cloudflare_ray_id=cloudflare_ray_id,
-                    success=success,
-                    error_details=error_details,
-                    performance_metrics=performance_metrics,
-                )
-
-                session.add(auth_event)
-                await session.commit()
-
-        except DatabaseError as e:
-            # Log database errors but don't fail authentication
-            logger.warning(f"Database event logging failed (graceful degradation): {e}")
-        except Exception as e:
-            # Log unexpected errors but don't fail authentication
-            logger.warning(f"Unexpected error logging event (graceful degradation): {e}")
 
     def _get_client_ip(self, request: Request) -> str | None:
         """Extract client IP address from request headers.
