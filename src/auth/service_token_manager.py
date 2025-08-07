@@ -10,7 +10,7 @@ This module provides comprehensive service token management including:
 import hashlib
 import logging
 import secrets
-from datetime import UTC, datetime
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -117,7 +117,7 @@ class ServiceTokenManager:
                 expires_at=expires_at,
                 is_active=is_active,
                 token_metadata=metadata or {},
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(new_token)
@@ -196,7 +196,7 @@ class ServiceTokenManager:
                 event_type="service_token_revocation",
                 success=True,
                 error_details={"reason": revocation_reason},
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(revocation_event)
@@ -250,7 +250,7 @@ class ServiceTokenManager:
                 event_type="emergency_revocation_all",
                 success=True,
                 error_details={"reason": emergency_reason, "tokens_revoked": active_count},
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(emergency_event)
@@ -310,12 +310,12 @@ class ServiceTokenManager:
 
             # Create new token with same metadata
             new_token = ServiceToken(
-                token_name=f"{old_token.token_name}_rotated_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
+                token_name=f"{old_token.token_name}_rotated_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
                 token_hash=new_token_hash,
                 expires_at=old_token.expires_at,
                 is_active=True,
                 token_metadata=old_token.token_metadata,
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(new_token)
@@ -336,7 +336,7 @@ class ServiceTokenManager:
                     "old_token_id": str(old_token.id),
                     "new_token_name": new_token.token_name,
                 },
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(rotation_event)
@@ -405,6 +405,9 @@ class ServiceTokenManager:
                 if not token_data:
                     return {"error": "Token not found"}
 
+                # Calculate cutoff date for security (avoid SQL injection)
+                cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+                
                 # Get recent authentication events
                 auth_events = await session.execute(
                     text(
@@ -412,12 +415,12 @@ class ServiceTokenManager:
                         SELECT event_type, success, created_at
                         FROM authentication_events
                         WHERE service_token_name = :token_name
-                          AND created_at >= NOW() - MAKE_INTERVAL(days => :days)
+                          AND created_at >= :cutoff_date
                         ORDER BY created_at DESC
                         LIMIT 100
                     """,
                     ),
-                    {"token_name": token_data.token_name, "days": days},
+                    {"token_name": token_data.token_name, "cutoff_date": cutoff_date},
                 )
 
                 recent_events = [
@@ -559,7 +562,7 @@ class ServiceTokenManager:
                     "action": action,
                     "token_names": [token.token_name for token in expired_tokens],
                 },
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
             )
 
             session.add(cleanup_event)
