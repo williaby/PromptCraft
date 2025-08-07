@@ -256,7 +256,9 @@ class ServiceTokenManager:
             session.add(emergency_event)
             await session.commit()
 
-            logger.critical(f"EMERGENCY REVOCATION: Revoked {active_count} service tokens (reason: {emergency_reason})")
+            # Sanitize emergency_reason for logging to prevent log injection
+            safe_reason = emergency_reason.replace('\n', '').replace('\r', '')[:100]
+            logger.critical(f"EMERGENCY REVOCATION: Revoked {active_count} service tokens (reason: {safe_reason})")
 
             return active_count
 
