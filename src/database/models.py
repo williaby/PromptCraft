@@ -100,7 +100,13 @@ class ServiceToken(Base):
         """Check if the token has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(UTC) > self.expires_at
+        # Ensure both datetimes are timezone-aware and in UTC
+        now_utc = datetime.now(UTC)
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            # Assume naive expires_at is UTC
+            expires_at = expires_at.replace(tzinfo=UTC)
+        return now_utc > expires_at
 
     @property
     def is_valid(self) -> bool:

@@ -124,21 +124,29 @@ class ServiceTokenManager:
             await session.commit()
             await session.refresh(new_token)
 
-            logger.info(f"Created service token: {token_name} (ID: {new_token.id})")
+            # Sanitize token_name for logging to prevent log injection
+            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
+            logger.info(f"Created service token: {safe_token_name}... (ID: {new_token.id})")
 
             return token_value, str(new_token.id)
 
         except ValueError as e:
             # Re-raise ValueError for duplicate names and other validation errors
-            logger.error(f"Error creating service token '{token_name}': {e}")
+            # Sanitize token_name for logging to prevent log injection
+            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
+            logger.error(f"Error creating service token '{safe_token_name}...': {e}")
             raise
         except Exception as e:
+            # Sanitize token_name for logging to prevent log injection
+            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
+            
             # Database connection errors and other critical errors should propagate
-            # Only catch and return None for specific database operation errors
             if "Database connection failed" in str(e):
-                logger.error(f"Database connection failed for token '{token_name}': {e}")
+                logger.error(f"Database connection failed for token '{safe_token_name}...': {e}")
                 raise
-            logger.error(f"Error creating service token '{token_name}': {e}")
+            
+            # Log and return None for other database operation errors
+            logger.error(f"Error creating service token '{safe_token_name}...': {e}")
             return None
 
     async def revoke_service_token(self, token_identifier: str, revocation_reason: str = "manual_revocation") -> bool:
@@ -171,7 +179,9 @@ class ServiceTokenManager:
             token_record = result.fetchone()
 
             if not token_record:
-                logger.warning(f"Service token not found for revocation: {token_identifier}")
+                # Sanitize token_identifier for logging to prevent log injection
+                safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+                logger.warning(f"Service token not found for revocation: {safe_identifier}...")
                 return False
 
             # Deactivate the token
@@ -192,16 +202,24 @@ class ServiceTokenManager:
             session.add(revocation_event)
             await session.commit()
 
-            logger.warning(f"REVOKED service token: {token_record.token_name} (reason: {revocation_reason})")
+            # Sanitize token name and reason for logging to prevent log injection
+            safe_token_name = token_record.token_name.replace('\n', '').replace('\r', '')[:50]
+            safe_reason = revocation_reason.replace('\n', '').replace('\r', '')[:30]
+            logger.warning(f"REVOKED service token: {safe_token_name}... (reason: {safe_reason}...)")
 
             return True
 
         except Exception as e:
+            # Sanitize token_identifier for logging to prevent log injection
+            safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+            
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error(f"Database connection failed for token revocation '{token_identifier}': {e}")
+                logger.error(f"Database connection failed for token revocation '{safe_identifier}...': {e}")
                 raise
-            logger.error(f"Error revoking service token '{token_identifier}': {e}")
+            
+            # Log and return None for other errors
+            logger.error(f"Error revoking service token '{safe_identifier}...': {e}")
             return None
 
     async def emergency_revoke_all_tokens(self, emergency_reason: str) -> int:
@@ -281,7 +299,9 @@ class ServiceTokenManager:
             old_token = result.fetchone()
 
             if not old_token:
-                logger.warning(f"Active service token not found for rotation: {token_identifier}")
+                # Sanitize token_identifier for logging to prevent log injection
+                safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+                logger.warning(f"Active service token not found for rotation: {safe_identifier}...")
                 return None
 
             # Generate new token
@@ -323,16 +343,24 @@ class ServiceTokenManager:
             await session.commit()
             await session.refresh(new_token)
 
-            logger.info(f"Rotated service token: {old_token.token_name} -> {new_token.token_name}")
+            # Sanitize token names for logging to prevent log injection
+            safe_old_name = old_token.token_name.replace('\n', '').replace('\r', '')[:50]
+            safe_new_name = new_token.token_name.replace('\n', '').replace('\r', '')[:50]
+            logger.info(f"Rotated service token: {safe_old_name}... -> {safe_new_name}...")
 
             return new_token_value, str(new_token.id)
 
         except Exception as e:
+            # Sanitize token_identifier for logging to prevent log injection
+            safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+            
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error(f"Database connection failed for token rotation '{token_identifier}': {e}")
+                logger.error(f"Database connection failed for token rotation '{safe_identifier}...': {e}")
                 raise
-            logger.error(f"Error rotating service token '{token_identifier}': {e}")
+            
+            # Log and return None for other errors
+            logger.error(f"Error rotating service token '{safe_identifier}...': {e}")
             return None
 
     async def get_token_usage_analytics(self, token_identifier: str | None = None, days: int = 30) -> dict:
