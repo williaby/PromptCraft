@@ -74,7 +74,7 @@ class ServiceTokenCreate(BaseModel):
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
     @validator("token_name")
-    def validate_token_name(cls, v: str) -> str:
+    def validate_token_name(cls, v: str) -> str:  # noqa: N805
         """Validate and clean token name."""
         return v.strip()
 
@@ -93,7 +93,7 @@ class ServiceTokenUpdate(BaseModel):
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
     @validator("token_name")
-    def validate_token_name(cls, v: str | None) -> str | None:
+    def validate_token_name(cls, v: str | None) -> str | None:  # noqa: N805
         """Validate and clean token name."""
         if v is not None:
             return v.strip()
@@ -147,7 +147,7 @@ class TokenValidationRequest(BaseModel):
     token: str = Field(..., min_length=1, description="Token to validate")
 
     @validator("token")
-    def validate_token(cls, v: str) -> str:
+    def validate_token(cls, v: str) -> str:  # noqa: N805
         """Validate and clean token."""
         return v.strip()
 
