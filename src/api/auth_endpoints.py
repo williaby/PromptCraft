@@ -7,7 +7,7 @@ This module provides FastAPI endpoints for service token management including:
 - Usage analytics and audit logging
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
@@ -134,7 +134,7 @@ async def auth_health_check() -> AuthHealthResponse:
 
     return AuthHealthResponse(
         status=status,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         database_status=database_status,
         active_tokens=active_tokens,
         recent_authentications=recent_authentications,
@@ -166,7 +166,7 @@ async def create_service_token(
     # Calculate expiration
     expires_at = None
     if token_request.expires_days:
-        expires_at = datetime.now(timezone.utc) + timedelta(days=token_request.expires_days)
+        expires_at = datetime.now(UTC) + timedelta(days=token_request.expires_days)
 
     try:
         result = await manager.create_service_token(
@@ -268,7 +268,7 @@ async def rotate_service_token(
                 )
             return TokenCreationResponse(
                 token_id=new_token_id,
-                token_name="rotated_token",  # nosec B106
+                token_name="rotated_token",  # nosec B106  # noqa: S106
                 token_value=new_token_value,
                 expires_at=None,
                 metadata={"rotated_by": current_user.email, "rotation_reason": reason},
@@ -284,7 +284,7 @@ async def rotate_service_token(
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),  # noqa: ARG001
 ) -> list[TokenInfo]:
     """List all service tokens (admin only).
 
@@ -335,7 +335,7 @@ async def get_token_analytics(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),  # noqa: ARG001
 ) -> dict:
     """Get detailed analytics for a specific service token (admin only).
 
@@ -387,7 +387,7 @@ async def emergency_revoke_all_tokens(
             "tokens_revoked": revoked_count or 0,
             "revoked_by": current_user.email,
             "reason": reason,
-            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat() + "Z",
         }
 
     except Exception as e:
@@ -400,7 +400,7 @@ system_router = APIRouter(prefix="/api/v1/system", tags=["system"])
 
 @system_router.get("/status")
 async def system_status(
-    request: Request,
+    request: Request,  # noqa: ARG001
     current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
 ) -> dict[str, str]:
     """Get system status information.
@@ -415,7 +415,7 @@ async def system_status(
 
     return {
         "status": "operational",
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
         "version": "1.0.0",
         "authenticated_as": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }
@@ -428,7 +428,7 @@ async def system_health() -> dict[str, str]:
     This endpoint is excluded from authentication middleware and can be used
     for basic health monitoring without credentials.
     """
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat() + "Z"}
+    return {"status": "healthy", "timestamp": datetime.now(UTC).isoformat() + "Z"}
 
 
 # Audit endpoints for CI/CD logging
@@ -437,7 +437,7 @@ audit_router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 
 @audit_router.post("/cicd-event")
 async def log_cicd_event(
-    request: Request,
+    request: Request,  # noqa: ARG001
     event_data: dict,
     current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
 ) -> dict[str, str]:
@@ -456,7 +456,7 @@ async def log_cicd_event(
 
     return {
         "status": "logged",
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
         "event_type": event_data.get("event_type", "unknown"),
         "logged_by": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }

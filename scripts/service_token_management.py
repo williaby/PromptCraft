@@ -19,7 +19,7 @@ Usage:
 import argparse
 import asyncio
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Add src to path for imports
@@ -47,7 +47,7 @@ async def create_token_command(args: argparse.Namespace) -> None:
     # Parse expiration
     expires_at = None
     if args.expires_days:
-        expires_at = datetime.utcnow() + timedelta(days=args.expires_days)
+        expires_at = datetime.now(UTC) + timedelta(days=args.expires_days)
     elif args.expires_at:
         expires_at = datetime.fromisoformat(args.expires_at.replace("Z", "+00:00"))
 
@@ -151,7 +151,7 @@ async def emergency_revoke_command(args: argparse.Namespace) -> None:
         print("🚨 EMERGENCY REVOCATION COMPLETED!")
         print(f"Tokens revoked: {revoked_count}")
         print(f"Reason: {args.reason}")
-        print(f"Timestamp: {datetime.utcnow().isoformat()}Z")
+        print(f"Timestamp: {datetime.now(UTC).isoformat()}Z")
         print()
         print("💥 ALL SERVICE TOKENS HAVE BEEN DEACTIVATED!")
         print("   You must create new tokens before any automated systems can authenticate.")
@@ -234,7 +234,7 @@ async def cleanup_command(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-async def list_tokens_command(args: argparse.Namespace) -> None:
+async def list_tokens_command(args: argparse.Namespace) -> None:  # noqa: ARG001
     """List all service tokens with their status."""
     manager = ServiceTokenManager()
 
@@ -261,7 +261,7 @@ async def list_tokens_command(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
-async def validate_database_command(args: argparse.Namespace) -> None:
+async def validate_database_command(args: argparse.Namespace) -> None:  # noqa: ARG001
     """Validate database connectivity and schema."""
     print("🔍 Validating database connectivity and schema...")
 
@@ -348,10 +348,10 @@ def main():
     )
 
     # List tokens command
-    list_parser = subparsers.add_parser("list", help="List all service tokens")
+    _ = subparsers.add_parser("list", help="List all service tokens")
 
     # Validate database command
-    validate_parser = subparsers.add_parser("validate-db", help="Validate database connectivity and schema")
+    _ = subparsers.add_parser("validate-db", help="Validate database connectivity and schema")
 
     args = parser.parse_args()
 
