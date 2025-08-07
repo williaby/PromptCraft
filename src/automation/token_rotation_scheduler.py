@@ -12,13 +12,15 @@ import asyncio
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import text
 
-from ..auth.service_token_manager import ServiceTokenManager
-from ..database.connection import get_db
-from ..monitoring.service_token_monitor import ServiceTokenMonitor
+from src.auth.service_token_manager import ServiceTokenManager
+from src.database.connection import get_db
+
+if TYPE_CHECKING:
+    from src.monitoring.service_token_monitor import ServiceTokenMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class TokenRotationPlan:
         scheduled_time: datetime,
         rotation_type: str = "scheduled",
         metadata: dict | None = None,
-    ):
+    ) -> None:
         """Initialize token rotation plan.
 
         Args:
@@ -62,7 +64,7 @@ class TokenRotationPlan:
 class TokenRotationScheduler:
     """Automated token rotation scheduler."""
 
-    def __init__(self, settings: Any | None = None):
+    def __init__(self, settings: Any | None = None) -> None:
         """Initialize token rotation scheduler.
 
         Args:
@@ -70,7 +72,7 @@ class TokenRotationScheduler:
         """
         self.settings = settings
         self.token_manager = ServiceTokenManager()
-        self.monitor = ServiceTokenMonitor(settings)
+        self.monitor: ServiceTokenMonitor | None = None
 
         # Rotation policies
         self.default_rotation_age_days = 90  # Rotate tokens older than 90 days
@@ -86,6 +88,14 @@ class TokenRotationScheduler:
 
         # Webhook/notification callbacks
         self._notification_callbacks: list[Callable] = []
+
+    def _get_monitor(self) -> "ServiceTokenMonitor":
+        """Get the service token monitor, initializing if needed."""
+        if self.monitor is None:
+            from src.monitoring.service_token_monitor import ServiceTokenMonitor  # noqa: PLC0415
+
+            self.monitor = ServiceTokenMonitor(self.settings)
+        return self.monitor
 
     async def analyze_tokens_for_rotation(self) -> list[TokenRotationPlan]:
         """Analyze tokens and create rotation plans for those needing rotation.
@@ -164,7 +174,7 @@ class TokenRotationScheduler:
                 break  # Only need first session
 
         except Exception as e:
-            logger.error(f"Failed to analyze tokens for rotation: {e}")
+            logger.error("Failed to analyze tokens for rotation: %s", e)
 
         return rotation_plans
 
@@ -197,15 +207,17 @@ class TokenRotationScheduler:
         try:
             # Validate the plan
             if plan.scheduled_time <= datetime.now(UTC):
-                logger.warning(f"Cannot schedule rotation for past time: {plan.token_name}")
+                logger.warning("Cannot schedule rotation for past time: %s", plan.token_name)
                 return False
 
             # Add to rotation plans
             self._rotation_plans.append(plan)
 
             logger.info(
-                f"Scheduled token rotation: {plan.token_name} "
-                f"({plan.rotation_type}) at {plan.scheduled_time.isoformat()}",
+                "Scheduled token rotation: %s (%s) at %s",
+                plan.token_name,
+                plan.rotation_type,
+                plan.scheduled_time.isoformat(),
             )
 
             # Send advance notification
@@ -214,7 +226,7 @@ class TokenRotationScheduler:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to schedule token rotation: {e}")
+            logger.error("Failed to schedule token rotation: %s", e)
             return False
 
     async def execute_rotation_plan(self, plan: TokenRotationPlan) -> bool:
@@ -229,7 +241,7 @@ class TokenRotationScheduler:
         plan.status = "in_progress"
 
         try:
-            logger.info(f"Executing token rotation: {plan.token_name} ({plan.rotation_reason})")
+            logger.info("Executing token rotation: %s (%s)", plan.token_name, plan.rotation_reason)
 
             # Send pre-rotation notification
             await self._send_rotation_notification(plan, "starting")
@@ -247,7 +259,7 @@ class TokenRotationScheduler:
                 plan.status = "completed"
                 plan.completed_at = datetime.now(UTC)
 
-                logger.info(f"Token rotation completed: {plan.token_name} -> new ID: {new_token_id}")
+                logger.info("Token rotation completed: %s -> new ID: %s", plan.token_name, new_token_id)
 
                 # Send success notification with new token
                 await self._send_rotation_notification(plan, "completed")
@@ -256,7 +268,7 @@ class TokenRotationScheduler:
             plan.status = "failed"
             plan.error_details = "Token rotation returned no result"
 
-            logger.error(f"Token rotation failed: {plan.token_name} - no result returned")
+            logger.error("Token rotation failed: %s - no result returned", plan.token_name)
 
             # Send failure notification
             await self._send_rotation_notification(plan, "failed")
@@ -267,7 +279,7 @@ class TokenRotationScheduler:
             plan.status = "failed"
             plan.error_details = str(e)
 
-            logger.error(f"Token rotation failed: {plan.token_name} - {e}")
+            logger.error("Token rotation failed: %s - %s", plan.token_name, e)
 
             # Send failure notification
             await self._send_rotation_notification(plan, "failed")
@@ -327,13 +339,13 @@ class TokenRotationScheduler:
                 try:
                     await callback(notification_data)
                 except Exception as e:
-                    logger.warning(f"Notification callback failed: {e}")
+                    logger.warning("Notification callback failed: %s", e)
 
             # Log the notification
-            logger.info(f"Rotation notification sent: {event_type} for {plan.token_name}")
+            logger.info("Rotation notification sent: %s for %s", event_type, plan.token_name)
 
         except Exception as e:
-            logger.error(f"Failed to send rotation notification: {e}")
+            logger.error("Failed to send rotation notification: %s", e)
 
     def add_notification_callback(self, callback: Callable) -> None:
         """Add a notification callback for rotation events.
@@ -387,8 +399,9 @@ class TokenRotationScheduler:
                 results["rotations_failed"] += 1
 
         logger.info(
-            f"Scheduled rotations completed: {results['rotations_successful']} successful, "
-            f"{results['rotations_failed']} failed",
+            "Scheduled rotations completed: %d successful, %d failed",
+            results["rotations_successful"],
+            results["rotations_failed"],
         )
 
         return results
@@ -428,7 +441,7 @@ class TokenRotationScheduler:
             }
 
         except Exception as e:
-            logger.error(f"Rotation scheduler failed: {e}")
+            logger.error("Rotation scheduler failed: %s", e)
             return {"status": "failed", "timestamp": start_time.isoformat(), "error": str(e)}
 
     async def start_rotation_daemon(self, check_interval_hours: int = 24) -> None:
@@ -437,7 +450,7 @@ class TokenRotationScheduler:
         Args:
             check_interval_hours: Hours between scheduler checks
         """
-        logger.info(f"Starting token rotation scheduler daemon (interval: {check_interval_hours} hours)")
+        logger.info("Starting token rotation scheduler daemon (interval: %d hours)", check_interval_hours)
 
         while True:
             try:
@@ -445,16 +458,16 @@ class TokenRotationScheduler:
 
                 if result["status"] == "completed":
                     logger.info(
-                        f"Rotation scheduler cycle completed: "
-                        f"{result.get('new_plans_created', 0)} new plans, "
-                        f"{result.get('new_plans_scheduled', 0)} scheduled, "
-                        f"{result.get('rotation_results', {}).get('rotations_successful', 0)} rotations completed",
+                        "Rotation scheduler cycle completed: %d new plans, %d scheduled, %d rotations completed",
+                        result.get("new_plans_created", 0),
+                        result.get("new_plans_scheduled", 0),
+                        result.get("rotation_results", {}).get("rotations_successful", 0),
                     )
                 else:
-                    logger.error(f"Rotation scheduler cycle failed: {result.get('error', 'Unknown error')}")
+                    logger.error("Rotation scheduler cycle failed: %s", result.get("error", "Unknown error"))
 
             except Exception as e:
-                logger.error(f"Rotation scheduler daemon error: {e}")
+                logger.error("Rotation scheduler daemon error: %s", e)
 
             # Wait for next cycle
             await asyncio.sleep(check_interval_hours * 3600)
