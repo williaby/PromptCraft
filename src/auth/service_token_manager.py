@@ -151,7 +151,9 @@ class ServiceTokenManager:
             return None
 
     async def revoke_service_token(
-        self, token_identifier: str, revocation_reason: str = "manual_revocation",
+        self,
+        token_identifier: str,
+        revocation_reason: str = "manual_revocation",
     ) -> bool | None:
         """Revoke a service token (emergency or planned).
 
@@ -369,7 +371,9 @@ class ServiceTokenManager:
             return None
 
     async def get_token_usage_analytics(
-        self, token_identifier: str | None = None, days: int = 30,
+        self,
+        token_identifier: str | None = None,
+        days: int = 30,
     ) -> dict[str, Any] | None:
         """Get usage analytics for service tokens.
 
