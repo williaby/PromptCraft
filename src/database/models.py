@@ -1,20 +1,22 @@
 """SQLAlchemy models for PromptCraft authentication and service token management.
 
 This module defines database models for:
-- Service token management and tracking
-- User session management
-- Authentication event logging
+- Service token management and tracking (AUTH-2)
+- User session management (AUTH-1)
+- Authentication event logging (AUTH-1)
 """
 
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import TIMESTAMP, Boolean, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from .connection import Base
+
+class Base(DeclarativeBase):
+    """Base class for SQLAlchemy models."""
 
 
 class ServiceToken(Base):
@@ -56,13 +58,13 @@ class ServiceToken(Base):
     last_used: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=True,
-        comment="Last usage timestamp",
+        comment="Last time this token was used for authentication",
     )
 
     expires_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=True,
-        comment="Token expiration timestamp (NULL = no expiration)",
+        comment="Token expiration time (NULL for no expiration)",
     )
 
     # Usage tracking
@@ -70,59 +72,48 @@ class ServiceToken(Base):
         Integer,
         nullable=False,
         default=0,
-        comment="Total number of times token has been used",
+        comment="Number of times this token has been used",
     )
 
-    # Status and configuration
+    # Status
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=True,
-        comment="Whether token is active and can be used",
+        comment="Whether the token is active and can be used",
     )
 
-    # Additional metadata
-    token_metadata: Mapped[dict[str, Any]] = mapped_column(
+    # Metadata
+    token_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
-        nullable=False,
-        default=dict,
-        comment="Additional token metadata (permissions, scope, etc.)",
+        nullable=True,
+        comment="Additional metadata about the token (permissions, environment, etc.)",
     )
 
     def __repr__(self) -> str:
-        """String representation of service token."""
+        """Return string representation of the service token."""
         status = "active" if self.is_active else "inactive"
-        return f"<ServiceToken(name='{self.token_name}', status='{status}', uses={self.usage_count})>"
+        return f"<ServiceToken(name='{self.token_name}', {status}, uses={self.usage_count})>"
 
     @property
     def is_expired(self) -> bool:
-        """Check if token is expired."""
+        """Check if the token has expired."""
         if self.expires_at is None:
             return False
-        return datetime.now(UTC) > self.expires_at.replace(tzinfo=None)
+        return datetime.now(UTC) > self.expires_at
 
     @property
     def is_valid(self) -> bool:
-        """Check if token is valid (active and not expired)."""
+        """Check if the token is valid (active and not expired)."""
         return self.is_active and not self.is_expired
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary (excluding sensitive data)."""
-        return {
-            "id": str(self.id),
-            "token_name": self.token_name,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_used": self.last_used.isoformat() if self.last_used else None,
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
-            "usage_count": self.usage_count,
-            "is_active": self.is_active,
-            "is_expired": self.is_expired,
-            "metadata": self.token_metadata,
-        }
 
 
 class UserSession(Base):
-    """User session model for tracking authenticated user sessions."""
+    """User session tracking model for authenticated users.
+
+    Tracks user sessions, preferences, and metadata for enhanced
+    authentication experience and user behavior analysis.
+    """
 
     __tablename__ = "user_sessions"
 
@@ -135,26 +126,36 @@ class UserSession(Base):
     )
 
     # User identification
-    email: Mapped[str] = mapped_column(String(255), nullable=False, comment="User email from Cloudflare Access")
+    email: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+        comment="User email address from Cloudflare Access JWT",
+    )
 
-    cloudflare_sub: Mapped[str] = mapped_column(String(255), nullable=False, comment="Cloudflare subject identifier")
+    cloudflare_sub: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+        comment="Cloudflare Access subject identifier",
+    )
 
-    # Session timestamps
+    # Session tracking
     first_seen: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
-        comment="First session timestamp",
+        comment="First time this user was seen",
     )
 
     last_seen: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
-        comment="Last activity timestamp",
+        onupdate=func.now(),
+        comment="Last time this user was seen",
     )
 
-    # Session tracking
     session_count: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
@@ -162,28 +163,32 @@ class UserSession(Base):
         comment="Number of sessions for this user",
     )
 
-    # User preferences and metadata
+    # User data
     preferences: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
-        default=dict,
+        server_default="{}",
         comment="User preferences and settings",
     )
 
     user_metadata: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
-        default=dict,
-        comment="Additional user metadata",
+        server_default="{}",
+        comment="Additional user metadata and context",
     )
 
     def __repr__(self) -> str:
-        """String representation of user session."""
-        return f"<UserSession(email='{self.email}', sessions={self.session_count})>"
+        """Return string representation of the user session."""
+        return f"<UserSession(id={self.id}, email='{self.email}', sessions={self.session_count})>"
 
 
 class AuthenticationEvent(Base):
-    """Authentication event model for audit logging."""
+    """Authentication event model for audit logging and analytics.
+
+    Tracks all authentication attempts, successes, and failures
+    for security monitoring and performance analysis.
+    """
 
     __tablename__ = "authentication_events"
 
@@ -195,52 +200,61 @@ class AuthenticationEvent(Base):
         comment="Unique event identifier",
     )
 
-    # User identification
-    user_email: Mapped[str | None] = mapped_column(
+    # Event identification
+    user_email: Mapped[str] = mapped_column(
         String(255),
-        nullable=True,
-        comment="User email (if user authentication)",
-    )
-
-    service_token_name: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-        comment="Service token name (if service token authentication)",
-    )
-
-    # Event details
-    event_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="Type of authentication event")
-
-    success: Mapped[bool] = mapped_column(
-        Boolean,
         nullable=False,
-        default=True,
-        comment="Whether authentication was successful",
+        index=True,
+        comment="User email (from JWT or 'unknown' for failures)",
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+        comment="Type of authentication event (login, token_refresh, etc.)",
     )
 
     # Request context
     ip_address: Mapped[str | None] = mapped_column(
-        String(45),
+        INET,
         nullable=True,
-        comment="Client IP address (IPv4 or IPv6)",
+        comment="Client IP address",
     )
 
-    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True, comment="Client user agent string")
+    user_agent: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Client user agent string",
+    )
 
-    endpoint: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="API endpoint accessed")
-
-    # Cloudflare context
     cloudflare_ray_id: Mapped[str | None] = mapped_column(
-        String(100),
+        String(255),
         nullable=True,
         comment="Cloudflare Ray ID for request tracing",
     )
 
-    # Error details
+    # Event outcome
+    success: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+        index=True,
+        comment="Whether the authentication was successful",
+    )
+
+    # Event details
     error_details: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Error details for failed authentications",
+        comment="Error details for failed authentication attempts",
+    )
+
+    performance_metrics: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="Performance metrics (timing, etc.) for the authentication",
     )
 
     # Timestamp
@@ -248,10 +262,20 @@ class AuthenticationEvent(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
+        index=True,
         comment="Event timestamp",
     )
 
     def __repr__(self) -> str:
-        """String representation of authentication event."""
-        status = "success" if self.success else "failure"
-        return f"<AuthenticationEvent(type='{self.event_type}', status='{status}')>"
+        """Return string representation of the authentication event."""
+        status = "SUCCESS" if self.success else "FAILED"
+        return f"<AuthenticationEvent(id={self.id}, user='{self.user_email}', type='{self.event_type}', {status})>"
+
+
+# Export all models
+__all__ = [
+    "AuthenticationEvent",
+    "Base",
+    "ServiceToken",
+    "UserSession",
+]

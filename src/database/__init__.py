@@ -7,13 +7,20 @@ This package provides:
 - Session management, event logging, and user metadata storage
 """
 
-from .connection import DatabaseConnectionError, DatabaseError, DatabaseManager, get_database_manager, get_db, get_db_session
+from .connection import (
+    DatabaseConnectionError,
+    DatabaseError,
+    DatabaseManager,
+    get_database_manager,
+    get_db,
+    get_db_session,
+)
 from .models import AuthenticationEvent, Base, ServiceToken, UserSession
 
 __all__ = [
     "AuthenticationEvent",
     "Base",
-    "DatabaseConnectionError", 
+    "DatabaseConnectionError",
     "DatabaseError",
     "DatabaseManager",
     "ServiceToken",

@@ -173,11 +173,15 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Database event logging for failures (if enabled)
             if self.database_enabled:
+                total_time = (time.time() - start_time) * 1000
                 await self._log_authentication_event(
+                    None,
                     request,
-                    event_type="auth_error",
-                    success=False,
-                    error_details={"error": str(e), "message": getattr(e, "message", str(e))},
+                    False,
+                    0,
+                    0,
+                    total_time,
+                    str(e),
                 )
 
             # Return 401 response

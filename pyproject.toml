@@ -70,7 +70,7 @@ slowapi = "^0.1.9"
 cachetools = "^6.1.0"
 defusedxml = "^0.7.1"
 starlette = ">=0.47.2"
-# Database dependencies for AUTH-2 service token management
+# Database dependencies for AUTH-1 enhanced authentication and AUTH-2 service token management
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 asyncpg = "^0.30.0"
 alembic = "^1.14.0"
