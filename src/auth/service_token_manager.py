@@ -26,7 +26,7 @@ class ServiceTokenManager:
 
     def __init__(self) -> None:
         """Initialize service token manager."""
-        self.token_prefix = "sk_"  # noqa: S105
+        self.token_prefix = "sk_"  # nosec B105
         self.token_length = 32  # 32 bytes = 256 bits of entropy
 
     async def _get_session(self) -> AsyncSession:
@@ -125,7 +125,7 @@ class ServiceTokenManager:
             await session.refresh(new_token)
 
             # Sanitize token_name for logging to prevent log injection
-            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
+            safe_token_name = token_name.replace("\n", "").replace("\r", "")[:50]
             logger.info(f"Created service token: {safe_token_name}... (ID: {new_token.id})")
 
             return token_value, str(new_token.id)
@@ -133,18 +133,18 @@ class ServiceTokenManager:
         except ValueError as e:
             # Re-raise ValueError for duplicate names and other validation errors
             # Sanitize token_name for logging to prevent log injection
-            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
+            safe_token_name = token_name.replace("\n", "").replace("\r", "")[:50]
             logger.error(f"Error creating service token '{safe_token_name}...': {e}")
             raise
         except Exception as e:
             # Sanitize token_name for logging to prevent log injection
-            safe_token_name = token_name.replace('\n', '').replace('\r', '')[:50]
-            
+            safe_token_name = token_name.replace("\n", "").replace("\r", "")[:50]
+
             # Database connection errors and other critical errors should propagate
             if "Database connection failed" in str(e):
                 logger.error(f"Database connection failed for token '{safe_token_name}...': {e}")
                 raise
-            
+
             # Log and return None for other database operation errors
             logger.error(f"Error creating service token '{safe_token_name}...': {e}")
             return None
@@ -180,7 +180,7 @@ class ServiceTokenManager:
 
             if not token_record:
                 # Sanitize token_identifier for logging to prevent log injection
-                safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+                safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
                 logger.warning(f"Service token not found for revocation: {safe_identifier}...")
                 return False
 
@@ -203,21 +203,21 @@ class ServiceTokenManager:
             await session.commit()
 
             # Sanitize token name and reason for logging to prevent log injection
-            safe_token_name = token_record.token_name.replace('\n', '').replace('\r', '')[:50]
-            safe_reason = revocation_reason.replace('\n', '').replace('\r', '')[:30]
+            safe_token_name = token_record.token_name.replace("\n", "").replace("\r", "")[:50]
+            safe_reason = revocation_reason.replace("\n", "").replace("\r", "")[:30]
             logger.warning(f"REVOKED service token: {safe_token_name}... (reason: {safe_reason}...)")
 
             return True
 
         except Exception as e:
             # Sanitize token_identifier for logging to prevent log injection
-            safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
-            
+            safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
+
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
                 logger.error(f"Database connection failed for token revocation '{safe_identifier}...': {e}")
                 raise
-            
+
             # Log and return None for other errors
             logger.error(f"Error revoking service token '{safe_identifier}...': {e}")
             return None
@@ -300,7 +300,7 @@ class ServiceTokenManager:
 
             if not old_token:
                 # Sanitize token_identifier for logging to prevent log injection
-                safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
+                safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
                 logger.warning(f"Active service token not found for rotation: {safe_identifier}...")
                 return None
 
@@ -344,21 +344,21 @@ class ServiceTokenManager:
             await session.refresh(new_token)
 
             # Sanitize token names for logging to prevent log injection
-            safe_old_name = old_token.token_name.replace('\n', '').replace('\r', '')[:50]
-            safe_new_name = new_token.token_name.replace('\n', '').replace('\r', '')[:50]
+            safe_old_name = old_token.token_name.replace("\n", "").replace("\r", "")[:50]
+            safe_new_name = new_token.token_name.replace("\n", "").replace("\r", "")[:50]
             logger.info(f"Rotated service token: {safe_old_name}... -> {safe_new_name}...")
 
             return new_token_value, str(new_token.id)
 
         except Exception as e:
             # Sanitize token_identifier for logging to prevent log injection
-            safe_identifier = token_identifier.replace('\n', '').replace('\r', '')[:50]
-            
+            safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
+
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
                 logger.error(f"Database connection failed for token rotation '{safe_identifier}...': {e}")
                 raise
-            
+
             # Log and return None for other errors
             logger.error(f"Error rotating service token '{safe_identifier}...': {e}")
             return None
@@ -407,7 +407,7 @@ class ServiceTokenManager:
 
                 # Calculate cutoff date for security (avoid SQL injection)
                 cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
-                
+
                 # Get recent authentication events
                 auth_events = await session.execute(
                     text(
