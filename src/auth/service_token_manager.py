@@ -10,7 +10,8 @@ This module provides comprehensive service token management including:
 import hashlib
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,15 +40,14 @@ class ServiceTokenManager:
         db_gen = get_db()
         # If it's mocked, it will have __aenter__ method
         if hasattr(db_gen, "__aenter__"):
-            async with db_gen as session:
-                return session
-        else:
-            # Real async generator usage
-            async for session in db_gen:
-                return session
-            # This should never be reached in normal operation
-            msg = "No database session available"
-            raise RuntimeError(msg)
+            session: AsyncSession = await db_gen.__aenter__()
+            return session
+        # Real async generator usage
+        async for session in db_gen:
+            return session
+        # This should never be reached in normal operation
+        msg = "No database session available"
+        raise RuntimeError(msg)
 
     def generate_token(self) -> str:
         """Generate a new cryptographically secure service token.
@@ -78,7 +78,7 @@ class ServiceTokenManager:
         metadata: dict | None = None,
         expires_at: datetime | None = None,
         is_active: bool = True,
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str] | None:
         """Create a new service token.
 
         Args:
@@ -107,7 +107,8 @@ class ServiceTokenManager:
                 {"token_name": token_name},
             )
 
-            if result.scalar() > 0:
+            count = result.scalar() or 0
+            if count > 0:
                 raise ValueError(f"Service token with name '{token_name}' already exists")
 
             # Create new token record
@@ -117,7 +118,7 @@ class ServiceTokenManager:
                 expires_at=expires_at,
                 is_active=is_active,
                 token_metadata=metadata or {},
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(new_token)
@@ -149,7 +150,9 @@ class ServiceTokenManager:
             logger.error(f"Error creating service token '{safe_token_name}...': {e}")
             return None
 
-    async def revoke_service_token(self, token_identifier: str, revocation_reason: str = "manual_revocation") -> bool:
+    async def revoke_service_token(
+        self, token_identifier: str, revocation_reason: str = "manual_revocation",
+    ) -> bool | None:
         """Revoke a service token (emergency or planned).
 
         Args:
@@ -196,7 +199,7 @@ class ServiceTokenManager:
                 event_type="service_token_revocation",
                 success=True,
                 error_details={"reason": revocation_reason},
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(revocation_event)
@@ -222,7 +225,7 @@ class ServiceTokenManager:
             logger.error(f"Error revoking service token '{safe_identifier}...': {e}")
             return None
 
-    async def emergency_revoke_all_tokens(self, emergency_reason: str) -> int:
+    async def emergency_revoke_all_tokens(self, emergency_reason: str) -> int | None:
         """Emergency revocation of ALL service tokens.
 
         Args:
@@ -250,14 +253,14 @@ class ServiceTokenManager:
                 event_type="emergency_revocation_all",
                 success=True,
                 error_details={"reason": emergency_reason, "tokens_revoked": active_count},
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(emergency_event)
             await session.commit()
 
             # Sanitize emergency_reason for logging to prevent log injection
-            safe_reason = emergency_reason.replace('\n', '').replace('\r', '')[:100]
+            safe_reason = emergency_reason.replace("\n", "").replace("\r", "")[:100]
             logger.critical(f"EMERGENCY REVOCATION: Revoked {active_count} service tokens (reason: {safe_reason})")
 
             return active_count
@@ -312,12 +315,12 @@ class ServiceTokenManager:
 
             # Create new token with same metadata
             new_token = ServiceToken(
-                token_name=f"{old_token.token_name}_rotated_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
+                token_name=f"{old_token.token_name}_rotated_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}",
                 token_hash=new_token_hash,
                 expires_at=old_token.expires_at,
                 is_active=True,
                 token_metadata=old_token.token_metadata,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(new_token)
@@ -338,7 +341,7 @@ class ServiceTokenManager:
                     "old_token_id": str(old_token.id),
                     "new_token_name": new_token.token_name,
                 },
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(rotation_event)
@@ -365,7 +368,9 @@ class ServiceTokenManager:
             logger.error(f"Error rotating service token '{safe_identifier}...': {e}")
             return None
 
-    async def get_token_usage_analytics(self, token_identifier: str | None = None, days: int = 30) -> dict:
+    async def get_token_usage_analytics(
+        self, token_identifier: str | None = None, days: int = 30,
+    ) -> dict[str, Any] | None:
         """Get usage analytics for service tokens.
 
         Args:
@@ -408,7 +413,7 @@ class ServiceTokenManager:
                     return {"error": "Token not found"}
 
                 # Calculate cutoff date for security (avoid SQL injection)
-                cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+                cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
                 # Get recent authentication events
                 auth_events = await session.execute(
@@ -458,6 +463,8 @@ class ServiceTokenManager:
             )
 
             summary = summary_result.fetchone()
+            if not summary:
+                return {"error": "Unable to fetch summary statistics"}
 
             # Get top used tokens
             top_tokens_result = await session.execute(
@@ -498,7 +505,7 @@ class ServiceTokenManager:
             logger.error(f"Error in analytics: {e}")
             return None
 
-    async def cleanup_expired_tokens(self, deactivate_only: bool = True) -> dict[str, int]:
+    async def cleanup_expired_tokens(self, deactivate_only: bool = True) -> dict[str, Any] | None:
         """Clean up expired service tokens.
 
         Args:
@@ -564,7 +571,7 @@ class ServiceTokenManager:
                     "action": action,
                     "token_names": [token.token_name for token in expired_tokens],
                 },
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
 
             session.add(cleanup_event)

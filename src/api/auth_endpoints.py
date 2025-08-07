@@ -12,9 +12,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from ..auth.middleware import ServiceTokenUser, require_authentication, require_role
-from ..auth.models import AuthenticatedUser
-from ..auth.service_token_manager import ServiceTokenManager
+from src.auth.middleware import ServiceTokenUser, require_authentication, require_role
+from src.auth.models import AuthenticatedUser
+from src.auth.service_token_manager import ServiceTokenManager
 
 
 class TokenCreationRequest(BaseModel):
@@ -117,8 +117,12 @@ async def auth_health_check() -> AuthHealthResponse:
         analytics = await manager.get_token_usage_analytics(days=1)
 
         database_status = "healthy"
-        active_tokens = analytics["summary"]["active_tokens"]
-        recent_authentications = analytics["summary"]["total_usage"]
+        if analytics and "summary" in analytics:
+            active_tokens = analytics["summary"]["active_tokens"]
+            recent_authentications = analytics["summary"]["total_usage"]
+        else:
+            active_tokens = -1
+            recent_authentications = -1
 
     except Exception as e:
         database_status = f"error: {e!s}"
@@ -165,12 +169,17 @@ async def create_service_token(
         expires_at = datetime.utcnow() + timedelta(days=token_request.expires_days)
 
     try:
-        token_value, token_id = await manager.create_service_token(
+        result = await manager.create_service_token(
             token_name=token_request.token_name,
             metadata=metadata,
             expires_at=expires_at,
             is_active=True,
         )
+
+        if result is None:
+            raise HTTPException(status_code=500, detail="Failed to create service token")
+
+        token_value, token_id = result
 
         return TokenCreationResponse(
             token_id=token_id,
@@ -249,11 +258,19 @@ async def rotate_service_token(
             # Get the new token info for response
             analytics = await manager.get_token_usage_analytics(token_identifier=new_token_id)
 
+            if analytics and "error" not in analytics:
+                return TokenCreationResponse(
+                    token_id=new_token_id,
+                    token_name=analytics.get("token_name", "rotated_token"),
+                    token_value=new_token_value,
+                    expires_at=None,  # Will be same as original
+                    metadata={"rotated_by": current_user.email, "rotation_reason": reason},
+                )
             return TokenCreationResponse(
                 token_id=new_token_id,
-                token_name=analytics.get("token_name", "rotated_token"),
+                token_name="rotated_token",
                 token_value=new_token_value,
-                expires_at=None,  # Will be same as original
+                expires_at=None,
                 metadata={"rotated_by": current_user.email, "rotation_reason": reason},
             )
         raise HTTPException(status_code=404, detail=f"Token '{token_identifier}' not found or inactive")
@@ -283,28 +300,29 @@ async def list_service_tokens(
         tokens = []
 
         # Process top tokens (active tokens)
-        for token_data in analytics.get("top_tokens", []):
-            # Get detailed info for each token
-            token_analytics = await manager.get_token_usage_analytics(token_identifier=token_data["token_name"])
+        if analytics and "top_tokens" in analytics:
+            for token_data in analytics.get("top_tokens", []):
+                # Get detailed info for each token
+                token_analytics = await manager.get_token_usage_analytics(token_identifier=token_data["token_name"])
 
-            if "error" not in token_analytics:
-                permissions = []  # Would need to fetch from database
+                if token_analytics and "error" not in token_analytics:
+                    permissions: list[str] = []  # Would need to fetch from database
 
-                tokens.append(
-                    TokenInfo(
-                        token_id="",  # We don't expose token IDs in listings
-                        token_name=token_analytics["token_name"],
-                        usage_count=token_analytics["usage_count"],
-                        last_used=(
-                            datetime.fromisoformat(token_analytics["last_used"])
-                            if token_analytics["last_used"]
-                            else None
+                    tokens.append(
+                        TokenInfo(
+                            token_id="",  # We don't expose token IDs in listings
+                            token_name=token_analytics["token_name"],
+                            usage_count=token_analytics["usage_count"],
+                            last_used=(
+                                datetime.fromisoformat(token_analytics["last_used"])
+                                if token_analytics["last_used"]
+                                else None
+                            ),
+                            is_active=token_analytics["is_active"],
+                            created_at=datetime.fromisoformat(token_analytics["created_at"]),
+                            permissions=permissions,
                         ),
-                        is_active=token_analytics["is_active"],
-                        created_at=datetime.fromisoformat(token_analytics["created_at"]),
-                        permissions=permissions,
-                    ),
-                )
+                    )
 
         return tokens
 
@@ -328,10 +346,10 @@ async def get_token_analytics(
     try:
         analytics = await manager.get_token_usage_analytics(token_identifier=token_identifier, days=days)
 
-        if "error" in analytics:
+        if analytics and "error" in analytics:
             raise HTTPException(status_code=404, detail=analytics["error"])
 
-        return analytics
+        return analytics or {}
 
     except HTTPException:
         raise
@@ -366,7 +384,7 @@ async def emergency_revoke_all_tokens(
 
         return {
             "status": "emergency_revocation_completed",
-            "tokens_revoked": revoked_count,
+            "tokens_revoked": revoked_count or 0,
             "revoked_by": current_user.email,
             "reason": reason,
             "timestamp": datetime.utcnow().isoformat() + "Z",

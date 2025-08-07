@@ -139,7 +139,11 @@ class DatabaseManager:
         if hasattr(self._settings, "database_password") and self._settings.database_password:
             password = self._settings.database_password.get_secret_value()
         elif hasattr(self._settings, "db_password") and self._settings.db_password:
-            password = self._settings.db_password
+            # Handle both SecretStr and plain string types
+            if hasattr(self._settings.db_password, "get_secret_value"):
+                password = self._settings.db_password.get_secret_value()
+            else:
+                password = str(self._settings.db_password)
 
         return f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}"
 

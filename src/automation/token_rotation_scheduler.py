@@ -282,7 +282,7 @@ class TokenRotationScheduler:
             event_type: Type of event (scheduled, starting, completed, failed)
         """
         try:
-            notification_data = {
+            notification_data: dict[str, Any] = {
                 "event_type": f"token_rotation_{event_type}",
                 "token_name": plan.token_name,
                 "rotation_type": plan.rotation_type,
@@ -360,7 +360,7 @@ class TokenRotationScheduler:
                 "scheduled_count": len([p for p in self._rotation_plans if p.status == "planned"]),
             }
 
-        results = {
+        results: dict[str, Any] = {
             "status": "completed",
             "timestamp": now.isoformat(),
             "rotations_attempted": len(due_plans),
@@ -485,7 +485,7 @@ class TokenRotationScheduler:
             "recent_completions": [
                 {
                     "token_name": p.token_name,
-                    "completed_at": p.completed_at.isoformat(),
+                    "completed_at": p.completed_at.isoformat() if p.completed_at else None,
                     "rotation_type": p.rotation_type,
                 }
                 for p in sorted(
