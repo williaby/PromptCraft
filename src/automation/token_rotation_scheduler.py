@@ -173,10 +173,9 @@ class TokenRotationScheduler:
 
                 break  # Only need first session
 
-        except Exception as e:
-            # Sanitize error message to prevent credential disclosure
-            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
-            logger.error("Failed to analyze service credentials for rotation: %s", safe_error)  # nosec B608
+        except Exception:
+            # Log only a generic error message to avoid leaking sensitive information
+            logger.error("Failed to analyze service credentials for rotation due to an internal error.")  # nosec B608
 
         return rotation_plans
 
@@ -239,10 +238,9 @@ class TokenRotationScheduler:
 
             return True
 
-        except Exception as e:
-            # Sanitize error message to prevent credential disclosure
-            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
-            logger.error("Failed to schedule credential rotation: %s", safe_error)  # nosec B608
+        except Exception:
+            # Log only a generic error message to avoid leaking sensitive information
+            logger.error("Failed to schedule credential rotation due to an internal error.")  # nosec B608
             return False
 
     async def execute_rotation_plan(self, plan: TokenRotationPlan) -> bool:
@@ -332,18 +330,8 @@ class TokenRotationScheduler:
             plan.status = "failed"
             plan.error_details = str(e)
 
-            # Sanitize token name and error message to prevent credential disclosure
-            safe_token_name = (
-                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
-                if len(plan.token_name) > 20
-                else plan.token_name.replace("\n", "").replace("\r", "")
-            )
-            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
-            logger.error(
-                "Credential rotation failed: %s - %s",  # nosec B608
-                safe_token_name,
-                safe_error,
-            )
+            # Log only a generic error message to avoid leaking sensitive information
+            logger.error("Credential rotation failed due to an internal error.")  # nosec B608
 
             # Send failure notification
             await self._send_rotation_notification(plan, "failed")
@@ -358,9 +346,16 @@ class TokenRotationScheduler:
             event_type: Type of event (scheduled, starting, completed, failed)
         """
         try:
+            # Sanitize token name to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
+
             notification_data: dict[str, Any] = {
                 "event_type": f"token_rotation_{event_type}",
-                "token_name": plan.token_name,
+                "token_name": safe_token_name,
                 "rotation_type": plan.rotation_type,
                 "rotation_reason": plan.rotation_reason,
                 "scheduled_time": plan.scheduled_time.isoformat(),
@@ -368,9 +363,15 @@ class TokenRotationScheduler:
             }
 
             if event_type == "completed" and plan.new_token_value:
+                # Sanitize new token ID to prevent credential disclosure
+                safe_new_token_id = (
+                    plan.new_token_id[:10].replace("\n", "").replace("\r", "") + "..."
+                    if plan.new_token_id and len(plan.new_token_id) > 10
+                    else (plan.new_token_id.replace("\n", "").replace("\r", "") if plan.new_token_id else None)
+                )
                 notification_data.update(
                     {
-                        "new_token_id": plan.new_token_id,
+                        "new_token_id": safe_new_token_id,
                         "message": "Token rotation completed successfully. Update your systems with the new token.",
                         "action_required": True,
                     },
@@ -378,7 +379,7 @@ class TokenRotationScheduler:
             elif event_type == "failed":
                 notification_data.update(
                     {
-                        "error": plan.error_details,
+                        "error": "Internal error occurred" if plan.error_details else None,
                         "message": "Token rotation failed. Manual intervention may be required.",
                         "action_required": True,
                     },
@@ -386,14 +387,14 @@ class TokenRotationScheduler:
             elif event_type == "starting":
                 notification_data.update(
                     {
-                        "message": f"Token rotation starting for {plan.token_name}",
+                        "message": f"Token rotation starting for {safe_token_name}",
                         "estimated_completion": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
                     },
                 )
             elif event_type == "scheduled":
                 notification_data.update(
                     {
-                        "message": f"Token rotation scheduled for {plan.token_name}",
+                        "message": f"Token rotation scheduled for {safe_token_name}",
                         "advance_notice_hours": self.advance_notice_hours,
                     },
                 )
@@ -402,14 +403,20 @@ class TokenRotationScheduler:
             for callback in self._notification_callbacks:
                 try:
                     await callback(notification_data)
-                except Exception as e:
-                    logger.warning("Notification callback failed: %s", e)
+                except Exception:
+                    # Log only a generic error message to avoid leaking sensitive information
+                    logger.warning("Notification callback failed due to an internal error.")  # nosec B608
 
-            # Log the notification
-            logger.info("Rotation notification sent: %s for service credential %s", event_type, plan.token_name)
+            # Log the notification with sanitized token name
+            logger.info(
+                "Rotation notification sent: %s for service credential %s",
+                event_type,
+                safe_token_name,
+            )  # nosec B608
 
-        except Exception as e:
-            logger.error("Failed to send rotation notification: %s", e)
+        except Exception:
+            # Log only a generic error message to avoid leaking sensitive information
+            logger.error("Failed to send rotation notification due to an internal error.")  # nosec B608
 
     def add_notification_callback(self, callback: Callable) -> None:
         """Add a notification callback for rotation events.
@@ -448,11 +455,18 @@ class TokenRotationScheduler:
         for plan in due_plans:
             success = await self.execute_rotation_plan(plan)
 
+            # Sanitize token name to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
+
             result_entry = {
-                "token_name": plan.token_name,
+                "token_name": safe_token_name,
                 "rotation_type": plan.rotation_type,
                 "success": success,
-                "error": plan.error_details if not success else None,
+                "error": "Internal error occurred" if not success and plan.error_details else None,
             }
 
             results["results"].append(result_entry)
@@ -504,9 +518,10 @@ class TokenRotationScheduler:
                 "total_planned_rotations": len([p for p in self._rotation_plans if p.status == "planned"]),
             }
 
-        except Exception as e:
-            logger.error("Rotation scheduler failed: %s", e)
-            return {"status": "failed", "timestamp": start_time.isoformat(), "error": str(e)}
+        except Exception:
+            # Log only a generic error message to avoid leaking sensitive information
+            logger.error("Rotation scheduler failed due to an internal error.")  # nosec B608
+            return {"status": "failed", "timestamp": start_time.isoformat(), "error": "Internal error occurred"}
 
     async def start_rotation_daemon(
         self,
@@ -537,10 +552,12 @@ class TokenRotationScheduler:
                             result.get("rotation_results", {}).get("rotations_successful", 0),
                         )
                     else:
-                        logger.error("Rotation scheduler cycle failed: %s", result.get("error", "Unknown error"))
+                        # Log only a generic error message to avoid leaking sensitive information
+                        logger.error("Rotation scheduler cycle failed due to an internal error.")  # nosec B608
 
-                except Exception as e:
-                    logger.error("Rotation scheduler daemon error: %s", e)
+                except Exception:
+                    # Log only a generic error message to avoid leaking sensitive information
+                    logger.error("Rotation scheduler daemon error due to an internal error.")  # nosec B608
 
                 # Wait for next cycle or shutdown signal
                 try:
@@ -577,7 +594,11 @@ class TokenRotationScheduler:
             "next_scheduled_rotation": min([p.scheduled_time for p in planned_rotations], default=None),
             "recent_completions": [
                 {
-                    "token_name": p.token_name,
+                    "token_name": (
+                        p.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                        if len(p.token_name) > 20
+                        else p.token_name.replace("\n", "").replace("\r", "")
+                    ),
                     "completed_at": p.completed_at.isoformat() if p.completed_at else None,
                     "rotation_type": p.rotation_type,
                 }
@@ -588,7 +609,15 @@ class TokenRotationScheduler:
                 )[:5]
             ],
             "recent_failures": [
-                {"token_name": p.token_name, "error": p.error_details, "rotation_type": p.rotation_type}
+                {
+                    "token_name": (
+                        p.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                        if len(p.token_name) > 20
+                        else p.token_name.replace("\n", "").replace("\r", "")
+                    ),
+                    "error": "Internal error occurred" if p.error_details else None,
+                    "rotation_type": p.rotation_type,
+                }
                 for p in failed_rotations[-5:]  # Last 5 failures
             ],
         }
