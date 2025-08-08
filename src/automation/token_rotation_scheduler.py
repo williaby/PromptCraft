@@ -176,7 +176,7 @@ class TokenRotationScheduler:
         except Exception as e:
             # Sanitize error message to prevent credential disclosure
             safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
-            logger.error("Failed to analyze tokens for rotation: %s", safe_error)  # nosec B608
+            logger.error("Failed to analyze service credentials for rotation: %s", safe_error)  # nosec B608
 
         return rotation_plans
 
@@ -228,7 +228,7 @@ class TokenRotationScheduler:
                 else plan.token_name.replace("\n", "").replace("\r", "")
             )
             logger.info(
-                "Scheduled token rotation: %s (%s) at %s",  # nosec B608
+                "Scheduled credential rotation: %s (%s) at %s",  # nosec B608
                 safe_token_name,
                 plan.rotation_type,
                 plan.scheduled_time.isoformat(),
@@ -242,7 +242,7 @@ class TokenRotationScheduler:
         except Exception as e:
             # Sanitize error message to prevent credential disclosure
             safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
-            logger.error("Failed to schedule token rotation: %s", safe_error)  # nosec B608
+            logger.error("Failed to schedule credential rotation: %s", safe_error)  # nosec B608
             return False
 
     async def execute_rotation_plan(self, plan: TokenRotationPlan) -> bool:
@@ -270,7 +270,7 @@ class TokenRotationScheduler:
                 else plan.rotation_reason.replace("\n", "").replace("\r", "")
             )
             logger.info(
-                "Executing token rotation: %s (%s)",  # nosec B608
+                "Executing credential rotation: %s (%s)",  # nosec B608
                 safe_token_name,
                 safe_rotation_reason,
             )
@@ -300,7 +300,7 @@ class TokenRotationScheduler:
                 safe_new_token_id = new_token_id[:10].replace("\n", "").replace("\r", "") + "..."
 
                 logger.info(
-                    "Token rotation completed: %s -> new ID: %s",  # nosec B608
+                    "Credential rotation completed: %s -> new ID: %s",  # nosec B608
                     safe_token_name,
                     safe_new_token_id,
                 )
@@ -319,7 +319,7 @@ class TokenRotationScheduler:
                 else plan.token_name.replace("\n", "").replace("\r", "")
             )
             logger.error(
-                "Token rotation failed: %s - no result returned",  # nosec B608
+                "Credential rotation failed: %s - no result returned",  # nosec B608
                 safe_token_name,
             )
 
@@ -340,7 +340,7 @@ class TokenRotationScheduler:
             )
             safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
             logger.error(
-                "Token rotation failed: %s - %s",  # nosec B608
+                "Credential rotation failed: %s - %s",  # nosec B608
                 safe_token_name,
                 safe_error,
             )
@@ -406,7 +406,7 @@ class TokenRotationScheduler:
                     logger.warning("Notification callback failed: %s", e)
 
             # Log the notification
-            logger.info("Rotation notification sent: %s for %s", event_type, plan.token_name)
+            logger.info("Rotation notification sent: %s for service credential %s", event_type, plan.token_name)
 
         except Exception as e:
             logger.error("Failed to send rotation notification: %s", e)
@@ -522,7 +522,7 @@ class TokenRotationScheduler:
         if shutdown_event is None:
             shutdown_event = asyncio.Event()
 
-        logger.info("Starting token rotation scheduler daemon (interval: %d hours)", check_interval_hours)
+        logger.info("Starting credential rotation scheduler daemon (interval: %d hours)", check_interval_hours)
 
         try:
             while not shutdown_event.is_set():
@@ -550,7 +550,7 @@ class TokenRotationScheduler:
                     # Timeout reached, continue to next cycle
                     continue
         finally:
-            logger.info("Token rotation scheduler daemon shutting down gracefully")
+            logger.info("Credential rotation scheduler daemon shutting down gracefully")
 
     async def get_rotation_status(self) -> dict[str, Any]:
         """Get current rotation scheduler status.
