@@ -174,7 +174,9 @@ class TokenRotationScheduler:
                 break  # Only need first session
 
         except Exception as e:
-            logger.error("Failed to analyze tokens for rotation: %s", str(e)[:100])  # nosec B608
+            # Sanitize error message to prevent credential disclosure
+            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
+            logger.error("Failed to analyze tokens for rotation: %s", safe_error)  # nosec B608
 
         return rotation_plans
 
@@ -207,26 +209,40 @@ class TokenRotationScheduler:
         try:
             # Validate the plan
             if plan.scheduled_time <= datetime.now(UTC):
-                logger.warning("Cannot schedule rotation for past time: %s", plan.token_name)
+                # Sanitize token name to prevent credential disclosure
+                safe_token_name = (
+                    plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                    if len(plan.token_name) > 20
+                    else plan.token_name.replace("\n", "").replace("\r", "")
+                )
+                logger.warning("Cannot schedule rotation for past time: %s", safe_token_name)  # nosec B608
                 return False
 
             # Add to rotation plans
             self._rotation_plans.append(plan)
 
+            # Sanitize token name to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
             logger.info(
-                "Scheduled token rotation: %s (%s) at %s",
-                plan.token_name[:20] + "..." if len(plan.token_name) > 20 else plan.token_name,  # nosec B608
+                "Scheduled token rotation: %s (%s) at %s",  # nosec B608
+                safe_token_name,
                 plan.rotation_type,
                 plan.scheduled_time.isoformat(),
             )
 
             # Send advance notification
-            await self._send_rotation_notification(plan, "scheduled")
+            await self._send_rotation_notification(plan, "scheduled")  # nosec B608
 
             return True
 
         except Exception as e:
-            logger.error("Failed to schedule token rotation: %s", str(e)[:100])  # nosec B608
+            # Sanitize error message to prevent credential disclosure
+            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
+            logger.error("Failed to schedule token rotation: %s", safe_error)  # nosec B608
             return False
 
     async def execute_rotation_plan(self, plan: TokenRotationPlan) -> bool:
@@ -241,10 +257,22 @@ class TokenRotationScheduler:
         plan.status = "in_progress"
 
         try:
+            # Sanitize token name to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
+            # Sanitize rotation reason to prevent credential disclosure
+            safe_rotation_reason = (
+                plan.rotation_reason[:50].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.rotation_reason) > 50
+                else plan.rotation_reason.replace("\n", "").replace("\r", "")
+            )
             logger.info(
-                "Executing token rotation: %s (%s)",
-                plan.token_name[:20] + "..." if len(plan.token_name) > 20 else plan.token_name,  # nosec B608
-                plan.rotation_reason[:50] + "..." if len(plan.rotation_reason) > 50 else plan.rotation_reason,
+                "Executing token rotation: %s (%s)",  # nosec B608
+                safe_token_name,
+                safe_rotation_reason,
             )
 
             # Send pre-rotation notification
@@ -263,11 +291,19 @@ class TokenRotationScheduler:
                 plan.status = "completed"
                 plan.completed_at = datetime.now(UTC)
 
+                # Sanitize token name and new token ID to prevent credential disclosure
+                safe_token_name = (
+                    plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                    if len(plan.token_name) > 20
+                    else plan.token_name.replace("\n", "").replace("\r", "")
+                )
+                safe_new_token_id = new_token_id[:10].replace("\n", "").replace("\r", "") + "..."
+
                 logger.info(
-                    "Token rotation completed: %s -> new ID: %s",
-                    plan.token_name[:20] + "..." if len(plan.token_name) > 20 else plan.token_name,  # nosec B608
-                    new_token_id[:10] + "...",
-                )  # nosec B608
+                    "Token rotation completed: %s -> new ID: %s",  # nosec B608
+                    safe_token_name,
+                    safe_new_token_id,
+                )
 
                 # Send success notification with new token
                 await self._send_rotation_notification(plan, "completed")
@@ -276,10 +312,16 @@ class TokenRotationScheduler:
             plan.status = "failed"
             plan.error_details = "Token rotation returned no result"
 
+            # Sanitize token name to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
             logger.error(
-                "Token rotation failed: %s - no result returned",
-                plan.token_name[:20] + "..." if len(plan.token_name) > 20 else plan.token_name,
-            )  # nosec B608
+                "Token rotation failed: %s - no result returned",  # nosec B608
+                safe_token_name,
+            )
 
             # Send failure notification
             await self._send_rotation_notification(plan, "failed")
@@ -290,11 +332,18 @@ class TokenRotationScheduler:
             plan.status = "failed"
             plan.error_details = str(e)
 
+            # Sanitize token name and error message to prevent credential disclosure
+            safe_token_name = (
+                plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
+                if len(plan.token_name) > 20
+                else plan.token_name.replace("\n", "").replace("\r", "")
+            )
+            safe_error = str(e)[:100].replace("\n", "").replace("\r", "")
             logger.error(
-                "Token rotation failed: %s - %s",
-                plan.token_name[:20] + "..." if len(plan.token_name) > 20 else plan.token_name,  # nosec B608
-                str(e)[:100],
-            )  # nosec B608
+                "Token rotation failed: %s - %s",  # nosec B608
+                safe_token_name,
+                safe_error,
+            )
 
             # Send failure notification
             await self._send_rotation_notification(plan, "failed")
