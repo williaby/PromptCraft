@@ -66,7 +66,7 @@ class TestServiceTokenModel:
         """Test string representation."""
         token = ServiceToken()
         token.id = uuid.uuid4()
-        token.token_name = "test-token"
+        token.token_name = "test-token"  # noqa: S105
         token.is_active = True
         token.usage_count = 5
 
@@ -215,7 +215,7 @@ class TestServiceTokenCreate:
         data = {"token_name": "test-token", "is_active": True, "metadata": {"environment": "test"}}
 
         token = ServiceTokenCreate(**data)
-        assert token.token_name == "test-token"
+        assert token.token_name == "test-token"  # noqa: S105
         assert token.is_active is True
         assert token.metadata == {"environment": "test"}
 
@@ -224,7 +224,7 @@ class TestServiceTokenCreate:
         data = {"token_name": "minimal-token"}
 
         token = ServiceTokenCreate(**data)
-        assert token.token_name == "minimal-token"
+        assert token.token_name == "minimal-token"  # noqa: S105
         assert token.is_active is True  # Default value
         assert token.expires_at is None
         assert token.metadata is None
@@ -247,13 +247,13 @@ class TestServiceTokenCreate:
 
     def test_whitespace_stripping(self):
         """Test that whitespace is stripped from token name."""
-        token = ServiceTokenCreate(token_name="  test-token  ")
-        assert token.token_name == "test-token"
+        token = ServiceTokenCreate(token_name="  test-token  ")  # noqa: S106
+        assert token.token_name == "test-token"  # noqa: S105
 
     def test_expiration_in_future(self):
         """Test token creation with future expiration."""
         future_date = datetime.now(UTC) + timedelta(days=30)
-        token = ServiceTokenCreate(token_name="future-token", expires_at=future_date)
+        token = ServiceTokenCreate(token_name="future-token", expires_at=future_date)  # noqa: S106
         assert token.expires_at == future_date
 
 
@@ -265,7 +265,7 @@ class TestServiceTokenUpdate:
         data = {"token_name": "updated-token"}
 
         update = ServiceTokenUpdate(**data)
-        assert update.token_name == "updated-token"
+        assert update.token_name == "updated-token"  # noqa: S105
         assert update.is_active is None
         assert update.expires_at is None
         assert update.metadata is None
@@ -281,7 +281,7 @@ class TestServiceTokenUpdate:
         }
 
         update = ServiceTokenUpdate(**data)
-        assert update.token_name == "updated-token"
+        assert update.token_name == "updated-token"  # noqa: S105
         assert update.is_active is False
         assert update.expires_at == future_date
         assert update.metadata == {"updated": True}
@@ -303,7 +303,7 @@ class TestServiceTokenResponse:
         # Create mock ServiceToken
         token = MagicMock()
         token.id = uuid.uuid4()
-        token.token_name = "test-token"
+        token.token_name = "test-token"  # noqa: S105
         token.created_at = datetime.now(UTC)
         token.last_used = None
         token.usage_count = 0
@@ -316,7 +316,7 @@ class TestServiceTokenResponse:
         response = ServiceTokenResponse.from_orm_model(token)
 
         assert response.id == token.id
-        assert response.token_name == "test-token"
+        assert response.token_name == "test-token"  # noqa: S105
         assert response.created_at == token.created_at
         assert response.last_used is None
         assert response.usage_count == 0
@@ -333,7 +333,7 @@ class TestServiceTokenResponse:
 
         response = ServiceTokenResponse(
             id=token_id,
-            token_name="direct-token",
+            token_name="direct-token",  # noqa: S106
             created_at=created_at,
             last_used=None,
             usage_count=5,
@@ -345,7 +345,7 @@ class TestServiceTokenResponse:
         )
 
         assert response.id == token_id
-        assert response.token_name == "direct-token"
+        assert response.token_name == "direct-token"  # noqa: S105
         assert response.usage_count == 5
 
 
@@ -357,7 +357,7 @@ class TestServiceTokenListResponse:
         tokens = [
             ServiceTokenResponse(
                 id=uuid.uuid4(),
-                token_name="token-1",
+                token_name="token-1",  # noqa: S106
                 created_at=datetime.now(UTC),
                 last_used=None,
                 usage_count=0,
@@ -399,8 +399,8 @@ class TestTokenValidationRequest:
 
     def test_valid_request(self):
         """Test valid token validation request."""
-        request = TokenValidationRequest(token="sk_test_1234567890abcdef")
-        assert request.token == "sk_test_1234567890abcdef"
+        request = TokenValidationRequest(token="sk_test_1234567890abcdef")  # noqa: S106
+        assert request.token == "sk_test_1234567890abcdef"  # noqa: S105
 
     def test_empty_token(self):
         """Test validation with empty token."""
@@ -411,8 +411,8 @@ class TestTokenValidationRequest:
 
     def test_whitespace_stripping(self):
         """Test that whitespace is stripped from token."""
-        request = TokenValidationRequest(token="  sk_test_token  ")
-        assert request.token == "sk_test_token"
+        request = TokenValidationRequest(token="  sk_test_token  ")  # noqa: S106
+        assert request.token == "sk_test_token"  # noqa: S105
 
 
 class TestTokenValidationResponse:
@@ -426,7 +426,7 @@ class TestTokenValidationResponse:
         response = TokenValidationResponse(
             valid=True,
             token_id=token_id,
-            token_name="test-token",
+            token_name="test-token",  # noqa: S106
             expires_at=expires_at,
             metadata={"test": True},
             error=None,
@@ -434,7 +434,7 @@ class TestTokenValidationResponse:
 
         assert response.valid is True
         assert response.token_id == token_id
-        assert response.token_name == "test-token"
+        assert response.token_name == "test-token"  # noqa: S105
         assert response.expires_at == expires_at
         assert response.metadata == {"test": True}
         assert response.error is None
