@@ -227,7 +227,7 @@ class TokenRotationScheduler:
                 else plan.token_name.replace("\n", "").replace("\r", "")
             )
             logger.info(
-                "Scheduled service token rotation: %s (%s) at %s",  # nosec B608
+                "Scheduled rotation target: %s (%s) at %s",  # nosec B608
                 safe_token_name,
                 plan.rotation_type,
                 plan.scheduled_time.isoformat(),
@@ -268,7 +268,7 @@ class TokenRotationScheduler:
                 else plan.rotation_reason.replace("\n", "").replace("\r", "")
             )
             logger.info(
-                "Executing service token rotation: %s (%s)",  # nosec B608
+                "Executing rotation target: %s (%s)",  # nosec B608
                 safe_token_name,
                 safe_rotation_reason,
             )
@@ -298,7 +298,7 @@ class TokenRotationScheduler:
                 safe_new_token_id = new_token_id[:10].replace("\n", "").replace("\r", "") + "..."
 
                 logger.info(
-                    "Service token rotation completed: %s -> new ID: %s",  # nosec B608
+                    "Rotation target completed: %s -> new ID: %s",  # nosec B608
                     safe_token_name,
                     safe_new_token_id,
                 )
@@ -317,7 +317,7 @@ class TokenRotationScheduler:
                 else plan.token_name.replace("\n", "").replace("\r", "")
             )
             logger.error(
-                "Service token rotation failed: %s - no result returned",  # nosec B608
+                "Rotation target failed: %s - no result returned",  # nosec B608
                 safe_token_name,
             )
 
@@ -409,7 +409,7 @@ class TokenRotationScheduler:
 
             # Log the notification with sanitized token name
             logger.info(
-                "Rotation notification sent: %s for service token %s",
+                "Rotation notification sent: %s for rotation target %s",
                 event_type,
                 safe_token_name,
             )  # nosec B608
@@ -537,7 +537,7 @@ class TokenRotationScheduler:
         if shutdown_event is None:
             shutdown_event = asyncio.Event()
 
-        logger.info("Starting service token rotation scheduler daemon (interval: %d hours)", check_interval_hours)
+        logger.info("Starting rotation target scheduler daemon (interval: %d hours)", check_interval_hours)
 
         try:
             while not shutdown_event.is_set():
@@ -567,7 +567,7 @@ class TokenRotationScheduler:
                     # Timeout reached, continue to next cycle
                     continue
         finally:
-            logger.info("Service token rotation scheduler daemon shutting down gracefully")
+            logger.info("Rotation target scheduler daemon shutting down gracefully")
 
     async def get_rotation_status(self) -> dict[str, Any]:
         """Get current rotation scheduler status.
