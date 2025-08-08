@@ -508,33 +508,49 @@ class TokenRotationScheduler:
             logger.error("Rotation scheduler failed: %s", e)
             return {"status": "failed", "timestamp": start_time.isoformat(), "error": str(e)}
 
-    async def start_rotation_daemon(self, check_interval_hours: int = 24) -> None:
-        """Start continuous rotation scheduler daemon.
+    async def start_rotation_daemon(
+        self,
+        check_interval_hours: int = 24,
+        shutdown_event: asyncio.Event | None = None,
+    ) -> None:
+        """Start continuous rotation scheduler daemon with graceful shutdown support.
 
         Args:
             check_interval_hours: Hours between scheduler checks
+            shutdown_event: Event to signal graceful shutdown (optional)
         """
+        if shutdown_event is None:
+            shutdown_event = asyncio.Event()
+
         logger.info("Starting token rotation scheduler daemon (interval: %d hours)", check_interval_hours)
 
-        while True:
-            try:
-                result = await self.run_rotation_scheduler()
+        try:
+            while not shutdown_event.is_set():
+                try:
+                    result = await self.run_rotation_scheduler()
 
-                if result["status"] == "completed":
-                    logger.info(
-                        "Rotation scheduler cycle completed: %d new plans, %d scheduled, %d rotations completed",
-                        result.get("new_plans_created", 0),
-                        result.get("new_plans_scheduled", 0),
-                        result.get("rotation_results", {}).get("rotations_successful", 0),
-                    )
-                else:
-                    logger.error("Rotation scheduler cycle failed: %s", result.get("error", "Unknown error"))
+                    if result["status"] == "completed":
+                        logger.info(
+                            "Rotation scheduler cycle completed: %d new plans, %d scheduled, %d rotations completed",
+                            result.get("new_plans_created", 0),
+                            result.get("new_plans_scheduled", 0),
+                            result.get("rotation_results", {}).get("rotations_successful", 0),
+                        )
+                    else:
+                        logger.error("Rotation scheduler cycle failed: %s", result.get("error", "Unknown error"))
 
-            except Exception as e:
-                logger.error("Rotation scheduler daemon error: %s", e)
+                except Exception as e:
+                    logger.error("Rotation scheduler daemon error: %s", e)
 
-            # Wait for next cycle
-            await asyncio.sleep(check_interval_hours * 3600)
+                # Wait for next cycle or shutdown signal
+                try:
+                    await asyncio.wait_for(shutdown_event.wait(), timeout=check_interval_hours * 3600)
+                    break  # Shutdown event was set
+                except TimeoutError:
+                    # Timeout reached, continue to next cycle
+                    continue
+        finally:
+            logger.info("Token rotation scheduler daemon shutting down gracefully")
 
     async def get_rotation_status(self) -> dict[str, Any]:
         """Get current rotation scheduler status.
