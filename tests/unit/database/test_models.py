@@ -133,10 +133,10 @@ class TestServiceTokenModel:
         assert token.is_expired is True
 
     def test_is_expired_timezone_aware_vs_naive_comparison(self):
-        """Test timezone handling with aware vs naive datetime objects."""
+        """Test timezone handling with both timezone-aware and naive datetime objects."""
         token = ServiceToken()
 
-        # Test with timezone-aware datetime (should work correctly)
+        # Test with timezone-aware datetime (current best practice)
         token.expires_at = datetime.now(UTC) - timedelta(seconds=1)
         assert token.is_expired is True
 
@@ -144,12 +144,25 @@ class TestServiceTokenModel:
         token.expires_at = datetime.now(UTC) + timedelta(hours=1)
         assert token.is_expired is False
 
+        # Test with timezone-naive datetime (legacy support - assumes UTC)
+        # This tests the model's defensive handling of naive datetimes
+        # We create naive datetimes by starting with UTC time and removing timezone info
+        utc_now = datetime.now(UTC)
+        naive_expired = utc_now.replace(tzinfo=None) - timedelta(seconds=1)
+        token.expires_at = naive_expired
+        assert token.is_expired is True
+
+        # Test with timezone-naive datetime in future (legacy support - assumes UTC)
+        naive_future = utc_now.replace(tzinfo=None) + timedelta(hours=1)
+        token.expires_at = naive_future
+        assert token.is_expired is False
+
     def test_timezone_consistency_across_properties(self):
         """Test that timezone handling is consistent across all datetime properties."""
         token = ServiceToken()
         current_time = datetime.now(UTC)
 
-        # Set times with explicit UTC timezone
+        # Set times with explicit UTC timezone (recommended practice)
         token.created_at = current_time - timedelta(hours=2)
         token.expires_at = current_time + timedelta(hours=1)
         token.last_used = current_time - timedelta(minutes=30)
@@ -159,9 +172,39 @@ class TestServiceTokenModel:
         assert token.expires_at.tzinfo is not None
         assert token.last_used.tzinfo is not None
 
+        # Verify all datetime fields use UTC timezone specifically
+        assert token.created_at.tzinfo == UTC
+        assert token.expires_at.tzinfo == UTC
+        assert token.last_used.tzinfo == UTC
+
         # Verify token is valid with proper timezone handling
         token.is_active = True
         assert token.is_valid is True
+
+    def test_utc_standardization_recommendation(self):
+        """Test demonstrating the recommended UTC standardization approach."""
+        token = ServiceToken()
+
+        # Best practice: Always use UTC timezone for consistency
+        base_time = datetime.now(UTC)
+
+        # All datetime assignments should use UTC
+        token.created_at = base_time - timedelta(days=30)
+        token.expires_at = base_time + timedelta(days=90)
+        token.last_used = base_time - timedelta(hours=1)
+
+        # Verify consistent UTC usage prevents timezone-related bugs
+        assert token.created_at < token.last_used < base_time < token.expires_at
+
+        # Verify expiration logic works correctly with UTC standardization
+        token.is_active = True
+        assert token.is_expired is False
+        assert token.is_valid is True
+
+        # Test expiration boundary with UTC
+        token.expires_at = base_time - timedelta(microseconds=1)
+        assert token.is_expired is True
+        assert token.is_valid is False
 
 
 class TestServiceTokenCreate:
