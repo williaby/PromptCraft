@@ -742,7 +742,7 @@ gradio-client==1.11.0 ; python_version >= "3.11" and python_version < "3.13" \
 gradio==5.41.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:4e1cfef903cbe642587ebe3183daea42c39cba4f622888fc09353a6d9a04ebfa \
     --hash=sha256:c7b9ba816d7b720ed9ee44170c9df0039c7015e85ea4adb1644568ada4a8fa92
-greenlet==3.2.4 ; python_version >= "3.11" and python_version < "3.13" and (platform_machine == "aarch64" or platform_machine == "ppc64le" or platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "AMD64" or platform_machine == "win32" or platform_machine == "WIN32" or platform_python_implementation == "CPython") \
+greenlet==3.2.4 ; python_version >= "3.11" and python_version < "3.13" and (platform_python_implementation == "CPython" or platform_machine == "AMD64" or platform_machine == "WIN32" or platform_machine == "aarch64" or platform_machine == "amd64" or platform_machine == "ppc64le" or platform_machine == "win32" or platform_machine == "x86_64") \
     --hash=sha256:00fadb3fedccc447f517ee0d3fd8fe49eae949e1cd0f6a611818f4f6fb7dc83b \
     --hash=sha256:061dc4cf2c34852b052a8620d40f36324554bc192be474b9e9770e8c042fd735 \
     --hash=sha256:0db5594dce18db94f7d1650d7489909b57afde4c580806b8d9203b6e79cdc079 \
@@ -858,7 +858,7 @@ h11==0.16.0 ; python_version >= "3.11" and python_version < "3.13" \
 h2==4.2.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:479a53ad425bb29af087f3458a61d30780bc818e4ebcf01f0b536ba916462ed0 \
     --hash=sha256:c8a52129695e88b1a0578d8d2cc6842bbd79128ac685463b887ee278126ad01f
-hf-xet==1.1.7 ; python_version >= "3.11" and python_version < "3.13" and (platform_machine == "x86_64" or platform_machine == "amd64" or platform_machine == "arm64" or platform_machine == "aarch64") \
+hf-xet==1.1.7 ; python_version >= "3.11" and python_version < "3.13" and (platform_machine == "aarch64" or platform_machine == "amd64" or platform_machine == "arm64" or platform_machine == "x86_64") \
     --hash=sha256:18b61bbae92d56ae731b92087c44efcac216071182c603fc535f8e29ec4b09b8 \
     --hash=sha256:20cec8db4561338824a3b5f8c19774055b04a8df7fff0cb1ff2cb1a0c1607b80 \
     --hash=sha256:2e356da7d284479ae0f1dea3cf5a2f74fdf925d6dca84ac4341930d892c7cb34 \

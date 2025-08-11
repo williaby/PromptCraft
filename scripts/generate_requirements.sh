@@ -96,6 +96,89 @@ except Exception as e:
     fi
 }
 
+# Function to normalize platform markers for consistent ordering across environments
+normalize_platform_markers() {
+    local file="$1"
+    local description="$2"
+
+    echo "🔧 Normalizing platform markers in $description..."
+
+    # Create a temporary file for processing
+    local temp_file="${file}.tmp"
+
+    # Use Python to normalize platform marker ordering
+    python3 -c "
+import re
+import sys
+
+def normalize_markers(content):
+    '''Normalize platform marker ordering within parentheses for consistent output'''
+
+    def sort_marker_conditions(match):
+        full_match = match.group(0)
+
+        # Extract all conditions within the parentheses
+        inner_content = full_match[1:-1]  # Remove outer parentheses
+
+        # Split by ' or ' to get individual conditions
+        conditions = [cond.strip() for cond in inner_content.split(' or ')]
+
+        # Sort conditions for deterministic ordering:
+        # 1. python_version conditions first
+        # 2. platform_python_implementation conditions second
+        # 3. platform_machine conditions last (sorted alphabetically)
+        def condition_sort_key(condition):
+            if 'python_version' in condition:
+                return (0, condition)
+            elif 'platform_python_implementation' in condition:
+                return (1, condition)
+            elif 'platform_machine' in condition:
+                return (2, condition)
+            else:
+                return (3, condition)
+
+        sorted_conditions = sorted(conditions, key=condition_sort_key)
+
+        # Reconstruct the parentheses with sorted conditions
+        return '(' + ' or '.join(sorted_conditions) + ')'
+
+    # Pattern to match parentheses containing platform/python markers
+    marker_pattern = r'\([^)]*(?:platform_|python_version)[^)]*\)'
+
+    # Apply normalization to all marker groups
+    normalized_content = re.sub(marker_pattern, sort_marker_conditions, content)
+
+    return normalized_content
+
+try:
+    with open('$file', 'r') as f:
+        content = f.read()
+
+    normalized = normalize_markers(content)
+
+    with open('$temp_file', 'w') as f:
+        f.write(normalized)
+
+    # Atomic replacement
+    import os
+    os.replace('$temp_file', '$file')
+
+    print('✅ Platform markers normalized successfully')
+
+except Exception as e:
+    print(f'❌ Error normalizing platform markers: {e}')
+    sys.exit(1)
+"
+
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Failed to normalize platform markers in $file"
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    echo "✅ Platform markers normalized in $description"
+}
+
 # Function to rollback on failure
 rollback_on_failure() {
     echo "❌ Generation failed, rolling back..."
@@ -119,6 +202,9 @@ poetry export \
     --output=requirements.txt \
     $WITHOUT_HASHES
 
+# Normalize platform markers for consistent ordering
+normalize_platform_markers "requirements.txt" "main requirements"
+
 # Validate the generated file
 validate_requirements "requirements.txt" "main requirements"
 
@@ -131,6 +217,9 @@ poetry export \
     --with=dev \
     $WITHOUT_HASHES
 
+# Normalize platform markers for consistent ordering
+normalize_platform_markers "requirements-dev.txt" "dev requirements"
+
 # Validate the generated file
 validate_requirements "requirements-dev.txt" "dev requirements"
 
@@ -142,6 +231,9 @@ poetry export \
     --format=requirements.txt \
     --output=requirements-docker.txt \
     --without=dev
+
+# Normalize platform markers for consistent ordering
+normalize_platform_markers "requirements-docker.txt" "Docker requirements"
 
 # Validate the Docker requirements file
 validate_requirements "requirements-docker.txt" "Docker requirements"
