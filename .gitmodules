@@ -1,0 +1,3 @@
+[submodule "zen-mcp-server"]
+	path = zen-mcp-server
+	url = https://github.com/williaby/zen-mcp-server.git
