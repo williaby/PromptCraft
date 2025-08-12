@@ -12,15 +12,14 @@ import asyncio
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import text
 
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database.connection import get_db
 
-if TYPE_CHECKING:
-    from src.monitoring.service_token_monitor import ServiceTokenMonitor
+# ServiceTokenMonitor imported lazily in _get_monitor() to avoid circular imports
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ class TokenRotationScheduler:
         """
         self.settings = settings
         self.token_manager = ServiceTokenManager()
-        self.monitor: ServiceTokenMonitor | None = None
+        self.monitor: Any = None
 
         # Rotation policies
         self.default_rotation_age_days = 90  # Rotate tokens older than 90 days
@@ -89,7 +88,7 @@ class TokenRotationScheduler:
         # Webhook/notification callbacks
         self._notification_callbacks: list[Callable] = []
 
-    def _get_monitor(self) -> "ServiceTokenMonitor":
+    def _get_monitor(self) -> Any:
         """Get the service token monitor, initializing if needed."""
         if self.monitor is None:
             from src.monitoring.service_token_monitor import ServiceTokenMonitor  # noqa: PLC0415
