@@ -7,13 +7,15 @@ This module provides FastAPI endpoints for service token management including:
 - Usage analytics and audit logging
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from src.auth.middleware import ServiceTokenUser, require_authentication, require_role
+from src.auth.middleware import ServiceTokenUser, require_authentication
 from src.auth.models import AuthenticatedUser
+from src.auth.permissions import Permissions, require_permission
+from src.auth.role_manager import RoleManager
 from src.auth.service_token_manager import ServiceTokenManager
 
 
@@ -94,12 +96,19 @@ async def get_current_user_info(
             permissions=current_user.metadata.get("permissions", []),
             usage_count=current_user.usage_count,
         )
-    # JWT user authentication
+    # JWT user authentication - get permissions from role system
+    try:
+        role_manager = RoleManager()
+        user_permissions = await role_manager.get_user_permissions(current_user.email)
+    except Exception:
+        # Fallback to empty permissions if role system unavailable
+        user_permissions = set()
+
     return CurrentUserResponse(
         user_type="jwt_user",
         email=current_user.email,
         role=current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role),
-        permissions=[],  # JWT users get permissions through roles
+        permissions=list(user_permissions),
     )
 
 
@@ -134,7 +143,7 @@ async def auth_health_check() -> AuthHealthResponse:
 
     return AuthHealthResponse(
         status=status,
-        timestamp=datetime.now(UTC),
+        timestamp=datetime.now(timezone.utc),
         database_status=database_status,
         active_tokens=active_tokens,
         recent_authentications=recent_authentications,
@@ -145,7 +154,7 @@ async def auth_health_check() -> AuthHealthResponse:
 async def create_service_token(
     request: Request,  # noqa: ARG001
     token_request: TokenCreationRequest,
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.TOKENS_CREATE)),
 ) -> TokenCreationResponse:
     """Create a new service token (admin only).
 
@@ -155,9 +164,10 @@ async def create_service_token(
     manager = ServiceTokenManager()
 
     # Build token metadata
+    created_by_email = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
     metadata = {
         "permissions": token_request.permissions,
-        "created_by": current_user.email,
+        "created_by": created_by_email,
         "purpose": token_request.purpose or "Created via API",
         "environment": token_request.environment or "production",
         "created_via": "admin_api",
@@ -166,7 +176,7 @@ async def create_service_token(
     # Calculate expiration
     expires_at = None
     if token_request.expires_days:
-        expires_at = datetime.now(UTC) + timedelta(days=token_request.expires_days)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=token_request.expires_days)
 
     try:
         result = await manager.create_service_token(
@@ -202,7 +212,7 @@ async def revoke_service_token(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     reason: str = Query(..., description="Reason for revocation"),
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.TOKENS_DELETE)),
 ) -> dict[str, str]:
     """Revoke a service token (admin only).
 
@@ -212,16 +222,17 @@ async def revoke_service_token(
     manager = ServiceTokenManager()
 
     try:
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
         success = await manager.revoke_service_token(
             token_identifier=token_identifier,
-            revocation_reason=f"{reason} (revoked by {current_user.email} via API)",
+            revocation_reason=f"{reason} (revoked by {revoked_by} via API)",
         )
 
         if success:
             return {
                 "status": "success",
                 "message": f"Token '{token_identifier}' has been revoked",
-                "revoked_by": current_user.email,
+                "revoked_by": revoked_by,
                 "reason": reason,
             }
         raise HTTPException(status_code=404, detail=f"Token '{token_identifier}' not found")
@@ -237,7 +248,7 @@ async def rotate_service_token(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     reason: str = Query("manual_rotation", description="Reason for rotation"),
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.TOKENS_ROTATE)),
 ) -> TokenCreationResponse:
     """Rotate a service token (admin only).
 
@@ -247,9 +258,10 @@ async def rotate_service_token(
     manager = ServiceTokenManager()
 
     try:
+        rotated_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
         result = await manager.rotate_service_token(
             token_identifier=token_identifier,
-            rotation_reason=f"{reason} (rotated by {current_user.email} via API)",
+            rotation_reason=f"{reason} (rotated by {rotated_by} via API)",
         )
 
         if result:
@@ -264,14 +276,14 @@ async def rotate_service_token(
                     token_name=analytics.get("token_name", "rotated_token"),
                     token_value=new_token_value,
                     expires_at=None,  # Will be same as original
-                    metadata={"rotated_by": current_user.email, "rotation_reason": reason},
+                    metadata={"rotated_by": rotated_by, "rotation_reason": reason},
                 )
             return TokenCreationResponse(
                 token_id=new_token_id,
                 token_name="rotated_token",  # nosec B106  # noqa: S106
                 token_value=new_token_value,
                 expires_at=None,
-                metadata={"rotated_by": current_user.email, "rotation_reason": reason},
+                metadata={"rotated_by": rotated_by, "rotation_reason": reason},
             )
         raise HTTPException(status_code=404, detail=f"Token '{token_identifier}' not found or inactive")
 
@@ -284,7 +296,7 @@ async def rotate_service_token(
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),  # noqa: ARG001
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.TOKENS_READ)),  # noqa: ARG001
 ) -> list[TokenInfo]:
     """List all service tokens (admin only).
 
@@ -335,7 +347,7 @@ async def get_token_analytics(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),  # noqa: ARG001
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.TOKENS_READ)),  # noqa: ARG001
 ) -> dict:
     """Get detailed analytics for a specific service token (admin only).
 
@@ -362,7 +374,7 @@ async def emergency_revoke_all_tokens(
     request: Request,  # noqa: ARG001
     reason: str = Query(..., description="Emergency revocation reason"),
     confirm: bool = Query(False, description="Confirmation required"),
-    current_user: AuthenticatedUser = Depends(lambda r: require_role(r, "admin")),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.SYSTEM_ADMIN)),
 ) -> dict[str, str | int]:
     """Emergency revocation of ALL service tokens (admin only).
 
@@ -378,16 +390,17 @@ async def emergency_revoke_all_tokens(
     manager = ServiceTokenManager()
 
     try:
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
         revoked_count = await manager.emergency_revoke_all_tokens(
-            emergency_reason=f"{reason} (emergency revoked by {current_user.email} via API)",
+            emergency_reason=f"{reason} (emergency revoked by {revoked_by} via API)",
         )
 
         return {
             "status": "emergency_revocation_completed",
             "tokens_revoked": revoked_count or 0,
-            "revoked_by": current_user.email,
+            "revoked_by": revoked_by,
             "reason": reason,
-            "timestamp": datetime.now(UTC).isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         }
 
     except Exception as e:
@@ -401,21 +414,17 @@ system_router = APIRouter(prefix="/api/v1/system", tags=["system"])
 @system_router.get("/status")
 async def system_status(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.SYSTEM_STATUS)),
 ) -> dict[str, str]:
     """Get system status information.
 
-    This endpoint requires authentication but works with both JWT and service tokens.
-    Service tokens need 'system_status' permission.
+    This endpoint requires authentication and system:status permission.
+    Works with both JWT users and service tokens.
     """
-    # Check permissions for service tokens
-    if isinstance(current_user, ServiceTokenUser):
-        if not current_user.has_permission("system_status"):
-            raise HTTPException(status_code=403, detail="Service token lacks 'system_status' permission")
 
     return {
         "status": "operational",
-        "timestamp": datetime.now(UTC).isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "version": "1.0.0",
         "authenticated_as": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }
@@ -428,7 +437,7 @@ async def system_health() -> dict[str, str]:
     This endpoint is excluded from authentication middleware and can be used
     for basic health monitoring without credentials.
     """
-    return {"status": "healthy", "timestamp": datetime.now(UTC).isoformat() + "Z"}
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat() + "Z"}
 
 
 # Audit endpoints for CI/CD logging
@@ -439,24 +448,20 @@ audit_router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 async def log_cicd_event(
     request: Request,  # noqa: ARG001
     event_data: dict,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
+    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.SYSTEM_AUDIT)),
 ) -> dict[str, str]:
     """Log CI/CD workflow events for audit trail.
 
     This endpoint allows CI/CD systems to log workflow events for audit purposes.
-    Service tokens need 'audit_log' permission.
+    Requires system:audit permission.
     """
-    # Check permissions for service tokens
-    if isinstance(current_user, ServiceTokenUser):
-        if not current_user.has_permission("audit_log"):
-            raise HTTPException(status_code=403, detail="Service token lacks 'audit_log' permission")
 
     # Here you would typically log to your audit system
     # For now, we'll just acknowledge the event
 
     return {
         "status": "logged",
-        "timestamp": datetime.now(UTC).isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
         "event_type": event_data.get("event_type", "unknown"),
         "logged_by": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }

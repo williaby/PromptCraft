@@ -40,6 +40,10 @@ from src.security.middleware import setup_security_middleware
 from src.security.rate_limiting import RateLimits, rate_limit, setup_rate_limiting
 from src.utils.circuit_breaker import get_all_circuit_breakers
 
+# Authentication and authorization imports
+from src.api.auth_endpoints import audit_router, auth_router, system_router
+from src.api.role_endpoints import role_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -197,6 +201,12 @@ def create_app() -> FastAPI:
 
 # Create the FastAPI application instance
 app = create_app()
+
+# Include authentication and authorization routers
+app.include_router(auth_router)
+app.include_router(role_router)
+app.include_router(system_router)
+app.include_router(audit_router)
 
 
 @app.get("/health", response_model=dict[str, Any])
