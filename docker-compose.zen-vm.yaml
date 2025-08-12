@@ -108,6 +108,63 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Zen MCP Server for AI Agent Orchestration
+  zen-mcp-server:
+    build:
+      context: ./zen-mcp-server
+      dockerfile: Dockerfile
+    container_name: zen-mcp-server
+    ports:
+      - "127.0.0.1:3000:3000"     # Bind to localhost only for cloudflared tunnel
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PYTHONHASHSEED=random
+      - ENVIRONMENT=${ENVIRONMENT:-dev}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - CUSTOM_API_URL=${CUSTOM_API_URL}
+    env_file:
+      - .env.local
+    volumes:
+      - ./zen-mcp-server/logs:/app/logs:rw
+      - ./zen-mcp-server/.env:/app/.env:ro
+    user: "1000:1000"              # Non-root user
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - promptcraft
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # Code-Server for Journey 3 IDE Integration
   promptcraft-ide:
     image: codercom/code-server:latest
