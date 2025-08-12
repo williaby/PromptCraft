@@ -9,6 +9,8 @@ This module tests the complete integration of:
 - Error handling and graceful degradation
 """
 
+# ruff: noqa: S106
+
 import asyncio
 import hashlib
 import time

@@ -9,6 +9,8 @@ Tests cover:
 - Error handling in integrated scenarios
 """
 
+# ruff: noqa: S105, S106
+
 import asyncio
 import hashlib
 from datetime import UTC, datetime, timedelta
@@ -181,7 +183,7 @@ class TestServiceTokenIntegration:
             )
 
             # Simulate multiple CI/CD requests
-            for i in range(5):
+            for _ in range(5):
                 # Simulate token usage (would normally be done by middleware)
                 token_hash = hashlib.sha256(cicd_token_value.encode()).hexdigest()
 
@@ -379,10 +381,10 @@ class TestServiceTokenIntegration:
                 )
 
             # Create 10 tokens concurrently
-            start_time = datetime.now()
+            start_time = datetime.now(UTC)
             tasks = [create_token(i) for i in range(10)]
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            end_time = datetime.now()
+            end_time = datetime.now(UTC)
 
             # Check that most operations succeeded
             successful_results = [r for r in results if not isinstance(r, Exception)]

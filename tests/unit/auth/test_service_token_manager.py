@@ -9,6 +9,8 @@ Tests cover:
 - Error handling and edge cases
 """
 
+# ruff: noqa: S105, S106
+
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 

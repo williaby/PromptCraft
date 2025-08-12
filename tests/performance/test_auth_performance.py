@@ -11,13 +11,15 @@ Tests verify:
 - Graceful degradation scenarios
 """
 
+# ruff: noqa: S105
+
 import asyncio
 import gc
 import statistics
 import time
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil

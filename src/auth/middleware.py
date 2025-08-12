@@ -487,7 +487,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     endpoint=str(request.url.path),
                     cloudflare_ray_id=request.headers.get("cf-ray"),
                     error_details=error_details,
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(timezone.utc),  # noqa: UP017
                 )
 
                 session.add(auth_event)
