@@ -89,19 +89,12 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
-      # Cache MyPy stubs (size-optimized for GitHub Actions)
-      - name: Cache MyPy stubs (optimized)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-optimized-${{ runner.os }}-${{ steps.cache-key.outputs.poetry-hash }}
-          restore-keys: |
-            mypy-stubs-optimized-${{ runner.os }}-
-
-      - name: Pre-install essential MyPy stubs only
+      # Pre-install essential type stubs without caching MyPy cache
+      # This prevents the 301MB cache compression timeout issue
+      - name: Install essential MyPy stubs (no cache)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🔧 Pre-installing essential MyPy stubs only (cache size optimization)"
+          echo "🔧 Installing essential MyPy stubs without caching (performance vs reliability tradeoff)"
           # Install only essential type stubs to prevent cache bloat
           poetry run python -m pip install \
             types-requests \
@@ -109,7 +102,7 @@ jobs:
             types-redis \
             types-python-dateutil \
             types-setuptools
-          echo "✅ Essential MyPy stubs installed (cache size optimized)"
+          echo "✅ Essential MyPy stubs installed (no cache compression timeout risk)"
 
   # Parallel unit test jobs by Python version
   unit-tests:
@@ -156,11 +149,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
-      - name: Restore MyPy cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-optimized-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
+      # MyPy cache disabled to prevent compression timeout
 
       # Unit tests with preserved dynamic_context coverage
       - name: Run unit tests with coverage
@@ -444,11 +433,7 @@ jobs:
             echo "✅ Installation successful on attempt 1"
           fi
 
-      - name: Restore MyPy cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-optimized-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
+      # MyPy cache disabled to prevent compression timeout
 
       # Fast type checking with pre-cached stubs
       - name: Run type checking (Fast)
