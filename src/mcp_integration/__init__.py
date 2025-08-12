@@ -38,9 +38,17 @@ Usage:
     This module is typically imported by core business logic components
     that need to communicate with external MCP services:
 
-    >>> from src.mcp_integration import zen_client
-    >>> from src.mcp_integration import mcp_protocol
-    >>> from src.mcp_integration import connection_manager
+    **RECOMMENDED USAGE:**
+    >>> from src.mcp_integration import HybridRouter  # Primary entry point for most use cases
+    >>> from src.mcp_integration import MCPClientFactory  # For configuration-driven client creation
+    >>> from src.mcp_integration import ZenMCPClient  # Direct Zen MCP Server integration
+
+    **COMPONENT OVERVIEW:**
+    - HybridRouter: Primary entry point - intelligent routing between OpenRouter and MCP services
+    - MCPClientFactory: Configuration-driven client creation with automatic fallbacks
+    - ZenMCPClient: Direct integration with Zen MCP Server (now integrated via Docker)
+    - DockerMCPClient: Docker-based MCP integration for containerized environments
+    - MCPClient: DEPRECATED - Legacy placeholder implementation, use HybridRouter instead
 
 Dependencies:
     - src.config: For MCP server configuration and connection settings

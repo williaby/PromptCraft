@@ -1,4 +1,16 @@
-"""MCP Client for external service communication."""
+"""
+DEPRECATED: Legacy MCP Client Implementation.
+
+⚠️  DEPRECATION NOTICE: This module contains placeholder implementation and will be removed.
+
+For new integrations, use:
+- HybridRouter: src.mcp_integration.HybridRouter (primary entry point)
+- ZenMCPClient: src.mcp_integration.ZenMCPClient (direct Zen MCP Server integration)
+- MCPClientFactory: src.mcp_integration.MCPClientFactory (configuration-driven creation)
+
+This file exists only for backward compatibility during migration.
+The real, production-ready MCP implementation is in mcp_client.py.
+"""
 
 import asyncio
 import json
