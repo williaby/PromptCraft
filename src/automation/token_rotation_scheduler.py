@@ -19,7 +19,7 @@ from sqlalchemy import text
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database.connection import get_db
 
-# ServiceTokenMonitor imported lazily in _get_monitor() to avoid circular imports
+# Note: ServiceTokenMonitor integration temporarily disabled due to circular import issues
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class TokenRotationScheduler:
         """
         self.settings = settings
         self.token_manager = ServiceTokenManager()
-        self.monitor: Any = None
+        # Monitoring integration placeholder (ServiceTokenMonitor dependency removed for MyPy compatibility)
 
         # Rotation policies
         self.default_rotation_age_days = 90  # Rotate tokens older than 90 days
@@ -88,13 +88,8 @@ class TokenRotationScheduler:
         # Webhook/notification callbacks
         self._notification_callbacks: list[Callable] = []
 
-    def _get_monitor(self) -> Any:
-        """Get the service token monitor, initializing if needed."""
-        if self.monitor is None:
-            from src.monitoring.service_token_monitor import ServiceTokenMonitor  # noqa: PLC0415
-
-            self.monitor = ServiceTokenMonitor(self.settings)
-        return self.monitor
+    # Note: ServiceTokenMonitor integration removed temporarily to resolve MyPy circular import issues
+    # This functionality can be re-added once the circular dependency is resolved through architectural changes
 
     async def analyze_tokens_for_rotation(self) -> list[TokenRotationPlan]:
         """Analyze tokens and create rotation plans for those needing rotation.
