@@ -1,0 +1,104 @@
+# Debug CI Configuration
+# Simplified workflow to diagnose Enhanced Setup failures
+# Focuses on Poetry installation and cache validation
+
+name: Debug CI Setup
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  pull_request:
+    branches:
+      - feature/phase-1-issue-auth-2-service-token-management
+    paths:
+      - '.github/workflows/debug-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  debug-setup:
+    name: Debug Enhanced Setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Debug environment
+        run: |
+          echo "🔍 Environment Debug Information"
+          echo "Working directory: $(pwd)"
+          echo "Python version: $(python3 --version)"
+          echo "Pip version: $(pip --version)"
+          echo "HOME: $HOME"
+          echo "PATH: $PATH"
+          echo ""
+          echo "📁 Directory contents:"
+          ls -la
+          echo ""
+          echo "📄 Key files:"
+          ls -la pyproject.toml poetry.lock || echo "Poetry files not found"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry (Simple)
+        run: |
+          echo "📦 Installing Poetry..."
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "✅ Poetry installation complete"
+
+      - name: Configure PATH
+        run: |
+          echo "🛠️ Configuring PATH..."
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "Updated PATH: $PATH"
+
+      - name: Verify Poetry
+        run: |
+          echo "🔍 Verifying Poetry installation..."
+          which poetry || echo "❌ Poetry not found in PATH"
+          ls -la "$HOME/.local/bin/" || echo "❌ .local/bin not found"
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry --version || echo "❌ Poetry version check failed"
+
+      - name: Configure Poetry
+        run: |
+          echo "⚙️ Configuring Poetry..."
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config --list
+
+      - name: Test Cache Paths
+        run: |
+          echo "📂 Testing cache paths..."
+          mkdir -p ~/.local/share/pypoetry || echo "pypoetry dir exists"
+          mkdir -p ~/.cache/pypoetry || echo "cache dir exists"
+          mkdir -p .venv || echo "venv dir exists"
+          echo "Cache directories created"
+          ls -la ~/.local/share/ || echo "No .local/share"
+          ls -la ~/.cache/ || echo "No .cache"
+          ls -la .venv || echo "No .venv"
+
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          echo "🔑 Generating cache key..."
+          POETRY_HASH=$(sha256sum poetry.lock | cut -d' ' -f1)
+          echo "poetry-hash=$POETRY_HASH" >> $GITHUB_OUTPUT
+          echo "Poetry hash: $POETRY_HASH"
+
+      - name: Test Poetry dependencies
+        run: |
+          echo "📦 Testing Poetry dependency installation..."
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry install --dry-run || echo "❌ Dry run failed"
+
+      - name: Final status
+        run: |
+          echo "✅ Debug workflow completed successfully"
+          echo "All basic operations working"
