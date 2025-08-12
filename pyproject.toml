@@ -70,8 +70,10 @@ slowapi = "^0.1.9"
 cachetools = "^6.1.0"
 defusedxml = "^0.7.1"
 starlette = ">=0.47.2"
-asyncpg = "^0.29.0"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.0"}
+# Database dependencies for AUTH-1 enhanced authentication and AUTH-2 service token management
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+asyncpg = "^0.30.0"
+alembic = "^1.14.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0.1"
@@ -126,6 +128,7 @@ mkdocstrings = {extras = ["python"], version = "^0.24.0"}
 [tool.poetry.group.test.dependencies]
 pytest-benchmark = ">=4.0.0"
 pytest-memray = ">=1.5.0"
+aiosqlite = "^0.21.0"
 
 
 [[tool.poetry.source]]
@@ -206,8 +209,6 @@ ignore = [
     "E501",    # line too long (handled by black)
     "B008",    # do not perform function calls in argument defaults
     "C901",    # too complex
-    "ANN101",  # missing type annotation for self
-    "ANN102",  # missing type annotation for cls
     "ANN401",  # dynamically typed expressions (Any)
     "S101",    # use of assert detected
     "PLR0913", # too many arguments
@@ -265,6 +266,7 @@ skip_glob = ["**/migrations/*", "**/venv/*", "**/.venv/*"]
 
 [tool.mypy]
 python_version = "3.11"
+mypy_path = "src"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -352,43 +354,8 @@ markers = [
     "auth: authentication and authorization tests",
 ]
 
-# Test execution profiles for different scenarios
-[tool.pytest.profiles]
-# Fast development loop (< 1 minute)
-fast = [
-    "tests/unit/",
-    "tests/auth/",
-    "-m", "not slow and not performance and not stress",
-    "--maxfail=3",
-    "--tb=short"
-]
-
-# Pre-commit validation (< 2 minutes)
-pre-commit = [
-    "tests/unit/",
-    "tests/auth/",
-    "tests/integration/",
-    "-m", "not performance and not stress and not contract",
-    "--maxfail=5"
-]
-
-# PR validation (< 5 minutes)
-pr = [
-    "-m", "not performance and not stress",
-    "--maxfail=10"
-]
-
-# Full suite (scheduled/main branch)
-full = [
-    "--durations=20"
-]
-
-# Performance tests only
-performance = [
-    "tests/performance/",
-    "-m", "performance or stress",
-    "--tb=line"
-]
+# Note: Test execution profiles are implemented via Makefile and noxfile.py
+# See CLAUDE.md for available test commands and execution strategies
 
 [tool.coverage.run]
 source = ["src"]
@@ -427,7 +394,7 @@ output = "coverage.xml"
 [tool.bandit]
 targets = ["src"]
 exclude_dirs = ["tests", "scripts"]
-skips = ["B101", "B404"]
+skips = ["B101", "B601"]
 
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"]

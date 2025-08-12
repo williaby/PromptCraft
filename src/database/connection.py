@@ -2,6 +2,8 @@
 
 This module provides async database connection management with:
 - Connection pooling for optimal performance
+- Proper session lifecycle management
+- Configuration-based connection parameters
 - Health checks and graceful failover
 - Configuration management from environment variables
 - Performance monitoring and optimization
@@ -23,6 +25,7 @@ from src.config.settings import get_settings
 logger = logging.getLogger(__name__)
 
 
+# Note: Base class is now defined in models.py to avoid circular imports
 class DatabaseError(Exception):
     """Base exception for database operations."""
 
@@ -56,6 +59,7 @@ class DatabaseManager:
         self._connection_lock = asyncio.Lock()
         self._health_check_cache: dict[str, Any] = {}
         self._health_check_ttl = 30.0  # 30 seconds cache
+        self._is_initialized = False
 
     async def initialize(self) -> None:
         """Initialize database engine and connection pool.
@@ -70,21 +74,21 @@ class DatabaseManager:
 
             try:
                 # Build connection string
-                db_url = self._build_connection_string()
+                db_url = await self._build_database_url()
                 logger.debug("Connecting to PostgreSQL at %s:%s", self._settings.db_host, self._settings.db_port)
 
                 # Create async engine with connection pooling
                 self._engine = create_async_engine(
                     db_url,
                     # Connection pool settings for performance
-                    pool_size=self._settings.db_pool_size,
-                    max_overflow=self._settings.db_pool_max_overflow,
-                    pool_timeout=self._settings.db_pool_timeout,
-                    pool_recycle=self._settings.db_pool_recycle,
+                    pool_size=getattr(self._settings, "db_pool_size", 10),
+                    max_overflow=getattr(self._settings, "db_pool_max_overflow", 20),
+                    pool_timeout=getattr(self._settings, "db_pool_timeout", 30),
+                    pool_recycle=getattr(self._settings, "db_pool_recycle", 3600),
                     pool_pre_ping=True,  # Validate connections before use
                     # Performance optimizations
-                    echo=self._settings.db_echo,
-                    poolclass=NullPool if self._settings.environment == "dev" else None,
+                    echo=getattr(self._settings, "db_echo", False),
+                    poolclass=NullPool if getattr(self._settings, "environment", "prod") == "dev" else None,
                     # Connection arguments for asyncpg
                     connect_args={
                         "server_settings": {
@@ -107,10 +111,11 @@ class DatabaseManager:
                 # Test connection
                 await self._test_connection()
 
+                self._is_initialized = True
                 logger.info(
                     "Database initialized successfully - Pool: %s, Max overflow: %s",
-                    self._settings.db_pool_size,
-                    self._settings.db_pool_max_overflow,
+                    getattr(self._settings, "db_pool_size", 10),
+                    getattr(self._settings, "db_pool_max_overflow", 20),
                 )
 
             except Exception as e:
@@ -118,15 +123,40 @@ class DatabaseManager:
                 await self._cleanup()
                 raise DatabaseConnectionError(f"Database initialization failed: {e}") from e
 
+    async def _build_database_url(self) -> str:
+        """Build database URL from configuration."""
+        # Use database_url if provided
+        if hasattr(self._settings, "database_url") and self._settings.database_url:
+            return self._settings.database_url.get_secret_value()
+
+        # Build URL from components
+        host = getattr(self._settings, "db_host", "192.168.1.16")
+        port = getattr(self._settings, "db_port", 5432)
+        database = getattr(self._settings, "db_name", "promptcraft")
+        username = getattr(self._settings, "db_user", "promptcraft_app")
+
+        password = ""  # nosec B105
+        if hasattr(self._settings, "database_password") and self._settings.database_password:
+            password = self._settings.database_password.get_secret_value()
+        elif hasattr(self._settings, "db_password") and self._settings.db_password:
+            # Handle both SecretStr and plain string types
+            if hasattr(self._settings.db_password, "get_secret_value"):
+                password = self._settings.db_password.get_secret_value()
+            else:
+                password = str(self._settings.db_password)
+
+        return f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}"
+
     def _build_connection_string(self) -> str:
-        """Build PostgreSQL connection string from settings.
+        """Build PostgreSQL connection string from settings (alternative method).
 
         Returns:
             Database connection URL
         """
-        # Use asyncpg driver for async operations
+        # Use asyncpg driver for async operations - supporting AUTH-1 pattern
+        password = getattr(self._settings, "db_password", "")
         return (
-            f"postgresql+asyncpg://{self._settings.db_user}:{self._settings.db_password}"
+            f"postgresql+asyncpg://{self._settings.db_user}:{password}"
             f"@{self._settings.db_host}:{self._settings.db_port}/{self._settings.db_name}"
         )
 
@@ -232,7 +262,6 @@ class DatabaseManager:
 
         if not self._session_factory:
             raise DatabaseConnectionError("Database session factory not available")
-
         async with self._session_factory() as session:
             try:
                 yield session
@@ -278,6 +307,24 @@ class DatabaseManager:
 
         raise DatabaseError(f"Operation failed after {max_retries + 1} attempts") from last_error
 
+    async def get_pool_status(self) -> dict:
+        """Get connection pool status."""
+        if not self._is_initialized:
+            return {"status": "not_initialized"}
+
+        return {
+            "status": "initialized",
+            "pool_size": getattr(self._engine.pool, "size", 0) if self._engine else 0,
+            "checked_in": getattr(self._engine.pool, "checkedin", 0) if self._engine else 0,
+            "checked_out": getattr(self._engine.pool, "checkedout", 0) if self._engine else 0,
+        }
+
+    # Alias for compatibility with tests
+    async def session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Alias for get_session for test compatibility."""
+        async with self.get_session() as session:
+            yield session
+
     async def close(self) -> None:
         """Close database connections and cleanup resources."""
         await self._cleanup()
@@ -288,6 +335,7 @@ class DatabaseManager:
             await self._engine.dispose()
             self._engine = None
             self._session_factory = None
+            self._is_initialized = False
             logger.info("Database connections closed")
 
 
@@ -295,8 +343,16 @@ class DatabaseManager:
 _db_manager: DatabaseManager | None = None
 
 
-async def get_database_manager() -> DatabaseManager:
-    """Get global database manager instance.
+def get_database_manager() -> DatabaseManager:
+    """Get the global database manager instance (synchronous version)."""
+    global _db_manager  # noqa: PLW0603
+    if _db_manager is None:
+        _db_manager = DatabaseManager()
+    return _db_manager
+
+
+async def get_database_manager_async() -> DatabaseManager:
+    """Get global database manager instance with initialization.
 
     Returns:
         DatabaseManager instance
@@ -308,22 +364,47 @@ async def get_database_manager() -> DatabaseManager:
     return _db_manager
 
 
+# Legacy compatibility functions
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Get database session (legacy compatibility)."""
+    db_manager = get_database_manager()
+    async with db_manager.get_session() as session:
+        yield session
+
+
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get database session for dependency injection.
 
     Yields:
         AsyncSession for database operations
     """
-    db_manager = await get_database_manager()
+    db_manager = get_database_manager()
     async with db_manager.get_session() as session:
         yield session
 
 
+async def database_health_check() -> dict[str, Any]:
+    """Perform database health check (legacy compatibility)."""
+    db_manager = get_database_manager()
+    return await db_manager.health_check()
+
+
+# Additional compatibility function for migration scripts
+async def initialize_database() -> None:
+    """Initialize database connection (used in validation scripts)."""
+    db_manager = get_database_manager()
+    await db_manager.initialize()
+
+
 # Export public interface
 __all__ = [
-    "ConnectionError",
+    "DatabaseConnectionError",
     "DatabaseError",
     "DatabaseManager",
+    "database_health_check",
     "get_database_manager",
+    "get_database_manager_async",
+    "get_db",
     "get_db_session",
+    "initialize_database",
 ]

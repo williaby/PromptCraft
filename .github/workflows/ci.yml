@@ -89,21 +89,20 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
-      # Pre-install and cache MyPy stubs globally
-      - name: Cache MyPy stubs globally
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-${{ runner.os }}-${{ steps.cache-key.outputs.poetry-hash }}
-          restore-keys: |
-            mypy-stubs-${{ runner.os }}-
-
-      - name: Pre-install MyPy stubs
+      # Pre-install essential type stubs without caching MyPy cache
+      # This prevents the 301MB cache compression timeout issue
+      - name: Install essential MyPy stubs (no cache)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🔧 Pre-installing MyPy stubs for all jobs"
-          poetry run python -m pip install types-requests types-pyyaml types-redis types-python-dateutil
-          poetry run mypy --install-types --non-interactive --cache-dir=${{ env.MYPY_CACHE_DIR }} src/ || true
+          echo "🔧 Installing essential MyPy stubs without caching (performance vs reliability tradeoff)"
+          # Install only essential type stubs to prevent cache bloat
+          poetry run python -m pip install \
+            types-requests \
+            types-pyyaml \
+            types-redis \
+            types-python-dateutil \
+            types-setuptools
+          echo "✅ Essential MyPy stubs installed (no cache compression timeout risk)"
 
   # Parallel unit test jobs by Python version
   unit-tests:
@@ -150,11 +149,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
-      - name: Restore MyPy cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
+      # MyPy cache disabled to prevent compression timeout
 
       # Unit tests with preserved dynamic_context coverage
       - name: Run unit tests with coverage
@@ -366,7 +361,7 @@ jobs:
   quality-checks:
     name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 6  # Reduced due to cached MyPy stubs
+    timeout-minutes: 8  # Increased to account for retry logic
     needs: setup-optimized
     steps:
       - uses: actions/checkout@v4
@@ -397,17 +392,48 @@ jobs:
           restore-keys: |
             poetry-deps-${{ runner.os }}-
 
-      # Install dependencies (fast if cached)
+      # Install dependencies with retry on NVIDIA package failures
       - name: Install dependencies
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          poetry install --sync --no-interaction
 
-      - name: Restore MyPy cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/mypy
-          key: mypy-stubs-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
+          # Function to clear corrupted poetry cache
+          clear_poetry_cache() {
+            echo "🧹 Clearing potentially corrupted Poetry cache..."
+            poetry cache clear --all pypi -n 2>/dev/null || true
+            rm -rf .venv 2>/dev/null || true
+            poetry env remove python3 2>/dev/null || true
+          }
+
+          # First attempt with existing cache
+          echo "📦 Installing dependencies (attempt 1 with cache)..."
+          if ! poetry install --sync --no-interaction; then
+            echo "❌ Installation failed, clearing cache and retrying..."
+            clear_poetry_cache
+
+            echo "📦 Installing dependencies (attempt 2 without cache)..."
+            if ! poetry install --sync --no-interaction; then
+              echo "❌ Installation failed again, this may be a persistent issue"
+              echo "🔍 Analyzing failure..."
+
+              # Try to identify if it's NVIDIA-related
+              if poetry install --sync --no-interaction 2>&1 | grep -q "nvidia-cuda"; then
+                echo "🚨 NVIDIA CUDA package installation issue detected"
+                echo "This is a known transient CI issue, not a code problem"
+                echo "The issue affects PyTorch dependencies pulled in by sentence-transformers"
+                exit 1
+              else
+                echo "🤔 Unknown installation issue, failing job"
+                exit 1
+              fi
+            else
+              echo "✅ Installation successful on attempt 2"
+            fi
+          else
+            echo "✅ Installation successful on attempt 1"
+          fi
+
+      # MyPy cache disabled to prevent compression timeout
 
       # Fast type checking with pre-cached stubs
       - name: Run type checking (Fast)

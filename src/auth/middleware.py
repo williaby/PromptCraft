@@ -2,14 +2,18 @@
 
 This module provides FastAPI middleware for JWT-based authentication with:
 - JWT token extraction from Cloudflare Access headers
+- Service token validation for non-interactive API access
 - Email-based user identification and role mapping
 - Rate limiting to prevent DOS attacks
 - User context injection for downstream processing
+- Database tracking for usage analytics and audit logging
 """
 
+import hashlib
 import logging
 import time
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -17,10 +21,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.database import DatabaseError, get_database_manager
+from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
 from .config import AuthenticationConfig
@@ -29,6 +34,37 @@ from .jwt_validator import JWTValidator
 from .models import AuthenticatedUser, AuthenticationError, JWTValidationError
 
 logger = logging.getLogger(__name__)
+
+
+class ServiceTokenUser:
+    """Represents an authenticated service token user."""
+
+    def __init__(self, token_id: str, token_name: str, metadata: dict, usage_count: int = 0) -> None:
+        """Initialize service token user.
+
+        Args:
+            token_id: Unique token identifier
+            token_name: Human-readable token name
+            metadata: Token metadata including permissions
+            usage_count: Current usage count
+        """
+        self.token_id = token_id
+        self.token_name = token_name
+        self.metadata = metadata
+        self.usage_count = usage_count
+        self.user_type = "service_token"
+
+    def has_permission(self, permission: str) -> bool:
+        """Check if token has a specific permission.
+
+        Args:
+            permission: Permission to check
+
+        Returns:
+            True if token has permission, False otherwise
+        """
+        permissions = self.metadata.get("permissions", [])
+        return permission in permissions or "admin" in permissions
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
@@ -98,12 +134,22 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Inject user context into request state
             request.state.authenticated_user = authenticated_user
-            request.state.user_email = authenticated_user.email
-            request.state.user_role = authenticated_user.role
+
+            # Handle different user types
+            if isinstance(authenticated_user, ServiceTokenUser):
+                request.state.user_email = None  # Service tokens don't have email
+                request.state.user_role = None  # Service tokens don't have roles
+                request.state.token_metadata = authenticated_user.metadata
+            else:
+                request.state.user_email = authenticated_user.email
+                request.state.user_role = authenticated_user.role
 
             # Log successful authentication
             if self.config.auth_logging_enabled:
-                logger.info(f"Authenticated user: {authenticated_user.email} with role: {authenticated_user.role}")
+                if isinstance(authenticated_user, ServiceTokenUser):
+                    logger.info(f"Authenticated service token: {authenticated_user.token_name}")
+                else:
+                    logger.info(f"Authenticated user: {authenticated_user.email} with role: {authenticated_user.role}")
 
             # Database event logging (if enabled)
             if self.database_enabled:
@@ -182,23 +228,42 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 return True
         return False
 
-    async def _authenticate_request(self, request: Request) -> AuthenticatedUser:
+    async def _authenticate_request(self, request: Request) -> AuthenticatedUser | ServiceTokenUser:
         """Authenticate the request and return user information.
 
         Args:
             request: HTTP request to authenticate
 
         Returns:
-            AuthenticatedUser with validated user information
+            AuthenticatedUser or ServiceTokenUser with validated information
 
         Raises:
             AuthenticationError: If authentication fails
         """
-        # Extract JWT token from Cloudflare Access header
-        token = self._extract_jwt_token(request)
+        # Extract authentication token (JWT or Service Token)
+        token = self._extract_auth_token(request)
         if not token:
             raise AuthenticationError("Missing authentication token", 401)
 
+        # Check if this is a service token (starts with 'sk_')
+        if token.startswith("sk_"):
+            return await self._validate_service_token(request, token)
+        # Handle JWT token validation (existing flow)
+        return await self._validate_jwt_token(request, token)
+
+    async def _validate_jwt_token(self, request: Request, token: str) -> AuthenticatedUser:
+        """Validate JWT token using existing flow.
+
+        Args:
+            request: HTTP request
+            token: JWT token string
+
+        Returns:
+            AuthenticatedUser with validated user information
+
+        Raises:
+            AuthenticationError: If validation fails
+        """
         try:
             # Validate JWT token
             authenticated_user = self.jwt_validator.validate_token(
@@ -206,20 +271,147 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 email_whitelist=self.config.email_whitelist if self.config.email_whitelist_enabled else None,
             )
 
+            # Log authentication event
+            await self._log_authentication_event(
+                request,
+                user_email=authenticated_user.email,
+                event_type="jwt_auth",
+                success=True,
+            )
+
             return authenticated_user
 
         except JWTValidationError as e:
+            # Log failed authentication
+            await self._log_authentication_event(
+                request,
+                event_type="jwt_auth",
+                success=False,
+                error_details={"error": str(e), "message": e.message},
+            )
             # Convert JWT validation errors to authentication errors
             raise AuthenticationError(f"Token validation failed: {e.message}", 401) from e
 
-    def _extract_jwt_token(self, request: Request) -> str | None:
-        """Extract JWT token from Cloudflare Access headers.
+    async def _validate_service_token(self, request: Request, token: str) -> ServiceTokenUser:
+        """Validate service token against database.
+
+        Args:
+            request: HTTP request
+            token: Service token string
+
+        Returns:
+            ServiceTokenUser with validated token information
+
+        Raises:
+            AuthenticationError: If validation fails
+        """
+        try:
+            # Hash the token for database lookup
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+            # Get database session and validate token
+            async for session in get_db():
+                # Query for active, non-expired token
+                result = await session.execute(
+                    text(
+                        """
+                        SELECT id, token_name, token_metadata, usage_count, is_active,
+                               CASE
+                                   WHEN expires_at IS NULL THEN FALSE
+                                   WHEN expires_at > NOW() THEN FALSE
+                                   ELSE TRUE
+                               END as is_expired
+                        FROM service_tokens
+                        WHERE token_hash = :token_hash
+                    """,
+                    ),
+                    {"token_hash": token_hash},
+                )
+
+                token_record = result.fetchone()
+
+                if not token_record:
+                    await self._log_authentication_event(
+                        request,
+                        event_type="service_token_auth",
+                        success=False,
+                        error_details={"error": "token_not_found"},
+                    )
+                    raise AuthenticationError("Invalid service token", 401)
+
+                # Check if token is active and not expired
+                if not token_record.is_active:
+                    await self._log_authentication_event(
+                        request,
+                        service_token_name=token_record.token_name,
+                        event_type="service_token_auth",
+                        success=False,
+                        error_details={"error": "token_inactive"},
+                    )
+                    raise AuthenticationError("Service token is inactive", 401)
+
+                if token_record.is_expired:
+                    await self._log_authentication_event(
+                        request,
+                        service_token_name=token_record.token_name,
+                        event_type="service_token_auth",
+                        success=False,
+                        error_details={"error": "token_expired"},
+                    )
+                    raise AuthenticationError("Service token has expired", 401)
+
+                # Update usage count and last_used timestamp
+                await session.execute(
+                    text(
+                        """
+                        UPDATE service_tokens
+                        SET usage_count = usage_count + 1, last_used = NOW()
+                        WHERE token_hash = :token_hash
+                    """,
+                    ),
+                    {"token_hash": token_hash},
+                )
+                await session.commit()
+
+                # Log successful authentication
+                await self._log_authentication_event(
+                    request,
+                    service_token_name=token_record.token_name,
+                    event_type="service_token_auth",
+                    success=True,
+                )
+
+                # Create ServiceTokenUser
+                service_user = ServiceTokenUser(
+                    token_id=str(token_record.id),
+                    token_name=token_record.token_name,
+                    metadata=token_record.token_metadata or {},
+                    usage_count=token_record.usage_count + 1,
+                )
+
+                return service_user
+
+        except AuthenticationError:
+            # Re-raise authentication errors as-is
+            raise
+        except Exception as e:
+            logger.error(f"Service token validation error: {e}")
+            await self._log_authentication_event(
+                request,
+                event_type="service_token_auth",
+                success=False,
+                error_details={"error": "validation_exception", "details": str(e)},
+            )
+            raise AuthenticationError("Service token validation failed", 500) from e
+
+    def _extract_auth_token(self, request: Request) -> str | None:
+        """Extract authentication token (JWT or Service Token) from headers.
 
         Args:
             request: HTTP request
 
         Returns:
-            JWT token string if found, None otherwise
+            Authentication token string if found, None otherwise
         """
         # Primary: Cloudflare Access JWT header
         cf_access_jwt = request.headers.get("CF-Access-Jwt-Assertion")
@@ -227,11 +419,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             logger.debug("Found JWT token in CF-Access-Jwt-Assertion header")
             return cf_access_jwt
 
-        # Fallback: Standard Authorization header
+        # Standard Authorization header (supports both JWT and Service Tokens)
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[7:]  # Remove "Bearer " prefix
-            logger.debug("Found JWT token in Authorization header")
+            token_type = "service token" if token.startswith("sk_") else "JWT token"
+            logger.debug(f"Found {token_type} in Authorization header")
             return token
 
         # Fallback: Custom header for testing/development
@@ -240,8 +433,71 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             logger.debug("Found JWT token in X-JWT-Token header")
             return custom_jwt
 
-        logger.debug("No JWT token found in request headers")
+        # Service token specific headers (for non-interactive access)
+        service_token = request.headers.get("X-Service-Token")
+        if service_token:
+            logger.debug("Found service token in X-Service-Token header")
+            return service_token
+
+        logger.debug("No authentication token found in request headers")
         return None
+
+    def _extract_jwt_token(self, request: Request) -> str | None:
+        """Extract JWT token from Cloudflare Access headers (legacy method).
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            JWT token string if found, None otherwise
+        """
+        return self._extract_auth_token(request)
+
+    async def _log_authentication_event(
+        self,
+        request: Request,
+        user_email: str | None = None,
+        service_token_name: str | None = None,
+        event_type: str = "auth",
+        success: bool = True,
+        error_details: dict | None = None,
+    ) -> None:
+        """Log authentication event to database.
+
+        Args:
+            request: HTTP request
+            user_email: User email (for JWT auth)
+            service_token_name: Service token name (for service token auth)
+            event_type: Type of authentication event
+            success: Whether authentication was successful
+            error_details: Error details for failed authentication
+        """
+        try:
+            async for session in get_db():
+                # Create authentication event record
+                auth_event = AuthenticationEvent(
+                    user_email=user_email,
+                    service_token_name=service_token_name,
+                    event_type=event_type,
+                    success=success,
+                    ip_address=(
+                        getattr(request.client, "host", None) if hasattr(request, "client") and request.client else None
+                    ),
+                    user_agent=request.headers.get("user-agent"),
+                    endpoint=str(request.url.path),
+                    cloudflare_ray_id=request.headers.get("cf-ray"),
+                    error_details=error_details,
+                    created_at=datetime.now(timezone.utc),  # noqa: UP017
+                )
+
+                session.add(auth_event)
+                await session.commit()
+
+                break  # Only need first session
+
+        except Exception as e:
+            # Don't fail authentication due to logging errors
+            logger.warning(f"Failed to log authentication event: {e}")
 
     def _create_auth_error_response(self, error: AuthenticationError) -> JSONResponse:
         """Create JSON error response for authentication failures.
@@ -317,83 +573,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Log unexpected errors but don't fail authentication
             logger.warning(f"Unexpected error updating session (graceful degradation): {e}")
-
-    async def _log_authentication_event(
-        self,
-        authenticated_user: AuthenticatedUser | None,
-        request: Request,
-        success: bool,
-        jwt_time_ms: float,
-        db_time_ms: float,
-        total_time_ms: float,
-        error_message: str | None = None,
-    ) -> None:
-        """Log authentication event to database with graceful degradation.
-
-        Args:
-            authenticated_user: Authenticated user (None for failures)
-            request: HTTP request for context
-            success: Whether authentication was successful
-            jwt_time_ms: JWT validation time in milliseconds
-            db_time_ms: Database operation time in milliseconds
-            total_time_ms: Total processing time in milliseconds
-            error_message: Error message for failed attempts
-        """
-        if not self.database_enabled:
-            return
-
-        try:
-            db_manager = await get_database_manager()
-
-            async with db_manager.get_session() as session:
-
-                # Extract request information
-                user_email = authenticated_user.email if authenticated_user else "unknown"
-                ip_address = self._get_client_ip(request)
-                user_agent = request.headers.get("User-Agent")
-                cloudflare_ray_id = request.headers.get("CF-Ray")
-
-                # Determine event type
-                event_type = "login" if success else "failed_login"
-
-                # Build performance metrics
-                performance_metrics = {
-                    "jwt_validation_ms": round(jwt_time_ms, 2),
-                    "database_operation_ms": round(db_time_ms, 2),
-                    "total_processing_ms": round(total_time_ms, 2),
-                    "timestamp": time.time(),
-                }
-
-                # Build error details if applicable
-                error_details = None
-                if not success and error_message:
-                    error_details = {
-                        "error_message": error_message,
-                        "request_path": str(request.url.path),
-                        "request_method": request.method,
-                    }
-
-                # Create authentication event
-                auth_event = AuthenticationEvent(
-                    user_email=user_email,
-                    event_type=event_type,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    cloudflare_ray_id=cloudflare_ray_id,
-                    success=success,
-                    error_details=error_details,
-                    performance_metrics=performance_metrics,
-                )
-
-                session.add(auth_event)
-                await session.commit()
-
-        except DatabaseError as e:
-            # Log database errors but don't fail authentication
-            logger.warning(f"Database event logging failed (graceful degradation): {e}")
-        except Exception as e:
-            # Log unexpected errors but don't fail authentication
-            logger.warning(f"Unexpected error logging event (graceful degradation): {e}")
 
     def _get_client_ip(self, request: Request) -> str | None:
         """Extract client IP address from request headers.

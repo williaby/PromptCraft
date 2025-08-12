@@ -5,11 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from src.config.settings import ApplicationSettings
+
 
 @pytest.fixture
 def mock_settings():
-    """Mock settings for database tests."""
-    settings = MagicMock()
+    """Mock application settings for testing."""
+    settings = MagicMock(spec=ApplicationSettings)
     settings.db_host = "localhost"
     settings.db_port = 5432
     settings.db_name = "test_db"
@@ -37,6 +39,7 @@ def mock_async_engine():
 
     engine.begin.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
     engine.begin.return_value.__aexit__ = AsyncMock(return_value=None)
+    engine.connect = AsyncMock()
 
     # Mock pool
     mock_pool = MagicMock()

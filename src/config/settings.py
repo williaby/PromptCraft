@@ -272,6 +272,32 @@ class ApplicationSettings(BaseSettings):
         description="Port number for the API server",
     )
 
+    # Database Configuration
+    database_host: str = Field(
+        default="192.168.1.16",
+        description="Database host address",
+    )
+
+    database_port: int = Field(
+        default=5432,
+        description="Database port number",
+    )
+
+    database_name: str = Field(
+        default="promptcraft",
+        description="Database name",
+    )
+
+    database_username: str = Field(
+        default="promptcraft",
+        description="Database username",
+    )
+
+    database_timeout: float = Field(
+        default=30.0,
+        description="Database connection timeout in seconds",
+    )
+
     # Database Configuration (sensitive values)
     database_password: SecretStr | None = Field(
         default=None,
@@ -858,6 +884,133 @@ class ApplicationSettings(BaseSettings):
         # Note: Cross-field validation (like checking debug mode based on environment)
         # will be handled in the startup validation function instead of here
         # since Pydantic v2 changed how cross-field validation works
+
+        return v
+
+    @field_validator("database_host")
+    @classmethod
+    def validate_database_host(cls, v: str) -> str:
+        """Validate database host address.
+
+        Args:
+            v: The database host to validate.
+
+        Returns:
+            The validated database host.
+
+        Raises:
+            ValueError: If the database host is invalid.
+        """
+        if not v.strip():
+            raise ValueError(
+                "Database host cannot be empty. Use 'localhost', '127.0.0.1', or a valid IP address/hostname.",
+            )
+
+        v = v.strip()
+
+        # Use the same validation logic as api_host
+        ip_pattern = re.compile(
+            r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+        )
+
+        hostname_pattern = re.compile(
+            r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)$",
+        )
+
+        # Allow common special cases
+        if v in ("localhost", "127.0.0.1"):
+            return v
+
+        # Validate IP address or hostname format
+        if ip_pattern.match(v) or (hostname_pattern.match(v) and len(v) <= MAX_HOSTNAME_LENGTH):
+            return v
+
+        raise ValueError(
+            f"Invalid database host format: '{v}'. "
+            "Host must be a valid IP address, hostname, 'localhost', or '127.0.0.1'.",
+        )
+
+    @field_validator("database_port")
+    @classmethod
+    def validate_database_port(cls, v: int) -> int:
+        """Validate database port number.
+
+        Args:
+            v: The database port to validate.
+
+        Returns:
+            The validated database port.
+
+        Raises:
+            ValueError: If the database port is invalid.
+        """
+        if not (1 <= v <= MAX_PORT_NUMBER):
+            raise ValueError(
+                f"Database port {v} is outside valid range (1-65535). "
+                "Common PostgreSQL ports: 5432 (default), 5433, 5434.",
+            )
+        return v
+
+    @field_validator("database_name", "database_username")
+    @classmethod
+    def validate_database_identifier(cls, v: str) -> str:
+        """Validate database name and username identifiers.
+
+        Args:
+            v: The database identifier to validate.
+
+        Returns:
+            The validated database identifier.
+
+        Raises:
+            ValueError: If the database identifier is invalid.
+        """
+        if not v.strip():
+            raise ValueError(
+                "Database identifier cannot be empty. Use alphanumeric characters, underscores, and hyphens only.",
+            )
+
+        v = v.strip()
+
+        # PostgreSQL identifier rules: start with letter/underscore, contain letters/digits/underscores
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
+            raise ValueError(
+                f"Invalid database identifier: '{v}'. "
+                "Must start with letter or underscore, contain only letters, digits, and underscores.",
+            )
+
+        if len(v) > 63:  # PostgreSQL identifier limit
+            raise ValueError(
+                f"Database identifier too long ({len(v)} characters). "
+                "PostgreSQL identifiers must be 63 characters or less.",
+            )
+
+        return v
+
+    @field_validator("database_timeout")
+    @classmethod
+    def validate_database_timeout(cls, v: float) -> float:
+        """Validate database timeout value.
+
+        Args:
+            v: The database timeout to validate.
+
+        Returns:
+            The validated database timeout.
+
+        Raises:
+            ValueError: If the database timeout is invalid.
+        """
+        if v <= 0:
+            raise ValueError(
+                "Database timeout must be positive. Common values: 30.0 (default), 60.0 (extended), 10.0 (fast).",
+            )
+
+        if v > 300:  # 5 minutes
+            raise ValueError(
+                "Database timeout too high (> 5 minutes). "
+                "Long timeouts can cause request queuing and poor user experience.",
+            )
 
         return v
 
