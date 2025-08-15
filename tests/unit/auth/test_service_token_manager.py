@@ -11,7 +11,7 @@ Tests cover:
 
 # ruff: noqa: S105, S106
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,7 +33,7 @@ class TestServiceTokenManager:
         return {
             "token_name": "test-token",
             "metadata": {"permissions": ["api_read", "system_status"], "environment": "test"},
-            "expires_at": datetime.now(UTC) + timedelta(days=30),
+            "expires_at": datetime.now(timezone.utc) + timedelta(days=30),
             "is_active": True,
         }
 
@@ -271,8 +271,8 @@ class TestServiceTokenManager:
         mock_token_data = MagicMock()
         mock_token_data.token_name = "test-token"
         mock_token_data.usage_count = 100
-        mock_token_data.last_used = datetime.now(UTC)
-        mock_token_data.created_at = datetime.now(UTC) - timedelta(days=30)
+        mock_token_data.last_used = datetime.now(timezone.utc)
+        mock_token_data.created_at = datetime.now(timezone.utc) - timedelta(days=30)
         mock_token_data.is_active = True
         mock_token_data.is_expired = False
         mock_token_result.fetchone.return_value = mock_token_data
@@ -282,7 +282,7 @@ class TestServiceTokenManager:
         mock_event = MagicMock()
         mock_event.event_type = "service_token_auth"
         mock_event.success = True
-        mock_event.created_at = datetime.now(UTC)
+        mock_event.created_at = datetime.now(timezone.utc)
         mock_events_result.fetchall.return_value = [mock_event]
 
         # Configure mock session to return different results for different queries
@@ -322,7 +322,7 @@ class TestServiceTokenManager:
         mock_top_token = MagicMock()
         mock_top_token.token_name = "popular-token"
         mock_top_token.usage_count = 200
-        mock_top_token.last_used = datetime.now(UTC)
+        mock_top_token.last_used = datetime.now(timezone.utc)
         mock_top_tokens_result.fetchall.return_value = [mock_top_token]
 
         # Configure mock session

@@ -15,6 +15,7 @@ from unittest.mock import Mock, patch
 import jwt
 import pytest
 
+from src.auth.config import AuthenticationConfig
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
 from src.auth.models import AuthenticatedUser, JWTValidationError, UserRole
@@ -26,7 +27,8 @@ class TestJWTValidatorInitialization:
     def test_init_minimal_config(self):
         """Test initialization with minimal configuration."""
         jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=jwks_client)
+        config = AuthenticationConfig()
+        validator = JWTValidator(jwks_client=jwks_client, config=config)
 
         assert validator.jwks_client is jwks_client
         assert validator.audience is None
@@ -36,8 +38,10 @@ class TestJWTValidatorInitialization:
     def test_init_full_config(self):
         """Test initialization with full configuration."""
         jwks_client = Mock(spec=JWKSClient)
+        config = AuthenticationConfig()
         validator = JWTValidator(
             jwks_client=jwks_client,
+            config=config,
             audience="https://app.example.com",
             issuer="https://example.cloudflareaccess.com",
             algorithm="HS256",
@@ -55,8 +59,10 @@ class TestJWTValidatorTokenValidation:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
+        config = AuthenticationConfig()
         self.validator = JWTValidator(
             jwks_client=self.jwks_client,
+            config=config,
             audience="https://app.example.com",
             issuer="https://example.cloudflareaccess.com",
         )
@@ -223,7 +229,8 @@ class TestJWTValidatorEmailValidation:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
-        self.validator = JWTValidator(jwks_client=self.jwks_client)
+        config = AuthenticationConfig()
+        self.validator = JWTValidator(jwks_client=self.jwks_client, config=config)
 
     @patch("jwt.get_unverified_header")
     @patch("jwt.algorithms.RSAAlgorithm.from_jwk")
@@ -271,57 +278,60 @@ class TestJWTValidatorEmailWhitelist:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
-        self.validator = JWTValidator(jwks_client=self.jwks_client)
+        config = AuthenticationConfig()
+        self.validator = JWTValidator(jwks_client=self.jwks_client, config=config)
 
-    def test_is_email_allowed_exact_match(self):
+    def testis_email_allowed_exact_match(self):
         """Test exact email match in whitelist."""
         email_whitelist = ["admin@example.com", "user@company.org"]
 
-        assert self.validator._is_email_allowed("admin@example.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("user@company.org", email_whitelist) is True
-        assert self.validator._is_email_allowed("other@example.com", email_whitelist) is False
+        assert self.validator.is_email_allowed("admin@example.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("user@company.org", email_whitelist) is True
+        assert self.validator.is_email_allowed("other@example.com", email_whitelist) is False
 
-    def test_is_email_allowed_case_insensitive(self):
+    def testis_email_allowed_case_insensitive(self):
         """Test case insensitive email matching."""
         email_whitelist = ["Admin@Example.COM"]
 
-        assert self.validator._is_email_allowed("admin@example.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("ADMIN@EXAMPLE.COM", email_whitelist) is True
+        assert self.validator.is_email_allowed("admin@example.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("ADMIN@EXAMPLE.COM", email_whitelist) is True
 
-    def test_is_email_allowed_domain_match(self):
+    def testis_email_allowed_domain_match(self):
         """Test domain matching in whitelist."""
         email_whitelist = ["@example.com", "@company.org"]
 
-        assert self.validator._is_email_allowed("user@example.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("admin@company.org", email_whitelist) is True
-        assert self.validator._is_email_allowed("user@other.com", email_whitelist) is False
+        assert self.validator.is_email_allowed("user@example.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("admin@company.org", email_whitelist) is True
+        assert self.validator.is_email_allowed("user@other.com", email_whitelist) is False
 
-    def test_is_email_allowed_domain_case_insensitive(self):
+    def testis_email_allowed_domain_case_insensitive(self):
         """Test case insensitive domain matching."""
         email_whitelist = ["@Example.COM"]
 
-        assert self.validator._is_email_allowed("user@example.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("user@EXAMPLE.COM", email_whitelist) is True
+        assert self.validator.is_email_allowed("user@example.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("user@EXAMPLE.COM", email_whitelist) is True
 
-    def test_is_email_allowed_mixed_whitelist(self):
+    def testis_email_allowed_mixed_whitelist(self):
         """Test whitelist with both exact emails and domains."""
         email_whitelist = ["specific@test.com", "@example.com"]
 
-        assert self.validator._is_email_allowed("specific@test.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("anyone@example.com", email_whitelist) is True
-        assert self.validator._is_email_allowed("other@test.com", email_whitelist) is False
+        assert self.validator.is_email_allowed("specific@test.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("anyone@example.com", email_whitelist) is True
+        assert self.validator.is_email_allowed("other@test.com", email_whitelist) is False
 
-    def test_is_email_allowed_empty_whitelist(self):
+    def testis_email_allowed_empty_whitelist(self):
         """Test behavior with empty whitelist."""
         email_whitelist = []
 
-        assert self.validator._is_email_allowed("user@example.com", email_whitelist) is False
+        assert self.validator.is_email_allowed("user@example.com", email_whitelist) is False
 
     @patch("jwt.get_unverified_header")
     @patch("jwt.algorithms.RSAAlgorithm.from_jwk")
     @patch("jwt.decode")
     def test_validate_token_email_not_in_whitelist(self, mock_decode, mock_from_jwk, mock_get_header):
         """Test validation when email is not in whitelist."""
+        from fastapi import HTTPException
+        
         mock_get_header.return_value = {"alg": "RS256", "kid": "test_key"}
         self.jwks_client.get_key_by_kid.return_value = {"kty": "RSA"}
         mock_from_jwk.return_value = "mock_public_key"
@@ -329,8 +339,10 @@ class TestJWTValidatorEmailWhitelist:
 
         email_whitelist = ["allowed@example.com", "@company.org"]
 
-        with pytest.raises(JWTValidationError, match="Email 'blocked@example.com' not authorized"):
+        with pytest.raises(HTTPException) as exc_info:
             self.validator.validate_token("header.payload.signature", email_whitelist)
+            
+        assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
 
 class TestJWTValidatorRoleDetermination:
@@ -339,7 +351,8 @@ class TestJWTValidatorRoleDetermination:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
-        self.validator = JWTValidator(jwks_client=self.jwks_client)
+        config = AuthenticationConfig()
+        self.validator = JWTValidator(jwks_client=self.jwks_client, config=config)
 
     def test_determine_user_role_admin_in_email(self):
         """Test admin role determination from email address."""
@@ -404,7 +417,8 @@ class TestJWTValidatorTokenFormat:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
-        self.validator = JWTValidator(jwks_client=self.jwks_client)
+        config = AuthenticationConfig()
+        self.validator = JWTValidator(jwks_client=self.jwks_client, config=config)
 
     @patch("jwt.get_unverified_header")
     def test_validate_token_format_valid(self, mock_get_header):
@@ -440,8 +454,10 @@ class TestJWTValidatorIntegration:
     def setup_method(self):
         """Set up test fixtures."""
         self.jwks_client = Mock(spec=JWKSClient)
+        config = AuthenticationConfig()
         self.validator = JWTValidator(
             jwks_client=self.jwks_client,
+            config=config,
             audience="https://app.example.com",
             issuer="https://example.cloudflareaccess.com",
         )
@@ -518,10 +534,14 @@ class TestJWTValidatorIntegration:
     @patch("jwt.decode")
     def test_validate_token_unexpected_error(self, mock_decode, mock_from_jwk, mock_get_header):
         """Test unexpected error handling during validation."""
+        from fastapi import HTTPException
+        
         mock_get_header.return_value = {"alg": "RS256", "kid": "test_key"}
         self.jwks_client.get_key_by_kid.return_value = {"kty": "RSA"}
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.side_effect = RuntimeError("Unexpected error")
 
-        with pytest.raises(JWTValidationError, match="Token validation failed"):
+        with pytest.raises(HTTPException) as exc_info:
             self.validator.validate_token("header.payload.signature")
+            
+        assert exc_info.value.status_code == 401
