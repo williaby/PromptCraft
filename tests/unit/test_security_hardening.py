@@ -1227,8 +1227,8 @@ class TestMainErrorHandling:
             data = response.json()
             # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
             expected_detail = {
-                "error": "Configuration validation failed", 
-                "details": "Contact system administrator"
+                "error": "Configuration validation failed",
+                "details": "Contact system administrator",
             }
             expected_error = str(expected_detail)
             assert data["error"] == expected_error
@@ -1257,8 +1257,8 @@ class TestMainErrorHandling:
             data = response.json()
             # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
             expected_detail = {
-                "error": "Configuration validation failed", 
-                "details": "Contact system administrator"
+                "error": "Configuration validation failed",
+                "details": "Contact system administrator",
             }
             expected_error = str(expected_detail)
             assert data["error"] == expected_error

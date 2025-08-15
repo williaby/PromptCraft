@@ -265,7 +265,7 @@ class RoleManager(DatabaseService):
                 perm_result = await session.execute(
                     select(Permission.id).where(
                         Permission.name == permission_name,
-                        Permission.is_active == True,
+                        Permission.is_active,
                     ),
                 )
                 permission_id = perm_result.scalar_one_or_none()
@@ -320,7 +320,7 @@ class RoleManager(DatabaseService):
                 perm_result = await session.execute(
                     select(Permission.id).where(
                         Permission.name == permission_name,
-                        Permission.is_active == True,
+                        Permission.is_active,
                     ),
                 )
                 permission_id = perm_result.scalar_one_or_none()

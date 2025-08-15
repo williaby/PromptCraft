@@ -389,8 +389,8 @@ class TestHealthCheckEndpoints:
         data = response.json()
         # In production mode, error message should contain minimal detail
         expected_detail = {
-            "error": "Configuration validation failed", 
-            "details": "Contact system administrator"
+            "error": "Configuration validation failed",
+            "details": "Contact system administrator",
         }
         expected_error = str(expected_detail)
         assert data["error"] == expected_error

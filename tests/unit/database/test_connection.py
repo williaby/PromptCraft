@@ -9,7 +9,6 @@ from src.database.connection import (
     DatabaseConnectionError,
     DatabaseError,
     DatabaseManager,
-    get_database_manager,
     get_database_manager_async,
     get_db_session,
 )

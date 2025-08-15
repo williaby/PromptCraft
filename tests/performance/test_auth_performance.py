@@ -676,7 +676,7 @@ class TestRoleBasedPermissionPerformance:
 
             return role_permissions.get(role_name, set())
 
-        def fast_assign_user_role(user_email: str, role_name: str, assigned_by: str = None):
+        def fast_assign_user_role(user_email: str, role_name: str, assigned_by: str | None = None):
             # Simulate 5-15ms user role assignment with database update
             time.sleep(0.005 + (hash(user_email + role_name) % 10) * 0.001)
             return True
@@ -1041,7 +1041,7 @@ class TestRoleBasedPermissionPerformance:
 
         # Simulate heavy role operations
         role_managers = []
-        for i in range(10):
+        for _i in range(10):
             # Create multiple role manager instances to test memory usage
             manager = MagicMock(spec=RoleManager)
 

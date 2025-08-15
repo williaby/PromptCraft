@@ -585,7 +585,7 @@ class TestDatabaseIntegration:
     async def mock_engine_and_session(self) -> AsyncGenerator[tuple[AsyncMock, AsyncMock], None]:
         """Mock database engine and session for testing."""
         from contextlib import asynccontextmanager
-        
+
         with (
             patch("src.database.connection.create_async_engine") as mock_engine_create,
             patch("src.database.connection.async_sessionmaker") as mock_session_maker,
@@ -594,15 +594,15 @@ class TestDatabaseIntegration:
             mock_session = AsyncMock()
 
             mock_engine_create.return_value = mock_engine
-            
+
             # Configure mock_session to support async context manager protocol
             mock_session.__aenter__ = AsyncMock(return_value=mock_session)
             mock_session.__aexit__ = AsyncMock(return_value=None)
-            
+
             # Create a regular function (not AsyncMock) for the session factory
             def mock_session_factory():
                 return mock_session
-            
+
             mock_session_maker.return_value = mock_session_factory
 
             # Mock successful connection test - create proper async context manager
@@ -610,7 +610,7 @@ class TestDatabaseIntegration:
             mock_result = MagicMock()
             mock_result.fetchone.return_value = [1]
             mock_conn.execute.return_value = mock_result
-            
+
             # Create async context manager for begin()
             @asynccontextmanager
             async def mock_begin_context():
@@ -618,20 +618,20 @@ class TestDatabaseIntegration:
                     yield mock_conn
                 finally:
                     pass
-            
+
             # Create a mock that tracks calls but returns the context manager
             class MockBeginMethod:
                 def __init__(self, context_func):
                     self.context_func = context_func
                     self.call_count = 0
-                
+
                 def __call__(self):
                     self.call_count += 1
                     return self.context_func()
-                
+
                 def assert_called(self):
                     assert self.call_count > 0, "Mock was not called"
-            
+
             mock_engine.begin = MockBeginMethod(mock_begin_context)
 
             # Mock pool for health checks

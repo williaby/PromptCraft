@@ -153,7 +153,7 @@ class TestAuthenticationNegativePaths:
     def test_unauthorized_email_attempts(self, jwt_validator, mock_jwks_client):
         """Test blocking of unauthorized email addresses."""
         from fastapi import HTTPException
-        
+
         mock_jwks_client.get_key_by_kid.return_value = {
             "kty": "RSA",
             "kid": "test-kid",

@@ -75,7 +75,7 @@ def mock_session_factory():
     mock_context = AsyncMock()
     mock_context.__aenter__ = AsyncMock(return_value=mock_session)
     mock_context.__aexit__ = AsyncMock(return_value=None)
-    
+
     factory.return_value = mock_context
 
     return factory

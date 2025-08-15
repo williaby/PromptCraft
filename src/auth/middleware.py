@@ -140,13 +140,13 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             # Extract and validate JWT token
             jwt_start = time.time()
             authenticated_user = await self._authenticate_request(request)
-            jwt_time = (time.time() - jwt_start) * 1000  # Convert to milliseconds
+            (time.time() - jwt_start) * 1000  # Convert to milliseconds
 
             # Database session tracking (if enabled)
             db_start = time.time()
             if self.database_enabled:
                 await self._update_user_session(authenticated_user, request)
-            db_time = (time.time() - db_start) * 1000  # Convert to milliseconds
+            (time.time() - db_start) * 1000  # Convert to milliseconds
 
             # Inject user context into request state
             request.state.authenticated_user = authenticated_user
@@ -169,14 +169,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Database event logging (if enabled)
             if self.database_enabled:
-                total_time = (time.time() - start_time) * 1000
+                (time.time() - start_time) * 1000
                 user_email = None
                 service_token_name = None
                 if isinstance(authenticated_user, ServiceTokenUser):
                     service_token_name = authenticated_user.token_name
                 else:
                     user_email = authenticated_user.email
-                    
+
                 await self._log_authentication_event(
                     request,
                     user_email=user_email,

@@ -5,7 +5,6 @@ from unittest.mock import Mock, patch
 
 import jwt
 import pytest
-
 from fastapi import HTTPException
 
 from src.auth.jwks_client import JWKSClient

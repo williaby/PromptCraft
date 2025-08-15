@@ -12,19 +12,18 @@ This module provides extensive test coverage for JWTValidator class focusing on:
 Aims to achieve 80%+ coverage for auth/jwt_validator.py
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidAudienceError,
     InvalidIssuerError,
     InvalidSignatureError,
 )
-
-from fastapi import HTTPException
 
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
@@ -78,9 +77,9 @@ class TestJWTValidatorTokenDecoding:
             "aud": "https://test-app.com",
             "sub": "user123",
             "email": "test@example.com",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
-            "nbf": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
+            "nbf": int(datetime.now(UTC).timestamp()),
         }
 
     @pytest.fixture
@@ -219,10 +218,10 @@ class TestJWTValidatorEmailWhitelist:
         client = Mock(spec=JWKSClient)
         client.get_key_by_kid.return_value = {
             "kty": "RSA",
-            "use": "sig", 
+            "use": "sig",
             "kid": "test-key-id",
-            "n": "test-modulus", 
-            "e": "AQAB"
+            "n": "test-modulus",
+            "e": "AQAB",
         }
         return client
 
@@ -345,7 +344,7 @@ class TestJWTValidatorEmailWhitelist:
     def test_validate_token_email_whitelist_denied(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test validation failure with non-whitelisted email."""
         from fastapi import HTTPException
-        
+
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "denied@blocked.com", "sub": "user789"}
 
@@ -353,7 +352,7 @@ class TestJWTValidatorEmailWhitelist:
 
         with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token, email_whitelist=whitelist)
-        
+
         assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
 
@@ -477,10 +476,10 @@ class TestJWTValidatorEdgeCases:
         client = Mock(spec=JWKSClient)
         client.get_key_by_kid.return_value = {
             "kty": "RSA",
-            "use": "sig", 
+            "use": "sig",
             "kid": "test-key-id",
-            "n": "test-modulus", 
-            "e": "AQAB"
+            "n": "test-modulus",
+            "e": "AQAB",
         }
         return client
 
@@ -521,13 +520,13 @@ class TestJWTValidatorEdgeCases:
     def test_validate_token_unexpected_error(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test handling of unexpected errors during validation."""
         from fastapi import HTTPException
-        
+
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.side_effect = Exception("Unexpected error")
 
         with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
-            
+
         assert exc_info.value.status_code == 401
 
     @patch("src.auth.jwt_validator.jwt.decode")
@@ -543,13 +542,13 @@ class TestJWTValidatorEdgeCases:
     def test_validate_token_jwks_client_error(self, mock_decode, validator, valid_jwt_token):
         """Test handling of JWKS client errors."""
         from fastapi import HTTPException
-        
+
         validator.jwks_client.get_key_by_kid.side_effect = Exception("JWKS error")
         mock_decode.side_effect = jwt.exceptions.InvalidTokenError("Key retrieval failed")
 
         with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
-            
+
         assert exc_info.value.status_code == 401
 
     def test_validator_configuration_edge_cases(self):

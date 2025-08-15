@@ -8,7 +8,7 @@ This module defines database models for:
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, func
@@ -102,11 +102,11 @@ class ServiceToken(Base):
         if self.expires_at is None:
             return False
         # Ensure both datetimes are timezone-aware and in UTC
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         expires_at = self.expires_at
         if expires_at.tzinfo is None:
             # Assume naive expires_at is UTC
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            expires_at = expires_at.replace(tzinfo=UTC)
         return now_utc > expires_at
 
     @property
@@ -185,16 +185,16 @@ class UserSession(Base):
         comment="Additional user metadata and context",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize UserSession with proper defaults."""
         # Set defaults for fields that should have them
-        if 'session_count' not in kwargs:
-            kwargs['session_count'] = 1
-        if 'preferences' not in kwargs:
-            kwargs['preferences'] = {}
-        if 'user_metadata' not in kwargs:
-            kwargs['user_metadata'] = {}
-        
+        if "session_count" not in kwargs:
+            kwargs["session_count"] = 1
+        if "preferences" not in kwargs:
+            kwargs["preferences"] = {}
+        if "user_metadata" not in kwargs:
+            kwargs["user_metadata"] = {}
+
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
@@ -292,12 +292,12 @@ class AuthenticationEvent(Base):
         comment="Event timestamp",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize AuthenticationEvent with proper defaults."""
         # Set defaults for fields that should have them
-        if 'success' not in kwargs:
-            kwargs['success'] = True
-        
+        if "success" not in kwargs:
+            kwargs["success"] = True
+
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:

@@ -14,7 +14,6 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from src.config.constants import HEALTH_CHECK_ERROR_LIMIT, HEALTH_CHECK_SUGGESTION_LIMIT
 from src.config.health import (
     ConfigurationStatusModel,
     _count_configured_secrets,
@@ -551,8 +550,8 @@ class TestHealthCheckEndpoints:
         data = response.json()
         # In production mode (debug=False), the error message should contain minimal detail
         expected_detail = {
-            "error": "Configuration validation failed", 
-            "details": "Contact system administrator"
+            "error": "Configuration validation failed",
+            "details": "Contact system administrator",
         }
         expected_error = str(expected_detail)
         assert data["error"] == expected_error
@@ -565,7 +564,7 @@ class TestHealthCheckEndpoints:
         # Second call in except block for debug check should succeed with debug=True
         field_errors = [
             "Error 1",
-            "Error 2", 
+            "Error 2",
             "Error 3",
             "Error 4",
             "Error 5",
@@ -574,7 +573,7 @@ class TestHealthCheckEndpoints:
         suggestions = [
             "Suggestion 1",
             "Suggestion 2",
-            "Suggestion 3", 
+            "Suggestion 3",
             "Suggestion 4",
         ]
         validation_error = ConfigurationValidationError(

@@ -588,13 +588,13 @@ def downgrade() -> None:
 
 
 # Apply seed data after table creation
-def upgrade():
+def upgrade() -> None:
     """Main upgrade function that applies schema and seed data."""
     upgrade_schema()
     upgrade_seed_data()
 
 
-def upgrade_schema():
+def upgrade_schema() -> None:
     """Apply only the schema changes without seed data."""
     # Move the existing upgrade() function content here
 

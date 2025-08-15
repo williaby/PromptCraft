@@ -9,7 +9,7 @@ This module provides extensive test coverage for the RoleManager class including
 - Database integration testing
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -34,13 +34,13 @@ def role_manager(mock_session):
     with patch("src.database.base_service.get_database_manager") as mock_get_db:
         # Mock the database manager
         mock_db_manager = MagicMock()
-        
+
         # Set up the session context manager to return our mock_session
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=mock_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
         mock_db_manager.get_session.return_value = async_context_manager
-        
+
         mock_get_db.return_value = mock_db_manager
         return RoleManager()
 
@@ -74,8 +74,8 @@ def sample_role_data():
         "name": "test_role",
         "description": "Test role description",
         "parent_role_id": None,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC),
         "is_active": True,
     }
 
@@ -89,7 +89,7 @@ def sample_permission_data():
         "resource": "test",
         "action": "permission",
         "description": "Test permission",
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
         "is_active": True,
     }
 
@@ -144,13 +144,13 @@ class TestRoleCreation:
         mock_role.name = "child_role"
         mock_role.description = "Child role"
         mock_role.parent_role_id = 2
-        mock_role.created_at = datetime.now(timezone.utc)
+        mock_role.created_at = datetime.now(UTC)
         mock_role.is_active = True
 
         # Mock refresh to populate the role attributes
         async def mock_refresh(role):
             for attr, value in vars(mock_role).items():
-                if not attr.startswith('_'):
+                if not attr.startswith("_"):
                     setattr(role, attr, value)
 
         mock_session.refresh.side_effect = mock_refresh
@@ -186,9 +186,9 @@ class TestRoleCreation:
         role_manager._db_manager.get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
         role_manager._db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        # Mock integrity error for duplicate name 
+        # Mock integrity error for duplicate name
         mock_session.commit.side_effect = IntegrityError("unique constraint", None, None)
-        
+
         with pytest.raises(RoleManagerError, match="Failed to create role: Database operation failed"):
             await role_manager.create_role(name="test_role")
 
@@ -249,8 +249,8 @@ class TestRoleRetrieval:
         mock_role1.name = "role1"
         mock_role1.description = "Role 1"
         mock_role1.parent_role_id = None
-        mock_role1.created_at = datetime.now(timezone.utc)
-        mock_role1.updated_at = datetime.now(timezone.utc)
+        mock_role1.created_at = datetime.now(UTC)
+        mock_role1.updated_at = datetime.now(UTC)
         mock_role1.is_active = True
 
         mock_role2 = MagicMock()
@@ -258,8 +258,8 @@ class TestRoleRetrieval:
         mock_role2.name = "role2"
         mock_role2.description = "Role 2"
         mock_role2.parent_role_id = None
-        mock_role2.created_at = datetime.now(timezone.utc)
-        mock_role2.updated_at = datetime.now(timezone.utc)
+        mock_role2.created_at = datetime.now(UTC)
+        mock_role2.updated_at = datetime.now(UTC)
         mock_role2.is_active = True
 
         mock_result = MagicMock()
@@ -340,7 +340,7 @@ class TestPermissionManagement:
         mock_insert = MagicMock()
         mock_insert.values.return_value = MagicMock()
         mock_insert.values.return_value.on_conflict_do_nothing.return_value = mock_insert_result
-        
+
         # Mock session.execute for three calls: role lookup, permission lookup, insert statement
         mock_session.execute.side_effect = [mock_role_result, mock_perm_result, mock_insert_result]
 
@@ -498,13 +498,13 @@ class TestUserRoleAssignment:
         mock_row1.role_id = 1
         mock_row1.role_name = "admin"
         mock_row1.role_description = "Administrator role"
-        mock_row1.assigned_at = datetime.now(timezone.utc)
+        mock_row1.assigned_at = datetime.now(UTC)
 
         mock_row2 = MagicMock()
         mock_row2.role_id = 2
         mock_row2.role_name = "user"
         mock_row2.role_description = "Regular user role"
-        mock_row2.assigned_at = datetime.now(timezone.utc)
+        mock_row2.assigned_at = datetime.now(UTC)
 
         mock_result = MagicMock()
         mock_result.fetchall.return_value = [mock_row1, mock_row2]
@@ -527,7 +527,7 @@ class TestUserRoleAssignment:
         mock_row.role_id = 1
         mock_row.role_name = "admin"
         mock_row.role_description = "Administrator role"
-        mock_row.assigned_at = datetime.now(timezone.utc)
+        mock_row.assigned_at = datetime.now(UTC)
 
         mock_roles_result = MagicMock()
         mock_roles_result.fetchall.return_value = [mock_row]
@@ -634,32 +634,31 @@ class TestRoleDeletion:
         # Create separate result objects for each query type
         role_lookup_result = MagicMock()
         role_lookup_result.scalar_one_or_none = MagicMock(return_value=mock_role)
-        
+
         child_roles_result = MagicMock()
         child_roles_result.scalars = MagicMock()
         child_roles_result.scalars.return_value.all = MagicMock(return_value=[])
-        
+
         user_assignments_result = MagicMock()
         user_assignments_result.scalars = MagicMock()
         user_assignments_result.scalars.return_value.all = MagicMock(return_value=[])
-        
+
         update_result = MagicMock()
-        
+
         # Set up return_value for AsyncMock to prevent coroutine wrapping
         mock_session.execute.return_value = role_lookup_result
-        
+
         # Set up side_effect for multiple calls with proper AsyncMock handling
         async def mock_execute_side_effect(*args, **kwargs):
             # Return values without coroutine wrapping
             if mock_session.execute.call_count == 1:
                 return role_lookup_result
-            elif mock_session.execute.call_count == 2:
+            if mock_session.execute.call_count == 2:
                 return child_roles_result
-            elif mock_session.execute.call_count == 3:
+            if mock_session.execute.call_count == 3:
                 return user_assignments_result
-            else:
-                return update_result
-                
+            return update_result
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         result = await role_manager.delete_role("test_role", force=False)
@@ -686,9 +685,8 @@ class TestRoleDeletion:
         async def mock_execute_side_effect(*args, **kwargs):
             if mock_session.execute.call_count == 1:
                 return role_lookup_result
-            else:
-                return child_roles_result
-                
+            return child_roles_result
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         with pytest.raises(RoleManagerError, match="has child roles"):
@@ -717,11 +715,10 @@ class TestRoleDeletion:
         async def mock_execute_side_effect(*args, **kwargs):
             if mock_session.execute.call_count == 1:
                 return role_lookup_result
-            elif mock_session.execute.call_count == 2:
+            if mock_session.execute.call_count == 2:
                 return child_roles_result
-            else:
-                return user_assignments_result
-                
+            return user_assignments_result
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         with pytest.raises(RoleManagerError, match="is assigned to 2 users"):
@@ -742,10 +739,9 @@ class TestRoleDeletion:
         async def mock_execute_side_effect(*args, **kwargs):
             if mock_session.execute.call_count == 1:
                 return role_lookup_result
-            else:
-                # All other execute calls (user assignment deletion, child role updates, soft delete)
-                return MagicMock()
-                
+            # All other execute calls (user assignment deletion, child role updates, soft delete)
+            return MagicMock()
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         result = await role_manager.delete_role("force_delete_role", force=True)
@@ -762,7 +758,7 @@ class TestRoleDeletion:
         # Set up side_effect
         async def mock_execute_side_effect(*args, **kwargs):
             return role_lookup_result
-                
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         with pytest.raises(RoleNotFoundError, match="Role 'nonexistent' not found"):
@@ -795,13 +791,13 @@ class TestErrorHandling:
         mock_role.parent_role_id = None
         mock_role.created_at = None
         mock_role.is_active = True
-        
+
         mock_session.add = MagicMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
-        
+
         result = await role_manager.create_role("")
-        
+
         # Should successfully create role with empty name (no validation in current implementation)
         assert result["name"] == ""
 
@@ -815,13 +811,13 @@ class TestErrorHandling:
         mock_role.parent_role_id = None
         mock_role.created_at = None
         mock_role.is_active = True
-        
+
         mock_session.add = MagicMock()
         mock_session.commit = AsyncMock()
         mock_session.refresh = AsyncMock()
-        
+
         result = await role_manager.create_role(None)
-        
+
         # Should successfully create role with None name (no validation in current implementation)
         assert result["name"] is None
 
@@ -856,18 +852,18 @@ class TestIntegrationScenarios:
         # Mock successful workflow: create role, assign permission, assign to user
         mock_role_result = MagicMock()
         mock_role_result.scalar_one_or_none.return_value = 1
-        
+
         mock_perm_result = MagicMock()
         mock_perm_result.scalar_one_or_none.return_value = 1
-        
+
         mock_user_result = MagicMock()
         mock_user_result.scalar_one_or_none.return_value = "user@example.com"
-        
+
         # Mock insert statement with on_conflict_do_nothing method
         mock_insert = MagicMock()
         mock_insert.values.return_value = mock_insert
         mock_insert.on_conflict_do_nothing.return_value = mock_insert
-        
+
         mock_session.execute.side_effect = [
             # Create role - no parent lookup
             # Assign permission
@@ -881,7 +877,7 @@ class TestIntegrationScenarios:
         ]
 
         # Mock the insert function to return our mock with on_conflict_do_nothing
-        with patch('src.auth.role_manager.insert', return_value=mock_insert):
+        with patch("src.auth.role_manager.insert", return_value=mock_insert):
             # Create role
             role_result = await role_manager.create_role("workflow_role", "Test workflow role")
 
@@ -938,11 +934,11 @@ class TestRegressionIssues:
         """Test that role names are case-sensitive."""
         # Keep track of which role name is being queried
         self.current_role_name = None
-        
+
         def mock_execute(query):
             # Extract role name from the query parameters or call context
-            query_str = str(query)
-            
+            str(query)
+
             # For TestRole (exact case match)
             if self.current_role_name == "TestRole":
                 result = MagicMock()
@@ -956,7 +952,7 @@ class TestRegressionIssues:
                 mock_role.is_active = True
                 result.scalar_one_or_none.return_value = mock_role
                 return result
-            
+
             # For testrole (different case), return None
             result = MagicMock()
             result.scalar_one_or_none.return_value = None
@@ -967,7 +963,7 @@ class TestRegressionIssues:
         # Test case sensitivity - these should be treated as different roles
         self.current_role_name = "TestRole"
         role1 = await role_manager.get_role("TestRole")
-        
+
         self.current_role_name = "testrole"
         role2 = await role_manager.get_role("testrole")
 

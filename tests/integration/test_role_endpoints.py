@@ -8,14 +8,14 @@ FastAPI endpoints, testing the complete API layer including:
 - Error response formatting
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.auth.middleware import require_authentication
-from src.auth.permissions import user_has_permission, Permissions, require_permission
+from src.auth.permissions import Permissions, require_permission
 from src.auth.role_manager import (
     PermissionNotFoundError,
     RoleManagerError,
@@ -31,9 +31,9 @@ def client(mock_authenticated_user):
     # Override the dependency to return our mock user
     def mock_require_authentication():
         return mock_authenticated_user
-    
+
     app.dependency_overrides[require_authentication] = mock_require_authentication
-    
+
     try:
         yield TestClient(app)
     finally:
@@ -55,13 +55,12 @@ def mock_service_token():
     """Mock service token with admin permissions."""
     from src.auth.middleware import ServiceTokenUser
     # Create a real ServiceTokenUser instance with admin permissions
-    token = ServiceTokenUser(
+    return ServiceTokenUser(
         token_id="test-token-id",
-        token_name="admin-service-token", 
+        token_name="admin-service-token",
         metadata={"permissions": ["admin"]},  # admin permission grants all access
-        usage_count=1
+        usage_count=1,
     )
-    return token
 
 
 @pytest.fixture
@@ -73,8 +72,8 @@ def sample_role_data():
         "description": "Test role description",
         "parent_role_id": None,
         "parent_role_name": None,
-        "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
+        "updated_at": datetime.now(UTC),
         "is_active": True,
     }
 
@@ -86,7 +85,7 @@ def sample_user_role_data():
         "role_id": 1,
         "role_name": "test_role",
         "role_description": "Test role description",
-        "assigned_at": datetime.now(timezone.utc),
+        "assigned_at": datetime.now(UTC),
     }
 
 
@@ -729,32 +728,32 @@ class TestServiceTokenAuthentication:
     ):
         """Test role creation using service token authentication."""
         # The service token already has admin permissions from the fixture
-        
+
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
-        
+
         # Override the authentication dependency BEFORE creating client
         app.dependency_overrides[require_authentication] = mock_require_authentication
-        
+
         try:
             # Setup mocks
             mock_manager = AsyncMock()
             mock_role_manager_class.return_value = mock_manager
             mock_manager.create_role.return_value = sample_role_data
-    
+
             # Test data
             request_data = {
                 "name": "test_role",
                 "description": "Test role description",
             }
-    
+
             # Create client after setting up authentication override
             client = TestClient(app)
-            
+
             # Make request
             response = client.post("/api/v1/roles/", json=request_data)
-    
+
             # Assert response
             assert response.status_code == 200
             assert response.json()["name"] == "test_role"
@@ -772,32 +771,32 @@ class TestServiceTokenAuthentication:
     ):
         """Test user role assignment using service token authentication."""
         # The service token already has admin permissions from the fixture
-        
+
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
-        
+
         # Override the authentication dependency BEFORE creating client
         app.dependency_overrides[require_authentication] = mock_require_authentication
-        
+
         try:
-            # Setup mocks  
+            # Setup mocks
             mock_manager = AsyncMock()
             mock_role_manager_class.return_value = mock_manager
             mock_manager.assign_user_role.return_value = True
-    
+
             # Test data
             request_data = {
                 "user_email": "user@example.com",
                 "role_name": "test_role",
             }
-    
+
             # Create client after setting up authentication override
             client = TestClient(app)
-            
+
             # Make request
             response = client.post("/api/v1/roles/assignments", json=request_data)
-    
+
             # Assert response
             assert response.status_code == 200
             data = response.json()

@@ -4,7 +4,7 @@ This file tests both AUTH-2 service token validation and AUTH-1 database integra
 features for the AuthenticationMiddleware.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -42,7 +42,7 @@ class TestAuthMiddlewareDatabase:
     def mock_jwt_validator(self):
         """Mock JWT validator."""
         from src.auth.models import AuthenticatedUser, UserRole
-        
+
         validator = MagicMock(spec=JWTValidator)
         authenticated_user = AuthenticatedUser(
             email="test@example.com",
@@ -69,11 +69,11 @@ class TestAuthMiddlewareDatabase:
         """Authentication middleware instance."""
         app = MagicMock()
         return AuthenticationMiddleware(
-            app, 
-            mock_config, 
-            mock_jwt_validator, 
+            app,
+            mock_config,
+            mock_jwt_validator,
             excluded_paths=["/health", "/docs"],
-            database_enabled=True
+            database_enabled=True,
         )
 
     @pytest.mark.asyncio
@@ -181,7 +181,7 @@ class TestAuthMiddlewareDatabase:
         mock_token.is_active = True
         mock_token.is_expired = True  # Token is expired
         mock_token.is_valid = False  # Not valid due to expiration
-        mock_token.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+        mock_token.expires_at = datetime.now(UTC) - timedelta(hours=1)
 
         # Mock query result
         mock_result = MagicMock()
@@ -392,7 +392,7 @@ class TestAuthMiddlewareDatabase:
         mock_token.is_expired = False
         mock_token.is_valid = True
         mock_token.usage_count = 42
-        mock_token.last_used = datetime.now(timezone.utc) - timedelta(hours=2)
+        mock_token.last_used = datetime.now(UTC) - timedelta(hours=2)
 
         # Mock query result
         mock_result = MagicMock()
@@ -410,12 +410,12 @@ class TestAuthMiddlewareDatabase:
             mock_get_db.return_value = mock_async_generator()
 
             # Track time before request (for potential performance testing)
-            _before_request = datetime.now(timezone.utc)
+            _before_request = datetime.now(UTC)
 
             result = await auth_middleware.dispatch(request, call_next)
 
             # Track time after request (for potential performance testing)
-            _after_request = datetime.now(timezone.utc)
+            _after_request = datetime.now(UTC)
 
             # Should proceed successfully
             call_next.assert_called_once_with(request)
@@ -489,7 +489,7 @@ class TestAuthMiddlewareDatabase:
         # Mock database manager and session directly
         mock_manager = MagicMock()
         mock_session = AsyncMock()
-        
+
         # Mock async context manager
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=mock_session)
@@ -550,7 +550,7 @@ class TestAuthMiddlewareDatabase:
         mock_manager = AsyncMock()
         mock_manager.get_session.side_effect = DatabaseError("Database unavailable")
 
-        with patch("src.auth.middleware.get_db") as mock_get_db:
+        with patch("src.auth.middleware.get_db"):
             # Should not raise exception (graceful degradation)
             await middleware._update_user_session(authenticated_user, mock_request)
 
@@ -579,7 +579,7 @@ class TestAuthMiddlewareDatabase:
         mock_manager = AsyncMock()
         mock_manager.get_session.side_effect = Exception("Unexpected error")
 
-        with patch("src.auth.middleware.get_db") as mock_get_db:
+        with patch("src.auth.middleware.get_db"):
             # Should not raise exception (graceful degradation)
             await middleware._update_user_session(authenticated_user, mock_request)
 
@@ -601,14 +601,14 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         with patch("src.auth.middleware.get_db") as mock_get_db:
             # Mock async generator to yield session
             async def mock_async_generator():
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             await middleware._log_authentication_event(
                 request=mock_request,
                 user_email=authenticated_user.email,
@@ -632,14 +632,14 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         with patch("src.auth.middleware.get_db") as mock_get_db:
             # Mock async generator to yield session
             async def mock_async_generator():
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             await middleware._log_authentication_event(
                 request=mock_request,
                 user_email=None,
@@ -670,7 +670,7 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         # Even when database_enabled=False, event logging still happens
         with patch("src.auth.middleware.get_db") as mock_get_db:
             # Mock async generator to yield session
@@ -678,14 +678,14 @@ class TestAuthMiddlewareDatabase:
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             await middleware._log_authentication_event(
                 request=mock_request,
                 user_email=authenticated_user.email,
                 event_type="general",
                 success=True,
             )
-            
+
             # The method should still try to get database for logging since
             # database_enabled only affects user session tracking, not event logging
             mock_get_db.assert_called_once()
@@ -717,7 +717,7 @@ class TestAuthMiddlewareDatabase:
         mock_manager = AsyncMock()
         mock_manager.get_session.side_effect = DatabaseError("Database unavailable")
 
-        with patch("src.auth.middleware.get_db") as mock_get_db:
+        with patch("src.auth.middleware.get_db"):
             # Should not raise exception (graceful degradation)
             await middleware._log_authentication_event(
                 request=mock_request,
@@ -818,7 +818,7 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         # Mock database manager for session updates
         mock_manager = MagicMock()
         async_context_manager = AsyncMock()
@@ -835,7 +835,7 @@ class TestAuthMiddlewareDatabase:
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 200
@@ -869,14 +869,14 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         with patch("src.auth.middleware.get_db") as mock_get_db:
             # Mock async generator to yield session for event logging
             async def mock_async_generator():
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 401
@@ -900,7 +900,7 @@ class TestAuthMiddlewareDatabase:
 
         # Mock session for async generator
         mock_session = AsyncMock()
-        
+
         # Mock database manager for session updates
         mock_manager = MagicMock()
         async_context_manager = AsyncMock()
@@ -923,7 +923,7 @@ class TestAuthMiddlewareDatabase:
                 yield mock_session
 
             mock_get_db.return_value = mock_async_generator()
-            
+
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 200

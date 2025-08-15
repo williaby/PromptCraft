@@ -331,7 +331,7 @@ class TestJWTValidatorEmailWhitelist:
     def test_validate_token_email_not_in_whitelist(self, mock_decode, mock_from_jwk, mock_get_header):
         """Test validation when email is not in whitelist."""
         from fastapi import HTTPException
-        
+
         mock_get_header.return_value = {"alg": "RS256", "kid": "test_key"}
         self.jwks_client.get_key_by_kid.return_value = {"kty": "RSA"}
         mock_from_jwk.return_value = "mock_public_key"
@@ -341,7 +341,7 @@ class TestJWTValidatorEmailWhitelist:
 
         with pytest.raises(HTTPException) as exc_info:
             self.validator.validate_token("header.payload.signature", email_whitelist)
-            
+
         assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
 
@@ -535,7 +535,7 @@ class TestJWTValidatorIntegration:
     def test_validate_token_unexpected_error(self, mock_decode, mock_from_jwk, mock_get_header):
         """Test unexpected error handling during validation."""
         from fastapi import HTTPException
-        
+
         mock_get_header.return_value = {"alg": "RS256", "kid": "test_key"}
         self.jwks_client.get_key_by_kid.return_value = {"kty": "RSA"}
         mock_from_jwk.return_value = "mock_public_key"
@@ -543,5 +543,5 @@ class TestJWTValidatorIntegration:
 
         with pytest.raises(HTTPException) as exc_info:
             self.validator.validate_token("header.payload.signature")
-            
+
         assert exc_info.value.status_code == 401
