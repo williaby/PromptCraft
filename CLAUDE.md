@@ -1,12 +1,12 @@
 # PromptCraft-Hybrid Development Guide
 
-> This project extends the global CLAUDE.md standards. Only project-specific configurations and deviations are 
+> This project extends the global CLAUDE.md standards. Only project-specific configurations and deviations are
 > documented below.
 
 ## Project Overview
 
-PromptCraft-Hybrid is a Zen-powered AI workbench that transforms queries into accurate, context-aware outputs 
-through intelligent orchestration and multi-agent collaboration. It implements a hybrid architecture with on-premise 
+PromptCraft-Hybrid is a Zen-powered AI workbench that transforms queries into accurate, context-aware outputs
+through intelligent orchestration and multi-agent collaboration. It implements a hybrid architecture with on-premise
 compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 
 **Key Architecture Concepts:**
@@ -15,7 +15,7 @@ compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 - **Four Progressive Journeys**: From simple prompt enhancement to full multi-agent automation
 - **HyDE Query Enhancement**: Three-tier query analysis system for improved retrieval accuracy
 - **Agent-First Design**: Specialized AI agents with dedicated knowledge bases
-- **C.R.E.A.T.E. Framework**: Core prompt engineering methodology (Context, Request, Examples, Augmentations, 
+- **C.R.E.A.T.E. Framework**: Core prompt engineering methodology (Context, Request, Examples, Augmentations,
   Tone & Format, Evaluation)
 
 **Tech Stack:**
@@ -30,7 +30,8 @@ compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 
 ## Project-Specific Development Commands
 
-> This project inherits all universal development commands from the global CLAUDE.md. Commands below are PromptCraft-specific or override global behavior.
+> This project inherits all universal development commands from the global CLAUDE.md. Commands below are
+> PromptCraft-specific or override global behavior.
 
 ### Setup and Installation
 
@@ -104,16 +105,19 @@ python scripts/claude-context7-integration.py get-context7-call fastapi "getting
 > All development follows universal quality and security standards. PromptCraft-specific requirements below.
 
 ### Performance Requirements
+
 - **API Response Time**: p95 < 2s for Claude.md generation
 - **Memory Usage**: < 2GB per container
 - **Test Coverage**: Minimum 80% for all Python code
 
 ### Security Implementation
+
 - **Secrets Management**: Use local encrypted .env files (following ledgerbase encryption.py pattern)
 - **Assured-OSS Service Account**: Place service account JSON at `.gcp/service-account.json`
 - **Key Validation**: Environment MUST validate both GPG and SSH keys are available
 
 ### Architecture Requirements
+
 - **Zen MCP Integration**: Use Zen MCP Server for ALL orchestration
 - **Heimdall Integration**: Use Heimdall MCP Server for analysis
 - **External Dependencies**: External Qdrant vector database at 192.168.1.16:6333
@@ -148,18 +152,21 @@ The system implements four levels of AI assistance:
 
 ## Naming Conventions (MANDATORY COMPLIANCE)
 
-**Core Components**
+### Core Components
+
 - **Agent ID**: snake_case (e.g., `security_agent`, `create_agent`)
 - **Agent Classes**: PascalCase + "Agent" suffix (e.g., `SecurityAgent`)
 - **Knowledge Folders**: snake_case matching agent_id (e.g., `/knowledge/security_agent/`)
 - **Knowledge Files**: kebab-case.md (e.g., `auth-best-practices.md`)
 
-**Code & Files**
+### Code & Files
+
 - **Python Files**: snake_case.py (e.g., `src/agents/security_agent.py`)
 - **Python Classes**: PascalCase (e.g., `class BaseAgent:`)
 - **Python Functions**: snake_case() (e.g., `def get_relevant_knowledge():`)
 
-**Git & Development**
+### Git & Development
+
 - **Git Branches**: kebab-case with prefixes (e.g., `feature/add-claude-md-generator`)
 - **PR Titles**: Conventional Commits (e.g., `feat(security): add SQL injection detection`)
 
@@ -204,6 +211,7 @@ purpose: [Single sentence ending with period]
 **Project-specific slash commands for complete development workflow automation:**
 
 ### Core Workflow Commands
+
 ```bash
 /project:workflow-review-cycle phase X issue Y        # Full review with O3/Gemini
 /project:workflow-plan-validation                     # Validate project plans
@@ -211,6 +219,7 @@ purpose: [Single sentence ending with period]
 ```
 
 ### Validation & Quality Commands
+
 ```bash
 /project:validation-precommit                         # Full pre-commit validation
 /project:validation-frontmatter knowledge/agent/file.md  # YAML validation
@@ -218,6 +227,7 @@ purpose: [Single sentence ending with period]
 ```
 
 ### Creation & Migration Commands
+
 ```bash
 /project:creation-knowledge-file security authentication  # Knowledge files
 /project:creation-planning-doc                           # Planning documents
