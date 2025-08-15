@@ -13,7 +13,7 @@ database_path: "data/monitoring.db"  # SQLite database path for metrics storage
 
 # Collection intervals (in seconds)
 metrics_collection_interval: 30.0    # Collect metrics every 30 seconds
-aggregation_interval: 300.0          # Aggregate metrics every 5 minutes  
+aggregation_interval: 300.0          # Aggregate metrics every 5 minutes
 dashboard_update_interval: 5.0       # Update dashboard every 5 seconds
 
 # Alert thresholds
@@ -58,20 +58,20 @@ quality_gates:
     target_percentage: 70.0
     minimum_sample_size: 20
     confidence_level: 0.95
-    
+
   # Performance gates
   loading_latency_validation:
     enabled: true
     max_p95_latency_ms: 200.0
     max_p99_latency_ms: 500.0
     minimum_sample_size: 50
-    
+
   # User experience gates
   success_rate_validation:
     enabled: true
     minimum_rate: 0.95
     minimum_sample_size: 30
-    
+
   # Task detection gates
   task_accuracy_validation:
     enabled: true
@@ -86,14 +86,14 @@ reporting:
   export_formats: ["json", "csv"]
   include_trends: true
   include_recommendations: true
-  
-# Notification settings  
+
+# Notification settings
 notifications:
   enabled: true
   validation_failure_alerts: true
   performance_degradation_alerts: true
   system_health_alerts: true
-  
+
 # Backup and recovery
 backup:
   enabled: true
