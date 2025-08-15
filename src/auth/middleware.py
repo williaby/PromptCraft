@@ -15,7 +15,7 @@ import time
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -24,11 +24,27 @@ from slowapi.util import get_remote_address
 from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.auth.exceptions import AuthExceptionHandler
 from src.database import DatabaseError, get_database_manager
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
 from .config import AuthenticationConfig
+from .constants import (
+    AUTH_EVENT_GENERAL,
+    AUTH_EVENT_JWT,
+    AUTH_EVENT_SERVICE_TOKEN,
+    ERROR_CODE_TOKEN_EXPIRED,
+    ERROR_CODE_TOKEN_INACTIVE,
+    ERROR_CODE_TOKEN_NOT_FOUND,
+    ERROR_CODE_VALIDATION_EXCEPTION,
+    PERMISSION_ADMIN,
+    RATE_LIMIT_KEY_EMAIL,
+    RATE_LIMIT_KEY_IP,
+    RATE_LIMIT_KEY_USER,
+    SERVICE_TOKEN_PREFIX,
+    USER_TYPE_SERVICE_TOKEN,
+)
 from .jwks_client import JWKSClient
 from .jwt_validator import JWTValidator
 from .models import AuthenticatedUser, AuthenticationError, JWTValidationError
@@ -52,7 +68,7 @@ class ServiceTokenUser:
         self.token_name = token_name
         self.metadata = metadata
         self.usage_count = usage_count
-        self.user_type = "service_token"
+        self.user_type = USER_TYPE_SERVICE_TOKEN
 
     def has_permission(self, permission: str) -> bool:
         """Check if token has a specific permission.
@@ -64,7 +80,7 @@ class ServiceTokenUser:
             True if token has permission, False otherwise
         """
         permissions = self.metadata.get("permissions", [])
-        return permission in permissions or "admin" in permissions
+        return permission in permissions or PERMISSION_ADMIN in permissions
 
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
@@ -154,13 +170,19 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             # Database event logging (if enabled)
             if self.database_enabled:
                 total_time = (time.time() - start_time) * 1000
+                user_email = None
+                service_token_name = None
+                if isinstance(authenticated_user, ServiceTokenUser):
+                    service_token_name = authenticated_user.token_name
+                else:
+                    user_email = authenticated_user.email
+                    
                 await self._log_authentication_event(
-                    authenticated_user,
                     request,
-                    True,
-                    jwt_time,
-                    db_time,
-                    total_time,
+                    user_email=user_email,
+                    service_token_name=service_token_name,
+                    event_type=AUTH_EVENT_GENERAL,
+                    success=True,
                 )
 
             # Proceed to next middleware/endpoint
@@ -173,44 +195,62 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Database event logging for failures (if enabled)
             if self.database_enabled:
-                total_time = (time.time() - start_time) * 1000
                 await self._log_authentication_event(
-                    None,
                     request,
-                    False,
-                    0,
-                    0,
-                    total_time,
-                    str(e),
+                    user_email=None,
+                    service_token_name=None,
+                    event_type=AUTH_EVENT_GENERAL,
+                    success=False,
+                    error_details={"error": str(e)},
                 )
 
-            # Return 401 response
-            return self._create_auth_error_response(e)
+            # Use appropriate error handling based on status code
+            if e.status_code == 500:
+                # Internal server error (e.g., database connection failure)
+                auth_exception = AuthExceptionHandler.handle_internal_error(
+                    operation_name="Authentication middleware",
+                    error=e,
+                    detail=e.message,
+                    expose_error=False,  # Never expose internal errors in production
+                )
+            else:
+                # Standard authentication error (401, etc.)
+                auth_exception = AuthExceptionHandler.handle_authentication_error(
+                    detail=e.message,
+                    user_identifier=getattr(request.state, "user_email", None)
+                    or getattr(request.state, "authenticated_user", {}).get("email", ""),
+                )
+            return JSONResponse(
+                status_code=auth_exception.status_code,
+                content={"error": auth_exception.detail},
+                headers=auth_exception.headers or {},
+            )
 
         except Exception as e:
             # Log unexpected errors
-            logger.error(f"Unexpected error in authentication middleware: {e}")
+            logger.error(f"Unexpected error in authentication middleware: {e}", exc_info=True)
 
             # Database event logging for errors (if enabled)
             if self.database_enabled:
-                total_time = (time.time() - start_time) * 1000
                 await self._log_authentication_event(
-                    None,
                     request,
-                    False,
-                    0,
-                    0,
-                    total_time,
-                    str(e),
+                    user_email=None,
+                    service_token_name=None,
+                    event_type=AUTH_EVENT_GENERAL,
+                    success=False,
+                    error_details={"error": str(e)},
                 )
 
-            # Return 500 response for unexpected errors
+            # Use standardized error handling for internal errors
+            internal_exception = AuthExceptionHandler.handle_internal_error(
+                operation_name="Authentication middleware",
+                error=e,
+                detail="Authentication system error",
+                expose_error=False,  # Never expose internal errors in production
+            )
             return JSONResponse(
-                status_code=500,
-                content={
-                    "error": "Internal server error",
-                    "message": "Authentication system error",
-                },
+                status_code=internal_exception.status_code,
+                content={"error": internal_exception.detail},
             )
 
     def _is_excluded_path(self, path: str) -> bool:
@@ -245,8 +285,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         if not token:
             raise AuthenticationError("Missing authentication token", 401)
 
-        # Check if this is a service token (starts with 'sk_')
-        if token.startswith("sk_"):
+        # Check if this is a service token (starts with service token prefix)
+        if token.startswith(SERVICE_TOKEN_PREFIX):
             return await self._validate_service_token(request, token)
         # Handle JWT token validation (existing flow)
         return await self._validate_jwt_token(request, token)
@@ -275,7 +315,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             await self._log_authentication_event(
                 request,
                 user_email=authenticated_user.email,
-                event_type="jwt_auth",
+                event_type=AUTH_EVENT_JWT,
                 success=True,
             )
 
@@ -285,7 +325,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             # Log failed authentication
             await self._log_authentication_event(
                 request,
-                event_type="jwt_auth",
+                event_type=AUTH_EVENT_JWT,
                 success=False,
                 error_details={"error": str(e), "message": e.message},
             )
@@ -333,9 +373,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 if not token_record:
                     await self._log_authentication_event(
                         request,
-                        event_type="service_token_auth",
+                        event_type=AUTH_EVENT_SERVICE_TOKEN,
                         success=False,
-                        error_details={"error": "token_not_found"},
+                        error_details={"error": ERROR_CODE_TOKEN_NOT_FOUND},
                     )
                     raise AuthenticationError("Invalid service token", 401)
 
@@ -344,9 +384,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     await self._log_authentication_event(
                         request,
                         service_token_name=token_record.token_name,
-                        event_type="service_token_auth",
+                        event_type=AUTH_EVENT_SERVICE_TOKEN,
                         success=False,
-                        error_details={"error": "token_inactive"},
+                        error_details={"error": ERROR_CODE_TOKEN_INACTIVE},
                     )
                     raise AuthenticationError("Service token is inactive", 401)
 
@@ -354,9 +394,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     await self._log_authentication_event(
                         request,
                         service_token_name=token_record.token_name,
-                        event_type="service_token_auth",
+                        event_type=AUTH_EVENT_SERVICE_TOKEN,
                         success=False,
-                        error_details={"error": "token_expired"},
+                        error_details={"error": ERROR_CODE_TOKEN_EXPIRED},
                     )
                     raise AuthenticationError("Service token has expired", 401)
 
@@ -377,7 +417,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 await self._log_authentication_event(
                     request,
                     service_token_name=token_record.token_name,
-                    event_type="service_token_auth",
+                    event_type=AUTH_EVENT_SERVICE_TOKEN,
                     success=True,
                 )
 
@@ -398,9 +438,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             logger.error(f"Service token validation error: {e}")
             await self._log_authentication_event(
                 request,
-                event_type="service_token_auth",
+                event_type=AUTH_EVENT_SERVICE_TOKEN,
                 success=False,
-                error_details={"error": "validation_exception", "details": str(e)},
+                error_details={"error": ERROR_CODE_VALIDATION_EXCEPTION, "details": str(e)},
             )
             raise AuthenticationError("Service token validation failed", 500) from e
 
@@ -423,7 +463,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[7:]  # Remove "Bearer " prefix
-            token_type = "service token" if token.startswith("sk_") else "JWT token"
+            token_type = "service token" if token.startswith(SERVICE_TOKEN_PREFIX) else "JWT token"
             logger.debug(f"Found {token_type} in Authorization header")
             return token
 
@@ -458,7 +498,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         request: Request,
         user_email: str | None = None,
         service_token_name: str | None = None,
-        event_type: str = "auth",
+        event_type: str = AUTH_EVENT_GENERAL,
         success: bool = True,
         error_details: dict | None = None,
     ) -> None:
@@ -484,7 +524,6 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                         getattr(request.client, "host", None) if hasattr(request, "client") and request.client else None
                     ),
                     user_agent=request.headers.get("user-agent"),
-                    endpoint=str(request.url.path),
                     cloudflare_ray_id=request.headers.get("cf-ray"),
                     error_details=error_details,
                     created_at=datetime.now(timezone.utc),  # noqa: UP017
@@ -529,7 +568,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             return
 
         try:
-            db_manager = await get_database_manager()
+            db_manager = get_database_manager()
             async with db_manager.get_session() as session:
 
                 # Extract Cloudflare subject from JWT claims
@@ -617,15 +656,15 @@ def create_rate_limiter(config: AuthenticationConfig) -> Limiter:
 
     def get_rate_limit_key(request: Request) -> str:
         """Get rate limiting key based on configuration."""
-        if config.rate_limit_key_func == "ip":
+        if config.rate_limit_key_func == RATE_LIMIT_KEY_IP:
             return get_remote_address(request)
-        if config.rate_limit_key_func == "email":
+        if config.rate_limit_key_func == RATE_LIMIT_KEY_EMAIL:
             # Use authenticated user email if available
             if hasattr(request.state, "user_email"):
                 return request.state.user_email
             # Fallback to IP if no authenticated user
             return get_remote_address(request)
-        if config.rate_limit_key_func == "user":
+        if config.rate_limit_key_func == RATE_LIMIT_KEY_USER:
             # Use authenticated user email if available
             if hasattr(request.state, "authenticated_user"):
                 return request.state.authenticated_user.email
@@ -666,6 +705,7 @@ def setup_authentication(
     # Create JWT validator
     jwt_validator = JWTValidator(
         jwks_client=jwks_client,
+        config=config,
         audience=config.cloudflare_audience,
         issuer=config.cloudflare_issuer,
         algorithm=config.jwt_algorithm,
@@ -724,7 +764,7 @@ def require_authentication(request: Request) -> AuthenticatedUser:
     """
     user = get_current_user(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
+        raise AuthExceptionHandler.handle_authentication_error()
     return user
 
 
@@ -743,5 +783,8 @@ def require_role(request: Request, required_role: str) -> AuthenticatedUser:
     """
     user = require_authentication(request)
     if user.role.value != required_role:
-        raise HTTPException(status_code=403, detail=f"Role '{required_role}' required")
+        raise AuthExceptionHandler.handle_permission_error(
+            user_identifier=user.email,
+            detail=f"Role '{required_role}' required",
+        )
     return user

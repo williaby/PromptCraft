@@ -13,6 +13,9 @@ from typing import Any
 import jwt
 from jwt.algorithms import RSAAlgorithm
 
+from .config import AuthenticationConfig
+from .constants import ADMIN_ROLE_PREFIXES, PERMISSION_NAME_EMAIL_AUTHORIZATION
+from .exceptions import AuthExceptionHandler
 from .jwks_client import JWKSClient
 from .models import AuthenticatedUser, JWTValidationError, UserRole
 
@@ -25,6 +28,7 @@ class JWTValidator:
     def __init__(
         self,
         jwks_client: JWKSClient,
+        config: AuthenticationConfig,
         audience: str | None = None,
         issuer: str | None = None,
         algorithm: str = "RS256",
@@ -155,7 +159,12 @@ class JWTValidator:
             # Validate email against whitelist if provided
             if email_whitelist and not self.is_email_allowed(email, email_whitelist):
                 logger.warning(f"Email '{email}' not in whitelist")
-                raise JWTValidationError(f"Email '{email}' not authorized", "email_not_authorized")
+                # Use AuthExceptionHandler for authorization errors
+                raise AuthExceptionHandler.handle_permission_error(
+                    permission_name=PERMISSION_NAME_EMAIL_AUTHORIZATION,
+                    user_identifier=email,
+                    detail=f"Email '{email}' not authorized for this application",
+                )
 
             # Determine user role (basic implementation)
             role = self._determine_user_role(email, payload)
@@ -173,7 +182,11 @@ class JWTValidator:
             raise
         except Exception as e:
             logger.error(f"Unexpected error during JWT validation: {e}")
-            raise JWTValidationError("Token validation failed", "unknown_error") from e
+            # Use AuthExceptionHandler for authentication failures
+            raise AuthExceptionHandler.handle_authentication_error(
+                detail="Authentication failed",
+                log_message=f"JWT validation failed: {e}",
+            ) from e
 
     def _is_email_allowed(self, email: str, email_whitelist: list[str]) -> bool:
         """Check if email is allowed based on whitelist.
@@ -224,7 +237,7 @@ class JWTValidator:
             UserRole.ADMIN if email starts with admin keywords, UserRole.USER otherwise
         """
         email_lower = email.lower()
-        admin_prefixes = ["admin", "administrator", "root", "superuser", "owner"]
+        admin_prefixes = ADMIN_ROLE_PREFIXES
 
         # Extract username part before @
         username = email_lower.split("@")[0]
@@ -282,3 +295,47 @@ class JWTValidator:
 
         except Exception:
             return False
+
+    def validate_token_or_raise(self, token: str, email_whitelist: list[str] | None = None) -> AuthenticatedUser:
+        """Validate JWT token and raise HTTPException on failure.
+
+        Wrapper around validate_token that converts JWTValidationError to
+        standardized HTTP exceptions using AuthExceptionHandler.
+
+        Args:
+            token: JWT token string
+            email_whitelist: Optional list of allowed email addresses/domains
+
+        Returns:
+            AuthenticatedUser with validated user information
+
+        Raises:
+            HTTPException: Standardized authentication/authorization errors
+        """
+        try:
+            return self.validate_token(token, email_whitelist)
+        except JWTValidationError as e:
+            # Convert specific JWT validation errors to appropriate HTTP exceptions
+            if e.error_code in {"expired_token"}:
+                raise AuthExceptionHandler.handle_authentication_error(
+                    detail="Token has expired",
+                    log_message=f"JWT validation failed: {e.message}",
+                ) from e
+            if e.error_code in {"invalid_signature", "invalid_key"}:
+                raise AuthExceptionHandler.handle_authentication_error(
+                    detail="Invalid authentication credentials",
+                    log_message=f"JWT signature validation failed: {e.message}",
+                ) from e
+            if e.error_code in {"invalid_format", "missing_kid", "invalid_token"}:
+                raise AuthExceptionHandler.handle_validation_error(
+                    f"Invalid token format: {e.message}",
+                    field_name="authorization_token",
+                ) from e
+            if e.error_code == "email_not_authorized":
+                # This is already handled in validate_token with AuthExceptionHandler
+                raise
+            # Generic authentication error for other cases
+            raise AuthExceptionHandler.handle_authentication_error(
+                detail="Authentication failed",
+                log_message=f"JWT validation failed: {e.message}",
+            ) from e

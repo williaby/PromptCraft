@@ -8,24 +8,21 @@ This module provides FastAPI endpoints for role and permission management includ
 - User permission queries and analytics
 """
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from src.auth.middleware import ServiceTokenUser
-from src.auth.models import AuthenticatedUser
+from src.auth.exceptions import AuthExceptionHandler
 from src.auth.permissions import Permissions, require_permission
 from src.auth.role_manager import (
-    CircularRoleHierarchyError,
     PermissionNotFoundError,
     RoleManager,
     RoleManagerError,
     RoleNotFoundError,
     UserNotFoundError,
 )
-
+from src.auth.types import AuthenticatedUserType
 
 # =============================================================================
 # REQUEST/RESPONSE MODELS
@@ -35,9 +32,9 @@ from src.auth.role_manager import (
 class RoleCreateRequest(BaseModel):
     """Request model for creating roles."""
 
-    name: str = Field(..., description="Unique role name (lowercase, underscore-separated)")
-    description: Optional[str] = Field(None, description="Human-readable description of the role")
-    parent_role_name: Optional[str] = Field(None, description="Parent role name for inheritance")
+    name: str = Field(..., min_length=1, description="Unique role name (lowercase, underscore-separated)")
+    description: str | None = Field(None, description="Human-readable description of the role")
+    parent_role_name: str | None = Field(None, description="Parent role name for inheritance")
 
 
 class RoleResponse(BaseModel):
@@ -45,11 +42,11 @@ class RoleResponse(BaseModel):
 
     id: int = Field(..., description="Role ID")
     name: str = Field(..., description="Role name")
-    description: Optional[str] = Field(None, description="Role description")
-    parent_role_id: Optional[int] = Field(None, description="Parent role ID")
-    parent_role_name: Optional[str] = Field(None, description="Parent role name")
+    description: str | None = Field(None, description="Role description")
+    parent_role_id: int | None = Field(None, description="Parent role ID")
+    parent_role_name: str | None = Field(None, description="Parent role name")
     created_at: datetime = Field(..., description="Creation timestamp")
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
     is_active: bool = Field(..., description="Whether role is active")
 
 
@@ -72,7 +69,7 @@ class UserRoleResponse(BaseModel):
 
     role_id: int = Field(..., description="Role ID")
     role_name: str = Field(..., description="Role name")
-    role_description: Optional[str] = Field(None, description="Role description")
+    role_description: str | None = Field(None, description="Role description")
     assigned_at: datetime = Field(..., description="Assignment timestamp")
 
 
@@ -80,15 +77,15 @@ class UserPermissionsResponse(BaseModel):
     """Response model for user permissions summary."""
 
     user_email: str = Field(..., description="User email")
-    roles: List[UserRoleResponse] = Field(..., description="Assigned roles")
-    permissions: List[str] = Field(..., description="All permissions (including inherited)")
+    roles: list[UserRoleResponse] = Field(..., description="Assigned roles")
+    permissions: list[str] = Field(..., description="All permissions (including inherited)")
 
 
 class RolePermissionsResponse(BaseModel):
     """Response model for role permissions."""
 
     role_name: str = Field(..., description="Role name")
-    permissions: List[str] = Field(..., description="All permissions (including inherited)")
+    permissions: list[str] = Field(..., description="All permissions (including inherited)")
 
 
 # =============================================================================
@@ -107,7 +104,7 @@ role_router = APIRouter(prefix="/api/v1/roles", tags=["role-management"])
 async def create_role(
     request: Request,  # noqa: ARG001
     role_request: RoleCreateRequest,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_CREATE)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_CREATE)),
 ) -> RoleResponse:
     """Create a new role (admin only).
 
@@ -135,20 +132,18 @@ async def create_role(
 
         return RoleResponse(**role_data)
 
-    except RoleManagerError as e:
-        if "already exists" in str(e):
-            raise HTTPException(status_code=400, detail=str(e)) from e
-        raise HTTPException(status_code=500, detail=f"Failed to create role: {e}") from e
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Role creation", e, expose_error=True) from e
 
 
-@role_router.get("/", response_model=List[RoleResponse])
+@role_router.get("/", response_model=list[RoleResponse])
 async def list_roles(
     request: Request,  # noqa: ARG001
     include_inactive: bool = Query(False, description="Include inactive roles"),
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_READ)),  # noqa: ARG001
-) -> List[RoleResponse]:
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+) -> list[RoleResponse]:
     """List all roles (admin only).
 
     This endpoint returns information about all roles in the system.
@@ -160,157 +155,11 @@ async def list_roles(
         return [RoleResponse(**role_data) for role_data in roles_data]
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to list roles: {e}") from e
-
-
-@role_router.get("/{role_name}", response_model=RoleResponse)
-async def get_role(
-    request: Request,  # noqa: ARG001
-    role_name: str,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_READ)),  # noqa: ARG001
-) -> RoleResponse:
-    """Get role information by name (admin only)."""
-    manager = RoleManager()
-
-    try:
-        role_data = await manager.get_role(role_name)
-        if not role_data:
-            raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
-
-        return RoleResponse(**role_data)
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get role: {e}") from e
-
-
-@role_router.delete("/{role_name}")
-async def delete_role(
-    request: Request,  # noqa: ARG001
-    role_name: str,
-    force: bool = Query(False, description="Force deletion (removes assignments and child dependencies)"),
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_DELETE)),
-) -> dict[str, str]:
-    """Delete a role (admin only).
-
-    This endpoint performs a soft delete by setting is_active=False.
-    Use force=True to also remove user assignments and child role dependencies.
-    """
-    manager = RoleManager()
-
-    try:
-        deleted_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
-        success = await manager.delete_role(role_name, force=force)
-
-        if success:
-            return {
-                "status": "success",
-                "message": f"Role '{role_name}' has been deleted",
-                "deleted_by": deleted_by,
-                "force": str(force),
-            }
-        raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
-
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleManagerError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete role: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("List roles", e, expose_error=True) from e
 
 
 # =============================================================================
-# ROLE PERMISSION MANAGEMENT ENDPOINTS
-# =============================================================================
-
-
-@role_router.get("/{role_name}/permissions", response_model=RolePermissionsResponse)
-async def get_role_permissions(
-    request: Request,  # noqa: ARG001
-    role_name: str,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_READ)),  # noqa: ARG001
-) -> RolePermissionsResponse:
-    """Get all permissions for a role including inherited permissions (admin only)."""
-    manager = RoleManager()
-
-    try:
-        permissions = await manager.get_role_permissions(role_name)
-        return RolePermissionsResponse(
-            role_name=role_name,
-            permissions=list(permissions),
-        )
-
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get role permissions: {e}") from e
-
-
-@role_router.post("/{role_name}/permissions")
-async def assign_permission_to_role(
-    request: Request,  # noqa: ARG001
-    role_name: str,
-    permission_request: PermissionAssignmentRequest,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_UPDATE)),
-) -> dict[str, str]:
-    """Assign a permission to a role (admin only)."""
-    manager = RoleManager()
-
-    try:
-        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
-        success = await manager.assign_permission_to_role(role_name, permission_request.permission_name)
-
-        if success:
-            return {
-                "status": "success",
-                "message": f"Permission '{permission_request.permission_name}' assigned to role '{role_name}'",
-                "assigned_by": assigned_by,
-            }
-        raise HTTPException(status_code=500, detail="Permission assignment failed")
-
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except PermissionNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleManagerError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to assign permission: {e}") from e
-
-
-@role_router.delete("/{role_name}/permissions/{permission_name}")
-async def revoke_permission_from_role(
-    request: Request,  # noqa: ARG001
-    role_name: str,
-    permission_name: str,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_UPDATE)),
-) -> dict[str, str]:
-    """Revoke a permission from a role (admin only)."""
-    manager = RoleManager()
-
-    try:
-        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
-        success = await manager.revoke_permission_from_role(role_name, permission_name)
-
-        if success:
-            return {
-                "status": "success",
-                "message": f"Permission '{permission_name}' revoked from role '{role_name}'",
-                "revoked_by": revoked_by,
-            }
-        raise HTTPException(status_code=500, detail="Permission revocation failed")
-
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except PermissionNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleManagerError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to revoke permission: {e}") from e
-
-
-# =============================================================================
-# USER ROLE ASSIGNMENT ENDPOINTS
+# USER ROLE ASSIGNMENT ENDPOINTS (Must come before /{role_name} routes)
 # =============================================================================
 
 
@@ -318,7 +167,7 @@ async def revoke_permission_from_role(
 async def assign_user_role(
     request: Request,  # noqa: ARG001
     assignment_request: UserRoleAssignmentRequest,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_ASSIGN)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),
 ) -> dict[str, str]:
     """Assign a role to a user (admin only)."""
     manager = RoleManager()
@@ -337,16 +186,12 @@ async def assign_user_role(
                 "message": f"Role '{assignment_request.role_name}' assigned to user '{assignment_request.user_email}'",
                 "assigned_by": assigned_by,
             }
-        raise HTTPException(status_code=500, detail="Role assignment failed")
+        raise AuthExceptionHandler.handle_internal_error("Role assignment", ValueError("Assignment failed"))
 
-    except UserNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleManagerError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to assign role: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Assign role", e, expose_error=True) from e
 
 
 @role_router.delete("/assignments")
@@ -354,7 +199,7 @@ async def revoke_user_role(
     request: Request,  # noqa: ARG001
     user_email: str = Query(..., description="User email address"),
     role_name: str = Query(..., description="Role name to revoke"),
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_ASSIGN)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),
 ) -> dict[str, str]:
     """Revoke a role from a user (admin only)."""
     manager = RoleManager()
@@ -375,25 +220,56 @@ async def revoke_user_role(
             "revoked_by": revoked_by,
         }
 
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except RoleManagerError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to revoke role: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Revoke role", e, expose_error=True) from e
 
 
 # =============================================================================
-# USER PERMISSION QUERY ENDPOINTS
+# ROLE HIERARCHY VALIDATION ENDPOINTS (Must come before /{role_name} routes)
 # =============================================================================
 
 
-@role_router.get("/users/{user_email}/roles", response_model=List[UserRoleResponse])
+@role_router.post("/validate-hierarchy")
+async def validate_role_hierarchy(
+    request: Request,  # noqa: ARG001
+    role_name: str = Query(..., description="Role name to modify"),
+    parent_role_name: str = Query(..., description="Proposed parent role name"),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+) -> dict[str, bool | str]:
+    """Validate that adding a parent role won't create a circular dependency (admin only)."""
+    manager = RoleManager()
+
+    try:
+        is_valid = await manager.validate_role_hierarchy(role_name, parent_role_name)
+
+        return {
+            "is_valid": is_valid,
+            "message": (
+                f"Setting '{parent_role_name}' as parent of '{role_name}' is valid"
+                if is_valid
+                else f"Setting '{parent_role_name}' as parent of '{role_name}' would create a circular dependency"
+            ),
+        }
+
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
+    except Exception as e:
+        raise AuthExceptionHandler.handle_internal_error("Validate hierarchy", e, expose_error=True) from e
+
+
+# =============================================================================
+# USER PERMISSION QUERY ENDPOINTS (Must come before /{role_name} routes)
+# =============================================================================
+
+
+@role_router.get("/users/{user_email}/roles", response_model=list[UserRoleResponse])
 async def get_user_roles(
     request: Request,  # noqa: ARG001
     user_email: str,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.USERS_READ)),  # noqa: ARG001
-) -> List[UserRoleResponse]:
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.USERS_READ)),
+) -> list[UserRoleResponse]:
     """Get all roles assigned to a user (admin only)."""
     manager = RoleManager()
 
@@ -402,14 +278,14 @@ async def get_user_roles(
         return [UserRoleResponse(**role_data) for role_data in roles_data]
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user roles: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Get user roles", e, expose_error=True) from e
 
 
 @role_router.get("/users/{user_email}/permissions", response_model=UserPermissionsResponse)
 async def get_user_permissions(
     request: Request,  # noqa: ARG001
     user_email: str,
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.USERS_READ)),  # noqa: ARG001
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.USERS_READ)),
 ) -> UserPermissionsResponse:
     """Get all permissions for a user through their assigned roles (admin only)."""
     manager = RoleManager()
@@ -429,37 +305,148 @@ async def get_user_permissions(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user permissions: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Get user permissions", e, expose_error=True) from e
 
 
-# =============================================================================
-# ROLE HIERARCHY VALIDATION ENDPOINTS
-# =============================================================================
-
-
-@role_router.post("/validate-hierarchy")
-async def validate_role_hierarchy(
+@role_router.get("/{role_name}", response_model=RoleResponse)
+async def get_role(
     request: Request,  # noqa: ARG001
-    role_name: str = Query(..., description="Role name to modify"),
-    parent_role_name: str = Query(..., description="Proposed parent role name"),
-    current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_permission(Permissions.ROLES_READ)),  # noqa: ARG001
-) -> dict[str, bool | str]:
-    """Validate that adding a parent role won't create a circular dependency (admin only)."""
+    role_name: str,
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+) -> RoleResponse:
+    """Get role information by name (admin only)."""
     manager = RoleManager()
 
     try:
-        is_valid = await manager.validate_role_hierarchy(role_name, parent_role_name)
+        role_data = await manager.get_role(role_name)
+        if not role_data:
+            raise AuthExceptionHandler.handle_not_found_error("role", role_name)
 
-        return {
-            "is_valid": is_valid,
-            "message": (
-                f"Setting '{parent_role_name}' as parent of '{role_name}' is valid"
-                if is_valid
-                else f"Setting '{parent_role_name}' as parent of '{role_name}' would create a circular dependency"
-            ),
-        }
+        return RoleResponse(**role_data)
 
-    except RoleNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    except HTTPException:
+        # Re-raise HTTPException as-is (404, 403, etc.)
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to validate hierarchy: {e}") from e
+        raise AuthExceptionHandler.handle_internal_error("Get role", e, expose_error=True) from e
+
+
+@role_router.delete("/{role_name}")
+async def delete_role(
+    request: Request,  # noqa: ARG001
+    role_name: str,
+    force: bool = Query(False, description="Force deletion (removes assignments and child dependencies)"),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_DELETE)),
+) -> dict[str, str]:
+    """Delete a role (admin only).
+
+    This endpoint performs a soft delete by setting is_active=False.
+    Use force=True to also remove user assignments and child role dependencies.
+    """
+    manager = RoleManager()
+
+    try:
+        deleted_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        success = await manager.delete_role(role_name, force=force)
+
+        if success:
+            return {
+                "status": "success",
+                "message": f"Role '{role_name}' has been deleted",
+                "deleted_by": deleted_by,
+                "force": str(force),
+            }
+        raise AuthExceptionHandler.handle_not_found_error("role", role_name)
+
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
+    except HTTPException:
+        # Re-raise HTTPException as-is (404, 403, etc.)
+        raise
+    except Exception as e:
+        raise AuthExceptionHandler.handle_internal_error("Delete role", e, expose_error=True) from e
+
+
+# =============================================================================
+# ROLE PERMISSION MANAGEMENT ENDPOINTS
+# =============================================================================
+
+
+@role_router.get("/{role_name}/permissions", response_model=RolePermissionsResponse)
+async def get_role_permissions(
+    request: Request,  # noqa: ARG001
+    role_name: str,
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+) -> RolePermissionsResponse:
+    """Get all permissions for a role including inherited permissions (admin only)."""
+    manager = RoleManager()
+
+    try:
+        permissions = await manager.get_role_permissions(role_name)
+        return RolePermissionsResponse(
+            role_name=role_name,
+            permissions=list(permissions),
+        )
+
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
+    except Exception as e:
+        raise AuthExceptionHandler.handle_internal_error("Get role permissions", e, expose_error=True) from e
+
+
+@role_router.post("/{role_name}/permissions")
+async def assign_permission_to_role(
+    request: Request,  # noqa: ARG001
+    role_name: str,
+    permission_request: PermissionAssignmentRequest,
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),
+) -> dict[str, str]:
+    """Assign a permission to a role (admin only)."""
+    manager = RoleManager()
+
+    try:
+        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        success = await manager.assign_permission_to_role(role_name, permission_request.permission_name)
+
+        if success:
+            return {
+                "status": "success",
+                "message": f"Permission '{permission_request.permission_name}' assigned to role '{role_name}'",
+                "assigned_by": assigned_by,
+            }
+        raise AuthExceptionHandler.handle_internal_error("Permission assignment", ValueError("Assignment failed"))
+
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
+    except Exception as e:
+        raise AuthExceptionHandler.handle_internal_error("Assign permission", e, expose_error=True) from e
+
+
+@role_router.delete("/{role_name}/permissions/{permission_name}")
+async def revoke_permission_from_role(
+    request: Request,  # noqa: ARG001
+    role_name: str,
+    permission_name: str,
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),
+) -> dict[str, str]:
+    """Revoke a permission from a role (admin only)."""
+    manager = RoleManager()
+
+    try:
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        success = await manager.revoke_permission_from_role(role_name, permission_name)
+
+        if success:
+            return {
+                "status": "success",
+                "message": f"Permission '{permission_name}' revoked from role '{role_name}'",
+                "revoked_by": revoked_by,
+            }
+        raise AuthExceptionHandler.handle_internal_error("Permission revocation", ValueError("Revocation failed"))
+
+    except (RoleManagerError, RoleNotFoundError, PermissionNotFoundError, UserNotFoundError) as e:
+        raise AuthExceptionHandler.handle_role_manager_error(e) from e
+    except Exception as e:
+        raise AuthExceptionHandler.handle_internal_error("Revoke permission", e, expose_error=True) from e
+
+
