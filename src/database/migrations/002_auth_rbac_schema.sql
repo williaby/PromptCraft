@@ -90,10 +90,10 @@ COMMENT ON COLUMN permissions.is_active IS 'Whether the permission is active and
 CREATE TABLE IF NOT EXISTS role_permissions (
     role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     permission_id INTEGER NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Primary key
     PRIMARY KEY (role_id, permission_id)
 );
@@ -106,11 +106,11 @@ COMMENT ON TABLE role_permissions IS 'Junction table for role-permission assignm
 CREATE TABLE IF NOT EXISTS user_roles (
     user_email VARCHAR(255) NOT NULL REFERENCES user_sessions(email) ON DELETE CASCADE,
     role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    
+
     -- Timestamps
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     assigned_by VARCHAR(255) NULL, -- Email of admin who assigned the role
-    
+
     -- Primary key
     PRIMARY KEY (user_email, role_id)
 );
@@ -186,16 +186,16 @@ WITH RECURSIVE role_hierarchy AS (
     SELECT id, parent_role_id, name, 0 as depth
     FROM roles
     WHERE id = p_role_id AND is_active = true
-    
+
     UNION ALL
-    
+
     -- Recursive case: find parent roles
     SELECT r.id, r.parent_role_id, r.name, rh.depth + 1
     FROM roles r
     INNER JOIN role_hierarchy rh ON r.id = rh.parent_role_id
     WHERE r.is_active = true AND rh.depth < 10 -- Prevent infinite recursion
 )
-SELECT DISTINCT 
+SELECT DISTINCT
     p.id as permission_id,
     p.name as permission_name,
     p.resource,
@@ -227,16 +227,16 @@ BEGIN
         AND p.name = p_permission_name
         AND r.is_active = true
         AND p.is_active = true
-        
+
         UNION
-        
+
         -- Also check inherited permissions from parent roles
         SELECT 1
         FROM user_roles ur
         INNER JOIN get_role_permissions(ur.role_id) grp ON grp.permission_name = p_permission_name
         WHERE ur.user_email = p_user_email
     ) INTO has_perm;
-    
+
     RETURN has_perm;
 END;
 $$ LANGUAGE plpgsql;
@@ -254,7 +254,7 @@ RETURNS TABLE(
 ) AS $$
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         r.id as role_id,
         r.name as role_name,
         r.description as role_description,
@@ -285,25 +285,25 @@ BEGIN
     SELECT EXISTS(
         SELECT 1 FROM roles WHERE id = p_role_id AND is_active = true
     ) INTO role_exists;
-    
+
     IF NOT role_exists THEN
         RAISE EXCEPTION 'Role with ID % does not exist or is inactive', p_role_id;
     END IF;
-    
+
     -- Check if user exists in user_sessions
     SELECT EXISTS(
         SELECT 1 FROM user_sessions WHERE email = p_user_email
     ) INTO user_exists;
-    
+
     IF NOT user_exists THEN
         RAISE EXCEPTION 'User with email % does not exist', p_user_email;
     END IF;
-    
+
     -- Insert role assignment (ON CONFLICT DO NOTHING for idempotency)
     INSERT INTO user_roles (user_email, role_id, assigned_by)
     VALUES (p_user_email, p_role_id, p_assigned_by)
     ON CONFLICT (user_email, role_id) DO NOTHING;
-    
+
     RETURN TRUE;
 EXCEPTION
     WHEN OTHERS THEN
@@ -323,7 +323,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
     DELETE FROM user_roles
     WHERE user_email = p_user_email AND role_id = p_role_id;
-    
+
     RETURN FOUND;
 END;
 $$ LANGUAGE plpgsql;
@@ -343,31 +343,31 @@ INSERT INTO permissions (name, resource, action, description) VALUES
     ('tokens:update', 'tokens', 'update', 'Update service token metadata'),
     ('tokens:delete', 'tokens', 'delete', 'Revoke or delete service tokens'),
     ('tokens:rotate', 'tokens', 'rotate', 'Rotate service token values'),
-    
+
     -- User management permissions
     ('users:read', 'users', 'read', 'View user information and sessions'),
     ('users:update', 'users', 'update', 'Update user preferences and metadata'),
     ('users:delete', 'users', 'delete', 'Delete user sessions and data'),
-    
+
     -- Role management permissions
     ('roles:create', 'roles', 'create', 'Create new roles'),
     ('roles:read', 'roles', 'read', 'View role information'),
     ('roles:update', 'roles', 'update', 'Update role definitions'),
     ('roles:delete', 'roles', 'delete', 'Delete roles'),
     ('roles:assign', 'roles', 'assign', 'Assign roles to users'),
-    
+
     -- Permission management permissions
     ('permissions:create', 'permissions', 'create', 'Create new permissions'),
     ('permissions:read', 'permissions', 'read', 'View permission information'),
     ('permissions:update', 'permissions', 'update', 'Update permission definitions'),
     ('permissions:delete', 'permissions', 'delete', 'Delete permissions'),
-    
+
     -- System administration permissions
     ('system:admin', 'system', 'admin', 'Full system administration access'),
     ('system:status', 'system', 'status', 'View system status and health'),
     ('system:audit', 'system', 'audit', 'Access audit logs and analytics'),
     ('system:monitor', 'system', 'monitor', 'Access monitoring and metrics'),
-    
+
     -- API access permissions
     ('api:access', 'api', 'access', 'Basic API access'),
     ('api:admin', 'api', 'admin', 'Administrative API access')
@@ -386,7 +386,7 @@ ON CONFLICT (name) DO NOTHING;
 -- Assign permissions to roles
 -- Super admin gets all permissions
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'super_admin'),
     id
 FROM permissions
@@ -394,7 +394,7 @@ ON CONFLICT DO NOTHING;
 
 -- Admin gets most permissions (excluding super admin only permissions)
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'admin'),
     id
 FROM permissions
@@ -403,7 +403,7 @@ ON CONFLICT DO NOTHING;
 
 -- User manager gets user and role management permissions
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'user_manager'),
     id
 FROM permissions
@@ -416,7 +416,7 @@ ON CONFLICT DO NOTHING;
 
 -- Token manager gets token management permissions
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'token_manager'),
     id
 FROM permissions
@@ -428,7 +428,7 @@ ON CONFLICT DO NOTHING;
 
 -- API user gets basic API access
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'api_user'),
     id
 FROM permissions
@@ -437,7 +437,7 @@ ON CONFLICT DO NOTHING;
 
 -- Readonly user gets read permissions only
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 
+SELECT
     (SELECT id FROM roles WHERE name = 'readonly_user'),
     id
 FROM permissions
@@ -455,7 +455,7 @@ ON CONFLICT DO NOTHING;
 CREATE OR REPLACE VIEW role_hierarchy_view AS
 WITH RECURSIVE role_tree AS (
     -- Root roles (no parent)
-    SELECT 
+    SELECT
         id,
         name,
         description,
@@ -464,11 +464,11 @@ WITH RECURSIVE role_tree AS (
         name::text as path
     FROM roles
     WHERE parent_role_id IS NULL AND is_active = true
-    
+
     UNION ALL
-    
+
     -- Child roles
-    SELECT 
+    SELECT
         r.id,
         r.name,
         r.description,
@@ -479,7 +479,7 @@ WITH RECURSIVE role_tree AS (
     INNER JOIN role_tree rt ON r.parent_role_id = rt.id
     WHERE r.is_active = true AND rt.level < 10
 )
-SELECT 
+SELECT
     id,
     name,
     description,
@@ -494,7 +494,7 @@ COMMENT ON VIEW role_hierarchy_view IS 'Hierarchical view of role relationships 
 
 -- Create view for user permission summary
 CREATE OR REPLACE VIEW user_permissions_summary AS
-SELECT 
+SELECT
     ur.user_email,
     r.name as role_name,
     p.name as permission_name,

@@ -9,7 +9,7 @@ This module defines database models for:
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any
 
 from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
@@ -185,6 +185,18 @@ class UserSession(Base):
         comment="Additional user metadata and context",
     )
 
+    def __init__(self, **kwargs):
+        """Initialize UserSession with proper defaults."""
+        # Set defaults for fields that should have them
+        if 'session_count' not in kwargs:
+            kwargs['session_count'] = 1
+        if 'preferences' not in kwargs:
+            kwargs['preferences'] = {}
+        if 'user_metadata' not in kwargs:
+            kwargs['user_metadata'] = {}
+        
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         """Return string representation of the user session."""
         return f"<UserSession(id={self.id}, email='{self.email}', sessions={self.session_count})>"
@@ -208,11 +220,18 @@ class AuthenticationEvent(Base):
     )
 
     # Event identification
-    user_email: Mapped[str] = mapped_column(
+    user_email: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=False,
+        nullable=True,
         index=True,
-        comment="User email (from JWT or 'unknown' for failures)",
+        comment="User email (from JWT or None for service token auth)",
+    )
+
+    service_token_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+        comment="Service token name (for service token auth, None for JWT auth)",
     )
 
     event_type: Mapped[str] = mapped_column(
@@ -273,10 +292,19 @@ class AuthenticationEvent(Base):
         comment="Event timestamp",
     )
 
+    def __init__(self, **kwargs):
+        """Initialize AuthenticationEvent with proper defaults."""
+        # Set defaults for fields that should have them
+        if 'success' not in kwargs:
+            kwargs['success'] = True
+        
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         """Return string representation of the authentication event."""
         status = "SUCCESS" if self.success else "FAILED"
-        return f"<AuthenticationEvent(id={self.id}, user='{self.user_email}', type='{self.event_type}', {status})>"
+        identifier = self.user_email or self.service_token_name or "unknown"
+        return f"<AuthenticationEvent(id={self.id}, user='{identifier}', type='{self.event_type}', {status})>"
 
 
 # Junction table for many-to-many relationship between roles and permissions
@@ -361,7 +389,7 @@ class Role(Base):
     )
 
     # Relationships
-    permissions: Mapped[List["Permission"]] = relationship(
+    permissions: Mapped[list["Permission"]] = relationship(
         "Permission",
         secondary=role_permissions_table,
         back_populates="roles",
@@ -374,12 +402,12 @@ class Role(Base):
         back_populates="child_roles",
     )
 
-    child_roles: Mapped[List["Role"]] = relationship(
+    child_roles: Mapped[list["Role"]] = relationship(
         "Role",
         back_populates="parent_role",
     )
 
-    users: Mapped[List["UserSession"]] = relationship(
+    users: Mapped[list["UserSession"]] = relationship(
         "UserSession",
         secondary=user_roles_table,
         back_populates="roles",
@@ -481,7 +509,7 @@ class Permission(Base):
     )
 
     # Relationships
-    roles: Mapped[List["Role"]] = relationship(
+    roles: Mapped[list["Role"]] = relationship(
         "Role",
         secondary=role_permissions_table,
         back_populates="permissions",

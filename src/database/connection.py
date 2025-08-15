@@ -88,20 +88,22 @@ class DatabaseManager:
                         "command_timeout": 5.0,  # 5 second query timeout
                     },
                 }
-                
+
                 # Use NullPool for dev, connection pooling for production
                 if getattr(self._settings, "environment", "prod") == "dev":
                     engine_kwargs["poolclass"] = NullPool
                 else:
                     # Add pool settings only for production
-                    engine_kwargs.update({
-                        "pool_size": getattr(self._settings, "db_pool_size", 10),
-                        "max_overflow": getattr(self._settings, "db_pool_max_overflow", 20),
-                        "pool_timeout": getattr(self._settings, "db_pool_timeout", 30),
-                        "pool_recycle": getattr(self._settings, "db_pool_recycle", 3600),
-                        "pool_pre_ping": True,  # Validate connections before use
-                    })
-                
+                    engine_kwargs.update(
+                        {
+                            "pool_size": getattr(self._settings, "db_pool_size", 10),
+                            "max_overflow": getattr(self._settings, "db_pool_max_overflow", 20),
+                            "pool_timeout": getattr(self._settings, "db_pool_timeout", 30),
+                            "pool_recycle": getattr(self._settings, "db_pool_recycle", 3600),
+                            "pool_pre_ping": True,  # Validate connections before use
+                        },
+                    )
+
                 self._engine = create_async_engine(db_url, **engine_kwargs)
 
                 # Create session factory
@@ -370,6 +372,7 @@ async def get_database_manager_async() -> DatabaseManager:
 
 
 # Legacy compatibility functions
+@asynccontextmanager
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Get database session (legacy compatibility)."""
     db_manager = get_database_manager()
@@ -377,6 +380,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+@asynccontextmanager
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get database session for dependency injection.
 

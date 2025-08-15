@@ -7,6 +7,7 @@ This package provides:
 - Session management, event logging, and user metadata storage
 """
 
+from .base_service import DatabaseService
 from .connection import (
     DatabaseConnectionError,
     DatabaseError,
@@ -23,6 +24,7 @@ __all__ = [
     "DatabaseConnectionError",
     "DatabaseError",
     "DatabaseManager",
+    "DatabaseService",
     "ServiceToken",
     "UserSession",
     "get_database_manager",
