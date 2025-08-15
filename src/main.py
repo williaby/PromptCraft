@@ -15,6 +15,10 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
+# Authentication and authorization imports
+from src.api.auth_endpoints import audit_router, auth_router, system_router
+from src.api.role_endpoints import role_router
+from src.auth.exceptions import AuthExceptionHandler
 from src.config.constants import (
     CORS_ORIGINS_BY_ENVIRONMENT,
     HEALTH_CHECK_ERROR_LIMIT,
@@ -39,10 +43,6 @@ from src.security.input_validation import SecureQueryParams, SecureTextInput
 from src.security.middleware import setup_security_middleware
 from src.security.rate_limiting import RateLimits, rate_limit, setup_rate_limiting
 from src.utils.circuit_breaker import get_all_circuit_breakers
-
-# Authentication and authorization imports
-from src.api.auth_endpoints import audit_router, auth_router, system_router
-from src.api.role_endpoints import role_router
 
 # Configure logging
 logging.basicConfig(
@@ -241,26 +241,19 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
                 **circuit_breaker_status,
             }
         logger.warning("Health check failed - configuration unhealthy")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "unhealthy",
-                "service": "promptcraft-hybrid",
-                **health_summary,
-            },
+        raise AuthExceptionHandler.handle_service_unavailable(
+            "promptcraft-hybrid",
+            f"Health check failed: configuration unhealthy - {health_summary}",
         )
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
     except Exception as e:  # Catch-all for unhandled endpoint errors
-        logger.error("Health check endpoint failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "service": "promptcraft-hybrid",
-                "error": "Health check failed",
-            },
+        raise AuthExceptionHandler.handle_internal_error(
+            "Health check",
+            e,
+            "Health check endpoint failed",
+            expose_error=True,
         ) from e
 
 
@@ -306,15 +299,18 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
                 "details": "Contact system administrator",
             }
 
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from e
+        raise AuthExceptionHandler.handle_internal_error(
+            "Configuration validation",
+            e,
+            str(detail),
+            expose_error=debug_mode,
+        ) from e
     except Exception as e:  # Catch-all for unhandled endpoint errors
-        logger.error("Configuration health check failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": "Configuration health check failed",
-                "details": "See application logs for more information",
-            },
+        raise AuthExceptionHandler.handle_internal_error(
+            "Configuration health check",
+            e,
+            "Configuration health check failed - see application logs",
+            expose_error=True,
         ) from e
 
 
@@ -344,36 +340,22 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
             }
 
         logger.warning("MCP health check failed - integration unhealthy")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "unhealthy",
-                "service": "mcp-integration",
-                **mcp_health,
-            },
+        raise AuthExceptionHandler.handle_service_unavailable(
+            "mcp-integration",
+            f"MCP integration unhealthy - {mcp_health}",
         )
     except ImportError as e:
         logger.warning("MCP integration not available")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={
-                "status": "unavailable",
-                "service": "mcp-integration",
-                "error": "MCP integration not available",
-            },
-        ) from e
+        raise AuthExceptionHandler.handle_service_unavailable("mcp-integration", "MCP integration not available") from e
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
     except Exception as e:
-        logger.error("MCP health check endpoint failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "service": "mcp-integration",
-                "error": "MCP health check failed",
-            },
+        raise AuthExceptionHandler.handle_internal_error(
+            "MCP health check",
+            e,
+            "MCP health check endpoint failed",
+            expose_error=True,
         ) from e
 
 
@@ -424,15 +406,11 @@ async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # n
         }
 
     except Exception as e:
-        logger.error("Circuit breaker health check failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "status": "error",
-                "service": "circuit-breaker-monitoring",
-                "error": "Circuit breaker health check failed",
-                "details": str(e),
-            },
+        raise AuthExceptionHandler.handle_internal_error(
+            "Circuit breaker health check",
+            e,
+            "Circuit breaker health check failed",
+            expose_error=True,
         ) from e
 
 
