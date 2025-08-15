@@ -1,0 +1,109 @@
+# Token Optimization Performance Monitoring Configuration
+# This file configures the comprehensive monitoring system for validating
+# the 70% token reduction goal and ensuring optimal system performance.
+
+# Core monitoring settings
+enabled: true
+validation_target: 0.70  # 70% token reduction target
+min_acceptable_reduction: 0.50  # 50% minimum acceptable reduction
+max_loading_latency_ms: 200.0  # Maximum acceptable function loading latency
+
+# Database settings
+database_path: "data/monitoring.db"  # SQLite database path for metrics storage
+
+# Collection intervals (in seconds)
+metrics_collection_interval: 30.0    # Collect metrics every 30 seconds
+aggregation_interval: 300.0          # Aggregate metrics every 5 minutes  
+dashboard_update_interval: 5.0       # Update dashboard every 5 seconds
+
+# Alert thresholds
+alert_thresholds:
+  token_reduction_min: 50.0          # Minimum token reduction percentage
+  token_reduction_target: 70.0       # Target token reduction percentage
+  latency_max_ms: 200.0             # Maximum loading latency in milliseconds
+  success_rate_min: 0.95            # Minimum success rate (95%)
+  task_accuracy_min: 0.80           # Minimum task detection accuracy (80%)
+  fallback_rate_max: 0.10           # Maximum fallback activation rate (10%)
+
+# Dashboard settings
+dashboard_enabled: true
+dashboard_host: "0.0.0.0"            # Bind to all interfaces
+dashboard_port: 8080                 # Dashboard web server port
+
+# External integrations
+integrations_enabled: true
+integrations_config_path: "config/integrations_config.json"
+
+# Privacy and data retention
+data_retention_days: 30              # Keep metrics data for 30 days
+anonymize_user_data: true            # Anonymize user identifiers in logs
+collect_raw_sessions: false          # Don't collect raw session data (privacy)
+
+# Performance settings
+max_concurrent_sessions: 1000        # Maximum concurrent sessions to monitor
+metrics_buffer_size: 1000           # In-memory metrics buffer size
+
+# Statistical validation settings
+statistical_validation:
+  confidence_level: 0.95             # 95% confidence level for statistical tests
+  minimum_sample_size: 10            # Minimum samples required for validation
+  power_threshold: 0.80              # Minimum statistical power required
+  effect_size_threshold: 0.5         # Minimum effect size for significance
+
+# Monitoring quality gates
+quality_gates:
+  # Token optimization gates
+  token_reduction_validation:
+    enabled: true
+    target_percentage: 70.0
+    minimum_sample_size: 20
+    confidence_level: 0.95
+    
+  # Performance gates
+  loading_latency_validation:
+    enabled: true
+    max_p95_latency_ms: 200.0
+    max_p99_latency_ms: 500.0
+    minimum_sample_size: 50
+    
+  # User experience gates
+  success_rate_validation:
+    enabled: true
+    minimum_rate: 0.95
+    minimum_sample_size: 30
+    
+  # Task detection gates
+  task_accuracy_validation:
+    enabled: true
+    minimum_accuracy: 0.80
+    minimum_sample_size: 25
+
+# Automated reporting
+reporting:
+  enabled: true
+  generate_daily_reports: true
+  generate_weekly_reports: true
+  export_formats: ["json", "csv"]
+  include_trends: true
+  include_recommendations: true
+  
+# Notification settings  
+notifications:
+  enabled: true
+  validation_failure_alerts: true
+  performance_degradation_alerts: true
+  system_health_alerts: true
+  
+# Backup and recovery
+backup:
+  enabled: true
+  backup_interval_hours: 24
+  backup_retention_days: 7
+  backup_location: "data/backups/"
+
+# Development and testing settings
+development:
+  mock_data_generation: false        # Generate mock data for testing
+  simulation_mode: false             # Run in simulation mode
+  debug_logging: false               # Enable debug-level logging
+  test_alert_webhooks: false         # Test alert delivery systems
