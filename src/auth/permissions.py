@@ -13,13 +13,13 @@ Key Features:
 """
 
 import logging
-from typing import Union
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends
 from sqlalchemy import text
 
+from src.auth.exceptions import AuthExceptionHandler
 from src.auth.middleware import ServiceTokenUser, require_authentication
-from src.auth.models import AuthenticatedUser
+from src.auth.types import AuthenticatedUserType
 from src.database.connection import get_db
 
 logger = logging.getLogger(__name__)
@@ -81,8 +81,8 @@ def require_permission(permission_name: str):
     """
 
     async def permission_checker(
-        current_user: Union[AuthenticatedUser, ServiceTokenUser] = Depends(require_authentication),
-    ) -> Union[AuthenticatedUser, ServiceTokenUser]:
+        current_user: AuthenticatedUserType = Depends(require_authentication),
+    ) -> AuthenticatedUserType:
         """Check if current user has the required permission.
 
         Args:
@@ -97,21 +97,20 @@ def require_permission(permission_name: str):
         if isinstance(current_user, ServiceTokenUser):
             # Service token permission check (existing AUTH-2 logic)
             if not current_user.has_permission(permission_name):
-                logger.warning(
-                    f"Service token '{current_user.token_name}' denied access: missing permission '{permission_name}'"
-                )
-                raise HTTPException(
-                    status_code=403,
+                raise AuthExceptionHandler.handle_permission_error(
+                    permission_name=permission_name,
+                    user_identifier=f"service token '{current_user.token_name}'",
                     detail=f"Service token lacks required permission: {permission_name}",
                 )
-            logger.debug(f"Service token '{current_user.token_name}' granted access with permission '{permission_name}'")
+            logger.debug(
+                f"Service token '{current_user.token_name}' granted access with permission '{permission_name}'",
+            )
         else:
             # JWT user permission check (new AUTH-3 logic)
             if not await user_has_permission(current_user.email, permission_name):
-                logger.warning(f"User '{current_user.email}' denied access: missing permission '{permission_name}'")
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Insufficient permissions: {permission_name} required",
+                raise AuthExceptionHandler.handle_permission_error(
+                    permission_name=permission_name,
+                    user_identifier=current_user.email,
                 )
             logger.debug(f"User '{current_user.email}' granted access with permission '{permission_name}'")
 
@@ -143,8 +142,8 @@ def require_any_permission(*permission_names: str):
     """
 
     async def any_permission_checker(
-        current_user: Union[AuthenticatedUser, ServiceTokenUser] = Depends(require_authentication),
-    ) -> Union[AuthenticatedUser, ServiceTokenUser]:
+        current_user: AuthenticatedUserType = Depends(require_authentication),
+    ) -> AuthenticatedUserType:
         """Check if current user has any of the required permissions.
 
         Args:
@@ -164,7 +163,7 @@ def require_any_permission(*permission_names: str):
                 if current_user.has_permission(permission_name):
                     has_any_permission = True
                     logger.debug(
-                        f"Service token '{current_user.token_name}' granted access with permission '{permission_name}'"
+                        f"Service token '{current_user.token_name}' granted access with permission '{permission_name}'",
                     )
                     break
         else:
@@ -179,11 +178,10 @@ def require_any_permission(*permission_names: str):
             user_identifier = (
                 f"service token '{current_user.token_name}'"
                 if isinstance(current_user, ServiceTokenUser)
-                else f"user '{current_user.email}'"
+                else current_user.email
             )
-            logger.warning(f"{user_identifier} denied access: missing any of permissions {permission_names}")
-            raise HTTPException(
-                status_code=403,
+            raise AuthExceptionHandler.handle_permission_error(
+                user_identifier=user_identifier,
                 detail=f"Insufficient permissions: one of {list(permission_names)} required",
             )
 
@@ -215,8 +213,8 @@ def require_all_permissions(*permission_names: str):
     """
 
     async def all_permissions_checker(
-        current_user: Union[AuthenticatedUser, ServiceTokenUser] = Depends(require_authentication),
-    ) -> Union[AuthenticatedUser, ServiceTokenUser]:
+        current_user: AuthenticatedUserType = Depends(require_authentication),
+    ) -> AuthenticatedUserType:
         """Check if current user has all required permissions.
 
         Args:
@@ -245,37 +243,20 @@ def require_all_permissions(*permission_names: str):
             user_identifier = (
                 f"service token '{current_user.token_name}'"
                 if isinstance(current_user, ServiceTokenUser)
-                else f"user '{current_user.email}'"
+                else current_user.email
             )
-            logger.warning(f"{user_identifier} denied access: missing permissions {missing_permissions}")
-            raise HTTPException(
-                status_code=403,
+            raise AuthExceptionHandler.handle_permission_error(
+                user_identifier=user_identifier,
                 detail=f"Insufficient permissions: missing {missing_permissions}",
             )
 
         logger.debug(
             f"{'Service token' if isinstance(current_user, ServiceTokenUser) else 'User'} "
-            f"granted access with all required permissions: {list(permission_names)}"
+            f"granted access with all required permissions: {list(permission_names)}",
         )
         return current_user
 
     return all_permissions_checker
-
-
-async def check_user_permission(user_email: str, permission_name: str) -> bool:
-    """Utility function to check user permissions without FastAPI dependency injection.
-
-    This is a standalone function for checking permissions outside of FastAPI endpoints,
-    such as in background tasks, CLI scripts, or other utility functions.
-
-    Args:
-        user_email: Email address of the user
-        permission_name: Name of the permission to check
-
-    Returns:
-        True if user has the permission, False otherwise
-    """
-    return await user_has_permission(user_email, permission_name)
 
 
 def has_service_token_permission(service_token_user: ServiceTokenUser, permission_name: str) -> bool:

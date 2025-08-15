@@ -12,12 +12,12 @@ automatically inherit permissions from their parent roles.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from sqlalchemy import delete, insert, select, text, update
 from sqlalchemy.exc import IntegrityError
 
-from src.database.connection import get_db
+from src.database.base_service import DatabaseService
 from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
 
 logger = logging.getLogger(__name__)
@@ -26,42 +26,40 @@ logger = logging.getLogger(__name__)
 class RoleManagerError(Exception):
     """Base exception for role management operations."""
 
-    pass
-
 
 class RoleNotFoundError(RoleManagerError):
     """Raised when a role is not found."""
-
-    pass
 
 
 class UserNotFoundError(RoleManagerError):
     """Raised when a user is not found."""
 
-    pass
-
 
 class PermissionNotFoundError(RoleManagerError):
     """Raised when a permission is not found."""
-
-    pass
 
 
 class CircularRoleHierarchyError(RoleManagerError):
     """Raised when a circular dependency is detected in role hierarchy."""
 
-    pass
 
+class RoleManager(DatabaseService):
+    """Manages role hierarchy, assignments, and permission resolution.
 
-class RoleManager:
-    """Manages role hierarchy, assignments, and permission resolution."""
+    Inherits from DatabaseService to provide standardized session management
+    and eliminate duplicate database connection patterns.
+    """
+
+    def __init__(self) -> None:
+        """Initialize role manager with database service."""
+        super().__init__()
 
     async def create_role(
         self,
         name: str,
-        description: Optional[str] = None,
-        parent_role_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        description: str | None = None,
+        parent_role_name: str | None = None,
+    ) -> dict[str, Any]:
         """Create a new role.
 
         Args:
@@ -77,12 +75,12 @@ class RoleManager:
             RoleNotFoundError: If parent role doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Validate parent role if specified
                 parent_role_id = None
                 if parent_role_name:
                     parent_result = await session.execute(
-                        select(Role.id).where(Role.name == parent_role_name, Role.is_active == True)  # noqa: E712
+                        select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),  # noqa: E712
                     )
                     parent_role = parent_result.scalar_one_or_none()
                     if not parent_role:
@@ -100,7 +98,7 @@ class RoleManager:
                 await session.commit()
                 await session.refresh(new_role)
 
-                logger.info(f"Created role '{name}' with ID {new_role.id}")
+                await self.log_operation_success("Role creation", new_role.id, name)
                 return {
                     "id": new_role.id,
                     "name": new_role.name,
@@ -111,15 +109,12 @@ class RoleManager:
                 }
 
         except IntegrityError as e:
-            logger.error(f"Role creation failed - integrity error: {e}")
-            if "unique constraint" in str(e).lower():
-                raise RoleManagerError(f"Role '{name}' already exists") from e
-            raise RoleManagerError(f"Role creation failed: {e}") from e
+            await self.handle_integrity_error(e, "Role creation", name)
         except Exception as e:
-            logger.error(f"Role creation failed: {e}")
+            await self.log_operation_error("Role creation", e, name)
             raise RoleManagerError(f"Failed to create role: {e}") from e
 
-    async def get_role(self, role_name: str) -> Optional[Dict[str, Any]]:
+    async def get_role(self, role_name: str) -> dict[str, Any] | None:
         """Get role information by name.
 
         Args:
@@ -129,9 +124,9 @@ class RoleManager:
             Dictionary with role information or None if not found
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role = result.scalar_one_or_none()
 
@@ -156,10 +151,10 @@ class RoleManager:
                 }
 
         except Exception as e:
-            logger.error(f"Failed to get role '{role_name}': {e}")
+            await self.log_operation_error("Get role", e, role_name)
             return None
 
-    async def list_roles(self, include_inactive: bool = False) -> List[Dict[str, Any]]:
+    async def list_roles(self, include_inactive: bool = False) -> list[dict[str, Any]]:
         """List all roles.
 
         Args:
@@ -169,7 +164,7 @@ class RoleManager:
             List of role dictionaries
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 query = select(Role)
                 if not include_inactive:
                     query = query.where(Role.is_active == True)  # noqa: E712
@@ -195,16 +190,16 @@ class RoleManager:
                             "created_at": role.created_at,
                             "updated_at": role.updated_at,
                             "is_active": role.is_active,
-                        }
+                        },
                     )
 
                 return role_list
 
         except Exception as e:
-            logger.error(f"Failed to list roles: {e}")
+            await self.log_operation_error("List roles", e)
             return []
 
-    async def get_role_permissions(self, role_name: str) -> Set[str]:
+    async def get_role_permissions(self, role_name: str) -> set[str]:
         """Get all permissions for a role including inherited permissions.
 
         Args:
@@ -217,17 +212,20 @@ class RoleManager:
             RoleNotFoundError: If role doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
                 # Use database function for permission resolution
-                result = await session.execute(text("SELECT permission_name FROM get_role_permissions(:role_id)"), {"role_id": role_id})
+                result = await session.execute(
+                    text("SELECT permission_name FROM get_role_permissions(:role_id)"),
+                    {"role_id": role_id},
+                )
                 permissions = {row[0] for row in result.fetchall()}
 
                 logger.debug(f"Role '{role_name}' has {len(permissions)} permissions (including inherited)")
@@ -236,7 +234,7 @@ class RoleManager:
         except RoleNotFoundError:
             raise
         except Exception as e:
-            logger.error(f"Failed to get permissions for role '{role_name}': {e}")
+            await self.log_operation_error("Get role permissions", e, role_name)
             return set()
 
     async def assign_permission_to_role(self, role_name: str, permission_name: str) -> bool:
@@ -254,10 +252,10 @@ class RoleManager:
             PermissionNotFoundError: If permission doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -265,7 +263,10 @@ class RoleManager:
 
                 # Get permission ID
                 perm_result = await session.execute(
-                    select(Permission.id).where(Permission.name == permission_name, Permission.is_active == True)  # noqa: E712
+                    select(Permission.id).where(
+                        Permission.name == permission_name,
+                        Permission.is_active == True,
+                    ),
                 )
                 permission_id = perm_result.scalar_one_or_none()
                 if not permission_id:
@@ -275,17 +276,20 @@ class RoleManager:
                 await session.execute(
                     insert(role_permissions_table)
                     .values(role_id=role_id, permission_id=permission_id)
-                    .on_conflict_do_nothing()
+                    .on_conflict_do_nothing(),
                 )
                 await session.commit()
 
-                logger.info(f"Assigned permission '{permission_name}' to role '{role_name}'")
+                await self.log_operation_success(
+                    "Permission assignment",
+                    additional_info=f"'{permission_name}' to role '{role_name}'",
+                )
                 return True
 
         except (RoleNotFoundError, PermissionNotFoundError):
             raise
         except Exception as e:
-            logger.error(f"Failed to assign permission '{permission_name}' to role '{role_name}': {e}")
+            await self.log_operation_error("Permission assignment", e, f"'{permission_name}' to role '{role_name}'")
             raise RoleManagerError(f"Permission assignment failed: {e}") from e
 
     async def revoke_permission_from_role(self, role_name: str, permission_name: str) -> bool:
@@ -303,10 +307,10 @@ class RoleManager:
             PermissionNotFoundError: If permission doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -314,7 +318,10 @@ class RoleManager:
 
                 # Get permission ID
                 perm_result = await session.execute(
-                    select(Permission.id).where(Permission.name == permission_name, Permission.is_active == True)  # noqa: E712
+                    select(Permission.id).where(
+                        Permission.name == permission_name,
+                        Permission.is_active == True,
+                    ),
                 )
                 permission_id = perm_result.scalar_one_or_none()
                 if not permission_id:
@@ -325,20 +332,23 @@ class RoleManager:
                     delete(role_permissions_table).where(
                         role_permissions_table.c.role_id == role_id,
                         role_permissions_table.c.permission_id == permission_id,
-                    )
+                    ),
                 )
                 await session.commit()
 
-                logger.info(f"Revoked permission '{permission_name}' from role '{role_name}'")
+                await self.log_operation_success(
+                    "Permission revocation",
+                    additional_info=f"'{permission_name}' from role '{role_name}'",
+                )
                 return True
 
         except (RoleNotFoundError, PermissionNotFoundError):
             raise
         except Exception as e:
-            logger.error(f"Failed to revoke permission '{permission_name}' from role '{role_name}': {e}")
+            await self.log_operation_error("Permission revocation", e, f"'{permission_name}' from role '{role_name}'")
             raise RoleManagerError(f"Permission revocation failed: {e}") from e
 
-    async def assign_user_role(self, user_email: str, role_name: str, assigned_by: Optional[str] = None) -> bool:
+    async def assign_user_role(self, user_email: str, role_name: str, assigned_by: str | None = None) -> bool:
         """Assign a role to a user.
 
         Args:
@@ -354,7 +364,7 @@ class RoleManager:
             RoleNotFoundError: If role doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Validate user exists
                 user_result = await session.execute(select(UserSession.email).where(UserSession.email == user_email))
                 if not user_result.scalar_one_or_none():
@@ -362,7 +372,7 @@ class RoleManager:
 
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -375,13 +385,16 @@ class RoleManager:
                 )
                 await session.commit()
 
-                logger.info(f"Assigned role '{role_name}' to user '{user_email}' by '{assigned_by}'")
+                await self.log_operation_success(
+                    "User role assignment",
+                    additional_info=f"role '{role_name}' to user '{user_email}' by '{assigned_by}'",
+                )
                 return True
 
         except (UserNotFoundError, RoleNotFoundError):
             raise
         except Exception as e:
-            logger.error(f"Failed to assign role '{role_name}' to user '{user_email}': {e}")
+            await self.log_operation_error("User role assignment", e, f"role '{role_name}' to user '{user_email}'")
             raise RoleManagerError(f"Role assignment failed: {e}") from e
 
     async def revoke_user_role(self, user_email: str, role_name: str) -> bool:
@@ -398,10 +411,10 @@ class RoleManager:
             RoleNotFoundError: If role doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -409,13 +422,17 @@ class RoleManager:
 
                 # Use database function for revocation
                 result = await session.execute(
-                    text("SELECT revoke_user_role(:user_email, :role_id)"), {"user_email": user_email, "role_id": role_id}
+                    text("SELECT revoke_user_role(:user_email, :role_id)"),
+                    {"user_email": user_email, "role_id": role_id},
                 )
                 success = result.scalar()
                 await session.commit()
 
                 if success:
-                    logger.info(f"Revoked role '{role_name}' from user '{user_email}'")
+                    await self.log_operation_success(
+                        "User role revocation",
+                        additional_info=f"role '{role_name}' from user '{user_email}'",
+                    )
                 else:
                     logger.warning(f"Role '{role_name}' was not assigned to user '{user_email}'")
 
@@ -424,10 +441,10 @@ class RoleManager:
         except RoleNotFoundError:
             raise
         except Exception as e:
-            logger.error(f"Failed to revoke role '{role_name}' from user '{user_email}': {e}")
+            await self.log_operation_error("User role revocation", e, f"role '{role_name}' from user '{user_email}'")
             raise RoleManagerError(f"Role revocation failed: {e}") from e
 
-    async def get_user_roles(self, user_email: str) -> List[Dict[str, Any]]:
+    async def get_user_roles(self, user_email: str) -> list[dict[str, Any]]:
         """Get all roles assigned to a user.
 
         Args:
@@ -437,9 +454,12 @@ class RoleManager:
             List of role dictionaries with assignment information
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Use database function to get user roles
-                result = await session.execute(text("SELECT * FROM get_user_roles(:user_email)"), {"user_email": user_email})
+                result = await session.execute(
+                    text("SELECT * FROM get_user_roles(:user_email)"),
+                    {"user_email": user_email},
+                )
                 rows = result.fetchall()
 
                 roles = []
@@ -450,17 +470,17 @@ class RoleManager:
                             "role_name": row.role_name,
                             "role_description": row.role_description,
                             "assigned_at": row.assigned_at,
-                        }
+                        },
                     )
 
                 logger.debug(f"User '{user_email}' has {len(roles)} assigned roles")
                 return roles
 
         except Exception as e:
-            logger.error(f"Failed to get roles for user '{user_email}': {e}")
+            await self.log_operation_error("Get user roles", e, user_email)
             return []
 
-    async def get_user_permissions(self, user_email: str) -> Set[str]:
+    async def get_user_permissions(self, user_email: str) -> set[str]:
         """Get all permissions for a user through their assigned roles.
 
         Args:
@@ -481,7 +501,7 @@ class RoleManager:
             return all_permissions
 
         except Exception as e:
-            logger.error(f"Failed to get permissions for user '{user_email}': {e}")
+            await self.log_operation_error("Get user permissions", e, user_email)
             return set()
 
     async def validate_role_hierarchy(self, role_name: str, parent_role_name: str) -> bool:
@@ -498,17 +518,17 @@ class RoleManager:
             RoleNotFoundError: If either role doesn't exist
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role IDs
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
                 parent_result = await session.execute(
-                    select(Role.id).where(Role.name == parent_role_name, Role.is_active == True)  # noqa: E712
+                    select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),  # noqa: E712
                 )
                 parent_id = parent_result.scalar_one_or_none()
                 if not parent_id:
@@ -523,16 +543,16 @@ class RoleManager:
                             SELECT id, parent_role_id, 0 as depth
                             FROM roles
                             WHERE id = :role_id AND is_active = true
-                            
+
                             UNION ALL
-                            
+
                             SELECT r.id, r.parent_role_id, rd.depth + 1
                             FROM roles r
                             INNER JOIN role_descendants rd ON r.parent_role_id = rd.id
                             WHERE r.is_active = true AND rd.depth < 10
                         )
                         SELECT EXISTS(SELECT 1 FROM role_descendants WHERE id = :parent_id)
-                    """
+                    """,
                     ),
                     {"role_id": role_id, "parent_id": parent_id},
                 )
@@ -543,7 +563,7 @@ class RoleManager:
         except RoleNotFoundError:
             raise
         except Exception as e:
-            logger.error(f"Failed to validate role hierarchy for '{role_name}' -> '{parent_role_name}': {e}")
+            await self.log_operation_error("Validate role hierarchy", e, f"'{role_name}' -> '{parent_role_name}'")
             return False
 
     async def delete_role(self, role_name: str, force: bool = False) -> bool:
@@ -561,10 +581,10 @@ class RoleManager:
             RoleManagerError: If role has dependencies and force=False
         """
         try:
-            async for session in get_db():
+            async with self.get_session() as session:
                 # Get role
                 role_result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True)  # noqa: E712
+                    select(Role).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
                 )
                 role = role_result.scalar_one_or_none()
                 if not role:
@@ -574,20 +594,22 @@ class RoleManager:
                 if not force:
                     # Check for child roles
                     child_result = await session.execute(
-                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active == True)  # noqa: E712
+                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active == True),  # noqa: E712
                     )
                     child_roles = child_result.scalars().all()
                     if child_roles:
-                        raise RoleManagerError(f"Role '{role_name}' has child roles: {list(child_roles)}. Use force=True to delete.")
+                        raise RoleManagerError(
+                            f"Role '{role_name}' has child roles: {list(child_roles)}. Use force=True to delete.",
+                        )
 
                     # Check for user assignments
                     user_result = await session.execute(
-                        select(user_roles_table.c.user_email).where(user_roles_table.c.role_id == role.id)
+                        select(user_roles_table.c.user_email).where(user_roles_table.c.role_id == role.id),
                     )
                     assigned_users = user_result.scalars().all()
                     if assigned_users:
                         raise RoleManagerError(
-                            f"Role '{role_name}' is assigned to {len(assigned_users)} users. Use force=True to delete."
+                            f"Role '{role_name}' is assigned to {len(assigned_users)} users. Use force=True to delete.",
                         )
 
                 # Perform soft delete
@@ -599,20 +621,20 @@ class RoleManager:
                     await session.execute(
                         update(Role)
                         .where(Role.parent_role_id == role.id)
-                        .values(parent_role_id=None, updated_at=datetime.utcnow())
+                        .values(parent_role_id=None, updated_at=datetime.utcnow()),
                     )
 
                 # Soft delete the role
                 await session.execute(
-                    update(Role).where(Role.id == role.id).values(is_active=False, updated_at=datetime.utcnow())
+                    update(Role).where(Role.id == role.id).values(is_active=False, updated_at=datetime.utcnow()),
                 )
                 await session.commit()
 
-                logger.info(f"Deleted role '{role_name}' (force={force})")
+                await self.log_operation_success("Role deletion", additional_info=f"'{role_name}' (force={force})")
                 return True
 
         except (RoleNotFoundError, RoleManagerError):
             raise
         except Exception as e:
-            logger.error(f"Failed to delete role '{role_name}': {e}")
+            await self.log_operation_error("Role deletion", e, role_name)
             raise RoleManagerError(f"Role deletion failed: {e}") from e
