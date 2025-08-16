@@ -74,6 +74,10 @@ starlette = ">=0.47.2"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 asyncpg = "^0.30.0"
 alembic = "^1.14.0"
+aiohttp = "^3.12.15"
+plotly = "^6.3.0"
+pandas = "^2.3.1"
+jinja2 = "^3.1.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0.1"
@@ -361,7 +365,6 @@ markers = [
 source = ["src"]
 branch = true
 parallel = true
-dynamic_context = "test_function"
 omit = [
     "*/tests/*",
     "*/test_*.py",
