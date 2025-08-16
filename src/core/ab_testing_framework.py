@@ -52,6 +52,7 @@ Base = declarative_base()
 
 class ExperimentType(Enum):
     """Types of A/B experiments."""
+
     DYNAMIC_LOADING = "dynamic_loading"
     OPTIMIZATION_STRATEGY = "optimization_strategy"
     USER_INTERFACE = "user_interface"
@@ -60,6 +61,7 @@ class ExperimentType(Enum):
 
 class ExperimentStatus(Enum):
     """Status of A/B experiments."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     PAUSED = "paused"
@@ -69,6 +71,7 @@ class ExperimentStatus(Enum):
 
 class UserSegment(Enum):
     """User segment types for A/B testing."""
+
     RANDOM = "random"
     POWER_USER = "power_user"
     NEW_USER = "new_user"
@@ -79,6 +82,7 @@ class UserSegment(Enum):
 
 class VariantType(Enum):
     """Types of experiment variants."""
+
     CONTROL = "control"
     TREATMENT = "treatment"
     TREATMENT_A = "treatment_a"
@@ -86,6 +90,7 @@ class VariantType(Enum):
 
 
 # Database Models
+
 
 class ExperimentModel(Base):
     """Database model for A/B experiments."""
@@ -180,6 +185,7 @@ class MetricEventModel(Base):
 
 
 # Pydantic Models
+
 
 @dataclass
 class ExperimentConfig:
@@ -355,10 +361,14 @@ class UserSegmentation:
         """
         try:
             # Check if user already assigned
-            existing = self.db_session.query(UserAssignmentModel).filter_by(
-                user_id=user_id,
-                experiment_id=experiment_id,
-            ).first()
+            existing = (
+                self.db_session.query(UserAssignmentModel)
+                .filter_by(
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                )
+                .first()
+            )
 
             if existing and not existing.opt_out:
                 return existing.variant, UserSegment(existing.segment)
@@ -372,8 +382,21 @@ class UserSegmentation:
             segment = self._determine_user_segment(user_characteristics or UserCharacteristics(user_id))
 
             # Check segment filters
-            if config.segment_filters and segment not in config.segment_filters:
-                return "control", segment
+            if config.segment_filters:
+                # Convert segment filters to enum objects if they're strings
+                segment_filter_enums = []
+                for f in config.segment_filters:
+                    if isinstance(f, str):
+                        try:
+                            segment_filter_enums.append(UserSegment(f))
+                        except ValueError:
+                            # Skip invalid segment filter values
+                            pass
+                    elif hasattr(f, "value"):
+                        segment_filter_enums.append(f)
+
+                if segment not in segment_filter_enums:
+                    return "control", segment
 
             # Check exclude segments
             if segment in config.exclude_segments:
@@ -423,8 +446,7 @@ class UserSegmentation:
                 return UserSegment.NEW_USER
 
         # Power user (high usage frequency and advanced patterns)
-        if (characteristics.usage_frequency == "high" and
-            characteristics.feature_usage_pattern == "advanced"):
+        if characteristics.usage_frequency == "high" and characteristics.feature_usage_pattern == "advanced":
             return UserSegment.POWER_USER
 
         # Volume-based segmentation
@@ -461,10 +483,14 @@ class UserSegmentation:
     def opt_out_user(self, user_id: str, experiment_id: str) -> bool:
         """Opt out a user from an experiment."""
         try:
-            assignment = self.db_session.query(UserAssignmentModel).filter_by(
-                user_id=user_id,
-                experiment_id=experiment_id,
-            ).first()
+            assignment = (
+                self.db_session.query(UserAssignmentModel)
+                .filter_by(
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                )
+                .first()
+            )
 
             if assignment:
                 assignment.opt_out = True
@@ -672,13 +698,15 @@ class StatisticalAnalyzer:
             experiment_id=experiment_id,
         )
 
-        variant_data = defaultdict(lambda: {
-            "user_count": 0,
-            "events": [],
-            "performance_metrics": [],
-            "error_count": 0,
-            "success_count": 0,
-        })
+        variant_data = defaultdict(
+            lambda: {
+                "user_count": 0,
+                "events": [],
+                "performance_metrics": [],
+                "error_count": 0,
+                "success_count": 0,
+            },
+        )
 
         # Count users per variant
         for assignment in assignments_query:
@@ -691,23 +719,27 @@ class StatisticalAnalyzer:
         )
 
         for event in events_query:
-            variant_data[event.variant]["events"].append({
-                "event_type": event.event_type,
-                "event_name": event.event_name,
-                "event_value": event.event_value,
-                "response_time_ms": event.response_time_ms,
-                "token_reduction_percentage": event.token_reduction_percentage,
-                "success": event.success,
-                "timestamp": event.timestamp,
-            })
+            variant_data[event.variant]["events"].append(
+                {
+                    "event_type": event.event_type,
+                    "event_name": event.event_name,
+                    "event_value": event.event_value,
+                    "response_time_ms": event.response_time_ms,
+                    "token_reduction_percentage": event.token_reduction_percentage,
+                    "success": event.success,
+                    "timestamp": event.timestamp,
+                },
+            )
 
             # Aggregate performance metrics
             if event.response_time_ms is not None:
-                variant_data[event.variant]["performance_metrics"].append({
-                    "response_time_ms": event.response_time_ms,
-                    "token_reduction_percentage": event.token_reduction_percentage or 0.0,
-                    "success": event.success,
-                })
+                variant_data[event.variant]["performance_metrics"].append(
+                    {
+                        "response_time_ms": event.response_time_ms,
+                        "token_reduction_percentage": event.token_reduction_percentage or 0.0,
+                        "success": event.success,
+                    },
+                )
 
             # Count successes and errors
             if event.success is True:
@@ -721,7 +753,11 @@ class StatisticalAnalyzer:
             if metrics:
                 data["avg_response_time_ms"] = sum(m["response_time_ms"] for m in metrics) / len(metrics)
                 data["avg_token_reduction"] = sum(m["token_reduction_percentage"] for m in metrics) / len(metrics)
-                data["success_rate"] = data["success_count"] / (data["success_count"] + data["error_count"]) if (data["success_count"] + data["error_count"]) > 0 else 0.0
+                data["success_rate"] = (
+                    data["success_count"] / (data["success_count"] + data["error_count"])
+                    if (data["success_count"] + data["error_count"]) > 0
+                    else 0.0
+                )
             else:
                 data["avg_response_time_ms"] = 0.0
                 data["avg_token_reduction"] = 0.0
@@ -768,7 +804,7 @@ class StatisticalAnalyzer:
         p_value = max(0.001, 1.0 - (significance / 100.0))
 
         # Confidence interval (simplified)
-        margin_of_error = 1.96 * (effect_size / (min_sample_size ** 0.5)) if min_sample_size > 0 else effect_size
+        margin_of_error = 1.96 * (effect_size / (min_sample_size**0.5)) if min_sample_size > 0 else effect_size
         confidence_interval = (
             max(0.0, effect_size - margin_of_error),
             min(1.0, effect_size + margin_of_error),
@@ -781,7 +817,11 @@ class StatisticalAnalyzer:
             "effect_size": effect_size,
         }
 
-    def _analyze_performance_metrics(self, experiment_id: str, variant_data: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def _analyze_performance_metrics(
+        self,
+        experiment_id: str,
+        variant_data: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
         """Analyze performance metrics across variants."""
 
         performance_summary = {
@@ -830,7 +870,11 @@ class StatisticalAnalyzer:
 
         return performance_summary
 
-    def _check_success_criteria(self, experiment: ExperimentModel, performance_summary: dict[str, Any]) -> dict[str, bool]:
+    def _check_success_criteria(
+        self,
+        experiment: ExperimentModel,
+        performance_summary: dict[str, Any],
+    ) -> dict[str, bool]:
         """Check if experiment meets success criteria."""
 
         success_criteria = experiment.success_criteria or {}
@@ -855,7 +899,11 @@ class StatisticalAnalyzer:
 
         return results
 
-    def _check_failure_thresholds(self, experiment: ExperimentModel, performance_summary: dict[str, Any]) -> dict[str, bool]:
+    def _check_failure_thresholds(
+        self,
+        experiment: ExperimentModel,
+        performance_summary: dict[str, Any],
+    ) -> dict[str, bool]:
         """Check if experiment exceeds failure thresholds."""
 
         failure_thresholds = experiment.failure_thresholds or {}
@@ -958,19 +1006,28 @@ class FeatureFlagManager:
         """Get feature flag value for a specific user."""
         try:
             # Check if user is in any active experiments for this flag
-            assignment = self.db_session.query(UserAssignmentModel).join(
-                ExperimentModel,
-            ).filter(
-                UserAssignmentModel.user_id == user_id,
-                ExperimentModel.status == "active",
-                ExperimentModel.config.contains({"feature_flags": {flag_name: True}}),
-            ).first()
+            assignment = (
+                self.db_session.query(UserAssignmentModel)
+                .join(
+                    ExperimentModel,
+                )
+                .filter(
+                    UserAssignmentModel.user_id == user_id,
+                    ExperimentModel.status == "active",
+                    ExperimentModel.config.contains({"feature_flags": {flag_name: True}}),
+                )
+                .first()
+            )
 
             if assignment and not assignment.opt_out:
                 # Get variant-specific configuration
-                experiment = self.db_session.query(ExperimentModel).filter_by(
-                    id=assignment.experiment_id,
-                ).first()
+                experiment = (
+                    self.db_session.query(ExperimentModel)
+                    .filter_by(
+                        id=assignment.experiment_id,
+                    )
+                    .first()
+                )
 
                 if experiment:
                     variant_config = experiment.config.get("variant_configs", {}).get(assignment.variant, {})
@@ -1156,9 +1213,31 @@ class ExperimentManager(ObservabilityMixin):
         self._monitoring_task: asyncio.Task | None = None
         self._shutdown_requested = False
 
-    def get_db_session(self) -> Session:
-        """Get database session."""
-        return self.SessionLocal()
+    @contextlib.contextmanager
+    def get_db_session(self):
+        """Get database session as context manager."""
+        session = self.SessionLocal()
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _serialize_config(self, config: ExperimentConfig) -> dict:
+        """Convert ExperimentConfig to JSON-serializable dictionary."""
+        config_dict = config.__dict__.copy()
+
+        # Convert enums to string values
+        if "experiment_type" in config_dict:
+            config_dict["experiment_type"] = config_dict["experiment_type"].value
+        if "segment_filters" in config_dict:
+            config_dict["segment_filters"] = [
+                s.value if hasattr(s, "value") else s for s in config_dict["segment_filters"]
+            ]
+
+        return config_dict
 
     async def create_experiment(self, config: ExperimentConfig, created_by: str = "system") -> str:
         """Create a new A/B testing experiment."""
@@ -1172,7 +1251,7 @@ class ExperimentManager(ObservabilityMixin):
                     description=config.description,
                     experiment_type=config.experiment_type.value,
                     status="draft",
-                    config=config.__dict__,
+                    config=self._serialize_config(config),
                     variants=list(config.variant_configs.keys()) or ["control", "treatment"],
                     success_criteria=config.success_criteria,
                     failure_thresholds=config.failure_thresholds,
@@ -1254,7 +1333,10 @@ class ExperimentManager(ObservabilityMixin):
                 segmentation = UserSegmentation(db_session)
 
                 return segmentation.assign_user_to_experiment(
-                    user_id, experiment_id, config, user_characteristics,
+                    user_id,
+                    experiment_id,
+                    config,
+                    user_characteristics,
                 )
 
         except Exception as e:
@@ -1281,10 +1363,14 @@ class ExperimentManager(ObservabilityMixin):
         try:
             with self.get_db_session() as db_session:
                 # Get user's variant assignment
-                assignment = db_session.query(UserAssignmentModel).filter_by(
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                ).first()
+                assignment = (
+                    db_session.query(UserAssignmentModel)
+                    .filter_by(
+                        user_id=user_id,
+                        experiment_id=experiment_id,
+                    )
+                    .first()
+                )
 
                 if not assignment or assignment.opt_out:
                     return False
@@ -1292,7 +1378,10 @@ class ExperimentManager(ObservabilityMixin):
                 # Record metrics
                 metrics_collector = MetricsCollector(db_session)
                 return metrics_collector.record_processing_result(
-                    experiment_id, user_id, assignment.variant, result,
+                    experiment_id,
+                    user_id,
+                    assignment.variant,
+                    result,
                 )
 
         except Exception as e:
@@ -1360,7 +1449,9 @@ class ExperimentManager(ObservabilityMixin):
                             experiment.end_time = datetime.utcnow()
                             db_session.commit()
 
-                            self.logger.info(f"Auto-completed experiment {experiment.id} after {elapsed_hours:.1f} hours")
+                            self.logger.info(
+                                f"Auto-completed experiment {experiment.id} after {elapsed_hours:.1f} hours",
+                            )
 
         except Exception as e:
             self.logger.error(f"Failed to check active experiments: {e}")

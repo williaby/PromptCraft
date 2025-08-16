@@ -28,7 +28,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -39,6 +39,7 @@ from src.utils.performance_monitor import PerformanceMonitor
 
 from .dynamic_function_loader import DynamicFunctionLoader, LoadingStrategy, initialize_dynamic_loading
 from .task_detection import DetectionResult, TaskDetectionSystem
+from .task_detection_config import ConfigManager
 from .token_optimization_monitor import TokenOptimizationMonitor
 from .user_control_system import CommandResult, UserControlSystem
 
@@ -80,6 +81,7 @@ class OptimizationReport:
 
 class IntegrationMode(Enum):
     """Integration mode for dynamic loading system."""
+
     DEVELOPMENT = "development"
     PRODUCTION = "production"
     TESTING = "testing"
@@ -88,6 +90,7 @@ class IntegrationMode(Enum):
 
 class IntegrationHealth(Enum):
     """Health status for integrated system."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     CRITICAL = "critical"
@@ -152,7 +155,7 @@ class IntegrationMetrics:
     @property
     def uptime_hours(self) -> float:
         """Calculate system uptime in hours."""
-        return (datetime.now() - self.uptime_start).total_seconds() / 3600.0
+        return (datetime.now(UTC) - self.uptime_start).total_seconds() / 3600.0
 
     def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary for monitoring/logging."""
@@ -165,24 +168,20 @@ class IntegrationMetrics:
             "cache_hits": self.cache_hits,
             "cache_misses": self.cache_misses,
             "cache_hit_rate": self.cache_hit_rate,
-
             # Token optimization metrics
             "baseline_tokens_total": self.baseline_tokens_total,
             "optimized_tokens_total": self.optimized_tokens_total,
             "average_reduction_percentage": self.average_reduction_percentage,
             "target_achievement_rate": self.target_achievement_rate,
-
             # Timing metrics
             "average_detection_time_ms": self.average_detection_time_ms,
             "average_loading_time_ms": self.average_loading_time_ms,
             "average_total_time_ms": self.average_total_time_ms,
-
             # User interaction metrics
             "user_commands_executed": self.user_commands_executed,
             "successful_user_commands": self.successful_user_commands,
             "user_command_success_rate": self.user_command_success_rate,
             "manual_overrides": self.manual_overrides,
-
             # System health metrics
             "error_count": self.error_count,
             "warning_count": self.warning_count,
@@ -286,7 +285,7 @@ class DynamicLoadingIntegration:
 
         # Core components
         self.function_loader: DynamicFunctionLoader | None = None
-        self.task_detector: TaskDetectionEngine | None = None
+        self.task_detector: TaskDetectionSystem | None = None
         self.optimization_monitor: TokenOptimizationMonitor | None = None
         self.user_control_system: UserControlSystem | None = None
         self.hybrid_router = hybrid_router
@@ -305,7 +304,7 @@ class DynamicLoadingIntegration:
         self._optimization_cache: dict[str, ProcessingResult] = {}
         self._cache_ttl_seconds = 3600  # 1 hour cache TTL
 
-        self.logger.info(f"Initializing DynamicLoadingIntegration in {mode.value} mode")
+        self.logger.info("Initializing DynamicLoadingIntegration in %s mode", mode.value)
 
     async def initialize(self) -> bool:
         """Initialize all components of the integrated system."""
@@ -337,8 +336,9 @@ class DynamicLoadingIntegration:
                 init_time = (time.perf_counter() - start_time) * 1000
 
                 self.logger.info(
-                    f"Dynamic loading integration initialized successfully in {init_time:.1f}ms "
-                    f"(status: {health_status.value})",
+                    "Dynamic loading integration initialized successfully in %.1fms (status: %s)",
+                    init_time,
+                    health_status.value,
                 )
                 return True
             self.health_status = IntegrationHealth.FAILED
@@ -348,7 +348,7 @@ class DynamicLoadingIntegration:
         except Exception as e:
             self.health_status = IntegrationHealth.FAILED
             self.metrics.error_count += 1
-            self.logger.error(f"Integration initialization failed: {e}", exc_info=True)
+            self.logger.exception("Integration initialization failed: %s", e)
             return False
 
     async def _initialize_core_components(self) -> None:
@@ -371,7 +371,11 @@ class DynamicLoadingIntegration:
 
     async def _initialize_user_controls(self) -> None:
         """Initialize user control and command systems."""
-        self.user_control_system = UserControlSystem()
+        # Create config manager
+        config_manager = ConfigManager()
+
+        # Initialize user control system with required dependencies
+        self.user_control_system = UserControlSystem(detection_system=self.task_detector, config_manager=config_manager)
 
         self.logger.info("User control systems initialized")
 
@@ -379,8 +383,10 @@ class DynamicLoadingIntegration:
         """Initialize enhanced hybrid router with dynamic loading."""
         if self.hybrid_router:
             # Connect hybrid router if not already connected
-            if not hasattr(self.hybrid_router, "connection_state") or \
-               self.hybrid_router.connection_state.name == "DISCONNECTED":
+            if (
+                not hasattr(self.hybrid_router, "connection_state")
+                or self.hybrid_router.connection_state.name == "DISCONNECTED"
+            ):
                 await self.hybrid_router.connect()
 
             self.logger.info("Hybrid router integration initialized")
@@ -410,7 +416,7 @@ class DynamicLoadingIntegration:
         start_time = time.perf_counter()
         session_id = f"{user_id}_{int(time.time() * 1000)}"
 
-        self.logger.info(f"Processing query for session {session_id}: {query[:100]}...")
+        self.logger.info("Processing query for session %s: %s...", session_id, query[:100])
 
         try:
             # Check cache first if enabled
@@ -420,7 +426,7 @@ class DynamicLoadingIntegration:
                 if cache_result:
                     self.metrics.cache_hits += 1
                     cache_result.cache_hit = True
-                    self.logger.info(f"Cache hit for session {session_id}")
+                    self.logger.info("Cache hit for session %s", session_id)
                     return cache_result
                 self.metrics.cache_misses += 1
 
@@ -431,19 +437,28 @@ class DynamicLoadingIntegration:
 
             # Extract categories and confidence from the detection result
             detected_categories = [cat for cat, detected in raw_detection_result.categories.items() if detected]
-            avg_confidence = sum(raw_detection_result.confidence_scores.values()) / len(raw_detection_result.confidence_scores) if raw_detection_result.confidence_scores else 0.0
+            avg_confidence = (
+                sum(raw_detection_result.confidence_scores.values()) / len(raw_detection_result.confidence_scores)
+                if raw_detection_result.confidence_scores
+                else 0.0
+            )
 
             # Create simplified detection result for compatibility
-            detection_result = type("DetectionResult", (), {
-                "categories": detected_categories,
-                "confidence": avg_confidence,
-                "reasoning": f"Detected {len(detected_categories)} categories with avg confidence {avg_confidence:.2f}",
-            })()
+            detection_result = type(
+                "DetectionResult",
+                (),
+                {
+                    "categories": detected_categories,
+                    "confidence": avg_confidence,
+                    "reasoning": f"Detected {len(detected_categories)} categories with avg confidence {avg_confidence:.2f}",
+                },
+            )()
 
             self.logger.info(
-                f"Task detection completed in {detection_time:.1f}ms: "
-                f"categories={detected_categories}, "
-                f"confidence={avg_confidence:.2f}",
+                "Task detection completed in %.1fms: categories=%s, confidence=%.2f",
+                detection_time,
+                detected_categories,
+                avg_confidence,
             )
 
             # Step 2: Create loading session and load functions
@@ -460,7 +475,8 @@ class DynamicLoadingIntegration:
                 for command in user_commands:
                     try:
                         cmd_result = await self.function_loader.execute_user_command(
-                            loading_session_id, command,
+                            loading_session_id,
+                            command,
                         )
                         command_results.append(cmd_result)
 
@@ -469,12 +485,14 @@ class DynamicLoadingIntegration:
                         self.metrics.user_commands_executed += 1
 
                     except Exception as e:
-                        self.logger.warning(f"User command failed: {command} - {e}")
-                        command_results.append(CommandResult(
-                            success=False,
-                            message=f"Command execution failed: {e}",
-                            command=command,
-                        ))
+                        self.logger.warning("User command failed: %s - %s", command, e)
+                        command_results.append(
+                            CommandResult(
+                                success=False,
+                                message=f"Command execution failed: {e}",
+                                command=command,
+                            ),
+                        )
                         self.metrics.user_commands_executed += 1
 
             # Load functions based on detection and user input
@@ -509,7 +527,7 @@ class DynamicLoadingIntegration:
             if self.enable_monitoring and self.optimization_monitor:
                 # Note: TokenOptimizationMonitor may not have record_optimization_result method
                 # For now, we'll just log the optimization
-                self.logger.info(f"Optimization recorded: {reduction_percentage:.1f}% reduction")
+                self.logger.info("Optimization recorded: %.1f%% reduction", reduction_percentage)
 
             # Calculate total processing time
             total_time = (time.perf_counter() - start_time) * 1000
@@ -542,8 +560,10 @@ class DynamicLoadingIntegration:
                 self._cache_result(query, strategy, result)
 
             self.logger.info(
-                f"Query processing completed successfully in {total_time:.1f}ms: "
-                f"reduction={reduction_percentage:.1f}%, target_achieved={target_achieved}",
+                "Query processing completed successfully in %.1fms: reduction=%.1f%%, target_achieved=%s",
+                total_time,
+                reduction_percentage,
+                target_achieved,
             )
 
             return result
@@ -552,14 +572,18 @@ class DynamicLoadingIntegration:
             self.metrics.error_count += 1
             total_time = (time.perf_counter() - start_time) * 1000
 
-            self.logger.error(f"Query processing failed for session {session_id}: {e}", exc_info=True)
+            self.logger.exception("Query processing failed for session %s: %s", session_id, e)
 
             # Create error result
-            error_detection_result = type("DetectionResult", (), {
-                "categories": [],
-                "confidence": 0.0,
-                "reasoning": "Processing failed",
-            })()
+            error_detection_result = type(
+                "DetectionResult",
+                (),
+                {
+                    "categories": [],
+                    "confidence": 0.0,
+                    "reasoning": "Processing failed",
+                },
+            )()
 
             return ProcessingResult(
                 query=query,
@@ -636,7 +660,7 @@ class DynamicLoadingIntegration:
             return workflow_responses, optimization_result
 
         except Exception as e:
-            self.logger.error(f"Workflow execution failed: {e}")
+            self.logger.error("Workflow execution failed: %s", e)
             # Update optimization result with error
             optimization_result.success = False
             optimization_result.error_message = f"Workflow execution failed: {e}"
@@ -690,15 +714,19 @@ class DynamicLoadingIntegration:
         else:
             # Running average
             self.metrics.average_reduction_percentage = (
-                (self.metrics.average_reduction_percentage * (self.metrics.total_queries_processed - 1) +
-                 result.reduction_percentage) / self.metrics.total_queries_processed
-            )
+                self.metrics.average_reduction_percentage * (self.metrics.total_queries_processed - 1)
+                + result.reduction_percentage
+            ) / self.metrics.total_queries_processed
 
         # Update target achievement rate
         if result.target_achieved:
-            successful_targets = (self.metrics.target_achievement_rate / 100.0) * (self.metrics.total_queries_processed - 1) + 1
+            successful_targets = (self.metrics.target_achievement_rate / 100.0) * (
+                self.metrics.total_queries_processed - 1
+            ) + 1
         else:
-            successful_targets = (self.metrics.target_achievement_rate / 100.0) * (self.metrics.total_queries_processed - 1)
+            successful_targets = (self.metrics.target_achievement_rate / 100.0) * (
+                self.metrics.total_queries_processed - 1
+            )
 
         self.metrics.target_achievement_rate = (successful_targets / self.metrics.total_queries_processed) * 100.0
 
@@ -715,16 +743,13 @@ class DynamicLoadingIntegration:
             self.metrics.average_total_time_ms = result.total_time_ms
         else:
             self.metrics.average_detection_time_ms = (
-                alpha * result.detection_time_ms +
-                (1 - alpha) * self.metrics.average_detection_time_ms
+                alpha * result.detection_time_ms + (1 - alpha) * self.metrics.average_detection_time_ms
             )
             self.metrics.average_loading_time_ms = (
-                alpha * result.loading_time_ms +
-                (1 - alpha) * self.metrics.average_loading_time_ms
+                alpha * result.loading_time_ms + (1 - alpha) * self.metrics.average_loading_time_ms
             )
             self.metrics.average_total_time_ms = (
-                alpha * result.total_time_ms +
-                (1 - alpha) * self.metrics.average_total_time_ms
+                alpha * result.total_time_ms + (1 - alpha) * self.metrics.average_total_time_ms
             )
 
     async def _perform_health_check(self) -> IntegrationHealth:
@@ -756,7 +781,7 @@ class DynamicLoadingIntegration:
                     health_issues.append(f"Hybrid router health check error: {e}")
 
             # Determine health status
-            self.metrics.last_health_check = datetime.now()
+            self.metrics.last_health_check = datetime.now(UTC)
 
             if not health_issues:
                 return IntegrationHealth.HEALTHY
@@ -767,7 +792,7 @@ class DynamicLoadingIntegration:
             return IntegrationHealth.CRITICAL
 
         except Exception as e:
-            self.logger.error(f"Health check failed: {e}", exc_info=True)
+            self.logger.exception("Health check failed: %s", e)
             self.metrics.error_count += 1
             return IntegrationHealth.FAILED
 
@@ -798,7 +823,6 @@ class DynamicLoadingIntegration:
             "active_sessions": len(self.active_sessions),
         }
 
-
     async def execute_user_command(
         self,
         command: str,
@@ -819,7 +843,7 @@ class DynamicLoadingIntegration:
                 result = await self.function_loader.execute_user_command(session_id, command)
             else:
                 # Execute through user control system
-                result = await self.user_control_system.execute_command(command, user_id)
+                result = await self.user_control_system.execute_command(command)
 
             if result.success:
                 self.metrics.successful_user_commands += 1
@@ -828,18 +852,17 @@ class DynamicLoadingIntegration:
             return result
 
         except Exception as e:
-            self.logger.error(f"User command execution failed: {command} - {e}")
+            self.logger.error("User command execution failed: %s - %s", command, e)
             self.metrics.user_commands_executed += 1
             return CommandResult(
                 success=False,
                 message=f"Command execution failed: {e}",
-                command=command,
             )
 
     async def get_performance_report(self) -> dict[str, Any]:
         """Generate comprehensive performance report."""
         if self.optimization_monitor:
-            monitor_report = await self.optimization_monitor.get_performance_report()
+            monitor_report = await self.optimization_monitor.get_optimization_report()
         else:
             monitor_report = {}
 
@@ -859,11 +882,13 @@ class DynamicLoadingIntegration:
                 "average_total_time_ms": self.metrics.average_total_time_ms,
                 "detection_percentage": (
                     (self.metrics.average_detection_time_ms / self.metrics.average_total_time_ms * 100)
-                    if self.metrics.average_total_time_ms > 0 else 0
+                    if self.metrics.average_total_time_ms > 0
+                    else 0
                 ),
                 "loading_percentage": (
                     (self.metrics.average_loading_time_ms / self.metrics.average_total_time_ms * 100)
-                    if self.metrics.average_total_time_ms > 0 else 0
+                    if self.metrics.average_total_time_ms > 0
+                    else 0
                 ),
             },
             "system_health": {
@@ -878,7 +903,7 @@ class DynamicLoadingIntegration:
         return {
             "integration_report": integration_report,
             "optimization_monitor_report": monitor_report,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     async def shutdown(self) -> None:
@@ -900,7 +925,7 @@ class DynamicLoadingIntegration:
             self.logger.info("Dynamic loading integration shutdown completed")
 
         except Exception as e:
-            self.logger.error(f"Error during shutdown: {e}", exc_info=True)
+            self.logger.exception("Error during shutdown: %s", e)
 
 
 # Global integration instance for application-wide use
@@ -926,8 +951,8 @@ async def get_integration_instance(
 @asynccontextmanager
 async def dynamic_loading_context(
     mode: IntegrationMode = IntegrationMode.PRODUCTION,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Any:
     """Async context manager for dynamic loading integration."""
     integration = DynamicLoadingIntegration(mode=mode, **kwargs)
 

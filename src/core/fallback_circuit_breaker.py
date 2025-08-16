@@ -44,25 +44,28 @@ logger = logging.getLogger(__name__)
 
 class AdvancedCircuitBreakerState(Enum):
     """Enhanced circuit breaker states with graduated transitions"""
-    CLOSED = "closed"              # Normal operation
-    HALF_OPEN = "half_open"        # Testing recovery
-    OPEN = "open"                  # Blocking requests
-    FORCED_OPEN = "forced_open"    # Manually opened (admin)
-    DEGRADED = "degraded"          # Partial functionality
+
+    CLOSED = "closed"  # Normal operation
+    HALF_OPEN = "half_open"  # Testing recovery
+    OPEN = "open"  # Blocking requests
+    FORCED_OPEN = "forced_open"  # Manually opened (admin)
+    DEGRADED = "degraded"  # Partial functionality
 
 
 class FailurePattern(Enum):
     """Types of failure patterns for adaptive behavior"""
+
     INTERMITTENT = "intermittent"  # Sporadic failures
-    SUSTAINED = "sustained"        # Continuous failures
-    CASCADING = "cascading"        # Failures spreading across system
-    TIMEOUT_HEAVY = "timeout_heavy" # Predominantly timeout failures
-    OVERLOAD = "overload"          # System overload pattern
+    SUSTAINED = "sustained"  # Continuous failures
+    CASCADING = "cascading"  # Failures spreading across system
+    TIMEOUT_HEAVY = "timeout_heavy"  # Predominantly timeout failures
+    OVERLOAD = "overload"  # System overload pattern
 
 
 @dataclass
 class CircuitBreakerMetrics:
     """Comprehensive metrics for circuit breaker monitoring"""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -92,18 +95,21 @@ class CircuitBreakerMetrics:
 @dataclass
 class AdaptiveThreshold:
     """Adaptive threshold configuration based on failure patterns"""
+
     base_failure_threshold: int = 5
     base_success_threshold: int = 3
     base_timeout: float = 60.0
 
     # Pattern-specific modifiers
-    pattern_modifiers: dict[FailurePattern, dict[str, float]] = field(default_factory=lambda: {
-        FailurePattern.INTERMITTENT: {"failure_mult": 1.5, "timeout_mult": 0.8},
-        FailurePattern.SUSTAINED: {"failure_mult": 0.7, "timeout_mult": 1.2},
-        FailurePattern.CASCADING: {"failure_mult": 0.5, "timeout_mult": 1.5},
-        FailurePattern.TIMEOUT_HEAVY: {"failure_mult": 0.8, "timeout_mult": 2.0},
-        FailurePattern.OVERLOAD: {"failure_mult": 0.6, "timeout_mult": 1.8},
-    })
+    pattern_modifiers: dict[FailurePattern, dict[str, float]] = field(
+        default_factory=lambda: {
+            FailurePattern.INTERMITTENT: {"failure_mult": 1.5, "timeout_mult": 0.8},
+            FailurePattern.SUSTAINED: {"failure_mult": 0.7, "timeout_mult": 1.2},
+            FailurePattern.CASCADING: {"failure_mult": 0.5, "timeout_mult": 1.5},
+            FailurePattern.TIMEOUT_HEAVY: {"failure_mult": 0.8, "timeout_mult": 2.0},
+            FailurePattern.OVERLOAD: {"failure_mult": 0.6, "timeout_mult": 1.8},
+        },
+    )
 
     def get_adjusted_thresholds(self, pattern: FailurePattern) -> dict[str, int | float]:
         """Get pattern-adjusted thresholds"""
@@ -126,12 +132,14 @@ class FailureAnalyzer:
 
     def record_request(self, success: bool, response_time: float, error_type: str | None = None) -> None:
         """Record a request result for pattern analysis"""
-        self.failure_history.append({
-            "success": success,
-            "timestamp": time.time(),
-            "response_time": response_time,
-            "error_type": error_type,
-        })
+        self.failure_history.append(
+            {
+                "success": success,
+                "timestamp": time.time(),
+                "response_time": response_time,
+                "error_type": error_type,
+            },
+        )
         self.response_times.append(response_time)
 
     def detect_failure_pattern(self) -> FailurePattern:
@@ -254,10 +262,12 @@ class FallbackCircuitBreaker(LoggerMixin):
     - Cascade failure prevention
     """
 
-    def __init__(self,
-                 adaptive_threshold: AdaptiveThreshold | None = None,
-                 recovery_strategy: RecoveryStrategy | None = None,
-                 logger_name: str = "fallback_circuit_breaker") -> None:
+    def __init__(
+        self,
+        adaptive_threshold: AdaptiveThreshold | None = None,
+        recovery_strategy: RecoveryStrategy | None = None,
+        logger_name: str = "fallback_circuit_breaker",
+    ) -> None:
         super().__init__(logger_name=logger_name)
 
         self.adaptive_threshold = adaptive_threshold or AdaptiveThreshold()
@@ -389,9 +399,15 @@ class FallbackCircuitBreaker(LoggerMixin):
             if self.consecutive_failures >= current_thresholds["failure_threshold"]:
                 # Decide between OPEN and DEGRADED based on pattern
                 if self.current_pattern in [FailurePattern.CASCADING, FailurePattern.SUSTAINED]:
-                    await self._transition_to_state(AdvancedCircuitBreakerState.OPEN, f"failure_threshold_exceeded_{self.current_pattern.value}")
+                    await self._transition_to_state(
+                        AdvancedCircuitBreakerState.OPEN,
+                        f"failure_threshold_exceeded_{self.current_pattern.value}",
+                    )
                 else:
-                    await self._transition_to_state(AdvancedCircuitBreakerState.DEGRADED, f"degraded_mode_{self.current_pattern.value}")
+                    await self._transition_to_state(
+                        AdvancedCircuitBreakerState.DEGRADED,
+                        f"degraded_mode_{self.current_pattern.value}",
+                    )
 
         elif self.state == AdvancedCircuitBreakerState.HALF_OPEN:
             # Any failure in half-open transitions back to OPEN
@@ -486,8 +502,7 @@ class FallbackCircuitBreaker(LoggerMixin):
         if self.metrics.avg_response_time == 0:
             self.metrics.avg_response_time = response_time
         else:
-            self.metrics.avg_response_time = (alpha * response_time +
-                                           (1 - alpha) * self.metrics.avg_response_time)
+            self.metrics.avg_response_time = alpha * response_time + (1 - alpha) * self.metrics.avg_response_time
 
     def get_health_status(self) -> dict[str, Any]:
         """Get comprehensive health status"""
@@ -510,14 +525,24 @@ class FallbackCircuitBreaker(LoggerMixin):
     def force_open(self, reason: str = "manual_intervention") -> None:
         """Manually force circuit breaker open"""
         self.logger.warning(f"Circuit breaker manually forced OPEN: {reason}")
-        asyncio.create_task(self._transition_to_state(AdvancedCircuitBreakerState.FORCED_OPEN, reason))
+        # For synchronous force operations, update state directly
+        old_state = self.state
+        self.state = AdvancedCircuitBreakerState.FORCED_OPEN
+        self.state_start_time = time.time()
+        self.last_state_change = time.time()
+        self.logger.info(f"STATE_CHANGE: {old_state.value} -> forced_open (reason: {reason})")
 
     def force_close(self, reason: str = "manual_intervention") -> None:
         """Manually force circuit breaker closed"""
         self.logger.info(f"Circuit breaker manually forced CLOSED: {reason}")
         self.consecutive_failures = 0
         self.consecutive_successes = 0
-        asyncio.create_task(self._transition_to_state(AdvancedCircuitBreakerState.CLOSED, reason))
+        # For synchronous force operations, update state directly
+        old_state = self.state
+        self.state = AdvancedCircuitBreakerState.CLOSED
+        self.state_start_time = time.time()
+        self.last_state_change = time.time()
+        self.logger.info(f"STATE_CHANGE: {old_state.value} -> closed (reason: {reason})")
 
     def reset_metrics(self) -> None:
         """Reset all metrics (for testing/admin)"""
@@ -536,7 +561,7 @@ def create_conservative_circuit_breaker() -> FallbackCircuitBreaker:
     adaptive_threshold = AdaptiveThreshold(
         base_failure_threshold=3,  # Conservative - fail fast
         base_success_threshold=5,  # Conservative - require more successes
-        base_timeout=30.0,          # Shorter timeout for faster recovery
+        base_timeout=30.0,  # Shorter timeout for faster recovery
     )
 
     recovery_strategy = GradualRecoveryStrategy(test_request_limit=3)
@@ -552,7 +577,7 @@ def create_high_availability_circuit_breaker() -> FallbackCircuitBreaker:
     adaptive_threshold = AdaptiveThreshold(
         base_failure_threshold=5,  # More tolerant
         base_success_threshold=3,  # Faster recovery
-        base_timeout=60.0,          # Longer timeout for stability
+        base_timeout=60.0,  # Longer timeout for stability
     )
 
     recovery_strategy = AggressiveRecoveryStrategy()
@@ -568,7 +593,7 @@ def create_performance_circuit_breaker() -> FallbackCircuitBreaker:
     adaptive_threshold = AdaptiveThreshold(
         base_failure_threshold=2,  # Very sensitive
         base_success_threshold=2,  # Quick recovery
-        base_timeout=15.0,          # Fast timeout
+        base_timeout=15.0,  # Fast timeout
     )
 
     recovery_strategy = AggressiveRecoveryStrategy()

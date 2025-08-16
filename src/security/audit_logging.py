@@ -476,6 +476,7 @@ class AuditLogger:
         response_status: int,
         processing_time: float,
         user_id: str | None = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> None:
         """Log API request/response events.
 
@@ -490,6 +491,7 @@ class AuditLogger:
             response_status: HTTP response status code for severity determination
             processing_time: Request processing time in seconds
             user_id: User identifier if authenticated (optional)
+            additional_data: Additional context data to include in the log (optional)
 
         Side Effects:
             Automatically includes response status and processing time in
@@ -520,6 +522,14 @@ class AuditLogger:
 
         message = f"API request: {request.method} {request.url.path} -> {response_status}"
 
+        # Merge default API data with any additional data provided
+        api_data = {
+            "response_status": response_status,
+            "processing_time": processing_time,
+        }
+        if additional_data:
+            api_data.update(additional_data)
+
         event = AuditEvent(
             event_type=AuditEventType.API_REQUEST,
             severity=severity,
@@ -529,10 +539,7 @@ class AuditLogger:
             resource=request.url.path,
             action=request.method.lower(),
             outcome=outcome,
-            additional_data={
-                "response_status": response_status,
-                "processing_time": processing_time,
-            },
+            additional_data=api_data,
         )
 
         self.log_event(event)

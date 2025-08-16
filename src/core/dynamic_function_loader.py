@@ -32,7 +32,7 @@ from statistics import mean, median
 from typing import Any
 from uuid import uuid4
 
-from src.utils.performance_monitor import PerformanceMonitor
+from src.utils.performance_monitor import MetricData, MetricType, PerformanceMonitor
 
 from .task_detection import DetectionResult, TaskDetectionSystem
 from .task_detection_config import ConfigManager
@@ -334,9 +334,9 @@ class FunctionRegistry:
             metadata.usage_count += 1
             metadata.last_used = datetime.now()
 
+            # Update success rate with exponential moving average
+            alpha = 0.1
             if success:
-                # Update success rate with exponential moving average
-                alpha = 0.1
                 metadata.success_rate = alpha * 1.0 + (1 - alpha) * metadata.success_rate
             else:
                 metadata.success_rate = alpha * 0.0 + (1 - alpha) * metadata.success_rate
@@ -400,7 +400,9 @@ class DynamicFunctionLoader:
         return session_id
 
     async def load_functions_for_query(
-        self, session_id: str, user_overrides: dict[str, Any] | None = None,
+        self,
+        session_id: str,
+        user_overrides: dict[str, Any] | None = None,
     ) -> LoadingDecision:
         """Main entry point for loading functions based on query analysis."""
 
@@ -421,6 +423,8 @@ class DynamicFunctionLoader:
             # Step 2: Apply User Overrides
             if user_overrides:
                 detection_result = await self._apply_user_overrides(detection_result, user_overrides, session)
+                # Update session with modified detection result
+                session.detection_result = detection_result
 
             # Step 3: Make Loading Decision
             loading_decision = await self._make_loading_decision(detection_result, session)
@@ -443,6 +447,13 @@ class DynamicFunctionLoader:
             return loading_decision
 
         except Exception as e:
+            # Add stack trace for debugging
+            import traceback
+
+            logger.error(f"Function loading exception details for session {session_id}:")
+            logger.error(f"Exception: {e}")
+            logger.error(f"Traceback:\n{traceback.format_exc()}")
+
             session.status = SessionStatus.FAILED
             session.error_count += 1
 
@@ -457,6 +468,17 @@ class DynamicFunctionLoader:
         """Detect task requirements using the task detection system."""
 
         # Build context for detection
+        # Debug logging to catch dict vs LoadingSession issue
+        if isinstance(session, dict):
+            logger.error(f"SESSION IS DICT! Keys: {list(session.keys())}")
+            logger.error(f"Type: {type(session)}")
+            raise TypeError(f"Expected LoadingSession but got dict with keys: {list(session.keys())}")
+
+        # Ensure session is LoadingSession object
+        if not hasattr(session, "timestamp"):
+            logger.error(f"Session missing timestamp! Type: {type(session)}, Attributes: {dir(session)}")
+            raise AttributeError(f"Session missing timestamp attribute. Type: {type(session)}")
+
         context = {
             "user_id": session.user_id,
             "session_id": session.session_id,
@@ -487,7 +509,10 @@ class DynamicFunctionLoader:
         return detection_result
 
     async def _apply_user_overrides(
-        self, detection_result: DetectionResult, user_overrides: dict[str, Any], session: LoadingSession,
+        self,
+        detection_result: DetectionResult,
+        user_overrides: dict[str, Any],
+        session: LoadingSession,
     ) -> DetectionResult:
         """Apply user overrides to detection results."""
 
@@ -500,9 +525,8 @@ class DynamicFunctionLoader:
         modified_categories = detection_result.categories.copy()
 
         for category in override_categories:
-            if category in modified_categories:
-                modified_categories[category] = True
-                session.user_commands.append(f"force_load:{category}")
+            modified_categories[category] = True
+            session.user_commands.append(f"force_load:{category}")
 
         for category in disable_categories:
             if category in modified_categories:
@@ -523,25 +547,33 @@ class DynamicFunctionLoader:
                 new_optimization=f"user_controlled_{len(session.user_commands)}",
             )
 
+        # Update confidence scores for forced categories
+        modified_confidence_scores = detection_result.confidence_scores.copy()
+        for category in override_categories:
+            # Give forced categories high confidence to ensure they load
+            modified_confidence_scores[category] = 1.0
+
         # Create modified detection result
         return DetectionResult(
             categories=modified_categories,
-            confidence_scores=detection_result.confidence_scores,
+            confidence_scores=modified_confidence_scores,
             detection_time_ms=detection_result.detection_time_ms,
             signals_used=detection_result.signals_used,
             fallback_applied=detection_result.fallback_applied,
         )
 
     async def _make_loading_decision(
-        self, detection_result: DetectionResult, session: LoadingSession,
+        self,
+        detection_result: DetectionResult,
+        session: LoadingSession,
     ) -> LoadingDecision:
         """Make intelligent loading decision based on detection results and strategy."""
 
         functions_to_load = set()
         tier_breakdown = {tier: set() for tier in LoadingTier}
 
-        # Always load Tier 1 (Essential functions)
-        tier1_functions = self.function_registry.get_functions_by_tier(LoadingTier.TIER_1)
+        # Load Tier 1 functions based on detected categories (for token optimization)
+        tier1_functions = self._select_tier1_functions(detection_result, session.strategy)
         functions_to_load.update(tier1_functions)
         tier_breakdown[LoadingTier.TIER_1] = tier1_functions
 
@@ -578,40 +610,99 @@ class DynamicFunctionLoader:
         # Cache decision
         if self.enable_caching:
             cache_key = self._generate_detection_cache_key(
-                session.query, {"strategy": session.strategy.value, "user_commands": session.user_commands},
+                session.query,
+                {"strategy": session.strategy.value, "user_commands": session.user_commands},
             )
             self.loading_cache[cache_key] = (loading_decision, datetime.now())
 
         return loading_decision
+
+    def _select_tier1_functions(self, detection_result: DetectionResult, strategy: LoadingStrategy) -> set[str]:
+        """Select Tier 1 functions based on detected categories for token optimization."""
+
+        tier1_functions = set()
+
+        # Always load core functions (essential for basic operations)
+        core_functions = self.function_registry.get_functions_by_category("core")
+        tier1_core_functions = {
+            func for func in core_functions if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_1)
+        }
+        tier1_functions.update(tier1_core_functions)
+
+        # Load git functions only if git category is detected with sufficient confidence
+        if detection_result.categories.get("git", False):
+            git_confidence = detection_result.confidence_scores.get("git", 0.0)
+            # Use a lower threshold for git since it's Tier 1, but still allow optimization
+            git_threshold = 0.3  # Lower threshold for Tier 1 git functions
+
+            if git_confidence >= git_threshold:
+                git_functions = self.function_registry.get_functions_by_category("git")
+                tier1_git_functions = {
+                    func
+                    for func in git_functions
+                    if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_1)
+                }
+                tier1_functions.update(tier1_git_functions)
+
+        return tier1_functions
 
     def _select_tier2_functions(self, detection_result: DetectionResult, strategy: LoadingStrategy) -> set[str]:
         """Select Tier 2 functions based on detection results and strategy."""
 
         tier2_functions = set()
 
-        # Get strategy-specific threshold
+        # Get strategy-specific threshold and category limit
         base_threshold = self.config.thresholds.tier2_base_threshold
 
         if strategy == LoadingStrategy.CONSERVATIVE:
-            threshold = base_threshold * 0.8  # Lower threshold for more loading
+            threshold = base_threshold * 0.9  # Still high threshold for safety
+            max_categories = 1  # Conservative: restrict to achieve 70% reduction
         elif strategy == LoadingStrategy.AGGRESSIVE:
-            threshold = base_threshold * 1.2  # Higher threshold for less loading
+            threshold = min(base_threshold * 1.05, 0.99)  # Higher threshold but cap at 0.99
+            max_categories = 1  # Aggressive: very selective
         else:  # BALANCED
             threshold = base_threshold
+            max_categories = 1  # Balanced: selective for token reduction
 
-        # Load functions for categories that meet threshold
+        # Get eligible categories, prioritizing those with actual Tier 2 functions
+        eligible_categories = []
+        tier2_tier_functions = self.function_registry.get_functions_by_tier(LoadingTier.TIER_2)
+
         for category, enabled in detection_result.categories.items():
             if enabled:
                 confidence = detection_result.confidence_scores.get(category, 0.0)
                 if confidence >= threshold:
+                    # Check if this category has any Tier 2 functions
                     category_functions = self.function_registry.get_functions_by_category(category)
-                    # Filter to Tier 2 functions only
-                    tier2_category_functions = {
-                        func
-                        for func in category_functions
-                        if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_2)
-                    }
-                    tier2_functions.update(tier2_category_functions)
+                    tier2_category_functions = category_functions & tier2_tier_functions
+                    has_tier2_functions = len(tier2_category_functions) > 0
+
+                    # Prioritize categories with Tier 2 functions for better functionality
+                    priority_score = confidence
+                    if has_tier2_functions:
+                        if confidence == 1.0:
+                            priority_score = 2.0  # Highest priority for forced categories with Tier 2 functions
+                        else:
+                            priority_score = (
+                                confidence + 0.5
+                            )  # Significant boost for natural categories with Tier 2 functions
+
+                    eligible_categories.append((category, priority_score, confidence))
+
+        # Sort by priority score (highest first), then by confidence
+        eligible_categories.sort(key=lambda x: (x[1], x[2]), reverse=True)
+        selected_categories = [(cat, conf) for cat, _, conf in eligible_categories[:max_categories]]
+
+        # Load functions for selected categories only
+        for category, confidence in selected_categories:
+            category_functions = self.function_registry.get_functions_by_category(category)
+            # Filter to Tier 2 functions only
+            tier2_category_functions = {
+                func
+                for func in category_functions
+                if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_2)
+            }
+            tier2_functions.update(tier2_category_functions)
 
         return tier2_functions
 
@@ -620,29 +711,41 @@ class DynamicFunctionLoader:
 
         tier3_functions = set()
 
-        # Get strategy-specific threshold
+        # Get strategy-specific threshold and category limit
         base_threshold = self.config.thresholds.tier3_base_threshold
 
         if strategy == LoadingStrategy.CONSERVATIVE:
             threshold = base_threshold * 0.9  # Slightly lower threshold
+            max_categories = 1  # Conservative: allow one tier 3 category
         elif strategy == LoadingStrategy.AGGRESSIVE:
-            threshold = base_threshold * 1.1  # Slightly higher threshold
+            threshold = min(base_threshold * 1.05, 0.99)  # Higher threshold but cap at 0.99
+            max_categories = 1  # Aggressive: very selective
         else:  # BALANCED
             threshold = base_threshold
+            max_categories = 1  # Balanced: highly selective for tier 3
 
-        # Only load if very confident
+        # Get eligible categories sorted by confidence
+        eligible_categories = []
         for category, enabled in detection_result.categories.items():
             if enabled:
                 confidence = detection_result.confidence_scores.get(category, 0.0)
                 if confidence >= threshold:
-                    category_functions = self.function_registry.get_functions_by_category(category)
-                    # Filter to Tier 3 functions only
-                    tier3_category_functions = {
-                        func
-                        for func in category_functions
-                        if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_3)
-                    }
-                    tier3_functions.update(tier3_category_functions)
+                    eligible_categories.append((category, confidence))
+
+        # Sort by confidence (highest first) and limit selection
+        eligible_categories.sort(key=lambda x: x[1], reverse=True)
+        selected_categories = eligible_categories[:max_categories]
+
+        # Load functions for selected categories only
+        for category, confidence in selected_categories:
+            category_functions = self.function_registry.get_functions_by_category(category)
+            # Filter to Tier 3 functions only
+            tier3_category_functions = {
+                func
+                for func in category_functions
+                if func in self.function_registry.get_functions_by_tier(LoadingTier.TIER_3)
+            }
+            tier3_functions.update(tier3_category_functions)
 
         return tier3_functions
 
@@ -741,17 +844,18 @@ class DynamicFunctionLoader:
 
         # Update performance metrics
         self.performance_monitor.record_metric(
-            {
-                "name": "function_loading_session",
-                "value": 1,
-                "timestamp": time.time(),
-                "labels": {
+            MetricData(
+                name="function_loading_session",
+                value=1,
+                timestamp=time.time(),
+                labels={
                     "session_id": session.session_id,
                     "strategy": session.strategy.value,
-                    "token_reduction_percent": round(token_reduction * 100, 1),
-                    "functions_loaded": len(session.functions_loaded),
+                    "token_reduction_percent": str(round(token_reduction * 100, 1)),
+                    "functions_loaded": str(len(session.functions_loaded)),
                 },
-            },
+                metric_type=MetricType.COUNTER,
+            ),
         )
 
         logger.debug(
@@ -973,7 +1077,6 @@ if __name__ == "__main__":
     async def main():
         """Test the dynamic function loading prototype."""
 
-
         # Initialize system
         loader = await initialize_dynamic_loading()
 
@@ -1035,7 +1138,6 @@ if __name__ == "__main__":
         # Generate performance report
 
         performance_report = await loader.get_performance_report()
-
 
         # Validation summary
         target_achieved = performance_report["session_statistics"]["average_token_reduction"] >= 70.0

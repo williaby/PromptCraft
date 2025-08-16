@@ -24,7 +24,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.comprehensive_prototype_demo import ComprehensivePrototypeDemo
 from src.core.dynamic_function_loader import LoadingStrategy
@@ -40,6 +40,7 @@ router = APIRouter(prefix="/api/v1/dynamic-loading", tags=["dynamic-loading"])
 
 # Request/Response Models
 
+
 class QueryOptimizationRequest(BaseModel):
     """Request model for query optimization."""
 
@@ -48,15 +49,17 @@ class QueryOptimizationRequest(BaseModel):
     strategy: str = Field(default="balanced", description="Loading strategy")
     user_commands: list[str] | None = Field(default=None, description="Optional user commands")
 
-    @validator("strategy")
-    def validate_strategy(self, v):
+    @field_validator("strategy")
+    @classmethod
+    def validate_strategy(cls, v):
         valid_strategies = ["conservative", "balanced", "aggressive"]
         if v.lower() not in valid_strategies:
             raise ValueError(f"Strategy must be one of: {valid_strategies}")
         return v.lower()
 
-    @validator("user_commands")
-    def validate_commands(self, v):
+    @field_validator("user_commands")
+    @classmethod
+    def validate_commands(cls, v):
         if v is not None:
             if len(v) > 10:
                 raise ValueError("Maximum 10 user commands allowed")
@@ -105,8 +108,9 @@ class UserCommandRequest(BaseModel):
     session_id: str | None = Field(default=None, description="Optional session ID")
     user_id: str = Field(default="api_user", max_length=100, description="User identifier")
 
-    @validator("command")
-    def validate_command(self, v):
+    @field_validator("command")
+    @classmethod
+    def validate_command(cls, v):
         if not v.startswith("/"):
             raise ValueError("Commands must start with '/'")
         return v
@@ -128,12 +132,17 @@ class DemoRunRequest(BaseModel):
     scenario_types: list[str] | None = Field(default=None, description="Specific scenario types to run")
     export_results: bool = Field(default=False, description="Whether to include detailed results")
 
-    @validator("scenario_types")
-    def validate_scenario_types(self, v):
+    @field_validator("scenario_types")
+    @classmethod
+    def validate_scenario_types(cls, v):
         if v is not None:
             valid_types = [
-                "basic_optimization", "complex_workflow", "user_interaction",
-                "performance_stress", "real_world_use_case", "edge_case_handling",
+                "basic_optimization",
+                "complex_workflow",
+                "user_interaction",
+                "performance_stress",
+                "real_world_use_case",
+                "edge_case_handling",
             ]
             for scenario_type in v:
                 if scenario_type not in valid_types:
@@ -155,6 +164,7 @@ async def get_integration_dependency() -> DynamicLoadingIntegration:
 
 
 # Main API Endpoints
+
 
 @router.post("/optimize-query", response_model=QueryOptimizationResponse)
 @rate_limit(RateLimits.API_DEFAULT)
@@ -212,7 +222,7 @@ async def optimize_query(
                 "reduction_percentage": result.reduction_percentage,
                 "target_achieved": result.target_achieved,
                 "detection_result": {
-                    "categories": [cat.value for cat in result.detection_result.categories],
+                    "categories": result.detection_result.categories,
                     "confidence": result.detection_result.confidence,
                     "reasoning": result.detection_result.reasoning,
                 },
@@ -344,7 +354,7 @@ async def execute_user_command(
         return UserCommandResponse(
             success=result.success,
             message=result.message,
-            command=result.command,
+            command=command_request.command,  # Get command from request instead of result
             data=result.data,
             suggestions=result.suggestions,
         )
@@ -407,8 +417,12 @@ async def run_comprehensive_demo(
                     "total_time_seconds": results["demo_metadata"]["total_time_seconds"],
                     "success_rate": results["performance_summary"]["success_rate"],
                     "average_reduction": results["performance_summary"]["token_optimization"]["average_reduction"],
-                    "target_achievement_rate": results["performance_summary"]["token_optimization"]["target_achievement_rate"],
-                    "average_processing_time": results["performance_summary"]["performance_metrics"]["average_processing_time_ms"],
+                    "target_achievement_rate": results["performance_summary"]["token_optimization"][
+                        "target_achievement_rate"
+                    ],
+                    "average_processing_time": results["performance_summary"]["performance_metrics"][
+                        "average_processing_time_ms"
+                    ],
                     "readiness_level": results["production_readiness"]["readiness_level"],
                     "overall_score": results["production_readiness"]["overall_score"],
                 },
@@ -508,7 +522,7 @@ async def get_function_registry_stats(
             tier_tokens = registry.get_tier_token_cost(tier)
 
             tier_stats[f"tier_{i}"] = {
-                "name": tier.value,
+                "name": tier.value,  # tier is LoadingTier enum, needs .value
                 "function_count": len(tier_functions),
                 "token_cost": tier_tokens,
                 "sample_functions": list(tier_functions)[:5],  # First 5 functions
@@ -520,7 +534,7 @@ async def get_function_registry_stats(
             category_functions = registry.get_functions_by_category(category)
             category_tokens, _ = registry.calculate_loading_cost(category_functions)
 
-            category_stats[category.value] = {
+            category_stats[category] = {
                 "function_count": len(category_functions),
                 "token_cost": category_tokens,
                 "sample_functions": list(category_functions)[:3],  # First 3 functions
@@ -537,7 +551,12 @@ async def get_function_registry_stats(
             "tier_breakdown": tier_stats,
             "category_breakdown": category_stats,
             "optimization_potential": {
-                "max_possible_reduction": 100.0 - (tier_stats.get("tier_1", {}).get("token_cost", 0) / registry.get_baseline_token_cost() * 100) if registry.get_baseline_token_cost() > 0 else 0,
+                "max_possible_reduction": (
+                    100.0
+                    - (tier_stats.get("tier_1", {}).get("token_cost", 0) / registry.get_baseline_token_cost() * 100)
+                    if registry.get_baseline_token_cost() > 0
+                    else 0
+                ),
                 "typical_reduction_range": "60-85%",
                 "aggressive_reduction_potential": "80-90%",
             },

@@ -235,6 +235,8 @@ class RateLimits:
 
     # Public read-only endpoints (moderate limits)
     PUBLIC_READ = "100/minute"
+    # Slow API endpoints that require more processing time
+    API_SLOW = "20/minute"
 
 
 def get_rate_limit_for_endpoint(endpoint_type: str) -> str:

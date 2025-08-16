@@ -47,19 +47,19 @@ class PerformanceConfig:
 class ThresholdConfig:
     """Detection threshold configuration"""
 
-    tier2_base_threshold: float = 0.3
-    tier3_base_threshold: float = 0.6
-    high_confidence_threshold: float = 0.8
-    medium_confidence_threshold: float = 0.4
-    ambiguous_difference_threshold: float = 0.2
+    tier2_base_threshold: float = 0.25  # Conservative threshold for over-inclusion safety
+    tier3_base_threshold: float = 0.55  # Conservative threshold for tier 3
+    high_confidence_threshold: float = 0.9
+    medium_confidence_threshold: float = 0.6
+    ambiguous_difference_threshold: float = 0.15
 
 
 @dataclass
 class BiasConfig:
     """Conservative bias configuration"""
 
-    new_user_threshold_multiplier: float = 0.7
-    complex_query_threshold_multiplier: float = 0.8
+    new_user_threshold_multiplier: float = 0.6
+    complex_query_threshold_multiplier: float = 0.7
     multi_domain_threshold_multiplier: float = 0.6
     error_context_boost: float = 0.2
     enable_conservative_expansion: bool = True
@@ -100,9 +100,9 @@ class TierDefinitionConfig:
     tier2_categories: list[str] = field(default_factory=lambda: ["analysis", "quality", "debug", "test", "security"])
     tier3_categories: list[str] = field(default_factory=lambda: ["external", "infrastructure"])
 
-    tier1_token_cost: int = 9040
-    tier2_token_cost: int = 14940
-    tier3_token_cost: int = 3850
+    tier1_token_cost: int = 12300
+    tier2_token_cost: int = 19540
+    tier3_token_cost: int = 5800
 
 
 @dataclass

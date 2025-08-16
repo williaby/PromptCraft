@@ -24,9 +24,9 @@ import time
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.ab_testing_framework import (
     ExperimentConfig,
@@ -49,6 +49,7 @@ router = APIRouter(prefix="/api/v1/ab-testing", tags=["ab-testing"])
 
 # Request/Response Models
 
+
 class CreateExperimentRequest(BaseModel):
     """Request model for creating A/B experiments."""
 
@@ -64,7 +65,10 @@ class CreateExperimentRequest(BaseModel):
 
     # Feature configuration
     feature_flags: dict[str, Any] = Field(default_factory=dict, description="Feature flags for experiment")
-    variant_configs: dict[str, dict[str, Any]] = Field(default_factory=dict, description="Variant-specific configurations")
+    variant_configs: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Variant-specific configurations",
+    )
 
     # Success criteria
     success_criteria: dict[str, float] = Field(default_factory=dict, description="Success criteria thresholds")
@@ -77,17 +81,24 @@ class CreateExperimentRequest(BaseModel):
 
     # Safety settings
     auto_rollback_enabled: bool = Field(default=True, description="Enable automatic rollback")
-    circuit_breaker_threshold: float = Field(default=10.0, ge=0.0, le=100.0, description="Error rate threshold for circuit breaker")
+    circuit_breaker_threshold: float = Field(
+        default=10.0,
+        ge=0.0,
+        le=100.0,
+        description="Error rate threshold for circuit breaker",
+    )
 
-    @validator("experiment_type")
-    def validate_experiment_type(self, v):
+    @field_validator("experiment_type")
+    @classmethod
+    def validate_experiment_type(cls, v):
         valid_types = ["dynamic_loading", "optimization_strategy", "user_interface", "performance"]
         if v not in valid_types:
             raise ValueError(f"Experiment type must be one of: {valid_types}")
         return v
 
-    @validator("rollout_steps")
-    def validate_rollout_steps(self, v):
+    @field_validator("rollout_steps")
+    @classmethod
+    def validate_rollout_steps(cls, v):
         if not v or len(v) > 10:
             raise ValueError("Rollout steps must be provided and contain at most 10 steps")
 
@@ -114,14 +125,16 @@ class UserAssignmentRequest(BaseModel):
     is_early_adopter: bool = Field(default=False, description="Whether user is an early adopter")
     opt_in_beta: bool = Field(default=False, description="Whether user opted into beta features")
 
-    @validator("usage_frequency")
-    def validate_usage_frequency(self, v):
+    @field_validator("usage_frequency")
+    @classmethod
+    def validate_usage_frequency(cls, v):
         if v is not None and v not in ["low", "medium", "high"]:
             raise ValueError("Usage frequency must be 'low', 'medium', or 'high'")
         return v
 
-    @validator("feature_usage_pattern")
-    def validate_feature_pattern(self, v):
+    @field_validator("feature_usage_pattern")
+    @classmethod
+    def validate_feature_pattern(cls, v):
         if v is not None and v not in ["basic", "intermediate", "advanced"]:
             raise ValueError("Feature usage pattern must be 'basic', 'intermediate', or 'advanced'")
         return v
@@ -142,12 +155,18 @@ class MetricEventRequest(BaseModel):
 
     # Performance metrics
     response_time_ms: float | None = Field(default=None, ge=0.0, description="Response time in milliseconds")
-    token_reduction_percentage: float | None = Field(default=None, ge=0.0, le=100.0, description="Token reduction percentage")
+    token_reduction_percentage: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=100.0,
+        description="Token reduction percentage",
+    )
     success: bool | None = Field(default=None, description="Whether operation was successful")
     error_message: str | None = Field(default=None, max_length=500, description="Error message if operation failed")
 
-    @validator("event_type")
-    def validate_event_type(self, v):
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, v):
         valid_types = ["performance", "conversion", "error", "engagement", "business"]
         if v not in valid_types:
             raise ValueError(f"Event type must be one of: {valid_types}")
@@ -262,7 +281,8 @@ async def get_experiment_manager_dependency() -> ExperimentManager:
 
 # Experiment Management Endpoints
 
-@router.post("/experiments", response_model=ExperimentResponse)
+
+@router.post("/experiments", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
 @rate_limit(RateLimits.API_DEFAULT)
 async def create_experiment(
     request: Request,
@@ -304,11 +324,14 @@ async def create_experiment(
         # Get experiment details
         with manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import ExperimentModel
+
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             if not experiment:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                 detail="Failed to create experiment")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to create experiment",
+                )
 
         # Log API usage
         processing_time = (time.perf_counter() - start_time) * 1000
@@ -346,8 +369,7 @@ async def create_experiment(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to create experiment: {e}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to create experiment")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create experiment")
 
 
 @router.post("/experiments/{experiment_id}/start")
@@ -362,8 +384,10 @@ async def start_experiment(
         success = await manager.start_experiment(experiment_id)
 
         if not success:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Experiment not found or cannot be started")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Experiment not found or cannot be started",
+            )
 
         # Log API usage
         audit_logger_instance.log_api_event(
@@ -382,8 +406,7 @@ async def start_experiment(
         raise
     except Exception as e:
         logger.error(f"Failed to start experiment {experiment_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to start experiment")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to start experiment")
 
 
 @router.post("/experiments/{experiment_id}/stop")
@@ -398,8 +421,10 @@ async def stop_experiment(
         success = await manager.stop_experiment(experiment_id)
 
         if not success:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Experiment not found or cannot be stopped")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Experiment not found or cannot be stopped",
+            )
 
         # Log API usage
         audit_logger_instance.log_api_event(
@@ -418,8 +443,7 @@ async def stop_experiment(
         raise
     except Exception as e:
         logger.error(f"Failed to stop experiment {experiment_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to stop experiment")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to stop experiment")
 
 
 @router.get("/experiments", response_model=list[ExperimentResponse])
@@ -427,8 +451,8 @@ async def stop_experiment(
 async def list_experiments(
     request: Request,
     status_filter: str | None = None,
-    limit: int = Field(default=50, ge=1, le=100),
-    offset: int = Field(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> list[ExperimentResponse]:
     """List all A/B testing experiments with optional filtering."""
@@ -445,29 +469,30 @@ async def list_experiments(
 
             results = []
             for experiment in experiments:
-                results.append(ExperimentResponse(
-                    id=experiment.id,
-                    name=experiment.name,
-                    description=experiment.description,
-                    experiment_type=experiment.experiment_type,
-                    status=experiment.status,
-                    target_percentage=experiment.target_percentage,
-                    current_percentage=experiment.current_percentage,
-                    planned_duration_hours=experiment.planned_duration_hours,
-                    total_users=experiment.total_users,
-                    statistical_significance=experiment.statistical_significance,
-                    created_at=experiment.created_at.isoformat(),
-                    start_time=experiment.start_time.isoformat() if experiment.start_time else None,
-                    end_time=experiment.end_time.isoformat() if experiment.end_time else None,
-                    risk_level="unknown",
-                ))
+                results.append(
+                    ExperimentResponse(
+                        id=experiment.id,
+                        name=experiment.name,
+                        description=experiment.description,
+                        experiment_type=experiment.experiment_type,
+                        status=experiment.status,
+                        target_percentage=experiment.target_percentage,
+                        current_percentage=experiment.current_percentage,
+                        planned_duration_hours=experiment.planned_duration_hours,
+                        total_users=experiment.total_users,
+                        statistical_significance=experiment.statistical_significance,
+                        created_at=experiment.created_at.isoformat(),
+                        start_time=experiment.start_time.isoformat() if experiment.start_time else None,
+                        end_time=experiment.end_time.isoformat() if experiment.end_time else None,
+                        risk_level="unknown",
+                    ),
+                )
 
             return results
 
     except Exception as e:
         logger.error(f"Failed to list experiments: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to list experiments")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to list experiments")
 
 
 @router.get("/experiments/{experiment_id}", response_model=ExperimentResponse)
@@ -485,8 +510,7 @@ async def get_experiment(
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             if not experiment:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                  detail="Experiment not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Experiment not found")
 
             return ExperimentResponse(
                 id=experiment.id,
@@ -509,11 +533,11 @@ async def get_experiment(
         raise
     except Exception as e:
         logger.error(f"Failed to get experiment {experiment_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to get experiment")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get experiment")
 
 
 # User Assignment Endpoints
+
 
 @router.post("/assign-user", response_model=UserAssignmentResponse)
 @rate_limit(RateLimits.API_DEFAULT)
@@ -577,7 +601,7 @@ async def assign_user_to_experiment(
 
 
 @router.get("/check-dynamic-loading/{user_id}")
-@rate_limit(RateLimits.API_FAST)
+@rate_limit(RateLimits.API_DEFAULT)
 async def check_dynamic_loading_assignment(
     request: Request,
     user_id: str,
@@ -613,8 +637,9 @@ async def check_dynamic_loading_assignment(
 
 # Metrics Collection Endpoints
 
+
 @router.post("/metrics/record-event")
-@rate_limit(RateLimits.API_FAST)
+@rate_limit(RateLimits.API_DEFAULT)
 async def record_metric_event(
     request: Request,
     metric_request: MetricEventRequest,
@@ -643,6 +668,7 @@ async def record_metric_event(
         # Record through metrics collector
         with manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import MetricsCollector
+
             collector = MetricsCollector(db_session)
             success = collector.record_event(event)
 
@@ -650,16 +676,15 @@ async def record_metric_event(
             return JSONResponse(
                 content={"success": True, "message": "Metric event recorded successfully"},
             )
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to record metric event")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to record metric event")
 
     except Exception as e:
         logger.error(f"Failed to record metric event: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to record metric event")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to record metric event")
 
 
 # Dashboard and Monitoring Endpoints
+
 
 @router.get("/dashboard/{experiment_id}", response_class=HTMLResponse)
 @rate_limit(RateLimits.API_DEFAULT)
@@ -702,8 +727,10 @@ async def get_dashboard_data(
         dashboard_data = await dashboard.get_dashboard_data(experiment_id)
 
         if not dashboard_data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Experiment not found or no data available")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Experiment not found or no data available",
+            )
 
         return DashboardResponse(
             experiment_id=dashboard_data["experiment_id"],
@@ -726,8 +753,7 @@ async def get_dashboard_data(
         raise
     except Exception as e:
         logger.error(f"Failed to get dashboard data for experiment {experiment_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to get dashboard data")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get dashboard data")
 
 
 @router.get("/experiments/{experiment_id}/results", response_model=ExperimentResultsResponse)
@@ -742,8 +768,10 @@ async def get_experiment_results(
         results = await manager.get_experiment_results(experiment_id)
 
         if not results:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                              detail="Experiment not found or no results available")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Experiment not found or no results available",
+            )
 
         return ExperimentResultsResponse(
             experiment_id=results.experiment_id,
@@ -765,8 +793,10 @@ async def get_experiment_results(
         raise
     except Exception as e:
         logger.error(f"Failed to get experiment results for {experiment_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to get experiment results")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get experiment results",
+        )
 
 
 @router.get("/overview", response_model=list[ExperimentResponse])
@@ -781,40 +811,45 @@ async def get_experiments_overview(
 
         results = []
         for summary in summaries:
-            results.append(ExperimentResponse(
-                id=summary["id"],
-                name=summary["name"],
-                status=summary["status"],
-                experiment_type="unknown",  # Would need to be added to summary
-                description="",  # Would need to be added to summary
-                target_percentage=summary.get("target_percentage", 0.0),
-                current_percentage=summary.get("current_percentage", 0.0),
-                planned_duration_hours=0,  # Would need to be added to summary
-                total_users=summary.get("total_users", 0),
-                statistical_significance=summary.get("statistical_significance", 0.0),
-                created_at=summary["created_at"],
-                start_time=summary.get("start_time"),
-                end_time=summary.get("end_time"),
-                active_alerts=summary.get("active_alerts", 0),
-                risk_level=summary.get("risk_level", "unknown"),
-            ))
+            results.append(
+                ExperimentResponse(
+                    id=summary["id"],
+                    name=summary["name"],
+                    status=summary["status"],
+                    experiment_type="unknown",  # Would need to be added to summary
+                    description="",  # Would need to be added to summary
+                    target_percentage=summary.get("target_percentage", 0.0),
+                    current_percentage=summary.get("current_percentage", 0.0),
+                    planned_duration_hours=0,  # Would need to be added to summary
+                    total_users=summary.get("total_users", 0),
+                    statistical_significance=summary.get("statistical_significance", 0.0),
+                    created_at=summary["created_at"],
+                    start_time=summary.get("start_time"),
+                    end_time=summary.get("end_time"),
+                    active_alerts=summary.get("active_alerts", 0),
+                    risk_level=summary.get("risk_level", "unknown"),
+                ),
+            )
 
         return results
 
     except Exception as e:
         logger.error(f"Failed to get experiments overview: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to get experiments overview")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get experiments overview",
+        )
 
 
 # Quick Setup Endpoints
+
 
 @router.post("/quick-setup/dynamic-loading")
 @rate_limit(RateLimits.API_DEFAULT)
 async def quick_setup_dynamic_loading_experiment(
     request: Request,
-    target_percentage: float = Field(default=50.0, ge=0.1, le=100.0),
-    duration_hours: int = Field(default=168, ge=1, le=8760),
+    target_percentage: float = Query(default=50.0, ge=0.1, le=100.0),
+    duration_hours: int = Query(default=168, ge=1, le=8760),
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> JSONResponse:
     """Quickly set up a standard dynamic loading A/B test experiment."""
@@ -849,11 +884,14 @@ async def quick_setup_dynamic_loading_experiment(
 
     except Exception as e:
         logger.error(f"Failed to create dynamic loading experiment: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                          detail="Failed to create dynamic loading experiment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create dynamic loading experiment",
+        )
 
 
 # Health and Status Endpoints
+
 
 @router.get("/health")
 @rate_limit(RateLimits.HEALTH_CHECK)
@@ -865,7 +903,9 @@ async def ab_testing_health_check(request: Request) -> JSONResponse:
         # Quick health check
         with manager.get_db_session() as db_session:
             # Test database connectivity
-            db_session.execute("SELECT 1")
+            from sqlalchemy import text
+
+            db_session.execute(text("SELECT 1"))
 
         return JSONResponse(
             content={

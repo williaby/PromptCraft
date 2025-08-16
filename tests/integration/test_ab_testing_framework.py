@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.api.ab_testing_endpoints import router
+from src.api.ab_testing_endpoints import get_experiment_manager_dependency, router
 from src.core.ab_testing_framework import (
     Base,
     ExperimentConfig,
@@ -91,6 +91,11 @@ def test_experiment_config():
         },
         target_percentage=50.0,
         rollout_steps=[5.0, 25.0, 50.0],
+        segment_filters=[
+            UserSegment.RANDOM,
+            UserSegment.EARLY_ADOPTER,
+            UserSegment.POWER_USER,
+        ],  # Include all user segments used in tests
         success_criteria={
             "min_token_reduction": 70.0,
             "max_response_time_ms": 200.0,
@@ -162,6 +167,7 @@ class TestExperimentManager:
         # Verify experiment was created in database
         with experiment_manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import ExperimentModel
+
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             assert experiment is not None
@@ -181,6 +187,7 @@ class TestExperimentManager:
         # Verify experiment is active
         with experiment_manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import ExperimentModel
+
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             assert experiment.status == "active"
@@ -206,7 +213,9 @@ class TestExperimentManager:
 
         # Assign user to experiment
         variant, segment = await experiment_manager.assign_user_to_experiment(
-            "test_user_1", experiment_id, test_user_characteristics,
+            "test_user_1",
+            experiment_id,
+            test_user_characteristics,
         )
 
         assert variant in ["control", "treatment"]
@@ -214,7 +223,9 @@ class TestExperimentManager:
 
         # Verify assignment is consistent
         variant2, segment2 = await experiment_manager.assign_user_to_experiment(
-            "test_user_1", experiment_id, test_user_characteristics,
+            "test_user_1",
+            experiment_id,
+            test_user_characteristics,
         )
 
         assert variant == variant2
@@ -223,10 +234,15 @@ class TestExperimentManager:
         # Verify assignment is stored in database
         with experiment_manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import UserAssignmentModel
-            assignment = db_session.query(UserAssignmentModel).filter_by(
-                user_id="test_user_1",
-                experiment_id=experiment_id,
-            ).first()
+
+            assignment = (
+                db_session.query(UserAssignmentModel)
+                .filter_by(
+                    user_id="test_user_1",
+                    experiment_id=experiment_id,
+                )
+                .first()
+            )
 
             assert assignment is not None
             assert assignment.variant == variant
@@ -248,7 +264,12 @@ class TestExperimentManager:
         assert should_use == should_use2
 
     @pytest.mark.asyncio
-    async def test_optimization_result_recording(self, experiment_manager, test_experiment_config, test_processing_result):
+    async def test_optimization_result_recording(
+        self,
+        experiment_manager,
+        test_experiment_config,
+        test_processing_result,
+    ):
         """Test recording optimization results."""
         experiment_id = await experiment_manager.create_experiment(test_experiment_config)
         await experiment_manager.start_experiment(experiment_id)
@@ -258,7 +279,9 @@ class TestExperimentManager:
 
         # Record optimization result
         success = await experiment_manager.record_optimization_result(
-            experiment_id, "test_user_1", test_processing_result,
+            experiment_id,
+            "test_user_1",
+            test_processing_result,
         )
 
         assert success is True
@@ -266,10 +289,15 @@ class TestExperimentManager:
         # Verify metrics were recorded
         with experiment_manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import MetricEventModel
-            events = db_session.query(MetricEventModel).filter_by(
-                experiment_id=experiment_id,
-                user_id="test_user_1",
-            ).all()
+
+            events = (
+                db_session.query(MetricEventModel)
+                .filter_by(
+                    experiment_id=experiment_id,
+                    user_id="test_user_1",
+                )
+                .all()
+            )
 
             assert len(events) >= 2  # Performance and optimization events
 
@@ -363,10 +391,15 @@ class TestMetricsCollector:
 
         # Verify event was stored
         from src.core.ab_testing_framework import MetricEventModel
-        stored_event = test_db_session.query(MetricEventModel).filter_by(
-            experiment_id="test_experiment",
-            user_id="test_user",
-        ).first()
+
+        stored_event = (
+            test_db_session.query(MetricEventModel)
+            .filter_by(
+                experiment_id="test_experiment",
+                user_id="test_user",
+            )
+            .first()
+        )
 
         assert stored_event is not None
         assert stored_event.event_type == "performance"
@@ -378,17 +411,25 @@ class TestMetricsCollector:
         collector = MetricsCollector(test_db_session)
 
         success = collector.record_processing_result(
-            "test_experiment", "test_user", "treatment", test_processing_result,
+            "test_experiment",
+            "test_user",
+            "treatment",
+            test_processing_result,
         )
 
         assert success is True
 
         # Verify multiple events were created
         from src.core.ab_testing_framework import MetricEventModel
-        events = test_db_session.query(MetricEventModel).filter_by(
-            experiment_id="test_experiment",
-            user_id="test_user",
-        ).all()
+
+        events = (
+            test_db_session.query(MetricEventModel)
+            .filter_by(
+                experiment_id="test_experiment",
+                user_id="test_user",
+            )
+            .all()
+        )
 
         assert len(events) >= 2  # Performance and optimization events
 
@@ -512,13 +553,110 @@ class TestDashboard:
         assert dashboard.visualizer is not None
 
     @pytest.mark.asyncio
-    async def test_metrics_collection(self, experiment_manager, test_experiment_config):
+    async def test_metrics_collection(self, experiment_manager, test_experiment_config, test_user_characteristics):
         """Test dashboard metrics collection."""
         dashboard = ABTestingDashboard(experiment_manager)
 
-        # Create and start experiment
-        experiment_id = await experiment_manager.create_experiment(test_experiment_config)
+        # Create experiment with full rollout to ensure variant diversity
+        config = ExperimentConfig(
+            name="Test Dynamic Loading Experiment",
+            description="Test experiment for dynamic function loading",
+            experiment_type=ExperimentType.DYNAMIC_LOADING,
+            planned_duration_hours=24,
+            initial_percentage=100.0,  # Full rollout to get both variants
+            target_percentage=100.0,
+            segment_filters=[UserSegment.RANDOM, UserSegment.EARLY_ADOPTER, UserSegment.POWER_USER],
+            feature_flags={"dynamic_loading_enabled": True},
+            variant_configs={
+                "control": {"feature_flags": {"dynamic_loading_enabled": False}},
+                "treatment": {"feature_flags": {"dynamic_loading_enabled": True}},
+            },
+        )
+        experiment_id = await experiment_manager.create_experiment(config)
         await experiment_manager.start_experiment(experiment_id)
+
+        # Add multiple test users to ensure we get both variants
+        from src.core.ab_testing_framework import UserCharacteristics
+
+        variants = []
+        # Use diverse user IDs that will hash to different variants
+        user_ids = ["user123", "user456", "user789", "user000", "user999", "alice", "bob", "charlie", "diana", "edward"]
+
+        for user_id in user_ids:
+            user_chars = UserCharacteristics(user_id=user_id, usage_frequency="high", is_early_adopter=True)
+            variant, _ = await experiment_manager.assign_user_to_experiment(user_id, experiment_id, user_chars)
+            variants.append((user_id, variant))
+            print(f"DEBUG: {user_id} -> {variant}")
+
+        # Count unique variants
+        unique_variants = set(variant for _, variant in variants)
+        print(f"DEBUG: Unique variants: {unique_variants}")
+
+        # Use first two users with potentially different variants for the processing results
+        user1, variant1 = variants[0]
+        user2, variant2 = variants[1]
+
+        # Record some optimization results to generate metric data
+        from unittest.mock import MagicMock
+
+        from src.core.dynamic_loading_integration import OptimizationReport, ProcessingResult
+
+        processing_result1 = ProcessingResult(
+            query=f"test query for {user1}",
+            session_id=f"session_{user1}",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id=f"session_{user1}",
+                baseline_token_count=1000,
+                optimized_token_count=300,
+                reduction_percentage=70.0,
+                target_achieved=True,
+                categories_detected=["optimization"],
+                functions_loaded=25,
+                strategy_used=variant1,
+                processing_time_ms=150.0,
+            ),
+            user_commands=[],
+            detection_time_ms=25.0,
+            loading_time_ms=50.0,
+            total_time_ms=150.0,
+            baseline_tokens=1000,
+            optimized_tokens=300,
+            reduction_percentage=70.0,
+            target_achieved=True,
+            success=True,
+        )
+
+        processing_result2 = ProcessingResult(
+            query=f"test query for {user2}",
+            session_id=f"session_{user2}",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id=f"session_{user2}",
+                baseline_token_count=1000,
+                optimized_token_count=800,
+                reduction_percentage=20.0,
+                target_achieved=False,
+                categories_detected=["optimization"],
+                functions_loaded=10,
+                strategy_used=variant2,
+                processing_time_ms=200.0,
+            ),
+            user_commands=[],
+            detection_time_ms=30.0,
+            loading_time_ms=60.0,
+            total_time_ms=200.0,
+            baseline_tokens=1000,
+            optimized_tokens=800,
+            reduction_percentage=20.0,
+            target_achieved=False,
+            success=True,
+        )
+
+        await experiment_manager.record_optimization_result(experiment_id, user1, processing_result1)
+        await experiment_manager.record_optimization_result(experiment_id, user2, processing_result2)
 
         # Collect metrics
         metrics = await dashboard.metrics_collector.collect_experiment_metrics(experiment_id)
@@ -530,13 +668,116 @@ class TestDashboard:
         assert isinstance(metrics.statistical_significance, float)
 
     @pytest.mark.asyncio
-    async def test_dashboard_html_generation(self, experiment_manager, test_experiment_config):
+    async def test_dashboard_html_generation(
+        self,
+        experiment_manager,
+        test_experiment_config,
+        test_user_characteristics,
+    ):
         """Test HTML dashboard generation."""
         dashboard = ABTestingDashboard(experiment_manager)
 
-        # Create experiment
-        experiment_id = await experiment_manager.create_experiment(test_experiment_config)
+        # Create experiment with full rollout to ensure variant diversity
+        config = ExperimentConfig(
+            name="Test Dynamic Loading Experiment",
+            description="Test experiment for dynamic function loading",
+            experiment_type=ExperimentType.DYNAMIC_LOADING,
+            planned_duration_hours=24,
+            initial_percentage=100.0,  # Full rollout to get both variants
+            segment_filters=[UserSegment.RANDOM, UserSegment.EARLY_ADOPTER, UserSegment.POWER_USER],
+            feature_flags={"dynamic_loading_enabled": True},
+            variant_configs={
+                "control": {"feature_flags": {"dynamic_loading_enabled": False}},
+                "treatment": {"feature_flags": {"dynamic_loading_enabled": True}},
+            },
+        )
+        experiment_id = await experiment_manager.create_experiment(config)
         await experiment_manager.start_experiment(experiment_id)
+
+        # Add multiple test users to ensure variant diversity
+        from src.core.ab_testing_framework import UserCharacteristics
+
+        user_ids = [f"test_user_{i}" for i in range(20)]  # More users to ensure variant distribution
+        variants = []
+        variant_counts = {"control": 0, "treatment": 0}
+
+        for user_id in user_ids:
+            user_chars = UserCharacteristics(user_id=user_id, usage_frequency="high", is_early_adopter=True)
+            variant, _ = await experiment_manager.assign_user_to_experiment(user_id, experiment_id, user_chars)
+            variants.append((user_id, variant))
+            variant_counts[variant] += 1
+
+        # Ensure we have both variants
+        assert variant_counts["control"] > 0, f"No control users found. Variant counts: {variant_counts}"
+        assert variant_counts["treatment"] > 0, f"No treatment users found. Variant counts: {variant_counts}"
+
+        # Get users from different variants for testing
+        control_users = [user_id for user_id, variant in variants if variant == "control"]
+        treatment_users = [user_id for user_id, variant in variants if variant == "treatment"]
+
+        user1, variant1 = control_users[0], "control"
+        user2, variant2 = treatment_users[0], "treatment"
+
+        # Record optimization results to generate meaningful data
+        from unittest.mock import MagicMock
+
+        from src.core.dynamic_loading_integration import OptimizationReport, ProcessingResult
+
+        processing_result1 = ProcessingResult(
+            query="test query 1",
+            session_id="session_1",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id="session_1",
+                baseline_token_count=1000,
+                optimized_token_count=300,
+                reduction_percentage=70.0,
+                target_achieved=True,
+                categories_detected=["optimization"],
+                functions_loaded=25,
+                strategy_used=variant1,
+                processing_time_ms=150.0,
+            ),
+            user_commands=[],
+            detection_time_ms=25.0,
+            loading_time_ms=50.0,
+            total_time_ms=150.0,
+            baseline_tokens=1000,
+            optimized_tokens=300,
+            reduction_percentage=70.0,
+            target_achieved=True,
+            success=True,
+        )
+        processing_result2 = ProcessingResult(
+            query="test query 2",
+            session_id="session_2",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id="session_2",
+                baseline_token_count=1000,
+                optimized_token_count=800,
+                reduction_percentage=20.0,
+                target_achieved=False,
+                categories_detected=["optimization"],
+                functions_loaded=10,
+                strategy_used=variant2,
+                processing_time_ms=200.0,
+            ),
+            user_commands=[],
+            detection_time_ms=30.0,
+            loading_time_ms=60.0,
+            total_time_ms=200.0,
+            baseline_tokens=1000,
+            optimized_tokens=800,
+            reduction_percentage=20.0,
+            target_achieved=False,
+            success=True,
+        )
+
+        await experiment_manager.record_optimization_result(experiment_id, user1, processing_result1)
+        await experiment_manager.record_optimization_result(experiment_id, user2, processing_result2)
 
         # Generate dashboard HTML
         html_content = await dashboard.generate_dashboard_html(experiment_id)
@@ -547,13 +788,101 @@ class TestDashboard:
         assert "Statistical Significance" in html_content
 
     @pytest.mark.asyncio
-    async def test_dashboard_data_api(self, experiment_manager, test_experiment_config):
+    async def test_dashboard_data_api(self, experiment_manager, test_experiment_config, test_user_characteristics):
         """Test dashboard data API."""
         dashboard = ABTestingDashboard(experiment_manager)
 
-        # Create experiment
-        experiment_id = await experiment_manager.create_experiment(test_experiment_config)
+        # Create experiment with full rollout to ensure variant diversity
+        config = ExperimentConfig(
+            name="Test Dynamic Loading Experiment",
+            description="Test experiment for dynamic function loading",
+            experiment_type=ExperimentType.DYNAMIC_LOADING,
+            planned_duration_hours=24,
+            initial_percentage=100.0,  # Full rollout to get both variants
+            segment_filters=[UserSegment.RANDOM, UserSegment.EARLY_ADOPTER, UserSegment.POWER_USER],
+            feature_flags={"dynamic_loading_enabled": True},
+            variant_configs={
+                "control": {"feature_flags": {"dynamic_loading_enabled": False}},
+                "treatment": {"feature_flags": {"dynamic_loading_enabled": True}},
+            },
+        )
+        experiment_id = await experiment_manager.create_experiment(config)
         await experiment_manager.start_experiment(experiment_id)
+
+        # Add multiple test users to ensure variant diversity
+        from src.core.ab_testing_framework import UserCharacteristics
+
+        user_ids = ["test_user_a", "test_user_b", "test_user_c", "test_user_d"]
+        variants = []
+
+        for user_id in user_ids:
+            user_chars = UserCharacteristics(user_id=user_id, usage_frequency="high", is_early_adopter=True)
+            variant, _ = await experiment_manager.assign_user_to_experiment(user_id, experiment_id, user_chars)
+            variants.append((user_id, variant))
+
+        user1, variant1 = variants[0]
+        user2, variant2 = variants[1]
+
+        # Record optimization results
+        from unittest.mock import MagicMock
+
+        from src.core.dynamic_loading_integration import OptimizationReport, ProcessingResult
+
+        processing_result1 = ProcessingResult(
+            query="test query 1",
+            session_id="session_1",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id="session_1",
+                baseline_token_count=1000,
+                optimized_token_count=300,
+                reduction_percentage=70.0,
+                target_achieved=True,
+                categories_detected=["optimization"],
+                functions_loaded=25,
+                strategy_used=variant1,
+                processing_time_ms=150.0,
+            ),
+            user_commands=[],
+            detection_time_ms=25.0,
+            loading_time_ms=50.0,
+            total_time_ms=150.0,
+            baseline_tokens=1000,
+            optimized_tokens=300,
+            reduction_percentage=70.0,
+            target_achieved=True,
+            success=True,
+        )
+        processing_result2 = ProcessingResult(
+            query="test query 2",
+            session_id="session_2",
+            detection_result=MagicMock(),
+            loading_decision=MagicMock(),
+            optimization_report=OptimizationReport(
+                session_id="session_2",
+                baseline_token_count=1000,
+                optimized_token_count=800,
+                reduction_percentage=20.0,
+                target_achieved=False,
+                categories_detected=["optimization"],
+                functions_loaded=10,
+                strategy_used=variant2,
+                processing_time_ms=200.0,
+            ),
+            user_commands=[],
+            detection_time_ms=30.0,
+            loading_time_ms=60.0,
+            total_time_ms=200.0,
+            baseline_tokens=1000,
+            optimized_tokens=800,
+            reduction_percentage=20.0,
+            target_achieved=False,
+            success=True,
+        )
+
+        await experiment_manager.record_optimization_result(experiment_id, user1, processing_result1)
+        await experiment_manager.record_optimization_result(experiment_id, user2, processing_result2)
 
         # Get dashboard data
         dashboard_data = await dashboard.get_dashboard_data(experiment_id)
@@ -574,35 +903,53 @@ class TestAPIEndpoints:
 
         app = FastAPI()
         app.include_router(router)
-        client = TestClient(app)
 
-        # Mock dependencies
-        with patch("src.api.ab_testing_endpoints.get_experiment_manager_dependency") as mock_manager:
-            mock_exp_manager = AsyncMock()
-            mock_exp_manager.create_experiment.return_value = "test_experiment_id"
-            mock_exp_manager.get_db_session.return_value.__enter__.return_value.query.return_value.filter_by.return_value.first.return_value = MagicMock(
-                id="test_experiment_id",
-                name="Test Experiment",
-                description="Test Description",
-                experiment_type="dynamic_loading",
-                status="draft",
-                target_percentage=50.0,
-                current_percentage=0.0,
-                planned_duration_hours=24,
-                total_users=0,
-                statistical_significance=0.0,
-                created_at=datetime.utcnow(),
-                start_time=None,
-                end_time=None,
+        # Mock the experiment manager dependency
+        mock_exp_manager = MagicMock()  # Change to regular MagicMock since we need synchronous context manager
+        mock_exp_manager.create_experiment = AsyncMock(return_value="test_experiment_id")
+
+        # Mock the database session and query result
+        mock_experiment = MagicMock()
+        mock_experiment.id = "test_experiment_id"
+        mock_experiment.name = "Test Experiment"
+        mock_experiment.description = "Test Description"
+        mock_experiment.experiment_type = "dynamic_loading"
+        mock_experiment.status = "draft"
+        mock_experiment.target_percentage = 50.0
+        mock_experiment.current_percentage = 0.0
+        mock_experiment.planned_duration_hours = 24
+        mock_experiment.total_users = 0
+        mock_experiment.statistical_significance = 0.0
+        mock_experiment.created_at = datetime.utcnow()
+        mock_experiment.start_time = None
+        mock_experiment.end_time = None
+
+        # Mock the database session context manager properly
+        mock_db_session = MagicMock()
+        mock_db_session.query.return_value.filter_by.return_value.first.return_value = mock_experiment
+        mock_exp_manager.get_db_session.return_value.__enter__.return_value = mock_db_session
+        mock_exp_manager.get_db_session.return_value.__exit__.return_value = None
+
+        # Override the dependency with a synchronous function that returns the mock
+        async def mock_dependency():
+            return mock_exp_manager
+
+        app.dependency_overrides[get_experiment_manager_dependency] = mock_dependency
+
+        # Mock audit logger
+        with patch("src.api.ab_testing_endpoints.audit_logger_instance") as mock_audit_logger:
+            mock_audit_logger.log_api_event = MagicMock()
+
+            client = TestClient(app)
+            response = client.post(
+                "/api/v1/ab-testing/experiments",
+                json={
+                    "name": "Test Experiment",
+                    "description": "Test Description",
+                    "experiment_type": "dynamic_loading",
+                    "target_percentage": 50.0,
+                },
             )
-            mock_manager.return_value = mock_exp_manager
-
-            response = client.post("/api/v1/ab-testing/experiments", json={
-                "name": "Test Experiment",
-                "description": "Test Description",
-                "experiment_type": "dynamic_loading",
-                "target_percentage": 50.0,
-            })
 
             assert response.status_code == 201
             data = response.json()
@@ -615,20 +962,31 @@ class TestAPIEndpoints:
 
         app = FastAPI()
         app.include_router(router)
-        client = TestClient(app)
 
-        # Mock dependencies
-        with patch("src.api.ab_testing_endpoints.get_experiment_manager_dependency") as mock_manager:
-            mock_exp_manager = AsyncMock()
-            mock_exp_manager.assign_user_to_experiment.return_value = ("treatment", UserSegment.POWER_USER)
-            mock_manager.return_value = mock_exp_manager
+        # Mock the experiment manager dependency
+        mock_exp_manager = MagicMock()
+        mock_exp_manager.assign_user_to_experiment = AsyncMock(return_value=("treatment", UserSegment.POWER_USER))
 
-            response = client.post("/api/v1/ab-testing/assign-user", json={
-                "user_id": "test_user",
-                "experiment_id": "test_experiment",
-                "usage_frequency": "high",
-                "is_early_adopter": True,
-            })
+        # Override the dependency
+        async def mock_dependency():
+            return mock_exp_manager
+
+        app.dependency_overrides[get_experiment_manager_dependency] = mock_dependency
+
+        # Mock audit logger
+        with patch("src.api.ab_testing_endpoints.audit_logger_instance") as mock_audit_logger:
+            mock_audit_logger.log_api_event = MagicMock()
+
+            client = TestClient(app)
+            response = client.post(
+                "/api/v1/ab-testing/assign-user",
+                json={
+                    "user_id": "test_user",
+                    "experiment_id": "test_experiment",
+                    "usage_frequency": "high",
+                    "is_early_adopter": True,
+                },
+            )
 
             assert response.status_code == 200
             data = response.json()
@@ -643,20 +1001,24 @@ class TestAPIEndpoints:
 
         app = FastAPI()
         app.include_router(router)
+
+        # Mock the experiment manager dependency
+        mock_exp_manager = MagicMock()
+        mock_exp_manager.should_use_dynamic_loading = AsyncMock(return_value=True)
+
+        # Override the dependency
+        async def mock_dependency():
+            return mock_exp_manager
+
+        app.dependency_overrides[get_experiment_manager_dependency] = mock_dependency
+
         client = TestClient(app)
+        response = client.get("/api/v1/ab-testing/check-dynamic-loading/test_user")
 
-        # Mock dependencies
-        with patch("src.api.ab_testing_endpoints.get_experiment_manager_dependency") as mock_manager:
-            mock_exp_manager = AsyncMock()
-            mock_exp_manager.should_use_dynamic_loading.return_value = True
-            mock_manager.return_value = mock_exp_manager
-
-            response = client.get("/api/v1/ab-testing/check-dynamic-loading/test_user")
-
-            assert response.status_code == 200
-            data = response.json()
-            assert data["user_id"] == "test_user"
-            assert data["use_dynamic_loading"] is True
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user_id"] == "test_user"
+        assert data["use_dynamic_loading"] is True
 
     def test_health_check_endpoint(self):
         """Test health check endpoint."""
@@ -684,25 +1046,52 @@ class TestIntegrationScenarios:
     """Test end-to-end integration scenarios."""
 
     @pytest.mark.asyncio
-    async def test_complete_experiment_lifecycle(self, experiment_manager, test_experiment_config, test_user_characteristics):
+    async def test_complete_experiment_lifecycle(
+        self,
+        experiment_manager,
+        test_experiment_config,
+        test_user_characteristics,
+    ):
         """Test complete experiment lifecycle from creation to completion."""
 
-        # 1. Create experiment
-        experiment_id = await experiment_manager.create_experiment(test_experiment_config)
+        # 1. Create experiment with 100% rollout to ensure variant diversity
+        config = ExperimentConfig(
+            name="Test Dynamic Loading Experiment",
+            description="Test experiment for dynamic function loading",
+            experiment_type=ExperimentType.DYNAMIC_LOADING,
+            planned_duration_hours=24,
+            initial_percentage=100.0,  # Full rollout to get both variants
+            target_percentage=100.0,
+            segment_filters=[UserSegment.RANDOM, UserSegment.EARLY_ADOPTER, UserSegment.POWER_USER],
+            feature_flags={"dynamic_loading_enabled": True},
+            variant_configs={
+                "control": {"feature_flags": {"dynamic_loading_enabled": False}},
+                "treatment": {"feature_flags": {"dynamic_loading_enabled": True}},
+            },
+            success_criteria={"min_token_reduction": 50.0},
+            failure_thresholds={"max_error_rate": 10.0},
+            auto_rollback_enabled=True,
+        )
+
+        experiment_id = await experiment_manager.create_experiment(config)
         assert experiment_id is not None
 
         # 2. Start experiment
         success = await experiment_manager.start_experiment(experiment_id)
         assert success is True
 
-        # 3. Assign users and collect metrics
+        # 3. Assign users and collect metrics - ensure we get both variants
         users = [f"user_{i}" for i in range(100)]
+        variant_counts = {"control": 0, "treatment": 0}
 
         for user_id in users:
             # Assign user to experiment
             variant, segment = await experiment_manager.assign_user_to_experiment(
-                user_id, experiment_id, test_user_characteristics,
+                user_id,
+                experiment_id,
+                test_user_characteristics,
             )
+            variant_counts[variant] += 1
 
             # Simulate processing result
             processing_result = ProcessingResult(
@@ -734,8 +1123,15 @@ class TestIntegrationScenarios:
 
             # Record optimization result
             await experiment_manager.record_optimization_result(
-                experiment_id, user_id, processing_result,
+                experiment_id,
+                user_id,
+                processing_result,
             )
+
+        # Ensure we have both variants for statistical analysis
+        assert variant_counts["control"] > 0, f"No control users found. Variant counts: {variant_counts}"
+        assert variant_counts["treatment"] > 0, f"No treatment users found. Variant counts: {variant_counts}"
+        assert len(variant_counts) >= 2, f"Need at least 2 variants for analysis. Found: {variant_counts}"
 
         # 4. Analyze results
         results = await experiment_manager.get_experiment_results(experiment_id)
@@ -755,6 +1151,7 @@ class TestIntegrationScenarios:
         # Verify final state
         with experiment_manager.get_db_session() as db_session:
             from src.core.ab_testing_framework import ExperimentModel
+
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
             assert experiment.status == "completed"
             assert experiment.end_time is not None
@@ -809,11 +1206,14 @@ class TestIntegrationScenarios:
             )
 
             await experiment_manager.record_optimization_result(
-                experiment_id, user_id, processing_result,
+                experiment_id,
+                user_id,
+                processing_result,
             )
 
         # Check if automatic rollback would be triggered
         from src.core.ab_testing_framework import RolloutController
+
         with experiment_manager.get_db_session() as db_session:
             controller = RolloutController(db_session)
             rollback_triggered = await controller.auto_rollback_if_needed(experiment_id)
@@ -898,7 +1298,9 @@ class TestIntegrationScenarios:
                 )
 
             await experiment_manager.record_optimization_result(
-                experiment_id, user_id, processing_result,
+                experiment_id,
+                user_id,
+                processing_result,
             )
 
         # Analyze performance

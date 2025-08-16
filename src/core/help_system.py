@@ -16,6 +16,7 @@ from .user_control_system import CommandResult, UserControlSystem
 @dataclass
 class HelpTopic:
     """Individual help topic with progressive disclosure"""
+
     name: str
     title: str
     description: str
@@ -31,6 +32,7 @@ class HelpTopic:
 @dataclass
 class LearningPath:
     """Structured learning path for mastering features"""
+
     name: str
     description: str
     level: str
@@ -42,8 +44,9 @@ class LearningPath:
 @dataclass
 class UserProgress:
     """Tracks user progress through help system"""
+
     user_id: str
-    completed_topics: Set[str] = field(default_factory=set)
+    completed_topics: set[str] = field(default_factory=set)
     current_level: str = "beginner"
     preferred_help_style: str = "guided"  # guided, reference, minimal
     last_accessed: dict[str, datetime] = field(default_factory=dict)
@@ -75,9 +78,12 @@ class ContextAnalyzer:
             },
         }
 
-    def analyze_context(self, recent_commands: list[str],
-                       recent_results: list[CommandResult],
-                       current_state: dict[str, Any]) -> list[str]:
+    def analyze_context(
+        self,
+        recent_commands: list[str],
+        recent_results: list[CommandResult],
+        current_state: dict[str, Any],
+    ) -> list[str]:
         """Analyze context and suggest relevant help topics"""
         suggested_topics = set()
 
@@ -434,9 +440,12 @@ Getting Help:
 
         return paths
 
-    def get_contextual_help(self, context_topics: list[str],
-                          user_level: str = "beginner",
-                          help_style: str = "guided") -> dict[str, Any]:
+    def get_contextual_help(
+        self,
+        context_topics: list[str],
+        user_level: str = "beginner",
+        help_style: str = "guided",
+    ) -> dict[str, Any]:
         """Generate contextual help based on suggested topics"""
         relevant_topics = []
 
@@ -485,7 +494,8 @@ Getting Help:
                     "name": topic.name,
                     "title": topic.title,
                     "description": topic.description,
-                } for topic in topics[1:3]  # Show 2 more related topics
+                }
+                for topic in topics[1:3]  # Show 2 more related topics
             ],
             "quick_actions": self._generate_quick_actions(primary_topic),
         }
@@ -502,7 +512,8 @@ Getting Help:
                     "examples": topic.examples,
                     "related_topics": topic.related_topics,
                     "tags": topic.tags,
-                } for topic in topics
+                }
+                for topic in topics
             ],
         }
 
@@ -552,9 +563,12 @@ class InteractiveHelpSystem:
         self.content_generator = HelpContentGenerator()
         self.user_progress = {}  # Would be persisted in real implementation
 
-    def get_help(self, query: str | None = None,
-                user_id: str = "default",
-                context: dict[str, Any] | None = None) -> CommandResult:
+    def get_help(
+        self,
+        query: str | None = None,
+        user_id: str = "default",
+        context: dict[str, Any] | None = None,
+    ) -> CommandResult:
         """Main help entry point"""
 
         # Get or create user progress
@@ -574,12 +588,16 @@ class InteractiveHelpSystem:
         current_state = context.get("current_state", {})
 
         suggested_topics = self.context_analyzer.analyze_context(
-            recent_commands, recent_results, current_state,
+            recent_commands,
+            recent_results,
+            current_state,
         )
 
         # Generate contextual help
         help_content = self.content_generator.get_contextual_help(
-            suggested_topics, user.current_level, user.preferred_help_style,
+            suggested_topics,
+            user.current_level,
+            user.preferred_help_style,
         )
 
         return CommandResult(
@@ -689,29 +707,35 @@ class InteractiveHelpSystem:
                 completed_topics = len([t for t in path.topics if t in user.completed_topics])
                 progress_percent = (completed_topics / len(path.topics)) * 100
 
-                opportunities.append({
-                    "type": "learning_path",
-                    "name": path.name,
-                    "description": path.description,
-                    "progress_percent": progress_percent,
-                    "estimated_time_minutes": path.estimated_time_minutes,
-                    "next_topic": path.topics[completed_topics] if completed_topics < len(path.topics) else None,
-                })
+                opportunities.append(
+                    {
+                        "type": "learning_path",
+                        "name": path.name,
+                        "description": path.description,
+                        "progress_percent": progress_percent,
+                        "estimated_time_minutes": path.estimated_time_minutes,
+                        "next_topic": path.topics[completed_topics] if completed_topics < len(path.topics) else None,
+                    },
+                )
 
         # Suggest topics based on recent activity
         recent_topics = set(user.last_accessed.keys())
         for topic_name, topic in self.content_generator.help_topics.items():
-            if (topic_name not in recent_topics and
-                topic_name not in user.completed_topics and
-                self.content_generator._is_appropriate_level(topic.level, user.current_level)):
+            if (
+                topic_name not in recent_topics
+                and topic_name not in user.completed_topics
+                and self.content_generator._is_appropriate_level(topic.level, user.current_level)
+            ):
 
-                opportunities.append({
-                    "type": "suggested_topic",
-                    "name": topic_name,
-                    "title": topic.title,
-                    "description": topic.description,
-                    "level": topic.level,
-                })
+                opportunities.append(
+                    {
+                        "type": "suggested_topic",
+                        "name": topic_name,
+                        "title": topic.title,
+                        "description": topic.description,
+                        "level": topic.level,
+                    },
+                )
 
         return opportunities[:5]  # Limit to top 5
 
@@ -791,7 +815,8 @@ class HelpCommandIntegration:
                             "description": path.description,
                             "level": path.level,
                             "estimated_time_minutes": path.estimated_time_minutes,
-                        } for path in paths.values()
+                        }
+                        for path in paths.values()
                     ],
                 },
             )
@@ -851,14 +876,11 @@ if __name__ == "__main__":
         "troubleshooting",
     ]
 
-
     for query in test_queries:
         result = help_system.get_help(query)
-
 
         if result.data and "help_content" in result.data:
             content = result.data["help_content"]
 
             if "primary_topic" in content:
                 pass
-

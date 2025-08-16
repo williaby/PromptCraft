@@ -15,6 +15,8 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.ab_testing_endpoints import router as ab_testing_router
+
 # Authentication and authorization imports
 from src.api.auth_endpoints import audit_router, auth_router, system_router
 from src.api.role_endpoints import role_router
@@ -207,6 +209,7 @@ app.include_router(auth_router)
 app.include_router(role_router)
 app.include_router(system_router)
 app.include_router(audit_router)
+app.include_router(ab_testing_router)
 
 
 @app.get("/health", response_model=dict[str, Any])

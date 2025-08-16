@@ -71,7 +71,7 @@ class KeywordAnalyzer:
             "analysis": {
                 "direct": ["analyze", "review", "understand", "investigate", "examine"],
                 "contextual": ["pattern", "architecture", "design", "structure", "flow"],
-                "action": ["study", "evaluate", "assess", "explore", "research"],
+                "action": ["study", "evaluate", "assess", "explore", "research", "improve"],
                 "confidence": 0.75,
             },
             "quality": {
@@ -185,12 +185,12 @@ class EnvironmentAnalyzer:
 
         # Check for merge conflicts
         if context.get("has_merge_conflicts", False):
-            signals["git"] = 0.9
+            signals["git"] = max(signals.get("git", 0), 0.9)
             signals["debug"] = 0.6
 
         # Check for recent commits
         if context.get("recent_commits", 0) > 0:
-            signals["git"] = 0.5
+            signals["git"] = max(signals.get("git", 0), 0.5)
 
         return signals
 
@@ -425,22 +425,28 @@ class FunctionLoader:
     """Manages tier-based function loading decisions"""
 
     def __init__(self) -> None:
+        # Import here to avoid circular imports
+        from .task_detection_config import default_config
+
+        config = default_config
         self.tier_definitions = {
             "tier1": {"categories": ["core", "git"], "threshold": 0.0, "token_cost": 9040},  # Always loaded
             "tier2": {
                 "categories": ["analysis", "quality", "debug", "test", "security"],
-                "threshold": 0.3,  # Load if moderate confidence
+                "threshold": config.thresholds.tier2_base_threshold,  # Use config value
                 "token_cost": 14940,
             },
             "tier3": {
                 "categories": ["external", "infrastructure"],
-                "threshold": 0.6,  # Load only if high confidence
+                "threshold": config.thresholds.tier3_base_threshold,  # Use config value
                 "token_cost": 3850,
             },
         }
 
     def make_loading_decision(
-        self, scores: dict[str, float], context: dict[str, Any],
+        self,
+        scores: dict[str, float],
+        context: dict[str, Any],
     ) -> tuple[dict[str, bool], str | None]:
         """Make tier-based loading decisions with fallback logic"""
         decisions = {}
@@ -486,7 +492,10 @@ class FunctionLoader:
         return threshold
 
     def apply_fallback_logic(
-        self, initial_decisions: dict[str, bool], scores: dict[str, float], context: dict[str, Any],
+        self,
+        initial_decisions: dict[str, bool],
+        scores: dict[str, float],
+        context: dict[str, Any],
     ) -> tuple[dict[str, bool], str | None]:
         """Apply fallback chain for edge cases and ambiguous situations"""
 
@@ -500,8 +509,18 @@ class FunctionLoader:
             expanded = self.expand_medium_confidence(initial_decisions, scores)
             return expanded, "medium_confidence_expansion"
 
-        # 3. Low-confidence/ambiguous → Load safe default
+        # 3. Low-confidence/ambiguous → Check if conservative bias enabled any functions
         if max_score < 0.4 or self.is_ambiguous(scores):
+            # If conservative bias enabled any tier2+ functions, respect those decisions
+            tier2_enabled = any(
+                initial_decisions.get(cat, False) for cat in self.tier_definitions["tier2"]["categories"]
+            )
+            tier3_enabled = any(
+                initial_decisions.get(cat, False) for cat in self.tier_definitions["tier3"]["categories"]
+            )
+
+            if tier2_enabled or tier3_enabled:
+                return initial_decisions, "conservative_bias"
             safe_default = self.load_safe_default(context)
             return safe_default, "safe_default"
 
@@ -513,14 +532,14 @@ class FunctionLoader:
         """Expand loading for medium-confidence scenarios"""
         expanded = decisions.copy()
 
-        # Load top 2-3 scoring tier2 categories
+        # Load top 2 scoring tier2 categories (reduced from 3 to improve precision)
         tier2_categories = self.tier_definitions["tier2"]["categories"]
         tier2_scores = {k: v for k, v in scores.items() if k in tier2_categories}
 
-        top_categories = sorted(tier2_scores.items(), key=lambda x: x[1], reverse=True)[:3]
+        top_categories = sorted(tier2_scores.items(), key=lambda x: x[1], reverse=True)[:2]
 
         for category, score in top_categories:
-            if score >= 0.2:  # Lower threshold for expansion
+            if score >= 0.3:  # Increased threshold from 0.2 to 0.3 for better precision
                 expanded[category] = True
 
         return expanded
@@ -698,7 +717,12 @@ class TaskDetectionSystem:
         """Extract environment-based signals"""
         scores = self.environment_analyzer.analyze(context)
         return [
-            SignalData(signal_type="environment", category_scores=scores, confidence=0.6, source="environment_analyzer"),
+            SignalData(
+                signal_type="environment",
+                category_scores=scores,
+                confidence=0.6,
+                source="environment_analyzer",
+            ),
         ]
 
     async def _extract_session_signals(self, context: dict[str, Any]) -> list[SignalData]:
