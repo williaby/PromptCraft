@@ -30,6 +30,7 @@ The coverage automation system is now **fully automated** - no manual interventi
 
 - Enhanced with coverage context detection
 - Waits for fresh coverage data from VS Code
+- Calls both `generate_test_coverage_fast.py` (fast reports) AND `simplified_coverage_automation.py` (simplified_report.html)
 - Generates all coverage reports automatically
 - Provides context-aware feedback
 
