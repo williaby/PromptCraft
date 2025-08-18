@@ -12,6 +12,7 @@ automatically inherit permissions from their parent roles.
 
 import logging
 from datetime import datetime
+from src.utils.datetime_compat import utc_now
 from typing import Any
 
 from sqlalchemy import delete, insert, select, text, update
@@ -621,12 +622,12 @@ class RoleManager(DatabaseService):
                     await session.execute(
                         update(Role)
                         .where(Role.parent_role_id == role.id)
-                        .values(parent_role_id=None, updated_at=datetime.utcnow()),
+                        .values(parent_role_id=None, updated_at=utc_now()),
                     )
 
                 # Soft delete the role
                 await session.execute(
-                    update(Role).where(Role.id == role.id).values(is_active=False, updated_at=datetime.utcnow()),
+                    update(Role).where(Role.id == role.id).values(is_active=False, updated_at=utc_now()),
                 )
                 await session.commit()
 

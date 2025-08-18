@@ -22,6 +22,7 @@ Security Features:
 import logging
 import time
 from datetime import datetime
+from src.utils.datetime_compat import utc_now
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -582,7 +583,7 @@ async def assign_user_to_experiment(
             experiment_id=assignment_request.experiment_id,
             variant=variant,
             segment=segment.value,
-            assignment_time=datetime.utcnow().isoformat(),
+            assignment_time=utc_now().isoformat(),
             success=True,
             message="User assigned successfully",
         )
@@ -594,7 +595,7 @@ async def assign_user_to_experiment(
             experiment_id=assignment_request.experiment_id,
             variant="control",
             segment="random",
-            assignment_time=datetime.utcnow().isoformat(),
+            assignment_time=utc_now().isoformat(),
             success=False,
             message=f"Assignment failed: {e!s}",
         )
@@ -617,7 +618,7 @@ async def check_dynamic_loading_assignment(
                 "user_id": user_id,
                 "experiment_id": experiment_id,
                 "use_dynamic_loading": should_use,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
         )
 
@@ -629,7 +630,7 @@ async def check_dynamic_loading_assignment(
                 "experiment_id": experiment_id,
                 "use_dynamic_loading": False,
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
@@ -911,7 +912,7 @@ async def ab_testing_health_check(request: Request) -> JSONResponse:
             content={
                 "status": "healthy",
                 "service": "ab-testing",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "database_connected": True,
             },
         )
@@ -922,7 +923,7 @@ async def ab_testing_health_check(request: Request) -> JSONResponse:
             content={
                 "status": "unhealthy",
                 "service": "ab-testing",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now().isoformat(),
                 "error": str(e),
             },
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
