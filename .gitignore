@@ -125,6 +125,9 @@ dmypy.json
 # pytest
 .pytest_cache/
 
+# Coverage files
+coverage.json
+
 # Pyre type checker
 .pyre/
 

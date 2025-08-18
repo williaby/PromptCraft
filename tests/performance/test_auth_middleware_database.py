@@ -1,7 +1,8 @@
-"""Unit tests for authentication middleware with database integration.
+"""Performance tests for authentication middleware with database integration.
 
-This file tests both AUTH-2 service token validation and AUTH-1 database integration
-features for the AuthenticationMiddleware.
+This file tests database integration performance for AUTH-2 service token validation
+and AUTH-1 database integration features in the AuthenticationMiddleware. These tests
+involve comprehensive async operations and database mocking that are inherently slow.
 """
 
 from datetime import UTC, datetime, timedelta
@@ -20,6 +21,7 @@ from src.database.models import ServiceToken
 
 
 # AUTH-2 Service Token Database Tests
+@pytest.mark.performance
 class TestAuthMiddlewareDatabase:
     """Test suite for authentication middleware with service token database integration."""
 
@@ -444,7 +446,6 @@ class TestAuthMiddlewareDatabase:
         }
         request.state = MagicMock()
         return request
-
 
     def test_middleware_initialization_database_enabled(self, mock_config, mock_jwt_validator):
         """Test middleware initialization with database enabled."""
