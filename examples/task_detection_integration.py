@@ -257,8 +257,8 @@ class IntelligentFunctionLoader:
         enhanced = base_context.copy()
 
         # Add current working directory analysis
-        if "working_directory" not in enhanced:
-            enhanced["working_directory"] = str(Path.cwd())
+        # For security, always use current working directory and ignore user-provided paths
+        enhanced["working_directory"] = str(Path.cwd())
 
         # Analyze project structure
         working_dir = Path(enhanced["working_directory"])

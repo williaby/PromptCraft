@@ -15,6 +15,11 @@ guidelines helps to communicate that you respect the time of the developers mana
 project. In return, they should reciprocate that respect in addressing your issue, assessing changes, and helping
 you finalize your pull requests.
 
+> See also: Quick-reference guides
+>
+> - Repository quick guide: [AGENTS.md](./AGENTS.md)
+> - Full development workflow: [docs/planning/development.md](./docs/planning/development.md)
+
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the Contributor Covenant Code of Conduct. By
