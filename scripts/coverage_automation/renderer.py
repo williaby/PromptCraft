@@ -10,25 +10,24 @@ from typing import Any
 
 from .classifier import TestTypeClassifier
 from .config import TestPatternConfig
-from .security import HTMLSanitizer
 
 
 class CoverageRenderer:
     """Renders coverage reports in various formats."""
-    
+
     def __init__(self, project_root: Path, config: TestPatternConfig, classifier: TestTypeClassifier):
         self.project_root = project_root
         self.config = config
         self.classifier = classifier
-        
+
         # Test type mapping with display metadata
         self.test_types = self._build_test_type_mapping()
-    
+
     def _build_test_type_mapping(self) -> dict[str, dict[str, str]]:
         """Build test type mapping from configuration with display metadata."""
         default_icons = {
             "unit": "🧪",
-            "auth": "🔐", 
+            "auth": "🔐",
             "integration": "🔗",
             "security": "🛡️",
             "performance": "⚡",
@@ -46,7 +45,7 @@ class CoverageRenderer:
             test_types[test_type] = {"icon": icon, "display": description}
 
         return test_types
-    
+
     def generate_coverage_reports(self, used_contexts: set[str]) -> str:
         """Generate enhanced HTML coverage reports."""
         try:
@@ -99,7 +98,7 @@ class CoverageRenderer:
         except subprocess.CalledProcessError as e:
             print(f"Error generating coverage report: {e}")
             return ""
-    
+
     def _write_enhanced_html(self, html_path: Path, coverage_data: dict[str, Any], used_contexts: set[str]) -> None:
         """Write enhanced HTML report with context filtering."""
         total_coverage = coverage_data.get("totals", {}).get("percent_covered", 0)

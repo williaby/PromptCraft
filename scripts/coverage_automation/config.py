@@ -2,9 +2,10 @@
 Configuration management for coverage automation.
 """
 
-import yaml
 from pathlib import Path
 from typing import Any
+
+import yaml
 
 
 class TestPatternConfig:
@@ -85,25 +86,25 @@ class TestPatternConfig:
         codecov_config = self._config.get("codecov_integration", {})
         if not codecov_config.get("enabled", False):
             return {}
-        
+
         # Try to load codecov.yaml
         project_root = self.config_path.parent.parent
         codecov_file = project_root / "codecov.yaml"
-        
+
         if codecov_file.exists():
             try:
                 with open(codecov_file, encoding="utf-8") as f:
                     codecov_data = yaml.safe_load(f)
                     flags = codecov_data.get("flags", {})
-                    
+
                     # Convert to simple mapping
                     flag_mapping = {}
                     for flag_name, flag_config in flags.items():
                         paths = flag_config.get("paths", [])
                         flag_mapping[flag_name] = paths
-                    
+
                     return flag_mapping
             except (yaml.YAMLError, OSError):
                 pass
-        
+
         return {}

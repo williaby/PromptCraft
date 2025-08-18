@@ -23,7 +23,7 @@ if scripts_path not in sys.path:
 # Import the refactored modules with try/except for better error handling
 try:
     from coverage_automation.classifier import TestTypeClassifier
-    from coverage_automation.cli import CoverageAutomationCLI  
+    from coverage_automation.cli import CoverageAutomationCLI
     from coverage_automation.config import TestPatternConfig
     from coverage_automation.renderer import CoverageRenderer
     from coverage_automation.security import HTMLSanitizer, SecurityValidator
@@ -300,12 +300,13 @@ class TestStructuredLogging:
 
     def test_context_aware_logging(self, caplog):
         """Test context-aware logging with structured information."""
-        from coverage_automation.logging_utils import get_logger
         import logging
+
+        from coverage_automation.logging_utils import get_logger
 
         # Set up logging level to capture info messages
         caplog.set_level(logging.INFO)
-        
+
         logger = get_logger("test")
 
         # Test logging with context
@@ -331,12 +332,13 @@ class TestStructuredLogging:
 
     def test_performance_logging(self, caplog):
         """Test performance logging."""
-        from coverage_automation.logging_utils import get_performance_logger
         import logging
+
+        from coverage_automation.logging_utils import get_performance_logger
 
         # Set up logging level to capture info messages
         caplog.set_level(logging.INFO)
-        
+
         perf_logger = get_performance_logger()
 
         # Test performance timing

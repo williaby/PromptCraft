@@ -3,7 +3,6 @@ Test type classification and coverage analysis.
 """
 
 import re
-import string
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, ClassVar
@@ -14,19 +13,19 @@ from .security import SecurityValidator
 
 class TestTypeClassifier:
     """Classifies tests by type and estimates coverage."""
-    
+
     # Compiled regex patterns for security and performance
     COMPILED_PATTERNS: ClassVar[dict[str, re.Pattern[str]]] = {
         "src_from_import": re.compile(r"from\s+src\.([a-zA-Z_][a-zA-Z0-9_.]*)\s+import\s+"),
         "src_direct_import": re.compile(r"import\s+src\.([a-zA-Z_][a-zA-Z0-9_.]*?)(?:\s|$|,)"),
         "valid_module": re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$"),
     }
-    
+
     def __init__(self, project_root: Path, config: TestPatternConfig):
         self.project_root = project_root
         self.config = config
         self.security = SecurityValidator(project_root)
-    
+
     def estimate_test_type_coverage(
         self,
         coverage_data: dict[str, Any],
@@ -87,7 +86,7 @@ class TestTypeClassifier:
                 coverage_by_type[test_type] = {"statement": 0.0, "branch": 0.0, "total_branches": 0}
 
         return coverage_by_type
-    
+
     @lru_cache(maxsize=32)
     def get_test_target_mapping(self, test_type: str) -> frozenset[str]:
         """
@@ -122,7 +121,7 @@ class TestTypeClassifier:
                             test_targets.update(targets)
 
         return frozenset(test_targets)
-    
+
     @lru_cache(maxsize=256)
     def _analyze_test_file_targets(self, test_file_path_str: str) -> frozenset[str]:
         """
@@ -174,7 +173,7 @@ class TestTypeClassifier:
 
                 # Try different source locations based on test file location
                 potential_targets = self._get_potential_targets(test_relative, module_name)
-                
+
                 # Check which targets actually exist
                 for target in potential_targets:
                     target_path = self.project_root / target
@@ -185,7 +184,7 @@ class TestTypeClassifier:
             print(f"  ⚠️  Could not analyze test file {test_file_path}: {e}")
 
         return frozenset(targets)
-    
+
     def _get_potential_targets(self, test_relative: Path, module_name: str) -> list[str]:
         """Get potential target files based on test location."""
         if "auth" in str(test_relative):
@@ -194,32 +193,29 @@ class TestTypeClassifier:
                 f"src/auth/{module_name}_validator.py",
                 f"src/auth/{module_name}_client.py",
             ]
-        elif "unit" in str(test_relative):
+        if "unit" in str(test_relative):
             # Unit tests - infer from directory structure
             parts = test_relative.parts
             if len(parts) >= 3 and parts[1] == "unit":
                 subdir = parts[2] if len(parts) > 3 else ""
                 if subdir and subdir != test_relative.stem:
                     return [f"src/{subdir}/{module_name}.py"]
-                else:
-                    return [
-                        f"src/core/{module_name}.py",
-                        f"src/agents/{module_name}.py",
-                        f"src/utils/{module_name}.py",
-                        f"src/api/{module_name}.py",
-                        f"src/{module_name}.py",
-                    ]
-            else:
-                return [f"src/{module_name}.py"]
-        elif "integration" in str(test_relative):
+                return [
+                    f"src/core/{module_name}.py",
+                    f"src/agents/{module_name}.py",
+                    f"src/utils/{module_name}.py",
+                    f"src/api/{module_name}.py",
+                    f"src/{module_name}.py",
+                ]
+            return [f"src/{module_name}.py"]
+        if "integration" in str(test_relative):
             return [
                 f"src/ui/{module_name}.py",
                 f"src/mcp_integration/{module_name}.py",
                 f"src/core/{module_name}.py",
             ]
-        else:
-            return [f"src/{module_name}.py"]
-    
+        return [f"src/{module_name}.py"]
+
     def _sanitize_file_content(self, content: str) -> str:
         """Sanitize test file content before regex processing."""
         return self.security.sanitize_content(content)
