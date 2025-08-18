@@ -262,7 +262,7 @@ class TestContextAnalyzer:
 
         assert isinstance(suggestions, list)
         # Should suggest relevant topics for unknown command error
-        assert any("basic_commands" in str(suggestions) or "command_syntax" in str(suggestions))
+        assert "basic_commands" in suggestions or "command_syntax" in suggestions
 
     @patch("src.core.help_system.CommandResult")
     def test_analyze_context_with_success(self, mock_command_result):
@@ -573,7 +573,7 @@ class TestHelpCommandIntegration:
         mock_help_instance = Mock()
         mock_help_instance.content_generator = Mock()
         mock_help_instance.content_generator.learning_paths = {
-            "beginner": Mock(name="beginner", description="Beginner path", level="beginner", estimated_time_minutes=15),
+            "beginner": Mock(name="beginner", description="Beginner path", level="beginner", estimated_time_minutes=15, topics=["basic_commands", "getting_started"]),
         }
 
         integration = HelpCommandIntegration(mock_help_instance)

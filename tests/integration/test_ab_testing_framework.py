@@ -17,6 +17,7 @@ Test Coverage:
 """
 
 from datetime import datetime, timedelta
+from src.utils.datetime_compat import utc_now
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -113,7 +114,7 @@ def test_user_characteristics():
     """Create test user characteristics."""
     return UserCharacteristics(
         user_id="test_user_1",
-        registration_date=datetime.utcnow() - timedelta(days=30),
+        registration_date=utc_now() - timedelta(days=30),
         usage_frequency="high",
         feature_usage_pattern="advanced",
         is_early_adopter=True,
@@ -329,7 +330,7 @@ class TestUserSegmentation:
         # Test new user
         new_user = UserCharacteristics(
             user_id="new_user",
-            registration_date=datetime.utcnow() - timedelta(days=15),
+            registration_date=utc_now() - timedelta(days=15),
         )
         segment = segmentation._determine_user_segment(new_user)
         assert segment == UserSegment.NEW_USER
@@ -920,7 +921,7 @@ class TestAPIEndpoints:
         mock_experiment.planned_duration_hours = 24
         mock_experiment.total_users = 0
         mock_experiment.statistical_significance = 0.0
-        mock_experiment.created_at = datetime.utcnow()
+        mock_experiment.created_at = utc_now()
         mock_experiment.start_time = None
         mock_experiment.end_time = None
 

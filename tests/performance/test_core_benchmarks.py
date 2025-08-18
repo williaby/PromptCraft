@@ -2,10 +2,14 @@
 
 import json
 import time
+from pathlib import Path
 from typing import Any
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+
+from examples.task_detection_integration import IntelligentFunctionLoader
+from src.core.task_detection import DetectionResult
 
 
 class TestQueryProcessingBenchmarks:
@@ -331,3 +335,96 @@ class TestRegressionBenchmarks:
 
         result = benchmark(io_simulation)
         assert result > 0
+
+
+class TestTaskDetectionPerformance:
+    """Performance tests for task detection and function loading."""
+
+    @pytest.mark.benchmark
+    @pytest.mark.performance
+    @pytest.mark.asyncio
+    @patch("examples.task_detection_integration.TaskDetectionSystem")
+    @patch("examples.task_detection_integration.ConfigManager")
+    @patch("examples.task_detection_integration.Path")
+    async def test_memory_usage_with_large_history(self, mock_path, mock_config_manager, mock_detection_system):
+        """Test memory usage with large loading history - moved from examples test suite to prevent timeout."""
+        # Mock file system operations to prevent expensive directory scanning
+        mock_cwd = Mock()
+        mock_cwd.return_value = Path("/test/project")
+        mock_path.cwd = mock_cwd
+        
+        # Mock working directory operations
+        mock_working_dir = Mock()
+        mock_working_dir.__truediv__ = Mock(return_value=Mock(exists=Mock(return_value=True)))
+        mock_working_dir.rglob = Mock(return_value=[])  # Empty file list to prevent timeout
+        
+        # Mock config
+        mock_config = Mock()
+        mock_config.performance.max_detection_time_ms = 100.0
+        mock_config_manager.return_value.get_config.return_value = mock_config
+
+        # Mock detection result
+        mock_detection_result = DetectionResult(
+            categories={"core": True},
+            confidence_scores={"core": 0.8},
+            detection_time_ms=25.0,
+            signals_used={},
+            fallback_applied=None,
+        )
+
+        mock_detection_system.return_value.detect_categories = AsyncMock(return_value=mock_detection_result)
+
+        loader = IntelligentFunctionLoader("production")
+
+        # Simulate many loading decisions (reduced from 2000 to 1500 for performance test suite)
+        for i in range(1500):  # More than the 1000 limit
+            with patch.object(Path, '__new__', return_value=mock_working_dir):
+                await loader.load_functions_for_query(f"query {i}")
+
+        # Check that history is properly limited
+        assert len(loader.loading_history) == 1000
+
+        # Check that performance summary still works
+        summary = loader.get_performance_summary()
+        assert "average_detection_time_ms" in summary
+
+    @pytest.mark.benchmark
+    @pytest.mark.performance
+    @pytest.mark.asyncio
+    @patch("examples.task_detection_integration.TaskDetectionSystem")
+    @patch("examples.task_detection_integration.ConfigManager")
+    async def test_function_loading_performance(self, mock_config_manager, mock_detection_system):
+        """Benchmark function loading performance."""
+        # Mock config
+        mock_config = Mock()
+        mock_config.performance.max_detection_time_ms = 100.0
+        mock_config_manager.return_value.get_config.return_value = mock_config
+
+        # Mock detection result
+        mock_detection_result = DetectionResult(
+            categories={"core": True, "git": True, "analysis": True},
+            confidence_scores={"core": 0.9, "git": 0.8, "analysis": 0.7},
+            detection_time_ms=15.0,
+            signals_used={},
+            fallback_applied=None,
+        )
+
+        mock_detection_system.return_value.detect_categories = AsyncMock(return_value=mock_detection_result)
+
+        loader = IntelligentFunctionLoader("production")
+
+        # Mock file system to prevent directory scanning
+        with patch.object(Path, 'cwd', return_value=Path("/test")):
+            with patch.object(Path, 'rglob', return_value=[]):
+                result = await loader.load_functions_for_query("test query for performance")
+
+        # Verify result structure
+        assert "functions" in result
+        assert "detection_result" in result
+        assert "stats" in result
+        assert "context_used" in result
+
+        # Verify performance characteristics
+        stats = result["stats"]
+        assert stats.detection_time_ms < 100.0  # Should be fast
+        assert stats.token_savings_percent > 0  # Should provide savings

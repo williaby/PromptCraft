@@ -12,7 +12,7 @@ This module provides extensive test coverage for JWTValidator class focusing on:
 Aims to achieve 80%+ coverage for auth/jwt_validator.py
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import jwt
@@ -77,9 +77,9 @@ class TestJWTValidatorTokenDecoding:
             "aud": "https://test-app.com",
             "sub": "user123",
             "email": "test@example.com",
-            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(UTC).timestamp()),
-            "nbf": int(datetime.now(UTC).timestamp()),
+            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "nbf": int(datetime.now(timezone.utc).timestamp()),
         }
 
     @pytest.fixture

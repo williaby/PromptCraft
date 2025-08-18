@@ -241,6 +241,12 @@ class TestDemoMethodsExist:
 
         # Mock the loader
         mock_loader = Mock()
+        mock_loader.function_registry = Mock()
+        mock_loader.function_registry.functions = {}
+        mock_loader.function_registry.get_baseline_token_cost = Mock(return_value=1000)
+        mock_loader.function_registry.tiers = [Mock(), Mock(), Mock()]
+        mock_loader.function_registry.get_functions_by_tier = Mock(return_value=[])
+        mock_loader.function_registry.get_tier_token_cost = Mock(return_value=100)
         mock_loader.create_loading_session = AsyncMock(return_value="test-session-id")
         mock_loader.execute_user_command = AsyncMock(return_value=Mock(success=True))
         mock_loader.load_functions_for_query = AsyncMock(return_value=Mock(functions_to_load=[]))
