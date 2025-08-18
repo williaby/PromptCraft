@@ -8,7 +8,7 @@ and session information.
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class ExportUtils:
         Returns:
             Formatted export content
         """
-        timestamp = datetime.now(UTC).isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         if format_type == "json":
             return self._export_as_json(
@@ -580,7 +580,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Returns:
             Formatted filename for download
         """
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         clean_filename = "".join(c for c in filename if c.isalnum() or c in (" ", "-", "_")).rstrip()
 
         return f"{clean_filename}_{timestamp}.{format_type}"
