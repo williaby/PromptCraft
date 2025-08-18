@@ -39,11 +39,17 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "coverage_hook: Mark tests that should trigger coverage report generation")
 
     # Store coverage detection for later use
-    cov_enabled = (
-        config.getoption("--cov") is not None
-        or config.getoption("--cov-report") is not None
-        or any("--cov" in str(arg) for arg in config.invocation_params.args)
-    )
+    cov_enabled = False
+    try:
+        cov_enabled = (
+            config.getoption("--cov") is not None
+            or config.getoption("--cov-report") is not None
+            or any("--cov" in str(arg) for arg in config.invocation_params.args)
+        )
+    except ValueError:
+        # pytest-cov not installed or --cov option not available
+        # Check command line args directly
+        cov_enabled = any("--cov" in str(arg) for arg in config.invocation_params.args)
 
     config._coverage_enabled = cov_enabled
 
