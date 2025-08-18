@@ -739,3 +739,39 @@ class ZenMCPErrorHandler:
             "circuit_breaker": self.circuit_breaker.get_health_status(),
             "retry_policy": self.retry_policy.get_health_status(),
         }
+
+
+# Factory functions for test compatibility
+
+def create_error_handler(config: dict[str, Any] | None = None) -> ZenMCPIntegration:
+    """
+    Create a configured error handler instance.
+    
+    Args:
+        config: Optional configuration dictionary
+        
+    Returns:
+        ZenMCPIntegration: Configured error handler
+    """
+    if config is None:
+        config = {}
+        
+    return ZenMCPIntegration(
+        circuit_breaker_config=config.get("circuit_breaker", {}),
+        retry_config=config.get("retry", {})
+    )
+
+
+def log_error_with_context(error: Exception, context: dict[str, Any]) -> None:
+    """
+    Log error with additional context information.
+    
+    Args:
+        error: Exception to log
+        context: Additional context for the error
+    """
+    import logging
+    
+    logger = logging.getLogger("zen_mcp_error_handling")
+    context_str = " ".join(f"{k}={v}" for k, v in context.items())
+    logger.error("Zen MCP Error: %s | Context: %s", str(error), context_str)

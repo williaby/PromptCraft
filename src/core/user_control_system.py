@@ -11,7 +11,7 @@ import logging
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import timezone, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,8 +31,8 @@ class UserSession:
     command_history: list[dict[str, Any]] = field(default_factory=list)
     preferences: dict[str, Any] = field(default_factory=dict)
     learning_enabled: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-    last_activity: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -45,7 +45,7 @@ class SessionProfile:
     detection_config: dict[str, Any] | None = None
     tags: list[str] = field(default_factory=list)
     created_by: str = "user"
-    created_at: datetime = field(default_factory=datetime.now)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     usage_count: int = 0
     last_used: datetime | None = None
 
@@ -461,14 +461,14 @@ class PerformanceMonitor:
         self.metrics["loading_times"].append({
             "operation": operation,
             "duration_ms": duration_ms,
-            "timestamp": datetime.now(),
+            "timestamp": datetime.now(timezone.utc),
         })
 
     def record_memory_usage(self, usage_mb: float) -> None:
         """Record memory usage"""
         self.metrics["memory_usage"].append({
             "usage_mb": usage_mb,
-            "timestamp": datetime.now(),
+            "timestamp": datetime.now(timezone.utc),
         })
 
     def get_function_stats(self) -> CommandResult:
@@ -512,7 +512,7 @@ class PerformanceMonitor:
         return CommandResult(
             success=True,
             message="Performance cache cleared",
-            data={"cache_cleared": True, "timestamp": datetime.now()},
+            data={"cache_cleared": True, "timestamp": datetime.now(timezone.utc)},
         )
 
     def benchmark_loading(self) -> CommandResult:
@@ -648,7 +648,7 @@ class ProfileManager:
 
         # Update usage statistics
         profile.usage_count += 1
-        profile.last_used = datetime.now()
+        profile.last_used = datetime.now(timezone.utc)
 
         # Save updated profile
         self._save_profile(profile)
@@ -995,7 +995,7 @@ class UserControlSystem:
             # Update session history
             self.current_session.command_history.append({
                 "command": command_line,
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(timezone.utc),
                 "success": result.success,
                 "execution_time_ms": execution_time,
             })
@@ -1151,7 +1151,7 @@ class UserControlSystem:
             )
 
         name = args["name"]
-        description = args.get("description", f"Profile saved on {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        description = args.get("description", f"Profile saved on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}")
         tags = args.get("tags", "").split(",") if args.get("tags") else []
 
         return self.profile_manager.save_session_profile(
@@ -1233,7 +1233,7 @@ class UserControlSystem:
                 "session_id": self.current_session.session_id,
                 "user_level": self.current_session.user_level,
                 "performance_mode": self.current_session.performance_mode,
-                "uptime_minutes": (datetime.now() - self.current_session.created_at).total_seconds() / 60,
+                "uptime_minutes": (datetime.now(timezone.utc) - self.current_session.created_at).total_seconds() / 60,
             },
             "command_usage": dict(self.usage_analytics["commands_executed"]),
             "category_usage": dict(self.usage_analytics["categories_used"]),

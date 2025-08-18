@@ -28,7 +28,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import timezone, datetime
 from enum import Enum
 from typing import Any
 
@@ -127,7 +127,7 @@ class IntegrationMetrics:
     # System health metrics
     error_count: int = 0
     warning_count: int = 0
-    uptime_start: datetime = field(default_factory=datetime.now)
+    uptime_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_health_check: datetime | None = None
 
     @property
@@ -155,7 +155,7 @@ class IntegrationMetrics:
     @property
     def uptime_hours(self) -> float:
         """Calculate system uptime in hours."""
-        return (datetime.now(UTC) - self.uptime_start).total_seconds() / 3600.0
+        return (datetime.now(timezone.utc) - self.uptime_start).total_seconds() / 3600.0
 
     def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary for monitoring/logging."""
@@ -781,7 +781,7 @@ class DynamicLoadingIntegration:
                     health_issues.append(f"Hybrid router health check error: {e}")
 
             # Determine health status
-            self.metrics.last_health_check = datetime.now(UTC)
+            self.metrics.last_health_check = datetime.now(timezone.utc)
 
             if not health_issues:
                 return IntegrationHealth.HEALTHY
@@ -903,7 +903,7 @@ class DynamicLoadingIntegration:
         return {
             "integration_report": integration_report,
             "optimization_monitor_report": monitor_report,
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     async def shutdown(self) -> None:

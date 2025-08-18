@@ -1323,12 +1323,70 @@ class MockVectorStore(EnhancedMockVectorStore):
 # Alias for backward compatibility
 VectorStore = MockVectorStore
 
+
+# Compatibility aliases and additional models for testing
+
+class VectorStoreConfig(BaseModel):
+    """Configuration for vector store instances."""
+    
+    host: str = Field(default="localhost", description="Vector store host")
+    port: int = Field(default=6333, description="Vector store port")
+    collection: str = Field(default="default", description="Default collection name")
+    timeout: float = Field(default=30.0, description="Connection timeout in seconds")
+    api_key: str | None = Field(default=None, description="API key for authentication")
+    use_ssl: bool = Field(default=False, description="Whether to use SSL connection")
+
+
+class ConnectionManager:
+    """Basic connection manager for vector store instances."""
+    
+    def __init__(self, config: VectorStoreConfig):
+        """Initialize connection manager with configuration."""
+        self.config = config
+        self._connection_pool = {}
+        self._is_connected = False
+    
+    async def connect(self) -> bool:
+        """Establish connection to the vector store."""
+        try:
+            # Basic connection simulation
+            self._is_connected = True
+            return True
+        except Exception:
+            self._is_connected = False
+            return False
+    
+    async def disconnect(self) -> None:
+        """Disconnect from the vector store."""
+        self._is_connected = False
+        self._connection_pool.clear()
+    
+    def is_connected(self) -> bool:
+        """Check if connection is active."""
+        return self._is_connected
+    
+    async def health_check(self) -> dict[str, Any]:
+        """Perform health check on the connection."""
+        return {
+            "status": "healthy" if self._is_connected else "disconnected",
+            "host": self.config.host,
+            "port": self.config.port,
+            "connection_pool_size": len(self._connection_pool)
+        }
+
+
+# Compatibility alias
+Document = VectorDocument
+
+
 # Export main classes for external use
 __all__ = [
     "DEFAULT_VECTOR_DIMENSIONS",
     "AbstractVectorStore",
     "BatchOperationResult",
+    "ConnectionManager",
     "ConnectionStatus",
+    "Document",  # Alias for VectorDocument
     "EnhancedMockVectorStore",
     "HealthCheckResult",
     "MockVectorStore",  # Backward compatibility
@@ -1338,6 +1396,7 @@ __all__ = [
     "SearchStrategy",
     "VectorDocument",
     "VectorStore",  # Main alias for import compatibility
+    "VectorStoreConfig",
     "VectorStoreFactory",
     "VectorStoreMetrics",
     "VectorStoreType",

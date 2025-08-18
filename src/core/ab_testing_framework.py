@@ -31,6 +31,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from src.utils.datetime_compat import utc_now
 from enum import Enum
 from typing import Any
 
@@ -442,7 +443,7 @@ class UserSegmentation:
 
         # New user (registered within last 30 days)
         if characteristics.registration_date:
-            if datetime.utcnow() - characteristics.registration_date <= timedelta(days=30):
+            if utc_now() - characteristics.registration_date <= timedelta(days=30):
                 return UserSegment.NEW_USER
 
         # Power user (high usage frequency and advanced patterns)
@@ -663,7 +664,7 @@ class StatisticalAnalyzer:
 
             # Calculate duration
             start_time = experiment.start_time or experiment.created_at
-            end_time = experiment.end_time or datetime.utcnow()
+            end_time = experiment.end_time or utc_now()
             duration_hours = (end_time - start_time).total_seconds() / 3600
 
             return ExperimentResults(
@@ -1060,7 +1061,7 @@ class FeatureFlagManager:
 
             config["variant_configs"] = variant_configs
             experiment.config = config
-            experiment.updated_at = datetime.utcnow()
+            experiment.updated_at = utc_now()
 
             self.db_session.commit()
 
@@ -1106,7 +1107,7 @@ class RolloutController:
 
             # Check if enough time has passed since last step
             if experiment.updated_at:
-                time_since_update = datetime.utcnow() - experiment.updated_at
+                time_since_update = utc_now() - experiment.updated_at
                 if time_since_update.total_seconds() < config.step_duration_hours * 3600:
                     self.logger.info(f"Experiment {experiment_id} step duration not yet reached")
                     return True
@@ -1126,7 +1127,7 @@ class RolloutController:
                 # Check if ready for next step
                 if results.statistical_significance >= 80.0:  # Require reasonable confidence
                     experiment.current_percentage = next_percentage
-                    experiment.updated_at = datetime.utcnow()
+                    experiment.updated_at = utc_now()
                     self.db_session.commit()
 
                     self.logger.info(
@@ -1173,7 +1174,7 @@ class RolloutController:
                     # Rollback by setting all users to control
                     experiment.status = "failed"
                     experiment.current_percentage = 0.0
-                    experiment.end_time = datetime.utcnow()
+                    experiment.end_time = utc_now()
 
                     self.db_session.commit()
 
@@ -1282,7 +1283,7 @@ class ExperimentManager(ObservabilityMixin):
                     return False
 
                 experiment.status = "active"
-                experiment.start_time = datetime.utcnow()
+                experiment.start_time = utc_now()
                 experiment.current_percentage = ExperimentConfig(**experiment.config).initial_percentage
 
                 db_session.commit()
@@ -1304,7 +1305,7 @@ class ExperimentManager(ObservabilityMixin):
                     return False
 
                 experiment.status = "completed"
-                experiment.end_time = datetime.utcnow()
+                experiment.end_time = utc_now()
 
                 db_session.commit()
 
@@ -1443,10 +1444,10 @@ class ExperimentManager(ObservabilityMixin):
 
                     # Check for experiment completion
                     if experiment.planned_duration_hours > 0:
-                        elapsed_hours = (datetime.utcnow() - experiment.start_time).total_seconds() / 3600
+                        elapsed_hours = (utc_now() - experiment.start_time).total_seconds() / 3600
                         if elapsed_hours >= experiment.planned_duration_hours:
                             experiment.status = "completed"
-                            experiment.end_time = datetime.utcnow()
+                            experiment.end_time = utc_now()
                             db_session.commit()
 
                             self.logger.info(

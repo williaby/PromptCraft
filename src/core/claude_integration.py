@@ -319,21 +319,24 @@ class ClaudeCommandIntegration:
     def _parse_command_line(self, command_line: str) -> dict[str, Any]:
         """Parse command line into components"""
         # Handle both /command and project:command formats
-        if command_line.startswith("/"):
+        if command_line.startswith("/project:"):
+            # Claude Code project format
+            command_name = command_line[9:]  # Remove /project:
+            parts = command_name.split(" ", 1)
+            return {
+                "command": parts[0],
+                "arguments": parts[1].split() if len(parts) > 1 else [],
+            }
+        elif command_line.startswith("/"):
             # User control system format
             parts = command_line[1:].split()
             return {
                 "command": parts[0] if parts else "",
                 "arguments": parts[1:] if len(parts) > 1 else [],
             }
-        if ":" in command_line:
-            # Claude Code project format
-            if command_line.startswith("/project:"):
-                command_name = command_line[9:]  # Remove /project:
-            else:
-                command_name = command_line
-
-            parts = command_name.split(" ", 1)
+        elif ":" in command_line:
+            # Claude Code project format without /project: prefix
+            parts = command_line.split(" ", 1)
             return {
                 "command": parts[0],
                 "arguments": parts[1].split() if len(parts) > 1 else [],
