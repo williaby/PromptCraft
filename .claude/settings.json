@@ -1,0 +1,16 @@
+{
+  "project": {
+    "name": "PromptCraft",
+    "type": "python",
+    "languages": [
+      "python",
+      "javascript"
+    ]
+  },
+  "tools": {
+    "enabled": [
+      "basic_commands"
+    ],
+    "disabled": []
+  }
+}

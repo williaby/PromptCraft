@@ -1,0 +1,98 @@
+# GitHub Copilot Configuration for PromptCraft-Hybrid
+# This file configures GitHub Copilot suggestions and behavior for this project
+
+# Enable Copilot suggestions
+suggestions:
+  enabled: true
+  
+  # Language-specific settings
+  languages:
+    python: true
+    javascript: true
+    typescript: true
+    markdown: true
+    yaml: true
+    json: true
+    dockerfile: true
+    shell: true
+
+# Copilot chat settings
+chat:
+  enabled: true
+  context:
+    # Include project-specific context
+    - ".claude/CLAUDE.md"
+    - "README.md"
+    - "pyproject.toml"
+
+# File patterns to exclude from Copilot analysis
+exclude:
+  # Logs and temporary files
+  - "*.log"
+  - "*.tmp"
+  - "*.cache"
+  
+  # Environment and secrets
+  - "*.env*"
+  - ".env*"
+  - "**/.env*"
+  - "**/secrets/**"
+  - "**/.secrets/**"
+  
+  # Dependencies and virtual environments
+  - "**/node_modules/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/__pycache__/**"
+  - "**/.pytest_cache/**"
+  - "**/poetry.lock"
+  
+  # Generated files
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/coverage/**"
+  - "**/reports/**"
+  - "**/.mypy_cache/**"
+  - "**/.ruff_cache/**"
+
+# Project-specific patterns for PromptCraft
+project:
+  # Knowledge base patterns - be careful with suggestions in knowledge files
+  knowledge_patterns:
+    - "knowledge/**/*.md"
+    
+  # Agent-specific code patterns
+  agent_patterns:
+    - "src/agents/**/*.py"
+    
+  # MCP integration patterns  
+  mcp_patterns:
+    - "src/mcp_integration/**/*.py"
+
+# Suggestions for common PromptCraft patterns
+patterns:
+  # Agent class suggestions
+  agent_class:
+    template: |
+      class {AgentName}Agent(BaseAgent):
+          """Agent for {domain} operations."""
+          
+          def __init__(self, config: AgentConfig):
+              super().__init__(config)
+              self.agent_id = "{agent_id}"
+              
+          async def process_request(self, request: AgentRequest) -> AgentResponse:
+              """Process agent request and return response."""
+              pass
+  
+  # Knowledge file suggestions  
+  knowledge_file:
+    frontmatter: |
+      ---
+      title: {Title}
+      version: 1.0
+      status: draft
+      agent_id: {agent_id}
+      tags: [{tags}]
+      purpose: {Purpose description ending with period.}
+      ---

@@ -1,0 +1,64 @@
+{
+  "project": "PromptCraft-Hybrid",
+  "version": "1.0.0",
+  "settings": {
+    "model": "gemini-2.0-flash-exp",
+    "temperature": 0.3,
+    "max_tokens": 8192,
+    "context_window": 32000
+  },
+  "features": {
+    "code_completion": {
+      "enabled": true,
+      "languages": ["python", "javascript", "typescript", "markdown", "yaml"],
+      "auto_import": true,
+      "documentation_generation": true
+    },
+    "code_analysis": {
+      "enabled": true,
+      "security_scan": true,
+      "performance_hints": true,
+      "best_practices": true
+    },
+    "chat_integration": {
+      "enabled": true,
+      "context_files": [
+        ".claude/CLAUDE.md",
+        "README.md",
+        "pyproject.toml"
+      ],
+      "knowledge_base": "knowledge/"
+    }
+  },
+  "project_context": {
+    "architecture": "hybrid-ai-workbench",
+    "primary_languages": ["python"],
+    "frameworks": ["fastapi", "gradio", "prefect"],
+    "databases": ["qdrant"],
+    "deployment": "docker",
+    "ai_frameworks": ["zen-mcp", "heimdall-mcp"]
+  },
+  "exclusions": {
+    "files": [
+      "*.env*",
+      "*.log",
+      "**/node_modules/**",
+      "**/.venv/**",
+      "**/__pycache__/**",
+      "**/coverage/**",
+      "**/reports/**"
+    ],
+    "directories": [
+      ".mypy_cache",
+      ".pytest_cache",
+      ".ruff_cache",
+      "build",
+      "dist"
+    ]
+  },
+  "prompts": {
+    "code_review": "Review this code for PromptCraft-Hybrid project standards, focusing on agent architecture, MCP integration, and security best practices.",
+    "documentation": "Generate documentation following PromptCraft knowledge base standards with YAML frontmatter.",
+    "testing": "Create comprehensive tests following the project's tiered testing approach with 80% coverage minimum."
+  }
+}
