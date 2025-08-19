@@ -16,6 +16,7 @@ Usage:
     python scripts/ai_tools_validator.py [--install-missing] [--quiet]
 """
 
+import argparse
 import json
 import os
 import shutil
@@ -23,8 +24,6 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-import argparse
 
 
 @dataclass
@@ -32,11 +31,11 @@ class ToolConfig:
     """Configuration for an AI coding tool."""
     name: str
     command: str
-    check_args: List[str]
-    install_command: Optional[str] = None
+    check_args: list[str]
+    install_command: str | None = None
     install_instructions: str = ""
-    config_files: List[str] = field(default_factory=list)
-    environment_vars: List[str] = field(default_factory=list)
+    config_files: list[str] = field(default_factory=list)
+    environment_vars: list[str] = field(default_factory=list)
     version_regex: str = r"(\d+\.\d+(?:\.\d+)?)"
 
 
@@ -44,22 +43,22 @@ class ToolConfig:
 class ToolStatus:
     """Status information for a tool."""
     installed: bool = False
-    version: Optional[str] = None
+    version: str | None = None
     configured: bool = False
-    config_issues: List[str] = field(default_factory=list)
-    missing_files: List[str] = field(default_factory=list)
-    missing_env_vars: List[str] = field(default_factory=list)
+    config_issues: list[str] = field(default_factory=list)
+    missing_files: list[str] = field(default_factory=list)
+    missing_env_vars: list[str] = field(default_factory=list)
 
 
 class AIToolsValidator:
     """Validator for AI coding CLI tools."""
-    
+
     def __init__(self, project_root: Path):
         self.project_root = project_root
         self.home_dir = Path.home()
-        
+
         # Tool configurations
-        self.tools: Dict[str, ToolConfig] = {
+        self.tools: dict[str, ToolConfig] = {
             "claude": ToolConfig(
                 name="Claude Code",
                 command="claude",
@@ -71,9 +70,9 @@ Install Claude Code:
 3. Verify with: claude --version
                 """,
                 config_files=[".claude/CLAUDE.md", ".claude/settings.json"],
-                environment_vars=["ANTHROPIC_API_KEY"]
+                environment_vars=["ANTHROPIC_API_KEY"],
             ),
-            
+
             "copilot": ToolConfig(
                 name="GitHub Copilot CLI",
                 command="gh",
@@ -87,9 +86,9 @@ Install GitHub Copilot CLI:
 4. Verify with: gh copilot --version
                 """,
                 config_files=[".github/copilot.yml"],
-                environment_vars=["GITHUB_TOKEN"]
+                environment_vars=["GITHUB_TOKEN"],
             ),
-            
+
             "gemini": ToolConfig(
                 name="Gemini CLI",
                 command="gemini",
@@ -101,9 +100,9 @@ Install Gemini CLI:
 3. Verify with: gemini --version
                 """,
                 config_files=[".gemini/config.json"],
-                environment_vars=["GOOGLE_AI_API_KEY", "GEMINI_API_KEY"]
+                environment_vars=["GOOGLE_AI_API_KEY", "GEMINI_API_KEY"],
             ),
-            
+
             "qwen": ToolConfig(
                 name="Qwen Code CLI",
                 command="qwen",
@@ -115,9 +114,9 @@ Install Qwen Code CLI:
 3. Verify with: qwen --version
                 """,
                 config_files=[".qwen/config.json"],
-                environment_vars=["QWEN_API_KEY"]
+                environment_vars=["QWEN_API_KEY"],
             ),
-            
+
             "codex": ToolConfig(
                 name="OpenAI Codex CLI",
                 command="openai",
@@ -130,27 +129,27 @@ Install OpenAI Codex CLI:
 3. Verify with: openai --version
                 """,
                 config_files=[".openai/config.json"],
-                environment_vars=["OPENAI_API_KEY"]
-            )
+                environment_vars=["OPENAI_API_KEY"],
+            ),
         }
 
     def check_tool_installation(self, tool_config: ToolConfig) -> ToolStatus:
         """Check if a tool is installed and get its version."""
         status = ToolStatus()
-        
+
         try:
             # Check if command exists
             if not shutil.which(tool_config.command):
                 return status
-            
+
             # Run version check
             result = subprocess.run(
-                [tool_config.command] + tool_config.check_args,
-                capture_output=True,
+                [tool_config.command, *tool_config.check_args],
+                check=False, capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
-            
+
             if result.returncode == 0:
                 status.installed = True
                 # Extract version if available
@@ -158,43 +157,43 @@ Install OpenAI Codex CLI:
                 version_match = re.search(tool_config.version_regex, result.stdout + result.stderr)
                 if version_match:
                     status.version = version_match.group(1)
-            
+
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
             pass
-        
+
         return status
 
     def check_tool_configuration(self, tool_config: ToolConfig, status: ToolStatus) -> None:
         """Check if a tool is properly configured."""
         if not status.installed:
             return
-        
+
         # Check config files
         for config_file in tool_config.config_files:
             config_path = self.project_root / config_file
             home_config_path = self.home_dir / config_file
-            
+
             if not config_path.exists() and not home_config_path.exists():
                 status.missing_files.append(config_file)
-        
+
         # Check environment variables
         for env_var in tool_config.environment_vars:
             if not os.getenv(env_var):
                 status.missing_env_vars.append(env_var)
-        
+
         # Tool is configured if no missing files or env vars
-        status.configured = (len(status.missing_files) == 0 and 
+        status.configured = (len(status.missing_files) == 0 and
                            len(status.missing_env_vars) == 0)
 
-    def validate_all_tools(self) -> Dict[str, ToolStatus]:
+    def validate_all_tools(self) -> dict[str, ToolStatus]:
         """Validate all configured tools."""
         results = {}
-        
+
         for tool_name, tool_config in self.tools.items():
             status = self.check_tool_installation(tool_config)
             self.check_tool_configuration(tool_config, status)
             results[tool_name] = status
-        
+
         return results
 
     def create_config_templates(self) -> None:
@@ -203,7 +202,7 @@ Install OpenAI Codex CLI:
         claude_dir = self.project_root / ".claude"
         if not claude_dir.exists():
             claude_dir.mkdir(exist_ok=True)
-        
+
         claude_settings = claude_dir / "settings.json"
         if not claude_settings.exists():
             settings_template = {
@@ -212,24 +211,24 @@ Install OpenAI Codex CLI:
                         "zen-mcp-server": {
                             "command": "python",
                             "args": ["-m", "zen_mcp_server"],
-                            "env": {}
-                        }
-                    }
+                            "env": {},
+                        },
+                    },
                 },
                 "tools": {
                     "enabled": ["mcp__zen__chat", "mcp__zen__debug", "mcp__zen__analyze"],
-                    "disabled": []
-                }
+                    "disabled": [],
+                },
             }
-            
-            with open(claude_settings, 'w') as f:
+
+            with open(claude_settings, "w") as f:
                 json.dump(settings_template, f, indent=2)
-        
+
         # GitHub Copilot configuration
         github_dir = self.project_root / ".github"
         if not github_dir.exists():
             github_dir.mkdir(exist_ok=True)
-        
+
         copilot_config = github_dir / "copilot.yml"
         if not copilot_config.exists():
             copilot_template = """# GitHub Copilot Configuration
@@ -248,27 +247,27 @@ exclude:
   - "**/node_modules/**"
   - "**/.venv/**"
 """
-            with open(copilot_config, 'w') as f:
+            with open(copilot_config, "w") as f:
                 f.write(copilot_template)
 
-    def generate_report(self, results: Dict[str, ToolStatus], quiet: bool = False) -> str:
+    def generate_report(self, results: dict[str, ToolStatus], quiet: bool = False) -> str:
         """Generate a validation report."""
         if quiet:
             # Just return summary counts
             installed_count = sum(1 for status in results.values() if status.installed)
             configured_count = sum(1 for status in results.values() if status.configured)
             return f"AI Tools: {installed_count}/{len(results)} installed, {configured_count}/{len(results)} configured"
-        
+
         report = ["🤖 AI Coding Tools Validation Report", "=" * 50]
-        
+
         for tool_name, status in results.items():
             tool_config = self.tools[tool_name]
-            
+
             if status.installed:
                 version_info = f" (v{status.version})" if status.version else ""
                 status_icon = "✅" if status.configured else "⚠️"
                 report.append(f"{status_icon} {tool_config.name}{version_info}")
-                
+
                 if not status.configured:
                     if status.missing_files:
                         report.append(f"   Missing files: {', '.join(status.missing_files)}")
@@ -277,12 +276,12 @@ exclude:
             else:
                 report.append(f"❌ {tool_config.name} - Not installed")
                 report.append(f"   {tool_config.install_instructions.strip()}")
-            
+
             report.append("")
-        
+
         return "\n".join(report)
 
-    def install_missing_tools(self, results: Dict[str, ToolStatus]) -> None:
+    def install_missing_tools(self, results: dict[str, ToolStatus]) -> None:
         """Attempt to install missing tools with available install commands."""
         for tool_name, status in results.items():
             if not status.installed:
@@ -294,7 +293,7 @@ exclude:
                             tool_config.install_command.split(),
                             check=True,
                             capture_output=True,
-                            text=True
+                            text=True,
                         )
                         print(f"✅ {tool_config.name} installed successfully")
                     except subprocess.CalledProcessError as e:
@@ -304,51 +303,51 @@ exclude:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Validate AI coding tools for VS Code")
-    parser.add_argument("--install-missing", action="store_true", 
+    parser.add_argument("--install-missing", action="store_true",
                        help="Attempt to install missing tools")
-    parser.add_argument("--quiet", action="store_true", 
+    parser.add_argument("--quiet", action="store_true",
                        help="Output minimal summary only")
     parser.add_argument("--create-templates", action="store_true",
                        help="Create configuration file templates")
-    
+
     args = parser.parse_args()
-    
+
     # Find project root
     current_dir = Path.cwd()
     project_root = current_dir
-    
+
     # Look for common project indicators
-    for parent in [current_dir] + list(current_dir.parents):
-        if any((parent / indicator).exists() for indicator in 
+    for parent in [current_dir, *list(current_dir.parents)]:
+        if any((parent / indicator).exists() for indicator in
                [".git", "pyproject.toml", "package.json", ".vscode"]):
             project_root = parent
             break
-    
+
     validator = AIToolsValidator(project_root)
-    
+
     # Create config templates if requested
     if args.create_templates:
         validator.create_config_templates()
         if not args.quiet:
             print("✅ Configuration templates created")
-    
+
     # Validate tools
     results = validator.validate_all_tools()
-    
+
     # Install missing tools if requested
     if args.install_missing:
         validator.install_missing_tools(results)
         # Re-validate after installation
         results = validator.validate_all_tools()
-    
+
     # Generate and print report
     report = validator.generate_report(results, args.quiet)
     print(report)
-    
+
     # Exit with error code if tools are missing/misconfigured
     installed_count = sum(1 for status in results.values() if status.installed)
     configured_count = sum(1 for status in results.values() if status.configured)
-    
+
     if installed_count == 0:
         sys.exit(2)  # No tools installed
     elif configured_count < installed_count:
