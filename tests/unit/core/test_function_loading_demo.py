@@ -247,7 +247,9 @@ class TestInteractiveFunctionLoadingDemo:
 
         # Verify loader calls
         mock_loader.create_loading_session.assert_called_once_with(
-            user_id="demo_user_test_scenario", query="test query for loading", strategy=LoadingStrategy.BALANCED,
+            user_id="demo_user_test_scenario",
+            query="test query for loading",
+            strategy=LoadingStrategy.BALANCED,
         )
 
         # Verify command execution
@@ -338,7 +340,10 @@ class TestInteractiveFunctionLoadingDemo:
     def test_display_scenario_result(self, demo):
         """Test scenario result display method."""
         scenario = DemoScenario(
-            name="Display Test", description="Test display", query="display query", expected_categories=["test"],
+            name="Display Test",
+            description="Test display",
+            query="display query",
+            expected_categories=["test"],
         )
 
         mock_loading_decision = MagicMock()
@@ -466,7 +471,9 @@ class TestInteractiveFunctionLoadingDemo:
 
         # Verify session creation
         mock_loader.create_loading_session.assert_called_once_with(
-            user_id="interactive_user", query="test interactive query", strategy=LoadingStrategy.BALANCED,
+            user_id="interactive_user",
+            query="test interactive query",
+            strategy=LoadingStrategy.BALANCED,
         )
 
         # Verify function loading
@@ -622,7 +629,8 @@ class TestInteractiveFunctionLoadingDemo:
 
         # Verify session was created for commands demo
         mock_loader.create_loading_session.assert_called_once_with(
-            user_id="commands_demo_user", query="help me with various development tasks",
+            user_id="commands_demo_user",
+            query="help me with various development tasks",
         )
 
         # Verify initial function loading
@@ -708,7 +716,11 @@ class TestInteractiveFunctionLoadingDemo:
             },
             "cache_statistics": {"hit_rate": 80.0, "size": 1024, "evictions": 5},
             "optimization_performance": {
-                "token_optimization": {"baseline_tokens": 12000, "optimized_tokens": 3600, "reduction_percentage": 70.0},
+                "token_optimization": {
+                    "baseline_tokens": 12000,
+                    "optimized_tokens": 3600,
+                    "reduction_percentage": 70.0,
+                },
             },
         }
 
@@ -1082,7 +1094,8 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         demo = InteractiveFunctionLoadingDemo()
 
         with patch(
-            "src.core.function_loading_demo.initialize_dynamic_loading", side_effect=Exception("Loader init failed"),
+            "src.core.function_loading_demo.initialize_dynamic_loading",
+            side_effect=Exception("Loader init failed"),
         ):
             with pytest.raises(Exception, match="Loader init failed"):
                 await demo.initialize()

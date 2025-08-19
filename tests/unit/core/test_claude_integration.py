@@ -48,7 +48,10 @@ class TestCommandMetadata:
     def test_command_metadata_defaults(self):
         """Test CommandMetadata with default values."""
         metadata = CommandMetadata(
-            name="simple-command", category="basic", complexity="low", estimated_time="< 1 minute",
+            name="simple-command",
+            category="basic",
+            complexity="low",
+            estimated_time="< 1 minute",
         )
 
         assert metadata.dependencies == []
@@ -126,7 +129,10 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         handler = MagicMock()
         metadata = CommandMetadata(
-            name="long-command-name", category="workflow", complexity="medium", estimated_time="< 2 minutes",
+            name="long-command-name",
+            category="workflow",
+            complexity="medium",
+            estimated_time="< 2 minutes",
         )
         aliases = ["short", "lcn"]
 
@@ -140,7 +146,10 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         handler = MagicMock()
         metadata = CommandMetadata(
-            name="direct-cmd", category="validation", complexity="low", estimated_time="< 1 minute",
+            name="direct-cmd",
+            category="validation",
+            complexity="low",
+            estimated_time="< 1 minute",
         )
 
         registry.register_command("direct-cmd", handler, metadata)
@@ -155,7 +164,10 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         handler = MagicMock()
         metadata = CommandMetadata(
-            name="aliased-command", category="creation", complexity="high", estimated_time="< 5 minutes",
+            name="aliased-command",
+            category="creation",
+            complexity="high",
+            estimated_time="< 5 minutes",
         )
 
         registry.register_command("aliased-command", handler, metadata, ["alias"])
@@ -198,7 +210,10 @@ class TestCommandRegistry:
         registry = CommandRegistry()
         handler = MagicMock()
         metadata = CommandMetadata(
-            name="searchable-command", category="meta", complexity="low", estimated_time="< 1 minute",
+            name="searchable-command",
+            category="meta",
+            complexity="low",
+            estimated_time="< 1 minute",
         )
 
         registry.register_command("searchable-command", handler, metadata)

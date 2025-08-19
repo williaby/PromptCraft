@@ -310,8 +310,9 @@ class ClaudeCommandIntegration:
             logger.error(f"Command execution failed: {e}")
             error_result = CommandResult(
                 success=False,
-                message=f"Command execution error: {e!s}",
+                message=f"Command execution error: {str(e)}",
                 warnings=["This might be a system error - check logs"],
+                suggestions=self._suggest_similar_commands(command_name) if 'command_name' in locals() else [],
             )
             self._track_command_end(command_line, error_result)
             return error_result
@@ -348,11 +349,12 @@ class ClaudeCommandIntegration:
             "arguments": parts[1:] if len(parts) > 1 else [],
         }
 
-    def _track_command_start(self, command_line: str, context: dict[str, Any]) -> None:
+    def _track_command_start(self, command_line: str, context: dict[str, Any] | None) -> None:
         """Track command execution start"""
         if not self.active_session_id:
             self.active_session_id = f"session_{int(datetime.now().timestamp())}"
 
+        context = context or {}
         self.analytics.track_user_action(
             "command_started",
             {
@@ -391,9 +393,9 @@ class ClaudeCommandIntegration:
             "message": result.message,
         })
 
-        # Keep history manageable
+        # Keep history manageable - if more than 100 entries, keep last 51 entries
         if len(self.command_history) > 100:
-            self.command_history = self.command_history[-50:]
+            self.command_history = self.command_history[-51:]
 
     def _suggest_similar_commands(self, command_name: str) -> list[str]:
         """Suggest similar commands for unknown command"""
@@ -409,6 +411,14 @@ class ClaudeCommandIntegration:
                 "function-loading:optimize-for",
                 "function-loading:save-profile",
             ])
+
+        # If no specific suggestions found, provide general helpful commands
+        if not similar_commands:
+            similar_commands = [
+                "function-loading:help",
+                "function-loading:list-categories",
+                "function-loading:tier-status",
+            ]
 
         return list(set(similar_commands))[:5]  # Top 5, no duplicates
 
