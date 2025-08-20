@@ -4,7 +4,7 @@
       "command": "uvx",
       "args": [
         "--from",
-        "git+https://github.com/BeehiveInnovations/zen-mcp-server",
+        "git+https://github.com/williaby/zen-mcp-server",
         "zen-mcp-server"
       ],
       "env": {

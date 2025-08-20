@@ -58,12 +58,17 @@ security: ## Run security checks
 	$(POETRY) run safety check
 	$(POETRY) run bandit -r src
 
-dev: ## Start development environment with all services
+dev: ## Start development environment with all services (including integrated Zen MCP Server)
 	docker-compose -f docker-compose.zen-vm.yaml up -d
 	@echo "Development environment started!"
-	@echo "- Gradio UI: http://192.168.1.205:7860"
-	@echo "- Zen MCP Server: http://192.168.1.205:3000"
+	@echo "- Gradio UI: http://127.0.0.1:7860 (Journeys 1, 2, 4)"
+	@echo "- FastAPI Backend: http://127.0.0.1:8000 (API endpoints)"
+	@echo "- Zen MCP Server: http://127.0.0.1:3000 (AI Agent Orchestration)"
+	@echo "- Code-Server IDE: http://127.0.0.1:8080 (Journey 3)"
 	@echo "- External Qdrant Dashboard: http://192.168.1.16:6333/dashboard"
+	@echo ""
+	@echo "✅ Zen MCP Server is now integrated and managed by Docker Compose!"
+	@echo "⚡ All services start with a single 'make dev' command"
 
 pre-commit: ## Run all pre-commit hooks manually
 	$(POETRY) run pre-commit run --all-files

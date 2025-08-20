@@ -1,6 +1,20 @@
 {
   "version": "1.0",
-  "mcpServers": {},
+  "mcpServers": {
+    "zen": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/williaby/zen-mcp-server",
+        "zen-mcp-server"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}"
+      }
+    }
+  },
   "global_settings": {},
   "parallel_execution": true,
   "max_concurrent_servers": 5,
