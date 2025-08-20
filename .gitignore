@@ -225,3 +225,9 @@ docs/zen/
 # Generated reports (organized)
 reports/
 zen-mcp-server/
+
+# Databases (development data should not be committed)
+# =================================
+*.db
+*.sqlite
+*.sqlite3
