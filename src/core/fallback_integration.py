@@ -46,16 +46,18 @@ logger = logging.getLogger(__name__)
 
 class IntegrationMode(Enum):
     """Integration modes for gradual rollout"""
-    DISABLED = "disabled"              # No fallback protection
-    MONITORING = "monitoring"          # Log only, no intervention
-    SHADOW = "shadow"                  # Run in parallel, compare results
-    ACTIVE = "active"                  # Full fallback protection
-    AGGRESSIVE = "aggressive"          # Prefer fallback over detection
+
+    DISABLED = "disabled"  # No fallback protection
+    MONITORING = "monitoring"  # Log only, no intervention
+    SHADOW = "shadow"  # Run in parallel, compare results
+    ACTIVE = "active"  # Full fallback protection
+    AGGRESSIVE = "aggressive"  # Prefer fallback over detection
 
 
 @dataclass
 class IntegrationConfig:
     """Configuration for fallback integration"""
+
     mode: IntegrationMode = IntegrationMode.ACTIVE
     enable_performance_monitoring: bool = True
     enable_health_checks: bool = True
@@ -97,8 +99,13 @@ class FallbackIntegrationMetrics:
         self.errors_prevented = 0
         self.cascade_failures_prevented = 0
 
-    def record_request(self, used_fallback: bool, detection_time: float,
-                      fallback_time: float = 0.0, error_prevented: bool = False) -> None:
+    def record_request(
+        self,
+        used_fallback: bool,
+        detection_time: float,
+        fallback_time: float = 0.0,
+        error_prevented: bool = False,
+    ) -> None:
         """Record a request outcome"""
         self.total_requests += 1
         self.total_detection_time += detection_time
@@ -144,8 +151,7 @@ class UserNotificationManager:
         self.last_notification_time = {}
         self.notification_cooldown = 300.0  # 5 minutes
 
-    async def notify_fallback_activation(self, level: FallbackLevel,
-                                       query: str, reason: str) -> bool:
+    async def notify_fallback_activation(self, level: FallbackLevel, query: str, reason: str) -> bool:
         """Notify user of fallback activation"""
         if not self.config.notify_on_fallback:
             return False
@@ -161,13 +167,15 @@ class UserNotificationManager:
 
         if success:
             self.last_notification_time[notification_key] = time.time()
-            self.notification_history.append({
-                "type": "fallback_activation",
-                "level": level.value,
-                "query": query[:50],
-                "reason": reason,
-                "timestamp": time.time(),
-            })
+            self.notification_history.append(
+                {
+                    "type": "fallback_activation",
+                    "level": level.value,
+                    "query": query[:50],
+                    "reason": reason,
+                    "timestamp": time.time(),
+                },
+            )
 
         return success
 
@@ -175,7 +183,6 @@ class UserNotificationManager:
         """Notify user of emergency mode activation"""
         if not self.config.notify_on_emergency:
             return False
-
 
         # Emergency notifications ignore cooldown
         message = (
@@ -188,11 +195,13 @@ class UserNotificationManager:
         success = await self._send_notification(message, "warning")
 
         if success:
-            self.notification_history.append({
-                "type": "emergency_mode",
-                "reason": reason,
-                "timestamp": time.time(),
-            })
+            self.notification_history.append(
+                {
+                    "type": "emergency_mode",
+                    "reason": reason,
+                    "timestamp": time.time(),
+                },
+            )
 
         return success
 
@@ -217,11 +226,13 @@ class UserNotificationManager:
 
         if success:
             self.last_notification_time[notification_key] = time.time()
-            self.notification_history.append({
-                "type": "recovery",
-                "previous_level": previous_level.value,
-                "timestamp": time.time(),
-            })
+            self.notification_history.append(
+                {
+                    "type": "recovery",
+                    "previous_level": previous_level.value,
+                    "timestamp": time.time(),
+                },
+            )
 
         return success
 
@@ -262,10 +273,12 @@ class UserNotificationManager:
 class EnhancedTaskDetectionSystem(LoggerMixin):
     """Enhanced task detection system with integrated fallback protection"""
 
-    def __init__(self,
-                 original_system: TaskDetectionSystem,
-                 integration_config: IntegrationConfig | None = None,
-                 detection_config: TaskDetectionConfig | None = None) -> None:
+    def __init__(
+        self,
+        original_system: TaskDetectionSystem,
+        integration_config: IntegrationConfig | None = None,
+        detection_config: TaskDetectionConfig | None = None,
+    ) -> None:
         super().__init__(logger_name="enhanced_task_detection")
 
         self.original_system = original_system
@@ -289,8 +302,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
         self.last_health_check = time.time()
         self.system_healthy = True
 
-    async def detect_categories(self, query: str,
-                              context: dict[str, Any] | None = None) -> DetectionResult:
+    async def detect_categories(self, query: str, context: dict[str, Any] | None = None) -> DetectionResult:
         """Enhanced detect_categories with fallback protection"""
 
         # Check if request should use fallback protection
@@ -320,8 +332,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
                 detection_time=detection_time,
             )
 
-    async def _try_original_with_fallback(self, query: str,
-                                        context: dict[str, Any] | None) -> DetectionResult:
+    async def _try_original_with_fallback(self, query: str, context: dict[str, Any] | None) -> DetectionResult:
         """Try original detection with fallback on failure"""
 
         try:
@@ -346,8 +357,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
             self.log_error_with_context(e, {"query": query[:50]}, "_try_original_with_fallback")
             return await self._use_fallback_system(query, context)
 
-    async def _use_fallback_system(self, query: str,
-                                 context: dict[str, Any] | None) -> DetectionResult:
+    async def _use_fallback_system(self, query: str, context: dict[str, Any] | None) -> DetectionResult:
         """Use fallback system for detection"""
 
         if not self.fallback_chain:
@@ -367,7 +377,9 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
             # Notify user if fallback level changed significantly
             if self._should_notify_fallback_change(previous_level, decision.level):
                 await self.notification_manager.notify_fallback_activation(
-                    decision.level, query, decision.rationale,
+                    decision.level,
+                    query,
+                    decision.rationale,
                 )
 
             # Create detection result from fallback decision
@@ -379,13 +391,11 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
                 fallback_applied=decision.level.value,
             )
 
-
         except Exception as e:
             self.log_error_with_context(e, {"query": query[:50]}, "_use_fallback_system")
             return self._create_safe_fallback_result()
 
-    async def _run_shadow_mode(self, query: str,
-                             context: dict[str, Any] | None) -> DetectionResult:
+    async def _run_shadow_mode(self, query: str, context: dict[str, Any] | None) -> DetectionResult:
         """Run both systems in parallel for comparison"""
 
         try:
@@ -478,8 +488,11 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
         # Check if any categories were detected
         return any(result.categories.values())
 
-    def _should_notify_fallback_change(self, previous_level: FallbackLevel | None,
-                                     current_level: FallbackLevel) -> bool:
+    def _should_notify_fallback_change(
+        self,
+        previous_level: FallbackLevel | None,
+        current_level: FallbackLevel,
+    ) -> bool:
         """Determine if fallback level change should trigger notification"""
 
         # First time entering fallback
@@ -521,8 +534,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
 
         return confidence_scores
 
-    def _compare_shadow_results(self, original: DetectionResult,
-                               fallback: DetectionResult, query: str) -> None:
+    def _compare_shadow_results(self, original: DetectionResult, fallback: DetectionResult, query: str) -> None:
         """Compare shadow mode results and log differences"""
 
         # Compare categories
@@ -607,9 +619,11 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
 
 
 # Factory functions for easy integration
-def create_enhanced_task_detection(original_system: TaskDetectionSystem,
-                                 integration_mode: IntegrationMode = IntegrationMode.ACTIVE,
-                                 detection_config: TaskDetectionConfig | None = None) -> EnhancedTaskDetectionSystem:
+def create_enhanced_task_detection(
+    original_system: TaskDetectionSystem,
+    integration_mode: IntegrationMode = IntegrationMode.ACTIVE,
+    detection_config: TaskDetectionConfig | None = None,
+) -> EnhancedTaskDetectionSystem:
     """Create enhanced task detection system with fallback protection"""
 
     integration_config = IntegrationConfig(mode=integration_mode)
@@ -642,8 +656,10 @@ def create_monitoring_integration(original_system: TaskDetectionSystem) -> Enhan
     )
 
 
-def create_shadow_integration(original_system: TaskDetectionSystem,
-                            rollout_percentage: float = 10.0) -> EnhancedTaskDetectionSystem:
+def create_shadow_integration(
+    original_system: TaskDetectionSystem,
+    rollout_percentage: float = 10.0,
+) -> EnhancedTaskDetectionSystem:
     """Create shadow mode integration for testing"""
 
     integration_config = IntegrationConfig(
@@ -675,8 +691,7 @@ class BackwardsCompatibleTaskDetection:
             IntegrationMode.ACTIVE,
         )
 
-    async def detect_categories(self, query: str,
-                              context: dict[str, Any] | None = None) -> DetectionResult:
+    async def detect_categories(self, query: str, context: dict[str, Any] | None = None) -> DetectionResult:
         """Backwards compatible detect_categories method"""
         return await self.enhanced_system.detect_categories(query, context)
 

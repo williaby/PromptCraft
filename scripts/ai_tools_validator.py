@@ -29,6 +29,7 @@ from pathlib import Path
 @dataclass
 class ToolConfig:
     """Configuration for an AI coding tool."""
+
     name: str
     command: str
     check_args: list[str]
@@ -42,6 +43,7 @@ class ToolConfig:
 @dataclass
 class ToolStatus:
     """Status information for a tool."""
+
     installed: bool = False
     version: str | None = None
     configured: bool = False
@@ -72,7 +74,6 @@ Install Claude Code:
                 config_files=[".claude/CLAUDE.md", ".claude/settings.json"],
                 environment_vars=["ANTHROPIC_API_KEY"],
             ),
-
             "copilot": ToolConfig(
                 name="GitHub Copilot CLI",
                 command="gh",
@@ -88,7 +89,6 @@ Install GitHub Copilot CLI:
                 config_files=[".github/copilot.yml"],
                 environment_vars=["GITHUB_TOKEN"],
             ),
-
             "gemini": ToolConfig(
                 name="Gemini CLI",
                 command="gemini",
@@ -102,7 +102,6 @@ Install Gemini CLI:
                 config_files=[".gemini/config.json"],
                 environment_vars=["GOOGLE_AI_API_KEY", "GEMINI_API_KEY"],
             ),
-
             "qwen": ToolConfig(
                 name="Qwen Code CLI",
                 command="qwen",
@@ -116,7 +115,6 @@ Install Qwen Code CLI:
                 config_files=[".qwen/config.json"],
                 environment_vars=["QWEN_API_KEY"],
             ),
-
             "codex": ToolConfig(
                 name="OpenAI Codex CLI",
                 command="openai",
@@ -145,7 +143,8 @@ Install OpenAI Codex CLI:
             # Run version check
             result = subprocess.run(
                 [tool_config.command, *tool_config.check_args],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=10,
             )
@@ -154,6 +153,7 @@ Install OpenAI Codex CLI:
                 status.installed = True
                 # Extract version if available
                 import re
+
                 version_match = re.search(tool_config.version_regex, result.stdout + result.stderr)
                 if version_match:
                     status.version = version_match.group(1)
@@ -182,8 +182,7 @@ Install OpenAI Codex CLI:
                 status.missing_env_vars.append(env_var)
 
         # Tool is configured if no missing files or env vars
-        status.configured = (len(status.missing_files) == 0 and
-                           len(status.missing_env_vars) == 0)
+        status.configured = len(status.missing_files) == 0 and len(status.missing_env_vars) == 0
 
     def validate_all_tools(self) -> dict[str, ToolStatus]:
         """Validate all configured tools."""
@@ -303,12 +302,9 @@ exclude:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Validate AI coding tools for VS Code")
-    parser.add_argument("--install-missing", action="store_true",
-                       help="Attempt to install missing tools")
-    parser.add_argument("--quiet", action="store_true",
-                       help="Output minimal summary only")
-    parser.add_argument("--create-templates", action="store_true",
-                       help="Create configuration file templates")
+    parser.add_argument("--install-missing", action="store_true", help="Attempt to install missing tools")
+    parser.add_argument("--quiet", action="store_true", help="Output minimal summary only")
+    parser.add_argument("--create-templates", action="store_true", help="Create configuration file templates")
 
     args = parser.parse_args()
 
@@ -318,8 +314,7 @@ def main():
 
     # Look for common project indicators
     for parent in [current_dir, *list(current_dir.parents)]:
-        if any((parent / indicator).exists() for indicator in
-               [".git", "pyproject.toml", "package.json", ".vscode"]):
+        if any((parent / indicator).exists() for indicator in [".git", "pyproject.toml", "package.json", ".vscode"]):
             project_root = parent
             break
 

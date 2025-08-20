@@ -18,6 +18,7 @@ from src.core.task_detection_config import ConfigManager
 @dataclass
 class FunctionDefinition:
     """Represents a Claude Code function definition"""
+
     name: str
     category: str
     tier: int
@@ -29,6 +30,7 @@ class FunctionDefinition:
 @dataclass
 class LoadingStats:
     """Statistics about function loading"""
+
     total_functions: int
     loaded_functions: int
     total_tokens: int
@@ -49,132 +51,195 @@ class FunctionRegistry:
         return {
             # Tier 1: Core Development Operations
             "bash": FunctionDefinition(
-                name="Bash", category="core", tier=1,
+                name="Bash",
+                category="core",
+                tier=1,
                 description="Execute shell commands with timeout and security",
-                token_cost=850, parameters={"command": "required"},
+                token_cost=850,
+                parameters={"command": "required"},
             ),
             "read": FunctionDefinition(
-                name="Read", category="core", tier=1,
+                name="Read",
+                category="core",
+                tier=1,
                 description="Read file contents with offset/limit support",
-                token_cost=420, parameters={"file_path": "required"},
+                token_cost=420,
+                parameters={"file_path": "required"},
             ),
             "write": FunctionDefinition(
-                name="Write", category="core", tier=1,
+                name="Write",
+                category="core",
+                tier=1,
                 description="Write complete file contents",
-                token_cost=380, parameters={"file_path": "required", "content": "required"},
+                token_cost=380,
+                parameters={"file_path": "required", "content": "required"},
             ),
             "edit": FunctionDefinition(
-                name="Edit", category="core", tier=1,
+                name="Edit",
+                category="core",
+                tier=1,
                 description="Single string replacement in files",
-                token_cost=450, parameters={"file_path": "required", "old_string": "required"},
+                token_cost=450,
+                parameters={"file_path": "required", "old_string": "required"},
             ),
             "multiedit": FunctionDefinition(
-                name="MultiEdit", category="core", tier=1,
+                name="MultiEdit",
+                category="core",
+                tier=1,
                 description="Multiple edits in single file operation",
-                token_cost=520, parameters={"file_path": "required", "edits": "required"},
+                token_cost=520,
+                parameters={"file_path": "required", "edits": "required"},
             ),
             "ls": FunctionDefinition(
-                name="LS", category="core", tier=1,
+                name="LS",
+                category="core",
+                tier=1,
                 description="List directory contents with filtering",
-                token_cost=280, parameters={"path": "required"},
+                token_cost=280,
+                parameters={"path": "required"},
             ),
             "glob": FunctionDefinition(
-                name="Glob", category="core", tier=1,
+                name="Glob",
+                category="core",
+                tier=1,
                 description="Pattern-based file discovery",
-                token_cost=320, parameters={"pattern": "required"},
+                token_cost=320,
+                parameters={"pattern": "required"},
             ),
             "grep": FunctionDefinition(
-                name="Grep", category="core", tier=1,
+                name="Grep",
+                category="core",
+                tier=1,
                 description="Advanced text search with regex",
-                token_cost=680, parameters={"pattern": "required"},
+                token_cost=680,
+                parameters={"pattern": "required"},
             ),
-
             # Git functions
             "git_status": FunctionDefinition(
-                name="mcp__git__git_status", category="git", tier=1,
+                name="mcp__git__git_status",
+                category="git",
+                tier=1,
                 description="Show working tree status",
-                token_cost=180, parameters={"repo_path": "required"},
+                token_cost=180,
+                parameters={"repo_path": "required"},
             ),
             "git_add": FunctionDefinition(
-                name="mcp__git__git_add", category="git", tier=1,
+                name="mcp__git__git_add",
+                category="git",
+                tier=1,
                 description="Stage files for commit",
-                token_cost=210, parameters={"repo_path": "required", "files": "required"},
+                token_cost=210,
+                parameters={"repo_path": "required", "files": "required"},
             ),
             "git_commit": FunctionDefinition(
-                name="mcp__git__git_commit", category="git", tier=1,
+                name="mcp__git__git_commit",
+                category="git",
+                tier=1,
                 description="Record changes to repository",
-                token_cost=200, parameters={"repo_path": "required", "message": "required"},
+                token_cost=200,
+                parameters={"repo_path": "required", "message": "required"},
             ),
-
             # Tier 2: Analysis & Intelligence
             "analyze": FunctionDefinition(
-                name="mcp__zen__analyze", category="analysis", tier=2,
+                name="mcp__zen__analyze",
+                category="analysis",
+                tier=2,
                 description="Comprehensive code analysis",
-                token_cost=820, parameters={"step": "required", "findings": "required"},
+                token_cost=820,
+                parameters={"step": "required", "findings": "required"},
             ),
             "debug": FunctionDefinition(
-                name="mcp__zen__debug", category="debug", tier=2,
+                name="mcp__zen__debug",
+                category="debug",
+                tier=2,
                 description="Systematic debugging workflow",
-                token_cost=920, parameters={"step": "required", "findings": "required"},
+                token_cost=920,
+                parameters={"step": "required", "findings": "required"},
             ),
             "thinkdeep": FunctionDefinition(
-                name="mcp__zen__thinkdeep", category="analysis", tier=2,
+                name="mcp__zen__thinkdeep",
+                category="analysis",
+                tier=2,
                 description="Multi-stage deep investigation",
-                token_cost=780, parameters={"step": "required", "findings": "required"},
+                token_cost=780,
+                parameters={"step": "required", "findings": "required"},
             ),
-
             # Quality tools
             "codereview": FunctionDefinition(
-                name="mcp__zen__codereview", category="quality", tier=2,
+                name="mcp__zen__codereview",
+                category="quality",
+                tier=2,
                 description="Comprehensive code review workflow",
-                token_cost=950, parameters={"step": "required", "findings": "required"},
+                token_cost=950,
+                parameters={"step": "required", "findings": "required"},
             ),
             "refactor": FunctionDefinition(
-                name="mcp__zen__refactor", category="quality", tier=2,
+                name="mcp__zen__refactor",
+                category="quality",
+                tier=2,
                 description="Refactoring analysis and planning",
-                token_cost=890, parameters={"step": "required", "findings": "required"},
+                token_cost=890,
+                parameters={"step": "required", "findings": "required"},
             ),
             "testgen": FunctionDefinition(
-                name="mcp__zen__testgen", category="test", tier=2,
+                name="mcp__zen__testgen",
+                category="test",
+                tier=2,
                 description="Comprehensive test generation",
-                token_cost=850, parameters={"step": "required", "findings": "required"},
+                token_cost=850,
+                parameters={"step": "required", "findings": "required"},
             ),
             "secaudit": FunctionDefinition(
-                name="mcp__zen__secaudit", category="security", tier=2,
+                name="mcp__zen__secaudit",
+                category="security",
+                tier=2,
                 description="Security audit workflow",
-                token_cost=980, parameters={"step": "required", "findings": "required"},
+                token_cost=980,
+                parameters={"step": "required", "findings": "required"},
             ),
-
             # Tier 3: External Services
             "resolve_library": FunctionDefinition(
-                name="mcp__context7-sse__resolve-library-id", category="external", tier=3,
+                name="mcp__context7-sse__resolve-library-id",
+                category="external",
+                tier=3,
                 description="Resolve library names to Context7 IDs",
-                token_cost=280, parameters={"libraryName": "required"},
+                token_cost=280,
+                parameters={"libraryName": "required"},
             ),
             "get_library_docs": FunctionDefinition(
-                name="mcp__context7-sse__get-library-docs", category="external", tier=3,
+                name="mcp__context7-sse__get-library-docs",
+                category="external",
+                tier=3,
                 description="Fetch library documentation",
-                token_cost=320, parameters={"context7CompatibleLibraryID": "required"},
+                token_cost=320,
+                parameters={"context7CompatibleLibraryID": "required"},
             ),
             "check_security": FunctionDefinition(
-                name="mcp__safety-mcp-sse__check_package_security", category="external", tier=3,
+                name="mcp__safety-mcp-sse__check_package_security",
+                category="external",
+                tier=3,
                 description="Check package vulnerabilities",
-                token_cost=450, parameters={"packages": "required"},
+                token_cost=450,
+                parameters={"packages": "required"},
             ),
-
             # Infrastructure
             "bash_output": FunctionDefinition(
-                name="BashOutput", category="infrastructure", tier=3,
+                name="BashOutput",
+                category="infrastructure",
+                tier=3,
                 description="Get background bash output",
-                token_cost=280, parameters={"bash_id": "required"},
+                token_cost=280,
+                parameters={"bash_id": "required"},
             ),
             "list_mcp_resources": FunctionDefinition(
-                name="ListMcpResourcesTool", category="infrastructure", tier=3,
+                name="ListMcpResourcesTool",
+                category="infrastructure",
+                tier=3,
                 description="List MCP server resources",
-                token_cost=220, parameters={},
+                token_cost=220,
+                parameters={},
             ),
         }
-
 
     def _build_category_mapping(self) -> dict[str, list[str]]:
         """Build mapping from categories to function names"""
@@ -222,8 +287,7 @@ class IntelligentFunctionLoader:
             "token_savings": [],
         }
 
-    async def load_functions_for_query(self, query: str,
-                                     context: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def load_functions_for_query(self, query: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         """Load appropriate functions for a given query"""
         if context is None:
             context = {}
@@ -233,7 +297,8 @@ class IntelligentFunctionLoader:
 
         # Detect required categories
         detection_result = await self.detection_system.detect_categories(
-            query, enhanced_context,
+            query,
+            enhanced_context,
         )
 
         # Load functions based on detection result
@@ -266,20 +331,16 @@ class IntelligentFunctionLoader:
         # Check for common project indicators
         enhanced["has_git_repo"] = (working_dir / ".git").exists()
         enhanced["has_test_directories"] = any(
-            (working_dir / test_dir).exists()
-            for test_dir in ["tests", "test", "__tests__", "spec"]
+            (working_dir / test_dir).exists() for test_dir in ["tests", "test", "__tests__", "spec"]
         )
         enhanced["has_security_files"] = any(
-            (working_dir / sec_file).exists()
-            for sec_file in [".env", "secrets.yaml", "auth.py", "security.py"]
+            (working_dir / sec_file).exists() for sec_file in [".env", "secrets.yaml", "auth.py", "security.py"]
         )
         enhanced["has_ci_files"] = any(
-            (working_dir / ci_file).exists()
-            for ci_file in [".github", ".gitlab-ci.yml", "Jenkinsfile", ".circleci"]
+            (working_dir / ci_file).exists() for ci_file in [".github", ".gitlab-ci.yml", "Jenkinsfile", ".circleci"]
         )
         enhanced["has_docs"] = any(
-            (working_dir / doc_dir).exists()
-            for doc_dir in ["docs", "documentation", "README.md"]
+            (working_dir / doc_dir).exists() for doc_dir in ["docs", "documentation", "README.md"]
         )
 
         # Analyze file types in project
@@ -302,9 +363,11 @@ class IntelligentFunctionLoader:
             enhanced["project_language"] = "java"
 
         # Check for security-focused project
-        if (enhanced.get("has_security_files") or
-            "security" in str(working_dir).lower() or
-            "auth" in str(working_dir).lower()):
+        if (
+            enhanced.get("has_security_files")
+            or "security" in str(working_dir).lower()
+            or "auth" in str(working_dir).lower()
+        ):
             enhanced["project_type"] = "security"
 
         return enhanced
@@ -321,8 +384,11 @@ class IntelligentFunctionLoader:
 
         return loaded_functions
 
-    def _calculate_loading_stats(self, loaded_functions: list[FunctionDefinition],
-                               detection_result: DetectionResult) -> LoadingStats:
+    def _calculate_loading_stats(
+        self,
+        loaded_functions: list[FunctionDefinition],
+        detection_result: DetectionResult,
+    ) -> LoadingStats:
         """Calculate loading statistics"""
         total_functions = len(self.function_registry.functions)
         loaded_count = len(loaded_functions)
@@ -343,8 +409,13 @@ class IntelligentFunctionLoader:
             token_savings_percent=token_savings_percent,
         )
 
-    def _record_loading_decision(self, query: str, context: dict[str, Any],
-                               detection_result: DetectionResult, stats: LoadingStats) -> None:
+    def _record_loading_decision(
+        self,
+        query: str,
+        context: dict[str, Any],
+        detection_result: DetectionResult,
+        stats: LoadingStats,
+    ) -> None:
         """Record loading decision for analysis and learning"""
         self.loading_history.append(stats)
 
@@ -426,7 +497,6 @@ class TaskDetectionDemo:
             },
         ]
 
-
         for _i, scenario in enumerate(scenarios, 1):
 
             # Load functions for this scenario
@@ -436,12 +506,7 @@ class TaskDetectionDemo:
             )
 
             # Display results
-            [
-                category for category, loaded
-                in result["detection_result"].categories.items()
-                if loaded
-            ]
-
+            [category for category, loaded in result["detection_result"].categories.items() if loaded]
 
             if result["detection_result"].fallback_applied:
                 pass
@@ -449,7 +514,8 @@ class TaskDetectionDemo:
             # Show confidence scores for top categories
             top_scores = sorted(
                 result["detection_result"].confidence_scores.items(),
-                key=lambda x: x[1], reverse=True,
+                key=lambda x: x[1],
+                reverse=True,
             )[:3]
 
             if top_scores:
@@ -505,7 +571,6 @@ class AccuracyValidator:
         precision_scores = []
         recall_scores = []
 
-
         for scenario in self.test_scenarios:
             result = await self.loader.load_functions_for_query(
                 scenario["query"],
@@ -513,9 +578,7 @@ class AccuracyValidator:
             )
 
             predicted_categories = {
-                category for category, loaded
-                in result["detection_result"].categories.items()
-                if loaded
+                category for category, loaded in result["detection_result"].categories.items() if loaded
             }
             expected_categories = set(scenario["expected_categories"])
 
@@ -527,11 +590,9 @@ class AccuracyValidator:
             precision_scores.append(precision)
             recall_scores.append(recall)
 
-
         avg_precision = sum(precision_scores) / len(precision_scores)
         avg_recall = sum(recall_scores) / len(recall_scores)
         f1_score = 2 * avg_precision * avg_recall / (avg_precision + avg_recall)
-
 
         return {
             "precision": avg_precision,
@@ -562,7 +623,6 @@ async def main() -> None:
     for config_name in ["development", "production", "performance_critical"]:
         if config_name in configs:
             config_manager.get_config(config_name)
-
 
 
 if __name__ == "__main__":

@@ -106,7 +106,6 @@ class DemoTaskDetectionSystem:
 async def demonstrate_normal_operation() -> None:
     """Demonstrate normal operation with different confidence levels"""
 
-
     # Create demo system
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
@@ -130,14 +129,12 @@ async def demonstrate_normal_operation() -> None:
 
             [cat for cat, loaded in categories.items() if loaded]
 
-
         except Exception:
             pass
 
 
 async def demonstrate_failure_scenarios() -> None:
     """Demonstrate failure scenarios and recovery"""
-
 
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
@@ -165,7 +162,6 @@ async def demonstrate_failure_scenarios() -> None:
 
             [cat for cat, loaded in categories.items() if loaded]
 
-
         except Exception:
             pass
 
@@ -176,13 +172,11 @@ async def demonstrate_failure_scenarios() -> None:
 async def demonstrate_circuit_breaker() -> None:
     """Demonstrate circuit breaker protection"""
 
-
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
     config.apply_mode_preset(DetectionMode.CONSERVATIVE)
 
     fallback_chain = create_conservative_fallback_chain(demo_system, config)
-
 
     # Set failure mode
     demo_system.set_failure_mode("network")
@@ -193,7 +187,6 @@ async def demonstrate_circuit_breaker() -> None:
             categories, decision = await fallback_chain.get_function_categories(
                 f"query that will fail {i}",
             )
-
 
     # Reset and test circuit breaker behavior
     demo_system.set_failure_mode(None)
@@ -207,18 +200,15 @@ async def demonstrate_circuit_breaker() -> None:
 async def demonstrate_emergency_mode() -> None:
     """Demonstrate emergency mode activation"""
 
-
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
     config.apply_mode_preset(DetectionMode.CONSERVATIVE)
 
     fallback_chain = create_conservative_fallback_chain(demo_system, config)
 
-
     # Force emergency mode
     fallback_chain.emergency_mode = True
     fallback_chain.emergency_mode_start = time.time()
-
 
     categories, decision = await fallback_chain.get_function_categories(
         "any query in emergency mode",
@@ -226,14 +216,12 @@ async def demonstrate_emergency_mode() -> None:
 
     [cat for cat, loaded in categories.items() if loaded]
 
-
     # Exit emergency mode
     fallback_chain.exit_emergency_mode()
 
 
 async def demonstrate_integration_modes() -> None:
     """Demonstrate different integration modes"""
-
 
     demo_system = DemoTaskDetectionSystem()
 
@@ -266,7 +254,6 @@ async def demonstrate_integration_modes() -> None:
 async def demonstrate_health_monitoring() -> None:
     """Demonstrate health monitoring and metrics"""
 
-
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
     config.apply_mode_preset(DetectionMode.CONSERVATIVE)
@@ -291,7 +278,6 @@ async def demonstrate_health_monitoring() -> None:
     # Get health status
     health = fallback_chain.get_health_status()
 
-
     if "performance" in health:
         health["performance"]
 
@@ -309,7 +295,6 @@ async def demonstrate_health_monitoring() -> None:
 async def demonstrate_performance_impact() -> None:
     """Demonstrate performance characteristics"""
 
-
     demo_system = DemoTaskDetectionSystem()
     config = TaskDetectionConfig()
     config.apply_mode_preset(DetectionMode.CONSERVATIVE)
@@ -321,7 +306,6 @@ async def demonstrate_performance_impact() -> None:
         await demo_system.detect_categories(f"query {i}")
     original_time = time.time() - start_time
 
-
     # Test with fallback protection
 
     fallback_chain = create_conservative_fallback_chain(demo_system, config)
@@ -330,7 +314,6 @@ async def demonstrate_performance_impact() -> None:
     for i in range(100):
         await fallback_chain.get_function_categories(f"query {i}")
     protected_time = time.time() - start_time
-
 
     ((protected_time - original_time) / original_time) * 100
 
@@ -346,10 +329,8 @@ async def demonstrate_performance_impact() -> None:
     time.time() - start_time
 
 
-
 async def main() -> None:
     """Run the complete demonstration"""
-
 
     try:
         # Run all demonstrations
@@ -361,9 +342,9 @@ async def main() -> None:
         await demonstrate_health_monitoring()
         await demonstrate_performance_impact()
 
-
     except Exception:
         import traceback
+
         traceback.print_exc()
 
 

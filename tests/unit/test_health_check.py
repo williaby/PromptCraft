@@ -595,7 +595,7 @@ class TestHealthCheckEndpoints:
         expected_detail = {
             "error": "Configuration validation failed",
             "field_errors": field_errors[:5],  # First 5 errors (HEALTH_CHECK_ERROR_LIMIT)
-            "suggestions": suggestions[:3],    # First 3 suggestions (HEALTH_CHECK_SUGGESTION_LIMIT)
+            "suggestions": suggestions[:3],  # First 3 suggestions (HEALTH_CHECK_SUGGESTION_LIMIT)
         }
         # With expose_error=True in debug mode, the error message format is: "detail: exception_message"
         # The exception_message is the full string representation of ConfigurationValidationError

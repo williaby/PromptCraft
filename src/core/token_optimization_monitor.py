@@ -267,7 +267,11 @@ class TokenOptimizationMonitor:
         )
 
     async def record_function_usage(
-        self, session_id: str, function_name: str, success: bool = True, tier: FunctionTier | None = None,
+        self,
+        session_id: str,
+        function_name: str,
+        success: bool = True,
+        tier: FunctionTier | None = None,
     ) -> None:
         """Record actual function usage to measure effectiveness."""
 
@@ -299,7 +303,11 @@ class TokenOptimizationMonitor:
         )
 
     async def record_task_detection(
-        self, session_id: str, detected_task: str, confidence: float, actual_task: str | None = None,
+        self,
+        session_id: str,
+        detected_task: str,
+        confidence: float,
+        actual_task: str | None = None,
     ) -> None:
         """Record task detection accuracy for validation."""
 
@@ -351,7 +359,10 @@ class TokenOptimizationMonitor:
         )
 
         self.logger.warning(
-            "Fallback system activated", session_id=session_id, reason=reason, missing_functions=missing_functions,
+            "Fallback system activated",
+            session_id=session_id,
+            reason=reason,
+            missing_functions=missing_functions,
         )
 
         # Track in analytics
@@ -367,7 +378,11 @@ class TokenOptimizationMonitor:
         )
 
     async def record_user_override(
-        self, session_id: str, override_type: str, original_optimization: str, new_optimization: str,
+        self,
+        session_id: str,
+        override_type: str,
+        original_optimization: str,
+        new_optimization: str,
     ) -> None:
         """Record user override of optimization settings."""
 
@@ -700,7 +715,6 @@ class TokenOptimizationMonitor:
                 "validation_confidence": self.validation_confidence,
             },
         }
-
 
 
 # Global monitor instance

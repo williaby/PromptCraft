@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UsageEvent:
     """Individual usage event tracking"""
+
     timestamp: datetime
     event_type: str  # command, function_call, category_load, etc.
     event_data: dict[str, Any]
@@ -32,6 +33,7 @@ class UsageEvent:
 @dataclass
 class SessionMetrics:
     """Metrics for a user session"""
+
     session_id: str
     user_id: str
     start_time: datetime
@@ -49,6 +51,7 @@ class SessionMetrics:
 @dataclass
 class UserBehaviorPattern:
     """Identified user behavior pattern"""
+
     pattern_id: str
     pattern_type: str  # sequential, temporal, preference, etc.
     description: str
@@ -63,6 +66,7 @@ class UserBehaviorPattern:
 @dataclass
 class OptimizationInsight:
     """Optimization recommendation based on analysis"""
+
     insight_id: str
     insight_type: str  # performance, workflow, learning, etc.
     title: str
@@ -86,7 +90,8 @@ class UsageTracker:
     def _initialize_database(self) -> None:
         """Initialize SQLite database for persistent storage"""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS usage_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -96,9 +101,11 @@ class UsageTracker:
                     session_id TEXT NOT NULL,
                     context TEXT
                 )
-            """)
+            """,
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS session_metrics (
                     session_id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
@@ -113,21 +120,31 @@ class UsageTracker:
                     help_requests INTEGER DEFAULT 0,
                     optimization_applied BOOLEAN DEFAULT FALSE
                 )
-            """)
+            """,
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_events_timestamp
                 ON usage_events(timestamp)
-            """)
+            """,
+            )
 
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_events_user
                 ON usage_events(user_id)
-            """)
+            """,
+            )
 
-    def track_event(self, event_type: str, event_data: dict[str, Any],
-                   user_id: str, session_id: str,
-                   context: dict[str, Any] | None = None) -> None:
+    def track_event(
+        self,
+        event_type: str,
+        event_data: dict[str, Any],
+        user_id: str,
+        session_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> None:
         """Track a usage event"""
         event = UsageEvent(
             timestamp=datetime.now(),
@@ -191,18 +208,21 @@ class UsageTracker:
         """Persist event to database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT INTO usage_events
                     (timestamp, event_type, event_data, user_id, session_id, context)
                     VALUES (?, ?, ?, ?, ?, ?)
-                """, (
-                    event.timestamp.isoformat(),
-                    event.event_type,
-                    json.dumps(event.event_data),
-                    event.user_id,
-                    event.session_id,
-                    json.dumps(event.context),
-                ))
+                """,
+                    (
+                        event.timestamp.isoformat(),
+                        event.event_type,
+                        json.dumps(event.event_data),
+                        event.user_id,
+                        event.session_id,
+                        json.dumps(event.context),
+                    ),
+                )
         except Exception as e:
             logger.error(f"Failed to persist event: {e}")
 
@@ -224,33 +244,39 @@ class UsageTracker:
         """Persist session metrics to database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT OR REPLACE INTO session_metrics
                     (session_id, user_id, start_time, end_time, commands_executed,
                      functions_used, categories_loaded, performance_mode,
                      total_tokens_used, errors_encountered, help_requests,
                      optimization_applied)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    session.session_id,
-                    session.user_id,
-                    session.start_time.isoformat(),
-                    session.end_time.isoformat() if session.end_time else None,
-                    session.commands_executed,
-                    json.dumps(list(session.functions_used)),
-                    json.dumps(list(session.categories_loaded)),
-                    session.performance_mode,
-                    session.total_tokens_used,
-                    session.errors_encountered,
-                    session.help_requests,
-                    session.optimization_applied,
-                ))
+                """,
+                    (
+                        session.session_id,
+                        session.user_id,
+                        session.start_time.isoformat(),
+                        session.end_time.isoformat() if session.end_time else None,
+                        session.commands_executed,
+                        json.dumps(list(session.functions_used)),
+                        json.dumps(list(session.categories_loaded)),
+                        session.performance_mode,
+                        session.total_tokens_used,
+                        session.errors_encountered,
+                        session.help_requests,
+                        session.optimization_applied,
+                    ),
+                )
         except Exception as e:
             logger.error(f"Failed to persist session metrics: {e}")
 
-    def get_recent_events(self, hours: int = 24,
-                         event_type: str | None = None,
-                         user_id: str | None = None) -> list[UsageEvent]:
+    def get_recent_events(
+        self,
+        hours: int = 24,
+        event_type: str | None = None,
+        user_id: str | None = None,
+    ) -> list[UsageEvent]:
         """Get recent events with optional filtering"""
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
@@ -302,9 +328,12 @@ class UsageTracker:
         """Load session metrics from database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     SELECT * FROM session_metrics WHERE session_id = ?
-                """, (session_id,))
+                """,
+                    (session_id,),
+                )
 
                 row = cursor.fetchone()
                 if not row:
@@ -337,14 +366,14 @@ class PatternDetector:
         self.min_pattern_frequency = 0.3  # 30% of sessions
         self.min_confidence = 0.7
 
-    def detect_patterns(self, user_id: str | None = None,
-                       days_back: int = 30) -> list[UserBehaviorPattern]:
+    def detect_patterns(self, user_id: str | None = None, days_back: int = 30) -> list[UserBehaviorPattern]:
         """Detect behavior patterns from usage data"""
         patterns = []
 
         # Get events for analysis
         events = self.usage_tracker.get_recent_events(
-            hours=days_back * 24, user_id=user_id,
+            hours=days_back * 24,
+            user_id=user_id,
         )
 
         if len(events) < 10:  # Need sufficient data
@@ -389,20 +418,22 @@ class PatternDetector:
             frequency = count / total_sessions
 
             if frequency >= self.min_pattern_frequency:
-                patterns.append(UserBehaviorPattern(
-                    pattern_id=f"seq_{hash(sequence)}",
-                    pattern_type="sequential",
-                    description=f"Users often run '{sequence[0]}' followed by '{sequence[1]}'",
-                    frequency=frequency,
-                    confidence=min(frequency * 2, 1.0),
-                    associated_categories=self._infer_categories_from_commands(sequence),
-                    typical_sequence=list(sequence),
-                    performance_impact={"token_savings": frequency * 500},
-                    suggested_optimizations=[
-                        f"Create macro for {sequence[0]} + {sequence[1]}",
-                        "Preload categories for this sequence",
-                    ],
-                ))
+                patterns.append(
+                    UserBehaviorPattern(
+                        pattern_id=f"seq_{hash(sequence)}",
+                        pattern_type="sequential",
+                        description=f"Users often run '{sequence[0]}' followed by '{sequence[1]}'",
+                        frequency=frequency,
+                        confidence=min(frequency * 2, 1.0),
+                        associated_categories=self._infer_categories_from_commands(sequence),
+                        typical_sequence=list(sequence),
+                        performance_impact={"token_savings": frequency * 500},
+                        suggested_optimizations=[
+                            f"Create macro for {sequence[0]} + {sequence[1]}",
+                            "Preload categories for this sequence",
+                        ],
+                    ),
+                )
 
         return patterns
 
@@ -431,20 +462,22 @@ class PatternDetector:
                 category_counts = Counter(categories)
                 top_categories = [cat for cat, _ in category_counts.most_common(3)]
 
-                patterns.append(UserBehaviorPattern(
-                    pattern_id=f"temporal_{hour}",
-                    pattern_type="temporal",
-                    description=f"High usage at {hour}:00 with focus on {', '.join(top_categories)}",
-                    frequency=len(categories) / total_events,
-                    confidence=0.8,
-                    associated_categories=top_categories,
-                    typical_sequence=[],
-                    performance_impact={"preload_benefit": len(categories) * 100},
-                    suggested_optimizations=[
-                        f"Preload {', '.join(top_categories)} categories at {hour}:00",
-                        f"Create time-based profile for {hour}:00-{(hour+2)%24}:00",
-                    ],
-                ))
+                patterns.append(
+                    UserBehaviorPattern(
+                        pattern_id=f"temporal_{hour}",
+                        pattern_type="temporal",
+                        description=f"High usage at {hour}:00 with focus on {', '.join(top_categories)}",
+                        frequency=len(categories) / total_events,
+                        confidence=0.8,
+                        associated_categories=top_categories,
+                        typical_sequence=[],
+                        performance_impact={"preload_benefit": len(categories) * 100},
+                        suggested_optimizations=[
+                            f"Preload {', '.join(top_categories)} categories at {hour}:00",
+                            f"Create time-based profile for {hour}:00-{(hour+2)%24}:00",
+                        ],
+                    ),
+                )
 
         return patterns
 
@@ -465,20 +498,22 @@ class PatternDetector:
             frequency = mode_usage[preferred_mode] / sum(mode_usage.values())
 
             if frequency > 0.6:  # Strong preference
-                patterns.append(UserBehaviorPattern(
-                    pattern_id=f"preference_mode_{preferred_mode}",
-                    pattern_type="preference",
-                    description=f"Strong preference for {preferred_mode} performance mode",
-                    frequency=frequency,
-                    confidence=frequency,
-                    associated_categories=[],
-                    typical_sequence=[],
-                    performance_impact={"consistency_benefit": frequency * 200},
-                    suggested_optimizations=[
-                        f"Set default performance mode to {preferred_mode}",
-                        f"Create profile with {preferred_mode} mode as default",
-                    ],
-                ))
+                patterns.append(
+                    UserBehaviorPattern(
+                        pattern_id=f"preference_mode_{preferred_mode}",
+                        pattern_type="preference",
+                        description=f"Strong preference for {preferred_mode} performance mode",
+                        frequency=frequency,
+                        confidence=frequency,
+                        associated_categories=[],
+                        typical_sequence=[],
+                        performance_impact={"consistency_benefit": frequency * 200},
+                        suggested_optimizations=[
+                            f"Set default performance mode to {preferred_mode}",
+                            f"Create profile with {preferred_mode} mode as default",
+                        ],
+                    ),
+                )
 
         # Analyze category preferences
         category_usage = Counter()
@@ -494,20 +529,22 @@ class PatternDetector:
                 frequency = count / total_loads
 
                 if frequency > 0.3:  # Frequently used category
-                    patterns.append(UserBehaviorPattern(
-                        pattern_id=f"preference_category_{category}",
-                        pattern_type="preference",
-                        description=f"Frequently uses {category} category",
-                        frequency=frequency,
-                        confidence=frequency,
-                        associated_categories=[category],
-                        typical_sequence=[],
-                        performance_impact={"preload_benefit": count * 50},
-                        suggested_optimizations=[
-                            f"Add {category} to default loading profile",
-                            f"Consider auto-loading {category} for this user",
-                        ],
-                    ))
+                    patterns.append(
+                        UserBehaviorPattern(
+                            pattern_id=f"preference_category_{category}",
+                            pattern_type="preference",
+                            description=f"Frequently uses {category} category",
+                            frequency=frequency,
+                            confidence=frequency,
+                            associated_categories=[category],
+                            typical_sequence=[],
+                            performance_impact={"preload_benefit": count * 50},
+                            suggested_optimizations=[
+                                f"Add {category} to default loading profile",
+                                f"Consider auto-loading {category} for this user",
+                            ],
+                        ),
+                    )
 
         return patterns
 
@@ -535,21 +572,23 @@ class PatternDetector:
                 frequency = count / total_sessions_with_opt
 
                 if frequency > 0.2:  # 20% of optimization sessions
-                    patterns.append(UserBehaviorPattern(
-                        pattern_id=f"workflow_{task_type}",
-                        pattern_type="workflow",
-                        description=f"Frequently optimizes for {task_type} tasks",
-                        frequency=frequency,
-                        confidence=frequency,
-                        associated_categories=self._get_optimization_categories(task_type),
-                        typical_sequence=[],
-                        performance_impact={"workflow_efficiency": frequency * 300},
-                        suggested_optimizations=[
-                            f"Create dedicated profile for {task_type} workflow",
-                            f"Auto-suggest {task_type} optimization",
-                            f"Set up shortcuts for {task_type} tasks",
-                        ],
-                    ))
+                    patterns.append(
+                        UserBehaviorPattern(
+                            pattern_id=f"workflow_{task_type}",
+                            pattern_type="workflow",
+                            description=f"Frequently optimizes for {task_type} tasks",
+                            frequency=frequency,
+                            confidence=frequency,
+                            associated_categories=self._get_optimization_categories(task_type),
+                            typical_sequence=[],
+                            performance_impact={"workflow_efficiency": frequency * 300},
+                            suggested_optimizations=[
+                                f"Create dedicated profile for {task_type} workflow",
+                                f"Auto-suggest {task_type} optimization",
+                                f"Set up shortcuts for {task_type} tasks",
+                            ],
+                        ),
+                    )
 
         return patterns
 
@@ -612,36 +651,40 @@ class InsightGenerator:
 
         return sorted(insights, key=lambda i: self._calculate_insight_priority(i), reverse=True)
 
-    def _generate_performance_insights(self, patterns: list[UserBehaviorPattern],
-                                     user_id: str | None) -> list[OptimizationInsight]:
+    def _generate_performance_insights(
+        self,
+        patterns: list[UserBehaviorPattern],
+        user_id: str | None,
+    ) -> list[OptimizationInsight]:
         """Generate performance optimization insights"""
         insights = []
 
         # Look for high-token usage patterns
-        high_usage_patterns = [p for p in patterns
-                             if p.performance_impact.get("token_savings", 0) > 200]
+        high_usage_patterns = [p for p in patterns if p.performance_impact.get("token_savings", 0) > 200]
 
         for pattern in high_usage_patterns:
             if pattern.pattern_type == "sequential":
-                insights.append(OptimizationInsight(
-                    insight_id=f"perf_seq_{pattern.pattern_id}",
-                    insight_type="performance",
-                    title="Command Sequence Optimization Opportunity",
-                    description=f"Create macro for frequent sequence: {' → '.join(pattern.typical_sequence)}",
-                    impact_estimate="medium",
-                    effort_estimate="easy",
-                    suggested_actions=[
-                        f"Create profile with optimized loading for {' + '.join(pattern.typical_sequence)}",
-                        "Consider adding sequence shortcuts",
-                        "Enable predictive loading for this pattern",
-                    ],
-                    evidence={
-                        "frequency": pattern.frequency,
-                        "estimated_token_savings": pattern.performance_impact.get("token_savings", 0),
-                        "sequence": pattern.typical_sequence,
-                    },
-                    applicable_users=[user_id] if user_id else ["system-wide"],
-                ))
+                insights.append(
+                    OptimizationInsight(
+                        insight_id=f"perf_seq_{pattern.pattern_id}",
+                        insight_type="performance",
+                        title="Command Sequence Optimization Opportunity",
+                        description=f"Create macro for frequent sequence: {' → '.join(pattern.typical_sequence)}",
+                        impact_estimate="medium",
+                        effort_estimate="easy",
+                        suggested_actions=[
+                            f"Create profile with optimized loading for {' + '.join(pattern.typical_sequence)}",
+                            "Consider adding sequence shortcuts",
+                            "Enable predictive loading for this pattern",
+                        ],
+                        evidence={
+                            "frequency": pattern.frequency,
+                            "estimated_token_savings": pattern.performance_impact.get("token_savings", 0),
+                            "sequence": pattern.typical_sequence,
+                        },
+                        applicable_users=[user_id] if user_id else ["system-wide"],
+                    ),
+                )
 
         # Check for over-loading patterns
         category_patterns = [p for p in patterns if p.pattern_type == "preference"]
@@ -649,29 +692,34 @@ class InsightGenerator:
         total_categories = len({cat for cats in loaded_categories for cat in cats})
 
         if total_categories > 6:  # Many categories loaded
-            insights.append(OptimizationInsight(
-                insight_id="perf_overload",
-                insight_type="performance",
-                title="Potential Over-Loading Detected",
-                description=f"You're loading {total_categories} categories. Consider task-specific optimization.",
-                impact_estimate="high",
-                effort_estimate="easy",
-                suggested_actions=[
-                    "Use /optimize-for <task-type> for focused loading",
-                    "Create task-specific profiles instead of loading everything",
-                    "Review actual function usage with /function-stats",
-                ],
-                evidence={
-                    "categories_loaded": total_categories,
-                    "optimization_potential": min(50, (total_categories - 4) * 10),
-                },
-                applicable_users=[user_id] if user_id else ["high-usage-users"],
-            ))
+            insights.append(
+                OptimizationInsight(
+                    insight_id="perf_overload",
+                    insight_type="performance",
+                    title="Potential Over-Loading Detected",
+                    description=f"You're loading {total_categories} categories. Consider task-specific optimization.",
+                    impact_estimate="high",
+                    effort_estimate="easy",
+                    suggested_actions=[
+                        "Use /optimize-for <task-type> for focused loading",
+                        "Create task-specific profiles instead of loading everything",
+                        "Review actual function usage with /function-stats",
+                    ],
+                    evidence={
+                        "categories_loaded": total_categories,
+                        "optimization_potential": min(50, (total_categories - 4) * 10),
+                    },
+                    applicable_users=[user_id] if user_id else ["high-usage-users"],
+                ),
+            )
 
         return insights
 
-    def _generate_workflow_insights(self, patterns: list[UserBehaviorPattern],
-                                  user_id: str | None) -> list[OptimizationInsight]:
+    def _generate_workflow_insights(
+        self,
+        patterns: list[UserBehaviorPattern],
+        user_id: str | None,
+    ) -> list[OptimizationInsight]:
         """Generate workflow optimization insights"""
         insights = []
 
@@ -680,50 +728,54 @@ class InsightGenerator:
 
         for pattern in workflow_patterns:
             if pattern.frequency > 0.3:  # Frequent workflow
-                insights.append(OptimizationInsight(
-                    insight_id=f"workflow_{pattern.pattern_id}",
-                    insight_type="workflow",
-                    title=f"Automate {pattern.description.split()[-2]} Workflow",
-                    description=f"Create dedicated workflow automation for {pattern.description}",
-                    impact_estimate="high",
-                    effort_estimate="moderate",
-                    suggested_actions=[
-                        f"Create profile optimized for {pattern.description}",
-                        "Set up keyboard shortcuts for this workflow",
-                        "Enable auto-optimization detection for this task type",
-                    ],
-                    evidence={
-                        "frequency": pattern.frequency,
-                        "workflow_efficiency_gain": pattern.performance_impact.get("workflow_efficiency", 0),
-                        "associated_categories": pattern.associated_categories,
-                    },
-                    applicable_users=[user_id] if user_id else ["workflow-users"],
-                ))
+                insights.append(
+                    OptimizationInsight(
+                        insight_id=f"workflow_{pattern.pattern_id}",
+                        insight_type="workflow",
+                        title=f"Automate {pattern.description.split()[-2]} Workflow",
+                        description=f"Create dedicated workflow automation for {pattern.description}",
+                        impact_estimate="high",
+                        effort_estimate="moderate",
+                        suggested_actions=[
+                            f"Create profile optimized for {pattern.description}",
+                            "Set up keyboard shortcuts for this workflow",
+                            "Enable auto-optimization detection for this task type",
+                        ],
+                        evidence={
+                            "frequency": pattern.frequency,
+                            "workflow_efficiency_gain": pattern.performance_impact.get("workflow_efficiency", 0),
+                            "associated_categories": pattern.associated_categories,
+                        },
+                        applicable_users=[user_id] if user_id else ["workflow-users"],
+                    ),
+                )
 
         # Check for temporal optimization opportunities
         temporal_patterns = [p for p in patterns if p.pattern_type == "temporal"]
 
         for pattern in temporal_patterns:
             if pattern.frequency > 0.15:  # Significant time-based usage
-                insights.append(OptimizationInsight(
-                    insight_id=f"temporal_{pattern.pattern_id}",
-                    insight_type="workflow",
-                    title="Time-Based Loading Optimization",
-                    description=pattern.description,
-                    impact_estimate="medium",
-                    effort_estimate="easy",
-                    suggested_actions=[
-                        "Create time-based loading profiles",
-                        "Enable automatic category preloading",
-                        "Set up scheduled optimization",
-                    ],
-                    evidence={
-                        "time_pattern": pattern.description,
-                        "preload_benefit": pattern.performance_impact.get("preload_benefit", 0),
-                        "categories": pattern.associated_categories,
-                    },
-                    applicable_users=[user_id] if user_id else ["time-pattern-users"],
-                ))
+                insights.append(
+                    OptimizationInsight(
+                        insight_id=f"temporal_{pattern.pattern_id}",
+                        insight_type="workflow",
+                        title="Time-Based Loading Optimization",
+                        description=pattern.description,
+                        impact_estimate="medium",
+                        effort_estimate="easy",
+                        suggested_actions=[
+                            "Create time-based loading profiles",
+                            "Enable automatic category preloading",
+                            "Set up scheduled optimization",
+                        ],
+                        evidence={
+                            "time_pattern": pattern.description,
+                            "preload_benefit": pattern.performance_impact.get("preload_benefit", 0),
+                            "categories": pattern.associated_categories,
+                        },
+                        applicable_users=[user_id] if user_id else ["time-pattern-users"],
+                    ),
+                )
 
         return insights
 
@@ -739,48 +791,53 @@ class InsightGenerator:
 
         # Check help request patterns
         help_requests = [e for e in recent_events if e.event_type == "help_requested"]
-        error_events = [e for e in recent_events if e.event_type == "command_executed"
-                       and not e.event_data.get("success", True)]
+        error_events = [
+            e for e in recent_events if e.event_type == "command_executed" and not e.event_data.get("success", True)
+        ]
 
         if len(help_requests) > 5:  # Many help requests
-            insights.append(OptimizationInsight(
-                insight_id="learning_help_frequency",
-                insight_type="learning",
-                title="Learning Opportunity Detected",
-                description="You've requested help frequently. Consider guided learning paths.",
-                impact_estimate="medium",
-                effort_estimate="easy",
-                suggested_actions=[
-                    "Start with /learning-path beginner",
-                    "Review basic commands with /help-function-loading",
-                    "Practice with guided examples",
-                ],
-                evidence={
-                    "help_requests": len(help_requests),
-                    "error_rate": len(error_events) / max(1, len(recent_events)),
-                },
-                applicable_users=[user_id],
-            ))
+            insights.append(
+                OptimizationInsight(
+                    insight_id="learning_help_frequency",
+                    insight_type="learning",
+                    title="Learning Opportunity Detected",
+                    description="You've requested help frequently. Consider guided learning paths.",
+                    impact_estimate="medium",
+                    effort_estimate="easy",
+                    suggested_actions=[
+                        "Start with /learning-path beginner",
+                        "Review basic commands with /help-function-loading",
+                        "Practice with guided examples",
+                    ],
+                    evidence={
+                        "help_requests": len(help_requests),
+                        "error_rate": len(error_events) / max(1, len(recent_events)),
+                    },
+                    applicable_users=[user_id],
+                ),
+            )
 
         if len(error_events) > len(recent_events) * 0.2:  # High error rate
-            insights.append(OptimizationInsight(
-                insight_id="learning_error_rate",
-                insight_type="learning",
-                title="High Error Rate Detected",
-                description="Consider reviewing command syntax and examples.",
-                impact_estimate="high",
-                effort_estimate="easy",
-                suggested_actions=[
-                    "Review command examples with /help <command>",
-                    "Use tab completion for command parameters",
-                    "Start with simpler commands and build up",
-                ],
-                evidence={
-                    "error_rate": len(error_events) / len(recent_events),
-                    "common_errors": [e.event_data.get("error_type") for e in error_events],
-                },
-                applicable_users=[user_id],
-            ))
+            insights.append(
+                OptimizationInsight(
+                    insight_id="learning_error_rate",
+                    insight_type="learning",
+                    title="High Error Rate Detected",
+                    description="Consider reviewing command syntax and examples.",
+                    impact_estimate="high",
+                    effort_estimate="easy",
+                    suggested_actions=[
+                        "Review command examples with /help <command>",
+                        "Use tab completion for command parameters",
+                        "Start with simpler commands and build up",
+                    ],
+                    evidence={
+                        "error_rate": len(error_events) / len(recent_events),
+                        "common_errors": [e.event_data.get("error_type") for e in error_events],
+                    },
+                    applicable_users=[user_id],
+                ),
+            )
 
         return insights
 
@@ -796,24 +853,26 @@ class InsightGenerator:
         # System-wide sequential patterns
         sequential_patterns = [p for p in patterns if p.pattern_type == "sequential"]
         if len(sequential_patterns) > 3:  # Multiple sequential patterns
-            insights.append(OptimizationInsight(
-                insight_id="system_sequential_optimization",
-                insight_type="performance",
-                title="System-Wide Sequential Pattern Optimization",
-                description="Multiple users show similar command sequences. Consider system optimization.",
-                impact_estimate="high",
-                effort_estimate="complex",
-                suggested_actions=[
-                    "Implement predictive loading for common sequences",
-                    "Create system-wide command macros",
-                    "Add intelligent suggestions based on usage patterns",
-                ],
-                evidence={
-                    "pattern_count": len(sequential_patterns),
-                    "common_sequences": [p.typical_sequence for p in sequential_patterns[:3]],
-                },
-                applicable_users=["system-wide"],
-            ))
+            insights.append(
+                OptimizationInsight(
+                    insight_id="system_sequential_optimization",
+                    insight_type="performance",
+                    title="System-Wide Sequential Pattern Optimization",
+                    description="Multiple users show similar command sequences. Consider system optimization.",
+                    impact_estimate="high",
+                    effort_estimate="complex",
+                    suggested_actions=[
+                        "Implement predictive loading for common sequences",
+                        "Create system-wide command macros",
+                        "Add intelligent suggestions based on usage patterns",
+                    ],
+                    evidence={
+                        "pattern_count": len(sequential_patterns),
+                        "common_sequences": [p.typical_sequence for p in sequential_patterns[:3]],
+                    },
+                    applicable_users=["system-wide"],
+                ),
+            )
 
         # Category usage analysis
         category_usage = Counter()
@@ -823,24 +882,26 @@ class InsightGenerator:
 
         underused_categories = [cat for cat, freq in category_usage.items() if freq < 0.1]
         if underused_categories:
-            insights.append(OptimizationInsight(
-                insight_id="system_underused_categories",
-                insight_type="performance",
-                title="Underused Categories Detected",
-                description=f"Categories {', '.join(underused_categories)} are rarely used.",
-                impact_estimate="medium",
-                effort_estimate="easy",
-                suggested_actions=[
-                    "Consider moving underused categories to higher tiers",
-                    "Review category definitions and groupings",
-                    "Provide better documentation for underused features",
-                ],
-                evidence={
-                    "underused_categories": underused_categories,
-                    "usage_frequencies": dict(category_usage),
-                },
-                applicable_users=["system-wide"],
-            ))
+            insights.append(
+                OptimizationInsight(
+                    insight_id="system_underused_categories",
+                    insight_type="performance",
+                    title="Underused Categories Detected",
+                    description=f"Categories {', '.join(underused_categories)} are rarely used.",
+                    impact_estimate="medium",
+                    effort_estimate="easy",
+                    suggested_actions=[
+                        "Consider moving underused categories to higher tiers",
+                        "Review category definitions and groupings",
+                        "Provide better documentation for underused features",
+                    ],
+                    evidence={
+                        "underused_categories": underused_categories,
+                        "usage_frequencies": dict(category_usage),
+                    },
+                    applicable_users=["system-wide"],
+                ),
+            )
 
         return insights
 
@@ -869,9 +930,14 @@ class AnalyticsEngine:
         self.analysis_cache = {}
         self.cache_ttl = timedelta(hours=1)
 
-    def track_user_action(self, action_type: str, action_data: dict[str, Any],
-                         user_id: str, session_id: str,
-                         context: dict[str, Any] | None = None) -> None:
+    def track_user_action(
+        self,
+        action_type: str,
+        action_data: dict[str, Any],
+        user_id: str,
+        session_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> None:
         """Track a user action"""
         self.usage_tracker.track_event(
             event_type=action_type,
@@ -886,13 +952,16 @@ class AnalyticsEngine:
         cache_key = f"user_analytics_{user_id}_{days_back}"
 
         # Check cache
-        if (cache_key in self.analysis_cache and
-            datetime.now() - self.analysis_cache[cache_key]["timestamp"] < self.cache_ttl):
+        if (
+            cache_key in self.analysis_cache
+            and datetime.now() - self.analysis_cache[cache_key]["timestamp"] < self.cache_ttl
+        ):
             return self.analysis_cache[cache_key]["data"]
 
         # Generate fresh analytics
         recent_events = self.usage_tracker.get_recent_events(
-            hours=days_back * 24, user_id=user_id,
+            hours=days_back * 24,
+            user_id=user_id,
         )
 
         patterns = self.pattern_detector.detect_patterns(user_id, days_back)
@@ -931,7 +1000,8 @@ class AnalyticsEngine:
                     "frequency": pattern.frequency,
                     "confidence": pattern.confidence,
                     "optimizations": pattern.suggested_optimizations,
-                } for pattern in patterns
+                }
+                for pattern in patterns
             ],
             "optimization_insights": [
                 {
@@ -941,7 +1011,8 @@ class AnalyticsEngine:
                     "impact": insight.impact_estimate,
                     "effort": insight.effort_estimate,
                     "actions": insight.suggested_actions,
-                } for insight in insights
+                }
+                for insight in insights
             ],
             "recommendations": self._generate_recommendations(patterns, insights),
         }
@@ -991,7 +1062,8 @@ class AnalyticsEngine:
                     "description": pattern.description,
                     "frequency": pattern.frequency,
                     "users_affected": "multiple" if pattern.frequency > 0.2 else "few",
-                } for pattern in patterns
+                }
+                for pattern in patterns
             ],
             "system_insights": [
                 {
@@ -1000,12 +1072,17 @@ class AnalyticsEngine:
                     "description": insight.description,
                     "impact": insight.impact_estimate,
                     "applicable_users": insight.applicable_users,
-                } for insight in insights if "system-wide" in insight.applicable_users
+                }
+                for insight in insights
+                if "system-wide" in insight.applicable_users
             ],
         }
 
-    def _generate_recommendations(self, patterns: list[UserBehaviorPattern],
-                                insights: list[OptimizationInsight]) -> list[str]:
+    def _generate_recommendations(
+        self,
+        patterns: list[UserBehaviorPattern],
+        insights: list[OptimizationInsight],
+    ) -> list[str]:
         """Generate actionable recommendations"""
         recommendations = []
 
@@ -1015,8 +1092,9 @@ class AnalyticsEngine:
             recommendations.extend(pattern.suggested_optimizations[:2])  # Top 2
 
         # From insights
-        high_impact_insights = [i for i in insights
-                              if i.impact_estimate == "high" and i.effort_estimate in ["easy", "moderate"]]
+        high_impact_insights = [
+            i for i in insights if i.impact_estimate == "high" and i.effort_estimate in ["easy", "moderate"]
+        ]
         for insight in high_impact_insights:
             recommendations.extend(insight.suggested_actions[:2])  # Top 2
 
@@ -1024,8 +1102,11 @@ class AnalyticsEngine:
         unique_recommendations = list(dict.fromkeys(recommendations))
         return unique_recommendations[:8]  # Top 8 recommendations
 
-    def export_analytics(self, user_id: str | None = None,
-                        format: str = "json") -> dict[str, Any]:
+    def clear_cache(self) -> None:
+        """Clears the analysis cache."""
+        self.analysis_cache = {}
+
+    def export_analytics(self, user_id: str | None = None, format: str = "json") -> dict[str, Any]:
         """Export analytics data for external analysis"""
         data = self.get_user_analytics(user_id) if user_id else self.get_system_analytics()
 
@@ -1037,9 +1118,9 @@ class AnalyticsEngine:
         }
 
 
-
 # Example usage and testing
 if __name__ == "__main__":
+
     async def main() -> None:
         # Initialize analytics engine
         analytics = AnalyticsEngine()
@@ -1052,19 +1133,22 @@ if __name__ == "__main__":
         analytics.track_user_action(
             "command_executed",
             {"command": "load-category", "category": "security", "success": True},
-            user_id, session_id,
+            user_id,
+            session_id,
         )
 
         analytics.track_user_action(
             "category_loaded",
             {"category": "security", "token_cost": 1900},
-            user_id, session_id,
+            user_id,
+            session_id,
         )
 
         analytics.track_user_action(
             "optimization_applied",
             {"task_type": "debugging"},
-            user_id, session_id,
+            user_id,
+            session_id,
         )
 
         # Get analytics

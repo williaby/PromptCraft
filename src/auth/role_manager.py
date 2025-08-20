@@ -11,8 +11,6 @@ automatically inherit permissions from their parent roles.
 """
 
 import logging
-from datetime import datetime
-from src.utils.datetime_compat import utc_now
 from typing import Any
 
 from sqlalchemy import delete, insert, select, text, update
@@ -20,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.database.base_service import DatabaseService
 from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
+from src.utils.datetime_compat import utc_now
 
 logger = logging.getLogger(__name__)
 

@@ -41,7 +41,7 @@ Called by:
 Complexity: O(1) for event creation and logging, O(n) for header processing where n is header count
 """
 
-from datetime import timezone, datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, cast
 
@@ -229,7 +229,7 @@ class AuditEvent:
         self.event_type = event_type
         self.severity = severity
         self.message = message
-        self.timestamp = datetime.now(timezone.utc).isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
         self.request = request
         self.user_id = user_id
         self.resource = resource

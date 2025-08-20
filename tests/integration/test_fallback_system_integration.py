@@ -299,7 +299,8 @@ class TestConfigurationIntegration:
             )
 
             enhanced_system = EnhancedTaskDetectionSystem(
-                original_system, config,
+                original_system,
+                config,
             )
 
             assert enhanced_system.integration_config.rollout_percentage == percentage

@@ -21,8 +21,6 @@ Security Features:
 
 import logging
 import time
-from datetime import datetime
-from src.utils.datetime_compat import utc_now
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -41,6 +39,7 @@ from src.core.ab_testing_framework import (
 from src.monitoring.ab_testing_dashboard import get_dashboard_instance
 from src.security.audit_logging import audit_logger_instance
 from src.security.rate_limiting import RateLimits, rate_limit
+from src.utils.datetime_compat import utc_now
 
 logger = logging.getLogger(__name__)
 

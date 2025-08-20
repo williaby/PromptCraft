@@ -34,8 +34,26 @@ Called by:
 Complexity: O(n) where n is the number of agent modules to import
 """
 
-# TODO: Import all agent modules to trigger registration
-# TODO: Import .registry module for agent_registry instance
-# TODO: Import .base_agent for BaseAgent interface
-# TODO: Import .create_agent for CreateAgent implementation
-# TODO: Export required components in __all__
+# Import the registry module for agent_registry instance
+# Import base agent for BaseAgent interface and data models
+from .base_agent import BaseAgent
+
+# Import agent implementations to trigger registration
+from .create_agent import CreateAgent
+from .examples.text_processor_agent import TextProcessorAgent
+from .models import AgentInput, AgentOutput
+from .qwen_test_engineer_agent import QwenTestEngineerAgent
+from .registry import agent_registry
+from .test_engineering_agent import TestEngineeringAgent
+
+# Export required components
+__all__ = [
+    "AgentInput",
+    "AgentOutput",
+    "BaseAgent",
+    "CreateAgent",
+    "QwenTestEngineerAgent",
+    "TestEngineeringAgent",
+    "TextProcessorAgent",
+    "agent_registry",
+]

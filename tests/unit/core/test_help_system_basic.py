@@ -573,7 +573,13 @@ class TestHelpCommandIntegration:
         mock_help_instance = Mock()
         mock_help_instance.content_generator = Mock()
         mock_help_instance.content_generator.learning_paths = {
-            "beginner": Mock(name="beginner", description="Beginner path", level="beginner", estimated_time_minutes=15, topics=["basic_commands", "getting_started"]),
+            "beginner": Mock(
+                name="beginner",
+                description="Beginner path",
+                level="beginner",
+                estimated_time_minutes=15,
+                topics=["basic_commands", "getting_started"],
+            ),
         }
 
         integration = HelpCommandIntegration(mock_help_instance)

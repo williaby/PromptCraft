@@ -42,7 +42,13 @@ class TestJWTValidatorInitialization:
         issuer = "https://myteam.cloudflareaccess.com"
         algorithm = "RS512"
 
-        validator = JWTValidator(jwks_client=jwks_client, config=config, audience=audience, issuer=issuer, algorithm=algorithm)
+        validator = JWTValidator(
+            jwks_client=jwks_client,
+            config=config,
+            audience=audience,
+            issuer=issuer,
+            algorithm=algorithm,
+        )
 
         assert validator.jwks_client == jwks_client
         assert validator.audience == audience
@@ -355,6 +361,7 @@ class TestJWTValidatorValidateToken:
             patch("jwt.decode", return_value=mock_payload),
         ):
             from fastapi import HTTPException
+
             with pytest.raises(HTTPException) as exc_info:
                 validator.validate_token(token, email_whitelist=email_whitelist)
 

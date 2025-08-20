@@ -65,7 +65,7 @@ class PrototypeRunner:
     async def run_validation_suite(self):
         """Run comprehensive validation of the 70% token reduction claim."""
         print("\n✅ COMPREHENSIVE VALIDATION SUITE")
-        print("="*60)
+        print("=" * 60)
         print("Validating 70% token reduction claim with comprehensive scenarios...")
 
         validation_scenarios = [
@@ -73,21 +73,22 @@ class PrototypeRunner:
             ("Git Workflow", "commit changes and create pull request", LoadingStrategy.BALANCED),
             ("File Operations", "read and edit configuration files", LoadingStrategy.AGGRESSIVE),
             ("Basic Debug", "check system status and logs", LoadingStrategy.CONSERVATIVE),
-
             # Advanced development tasks
             ("Security Audit", "perform comprehensive security analysis", LoadingStrategy.CONSERVATIVE),
             ("Performance Debug", "analyze performance bottlenecks in database", LoadingStrategy.BALANCED),
             ("Code Refactoring", "refactor legacy authentication module", LoadingStrategy.AGGRESSIVE),
             ("Documentation", "generate comprehensive API documentation", LoadingStrategy.BALANCED),
-
             # Specialized tasks
             ("External Integration", "integrate payment gateway with security validation", LoadingStrategy.BALANCED),
             ("Infrastructure Management", "manage MCP resources and configurations", LoadingStrategy.CONSERVATIVE),
             ("Testing Workflow", "generate and run comprehensive test suite", LoadingStrategy.BALANCED),
-
             # Edge cases
             ("Minimal Task", "just read a simple file", LoadingStrategy.AGGRESSIVE),
-            ("Complex Analysis", "deep analysis of system architecture with security review", LoadingStrategy.CONSERVATIVE),
+            (
+                "Complex Analysis",
+                "deep analysis of system architecture with security review",
+                LoadingStrategy.CONSERVATIVE,
+            ),
         ]
 
         validation_results = []
@@ -113,7 +114,9 @@ class PrototypeRunner:
                 loading_decision = await self.loader.load_functions_for_query(session_id)
 
                 # Simulate function usage
-                used_functions = list(loading_decision.functions_to_load)[:min(3, len(loading_decision.functions_to_load))]
+                used_functions = list(loading_decision.functions_to_load)[
+                    : min(3, len(loading_decision.functions_to_load))
+                ]
                 for func in used_functions:
                     await self.loader.record_function_usage(session_id, func, success=True)
 
@@ -161,7 +164,7 @@ class PrototypeRunner:
     async def _analyze_validation_results(self, results: list[dict[str, Any]], baseline_tokens: int):
         """Analyze and display validation results."""
         print("\n📊 VALIDATION ANALYSIS")
-        print("="*50)
+        print("=" * 50)
 
         # Calculate statistics
         total_scenarios = len(results)
@@ -213,7 +216,9 @@ class PrototypeRunner:
         for strategy, reductions in strategy_results.items():
             avg_strategy_reduction = sum(reductions) / len(reductions)
             strategy_success = sum(1 for r in reductions if r >= 70.0)
-            print(f"  {strategy:<12}: {avg_strategy_reduction:5.1f}% avg, {strategy_success}/{len(reductions)} achieving target")
+            print(
+                f"  {strategy:<12}: {avg_strategy_reduction:5.1f}% avg, {strategy_success}/{len(reductions)} achieving target",
+            )
 
         # Final assessment
         print("\n🏆 FINAL ASSESSMENT:")
@@ -258,13 +263,17 @@ class PrototypeRunner:
             "average_reduction": avg_reduction,
             "performance_target_met": latency_target_met,
             "total_token_savings": total_savings,
-            "assessment": "excellent" if success_rate >= 80.0 and avg_reduction >= 70.0 else "good" if success_rate >= 60.0 else "needs_improvement",
+            "assessment": (
+                "excellent"
+                if success_rate >= 80.0 and avg_reduction >= 70.0
+                else "good" if success_rate >= 60.0 else "needs_improvement"
+            ),
         }
 
     async def run_performance_benchmark(self):
         """Run comprehensive performance benchmarks."""
         print("\n⚡ PERFORMANCE BENCHMARK SUITE")
-        print("="*50)
+        print("=" * 50)
 
         benchmarks = [
             ("Single Session Latency", self._benchmark_single_session),
@@ -409,7 +418,8 @@ class PrototypeRunner:
             "total_functions": len(registry.functions),
             "cache_entries": len(self.loader.loading_cache),
             "active_sessions": len(self.loader.active_sessions),
-            "estimated_memory_kb": len(registry.functions) * 1.5 + len(self.loader.loading_cache) * 0.5,  # Rough estimate
+            "estimated_memory_kb": len(registry.functions) * 1.5
+            + len(self.loader.loading_cache) * 0.5,  # Rough estimate
         }
 
     async def _benchmark_strategy_comparison(self) -> dict[str, Any]:
@@ -452,7 +462,7 @@ class PrototypeRunner:
     async def _display_benchmark_summary(self, results: dict[str, Any]):
         """Display benchmark summary."""
         print("\n📊 BENCHMARK SUMMARY")
-        print("="*40)
+        print("=" * 40)
 
         for benchmark_name, result in results.items():
             if "error" in result:
@@ -468,7 +478,9 @@ class PrototypeRunner:
             elif benchmark_name == "Concurrent Sessions":
                 for key, value in result.items():
                     sessions = key.split("_")[0]
-                    print(f"   {sessions} sessions: {value['total_time_ms']:.1f}ms total, {value['time_per_session_ms']:.1f}ms/session")
+                    print(
+                        f"   {sessions} sessions: {value['total_time_ms']:.1f}ms total, {value['time_per_session_ms']:.1f}ms/session",
+                    )
 
             elif benchmark_name == "Cache Performance":
                 print(f"   Without cache: {result['average_time_no_cache_ms']:.1f}ms")
@@ -487,7 +499,7 @@ class PrototypeRunner:
     async def run_unit_tests(self):
         """Run the unit test suite."""
         print("\n🧪 RUNNING UNIT TEST SUITE")
-        print("="*40)
+        print("=" * 40)
 
         try:
             import pytest
@@ -502,12 +514,14 @@ class PrototypeRunner:
             print(f"Running tests from: {test_file}")
 
             # Run pytest programmatically
-            exit_code = pytest.main([
-                "-v",
-                "--tb=short",
-                "--disable-warnings",
-                str(test_file),
-            ])
+            exit_code = pytest.main(
+                [
+                    "-v",
+                    "--tb=short",
+                    "--disable-warnings",
+                    str(test_file),
+                ],
+            )
 
             if exit_code == 0:
                 print("✅ All tests passed!")
@@ -525,7 +539,7 @@ class PrototypeRunner:
     async def generate_comprehensive_report(self):
         """Generate a comprehensive prototype report."""
         print("\n📋 GENERATING COMPREHENSIVE PROTOTYPE REPORT")
-        print("="*60)
+        print("=" * 60)
 
         # Run all validation and benchmarks
         validation_results = await self.run_validation_suite()
@@ -544,8 +558,10 @@ class PrototypeRunner:
             },
             "validation": {
                 "scenarios": validation_results,
-                "summary": await self._analyze_validation_results(validation_results,
-                                                                self.loader.function_registry.get_baseline_token_cost()),
+                "summary": await self._analyze_validation_results(
+                    validation_results,
+                    self.loader.function_registry.get_baseline_token_cost(),
+                ),
             },
             "performance": {
                 "benchmarks": benchmark_results,
@@ -554,9 +570,21 @@ class PrototypeRunner:
             "function_inventory": {
                 "total_functions": len(self.loader.function_registry.functions),
                 "tier_breakdown": {
-                    "tier_1": len(self.loader.function_registry.get_functions_by_tier(self.loader.function_registry.LoadingTier.TIER_1)),
-                    "tier_2": len(self.loader.function_registry.get_functions_by_tier(self.loader.function_registry.LoadingTier.TIER_2)),
-                    "tier_3": len(self.loader.function_registry.get_functions_by_tier(self.loader.function_registry.LoadingTier.TIER_3)),
+                    "tier_1": len(
+                        self.loader.function_registry.get_functions_by_tier(
+                            self.loader.function_registry.LoadingTier.TIER_1,
+                        ),
+                    ),
+                    "tier_2": len(
+                        self.loader.function_registry.get_functions_by_tier(
+                            self.loader.function_registry.LoadingTier.TIER_2,
+                        ),
+                    ),
+                    "tier_3": len(
+                        self.loader.function_registry.get_functions_by_tier(
+                            self.loader.function_registry.LoadingTier.TIER_3,
+                        ),
+                    ),
                 },
                 "baseline_tokens": self.loader.function_registry.get_baseline_token_cost(),
             },

@@ -12,7 +12,7 @@ This module provides extensive test coverage for JWTValidator class focusing on:
 Aims to achieve 80%+ coverage for auth/jwt_validator.py
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock, patch
 
 import jwt
@@ -52,6 +52,7 @@ class TestJWTValidatorTokenDecoding:
     def auth_config(self):
         """Authentication configuration for testing."""
         from src.auth.config import AuthenticationConfig
+
         return AuthenticationConfig(
             cloudflare_access_enabled=True,
             cloudflare_team_domain="test-team",
@@ -77,9 +78,9 @@ class TestJWTValidatorTokenDecoding:
             "aud": "https://test-app.com",
             "sub": "user123",
             "email": "test@example.com",
-            "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
-            "nbf": int(datetime.now(timezone.utc).timestamp()),
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
+            "nbf": int(datetime.now(UTC).timestamp()),
         }
 
     @pytest.fixture
@@ -229,6 +230,7 @@ class TestJWTValidatorEmailWhitelist:
     def auth_config(self):
         """Authentication configuration for testing."""
         from src.auth.config import AuthenticationConfig
+
         return AuthenticationConfig(
             cloudflare_access_enabled=True,
             cloudflare_team_domain="test-team",
@@ -370,6 +372,7 @@ class TestJWTValidatorRoleDetermination:
     def auth_config(self):
         """Authentication configuration for testing."""
         from src.auth.config import AuthenticationConfig
+
         return AuthenticationConfig(
             cloudflare_access_enabled=True,
             cloudflare_team_domain="test-team",
@@ -487,6 +490,7 @@ class TestJWTValidatorEdgeCases:
     def auth_config(self):
         """Authentication configuration for testing."""
         from src.auth.config import AuthenticationConfig
+
         return AuthenticationConfig(
             cloudflare_access_enabled=True,
             cloudflare_team_domain="test-team",
@@ -557,6 +561,7 @@ class TestJWTValidatorEdgeCases:
 
         # Test with very long audience
         from src.auth.config import AuthenticationConfig
+
         config = AuthenticationConfig()
         long_audience = "https://" + "a" * 1000 + ".com"
         validator = JWTValidator(jwks_client, config=config, audience=long_audience)

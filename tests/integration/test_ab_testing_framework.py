@@ -16,8 +16,7 @@ Test Coverage:
 - Performance monitoring
 """
 
-from datetime import datetime, timedelta
-from src.utils.datetime_compat import utc_now
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -41,6 +40,7 @@ from src.core.ab_testing_framework import (
 )
 from src.core.dynamic_loading_integration import OptimizationReport, ProcessingResult
 from src.monitoring.ab_testing_dashboard import ABTestingDashboard
+from src.utils.datetime_compat import utc_now
 
 
 @pytest.fixture

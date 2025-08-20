@@ -1193,6 +1193,7 @@ class TestMainErrorHandling:
             data = response.json()
             # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
             from src.config.constants import HEALTH_CHECK_ERROR_LIMIT, HEALTH_CHECK_SUGGESTION_LIMIT
+
             expected_detail = {
                 "error": "Configuration validation failed",
                 "field_errors": ["Error 1", "Error 2", "Error 3"][:HEALTH_CHECK_ERROR_LIMIT],

@@ -19,7 +19,10 @@ class HTMLRenderer:
         self.timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
     def generate_main_index(
-        self, coverage_data: dict[str, Any], test_distribution: dict[str, Any], test_type_coverage: dict[str, Any],
+        self,
+        coverage_data: dict[str, Any],
+        test_distribution: dict[str, Any],
+        test_type_coverage: dict[str, Any],
     ) -> str:
         """Generate main coverage index HTML."""
         total_files = len(coverage_data.get("files", {}))

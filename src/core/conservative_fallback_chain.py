@@ -51,15 +51,17 @@ logger = logging.getLogger(__name__)
 
 class FallbackLevel(Enum):
     """Fallback level constants for progressive degradation"""
-    HIGH_CONFIDENCE = "high_confidence"      # ≥70% confidence
+
+    HIGH_CONFIDENCE = "high_confidence"  # ≥70% confidence
     MEDIUM_CONFIDENCE = "medium_confidence"  # 30-69% confidence
-    LOW_CONFIDENCE = "low_confidence"        # <30% confidence
+    LOW_CONFIDENCE = "low_confidence"  # <30% confidence
     DETECTION_FAILURE = "detection_failure"  # Complete detection failure
-    SYSTEM_EMERGENCY = "system_emergency"    # Function loading unavailable
+    SYSTEM_EMERGENCY = "system_emergency"  # Function loading unavailable
 
 
 class ErrorType(Enum):
     """Error types for classification and handling"""
+
     TIMEOUT = "timeout"
     NETWORK_FAILURE = "network_failure"
     MEMORY_PRESSURE = "memory_pressure"
@@ -72,6 +74,7 @@ class ErrorType(Enum):
 
 class ErrorSeverity(Enum):
     """Error severity levels for prioritization"""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -81,6 +84,7 @@ class ErrorSeverity(Enum):
 @dataclass
 class FallbackMetrics:
     """Metrics for fallback system performance tracking"""
+
     activation_count: int = 0
     total_recovery_time: float = 0.0
     successful_recoveries: int = 0
@@ -107,6 +111,7 @@ class FallbackMetrics:
 @dataclass
 class ErrorContext:
     """Context information for error classification and handling"""
+
     error_type: ErrorType
     severity: ErrorSeverity
     timestamp: float
@@ -120,6 +125,7 @@ class ErrorContext:
 @dataclass
 class FallbackDecision:
     """Decision result from fallback controller"""
+
     level: FallbackLevel
     categories_to_load: dict[str, bool]
     confidence_threshold: float
@@ -136,53 +142,91 @@ class ErrorClassifier:
         self.error_patterns = {
             # Timeout-related patterns
             ErrorType.TIMEOUT: [
-                "timeout", "timed out", "deadline", "expired",
-                "asyncio.TimeoutError", "concurrent.futures.TimeoutError",
+                "timeout",
+                "timed out",
+                "deadline",
+                "expired",
+                "asyncio.TimeoutError",
+                "concurrent.futures.TimeoutError",
             ],
-
             # Network failure patterns
             ErrorType.NETWORK_FAILURE: [
-                "connection", "network", "dns", "socket", "http",
-                "ConnectionError", "NetworkError", "aiohttp",
+                "connection",
+                "network",
+                "dns",
+                "socket",
+                "http",
+                "ConnectionError",
+                "NetworkError",
+                "aiohttp",
             ],
-
             # Memory pressure patterns
             ErrorType.MEMORY_PRESSURE: [
-                "memory", "oom", "allocation", "heap", "garbage",
-                "MemoryError", "OutOfMemoryError",
+                "memory",
+                "oom",
+                "allocation",
+                "heap",
+                "garbage",
+                "MemoryError",
+                "OutOfMemoryError",
             ],
-
             # Version mismatch patterns
             ErrorType.VERSION_MISMATCH: [
-                "version", "compatibility", "deprecated", "schema",
-                "VersionError", "CompatibilityError",
+                "version",
+                "compatibility",
+                "deprecated",
+                "schema",
+                "VersionError",
+                "CompatibilityError",
             ],
-
             # Detection failure patterns
             ErrorType.DETECTION_FAILURE: [
-                "detection", "classification", "analysis", "parsing",
-                "DetectionError", "ClassificationError",
+                "detection",
+                "classification",
+                "analysis",
+                "parsing",
+                "DetectionError",
+                "ClassificationError",
             ],
-
             # System overload patterns
             ErrorType.SYSTEM_OVERLOAD: [
-                "overload", "throttle", "rate limit", "capacity",
-                "OverloadError", "ThrottleError",
+                "overload",
+                "throttle",
+                "rate limit",
+                "capacity",
+                "OverloadError",
+                "ThrottleError",
             ],
         }
 
         self.severity_indicators = {
             ErrorSeverity.CRITICAL: [
-                "critical", "fatal", "emergency", "panic", "abort",
+                "critical",
+                "fatal",
+                "emergency",
+                "panic",
+                "abort",
             ],
             ErrorSeverity.HIGH: [
-                "error", "exception", "failed", "failure", "broken",
+                "error",
+                "exception",
+                "failed",
+                "failure",
+                "broken",
             ],
             ErrorSeverity.MEDIUM: [
-                "warning", "warn", "degraded", "slow", "retry",
+                "warning",
+                "warn",
+                "degraded",
+                "slow",
+                "retry",
             ],
             ErrorSeverity.LOW: [
-                "info", "notice", "debug", "trace", "minor",
+                "info",
+                "notice",
+                "debug",
+                "trace",
+                "minor",
             ],
         }
 
@@ -191,23 +235,19 @@ class ErrorClassifier:
         error_type_severity_map = {
             # Critical system-level errors
             ErrorType.SYSTEM_OVERLOAD: ErrorSeverity.CRITICAL,
-            
             # High severity errors - resource exhaustion and critical failures
             ErrorType.MEMORY_PRESSURE: ErrorSeverity.HIGH,
             ErrorType.CONFIGURATION_ERROR: ErrorSeverity.HIGH,
-            
             # Medium severity errors - operational issues
             ErrorType.TIMEOUT: ErrorSeverity.MEDIUM,
             ErrorType.NETWORK_FAILURE: ErrorSeverity.MEDIUM,
             ErrorType.VERSION_MISMATCH: ErrorSeverity.MEDIUM,
-            
             # Low severity errors - functional issues
             ErrorType.DETECTION_FAILURE: ErrorSeverity.LOW,
-            
             # Unknown errors default to None (use string matching)
             ErrorType.UNKNOWN: None,
         }
-        
+
         return error_type_severity_map.get(error_type)
 
     def classify_error(self, exception: Exception, context: dict[str, Any]) -> ErrorContext:
@@ -225,7 +265,7 @@ class ErrorClassifier:
 
         # Classify severity based on error type first, then fallback to string matching
         severity = self._get_severity_for_error_type(error_type)
-        
+
         # If no type-specific severity, use string matching
         if severity is None:
             severity = ErrorSeverity.MEDIUM  # Default
@@ -290,8 +330,8 @@ class PerformanceMonitor:
 
         # Performance thresholds
         self.max_response_time = 5.0  # 5 second hard timeout
-        self.max_memory_mb = 100      # 100MB memory limit
-        self.max_error_rate = 0.1     # 10% error rate threshold
+        self.max_memory_mb = 100  # 100MB memory limit
+        self.max_error_rate = 0.1  # 10% error rate threshold
 
     def record_operation(self, duration: float, memory_usage: float, had_error: bool) -> None:
         """Record operation metrics"""
@@ -369,8 +409,11 @@ class RecoveryManager:
         self.base_retry_delay = 1.0
         self.max_retry_delay = 30.0
 
-    async def attempt_recovery(self, error_context: ErrorContext,
-                             detection_system: TaskDetectionSystem) -> DetectionResult | None:
+    async def attempt_recovery(
+        self,
+        error_context: ErrorContext,
+        detection_system: TaskDetectionSystem,
+    ) -> DetectionResult | None:
         """Attempt to recover from detection failure"""
         recovery_start = time.time()
         attempt_key = f"{error_context.error_type.value}_{error_context.query[:50]}"
@@ -386,8 +429,10 @@ class RecoveryManager:
         # Calculate retry delay with exponential backoff
         delay = min(self.base_retry_delay * (2 ** (current_attempt - 1)), self.max_retry_delay)
 
-        logger.info(f"Attempting recovery (attempt {current_attempt}/{self.max_retry_attempts}) "
-                   f"after {delay}s delay for error: {error_context.error_type.value}")
+        logger.info(
+            f"Attempting recovery (attempt {current_attempt}/{self.max_retry_attempts}) "
+            f"after {delay}s delay for error: {error_context.error_type.value}",
+        )
 
         # Wait before retry
         await asyncio.sleep(delay)
@@ -412,13 +457,15 @@ class RecoveryManager:
 
             # Record successful recovery
             recovery_time = time.time() - recovery_start
-            self.recovery_history.append({
-                "success": True,
-                "error_type": error_context.error_type.value,
-                "attempt": current_attempt,
-                "recovery_time": recovery_time,
-                "timestamp": time.time(),
-            })
+            self.recovery_history.append(
+                {
+                    "success": True,
+                    "error_type": error_context.error_type.value,
+                    "attempt": current_attempt,
+                    "recovery_time": recovery_time,
+                    "timestamp": time.time(),
+                },
+            )
 
             # Reset retry counter on success
             self.retry_attempts[attempt_key] = 0
@@ -429,14 +476,16 @@ class RecoveryManager:
         except Exception as e:
             # Record failed recovery
             recovery_time = time.time() - recovery_start
-            self.recovery_history.append({
-                "success": False,
-                "error_type": error_context.error_type.value,
-                "attempt": current_attempt,
-                "recovery_time": recovery_time,
-                "error_message": str(e),
-                "timestamp": time.time(),
-            })
+            self.recovery_history.append(
+                {
+                    "success": False,
+                    "error_type": error_context.error_type.value,
+                    "attempt": current_attempt,
+                    "recovery_time": recovery_time,
+                    "error_message": str(e),
+                    "timestamp": time.time(),
+                },
+            )
 
             logger.warning(f"Recovery attempt {current_attempt} failed after {recovery_time:.2f}s: {e}")
             return None
@@ -467,8 +516,13 @@ class LearningCollector:
         self.success_patterns = deque(maxlen=max_samples)
         self.query_patterns = defaultdict(list)
 
-    def record_failure(self, query: str, context: dict[str, Any],
-                      error_context: ErrorContext, fallback_level: FallbackLevel) -> None:
+    def record_failure(
+        self,
+        query: str,
+        context: dict[str, Any],
+        error_context: ErrorContext,
+        fallback_level: FallbackLevel,
+    ) -> None:
         """Record a detection failure for learning"""
         pattern = {
             "query": query,
@@ -484,8 +538,7 @@ class LearningCollector:
         self.failure_patterns.append(pattern)
         self.query_patterns[self._get_query_category(query)].append(pattern)
 
-    def record_success(self, query: str, context: dict[str, Any],
-                      result: DetectionResult) -> None:
+    def record_success(self, query: str, context: dict[str, Any], result: DetectionResult) -> None:
         """Record a successful detection for learning"""
         pattern = {
             "query": query,
@@ -521,8 +574,12 @@ class LearningCollector:
             most_common_error = max(error_types, key=error_types.get)
             most_common_fallback = max(fallback_levels, key=fallback_levels.get)
 
-            insights.append(f"Most common error type: {most_common_error} ({error_types[most_common_error]} occurrences)")
-            insights.append(f"Most common fallback level: {most_common_fallback} ({fallback_levels[most_common_fallback]} occurrences)")
+            insights.append(
+                f"Most common error type: {most_common_error} ({error_types[most_common_error]} occurrences)",
+            )
+            insights.append(
+                f"Most common fallback level: {most_common_fallback} ({fallback_levels[most_common_fallback]} occurrences)",
+            )
 
             if error_types.get("timeout", 0) > len(self.failure_patterns) * 0.3:
                 recommendations.append("Consider increasing detection timeout threshold")
@@ -543,7 +600,11 @@ class LearningCollector:
             "recommendations": recommendations,
             "total_failures": len(self.failure_patterns),
             "total_successes": len(self.success_patterns),
-            "failure_rate": len(self.failure_patterns) / (len(self.failure_patterns) + len(self.success_patterns)) if (self.failure_patterns or self.success_patterns) else 0,
+            "failure_rate": (
+                len(self.failure_patterns) / (len(self.failure_patterns) + len(self.success_patterns))
+                if (self.failure_patterns or self.success_patterns)
+                else 0
+            ),
         }
 
     def _estimate_query_complexity(self, query: str) -> float:
@@ -578,9 +639,7 @@ class ConservativeFallbackChain(LoggerMixin):
     Main fallback controller implementing the five-tier progressive degradation strategy
     """
 
-    def __init__(self,
-                 detection_system: TaskDetectionSystem,
-                 config: TaskDetectionConfig | None = None) -> None:
+    def __init__(self, detection_system: TaskDetectionSystem, config: TaskDetectionConfig | None = None) -> None:
         super().__init__(logger_name="conservative_fallback")
 
         self.detection_system = detection_system
@@ -630,14 +689,27 @@ class ConservativeFallbackChain(LoggerMixin):
                 "description": "Comprehensive coverage minus external tools",
             },
             FallbackLevel.SYSTEM_EMERGENCY: {
-                "categories": {"core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure"},  # Everything
+                "categories": {
+                    "core",
+                    "git",
+                    "analysis",
+                    "debug",
+                    "test",
+                    "quality",
+                    "security",
+                    "external",
+                    "infrastructure",
+                },  # Everything
                 "expected_count": 98,
                 "description": "Complete function availability",
             },
         }
 
-    async def get_function_categories(self, query: str,
-                                    context: dict[str, Any] | None = None) -> tuple[dict[str, bool], FallbackDecision]:
+    async def get_function_categories(
+        self,
+        query: str,
+        context: dict[str, Any] | None = None,
+    ) -> tuple[dict[str, bool], FallbackDecision]:
         """
         Main entry point for conservative fallback chain function loading
 
@@ -713,8 +785,7 @@ class ConservativeFallbackChain(LoggerMixin):
             else:
                 self.metrics.successful_recoveries += 1
 
-    def _make_fallback_decision(self, result: DetectionResult,
-                              query: str, context: dict[str, Any]) -> FallbackDecision:
+    def _make_fallback_decision(self, result: DetectionResult, query: str, context: dict[str, Any]) -> FallbackDecision:
         """Make fallback decision based on detection confidence"""
 
         # Calculate overall confidence as max of category scores
@@ -757,7 +828,17 @@ class ConservativeFallbackChain(LoggerMixin):
                 categories_to_load.add("quality")  # Add quality tools
 
         # Convert to boolean dict
-        all_categories = {"core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure"}
+        all_categories = {
+            "core",
+            "git",
+            "analysis",
+            "debug",
+            "test",
+            "quality",
+            "security",
+            "external",
+            "infrastructure",
+        }
         categories_dict = {cat: cat in categories_to_load for cat in all_categories}
 
         return FallbackDecision(
@@ -770,8 +851,7 @@ class ConservativeFallbackChain(LoggerMixin):
             recovery_strategy="none_needed",
         )
 
-    def _apply_fallback_decision(self, decision: FallbackDecision,
-                               result: DetectionResult) -> dict[str, bool]:
+    def _apply_fallback_decision(self, decision: FallbackDecision, result: DetectionResult) -> dict[str, bool]:
         """Apply the fallback decision and return categories to load"""
 
         # Update metrics
@@ -788,7 +868,9 @@ class ConservativeFallbackChain(LoggerMixin):
     async def _handle_detection_failure(self, error_context: ErrorContext) -> tuple[dict[str, bool], FallbackDecision]:
         """Handle detection failure with progressive fallback"""
 
-        self.logger.warning(f"Detection failure: {error_context.error_type.value} - {error_context.metadata.get('exception_message', 'Unknown error')}")
+        self.logger.warning(
+            f"Detection failure: {error_context.error_type.value} - {error_context.metadata.get('exception_message', 'Unknown error')}",
+        )
 
         # Update error metrics
         self.metrics.error_counts[error_context.error_type] += 1
@@ -821,8 +903,10 @@ class ConservativeFallbackChain(LoggerMixin):
 
         # Get categories for fallback level
         tier_def = self.tier_definitions[level]
-        categories_dict = {cat: cat in tier_def["categories"] for cat in
-                          ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")}
+        categories_dict = {
+            cat: cat in tier_def["categories"]
+            for cat in ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")
+        }
 
         decision = FallbackDecision(
             level=level,
@@ -865,14 +949,20 @@ class ConservativeFallbackChain(LoggerMixin):
 
         return categories_dict, decision
 
-    def _circuit_breaker_fallback(self, query: str, context: dict[str, Any]) -> tuple[dict[str, bool], FallbackDecision]:
+    def _circuit_breaker_fallback(
+        self,
+        query: str,
+        context: dict[str, Any],
+    ) -> tuple[dict[str, bool], FallbackDecision]:
         """Circuit breaker is open - use detection failure level"""
 
         self.logger.warning("Circuit breaker is OPEN - using detection failure fallback")
 
         tier_def = self.tier_definitions[FallbackLevel.DETECTION_FAILURE]
-        categories_dict = {cat: cat in tier_def["categories"] for cat in
-                          ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")}
+        categories_dict = {
+            cat: cat in tier_def["categories"]
+            for cat in ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")
+        }
 
         decision = FallbackDecision(
             level=FallbackLevel.DETECTION_FAILURE,
@@ -962,8 +1052,10 @@ class ConservativeFallbackChain(LoggerMixin):
 
 
 # Factory function for easy integration
-def create_conservative_fallback_chain(detection_system: TaskDetectionSystem,
-                                     config: TaskDetectionConfig | None = None) -> ConservativeFallbackChain:
+def create_conservative_fallback_chain(
+    detection_system: TaskDetectionSystem,
+    config: TaskDetectionConfig | None = None,
+) -> ConservativeFallbackChain:
     """Create a conservative fallback chain with proper configuration"""
 
     if config is None:

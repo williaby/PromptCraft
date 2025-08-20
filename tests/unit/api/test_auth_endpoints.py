@@ -7,32 +7,31 @@ This module tests all authentication endpoints including:
 - Usage analytics and audit logging
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock, Mock, patch, MagicMock
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from starlette.requests import Request
 
 # Import the module for coverage
-import src.api.auth_endpoints as auth_endpoints
-
 from src.api.auth_endpoints import (
-    get_current_user_info,
-    auth_health_check,
-    create_service_token,
-    revoke_service_token,
-    rotate_service_token,
-    list_service_tokens,
-    get_token_analytics,
-    emergency_revoke_all_tokens,
-    system_status,
-    system_health,
-    log_cicd_event,
+    AuthHealthResponse,
+    CurrentUserResponse,
     TokenCreationRequest,
     TokenCreationResponse,
     TokenInfo,
-    CurrentUserResponse,
-    AuthHealthResponse,
+    auth_health_check,
+    create_service_token,
+    emergency_revoke_all_tokens,
+    get_current_user_info,
+    get_token_analytics,
+    list_service_tokens,
+    log_cicd_event,
+    revoke_service_token,
+    rotate_service_token,
+    system_health,
+    system_status,
 )
 from src.auth.constants import (
     API_STATUS_SUCCESS,
@@ -76,7 +75,7 @@ def create_mock_service_token_user(
     """Create a mock ServiceTokenUser."""
     if permissions is None:
         permissions = ["tokens:create", "tokens:read"]
-    
+
     # Create the ServiceTokenUser with all required attributes
     mock_user = Mock(spec=ServiceTokenUser)
     mock_user.token_name = token_name
@@ -115,13 +114,13 @@ class TestCurrentUserEndpoint:
         assert result.role is None
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.RoleManager')
+    @patch("src.api.auth_endpoints.RoleManager")
     async def test_get_current_user_info_jwt_user(self, mock_role_manager_class):
         """Test getting current user info for JWT authentication."""
         # Arrange
         mock_request = create_mock_request()
         jwt_user = create_mock_jwt_user("admin@company.com", "admin")
-        
+
         mock_role_manager = Mock()
         mock_role_manager.get_user_permissions = AsyncMock(return_value={"system:admin", "tokens:create"})
         mock_role_manager_class.return_value = mock_role_manager
@@ -140,13 +139,13 @@ class TestCurrentUserEndpoint:
         assert result.token_id is None
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.RoleManager')
+    @patch("src.api.auth_endpoints.RoleManager")
     async def test_get_current_user_info_jwt_user_role_system_unavailable(self, mock_role_manager_class):
         """Test JWT user info when role system is unavailable."""
         # Arrange
         mock_request = create_mock_request()
         jwt_user = create_mock_jwt_user("user@company.com", "user")
-        
+
         mock_role_manager = Mock()
         mock_role_manager.get_user_permissions = AsyncMock(side_effect=Exception("Role system unavailable"))
         mock_role_manager_class.return_value = mock_role_manager
@@ -169,8 +168,8 @@ class TestCurrentUserEndpoint:
         jwt_user = Mock()
         jwt_user.email = "test@example.com"
         jwt_user.role = "string_role"  # No .value attribute
-        
-        with patch('src.api.auth_endpoints.RoleManager') as mock_role_manager_class:
+
+        with patch("src.api.auth_endpoints.RoleManager") as mock_role_manager_class:
             mock_role_manager = Mock()
             mock_role_manager.get_user_permissions = AsyncMock(return_value=set())
             mock_role_manager_class.return_value = mock_role_manager
@@ -186,7 +185,7 @@ class TestAuthHealthEndpoint:
     """Test suite for /auth/health endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_auth_health_check_success(self, mock_service_token_manager_class):
         """Test successful auth health check."""
         # Arrange
@@ -195,7 +194,7 @@ class TestAuthHealthEndpoint:
             "summary": {
                 "active_tokens": 5,
                 "total_usage": 150,
-            }
+            },
         }
         mock_manager.get_token_usage_analytics = AsyncMock(return_value=mock_analytics)
         mock_service_token_manager_class.return_value = mock_manager
@@ -213,7 +212,7 @@ class TestAuthHealthEndpoint:
         mock_manager.get_token_usage_analytics.assert_called_once_with(days=1)
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_auth_health_check_no_analytics(self, mock_service_token_manager_class):
         """Test auth health check with no analytics data."""
         # Arrange
@@ -231,7 +230,7 @@ class TestAuthHealthEndpoint:
         assert result.recent_authentications == -1
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_auth_health_check_database_error(self, mock_service_token_manager_class):
         """Test auth health check with database error."""
         # Arrange
@@ -253,13 +252,13 @@ class TestTokenCreationEndpoint:
     """Test suite for POST /auth/tokens endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_create_service_token_success(self, mock_service_token_manager_class):
         """Test successful service token creation."""
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user("admin@company.com", "admin")
-        
+
         token_request = TokenCreationRequest(
             token_name="ci_cd_token",
             permissions=["tokens:create", "system:read"],
@@ -290,13 +289,13 @@ class TestTokenCreationEndpoint:
         assert result.metadata["created_via"] == "admin_api"
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_create_service_token_no_expiration(self, mock_service_token_manager_class):
         """Test service token creation without expiration."""
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        
+
         token_request = TokenCreationRequest(
             token_name="permanent_token",
             permissions=["tokens:read"],
@@ -316,13 +315,13 @@ class TestTokenCreationEndpoint:
         assert call_args.kwargs["expires_at"] is None
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_create_service_token_from_service_token_user(self, mock_service_token_manager_class):
         """Test service token creation by another service token."""
         # Arrange
         mock_request = create_mock_request()
         service_token_user = create_mock_service_token_user("admin_token", "st_admin")
-        
+
         token_request = TokenCreationRequest(token_name="new_token")
 
         mock_manager = Mock()
@@ -336,9 +335,13 @@ class TestTokenCreationEndpoint:
         assert result.metadata["created_by"] == "admin_token"
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
-    async def test_create_service_token_creation_returns_none(self, mock_exception_handler, mock_service_token_manager_class):
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
+    async def test_create_service_token_creation_returns_none(
+        self,
+        mock_exception_handler,
+        mock_service_token_manager_class,
+    ):
         """Test service token creation when manager returns None."""
         # Arrange
         mock_request = create_mock_request()
@@ -350,20 +353,25 @@ class TestTokenCreationEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_internal_error.side_effect = HTTPException(
-            status_code=500, detail="Internal error"
+            status_code=500,
+            detail="Internal error",
         )
 
         # Act & Assert
         with pytest.raises(HTTPException):
             await create_service_token(mock_request, token_request, admin_user)
-        
-        # Should be called twice: once for the ValueError and once for the resulting HTTPException  
+
+        # Should be called twice: once for the ValueError and once for the resulting HTTPException
         assert mock_exception_handler.handle_internal_error.call_count == 2
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
-    async def test_create_service_token_name_already_exists(self, mock_exception_handler, mock_service_token_manager_class):
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
+    async def test_create_service_token_name_already_exists(
+        self,
+        mock_exception_handler,
+        mock_service_token_manager_class,
+    ):
         """Test service token creation with duplicate name."""
         # Arrange
         mock_request = create_mock_request()
@@ -375,21 +383,27 @@ class TestTokenCreationEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_validation_error.side_effect = HTTPException(
-            status_code=400, detail="Validation error"
+            status_code=400,
+            detail="Validation error",
         )
 
         # Act & Assert
         with pytest.raises(HTTPException):
             await create_service_token(mock_request, token_request, admin_user)
-        
+
         mock_exception_handler.handle_validation_error.assert_called_once_with(
-            "Token name already exists", "token_name"
+            "Token name already exists",
+            "token_name",
         )
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
-    async def test_create_service_token_unexpected_error(self, mock_exception_handler, mock_service_token_manager_class):
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
+    async def test_create_service_token_unexpected_error(
+        self,
+        mock_exception_handler,
+        mock_service_token_manager_class,
+    ):
         """Test service token creation with unexpected error."""
         # Arrange
         mock_request = create_mock_request()
@@ -401,13 +415,14 @@ class TestTokenCreationEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_internal_error.side_effect = HTTPException(
-            status_code=500, detail="Internal error"
+            status_code=500,
+            detail="Internal error",
         )
 
         # Act & Assert
         with pytest.raises(HTTPException):
             await create_service_token(mock_request, token_request, admin_user)
-        
+
         mock_exception_handler.handle_internal_error.assert_called_once()
 
 
@@ -415,7 +430,7 @@ class TestTokenRevocationEndpoint:
     """Test suite for DELETE /auth/tokens/{token_identifier} endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_revoke_service_token_success(self, mock_service_token_manager_class):
         """Test successful service token revocation."""
         # Arrange
@@ -436,15 +451,15 @@ class TestTokenRevocationEndpoint:
         assert result["message"] == "Token 'test_token_123' has been revoked"
         assert result["revoked_by"] == "admin@company.com"
         assert result["reason"] == reason
-        
+
         mock_manager.revoke_service_token.assert_called_once_with(
             token_identifier=token_identifier,
-            revocation_reason=f"{reason} (revoked by admin@company.com via API)"
+            revocation_reason=f"{reason} (revoked by admin@company.com via API)",
         )
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
     async def test_revoke_service_token_not_found(self, mock_exception_handler, mock_service_token_manager_class):
         """Test token revocation when token not found."""
         # Arrange
@@ -458,17 +473,18 @@ class TestTokenRevocationEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_not_found_error.side_effect = HTTPException(
-            status_code=404, detail="Token not found"
+            status_code=404,
+            detail="Token not found",
         )
 
         # Act & Assert
         with pytest.raises(HTTPException):
             await revoke_service_token(mock_request, token_identifier, reason, admin_user)
-        
+
         mock_exception_handler.handle_not_found_error.assert_called_once_with("token", token_identifier)
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_revoke_service_token_by_service_token(self, mock_service_token_manager_class):
         """Test token revocation by another service token."""
         # Arrange
@@ -489,7 +505,7 @@ class TestTokenRevocationEndpoint:
         expected_reason = f"{reason} (revoked by admin_service_token via API)"
         mock_manager.revoke_service_token.assert_called_once_with(
             token_identifier=token_identifier,
-            revocation_reason=expected_reason
+            revocation_reason=expected_reason,
         )
 
 
@@ -497,7 +513,7 @@ class TestTokenRotationEndpoint:
     """Test suite for POST /auth/tokens/{token_identifier}/rotate endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_rotate_service_token_success(self, mock_service_token_manager_class):
         """Test successful service token rotation."""
         # Arrange
@@ -510,7 +526,7 @@ class TestTokenRotationEndpoint:
         new_token_value = "st_new_token_456"
         new_token_id = "new_token_id_789"
         mock_manager.rotate_service_token = AsyncMock(return_value=(new_token_value, new_token_id))
-        
+
         mock_analytics = {
             "token_name": "rotated_service_token",
             "usage_count": 10,
@@ -529,14 +545,14 @@ class TestTokenRotationEndpoint:
         assert result.expires_at is None
         assert result.metadata["rotated_by"] == "admin@company.com"
         assert result.metadata["rotation_reason"] == reason
-        
+
         mock_manager.rotate_service_token.assert_called_once_with(
             token_identifier=token_identifier,
-            rotation_reason=f"{reason} (rotated by admin@company.com via API)"
+            rotation_reason=f"{reason} (rotated by admin@company.com via API)",
         )
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_rotate_service_token_no_analytics(self, mock_service_token_manager_class):
         """Test token rotation when analytics are unavailable."""
         # Arrange
@@ -558,8 +574,8 @@ class TestTokenRotationEndpoint:
         assert result.token_name == "rotated_token"  # Fallback name
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
     async def test_rotate_service_token_not_found(self, mock_exception_handler, mock_service_token_manager_class):
         """Test token rotation when token not found."""
         # Arrange
@@ -572,7 +588,8 @@ class TestTokenRotationEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_not_found_error.side_effect = HTTPException(
-            status_code=404, detail="Token not found"
+            status_code=404,
+            detail="Token not found",
         )
 
         # Act & Assert
@@ -584,7 +601,7 @@ class TestListTokensEndpoint:
     """Test suite for GET /auth/tokens endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_list_service_tokens_success(self, mock_service_token_manager_class):
         """Test successful token listing."""
         # Arrange
@@ -592,15 +609,15 @@ class TestListTokensEndpoint:
         admin_user = create_mock_jwt_user()
 
         mock_manager = Mock()
-        
+
         # Mock analytics for the main call
         main_analytics = {
             "top_tokens": [
                 {"token_name": "token1"},
                 {"token_name": "token2"},
-            ]
+            ],
         }
-        
+
         # Mock detailed analytics for each token
         token1_analytics = {
             "token_name": "token1",
@@ -609,7 +626,7 @@ class TestListTokensEndpoint:
             "is_active": True,
             "created_at": "2024-01-01T00:00:00",
         }
-        
+
         token2_analytics = {
             "token_name": "token2",
             "usage_count": 5,
@@ -632,14 +649,14 @@ class TestListTokensEndpoint:
         # Assert
         assert isinstance(result, list)
         assert len(result) == 2
-        
+
         token1_info = result[0]
         assert isinstance(token1_info, TokenInfo)
         assert token1_info.token_name == "token1"
         assert token1_info.usage_count == 25
         assert token1_info.is_active is True
         assert token1_info.last_used == datetime.fromisoformat("2024-01-15T10:30:00")
-        
+
         token2_info = result[1]
         assert token2_info.token_name == "token2"
         assert token2_info.usage_count == 5
@@ -647,7 +664,7 @@ class TestListTokensEndpoint:
         assert token2_info.last_used is None
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_list_service_tokens_no_tokens(self, mock_service_token_manager_class):
         """Test token listing when no tokens exist."""
         # Arrange
@@ -665,8 +682,8 @@ class TestListTokensEndpoint:
         assert result == []
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
     async def test_list_service_tokens_error(self, mock_exception_handler, mock_service_token_manager_class):
         """Test token listing with database error."""
         # Arrange
@@ -678,7 +695,8 @@ class TestListTokensEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_internal_error.side_effect = HTTPException(
-            status_code=500, detail="Internal error"
+            status_code=500,
+            detail="Internal error",
         )
 
         # Act & Assert
@@ -690,7 +708,7 @@ class TestTokenAnalyticsEndpoint:
     """Test suite for GET /auth/tokens/{token_identifier}/analytics endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_get_token_analytics_success(self, mock_service_token_manager_class):
         """Test successful token analytics retrieval."""
         # Arrange
@@ -715,13 +733,11 @@ class TestTokenAnalyticsEndpoint:
 
         # Assert
         assert result == mock_analytics
-        mock_manager.get_token_usage_analytics.assert_called_once_with(
-            token_identifier=token_identifier, days=days
-        )
+        mock_manager.get_token_usage_analytics.assert_called_once_with(token_identifier=token_identifier, days=days)
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
     async def test_get_token_analytics_token_not_found(self, mock_exception_handler, mock_service_token_manager_class):
         """Test token analytics when token not found."""
         # Arrange
@@ -735,7 +751,8 @@ class TestTokenAnalyticsEndpoint:
         mock_service_token_manager_class.return_value = mock_manager
 
         mock_exception_handler.handle_not_found_error.side_effect = HTTPException(
-            status_code=404, detail="Token not found"
+            status_code=404,
+            detail="Token not found",
         )
 
         # Act & Assert
@@ -743,7 +760,7 @@ class TestTokenAnalyticsEndpoint:
             await get_token_analytics(mock_request, token_identifier, 30, admin_user)
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_get_token_analytics_no_data(self, mock_service_token_manager_class):
         """Test token analytics when no data available."""
         # Arrange
@@ -766,7 +783,7 @@ class TestEmergencyRevocationEndpoint:
     """Test suite for POST /auth/emergency-revoke endpoint."""
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_emergency_revoke_all_tokens_success(self, mock_service_token_manager_class):
         """Test successful emergency revocation of all tokens."""
         # Arrange
@@ -788,13 +805,13 @@ class TestEmergencyRevocationEndpoint:
         assert result["revoked_by"] == "admin@company.com"
         assert result["reason"] == reason
         assert "timestamp" in result
-        
+
         mock_manager.emergency_revoke_all_tokens.assert_called_once_with(
-            emergency_reason=f"{reason} (emergency revoked by admin@company.com via API)"
+            emergency_reason=f"{reason} (emergency revoked by admin@company.com via API)",
         )
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.AuthExceptionHandler')
+    @patch("src.api.auth_endpoints.AuthExceptionHandler")
     async def test_emergency_revoke_all_tokens_no_confirmation(self, mock_exception_handler):
         """Test emergency revocation without confirmation."""
         # Arrange
@@ -804,20 +821,21 @@ class TestEmergencyRevocationEndpoint:
         confirm = False
 
         mock_exception_handler.handle_validation_error.side_effect = HTTPException(
-            status_code=400, detail="Confirmation required"
+            status_code=400,
+            detail="Confirmation required",
         )
 
         # Act & Assert
         with pytest.raises(HTTPException):
             await emergency_revoke_all_tokens(mock_request, reason, confirm, admin_user)
-        
+
         mock_exception_handler.handle_validation_error.assert_called_once_with(
             "Emergency revocation requires explicit confirmation (confirm=true)",
-            "confirm"
+            "confirm",
         )
 
     @pytest.mark.asyncio
-    @patch('src.api.auth_endpoints.ServiceTokenManager')
+    @patch("src.api.auth_endpoints.ServiceTokenManager")
     async def test_emergency_revoke_all_tokens_no_tokens_revoked(self, mock_service_token_manager_class):
         """Test emergency revocation when no tokens exist."""
         # Arrange
@@ -990,7 +1008,7 @@ class TestPydanticModels:
 
     def test_auth_health_response(self):
         """Test AuthHealthResponse model."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         response = AuthHealthResponse(
             status=HEALTH_STATUS_HEALTHY,
             timestamp=now,
@@ -1004,7 +1022,7 @@ class TestPydanticModels:
 
     def test_token_info_model(self):
         """Test TokenInfo model."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         token_info = TokenInfo(
             token_id="token_123",
             token_name="test_token",

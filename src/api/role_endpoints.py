@@ -448,5 +448,3 @@ async def revoke_permission_from_role(
         raise AuthExceptionHandler.handle_role_manager_error(e) from e
     except Exception as e:
         raise AuthExceptionHandler.handle_internal_error("Revoke permission", e, expose_error=True) from e
-
-

@@ -364,6 +364,7 @@ class TestHealthCheckEndpoints:
         data = response.json()
         # With debug mode, error message should contain detailed information
         from src.config.constants import HEALTH_CHECK_ERROR_LIMIT, HEALTH_CHECK_SUGGESTION_LIMIT
+
         expected_detail = {
             "error": "Configuration validation failed",
             "field_errors": config_error.field_errors[:HEALTH_CHECK_ERROR_LIMIT],

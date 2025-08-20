@@ -28,6 +28,7 @@ from src.main import app
 @pytest.fixture
 def client(mock_authenticated_user):
     """Create a test client for FastAPI app with authentication override."""
+
     # Override the dependency to return our mock user
     def mock_require_authentication():
         return mock_authenticated_user
@@ -54,6 +55,7 @@ def mock_authenticated_user():
 def mock_service_token():
     """Mock service token with admin permissions."""
     from src.auth.middleware import ServiceTokenUser
+
     # Create a real ServiceTokenUser instance with admin permissions
     return ServiceTokenUser(
         token_id="test-token-id",
@@ -616,7 +618,13 @@ class TestRoleDeletionEndpoints:
 
     @patch("src.auth.permissions.user_has_permission")
     @patch("src.api.role_endpoints.RoleManager")
-    def test_delete_role_force(self, mock_role_manager_class, mock_user_has_permission, client, mock_authenticated_user):
+    def test_delete_role_force(
+        self,
+        mock_role_manager_class,
+        mock_user_has_permission,
+        client,
+        mock_authenticated_user,
+    ):
         """Test force role deletion."""
         # Setup mocks
         mock_user_has_permission.return_value = lambda: mock_authenticated_user
@@ -944,6 +952,7 @@ class TestPermissionEnforcement:
         # Setup mocks to simulate permission denial
         def mock_permission_checker():
             from fastapi import HTTPException
+
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:create required")
 
         app.dependency_overrides[require_permission(Permissions.ROLES_CREATE)] = mock_permission_checker
@@ -969,6 +978,7 @@ class TestPermissionEnforcement:
         # Setup mocks to simulate permission denial
         def mock_permission_checker():
             from fastapi import HTTPException
+
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:assign required")
 
         app.dependency_overrides[require_permission(Permissions.ROLES_ASSIGN)] = mock_permission_checker

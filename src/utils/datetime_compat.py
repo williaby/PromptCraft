@@ -22,7 +22,7 @@ PY_312_PLUS = PY_VERSION >= (3, 12)
 if PY_311_PLUS:
     from datetime import UTC
 else:
-    UTC = timezone.utc
+    UTC = UTC
 
 # Export the UTC constant for consistent imports
 __all__ = [

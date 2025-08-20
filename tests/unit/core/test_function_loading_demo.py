@@ -937,6 +937,19 @@ except Exception:
 class TestInteractiveFunctionLoadingDemoIntegration:
     """Integration tests for InteractiveFunctionLoadingDemo."""
 
+    @pytest.fixture
+    def mock_loader(self):
+        """Create a mock DynamicFunctionLoader for integration tests."""
+        loader = AsyncMock()
+        loader.function_registry = MagicMock()
+        loader.function_registry.functions = {}
+        loader.function_registry.get_baseline_token_cost.return_value = 10000
+        loader.function_registry.tiers = ["tier1", "tier2", "tier3"]
+        loader.function_registry.get_functions_by_tier.return_value = []
+        loader.function_registry.get_tier_token_cost.return_value = 0
+        loader.function_registry.calculate_loading_cost.return_value = (1000, 0.5)
+        return loader
+
     @pytest.mark.asyncio
     async def test_full_demo_workflow(self, mock_loader):
         """Test complete demo workflow from initialization to completion."""
@@ -1087,6 +1100,19 @@ class TestInteractiveFunctionLoadingDemoIntegration:
 
 class TestInteractiveFunctionLoadingDemoEdgeCases:
     """Test edge cases and error conditions for InteractiveFunctionLoadingDemo."""
+
+    @pytest.fixture
+    def mock_loader(self):
+        """Create a mock DynamicFunctionLoader for edge case tests."""
+        loader = AsyncMock()
+        loader.function_registry = MagicMock()
+        loader.function_registry.functions = {}
+        loader.function_registry.get_baseline_token_cost.return_value = 10000
+        loader.function_registry.tiers = ["tier1", "tier2", "tier3"]
+        loader.function_registry.get_functions_by_tier.return_value = []
+        loader.function_registry.get_tier_token_cost.return_value = 0
+        loader.function_registry.calculate_loading_cost.return_value = (1000, 0.5)
+        return loader
 
     @pytest.mark.asyncio
     async def test_initialization_with_loader_error(self):

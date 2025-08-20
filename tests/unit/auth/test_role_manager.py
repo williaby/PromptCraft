@@ -709,7 +709,9 @@ class TestRoleDeletion:
 
         user_assignments_result = MagicMock()
         user_assignments_result.scalars = MagicMock()
-        user_assignments_result.scalars.return_value.all = MagicMock(return_value=["user1@example.com", "user2@example.com"])
+        user_assignments_result.scalars.return_value.all = MagicMock(
+            return_value=["user1@example.com", "user2@example.com"],
+        )
 
         # Set up side_effect for multiple calls
         async def mock_execute_side_effect(*args, **kwargs):

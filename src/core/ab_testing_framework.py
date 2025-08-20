@@ -31,7 +31,6 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import utc_now
 from enum import Enum
 from typing import Any
 
@@ -40,6 +39,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.config.settings import get_settings
+from src.utils.datetime_compat import utc_now
 from src.utils.observability import ObservabilityMixin
 from src.utils.performance_monitor import PerformanceMonitor
 
@@ -663,8 +663,15 @@ class StatisticalAnalyzer:
             )
 
             # Calculate duration
+            from src.utils.datetime_compat import ensure_aware
+
             start_time = experiment.start_time or experiment.created_at
             end_time = experiment.end_time or utc_now()
+
+            # Ensure both datetimes are timezone-aware for calculation
+            start_time = ensure_aware(start_time)
+            end_time = ensure_aware(end_time)
+
             duration_hours = (end_time - start_time).total_seconds() / 3600
 
             return ExperimentResults(

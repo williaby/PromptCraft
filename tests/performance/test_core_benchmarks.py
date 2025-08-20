@@ -352,12 +352,12 @@ class TestTaskDetectionPerformance:
         mock_cwd = Mock()
         mock_cwd.return_value = Path("/test/project")
         mock_path.cwd = mock_cwd
-        
+
         # Mock working directory operations
         mock_working_dir = Mock()
         mock_working_dir.__truediv__ = Mock(return_value=Mock(exists=Mock(return_value=True)))
         mock_working_dir.rglob = Mock(return_value=[])  # Empty file list to prevent timeout
-        
+
         # Mock config
         mock_config = Mock()
         mock_config.performance.max_detection_time_ms = 100.0
@@ -378,7 +378,7 @@ class TestTaskDetectionPerformance:
 
         # Simulate many loading decisions (reduced from 2000 to 1500 for performance test suite)
         for i in range(1500):  # More than the 1000 limit
-            with patch.object(Path, '__new__', return_value=mock_working_dir):
+            with patch.object(Path, "__new__", return_value=mock_working_dir):
                 await loader.load_functions_for_query(f"query {i}")
 
         # Check that history is properly limited
@@ -414,8 +414,8 @@ class TestTaskDetectionPerformance:
         loader = IntelligentFunctionLoader("production")
 
         # Mock file system to prevent directory scanning
-        with patch.object(Path, 'cwd', return_value=Path("/test")):
-            with patch.object(Path, 'rglob', return_value=[]):
+        with patch.object(Path, "cwd", return_value=Path("/test")):
+            with patch.object(Path, "rglob", return_value=[]):
                 result = await loader.load_functions_for_query("test query for performance")
 
         # Verify result structure

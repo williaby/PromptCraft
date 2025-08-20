@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CommandMetadata:
     """Metadata for Claude Code commands"""
+
     name: str
     category: str
     complexity: str  # low, medium, high
@@ -38,6 +39,7 @@ class CommandMetadata:
 @dataclass
 class IntegrationStatus:
     """Status of system integration"""
+
     user_control_active: bool = False
     help_system_active: bool = False
     analytics_active: bool = False
@@ -62,10 +64,13 @@ class CommandRegistry:
         }
         self.aliases: dict[str, str] = {}
 
-    def register_command(self, command_name: str,
-                        handler: Callable,
-                        metadata: CommandMetadata,
-                        aliases: list[str] | None = None) -> None:
+    def register_command(
+        self,
+        command_name: str,
+        handler: Callable,
+        metadata: CommandMetadata,
+        aliases: list[str] | None = None,
+    ) -> None:
         """Register a command with metadata"""
         self.commands[command_name] = {
             "handler": handler,
@@ -123,9 +128,12 @@ class CommandRegistry:
 class ClaudeCommandIntegration:
     """Integrates user control system with Claude Code command structure"""
 
-    def __init__(self, control_system: UserControlSystem,
-                 help_system: InteractiveHelpSystem,
-                 analytics: AnalyticsEngine) -> None:
+    def __init__(
+        self,
+        control_system: UserControlSystem,
+        help_system: InteractiveHelpSystem,
+        analytics: AnalyticsEngine,
+    ) -> None:
         self.control_system = control_system
         self.help_system = help_system
         self.analytics = analytics
@@ -269,8 +277,7 @@ class ClaudeCommandIntegration:
         self.integration_status.command_count = len(user_control_commands)
         self.integration_status.user_control_active = True
 
-    async def execute_command(self, command_line: str,
-                            context: dict[str, Any] | None = None) -> CommandResult:
+    async def execute_command(self, command_line: str, context: dict[str, Any] | None = None) -> CommandResult:
         """Execute a command through the integrated system"""
         try:
             # Track command execution
@@ -310,9 +317,9 @@ class ClaudeCommandIntegration:
             logger.error(f"Command execution failed: {e}")
             error_result = CommandResult(
                 success=False,
-                message=f"Command execution error: {str(e)}",
+                message=f"Command execution error: {e!s}",
                 warnings=["This might be a system error - check logs"],
-                suggestions=self._suggest_similar_commands(command_name) if 'command_name' in locals() else [],
+                suggestions=self._suggest_similar_commands(command_name) if "command_name" in locals() else [],
             )
             self._track_command_end(command_line, error_result)
             return error_result
@@ -328,14 +335,14 @@ class ClaudeCommandIntegration:
                 "command": parts[0],
                 "arguments": parts[1].split() if len(parts) > 1 else [],
             }
-        elif command_line.startswith("/"):
+        if command_line.startswith("/"):
             # User control system format
             parts = command_line[1:].split()
             return {
                 "command": parts[0] if parts else "",
                 "arguments": parts[1:] if len(parts) > 1 else [],
             }
-        elif ":" in command_line:
+        if ":" in command_line:
             # Claude Code project format without /project: prefix
             parts = command_line.split(" ", 1)
             return {
@@ -386,12 +393,14 @@ class ClaudeCommandIntegration:
         )
 
         # Add to command history
-        self.command_history.append({
-            "timestamp": datetime.now(),
-            "command": command_line,
-            "success": result.success,
-            "message": result.message,
-        })
+        self.command_history.append(
+            {
+                "timestamp": datetime.now(),
+                "command": command_line,
+                "success": result.success,
+                "message": result.message,
+            },
+        )
 
         # Keep history manageable - if more than 100 entries, keep last 51 entries
         if len(self.command_history) > 100:
@@ -403,14 +412,15 @@ class ClaudeCommandIntegration:
         similar_commands = self.command_registry.search_commands(command_name)
 
         # Add function control suggestions if relevant
-        if any(keyword in command_name.lower()
-               for keyword in ["load", "category", "tier", "optimize", "profile"]):
-            similar_commands.extend([
-                "function-loading:load-category",
-                "function-loading:list-categories",
-                "function-loading:optimize-for",
-                "function-loading:save-profile",
-            ])
+        if any(keyword in command_name.lower() for keyword in ["load", "category", "tier", "optimize", "profile"]):
+            similar_commands.extend(
+                [
+                    "function-loading:load-category",
+                    "function-loading:list-categories",
+                    "function-loading:optimize-for",
+                    "function-loading:save-profile",
+                ],
+            )
 
         # If no specific suggestions found, provide general helpful commands
         if not similar_commands:
@@ -423,8 +433,7 @@ class ClaudeCommandIntegration:
         return list(set(similar_commands))[:5]  # Top 5, no duplicates
 
     # Command handlers
-    async def _handle_load_category(self, args: list[str],
-                                  context: dict[str, Any]) -> CommandResult:
+    async def _handle_load_category(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle load-category command"""
         if not args:
             return CommandResult(
@@ -452,8 +461,7 @@ class ClaudeCommandIntegration:
 
         return result
 
-    async def _handle_unload_category(self, args: list[str],
-                                   context: dict[str, Any]) -> CommandResult:
+    async def _handle_unload_category(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle unload-category command"""
         if not args:
             return CommandResult(
@@ -481,8 +489,7 @@ class ClaudeCommandIntegration:
 
         return result
 
-    async def _handle_list_categories(self, args: list[str],
-                                    context: dict[str, Any]) -> CommandResult:
+    async def _handle_list_categories(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle list-categories command"""
         # Parse optional arguments
         tier_filter = None
@@ -505,8 +512,7 @@ class ClaudeCommandIntegration:
         command_line = " ".join(command_parts)
         return await self.control_system.execute_command(command_line)
 
-    async def _handle_optimize_for(self, args: list[str],
-                                 context: dict[str, Any]) -> CommandResult:
+    async def _handle_optimize_for(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle optimize-for command"""
         if not args:
             return CommandResult(
@@ -536,13 +542,11 @@ class ClaudeCommandIntegration:
 
         return result
 
-    async def _handle_tier_status(self, args: list[str],
-                                context: dict[str, Any]) -> CommandResult:
+    async def _handle_tier_status(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle tier-status command"""
         return await self.control_system.execute_command("/tier-status")
 
-    async def _handle_save_profile(self, args: list[str],
-                                 context: dict[str, Any]) -> CommandResult:
+    async def _handle_save_profile(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle save-profile command"""
         if not args:
             return CommandResult(
@@ -572,8 +576,7 @@ class ClaudeCommandIntegration:
 
         return result
 
-    async def _handle_load_profile(self, args: list[str],
-                                 context: dict[str, Any]) -> CommandResult:
+    async def _handle_load_profile(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle load-profile command"""
         if not args:
             return CommandResult(
@@ -601,8 +604,7 @@ class ClaudeCommandIntegration:
 
         return result
 
-    async def _handle_performance_stats(self, args: list[str],
-                                      context: dict[str, Any]) -> CommandResult:
+    async def _handle_performance_stats(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle performance-stats command"""
         result = await self.control_system.execute_command("/function-stats")
 
@@ -610,15 +612,15 @@ class ClaudeCommandIntegration:
         if result.success and result.data:
             result.data["integration_metrics"] = {
                 "commands_executed": len(self.command_history),
-                "error_rate": len([h for h in self.command_history if not h["success"]]) / max(1, len(self.command_history)),
+                "error_rate": len([h for h in self.command_history if not h["success"]])
+                / max(1, len(self.command_history)),
                 "avg_commands_per_session": len(self.command_history) / 1,  # Would track multiple sessions
                 "most_used_commands": self._get_command_usage_stats(),
             }
 
         return result
 
-    async def _handle_function_loading_help(self, args: list[str],
-                                          context: dict[str, Any]) -> CommandResult:
+    async def _handle_function_loading_help(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle function-loading help command"""
         query = " ".join(args) if args else None
 
@@ -642,8 +644,7 @@ class ClaudeCommandIntegration:
 
         return self.help_system.get_help(query, context=help_context)
 
-    async def _handle_analytics(self, args: list[str],
-                              context: dict[str, Any]) -> CommandResult:
+    async def _handle_analytics(self, args: list[str], context: dict[str, Any]) -> CommandResult:
         """Handle analytics command"""
         user_id = context.get("user_id", "default")
 
@@ -772,7 +773,9 @@ class ClaudeCommandIntegration:
 
             return {
                 "status": "healthy",
-                "active_sessions": len(self.control_system.active_sessions) if hasattr(self.control_system, "active_sessions") else 1,
+                "active_sessions": (
+                    len(self.control_system.active_sessions) if hasattr(self.control_system, "active_sessions") else 1
+                ),
                 "last_command": self.command_history[-1]["command"] if self.command_history else None,
             }
         except Exception as e:
@@ -1052,6 +1055,7 @@ Later, quickly restore:
 
 # Example usage and integration
 if __name__ == "__main__":
+
     async def main() -> None:
         # Initialize system components
         detection_system = TaskDetectionSystem()
@@ -1074,10 +1078,8 @@ if __name__ == "__main__":
             "function-loading:analytics",
         ]
 
-
         for command in test_commands:
             result = await integration.execute_command(command)
-
 
             if result.data:
                 pass

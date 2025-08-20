@@ -33,7 +33,13 @@ class CoverageAutomationCLI:
                 return False
 
             # Check if Poetry is available
-            result = subprocess.run(["poetry", "--version"], check=False, capture_output=True, text=True, cwd=self.project_root)
+            result = subprocess.run(
+                ["poetry", "--version"],
+                check=False,
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+            )
 
             if result.returncode != 0:
                 print("⚠️  Poetry not found - please install Poetry")

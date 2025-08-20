@@ -11,7 +11,7 @@ This module provides automated token rotation capabilities including:
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import timezone, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -53,7 +53,7 @@ class TokenRotationPlan:
         self.rotation_type = rotation_type
         self.metadata = metadata or {}
         self.status = "planned"  # planned, in_progress, completed, failed
-        self.created_at = datetime.now(timezone.utc)
+        self.created_at = datetime.now(UTC)
         self.completed_at: datetime | None = None
         self.error_details: str | None = None
         self.new_token_value: str | None = None
@@ -102,7 +102,7 @@ class TokenRotationScheduler:
         try:
             async for session in get_db():
                 # Find tokens that need rotation based on age
-                cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.default_rotation_age_days)
+                cutoff_date = datetime.now(UTC) - timedelta(days=self.default_rotation_age_days)
 
                 result = await session.execute(
                     text(
@@ -127,7 +127,7 @@ class TokenRotationScheduler:
                     {
                         "cutoff_date": cutoff_date,
                         "high_usage_threshold": self.high_usage_threshold,
-                        "high_usage_cutoff": datetime.now(timezone.utc) - timedelta(days=self.high_usage_rotation_days),
+                        "high_usage_cutoff": datetime.now(UTC) - timedelta(days=self.high_usage_rotation_days),
                     },
                 )
 
@@ -180,7 +180,7 @@ class TokenRotationScheduler:
             Next maintenance window datetime
         """
         # Schedule for 2 AM UTC tomorrow (or today if it's before 2 AM)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         maintenance_hour = 2  # 2 AM UTC
 
         if now.hour < maintenance_hour:
@@ -201,7 +201,7 @@ class TokenRotationScheduler:
         """
         try:
             # Validate the plan
-            if plan.scheduled_time <= datetime.now(timezone.utc):
+            if plan.scheduled_time <= datetime.now(UTC):
                 # Sanitize token name to prevent credential disclosure
                 safe_token_name = (
                     plan.token_name[:20].replace("\n", "").replace("\r", "") + "..."
@@ -281,7 +281,7 @@ class TokenRotationScheduler:
                 plan.new_token_value = new_token_value
                 plan.new_token_id = new_token_id
                 plan.status = "completed"
-                plan.completed_at = datetime.now(timezone.utc)
+                plan.completed_at = datetime.now(UTC)
 
                 # Sanitize token name and new token ID to prevent credential disclosure
                 safe_token_name = (
@@ -353,7 +353,7 @@ class TokenRotationScheduler:
                 "rotation_type": plan.rotation_type,
                 "rotation_reason": plan.rotation_reason,
                 "scheduled_time": plan.scheduled_time.isoformat(),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             if event_type == "completed" and plan.new_token_value:
@@ -382,7 +382,7 @@ class TokenRotationScheduler:
                 notification_data.update(
                     {
                         "message": f"Token rotation starting for {safe_token_name}",
-                        "estimated_completion": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+                        "estimated_completion": (datetime.now(UTC) + timedelta(minutes=5)).isoformat(),
                     },
                 )
             elif event_type == "scheduled":
@@ -426,7 +426,7 @@ class TokenRotationScheduler:
         Returns:
             Summary of rotation results
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         due_plans = [plan for plan in self._rotation_plans if plan.status == "planned" and plan.scheduled_time <= now]
 
@@ -484,7 +484,7 @@ class TokenRotationScheduler:
         Returns:
             Summary of scheduler results
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             # Analyze tokens for rotation
@@ -500,7 +500,7 @@ class TokenRotationScheduler:
             # Execute due rotations
             rotation_results = await self.run_scheduled_rotations()
 
-            execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
 
             return {
                 "status": "completed",
@@ -569,7 +569,7 @@ class TokenRotationScheduler:
         Returns:
             Status information
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         planned_rotations = [p for p in self._rotation_plans if p.status == "planned"]
         completed_rotations = [p for p in self._rotation_plans if p.status == "completed"]
@@ -598,7 +598,7 @@ class TokenRotationScheduler:
                 }
                 for p in sorted(
                     completed_rotations,
-                    key=lambda x: x.completed_at or datetime.min.replace(tzinfo=timezone.utc),
+                    key=lambda x: x.completed_at or datetime.min.replace(tzinfo=UTC),
                     reverse=True,
                 )[:5]
             ],

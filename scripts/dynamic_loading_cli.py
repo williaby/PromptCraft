@@ -72,7 +72,7 @@ class DynamicLoadingCLI:
     async def run_demo(self, comprehensive: bool = False, scenario_types: list[str] | None = None):
         """Run demonstration scenarios."""
         print("🎬 RUNNING DYNAMIC FUNCTION LOADING DEMONSTRATION")
-        print("="*60)
+        print("=" * 60)
 
         demo = ComprehensivePrototypeDemo(mode=IntegrationMode.DEMO)
 
@@ -90,14 +90,12 @@ class DynamicLoadingCLI:
 
         # Run selected scenario types or basic demo
         if scenario_types:
-            selected_scenarios = [
-                s for s in demo.demo_scenarios
-                if s.scenario_type.value in scenario_types
-            ]
+            selected_scenarios = [s for s in demo.demo_scenarios if s.scenario_type.value in scenario_types]
         else:
             # Run basic scenarios
             selected_scenarios = [
-                s for s in demo.demo_scenarios
+                s
+                for s in demo.demo_scenarios
                 if s.scenario_type in [DemoScenarioType.BASIC_OPTIMIZATION, DemoScenarioType.USER_INTERACTION]
             ][:3]
 
@@ -161,7 +159,7 @@ class DynamicLoadingCLI:
     ):
         """Run various validation tests."""
         print("✅ RUNNING VALIDATION TESTS")
-        print("="*50)
+        print("=" * 50)
 
         validation_results = {
             "timestamp": datetime.now().isoformat(),
@@ -215,7 +213,7 @@ class DynamicLoadingCLI:
     async def run_interactive(self):
         """Run interactive session for testing queries."""
         print("💬 INTERACTIVE DYNAMIC LOADING SESSION")
-        print("="*50)
+        print("=" * 50)
         print("Enter queries to see optimization in action!")
         print("Commands:")
         print("  /help                    - Show available commands")
@@ -295,7 +293,7 @@ class DynamicLoadingCLI:
     async def generate_report(self, export_path: str | None = None):
         """Generate comprehensive performance report."""
         print("📊 GENERATING PERFORMANCE REPORT")
-        print("="*40)
+        print("=" * 40)
 
         report = await self.integration.get_performance_report()
         status = await self.integration.get_system_status()
@@ -343,7 +341,7 @@ class DynamicLoadingCLI:
     def _display_demo_summary(self, results: dict[str, Any]):
         """Display summary of comprehensive demo results."""
         print("\n🏆 DEMONSTRATION SUMMARY")
-        print("="*50)
+        print("=" * 50)
 
         perf_summary = results["performance_summary"]
         readiness = results["production_readiness"]
@@ -561,14 +559,12 @@ class DynamicLoadingCLI:
             strategy=LoadingStrategy.BALANCED,
         )
 
-        basic_success = (
-            result.success and
-            result.reduction_percentage > 0 and
-            result.total_time_ms <= 1000.0
-        )
+        basic_success = result.success and result.reduction_percentage > 0 and result.total_time_ms <= 1000.0
 
         status = "✅" if basic_success else "❌"
-        print(f"{status} Basic functionality: {result.reduction_percentage:.1f}% reduction in {result.total_time_ms:.1f}ms")
+        print(
+            f"{status} Basic functionality: {result.reduction_percentage:.1f}% reduction in {result.total_time_ms:.1f}ms",
+        )
 
         return {
             "success": basic_success,
@@ -603,8 +599,12 @@ Examples:
     # Optimize command
     optimize_parser = subparsers.add_parser("optimize", help="Optimize a specific query")
     optimize_parser.add_argument("query", help="Query to optimize")
-    optimize_parser.add_argument("--strategy", choices=["conservative", "balanced", "aggressive"],
-                                default="balanced", help="Loading strategy")
+    optimize_parser.add_argument(
+        "--strategy",
+        choices=["conservative", "balanced", "aggressive"],
+        default="balanced",
+        help="Loading strategy",
+    )
     optimize_parser.add_argument("--user-commands", nargs="*", help="User commands to execute")
     optimize_parser.add_argument("--user-id", default="cli_user", help="User identifier")
 
@@ -612,7 +612,11 @@ Examples:
     validate_parser = subparsers.add_parser("validate", help="Run validation tests")
     validate_parser.add_argument("--performance", action="store_true", help="Run performance validation")
     validate_parser.add_argument("--stress-test", action="store_true", help="Run stress test validation")
-    validate_parser.add_argument("--production-readiness", action="store_true", help="Run production readiness validation")
+    validate_parser.add_argument(
+        "--production-readiness",
+        action="store_true",
+        help="Run production readiness validation",
+    )
 
     # Interactive command
     subparsers.add_parser("interactive", help="Run interactive session")
@@ -622,8 +626,12 @@ Examples:
     report_parser.add_argument("--export", help="Export report to JSON file")
 
     # Global options
-    parser.add_argument("--mode", choices=["production", "development", "testing", "demo"],
-                       default="production", help="Integration mode")
+    parser.add_argument(
+        "--mode",
+        choices=["production", "development", "testing", "demo"],
+        default="production",
+        help="Integration mode",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
@@ -684,6 +692,7 @@ Examples:
         print(f"❌ Error: {e}")
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 

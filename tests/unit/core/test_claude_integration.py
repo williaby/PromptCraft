@@ -466,11 +466,14 @@ class TestClaudeCommandIntegration:
 
     def test_suggest_similar_commands(self, integration):
         """Test similar command suggestions."""
+        # Mock command registry to return empty list so function loading suggestions are added
+        integration.command_registry.search_commands = MagicMock(return_value=[])
+
         # Test with function loading related terms
         suggestions = integration._suggest_similar_commands("load")
 
         assert len(suggestions) <= 5
-        assert any("load-category" in cmd for cmd in suggestions)
+        assert any("function-loading:load-category" in cmd for cmd in suggestions)
 
     def test_suggest_similar_commands_empty(self, integration):
         """Test similar command suggestions with no matches."""

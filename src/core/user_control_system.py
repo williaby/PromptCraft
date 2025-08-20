@@ -11,7 +11,7 @@ import logging
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import timezone, datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UserSession:
     """Tracks user session state and preferences"""
+
     session_id: str
     user_level: str = "balanced"  # beginner, balanced, expert
     active_categories: dict[str, bool] = field(default_factory=dict)
@@ -31,13 +32,14 @@ class UserSession:
     command_history: list[dict[str, Any]] = field(default_factory=list)
     preferences: dict[str, Any] = field(default_factory=dict)
     learning_enabled: bool = True
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    last_activity: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
 class SessionProfile:
     """Saved session configuration profile"""
+
     name: str
     description: str
     categories: dict[str, bool]
@@ -45,7 +47,7 @@ class SessionProfile:
     detection_config: dict[str, Any] | None = None
     tags: list[str] = field(default_factory=list)
     created_by: str = "user"
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     usage_count: int = 0
     last_used: datetime | None = None
 
@@ -53,6 +55,7 @@ class SessionProfile:
 @dataclass
 class CommandResult:
     """Result of user command execution"""
+
     success: bool
     message: str
     data: dict[str, Any] | None = None
@@ -193,8 +196,7 @@ class CategoryManager:
             },
         )
 
-    def list_categories(self, filter_tier: int | None = None,
-                       show_loaded_only: bool = False) -> CommandResult:
+    def list_categories(self, filter_tier: int | None = None, show_loaded_only: bool = False) -> CommandResult:
         """List all available categories with their status"""
         categories_info = []
 
@@ -208,15 +210,17 @@ class CategoryManager:
             if show_loaded_only and not is_loaded:
                 continue
 
-            categories_info.append({
-                "name": name,
-                "description": info["description"],
-                "tier": info["tier"],
-                "token_cost": info["token_cost"],
-                "function_count": len(info["functions"]),
-                "is_loaded": is_loaded,
-                "usage_patterns": info.get("usage_patterns", []),
-            })
+            categories_info.append(
+                {
+                    "name": name,
+                    "description": info["description"],
+                    "tier": info["tier"],
+                    "token_cost": info["token_cost"],
+                    "function_count": len(info["functions"]),
+                    "is_loaded": is_loaded,
+                    "usage_patterns": info.get("usage_patterns", []),
+                },
+            )
 
         return CommandResult(
             success=True,
@@ -356,15 +360,17 @@ class TierController:
             if is_loaded:
                 total_tokens += tier_info["token_cost"]
 
-            status_info.append({
-                "tier": tier_num,
-                "name": tier_info["name"],
-                "description": tier_info["description"],
-                "is_loaded": is_loaded,
-                "categories": tier_info["categories"],
-                "token_cost": tier_info["token_cost"],
-                "load_threshold": tier_info["load_threshold"],
-            })
+            status_info.append(
+                {
+                    "tier": tier_num,
+                    "name": tier_info["name"],
+                    "description": tier_info["description"],
+                    "is_loaded": is_loaded,
+                    "categories": tier_info["categories"],
+                    "token_cost": tier_info["token_cost"],
+                    "load_threshold": tier_info["load_threshold"],
+                },
+            )
 
         return CommandResult(
             success=True,
@@ -458,18 +464,22 @@ class PerformanceMonitor:
 
     def record_loading_time(self, operation: str, duration_ms: float) -> None:
         """Record loading operation time"""
-        self.metrics["loading_times"].append({
-            "operation": operation,
-            "duration_ms": duration_ms,
-            "timestamp": datetime.now(timezone.utc),
-        })
+        self.metrics["loading_times"].append(
+            {
+                "operation": operation,
+                "duration_ms": duration_ms,
+                "timestamp": datetime.now(UTC),
+            },
+        )
 
     def record_memory_usage(self, usage_mb: float) -> None:
         """Record memory usage"""
-        self.metrics["memory_usage"].append({
-            "usage_mb": usage_mb,
-            "timestamp": datetime.now(timezone.utc),
-        })
+        self.metrics["memory_usage"].append(
+            {
+                "usage_mb": usage_mb,
+                "timestamp": datetime.now(UTC),
+            },
+        )
 
     def get_function_stats(self) -> CommandResult:
         """Get current function loading statistics"""
@@ -477,15 +487,13 @@ class PerformanceMonitor:
         avg_loading_time = 0
 
         if self.metrics["loading_times"]:
-            avg_loading_time = sum(
-                lt["duration_ms"] for lt in self.metrics["loading_times"]
-            ) / len(self.metrics["loading_times"])
+            avg_loading_time = sum(lt["duration_ms"] for lt in self.metrics["loading_times"]) / len(
+                self.metrics["loading_times"],
+            )
 
         cache_hit_rate = 0
         if self.metrics["cache_hits"] + self.metrics["cache_misses"] > 0:
-            cache_hit_rate = self.metrics["cache_hits"] / (
-                self.metrics["cache_hits"] + self.metrics["cache_misses"]
-            )
+            cache_hit_rate = self.metrics["cache_hits"] / (self.metrics["cache_hits"] + self.metrics["cache_misses"])
 
         return CommandResult(
             success=True,
@@ -512,7 +520,7 @@ class PerformanceMonitor:
         return CommandResult(
             success=True,
             message="Performance cache cleared",
-            data={"cache_cleared": True, "timestamp": datetime.now(timezone.utc)},
+            data={"cache_cleared": True, "timestamp": datetime.now(UTC)},
         )
 
     def benchmark_loading(self) -> CommandResult:
@@ -578,10 +586,14 @@ class ProfileManager:
             except Exception as e:
                 logger.warning(f"Failed to load profile {profile_file}: {e}")
 
-    def save_session_profile(self, name: str, description: str,
-                           current_categories: dict[str, bool],
-                           performance_mode: str,
-                           tags: list[str] | None = None) -> CommandResult:
+    def save_session_profile(
+        self,
+        name: str,
+        description: str,
+        current_categories: dict[str, bool],
+        performance_mode: str,
+        tags: list[str] | None = None,
+    ) -> CommandResult:
         """Save current session as a named profile"""
         if not name or not name.strip():
             return CommandResult(
@@ -603,18 +615,22 @@ class ProfileManager:
         profile_file = self.config_dir / f"{name}.json"
         try:
             with open(profile_file, "w") as f:
-                json.dump({
-                    "name": profile.name,
-                    "description": profile.description,
-                    "categories": profile.categories,
-                    "performance_mode": profile.performance_mode,
-                    "detection_config": profile.detection_config,
-                    "tags": profile.tags,
-                    "created_by": profile.created_by,
-                    "created_at": profile.created_at.isoformat(),
-                    "usage_count": profile.usage_count,
-                    "last_used": profile.last_used.isoformat() if profile.last_used else None,
-                }, f, indent=2)
+                json.dump(
+                    {
+                        "name": profile.name,
+                        "description": profile.description,
+                        "categories": profile.categories,
+                        "performance_mode": profile.performance_mode,
+                        "detection_config": profile.detection_config,
+                        "tags": profile.tags,
+                        "created_by": profile.created_by,
+                        "created_at": profile.created_at.isoformat(),
+                        "usage_count": profile.usage_count,
+                        "last_used": profile.last_used.isoformat() if profile.last_used else None,
+                    },
+                    f,
+                    indent=2,
+                )
 
             self.profiles[name] = profile
 
@@ -648,7 +664,7 @@ class ProfileManager:
 
         # Update usage statistics
         profile.usage_count += 1
-        profile.last_used = datetime.now(timezone.utc)
+        profile.last_used = datetime.now(UTC)
 
         # Save updated profile
         self._save_profile(profile)
@@ -674,15 +690,17 @@ class ProfileManager:
             if tag_filter and tag_filter not in profile.tags:
                 continue
 
-            filtered_profiles.append({
-                "name": profile.name,
-                "description": profile.description,
-                "tags": profile.tags,
-                "usage_count": profile.usage_count,
-                "last_used": profile.last_used.isoformat() if profile.last_used else None,
-                "created_at": profile.created_at.isoformat(),
-                "categories_count": len([c for c, enabled in profile.categories.items() if enabled]),
-            })
+            filtered_profiles.append(
+                {
+                    "name": profile.name,
+                    "description": profile.description,
+                    "tags": profile.tags,
+                    "usage_count": profile.usage_count,
+                    "last_used": profile.last_used.isoformat() if profile.last_used else None,
+                    "created_at": profile.created_at.isoformat(),
+                    "categories_count": len([c for c, enabled in profile.categories.items() if enabled]),
+                },
+            )
 
         # Sort by usage count and recency
         filtered_profiles.sort(
@@ -704,18 +722,22 @@ class ProfileManager:
         """Save profile to disk"""
         profile_file = self.config_dir / f"{profile.name}.json"
         with open(profile_file, "w") as f:
-            json.dump({
-                "name": profile.name,
-                "description": profile.description,
-                "categories": profile.categories,
-                "performance_mode": profile.performance_mode,
-                "detection_config": profile.detection_config,
-                "tags": profile.tags,
-                "created_by": profile.created_by,
-                "created_at": profile.created_at.isoformat(),
-                "usage_count": profile.usage_count,
-                "last_used": profile.last_used.isoformat() if profile.last_used else None,
-            }, f, indent=2)
+            json.dump(
+                {
+                    "name": profile.name,
+                    "description": profile.description,
+                    "categories": profile.categories,
+                    "performance_mode": profile.performance_mode,
+                    "detection_config": profile.detection_config,
+                    "tags": profile.tags,
+                    "created_by": profile.created_by,
+                    "created_at": profile.created_at.isoformat(),
+                    "usage_count": profile.usage_count,
+                    "last_used": profile.last_used.isoformat() if profile.last_used else None,
+                },
+                f,
+                indent=2,
+            )
 
 
 class CommandParser:
@@ -928,8 +950,7 @@ class CommandParser:
 class UserControlSystem:
     """Main user control system orchestrating all components"""
 
-    def __init__(self, detection_system: TaskDetectionSystem,
-                 config_manager: ConfigManager) -> None:
+    def __init__(self, detection_system: TaskDetectionSystem, config_manager: ConfigManager) -> None:
         self.detection_system = detection_system
         self.config_manager = config_manager
 
@@ -989,16 +1010,19 @@ class UserControlSystem:
             # Record performance
             execution_time = (time.perf_counter() - start_time) * 1000
             self.performance_monitor.record_loading_time(
-                f"command_{parsed['command']}", execution_time,
+                f"command_{parsed['command']}",
+                execution_time,
             )
 
             # Update session history
-            self.current_session.command_history.append({
-                "command": command_line,
-                "timestamp": datetime.now(timezone.utc),
-                "success": result.success,
-                "execution_time_ms": execution_time,
-            })
+            self.current_session.command_history.append(
+                {
+                    "command": command_line,
+                    "timestamp": datetime.now(UTC),
+                    "success": result.success,
+                    "execution_time_ms": execution_time,
+                },
+            )
 
             return result
 
@@ -1151,12 +1175,18 @@ class UserControlSystem:
             )
 
         name = args["name"]
-        description = args.get("description", f"Profile saved on {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')}")
+        description = args.get(
+            "description",
+            f"Profile saved on {datetime.now(UTC).strftime('%Y-%m-%d %H:%M')}",
+        )
         tags = args.get("tags", "").split(",") if args.get("tags") else []
 
         return self.profile_manager.save_session_profile(
-            name, description, self.current_session.active_categories,
-            self.current_session.performance_mode, tags,
+            name,
+            description,
+            self.current_session.active_categories,
+            self.current_session.performance_mode,
+            tags,
         )
 
     async def load_session_profile(self, args: dict[str, Any], flags: list[str]) -> CommandResult:
@@ -1233,7 +1263,7 @@ class UserControlSystem:
                 "session_id": self.current_session.session_id,
                 "user_level": self.current_session.user_level,
                 "performance_mode": self.current_session.performance_mode,
-                "uptime_minutes": (datetime.now(timezone.utc) - self.current_session.created_at).total_seconds() / 60,
+                "uptime_minutes": (datetime.now(UTC) - self.current_session.created_at).total_seconds() / 60,
             },
             "command_usage": dict(self.usage_analytics["commands_executed"]),
             "category_usage": dict(self.usage_analytics["categories_used"]),
@@ -1272,6 +1302,7 @@ class UserControlSystem:
 
 # Example usage and testing
 if __name__ == "__main__":
+
     async def main() -> None:
         # Initialize system components
         detection_system = TaskDetectionSystem()
@@ -1292,10 +1323,8 @@ if __name__ == "__main__":
             "/help load-category",
         ]
 
-
         for command in test_commands:
             result = await control_system.execute_command(command)
-
 
             if result.data:
                 pass

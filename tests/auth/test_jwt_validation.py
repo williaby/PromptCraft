@@ -25,6 +25,7 @@ class TestJWTValidator:
     def auth_config(self):
         """Authentication configuration for testing."""
         from src.auth.config import AuthenticationConfig
+
         return AuthenticationConfig(
             cloudflare_access_enabled=True,
             cloudflare_team_domain="test-team",

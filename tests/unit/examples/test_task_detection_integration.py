@@ -12,11 +12,9 @@ Tests all functionality including:
 - Main function integration
 """
 
-import asyncio
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
-from typing import Any
 
 import pytest
 
@@ -56,12 +54,20 @@ class TestFunctionDefinition:
     def test_dataclass_equality(self):
         """Test that two identical FunctionDefinitions are equal."""
         func_def1 = FunctionDefinition(
-            name="Test", category="test", tier=1,
-            description="Test", token_cost=100, parameters={}
+            name="Test",
+            category="test",
+            tier=1,
+            description="Test",
+            token_cost=100,
+            parameters={},
         )
         func_def2 = FunctionDefinition(
-            name="Test", category="test", tier=1,
-            description="Test", token_cost=100, parameters={}
+            name="Test",
+            category="test",
+            tier=1,
+            description="Test",
+            token_cost=100,
+            parameters={},
         )
 
         assert func_def1 == func_def2
@@ -69,12 +75,20 @@ class TestFunctionDefinition:
     def test_dataclass_inequality(self):
         """Test that FunctionDefinitions with different values are not equal."""
         func_def1 = FunctionDefinition(
-            name="Test1", category="test", tier=1,
-            description="Test", token_cost=100, parameters={}
+            name="Test1",
+            category="test",
+            tier=1,
+            description="Test",
+            token_cost=100,
+            parameters={},
         )
         func_def2 = FunctionDefinition(
-            name="Test2", category="test", tier=1,
-            description="Test", token_cost=100, parameters={}
+            name="Test2",
+            category="test",
+            tier=1,
+            description="Test",
+            token_cost=100,
+            parameters={},
         )
 
         assert func_def1 != func_def2
@@ -104,12 +118,20 @@ class TestLoadingStats:
     def test_dataclass_features(self):
         """Test that LoadingStats behaves as a proper dataclass."""
         stats1 = LoadingStats(
-            total_functions=100, loaded_functions=30, total_tokens=10000,
-            loaded_tokens=3000, detection_time_ms=25.5, token_savings_percent=70.0
+            total_functions=100,
+            loaded_functions=30,
+            total_tokens=10000,
+            loaded_tokens=3000,
+            detection_time_ms=25.5,
+            token_savings_percent=70.0,
         )
         stats2 = LoadingStats(
-            total_functions=100, loaded_functions=30, total_tokens=10000,
-            loaded_tokens=3000, detection_time_ms=25.5, token_savings_percent=70.0
+            total_functions=100,
+            loaded_functions=30,
+            total_tokens=10000,
+            loaded_tokens=3000,
+            detection_time_ms=25.5,
+            token_savings_percent=70.0,
         )
 
         assert stats1 == stats2
@@ -319,7 +341,7 @@ class TestIntelligentFunctionLoader:
         # Mock Path.cwd() and path operations
         mock_cwd = Mock()
         mock_cwd.return_value = Path("/test/project")
-        
+
         with patch("examples.task_detection_integration.Path.cwd", mock_cwd):
             with patch("examples.task_detection_integration.TaskDetectionSystem"):
                 with patch("examples.task_detection_integration.ConfigManager"):
@@ -331,7 +353,7 @@ class TestIntelligentFunctionLoader:
                         mock_path_instance = Mock()
                         mock_path_instance.exists.return_value = True
                         mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
-                        
+
                         # Mock file discovery
                         mock_files = [
                             Mock(is_file=lambda: True, suffix=".py"),
@@ -339,7 +361,7 @@ class TestIntelligentFunctionLoader:
                             Mock(is_file=lambda: True, suffix=".md"),
                         ]
                         mock_path_instance.rglob.return_value = mock_files
-                        
+
                         # Configure the Path class to return our mock instance
                         mock_path_class.return_value = mock_path_instance
                         mock_path_class.cwd.return_value = mock_path_instance
@@ -356,8 +378,11 @@ class TestIntelligentFunctionLoader:
 
                         # Check that all the boolean indicators are added
                         expected_indicators = [
-                            "has_git_repo", "has_test_directories", "has_security_files",
-                            "has_ci_files", "has_docs"
+                            "has_git_repo",
+                            "has_test_directories",
+                            "has_security_files",
+                            "has_ci_files",
+                            "has_docs",
                         ]
                         for indicator in expected_indicators:
                             assert indicator in enhanced
@@ -382,7 +407,7 @@ class TestIntelligentFunctionLoader:
 
                 # Check that functions were loaded for enabled categories
                 assert len(loaded_functions) > 0
-                
+
                 # Check that only enabled categories are represented
                 loaded_categories = {func.category for func in loaded_functions}
                 assert "core" in loaded_categories
@@ -397,7 +422,7 @@ class TestIntelligentFunctionLoader:
 
                 # Create sample functions
                 functions = loader.function_registry.get_functions_by_category("core")[:3]
-                
+
                 detection_result = DetectionResult(
                     categories={"core": True},
                     confidence_scores={"core": 0.9},
@@ -424,8 +449,12 @@ class TestIntelligentFunctionLoader:
 
                 # Create sample stats
                 stats = LoadingStats(
-                    total_functions=100, loaded_functions=30, total_tokens=10000,
-                    loaded_tokens=3000, detection_time_ms=25.0, token_savings_percent=70.0
+                    total_functions=100,
+                    loaded_functions=30,
+                    total_tokens=10000,
+                    loaded_tokens=3000,
+                    detection_time_ms=25.0,
+                    token_savings_percent=70.0,
                 )
 
                 # Record decision
@@ -444,8 +473,12 @@ class TestIntelligentFunctionLoader:
                 # Fill history beyond limit
                 for i in range(1050):  # More than 1000
                     stats = LoadingStats(
-                        total_functions=100, loaded_functions=30, total_tokens=10000,
-                        loaded_tokens=3000, detection_time_ms=25.0, token_savings_percent=70.0
+                        total_functions=100,
+                        loaded_functions=30,
+                        total_tokens=10000,
+                        loaded_tokens=3000,
+                        detection_time_ms=25.0,
+                        token_savings_percent=70.0,
                     )
                     loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
 
@@ -475,8 +508,12 @@ class TestIntelligentFunctionLoader:
                 # Add some history
                 for i in range(10):
                     stats = LoadingStats(
-                        total_functions=100, loaded_functions=30, total_tokens=10000,
-                        loaded_tokens=3000, detection_time_ms=25.0 + i, token_savings_percent=70.0 + i
+                        total_functions=100,
+                        loaded_functions=30,
+                        total_tokens=10000,
+                        loaded_tokens=3000,
+                        detection_time_ms=25.0 + i,
+                        token_savings_percent=70.0 + i,
                     )
                     loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
 
@@ -528,7 +565,7 @@ class TestTaskDetectionDemo:
         mock_loader_class.return_value = mock_loader
 
         demo = TaskDetectionDemo()
-        
+
         # Should run without exceptions
         await demo.run_demo_scenarios()
 
@@ -560,7 +597,7 @@ class TestAccuracyValidator:
         """Test accuracy validation functionality."""
         # Mock the loader to return predictable results
         mock_loader = Mock()
-        
+
         # Create mock results that match expected categories perfectly
         def mock_load_function(query, context):
             # Return perfect matches for testing
@@ -649,7 +686,7 @@ class TestIntegrationScenarios:
         loader = IntelligentFunctionLoader("production")
         result = await loader.load_functions_for_query(
             "git commit my changes",
-            {"has_git_repo": True, "file_extensions": [".py"]}
+            {"has_git_repo": True, "file_extensions": [".py"]},
         )
 
         # Validate result structure
@@ -678,7 +715,7 @@ class TestIntegrationScenarios:
         """Test context enhancement with realistic scenarios."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             # Create realistic project structure
             (temp_path / ".git").mkdir()
             (temp_path / "tests").mkdir()
@@ -799,6 +836,7 @@ class TestPerformanceCharacteristics:
 
         # Test that registry creation is fast
         import time
+
         start_time = time.time()
         new_registry = FunctionRegistry()
         creation_time = time.time() - start_time
@@ -829,14 +867,14 @@ class TestMainFunction:
         mock_demo_class.return_value = mock_demo
 
         mock_validator = Mock()
-        mock_validator.validate_accuracy = AsyncMock(return_value={
-            "precision": 0.9, "recall": 0.85, "f1_score": 0.87
-        })
+        mock_validator.validate_accuracy = AsyncMock(return_value={"precision": 0.9, "recall": 0.85, "f1_score": 0.87})
         mock_validator_class.return_value = mock_validator
 
         # Mock config manager
         mock_config_manager.return_value.list_configs.return_value = [
-            "development", "production", "performance_critical"
+            "development",
+            "production",
+            "performance_critical",
         ]
         mock_config_manager.return_value.get_config.return_value = Mock()
 
@@ -867,7 +905,7 @@ class TestSecurityAndSafety:
     def test_function_definition_immutability(self):
         """Test that function definitions are safe from modification."""
         registry = FunctionRegistry()
-        
+
         # Get a function definition
         bash_func = registry.functions["bash"]
         original_cost = bash_func.token_cost
@@ -916,12 +954,12 @@ class TestSecurityAndSafety:
         context_used = result["context_used"]
         assert "user_input" in context_used
         # The system should not execute or interpret these values
-        
+
     async def test_path_traversal_protection(self):
         """Test protection against path traversal in context enhancement."""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             with patch("examples.task_detection_integration.Path.cwd", return_value=temp_path):
                 with patch("examples.task_detection_integration.TaskDetectionSystem"):
                     with patch("examples.task_detection_integration.ConfigManager"):

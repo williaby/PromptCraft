@@ -28,7 +28,7 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import timezone, datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -127,7 +127,7 @@ class IntegrationMetrics:
     # System health metrics
     error_count: int = 0
     warning_count: int = 0
-    uptime_start: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    uptime_start: datetime = field(default_factory=lambda: datetime.now(UTC))
     last_health_check: datetime | None = None
 
     @property
@@ -155,7 +155,7 @@ class IntegrationMetrics:
     @property
     def uptime_hours(self) -> float:
         """Calculate system uptime in hours."""
-        return (datetime.now(timezone.utc) - self.uptime_start).total_seconds() / 3600.0
+        return (datetime.now(UTC) - self.uptime_start).total_seconds() / 3600.0
 
     def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary for monitoring/logging."""
@@ -674,9 +674,14 @@ class DynamicLoadingIntegration:
             cached_result = self._optimization_cache[cache_key]
 
             # Check if cache entry is still valid (TTL)
-            cache_age = time.time() - (cached_result.total_time_ms / 1000)  # Approximate cache time
+            cache_age = time.time() - getattr(cached_result, "_cached_at", time.time() - self._cache_ttl_seconds + 1)
             if cache_age < self._cache_ttl_seconds:
-                return cached_result
+                # Create a copy and ensure cache_hit is set
+                import copy
+
+                cached_copy = copy.deepcopy(cached_result)
+                cached_copy.cache_hit = True
+                return cached_copy
             # Remove expired entry
             del self._optimization_cache[cache_key]
 
@@ -692,6 +697,8 @@ class DynamicLoadingIntegration:
             oldest_key = next(iter(self._optimization_cache))
             del self._optimization_cache[oldest_key]
 
+        # Store timestamp for TTL tracking
+        result._cached_at = time.time()
         self._optimization_cache[cache_key] = result
 
     def _update_metrics(self, result: ProcessingResult) -> None:
@@ -781,7 +788,7 @@ class DynamicLoadingIntegration:
                     health_issues.append(f"Hybrid router health check error: {e}")
 
             # Determine health status
-            self.metrics.last_health_check = datetime.now(timezone.utc)
+            self.metrics.last_health_check = datetime.now(UTC)
 
             if not health_issues:
                 return IntegrationHealth.HEALTHY
@@ -903,7 +910,7 @@ class DynamicLoadingIntegration:
         return {
             "integration_report": integration_report,
             "optimization_monitor_report": monitor_report,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     async def shutdown(self) -> None:

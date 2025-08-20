@@ -13,21 +13,15 @@ This module tests all endpoints in src/api/dynamic_loading_endpoints.py includin
 """
 
 import json
-import pytest
-from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
-from io import BytesIO
 
+import pytest
 from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.testclient import TestClient
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.requests import Request
-from starlette.datastructures import Headers, QueryParams
-from starlette.types import Scope, Receive, Send
 
 # Import the module for coverage
-import src.api.dynamic_loading_endpoints as dynamic_loading_endpoints
 
 
 def create_starlette_request(method="POST", path="/test"):
@@ -45,23 +39,23 @@ def create_starlette_request(method="POST", path="/test"):
 
 
 from src.api.dynamic_loading_endpoints import (
-    router,
+    DemoRunRequest,
+    PerformanceReportResponse,
     QueryOptimizationRequest,
     QueryOptimizationResponse,
     SystemStatusResponse,
-    PerformanceReportResponse,
     UserCommandRequest,
     UserCommandResponse,
-    DemoRunRequest,
-    get_integration_dependency,
-    optimize_query,
-    get_system_status,
-    get_performance_report,
-    execute_user_command,
-    run_comprehensive_demo,
-    get_live_metrics,
-    get_function_registry_stats,
     dynamic_loading_health_check,
+    execute_user_command,
+    get_function_registry_stats,
+    get_integration_dependency,
+    get_live_metrics,
+    get_performance_report,
+    get_system_status,
+    optimize_query,
+    router,
+    run_comprehensive_demo,
 )
 from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import DynamicLoadingIntegration, IntegrationMode
@@ -78,7 +72,7 @@ class TestQueryOptimizationRequest:
             strategy="balanced",
             user_commands=["/help", "/status"],
         )
-        
+
         assert request.query == "test query"
         assert request.user_id == "test_user"
         assert request.strategy == "balanced"
@@ -87,7 +81,7 @@ class TestQueryOptimizationRequest:
     def test_default_values(self):
         """Test request with default values."""
         request = QueryOptimizationRequest(query="minimal query")
-        
+
         assert request.query == "minimal query"
         assert request.user_id == "api_user"
         assert request.strategy == "balanced"
@@ -103,7 +97,7 @@ class TestQueryOptimizationRequest:
         """Test invalid strategy validation."""
         with pytest.raises(ValidationError) as exc_info:
             QueryOptimizationRequest(query="test", strategy="invalid")
-        
+
         error = exc_info.value.errors()[0]
         assert "Strategy must be one of" in error["msg"]
 
@@ -117,7 +111,7 @@ class TestQueryOptimizationRequest:
         # Test minimum length
         with pytest.raises(ValidationError):
             QueryOptimizationRequest(query="")
-        
+
         # Test maximum length
         long_query = "x" * 2001
         with pytest.raises(ValidationError):
@@ -136,7 +130,7 @@ class TestQueryOptimizationRequest:
         commands = [f"/cmd{i}" for i in range(11)]
         with pytest.raises(ValidationError) as exc_info:
             QueryOptimizationRequest(query="test", user_commands=commands)
-        
+
         error = exc_info.value.errors()[0]
         assert "Maximum 10 user commands allowed" in error["msg"]
 
@@ -144,7 +138,7 @@ class TestQueryOptimizationRequest:
         """Test user commands validation with invalid format."""
         with pytest.raises(ValidationError) as exc_info:
             QueryOptimizationRequest(query="test", user_commands=["help", "/status"])
-        
+
         error = exc_info.value.errors()[0]
         assert "User commands must start with '/'" in error["msg"]
 
@@ -159,7 +153,7 @@ class TestUserCommandRequest:
             session_id="session123",
             user_id="test_user",
         )
-        
+
         assert request.command == "/help"
         assert request.session_id == "session123"
         assert request.user_id == "test_user"
@@ -173,7 +167,7 @@ class TestUserCommandRequest:
         """Test invalid command validation."""
         with pytest.raises(ValidationError) as exc_info:
             UserCommandRequest(command="help")
-        
+
         error = exc_info.value.errors()[0]
         assert "Commands must start with '/'" in error["msg"]
 
@@ -194,14 +188,14 @@ class TestDemoRunRequest:
             scenario_types=["basic_optimization", "performance_stress"],
             export_results=True,
         )
-        
+
         assert request.scenario_types == ["basic_optimization", "performance_stress"]
         assert request.export_results is True
 
     def test_default_values(self):
         """Test request with default values."""
         request = DemoRunRequest()
-        
+
         assert request.scenario_types is None
         assert request.export_results is False
 
@@ -222,7 +216,7 @@ class TestDemoRunRequest:
         """Test invalid scenario types validation."""
         with pytest.raises(ValidationError) as exc_info:
             DemoRunRequest(scenario_types=["invalid_scenario"])
-        
+
         error = exc_info.value.errors()[0]
         assert "Invalid scenario type" in error["msg"]
 
@@ -240,7 +234,7 @@ class TestResponseModels:
             user_commands_executed=2,
             error_message=None,
         )
-        
+
         assert response.success is True
         assert response.session_id == "session123"
         assert response.processing_time_ms == 150.5
@@ -258,7 +252,7 @@ class TestResponseModels:
             features={"optimization": True},
             uptime_hours=24.5,
         )
-        
+
         assert response.integration_health == "healthy"
         assert response.mode == "production"
         assert response.metrics == {"uptime": 24.5}
@@ -275,7 +269,7 @@ class TestResponseModels:
             data={"result": "success"},
             suggestions=["Try /status"],
         )
-        
+
         assert response.success is True
         assert response.message == "Command executed successfully"
         assert response.command == "/help"
@@ -291,9 +285,9 @@ class TestIntegrationDependency:
         """Test successful integration dependency resolution."""
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_get_instance.return_value = mock_integration
-        
+
         result = await get_integration_dependency()
-        
+
         assert result == mock_integration
         mock_get_instance.assert_called_once_with(mode=IntegrationMode.PRODUCTION)
 
@@ -301,10 +295,10 @@ class TestIntegrationDependency:
     async def test_get_integration_dependency_failure(self, mock_get_instance):
         """Test integration dependency failure."""
         mock_get_instance.side_effect = Exception("Integration unavailable")
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_integration_dependency()
-        
+
         assert exc_info.value.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
         assert "Dynamic loading system unavailable" in exc_info.value.detail
 
@@ -332,14 +326,14 @@ class TestOptimizeQueryEndpoint:
         mock_result.fallback_used = False
         mock_result.user_commands = ["/help"]
         mock_result.error_message = None
-        
+
         # Mock detection result
         mock_detection = Mock()
         mock_detection.categories = {"core": True}
         mock_detection.confidence = 0.95
         mock_detection.reasoning = "High confidence"
         mock_result.detection_result = mock_detection
-        
+
         return mock_result
 
     @patch("src.api.dynamic_loading_endpoints.audit_logger_instance")
@@ -352,17 +346,17 @@ class TestOptimizeQueryEndpoint:
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_result = self.create_mock_integration_result()
         mock_integration.process_query = AsyncMock(return_value=mock_result)
-        
+
         query_request = QueryOptimizationRequest(
             query="test query",
             user_id="test_user",
             strategy="balanced",
             user_commands=["/help"],
         )
-        
+
         # Execute endpoint
         response = await optimize_query(mock_request, query_request, mock_integration)
-        
+
         # Verify response
         assert response.success is True
         assert response.session_id == "session123"
@@ -373,7 +367,7 @@ class TestOptimizeQueryEndpoint:
         assert response.optimization_results["target_achieved"] is True
         assert response.user_commands_executed == 1
         assert response.error_message is None
-        
+
         # Verify integration was called correctly
         mock_integration.process_query.assert_called_once_with(
             query="test query",
@@ -381,7 +375,7 @@ class TestOptimizeQueryEndpoint:
             strategy=LoadingStrategy.BALANCED,
             user_commands=["/help"],
         )
-        
+
         # Verify audit logging
         mock_audit_logger.log_api_event.assert_called_once()
 
@@ -393,15 +387,15 @@ class TestOptimizeQueryEndpoint:
         mock_request = self.create_mock_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.process_query = AsyncMock(side_effect=Exception("Integration error"))
-        
+
         query_request = QueryOptimizationRequest(query="test query")
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await optimize_query(mock_request, query_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Query optimization failed" in exc_info.value.detail
-        
+
         # Verify error was logged
         mock_audit_logger.log_api_event.assert_called_once()
 
@@ -411,21 +405,21 @@ class TestOptimizeQueryEndpoint:
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_result = self.create_mock_integration_result()
         mock_integration.process_query = AsyncMock(return_value=mock_result)
-        
+
         # Test all valid strategies
         strategies = {
             "conservative": LoadingStrategy.CONSERVATIVE,
             "balanced": LoadingStrategy.BALANCED,
             "aggressive": LoadingStrategy.AGGRESSIVE,
         }
-        
+
         for strategy_str, strategy_enum in strategies.items():
             query_request = QueryOptimizationRequest(query="test", strategy=strategy_str)
-            
+
             with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.1]):
                 with patch("src.api.dynamic_loading_endpoints.audit_logger_instance"):
                     await optimize_query(mock_request, query_request, mock_integration)
-            
+
             # Verify correct strategy was passed
             calls = mock_integration.process_query.call_args_list
             assert calls[-1][1]["strategy"] == strategy_enum
@@ -442,7 +436,7 @@ class TestSystemStatusEndpoint:
         """Test successful system status retrieval."""
         mock_request = self.create_mock_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         status_data = {
             "integration_health": "healthy",
             "mode": "production",
@@ -451,16 +445,16 @@ class TestSystemStatusEndpoint:
             "features": {"optimization": True, "caching": True},
         }
         mock_integration.get_system_status = AsyncMock(return_value=status_data)
-        
+
         response = await get_system_status(mock_request, mock_integration)
-        
+
         assert response.integration_health == "healthy"
         assert response.mode == "production"
         assert response.metrics == {"uptime_hours": 24.5, "queries": 100}
         assert response.components == {"loader": True, "detector": True}
         assert response.features == {"optimization": True, "caching": True}
         assert response.uptime_hours == 24.5
-        
+
         mock_integration.get_system_status.assert_called_once()
 
     async def test_get_system_status_failure(self):
@@ -468,10 +462,10 @@ class TestSystemStatusEndpoint:
         mock_request = self.create_mock_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.get_system_status = AsyncMock(side_effect=Exception("Status error"))
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_system_status(mock_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to retrieve system status" in exc_info.value.detail
 
@@ -483,7 +477,7 @@ class TestPerformanceReportEndpoint:
         """Test successful performance report retrieval."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         report_data = {
             "timestamp": "2024-01-01T12:00:00Z",
             "integration_report": {
@@ -494,9 +488,9 @@ class TestPerformanceReportEndpoint:
             },
         }
         mock_integration.get_performance_report = AsyncMock(return_value=report_data)
-        
+
         response = await get_performance_report(mock_request, mock_integration)
-        
+
         assert response.report_timestamp == "2024-01-01T12:00:00Z"
         assert response.integration_metrics == {"queries_processed": 1000}
         assert response.performance_summary == {"avg_time": 150.5}
@@ -508,10 +502,10 @@ class TestPerformanceReportEndpoint:
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.get_performance_report = AsyncMock(side_effect=Exception("Report error"))
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_performance_report(mock_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to retrieve performance report" in exc_info.value.detail
 
@@ -524,36 +518,36 @@ class TestUserCommandEndpoint:
         """Test successful user command execution."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         command_result = Mock()
         command_result.success = True
         command_result.message = "Command executed successfully"
         command_result.data = {"result": "success"}
         command_result.suggestions = ["Try /status"]
-        
+
         mock_integration.execute_user_command = AsyncMock(return_value=command_result)
-        
+
         command_request = UserCommandRequest(
             command="/help",
             session_id="session123",
             user_id="test_user",
         )
-        
+
         response = await execute_user_command(mock_request, command_request, mock_integration)
-        
+
         assert response.success is True
         assert response.message == "Command executed successfully"
         assert response.command == "/help"
         assert response.data == {"result": "success"}
         assert response.suggestions == ["Try /status"]
-        
+
         # Verify integration was called correctly
         mock_integration.execute_user_command.assert_called_once_with(
             command="/help",
             session_id="session123",
             user_id="test_user",
         )
-        
+
         # Verify audit logging
         mock_audit_logger.log_api_event.assert_called_once()
 
@@ -562,12 +556,12 @@ class TestUserCommandEndpoint:
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.execute_user_command = AsyncMock(side_effect=Exception("Command error"))
-        
+
         command_request = UserCommandRequest(command="/help")
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await execute_user_command(mock_request, command_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Command execution failed" in exc_info.value.detail
 
@@ -581,11 +575,11 @@ class TestComprehensiveDemoEndpoint:
         """Test successful demo run with exported results."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         # Setup demo mock
         mock_demo = Mock()
         mock_demo.initialize = AsyncMock(return_value=True)
-        
+
         demo_results = {
             "demo_metadata": {"total_scenarios": 5, "total_time_seconds": 120.5},
             "performance_summary": {
@@ -605,23 +599,23 @@ class TestComprehensiveDemoEndpoint:
         }
         mock_demo.run_comprehensive_demo = AsyncMock(return_value=demo_results)
         mock_demo_class.return_value = mock_demo
-        
+
         demo_request = DemoRunRequest(export_results=True)
-        
+
         response = await run_comprehensive_demo(mock_request, demo_request, mock_integration)
-        
+
         # Verify response is JSONResponse with full results
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
         assert response_data == demo_results
-        
+
         # Verify demo was initialized and run
         mock_demo.initialize.assert_called_once()
         mock_demo.run_comprehensive_demo.assert_called_once()
-        
+
         # Verify audit logging
         mock_audit_logger.log_api_event.assert_called_once()
 
@@ -631,11 +625,11 @@ class TestComprehensiveDemoEndpoint:
         """Test successful demo run with summary only."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         # Setup demo mock
         mock_demo = Mock()
         mock_demo.initialize = AsyncMock(return_value=True)
-        
+
         demo_results = {
             "demo_metadata": {"total_scenarios": 3, "total_time_seconds": 60.0},
             "performance_summary": {
@@ -655,20 +649,20 @@ class TestComprehensiveDemoEndpoint:
         }
         mock_demo.run_comprehensive_demo = AsyncMock(return_value=demo_results)
         mock_demo_class.return_value = mock_demo
-        
+
         demo_request = DemoRunRequest(export_results=False)
-        
+
         response = await run_comprehensive_demo(mock_request, demo_request, mock_integration)
-        
+
         # Verify response is JSONResponse with summary only
         assert isinstance(response, JSONResponse)
-        
+
         # Parse response content and verify it's a summary
         response_data = json.loads(response.body.decode())
         assert "demo_summary" in response_data
         assert "key_achievements" in response_data
         assert "deployment_recommendation" in response_data
-        
+
         # Verify summary contains expected data
         demo_summary = response_data["demo_summary"]
         assert demo_summary["total_scenarios"] == 3
@@ -680,16 +674,16 @@ class TestComprehensiveDemoEndpoint:
         """Test demo run with initialization failure."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         mock_demo = Mock()
         mock_demo.initialize = AsyncMock(return_value=False)
         mock_demo_class.return_value = mock_demo
-        
+
         demo_request = DemoRunRequest()
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await run_comprehensive_demo(mock_request, demo_request, mock_integration)
-        
+
         # The inner 503 exception gets caught and re-raised as 500 by the generic handler
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Demo execution failed" in str(exc_info.value.detail)
@@ -699,17 +693,17 @@ class TestComprehensiveDemoEndpoint:
         """Test demo run with execution failure."""
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         mock_demo = Mock()
         mock_demo.initialize = AsyncMock(return_value=True)
         mock_demo.run_comprehensive_demo = AsyncMock(side_effect=Exception("Demo execution error"))
         mock_demo_class.return_value = mock_demo
-        
+
         demo_request = DemoRunRequest()
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await run_comprehensive_demo(mock_request, demo_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Demo execution failed" in exc_info.value.detail
 
@@ -721,10 +715,10 @@ class TestLiveMetricsEndpoint:
     async def test_get_live_metrics_success(self, mock_datetime):
         """Test successful live metrics retrieval."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         status_data = {
             "integration_health": "healthy",
             "metrics": {
@@ -745,18 +739,18 @@ class TestLiveMetricsEndpoint:
             "active_sessions": 15,
         }
         mock_integration.get_system_status = AsyncMock(return_value=status_data)
-        
+
         response = await get_live_metrics(mock_request, mock_integration)
-        
+
         # Verify response is JSONResponse
         assert isinstance(response, JSONResponse)
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
-        
+
         assert response_data["timestamp"] == "2024-01-01T12:00:00"
         assert response_data["health_status"] == "healthy"
-        
+
         # Verify performance metrics
         performance = response_data["performance"]
         assert performance["queries_processed"] == 1000
@@ -765,14 +759,14 @@ class TestLiveMetricsEndpoint:
         assert performance["target_achievement_rate"] == 0.88
         assert performance["average_processing_time_ms"] == 150.0
         assert performance["cache_hit_rate"] == 0.75
-        
+
         # Verify system metrics
         system = response_data["system"]
         assert system["uptime_hours"] == 24.5
         assert system["error_count"] == 5
         assert system["warning_count"] == 2
         assert system["active_sessions"] == 15
-        
+
         # Verify optimization metrics
         optimization = response_data["optimization"]
         assert optimization["successful_optimizations"] == 950
@@ -785,10 +779,10 @@ class TestLiveMetricsEndpoint:
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.get_system_status = AsyncMock(side_effect=Exception("Metrics error"))
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_live_metrics(mock_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to retrieve live metrics" in exc_info.value.detail
 
@@ -800,35 +794,36 @@ class TestFunctionRegistryStatsEndpoint:
     async def test_get_function_registry_stats_success(self, mock_datetime):
         """Test successful function registry stats retrieval."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
-        
+
         # Setup function loader mock
         mock_function_loader = Mock()
         mock_integration.function_loader = mock_function_loader
-        
+
         # Setup registry mock
         mock_registry = Mock()
         mock_function_loader.function_registry = mock_registry
-        
+
         # Mock tier data
         from enum import Enum
+
         class MockLoadingTier(Enum):
             TIER_1 = "tier_1"
             TIER_2 = "tier_2"
-        
+
         mock_tier1 = MockLoadingTier.TIER_1
         mock_tier2 = MockLoadingTier.TIER_2
         mock_registry.tiers = [mock_tier1, mock_tier2]
-        
+
         # Mock tier functions and costs
         mock_registry.get_functions_by_tier.side_effect = [
             ["func1", "func2", "func3", "func4", "func5", "func6"],  # tier_1
             ["func7", "func8"],  # tier_2
         ]
         mock_registry.get_tier_token_cost.side_effect = [500, 200]  # costs
-        
+
         # Mock category data
         mock_registry.categories = ["core", "utils", "advanced"]
         mock_registry.get_functions_by_category.side_effect = [
@@ -841,19 +836,19 @@ class TestFunctionRegistryStatsEndpoint:
             (100, {}),  # utils
             (250, {}),  # advanced
         ]
-        
+
         # Mock registry summary
         mock_registry.functions = ["func1", "func2", "func3", "func4", "func5", "func6", "func7", "func8"]
         mock_registry.get_baseline_token_cost.return_value = 1000
-        
+
         response = await get_function_registry_stats(mock_request, mock_integration)
-        
+
         # Verify response is JSONResponse
         assert isinstance(response, JSONResponse)
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
-        
+
         # Verify registry summary
         summary = response_data["registry_summary"]
         assert summary["total_functions"] == 8
@@ -861,29 +856,29 @@ class TestFunctionRegistryStatsEndpoint:
         assert summary["total_tiers"] == 2
         assert summary["baseline_token_cost"] == 1000
         assert summary["last_updated"] == "2024-01-01T12:00:00"
-        
+
         # Verify tier breakdown
         tier_breakdown = response_data["tier_breakdown"]
         assert "tier_1" in tier_breakdown
         assert "tier_2" in tier_breakdown
-        
+
         tier1_data = tier_breakdown["tier_1"]
         assert tier1_data["name"] == "tier_1"
         assert tier1_data["function_count"] == 6
         assert tier1_data["token_cost"] == 500
         assert len(tier1_data["sample_functions"]) == 5  # First 5 functions
-        
+
         # Verify category breakdown
         category_breakdown = response_data["category_breakdown"]
         assert "core" in category_breakdown
         assert "utils" in category_breakdown
         assert "advanced" in category_breakdown
-        
+
         core_data = category_breakdown["core"]
         assert core_data["function_count"] == 2
         assert core_data["token_cost"] == 300
         assert len(core_data["sample_functions"]) == 2  # First 3 functions (but only 2 exist)
-        
+
         # Verify optimization potential
         optimization = response_data["optimization_potential"]
         assert "max_possible_reduction" in optimization
@@ -895,10 +890,10 @@ class TestFunctionRegistryStatsEndpoint:
         mock_request = create_starlette_request()
         mock_integration = Mock(spec=DynamicLoadingIntegration)
         mock_integration.function_loader = None
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_function_registry_stats(mock_request, mock_integration)
-        
+
         # The inner 503 exception gets caught and re-raised as 500 by the generic handler
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to retrieve function registry statistics" in str(exc_info.value.detail)
@@ -910,10 +905,10 @@ class TestFunctionRegistryStatsEndpoint:
         mock_integration.function_loader = Mock()
         mock_integration.function_loader.function_registry = Mock()
         mock_integration.function_loader.function_registry.tiers = Mock(side_effect=Exception("Registry error"))
-        
+
         with pytest.raises(HTTPException) as exc_info:
             await get_function_registry_stats(mock_request, mock_integration)
-        
+
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to retrieve function registry statistics" in exc_info.value.detail
 
@@ -926,10 +921,10 @@ class TestHealthCheckEndpoint:
     async def test_health_check_healthy_status(self, mock_datetime, mock_get_instance):
         """Test health check with healthy status."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_integration = Mock()
-        
+
         status_data = {
             "integration_health": "healthy",
             "metrics": {
@@ -940,23 +935,23 @@ class TestHealthCheckEndpoint:
         }
         mock_integration.get_system_status = AsyncMock(return_value=status_data)
         mock_get_instance.return_value = mock_integration
-        
+
         response = await dynamic_loading_health_check(mock_request)
-        
+
         # Verify response is JSONResponse with 200 status
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
-        
+
         assert response_data["status"] == "healthy"
         assert response_data["service"] == "dynamic-function-loading"
         assert response_data["uptime_hours"] == 24.5
         assert response_data["queries_processed"] == 1000
         assert response_data["success_rate"] == 0.95
         assert response_data["timestamp"] == "2024-01-01T12:00:00"
-        
+
         mock_get_instance.assert_called_once_with(mode=IntegrationMode.PRODUCTION)
 
     @patch("src.api.dynamic_loading_endpoints.get_integration_instance")
@@ -964,10 +959,10 @@ class TestHealthCheckEndpoint:
     async def test_health_check_degraded_status(self, mock_datetime, mock_get_instance):
         """Test health check with degraded status."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_integration = Mock()
-        
+
         status_data = {
             "integration_health": "degraded",
             "metrics": {
@@ -978,13 +973,13 @@ class TestHealthCheckEndpoint:
         }
         mock_integration.get_system_status = AsyncMock(return_value=status_data)
         mock_get_instance.return_value = mock_integration
-        
+
         response = await dynamic_loading_health_check(mock_request)
-        
+
         # Verify response is JSONResponse with 200 status (degraded is still acceptable)
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_200_OK
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
         assert response_data["status"] == "degraded"
@@ -994,23 +989,23 @@ class TestHealthCheckEndpoint:
     async def test_health_check_unhealthy_status(self, mock_datetime, mock_get_instance):
         """Test health check with unhealthy status."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_integration = Mock()
-        
+
         status_data = {
             "integration_health": "unhealthy",
             "metrics": {"uptime_hours": 0.1},
         }
         mock_integration.get_system_status = AsyncMock(return_value=status_data)
         mock_get_instance.return_value = mock_integration
-        
+
         response = await dynamic_loading_health_check(mock_request)
-        
+
         # Verify response is JSONResponse with 503 status
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
         assert response_data["status"] == "unhealthy"
@@ -1021,16 +1016,16 @@ class TestHealthCheckEndpoint:
     async def test_health_check_exception(self, mock_datetime, mock_get_instance):
         """Test health check with exception."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-01T12:00:00"
-        
+
         mock_request = create_starlette_request()
         mock_get_instance.side_effect = Exception("Integration unavailable")
-        
+
         response = await dynamic_loading_health_check(mock_request)
-        
+
         # Verify response is JSONResponse with 503 status
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
-        
+
         # Parse response content
         response_data = json.loads(response.body.decode())
         assert response_data["status"] == "failed"
@@ -1050,13 +1045,13 @@ class TestEndpointIntegration:
         """Test that all endpoints have rate limiting decorators."""
         # This test verifies that rate limiting is applied by checking the function decorators
         # In a real application, you would test the actual rate limiting behavior
-        
+
         # Get all route handlers from the router
-        routes = [route for route in router.routes if hasattr(route, 'endpoint')]
-        
+        routes = [route for route in router.routes if hasattr(route, "endpoint")]
+
         # Verify we have the expected number of endpoints
         assert len(routes) >= 8  # We have 8 main endpoints
-        
+
         # Note: In practice, you would need to test actual rate limiting behavior
         # by making multiple requests and verifying rate limit responses
         # This would require integration testing with the actual FastAPI app
@@ -1064,19 +1059,19 @@ class TestEndpointIntegration:
     def test_response_models_are_correctly_typed(self):
         """Test that response models have correct type annotations."""
         # Verify key response models exist and have expected fields
-        assert hasattr(QueryOptimizationResponse, '__annotations__')
-        assert hasattr(SystemStatusResponse, '__annotations__')
-        assert hasattr(PerformanceReportResponse, '__annotations__')
-        assert hasattr(UserCommandResponse, '__annotations__')
-        
+        assert hasattr(QueryOptimizationResponse, "__annotations__")
+        assert hasattr(SystemStatusResponse, "__annotations__")
+        assert hasattr(PerformanceReportResponse, "__annotations__")
+        assert hasattr(UserCommandResponse, "__annotations__")
+
         # Verify required fields
-        assert 'success' in QueryOptimizationResponse.__annotations__
-        assert 'session_id' in QueryOptimizationResponse.__annotations__
-        assert 'processing_time_ms' in QueryOptimizationResponse.__annotations__
-        
-        assert 'integration_health' in SystemStatusResponse.__annotations__
-        assert 'mode' in SystemStatusResponse.__annotations__
-        assert 'metrics' in SystemStatusResponse.__annotations__
+        assert "success" in QueryOptimizationResponse.__annotations__
+        assert "session_id" in QueryOptimizationResponse.__annotations__
+        assert "processing_time_ms" in QueryOptimizationResponse.__annotations__
+
+        assert "integration_health" in SystemStatusResponse.__annotations__
+        assert "mode" in SystemStatusResponse.__annotations__
+        assert "metrics" in SystemStatusResponse.__annotations__
 
     def test_model_validation_edge_cases(self):
         """Test edge cases for model validation."""
@@ -1084,11 +1079,11 @@ class TestEndpointIntegration:
         max_query = "x" * 2000
         request = QueryOptimizationRequest(query=max_query)
         assert len(request.query) == 2000
-        
+
         # Test command with slash and minimum content
         request = UserCommandRequest(command="/x")
         assert request.command == "/x"
-        
+
         # Test empty scenario types list
         request = DemoRunRequest(scenario_types=[])
         assert request.scenario_types == []
@@ -1097,14 +1092,14 @@ class TestEndpointIntegration:
         """Test that all endpoints handle errors consistently."""
         # All endpoints should raise HTTPException with appropriate status codes
         # and follow the same error response pattern
-        
+
         # This is verified through the individual endpoint tests above
         # but here we can verify consistency patterns
-        
+
         # Verify that 500 errors are used for internal failures
         # Verify that 503 errors are used for service unavailability
         # Verify that 400 errors are used for validation failures
-        
+
         # This test serves as documentation of error handling patterns
         assert status.HTTP_500_INTERNAL_SERVER_ERROR == 500
         assert status.HTTP_503_SERVICE_UNAVAILABLE == 503

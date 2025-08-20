@@ -83,6 +83,7 @@ class TestAuthenticationIntegration:
     ) -> AsyncGenerator[AsyncMock, None]:
         """Mock database manager for integration testing."""
         from contextlib import asynccontextmanager
+
         mock_manager = AsyncMock(spec=DatabaseManager)
 
         # Create proper async context manager for session
@@ -311,6 +312,7 @@ class TestAuthenticationIntegration:
     ):
         """Test graceful degradation when database is unavailable."""
         from starlette.middleware.base import BaseHTTPMiddleware
+
         app = FastAPI()
 
         # Mock database failure - return a coroutine that raises an exception

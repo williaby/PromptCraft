@@ -588,6 +588,10 @@ async def main() -> None:
         await demo._performance_comparison()
 
 
+# Make main function available for import by test modules
+__all__ = ["main", "InteractiveFunctionLoadingDemo", "DemoScenario"]
+
+
 if __name__ == "__main__":
     try:
         asyncio.run(main())

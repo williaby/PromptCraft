@@ -1326,9 +1326,10 @@ VectorStore = MockVectorStore
 
 # Compatibility aliases and additional models for testing
 
+
 class VectorStoreConfig(BaseModel):
     """Configuration for vector store instances."""
-    
+
     host: str = Field(default="localhost", description="Vector store host")
     port: int = Field(default=6333, description="Vector store port")
     collection: str = Field(default="default", description="Default collection name")
@@ -1339,13 +1340,13 @@ class VectorStoreConfig(BaseModel):
 
 class ConnectionManager:
     """Basic connection manager for vector store instances."""
-    
+
     def __init__(self, config: VectorStoreConfig):
         """Initialize connection manager with configuration."""
         self.config = config
         self._connection_pool = {}
         self._is_connected = False
-    
+
     async def connect(self) -> bool:
         """Establish connection to the vector store."""
         try:
@@ -1355,23 +1356,23 @@ class ConnectionManager:
         except Exception:
             self._is_connected = False
             return False
-    
+
     async def disconnect(self) -> None:
         """Disconnect from the vector store."""
         self._is_connected = False
         self._connection_pool.clear()
-    
+
     def is_connected(self) -> bool:
         """Check if connection is active."""
         return self._is_connected
-    
+
     async def health_check(self) -> dict[str, Any]:
         """Perform health check on the connection."""
         return {
             "status": "healthy" if self._is_connected else "disconnected",
             "host": self.config.host,
             "port": self.config.port,
-            "connection_pool_size": len(self._connection_pool)
+            "connection_pool_size": len(self._connection_pool),
         }
 
 

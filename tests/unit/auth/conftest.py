@@ -2,7 +2,7 @@
 
 import base64
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import Mock
 
@@ -44,9 +44,9 @@ def valid_jwt_payload():
         "aud": "https://test-app.com",
         "sub": "user123",
         "email": "test@example.com",
-        "exp": int((datetime.now(timezone.utc) + timedelta(hours=1)).timestamp()),
-        "iat": int(datetime.now(timezone.utc).timestamp()),
-        "nbf": int(datetime.now(timezone.utc).timestamp()),
+        "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+        "iat": int(datetime.now(UTC).timestamp()),
+        "nbf": int(datetime.now(UTC).timestamp()),
     }
 
 

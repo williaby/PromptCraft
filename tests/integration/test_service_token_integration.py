@@ -13,6 +13,7 @@ Tests cover:
 
 import asyncio
 import hashlib
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -53,7 +54,7 @@ async def db_session():
         has_extract = "EXTRACT(EPOCH FROM (" in query_str
         has_expires = "EXPIRES_AT - NOW()" in query_str or "expires_at - NOW()" in query_str
         has_cutoff = "cutoff_date" in str(params or {})
-        has_total_tokens = ("TOTAL_TOKENS" in query_str or "total_tokens" in query_str)
+        has_total_tokens = "TOTAL_TOKENS" in query_str or "total_tokens" in query_str
         has_filter = "FILTER" in query_str
         has_count = "COUNT(*)" in query_str
 
@@ -73,9 +74,15 @@ async def db_session():
             print("SHOULD MATCH ANALYTICS QUERY!")
 
         # Handle analytics summary queries FIRST (before other SELECT queries)
-        if ("TOTAL_TOKENS" in query_str or "total_tokens" in query_str or
-            ("COUNT(*)" in query_str and "FILTER" in query_str)):
-            print(f"MOCK: Handling analytics summary query (emergency_revocation_executed={emergency_revocation_executed})")
+        if (
+            "TOTAL_TOKENS" in query_str
+            or "total_tokens" in query_str
+            or ("COUNT(*)" in query_str and "FILTER" in query_str)
+        ):
+            print(
+                f"MOCK: Handling analytics summary query (emergency_revocation_executed={emergency_revocation_executed})",
+            )
+
             # Mock summary statistics queries (analytics calls)
             # Create a proper row-like object that can be accessed by attribute
             class MockSummaryRow:
@@ -94,7 +101,9 @@ async def db_session():
             return mock_result
 
         # Handle COUNT queries for token name existence check and emergency revocation
-        if ("COUNT(*)" in query_str and "service_tokens" in query_str) or ("COUNT(*)" in query_str and "SERVICE_TOKENS" in query_str):
+        if ("COUNT(*)" in query_str and "service_tokens" in query_str) or (
+            "COUNT(*)" in query_str and "SERVICE_TOKENS" in query_str
+        ):
             # Check if this is emergency revocation active token count query
             if "IS_ACTIVE = TRUE" in query_str:
                 print("MOCK: Handling emergency revocation active token count")
@@ -129,6 +138,7 @@ async def db_session():
         # Handle top tokens queries (ORDER BY USAGE_COUNT)
         if "ORDER BY USAGE_COUNT" in query_str or "ORDER BY usage_count" in query_str:
             print("MOCK: Handling top tokens query")
+
             # Mock top tokens query
             class MockTopTokenRow:
                 def __init__(self, name, usage, last_used):
@@ -146,8 +156,9 @@ async def db_session():
             return mock_result
 
         # Handle cleanup queries (for expired tokens)
-        if ("SELECT ID, TOKEN_NAME" in query_str and "EXPIRES_AT < NOW()" in query_str):
+        if "SELECT ID, TOKEN_NAME" in query_str and "EXPIRES_AT < NOW()" in query_str:
             print("MOCK: Handling cleanup expired tokens query")
+
             # Mock expired token query - return the expired token we created in test
             class MockExpiredTokenRow:
                 def __init__(self):
@@ -160,7 +171,9 @@ async def db_session():
             return mock_result
 
         # Handle SELECT queries for service token lookup
-        if ("SELECT" in query_str and "service_tokens" in query_str) or ("SELECT" in query_str and "SERVICE_TOKENS" in query_str):
+        if ("SELECT" in query_str and "service_tokens" in query_str) or (
+            "SELECT" in query_str and "SERVICE_TOKENS" in query_str
+        ):
             # Always return a mock record for service_tokens SELECT queries
             mock_record = MagicMock()
 
@@ -192,9 +205,11 @@ async def db_session():
                         identifier = params["identifier"]
                         # Check if identifier matches any created token name, ID, or hash
                         for name, info in created_tokens.items():
-                            if (identifier == name or
-                                identifier == info.get("id") or
-                                identifier == info.get("token_hash")):
+                            if (
+                                identifier == name
+                                or identifier == info.get("id")
+                                or identifier == info.get("token_hash")
+                            ):
                                 token_name = name
                                 break
                 # Fallback to token_name parameter
@@ -259,9 +274,9 @@ async def db_session():
             # Handle different query patterns
             # Check for monitoring expiration query pattern (more flexible matching)
             is_expiration_query = (
-                "EXTRACT(EPOCH FROM (" in query_str and
-                ("EXPIRES_AT - NOW()" in query_str or "expires_at - NOW()" in query_str) and
-                "cutoff_date" in str(params or {})
+                "EXTRACT(EPOCH FROM (" in query_str
+                and ("EXPIRES_AT - NOW()" in query_str or "expires_at - NOW()" in query_str)
+                and "cutoff_date" in str(params or {})
             )
 
             if is_expiration_query:
@@ -284,9 +299,11 @@ async def db_session():
 
                 mock_result.fetchall = MagicMock(side_effect=create_fresh_expiring_records)
                 print("MOCK: Set fetchall to dynamically create fresh records")
-            elif ("age_days" in query_str or
-                  ("NOW() - CREATED_AT" in query_str and "EXTRACT" in query_str) or
-                  ("NOW() - created_at" in query_str and "EXTRACT" in query_str)):
+            elif (
+                "age_days" in query_str
+                or ("NOW() - CREATED_AT" in query_str and "EXTRACT" in query_str)
+                or ("NOW() - created_at" in query_str and "EXTRACT" in query_str)
+            ):
                 # Mock rotation analysis queries (scheduler uses different EXTRACT pattern)
                 print("MOCK: Returning rotation analysis data")
                 mock_record.id = "uuid-old-token"
@@ -344,7 +361,10 @@ async def db_session():
                 mock_emergency_event.event_type = "emergency_revocation_all"
                 mock_emergency_event.success = True
                 mock_emergency_event.created_at = datetime.now(UTC)
-                mock_emergency_event.error_details = {"reason": "Security incident: Potential token compromise", "tokens_revoked": 3}
+                mock_emergency_event.error_details = {
+                    "reason": "Security incident: Potential token compromise",
+                    "tokens_revoked": 3,
+                }
                 mock_result.fetchone.return_value = mock_emergency_event
                 print("MOCK: Set emergency event fetchone to return emergency_revocation_all event")
             else:
@@ -502,8 +522,10 @@ class TestServiceTokenIntegration:
 
             # Test token validation - need to patch get_db for middleware
             with patch("src.auth.middleware.get_db") as mock_middleware_db:
+
                 async def mock_db_generator():
                     yield db_session
+
                 mock_middleware_db.return_value = mock_db_generator()
 
                 try:
@@ -583,12 +605,13 @@ class TestServiceTokenIntegration:
             mock_get_db.return_value.__aenter__.return_value = db_session
             mock_get_db.return_value.__aexit__.return_value = None
 
-            # Mock monitoring system database access with async generator behavior
-            async def mock_monitor_db_generator():
+            # Mock monitoring system database access with proper async context manager
+            @asynccontextmanager
+            async def mock_monitor_db_context_manager():
                 yield db_session
 
-            # CRITICAL FIX: Make get_db() return a NEW generator each time it's called
-            mock_monitor_get_db.side_effect = lambda: mock_monitor_db_generator()
+            # CRITICAL FIX: Make get_db() return a proper async context manager each time it's called
+            mock_monitor_get_db.side_effect = lambda: mock_monitor_db_context_manager()
 
             # Mock health check
             mock_health_check.return_value = {"status": "healthy", "connection_time_ms": 5.2}

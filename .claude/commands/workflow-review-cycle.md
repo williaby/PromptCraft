@@ -4,12 +4,12 @@ complexity: medium
 estimated_time: "15-30 minutes"
 dependencies: ["workflow-implementation", "validation-precommit"]
 sub_commands: ["validation-precommit"]
-version: "1.1"
+version: "2.0"
 models_required: ["testing", "review", "consensus"]
 model_preferences:
   testing: ["o3", "o3-mini", "microsoft/phi-4-reasoning:free"]
   review: ["anthropic/claude-opus-4", "anthropic/claude-sonnet-4", "google/gemini-2.5-pro"]
-  consensus: ["deepseek/deepseek-chat-v3-0324:free", "google/gemini-2.0-flash-exp:free"]
+  consensus: ["deepseek/deepseek-chat:free", "gemini-2.0-flash"]
 ---
 
 # Workflow Review Cycle
@@ -20,11 +20,16 @@ Comprehensive testing, validation, and multi-agent review of implemented solutio
 
 - `phase X issue Y` - Full review cycle with multi-agent validation
 - `quick phase X issue Y` - Essential testing and validation only
-- `consensus phase X issue Y` - Multi-model consensus review
+- `consensus phase X issue Y` - Layered consensus review (strategic/analytical/practical)
+- `strategic phase X issue Y` - Strategic consensus with business impact focus
+- `layered phase X issue Y` - Full layered consensus across all three layers
+- `technical phase X issue Y` - Technical-only layered consensus (analytical + practical)
 - `--model=[name]` - Override default model for all roles
 - `--testing-model=[name]` - Specific model for testing development
 - `--review-model=[name]` - Specific model for code review
 - `--consensus-model=[name]` - Specific model for consensus validation
+- `--cost-preference=[level]` - Cost preference: cost-optimized/balanced/performance
+- `--org-level=[level]` - Organization level: startup/scaleup/enterprise
 
 **Automatic Branch Detection**: Works on current issue branch or detects from phase/issue arguments.
 
@@ -44,19 +49,41 @@ This command requires completed implementation. Implementation must pass basic q
 
    PHASE=$(echo "$ARGUMENTS" | grep -oP "phase\s+\K\d+" || echo "1")
    ISSUE=$(echo "$ARGUMENTS" | grep -oP "issue\s+\K\d+" || echo "")
-   MODE=$(echo "$ARGUMENTS" | grep -oP "^(quick|consensus)" || echo "standard")
+   MODE=$(echo "$ARGUMENTS" | grep -oP "^(quick|consensus|strategic|layered|technical)" || echo "standard")
 
    # Configure models with fallback chains
    TESTING_MODEL=$(get_model_override "testing" "$ARGUMENTS" "o3")
    REVIEW_MODEL=$(get_model_override "review" "$ARGUMENTS" "anthropic/claude-opus-4")
-   CONSENSUS_MODEL=$(get_model_override "consensus" "$ARGUMENTS" "deepseek/deepseek-chat-v3-0324:free")
+   CONSENSUS_MODEL=$(get_model_override "consensus" "$ARGUMENTS" "deepseek/deepseek-chat:free")
+
+   # Layered consensus configuration
+   LAYERED_CONSENSUS_MODELS=5  # Default model count for layered analysis
+   CONSENSUS_LAYERS="strategic,analytical,practical"
+   ORG_LEVEL=$(echo "$ARGUMENTS" | grep -oP "org-level=\K\w+" || echo "startup")
+   COST_PREFERENCE=$(echo "$ARGUMENTS" | grep -oP "cost-preference=\K[\w-]+" || echo "balanced")
+
+   # Configure layered consensus based on mode
+   case "$MODE" in
+       "strategic")
+           CONSENSUS_LAYERS="strategic"
+           LAYERED_CONSENSUS_MODELS=3
+           ;;
+       "layered"|"consensus")
+           CONSENSUS_LAYERS="strategic,analytical,practical"
+           LAYERED_CONSENSUS_MODELS=5
+           ;;
+       "technical")
+           CONSENSUS_LAYERS="analytical,practical"
+           LAYERED_CONSENSUS_MODELS=4
+           ;;
+   esac
 
    # Add free model support for premium workflows
    if [[ ! "$TESTING_MODEL" =~ ":free" ]] && [[ "$MODE" != "quick" ]]; then
        TESTING_SUPPORT_MODEL="microsoft/phi-4-reasoning:free"
    fi
    if [[ ! "$REVIEW_MODEL" =~ ":free" ]] && [[ "$MODE" != "quick" ]]; then
-       REVIEW_SUPPORT_MODEL="google/gemini-2.0-flash-exp:free"
+       REVIEW_SUPPORT_MODEL="gemini-2.0-flash"
    fi
    ```
 
@@ -77,8 +104,8 @@ This command requires completed implementation. Implementation must pass basic q
    if [[ ${#AVAILABLE_MODELS[@]} -eq 0 ]]; then
        echo "🔄 No preferred models available, using free fallbacks"
        TESTING_MODEL="microsoft/phi-4-reasoning:free"
-       REVIEW_MODEL="deepseek/deepseek-chat-v3-0324:free"
-       CONSENSUS_MODEL="google/gemini-2.0-flash-exp:free"
+       REVIEW_MODEL="deepseek/deepseek-chat:free"
+       CONSENSUS_MODEL="gemini-2.0-flash"
    fi
    ```
 
@@ -271,30 +298,40 @@ synchronize_branches
    fi
    ```
 
-3. **Consensus Validation**:
+3. **Layered Consensus Validation**:
 
    ```bash
-   echo "🤝 Building consensus using: $CONSENSUS_MODEL"
+   echo "🏗️ Building layered consensus using: $LAYERED_CONSENSUS_MODELS models"
 
-   if [[ "$MODE" == "consensus" ]]; then
-       # Use Zen consensus tool with multiple models
-       zen_mcp_consensus \
-           --models "$TESTING_MODEL,$REVIEW_MODEL,$CONSENSUS_MODEL" \
-           --topic "Implementation quality and completeness assessment" \
-           --request "Evaluate if implementation meets all acceptance criteria"
-   else
-       # Standard consensus validation
-       zen_mcp_call "$CONSENSUS_MODEL" \
-           --role "Technical Consensus Builder" \
-           --request "Synthesize review findings and identify any conflicts or required changes"
-   fi
+   case "$MODE" in
+       "strategic"|"layered"|"consensus"|"technical")
+           # Use enhanced layered consensus
+           claude mcp zen layered_consensus \
+               --question "Comprehensive evaluation: Is this implementation ready for production deployment? Consider code quality, security, performance, maintainability, and business value." \
+               --layers "$CONSENSUS_LAYERS" \
+               --model_count "$LAYERED_CONSENSUS_MODELS" \
+               --cost_threshold "$COST_PREFERENCE" \
+               --org_level "$ORG_LEVEL" \
+               --files "$(find src tests -name '*.py' -type f | head -15 | tr '\n' ',')" \
+               --relevant_files "$(git diff --name-only HEAD~1 2>/dev/null | tr '\n' ',')" \
+               --model "gemini-2.5-pro"
+           ;;
+       *)
+           # Fallback to standard consensus for quick/other modes
+           zen_mcp_call "$CONSENSUS_MODEL" \
+               --role "Technical Consensus Builder" \
+               --request "Synthesize review findings and identify conflicts or required changes"
+           ;;
+   esac
    ```
 
    **Key Validation Points:**
-   - Compare review findings across all models
-   - Resolve any conflicting recommendations
-   - Document consensus decisions
-   - Identify required changes
+   - Strategic layer: Business impact, long-term implications, competitive positioning
+   - Analytical layer: Technical analysis, data-driven evaluation, objective assessment
+   - Practical layer: Implementation feasibility, operational concerns, resource requirements
+   - Cross-layer synthesis: Areas of consensus, key disagreements, final recommendation
+   - Structured dissent: Devil's advocate challenges and assumption testing
+   - Confidence calibration: Final recommendation with confidence levels
 
 ### Step 4: Final Validation Report
 
@@ -336,6 +373,30 @@ ${TESTING_SUPPORT_MODEL:+
 ${REVIEW_SUPPORT_MODEL:+
 ### Quick Validation Check (${REVIEW_SUPPORT_MODEL})
 - [Obvious issues or validation points]
+}
+
+### Layered Consensus Results
+${MODE:+
+#### Strategic Layer Assessment
+- [High-level business and architectural evaluation]
+- [Strategic risks and opportunities]
+- [Long-term implications and competitive positioning]
+
+#### Analytical Layer Assessment
+- [Technical analysis and data-driven evaluation]
+- [Code quality metrics and objective assessment]
+- [Risk analysis and evidence-based conclusions]
+
+#### Practical Layer Assessment
+- [Implementation feasibility and operational concerns]
+- [Resource requirements and deployment considerations]
+- [Maintenance and support implications]
+
+#### Cross-Layer Synthesis
+- [Areas of consensus across all layers]
+- [Key disagreements and tensions identified]
+- [Devil's advocate challenges and critical findings]
+- [Final recommendation with confidence level]
 }
 
 ### Consensus Decisions
@@ -441,6 +502,21 @@ The review cycle is complete when:
 
 # Premium models with free support
 /project:workflow-review-cycle consensus phase 1 issue 8 --review-model=sonnet --testing-model=o3-mini
+
+# Strategic consensus focusing on business impact
+/project:workflow-review-cycle strategic phase 1 issue 3
+
+# Full layered consensus with all three layers
+/project:workflow-review-cycle layered phase 2 issue 5
+
+# Technical-only consensus (analytical + practical layers)
+/project:workflow-review-cycle technical phase 1 issue 8
+
+# Cost-optimized layered consensus
+/project:workflow-review-cycle layered phase 3 issue 2 --cost-preference=cost-optimized
+
+# Performance-focused layered consensus for critical features
+/project:workflow-review-cycle layered phase 1 issue 1 --cost-preference=performance --org-level=enterprise
 ```
 
 ## Model Roles and Recommendations
