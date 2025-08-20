@@ -45,7 +45,7 @@ class ServiceTokenManager:
         except AttributeError:
             # Fall back to context manager pattern
             if hasattr(db_gen, "__aenter__"):
-                session = await db_gen.__aenter__()  # type: ignore[attr-defined]
+                session = await db_gen.__aenter__()
                 return session
             # Last resort - direct call
             raise RuntimeError("No database session available") from None

@@ -36,7 +36,7 @@ from src.utils.performance_monitor import MetricData, MetricType, PerformanceMon
 
 from .task_detection import DetectionResult, TaskDetectionSystem
 from .task_detection_config import ConfigManager
-from .token_optimization_monitor import FunctionTier, TokenOptimizationMonitor
+from .token_optimization_monitor import FunctionTier, OptimizationStatus, TokenOptimizationMonitor
 from .user_control_system import CommandResult, UserControlSystem
 
 logger = logging.getLogger(__name__)
@@ -570,7 +570,7 @@ class DynamicFunctionLoader:
         """Make intelligent loading decision based on detection results and strategy."""
 
         functions_to_load = set()
-        tier_breakdown = {tier: set() for tier in LoadingTier}
+        tier_breakdown: dict[LoadingTier, set[str]] = {tier: set() for tier in LoadingTier}
 
         # Load Tier 1 functions based on detected categories (for token optimization)
         tier1_functions = self._select_tier1_functions(detection_result, session.strategy)
@@ -807,7 +807,7 @@ class DynamicFunctionLoader:
         estimated_tokens, estimated_loading_time = self.function_registry.calculate_loading_cost(fallback_functions)
 
         # Create fallback decision
-        tier_breakdown = {tier: set() for tier in LoadingTier}
+        tier_breakdown: dict[LoadingTier, set[str]] = {tier: set() for tier in LoadingTier}
         tier_breakdown[LoadingTier.FALLBACK] = fallback_functions
 
         fallback_decision = LoadingDecision(
@@ -942,19 +942,19 @@ class DynamicFunctionLoader:
         self.session_history.append(session)
         del self.active_sessions[session_id]
 
+        efficiency: float = session_summary.get("usage_efficiency", 0.0)  # type: ignore[assignment]
         logger.info(
             f"Completed session {session_id}: "
             f"{session_summary['token_reduction_percentage']:.1f}% token reduction, "
-            f"{session_summary['usage_efficiency']*100:.1f}% function usage efficiency",
+            f"{efficiency*100:.1f}% function usage efficiency",
         )
 
         return session_summary
 
     # Utility methods
 
-    def _strategy_to_optimization_level(self, strategy: LoadingStrategy):
+    def _strategy_to_optimization_level(self, strategy: LoadingStrategy) -> OptimizationStatus:
         """Convert loading strategy to optimization level."""
-        from .token_optimization_monitor import OptimizationStatus
 
         mapping = {
             LoadingStrategy.CONSERVATIVE: OptimizationStatus.CONSERVATIVE,
@@ -1074,7 +1074,7 @@ async def initialize_dynamic_loading() -> DynamicFunctionLoader:
 # Example usage and testing
 if __name__ == "__main__":
 
-    async def main():
+    async def main() -> dict[str, Any]:
         """Test the dynamic function loading prototype."""
 
         # Initialize system
@@ -1113,7 +1113,9 @@ if __name__ == "__main__":
         for scenario in test_scenarios:
 
             # Create session
-            session_id = await loader.create_loading_session(user_id=scenario["user_id"], query=scenario["query"])
+            session_id = await loader.create_loading_session(
+                user_id=str(scenario["user_id"]), query=str(scenario["query"])
+            )
 
             # Load functions
             start_time = time.perf_counter()

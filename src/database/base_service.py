@@ -14,7 +14,7 @@ consistent patterns and eliminate code duplication.
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, TypeVar
+from typing import Any, AsyncGenerator, Callable, TypeVar
 
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -42,7 +42,7 @@ class DatabaseService:
         self._db_manager = get_database_manager()
 
     @asynccontextmanager
-    async def get_session(self):
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Get database session with automatic resource management.
 
         This context manager provides automatic session cleanup and error handling.
@@ -66,7 +66,7 @@ class DatabaseService:
                 await session.rollback()
                 raise
 
-    async def execute_with_session(self, operation: callable, *args, **kwargs) -> Any:
+    async def execute_with_session(self, operation: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Execute database operation with automatic session management.
 
         This method provides a standardized way to execute database operations
@@ -188,7 +188,7 @@ class DatabaseService:
     async def check_entity_exists(
         self,
         session: AsyncSession,
-        model_class: type,
+        model_class: type[Any],
         filter_conditions: dict[str, Any],
         entity_name: str = "",
     ) -> bool:
@@ -204,8 +204,9 @@ class DatabaseService:
             True if entity exists, False otherwise
         """
         from sqlalchemy import select
+        from sqlalchemy.sql import Select
 
-        query = select(model_class.id)
+        query: Select[Any] = select(model_class.id)
         for field, value in filter_conditions.items():
             query = query.where(getattr(model_class, field) == value)
 
@@ -218,7 +219,7 @@ class DatabaseService:
     async def get_entity_by_conditions(
         self,
         session: AsyncSession,
-        model_class: type,
+        model_class: type[Any],
         filter_conditions: dict[str, Any],
         entity_name: str = "",
     ) -> Any | None:
@@ -234,8 +235,9 @@ class DatabaseService:
             Entity if found, None otherwise
         """
         from sqlalchemy import select
+        from sqlalchemy.sql import Select
 
-        query = select(model_class)
+        query: Select[Any] = select(model_class)
         for field, value in filter_conditions.items():
             query = query.where(getattr(model_class, field) == value)
 

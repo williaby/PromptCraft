@@ -52,7 +52,7 @@ class InteractiveFunctionLoadingDemo:
         self.loader: DynamicFunctionLoader | None = None
         self.current_session_id: str | None = None
         self.demo_scenarios = self._create_demo_scenarios()
-        self.performance_baseline = None
+        self.performance_baseline: dict[str, Any] | None = None
 
     def _create_demo_scenarios(self) -> list[DemoScenario]:
         """Create comprehensive demonstration scenarios."""
@@ -132,6 +132,9 @@ class InteractiveFunctionLoadingDemo:
 
     async def _measure_baseline_performance(self) -> None:
         """Measure baseline performance with all functions loaded."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
+
         registry = self.loader.function_registry
 
         self.performance_baseline = {
@@ -140,23 +143,23 @@ class InteractiveFunctionLoadingDemo:
             "tier_breakdown": {
                 "tier_1": (
                     {
-                        "functions": len(registry.get_functions_by_tier(registry.tiers[0])),
-                        "tokens": registry.get_tier_token_cost(registry.tiers[0]),
+                        "functions": len(registry.get_functions_by_tier(list(registry.tiers)[0])),
+                        "tokens": registry.get_tier_token_cost(list(registry.tiers)[0]),
                     }
                     if registry.tiers
                     else {"functions": 0, "tokens": 0}
                 ),
                 "tier_2": {
                     "functions": (
-                        len(registry.get_functions_by_tier(registry.tiers[1])) if len(registry.tiers) > 1 else 0
+                        len(registry.get_functions_by_tier(list(registry.tiers)[1])) if len(registry.tiers) > 1 else 0
                     ),
-                    "tokens": registry.get_tier_token_cost(registry.tiers[1]) if len(registry.tiers) > 1 else 0,
+                    "tokens": registry.get_tier_token_cost(list(registry.tiers)[1]) if len(registry.tiers) > 1 else 0,
                 },
                 "tier_3": {
                     "functions": (
-                        len(registry.get_functions_by_tier(registry.tiers[2])) if len(registry.tiers) > 2 else 0
+                        len(registry.get_functions_by_tier(list(registry.tiers)[2])) if len(registry.tiers) > 2 else 0
                     ),
-                    "tokens": registry.get_tier_token_cost(registry.tiers[2]) if len(registry.tiers) > 2 else 0,
+                    "tokens": registry.get_tier_token_cost(list(registry.tiers)[2]) if len(registry.tiers) > 2 else 0,
                 },
             },
         }
@@ -210,6 +213,9 @@ class InteractiveFunctionLoadingDemo:
 
     async def _run_single_scenario(self, scenario: DemoScenario) -> dict[str, Any]:
         """Run a single demonstration scenario."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
+
         start_time = time.perf_counter()
 
         # Create session
@@ -244,13 +250,18 @@ class InteractiveFunctionLoadingDemo:
 
         total_time = (time.perf_counter() - start_time) * 1000
 
+        # Extract token reduction safely
+        token_reduction = 0.0
+        if session_summary is not None and isinstance(session_summary, dict):
+            token_reduction = float(session_summary.get("token_reduction_percentage", 0.0))
+
         return {
             "scenario": scenario,
             "session_summary": session_summary,
             "loading_decision": loading_decision,
             "command_results": command_results,
             "total_time_ms": total_time,
-            "token_reduction": session_summary["token_reduction_percentage"],
+            "token_reduction": token_reduction,
             "functions_loaded": len(loading_decision.functions_to_load),
             "functions_used": len(used_functions),
         }
@@ -307,6 +318,8 @@ class InteractiveFunctionLoadingDemo:
 
     async def _run_interactive_query(self, query: str, strategy: LoadingStrategy) -> None:
         """Run a single interactive query."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
 
         start_time = time.perf_counter()
 
@@ -337,9 +350,10 @@ class InteractiveFunctionLoadingDemo:
                     pass
 
         # Calculate and show optimization
-        baseline_tokens = self.performance_baseline["total_tokens"]
-        optimized_tokens = loading_decision.estimated_tokens
-        (baseline_tokens - optimized_tokens) / baseline_tokens * 100
+        if self.performance_baseline is not None:
+            baseline_tokens = self.performance_baseline["total_tokens"]
+            optimized_tokens = loading_decision.estimated_tokens
+            (baseline_tokens - optimized_tokens) / baseline_tokens * 100
 
         # Offer user commands
         await self._offer_user_commands(session_id)
@@ -349,6 +363,8 @@ class InteractiveFunctionLoadingDemo:
 
     async def _offer_user_commands(self, session_id: str) -> None:
         """Offer user commands during interactive session."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
 
         while True:
             command = input("\n🎛️  Command: ").strip()
@@ -376,6 +392,8 @@ class InteractiveFunctionLoadingDemo:
 
     async def _performance_comparison(self) -> None:
         """Show performance comparison between optimized and baseline."""
+        if self.loader is None or self.performance_baseline is None:
+            raise RuntimeError("Loader and baseline not initialized")
 
         # Run a sample query with different strategies
         test_query = "analyze this codebase for security vulnerabilities and performance issues"
@@ -416,12 +434,17 @@ class InteractiveFunctionLoadingDemo:
 
                     session_summary = await self.loader.end_loading_session(session_id)
 
+                    # Extract token reduction safely
+                    token_reduction = 0.0
+                    if session_summary is not None and isinstance(session_summary, dict):
+                        token_reduction = float(session_summary.get("token_reduction_percentage", 0.0))
+
                     result = {
                         "strategy_name": strategy_name,
                         "functions_loaded": len(loading_decision.functions_to_load),
                         "tokens_used": loading_decision.estimated_tokens,
                         "loading_time_ms": loading_time,
-                        "token_reduction": session_summary["token_reduction_percentage"],
+                        "token_reduction": token_reduction,
                     }
                 except Exception:
                     # Skip this strategy on failure and continue with others
@@ -439,10 +462,13 @@ class InteractiveFunctionLoadingDemo:
         next(r["strategy_name"] for r in comparison_results if r["token_reduction"] == best_reduction)
 
         if best_reduction >= 70:
-            self.performance_baseline["total_tokens"] * (best_reduction / 100)
+            baseline_tokens = self.performance_baseline["total_tokens"]
+            baseline_tokens * (best_reduction / 100)
 
     async def _user_commands_demo(self) -> None:
         """Demonstrate user command capabilities."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
 
         # Create a session for commands demo
         session_id = await self.loader.create_loading_session(
@@ -488,6 +514,8 @@ class InteractiveFunctionLoadingDemo:
 
     async def _monitoring_dashboard(self) -> None:
         """Show real-time monitoring dashboard."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
 
         # Get current performance report
         performance_report = await self.loader.get_performance_report()
@@ -511,6 +539,8 @@ class InteractiveFunctionLoadingDemo:
 
     async def _validation_report(self) -> None:
         """Generate comprehensive validation report."""
+        if self.loader is None:
+            raise RuntimeError("Loader not initialized")
 
         # Run validation scenarios
 
@@ -534,22 +564,40 @@ class InteractiveFunctionLoadingDemo:
             loading_decision = await self.loader.load_functions_for_query(session_id)
             session_summary = await self.loader.end_loading_session(session_id)
 
+            # Extract token reduction safely
+            token_reduction = 0.0
+            if session_summary is not None and isinstance(session_summary, dict):
+                token_reduction = float(session_summary.get("token_reduction_percentage", 0.0))
+
             validation_results.append(
                 {
                     "name": name,
-                    "token_reduction": session_summary["token_reduction_percentage"],
+                    "token_reduction": token_reduction,
                     "functions_loaded": len(loading_decision.functions_to_load),
                     "strategy": strategy.value,
                 },
             )
 
         # Analysis
-        achieving_target = sum(1 for r in validation_results if r["token_reduction"] >= 70.0)
+        achieving_target = 0
+        total_reductions = []
+
+        for r in validation_results:
+            token_reduction_raw = r.get("token_reduction", 0.0)
+            if isinstance(token_reduction_raw, (int, float)):
+                token_reduction = float(token_reduction_raw)
+                if token_reduction >= 70.0:
+                    achieving_target += 1
+                total_reductions.append(token_reduction)
+
         total_scenarios = len(validation_results)
-        avg_reduction = sum(r["token_reduction"] for r in validation_results) / total_scenarios
+        avg_reduction = sum(total_reductions) / len(total_reductions) if total_reductions else 0.0
 
         for result in validation_results:
-            "✅" if result["token_reduction"] >= 70.0 else "❌"
+            token_reduction_raw = result.get("token_reduction", 0.0)
+            if isinstance(token_reduction_raw, (int, float)):
+                token_reduction = float(token_reduction_raw)
+                "✅" if token_reduction >= 70.0 else "❌"
 
         # Final assessment
         if (avg_reduction >= 70.0 and achieving_target >= total_scenarios * 0.8) or avg_reduction >= 60.0:

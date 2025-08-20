@@ -50,7 +50,7 @@ async def user_has_permission(user_email: str, permission_name: str) -> bool:
             session = await db_gen.__anext__()  # type: ignore[attr-defined]
         except AttributeError:
             if hasattr(db_gen, "__aenter__"):
-                session = await db_gen.__aenter__()  # type: ignore[attr-defined]
+                session = await db_gen.__aenter__()
             else:
                 raise RuntimeError("No database session available") from None
 

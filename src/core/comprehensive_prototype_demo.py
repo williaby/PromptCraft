@@ -62,12 +62,12 @@ class DemoScenario:
     expected_categories: list[str]
     target_reduction: float = 70.0
     strategy: LoadingStrategy = LoadingStrategy.BALANCED
-    user_commands: list[str] = None
-    workflow_steps: list[dict[str, Any]] = None
+    user_commands: list[str] | None = None
+    workflow_steps: list[dict[str, Any]] | None = None
     expected_performance_ms: float = 200.0
-    success_criteria: dict[str, Any] = None
+    success_criteria: dict[str, Any] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.user_commands is None:
             self.user_commands = []
         if self.workflow_steps is None:
@@ -275,7 +275,7 @@ class ComprehensivePrototypeDemo:
         """Run the complete demonstration showcasing all capabilities."""
 
         demo_start_time = time.perf_counter()
-        overall_results = {
+        overall_results: dict[str, Any] = {
             "demo_metadata": {
                 "start_time": datetime.now().isoformat(),
                 "mode": self.mode.value,
@@ -289,7 +289,7 @@ class ComprehensivePrototypeDemo:
         }
 
         # Group scenarios by type for organized demonstration
-        scenarios_by_type = {}
+        scenarios_by_type: dict[DemoScenarioType, list[DemoScenario]] = {}
         for scenario in self.demo_scenarios:
             scenario_type = scenario.scenario_type
             if scenario_type not in scenarios_by_type:
@@ -346,6 +346,9 @@ class ComprehensivePrototypeDemo:
         scenario_start_time = time.perf_counter()
 
         try:
+            if self.integration is None:
+                raise RuntimeError("Integration not initialized")
+
             # Process the main query
             processing_result = await self.integration.process_query(
                 query=scenario.query,
@@ -355,14 +358,15 @@ class ComprehensivePrototypeDemo:
             )
 
             # Process workflow if specified
-            workflow_responses = []
+            workflow_responses: list[Any] = []
             if scenario.workflow_steps:
                 workflow_steps = [
                     WorkflowStep(
+                        step_id=f"step_{i}",
                         agent_id=step.get("agent", "default_agent"),
                         input_data={"task": step.get("task", "general_task"), "query": scenario.query},
                     )
-                    for step in scenario.workflow_steps
+                    for i, step in enumerate(scenario.workflow_steps)
                 ]
 
                 with contextlib.suppress(Exception):
@@ -439,6 +443,9 @@ class ComprehensivePrototypeDemo:
     def _evaluate_success_criteria(self, scenario: DemoScenario, result: ProcessingResult) -> dict[str, Any]:
         """Evaluate scenario success criteria against results."""
         criteria = scenario.success_criteria
+        if criteria is None:
+            return {"criteria_met": {}, "overall_success": True, "total_criteria": 0, "passed_criteria": 0}
+
         criteria_met = {}
 
         # Check minimum reduction percentage
@@ -496,11 +503,12 @@ class ComprehensivePrototypeDemo:
         success_eval = result.get("success_evaluation", {})
 
         if processing.get("success", False):
-            processing.get("reduction_percentage", 0.0)
-            processing.get("total_time_ms", 0.0)
-            "✅" if assessment.get("meets_reduction_target", False) else "❌"
-            "✅" if assessment.get("meets_performance_target", False) else "❌"
-            "✅" if success_eval.get("overall_success", False) else "❌"
+            # Results are available but display logic would be implemented here
+            _ = processing.get("reduction_percentage", 0.0)
+            _ = processing.get("total_time_ms", 0.0)
+            _ = "✅" if assessment.get("meets_reduction_target", False) else "❌"
+            _ = "✅" if assessment.get("meets_performance_target", False) else "❌"
+            _ = "✅" if success_eval.get("overall_success", False) else "❌"
 
             if processing.get("fallback_used", False):
                 pass
@@ -508,27 +516,33 @@ class ComprehensivePrototypeDemo:
             if processing.get("cache_hit", False):
                 pass
         else:
-            processing.get("error_message", "Unknown error")
+            _ = processing.get("error_message", "Unknown error")
 
     def _display_type_summary(self, scenario_type: DemoScenarioType, results: list[dict[str, Any]]) -> None:
         """Display summary for a scenario type."""
-        len(results)
+        _ = len(results)
         successful_scenarios = sum(1 for r in results if r["processing_result"].get("success", False))
 
         if successful_scenarios > 0:
-            sum(
-                r["processing_result"].get("reduction_percentage", 0.0)
-                for r in results
-                if r["processing_result"].get("success", False)
-            ) / successful_scenarios
+            _ = (
+                sum(
+                    r["processing_result"].get("reduction_percentage", 0.0)
+                    for r in results
+                    if r["processing_result"].get("success", False)
+                )
+                / successful_scenarios
+            )
 
-            sum(
-                r["processing_result"].get("total_time_ms", 0.0)
-                for r in results
-                if r["processing_result"].get("success", False)
-            ) / successful_scenarios
+            _ = (
+                sum(
+                    r["processing_result"].get("total_time_ms", 0.0)
+                    for r in results
+                    if r["processing_result"].get("success", False)
+                )
+                / successful_scenarios
+            )
 
-            sum(1 for r in results if r["performance_assessment"].get("meets_reduction_target", False))
+            _ = sum(1 for r in results if r["performance_assessment"].get("meets_reduction_target", False))
         else:
             pass
 
@@ -583,6 +597,9 @@ class ComprehensivePrototypeDemo:
 
     async def _generate_validation_report(self, scenario_results: list[dict[str, Any]]) -> dict[str, Any]:
         """Generate comprehensive validation report."""
+        if self.integration is None:
+            raise RuntimeError("Integration not initialized")
+
         # Get system status
         system_status = await self.integration.get_system_status()
         performance_report = await self.integration.get_performance_report()
@@ -738,12 +755,18 @@ class ComprehensivePrototypeDemo:
 
         for _category, category_data in readiness_criteria.items():
             criteria = category_data["criteria"]
-            passed_criteria = sum(1 for criterion in criteria.values() if criterion)
-            category_score = (passed_criteria / len(criteria)) * 100.0
-            category_data["score"] = category_score
+            if isinstance(criteria, dict):
+                passed_criteria = sum(1 for criterion in criteria.values() if bool(criterion))
+                criteria_count = len(criteria)
+                category_score = (passed_criteria / criteria_count) * 100.0 if criteria_count > 0 else 0.0
+                category_data["score"] = category_score
+            else:
+                category_data["score"] = 0.0
 
-            weighted_score = category_score * category_data["weight"]
-            total_weighted_score += weighted_score
+            weight = category_data["weight"]
+            if isinstance(weight, (int, float)):
+                weighted_score = category_score * weight
+                total_weighted_score += weighted_score
 
         # Determine overall readiness level
         if total_weighted_score >= 85.0:
@@ -770,7 +793,11 @@ class ComprehensivePrototypeDemo:
                 f"✅ {performance_summary['success_rate']:.1f}% scenario success rate",
                 f"✅ {performance_summary['token_optimization']['scenarios_above_70_percent']} scenarios above 70% reduction",
             ],
-            "improvement_areas": [area for area, data in readiness_criteria.items() if data["score"] < 80.0],
+            "improvement_areas": [
+                area
+                for area, data in readiness_criteria.items()
+                if (score := data.get("score")) is not None and isinstance(score, (int, float)) and score < 80.0
+            ],
             "deployment_recommendation": self._generate_deployment_recommendation(
                 total_weighted_score,
                 readiness_criteria,
@@ -816,16 +843,12 @@ class ComprehensivePrototypeDemo:
             pass
 
         # Performance Breakdown
-
-        perf_summary["token_optimization"]
-
-        perf_summary["performance_metrics"]
+        _ = perf_summary["token_optimization"]
+        _ = perf_summary["performance_metrics"]
 
         # Production Readiness Breakdown
         for _category, data in readiness["category_scores"].items():
-            data["score"]
-
-        # Deployment Recommendation
+            _ = data["score"]
 
         # Technical Validation
         validation = results["validation_report"]

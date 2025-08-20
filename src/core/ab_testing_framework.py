@@ -462,7 +462,7 @@ class UserSegmentation:
     def _get_current_rollout_percentage(self, experiment_id: str) -> float:
         """Get current rollout percentage for experiment."""
         experiment = self.db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
-        return experiment.current_percentage if experiment else 0.0
+        return float(experiment.current_percentage) if experiment else 0.0
 
     def _assign_variant_consistent(self, user_id: str, experiment_id: str, rollout_percentage: float) -> str:
         """Assign variant using consistent hashing for stable assignments."""
@@ -494,7 +494,7 @@ class UserSegmentation:
             )
 
             if assignment:
-                assignment.opt_out = True
+                assignment.opt_out = True  # type: ignore[assignment]
                 self.db_session.commit()
                 return True
 
@@ -665,18 +665,18 @@ class StatisticalAnalyzer:
             # Calculate duration
             from src.utils.datetime_compat import ensure_aware
 
-            start_time = experiment.start_time or experiment.created_at
-            end_time = experiment.end_time or utc_now()
+            start_time_raw = experiment.start_time or experiment.created_at
+            end_time_raw = experiment.end_time or utc_now()
 
             # Ensure both datetimes are timezone-aware for calculation
-            start_time = ensure_aware(start_time)
-            end_time = ensure_aware(end_time)
+            start_time = ensure_aware(start_time_raw)  # type: ignore[arg-type]
+            end_time = ensure_aware(end_time_raw)  # type: ignore[arg-type]
 
             duration_hours = (end_time - start_time).total_seconds() / 3600
 
             return ExperimentResults(
                 experiment_id=experiment_id,
-                experiment_name=experiment.name,
+                experiment_name=str(experiment.name),
                 total_users=sum(v.get("user_count", 0) for v in variant_data.values()),
                 variants=variant_data,
                 statistical_significance=significance_results["significance"],
@@ -706,7 +706,7 @@ class StatisticalAnalyzer:
             experiment_id=experiment_id,
         )
 
-        variant_data = defaultdict(
+        variant_data: dict[str, dict[str, Any]] = defaultdict(
             lambda: {
                 "user_count": 0,
                 "events": [],
@@ -719,7 +719,7 @@ class StatisticalAnalyzer:
         # Count users per variant
         for assignment in assignments_query:
             if not assignment.opt_out:
-                variant_data[assignment.variant]["user_count"] += 1
+                variant_data[str(assignment.variant)]["user_count"] += 1
 
         # Get metric events
         events_query = self.db_session.query(MetricEventModel).filter_by(
@@ -727,7 +727,7 @@ class StatisticalAnalyzer:
         )
 
         for event in events_query:
-            variant_data[event.variant]["events"].append(
+            variant_data[str(event.variant)]["events"].append(
                 {
                     "event_type": event.event_type,
                     "event_name": event.event_name,
@@ -741,7 +741,7 @@ class StatisticalAnalyzer:
 
             # Aggregate performance metrics
             if event.response_time_ms is not None:
-                variant_data[event.variant]["performance_metrics"].append(
+                variant_data[str(event.variant)]["performance_metrics"].append(
                     {
                         "response_time_ms": event.response_time_ms,
                         "token_reduction_percentage": event.token_reduction_percentage or 0.0,
@@ -750,10 +750,11 @@ class StatisticalAnalyzer:
                 )
 
             # Count successes and errors
-            if event.success is True:
-                variant_data[event.variant]["success_count"] += 1
-            elif event.success is False:
-                variant_data[event.variant]["error_count"] += 1
+            success_value = bool(event.success) if event.success is not None else None
+            if success_value is True:
+                variant_data[str(event.variant)]["success_count"] += 1
+            elif success_value is False:
+                variant_data[str(event.variant)]["error_count"] += 1
 
         # Calculate aggregated metrics for each variant
         for _variant, data in variant_data.items():
@@ -773,7 +774,7 @@ class StatisticalAnalyzer:
 
         return dict(variant_data)
 
-    def _calculate_statistical_significance(self, variant_data: dict[str, dict[str, Any]]) -> dict[str, float]:
+    def _calculate_statistical_significance(self, variant_data: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Calculate statistical significance between variants."""
 
         # Simplified statistical analysis
@@ -857,7 +858,7 @@ class StatisticalAnalyzer:
             total_successes += data["success_count"]
             total_attempts += data["success_count"] + data["error_count"]
 
-            performance_summary["variant_comparison"][variant] = {
+            performance_summary["variant_comparison"][variant] = {  # type: ignore[index]
                 "user_count": data["user_count"],
                 "request_count": variant_requests,
                 "avg_response_time_ms": data["avg_response_time_ms"],
@@ -885,7 +886,7 @@ class StatisticalAnalyzer:
     ) -> dict[str, bool]:
         """Check if experiment meets success criteria."""
 
-        success_criteria = experiment.success_criteria or {}
+        success_criteria: dict[str, Any] = dict(experiment.success_criteria or {})
         results = {}
 
         # Check minimum token reduction
@@ -914,7 +915,7 @@ class StatisticalAnalyzer:
     ) -> dict[str, bool]:
         """Check if experiment exceeds failure thresholds."""
 
-        failure_thresholds = experiment.failure_thresholds or {}
+        failure_thresholds: dict[str, Any] = dict(experiment.failure_thresholds or {})
         results = {}
 
         # Check maximum error rate
@@ -1055,7 +1056,7 @@ class FeatureFlagManager:
                 return False
 
             # Update the configuration
-            config = experiment.config or {}
+            config: dict[str, Any] = dict(experiment.config or {})
             variant_configs = config.get("variant_configs", {})
 
             if variant not in variant_configs:
@@ -1067,8 +1068,8 @@ class FeatureFlagManager:
             variant_configs[variant]["feature_flags"][flag_name] = value
 
             config["variant_configs"] = variant_configs
-            experiment.config = config
-            experiment.updated_at = utc_now()
+            experiment.config = config  # type: ignore[assignment]
+            experiment.updated_at = utc_now()  # type: ignore[assignment]
 
             self.db_session.commit()
 
@@ -1127,14 +1128,14 @@ class RolloutController:
                 # Check for failure conditions
                 if any(results.failure_thresholds_exceeded.values()):
                     self.logger.warning(f"Experiment {experiment_id} failed safety checks, pausing rollout")
-                    experiment.status = "paused"
+                    experiment.status = "paused"  # type: ignore[assignment]
                     self.db_session.commit()
                     return False
 
                 # Check if ready for next step
                 if results.statistical_significance >= 80.0:  # Require reasonable confidence
-                    experiment.current_percentage = next_percentage
-                    experiment.updated_at = utc_now()
+                    experiment.current_percentage = next_percentage  # type: ignore[assignment]
+                    experiment.updated_at = utc_now()  # type: ignore[assignment]
                     self.db_session.commit()
 
                     self.logger.info(
@@ -1179,9 +1180,9 @@ class RolloutController:
                     )
 
                     # Rollback by setting all users to control
-                    experiment.status = "failed"
-                    experiment.current_percentage = 0.0
-                    experiment.end_time = utc_now()
+                    experiment.status = "failed"  # type: ignore[assignment]
+                    experiment.current_percentage = 0.0  # type: ignore[assignment]
+                    experiment.end_time = utc_now()  # type: ignore[assignment]
 
                     self.db_session.commit()
 
@@ -1209,7 +1210,7 @@ class ExperimentManager(ObservabilityMixin):
             db_url = "sqlite:///ab_testing.db"  # Fallback for testing
             self.engine = create_engine(db_url)
 
-        Base.metadata.create_all(self.engine)
+        BaseModel.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
         self.logger = logging.getLogger(__name__)
@@ -1222,7 +1223,7 @@ class ExperimentManager(ObservabilityMixin):
         self._shutdown_requested = False
 
     @contextlib.contextmanager
-    def get_db_session(self):
+    def get_db_session(self) -> Any:
         """Get database session as context manager."""
         session = self.SessionLocal()
         try:

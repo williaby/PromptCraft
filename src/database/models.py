@@ -185,7 +185,7 @@ class UserSession(Base):
         comment="Additional user metadata and context",
     )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize UserSession with proper defaults."""
         # Set defaults for fields that should have them
         if "session_count" not in kwargs:
@@ -292,7 +292,7 @@ class AuthenticationEvent(Base):
         comment="Event timestamp",
     )
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize AuthenticationEvent with proper defaults."""
         # Set defaults for fields that should have them
         if "success" not in kwargs:

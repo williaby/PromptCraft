@@ -225,8 +225,8 @@ class ProcessingResult:
             "session_id": self.session_id,
             "detection_result": {
                 "categories": self.detection_result.categories,
-                "confidence": self.detection_result.confidence,
-                "reasoning": self.detection_result.reasoning,
+                "confidence_scores": self.detection_result.confidence_scores,
+                "fallback_applied": self.detection_result.fallback_applied,
             },
             "optimization_report": self.optimization_report.to_dict(),
             "user_commands_count": len(self.user_commands),
@@ -301,7 +301,7 @@ class DynamicLoadingIntegration:
         self.logger = logging.getLogger(__name__)
 
         # Cache for optimization results
-        self._optimization_cache: dict[str, ProcessingResult] = {}
+        self._optimization_cache: dict[str, dict[str, Any]] = {}
         self._cache_ttl_seconds = 3600  # 1 hour cache TTL
 
         self.logger.info("Initializing DynamicLoadingIntegration in %s mode", mode.value)
@@ -375,6 +375,8 @@ class DynamicLoadingIntegration:
         config_manager = ConfigManager()
 
         # Initialize user control system with required dependencies
+        if self.task_detector is None:
+            raise RuntimeError("Task detector must be initialized before user controls")
         self.user_control_system = UserControlSystem(detection_system=self.task_detector, config_manager=config_manager)
 
         self.logger.info("User control systems initialized")
@@ -431,6 +433,8 @@ class DynamicLoadingIntegration:
                 self.metrics.cache_misses += 1
 
             # Step 1: Task Detection
+            if self.task_detector is None:
+                raise RuntimeError("Task detector not initialized")
             detection_start = time.perf_counter()
             raw_detection_result = await self.task_detector.detect_categories(query)
             detection_time = (time.perf_counter() - detection_start) * 1000
@@ -462,6 +466,8 @@ class DynamicLoadingIntegration:
             )
 
             # Step 2: Create loading session and load functions
+            if self.function_loader is None:
+                raise RuntimeError("Function loader not initialized")
             loading_start = time.perf_counter()
             loading_session_id = await self.function_loader.create_loading_session(
                 user_id=user_id,
@@ -474,6 +480,7 @@ class DynamicLoadingIntegration:
             if user_commands and self.enable_user_controls:
                 for command in user_commands:
                     try:
+                        assert self.function_loader is not None  # Already checked above
                         cmd_result = await self.function_loader.execute_user_command(
                             loading_session_id,
                             command,
@@ -490,12 +497,12 @@ class DynamicLoadingIntegration:
                             CommandResult(
                                 success=False,
                                 message=f"Command execution failed: {e}",
-                                command=command,
                             ),
                         )
                         self.metrics.user_commands_executed += 1
 
             # Load functions based on detection and user input
+            assert self.function_loader is not None  # Already checked above
             loading_decision = await self.function_loader.load_functions_for_query(
                 loading_session_id,
             )
@@ -506,7 +513,11 @@ class DynamicLoadingIntegration:
 
             baseline_tokens = self.function_loader.function_registry.get_baseline_token_cost()
             optimized_tokens = loading_decision.estimated_tokens
-            reduction_percentage = session_summary["token_reduction_percentage"]
+            reduction_percentage = (
+                session_summary.get("token_reduction_percentage", 0.0)
+                if session_summary is not None and isinstance(session_summary, dict)
+                else 0.0
+            )
             target_achieved = reduction_percentage >= 70.0
 
             # Step 4: Create optimization report
@@ -671,18 +682,21 @@ class DynamicLoadingIntegration:
         cache_key = f"{query}:{strategy.value}"
 
         if cache_key in self._optimization_cache:
-            cached_result = self._optimization_cache[cache_key]
+            cache_entry = self._optimization_cache[cache_key]
 
             # Check if cache entry is still valid (TTL)
-            cache_age = time.time() - getattr(cached_result, "_cached_at", time.time() - self._cache_ttl_seconds + 1)
-            if cache_age < self._cache_ttl_seconds:
-                # Create a copy and ensure cache_hit is set
-                import copy
+            if isinstance(cache_entry, dict) and "cached_at" in cache_entry:
+                cache_age = time.time() - cache_entry["cached_at"]
+                if cache_age < self._cache_ttl_seconds:
+                    # Create a copy and ensure cache_hit is set
+                    import copy
 
-                cached_copy = copy.deepcopy(cached_result)
-                cached_copy.cache_hit = True
-                return cached_copy
-            # Remove expired entry
+                    cached_result = cache_entry["result"]
+                    if isinstance(cached_result, ProcessingResult):
+                        cached_copy = copy.deepcopy(cached_result)
+                        cached_copy.cache_hit = True
+                        return cached_copy
+            # Remove expired or invalid entry
             del self._optimization_cache[cache_key]
 
         return None
@@ -697,9 +711,11 @@ class DynamicLoadingIntegration:
             oldest_key = next(iter(self._optimization_cache))
             del self._optimization_cache[oldest_key]
 
-        # Store timestamp for TTL tracking
-        result._cached_at = time.time()
-        self._optimization_cache[cache_key] = result
+        # Store result with timestamp for TTL tracking
+        self._optimization_cache[cache_key] = {
+            "result": result,
+            "cached_at": time.time(),
+        }
 
     def _update_metrics(self, result: ProcessingResult) -> None:
         """Update integration metrics based on processing result."""
@@ -841,7 +857,6 @@ class DynamicLoadingIntegration:
             return CommandResult(
                 success=False,
                 message="User controls not enabled",
-                command=command,
             )
 
         try:
