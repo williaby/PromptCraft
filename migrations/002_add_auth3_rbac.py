@@ -406,7 +406,6 @@ def upgrade_seed_data() -> None:
 
     # Insert roles
     for name, description, parent_name in roles_data:
-        parent_id_query = ""
         params = {"name": name, "description": description, "created_at": datetime.now(UTC)}
 
         if parent_name:
@@ -414,11 +413,13 @@ def upgrade_seed_data() -> None:
 
             # Use parameterized subquery to avoid SQL injection concerns
             op.execute(
-                sa.text("""
+                sa.text(
+                    """
                 INSERT INTO roles (name, description, parent_role_id, created_at, is_active)
                 VALUES (:name, :description, (SELECT id FROM roles WHERE name = :parent_name), :created_at, true)
                 ON CONFLICT (name) DO NOTHING
-                """),
+                """,
+                ),
                 params,
             )
         else:
@@ -583,13 +584,6 @@ def downgrade() -> None:
     # Drop main tables
     op.drop_table("permissions")
     op.drop_table("roles")
-
-
-# Apply seed data after table creation
-def upgrade() -> None:
-    """Main upgrade function that applies schema and seed data."""
-    upgrade_schema()
-    upgrade_seed_data()
 
 
 def upgrade_schema() -> None:

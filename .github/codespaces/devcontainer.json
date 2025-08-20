@@ -1,0 +1,48 @@
+{
+  "name": "PromptCraft Codespaces (Prebuild Optimized)",
+  "build": {
+    "dockerfile": "../../.devcontainer/Dockerfile",
+    "context": "../.."
+  },
+  "postCreateCommand": {
+    "setup": "make setup && echo '🚀 Codespaces environment ready!'",
+    "verify": "poetry --version && python --version && git --version",
+    "info": "echo '📋 Available services: Gradio (7860), FastAPI (8000), Zen MCP (3000)'"
+  },
+  "updateContentCommand": "poetry install --sync",
+  "forwardPorts": [7860, 8000, 3000, 8080],
+  "portsAttributes": {
+    "7860": {"label": "Gradio UI", "onAutoForward": "notify"},
+    "8000": {"label": "FastAPI Backend", "onAutoForward": "notify"},
+    "3000": {"label": "Zen MCP Server", "onAutoForward": "silent"},
+    "8080": {"label": "Code-Server IDE", "onAutoForward": "silent"}
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "ms-python.black-formatter",
+        "ms-vscode.makefile-tools",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "davidanson.vscode-markdownlint"
+      ]
+    }
+  },
+  "remoteUser": "promptcraft",
+  "workspaceFolder": "/workspace",
+  "containerEnv": {
+    "CODESPACES": "true",
+    "CI_ENVIRONMENT": "false",
+    "PROMPTCRAFT_REDIS_HOST": "localhost",
+    "PROMPTCRAFT_QDRANT_HOST": "192.168.1.16",
+    "PROMPTCRAFT_ENABLE_SERVICE_MOCKING": "true"
+  }
+}
