@@ -14,6 +14,7 @@ This migration adds the AUTH-3 role-based access control system including:
 """
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 import sqlalchemy as sa
 from alembic import op
@@ -190,13 +191,11 @@ def upgrade() -> None:
     # =============================================================================
 
     # Read and execute the PostgreSQL functions file
-    import os
-
     # Get the path to the functions file relative to this migration
-    functions_file = os.path.join(os.path.dirname(__file__), "auth3_functions.sql")
+    functions_file = Path(__file__).parent / "auth3_functions.sql"
 
-    if os.path.exists(functions_file):
-        with open(functions_file) as f:
+    if functions_file.exists():
+        with functions_file.open() as f:
             functions_sql = f.read()
 
         # Execute the functions SQL
@@ -374,7 +373,8 @@ def upgrade_seed_data() -> None:
 
     # Insert permissions
     for name, resource, action, description in permissions_data:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO permissions (name, resource, action, description, created_at, is_active)
@@ -412,7 +412,8 @@ def upgrade_seed_data() -> None:
             params["parent_name"] = parent_name
 
             # Use parameterized subquery to avoid SQL injection concerns
-            op.execute(
+            conn = op.get_bind()
+            conn.execute(
                 sa.text(
                     """
                 INSERT INTO roles (name, description, parent_role_id, created_at, is_active)
@@ -423,7 +424,8 @@ def upgrade_seed_data() -> None:
                 params,
             )
         else:
-            op.execute(
+            conn = op.get_bind()
+            conn.execute(
                 sa.text(
                     """
                 INSERT INTO roles (name, description, parent_role_id, created_at, is_active)
@@ -475,7 +477,8 @@ def upgrade_seed_data() -> None:
     ]
 
     for perm in admin_permissions:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO role_permissions (role_id, permission_id)
@@ -492,7 +495,8 @@ def upgrade_seed_data() -> None:
     user_manager_permissions = ["users:read", "users:update", "roles:read", "roles:assign", "api:access"]
 
     for perm in user_manager_permissions:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO role_permissions (role_id, permission_id)
@@ -516,7 +520,8 @@ def upgrade_seed_data() -> None:
     ]
 
     for perm in token_manager_permissions:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO role_permissions (role_id, permission_id)
@@ -533,7 +538,8 @@ def upgrade_seed_data() -> None:
     api_user_permissions = ["api:access", "system:status"]
 
     for perm in api_user_permissions:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO role_permissions (role_id, permission_id)
@@ -550,7 +556,8 @@ def upgrade_seed_data() -> None:
     readonly_permissions = ["users:read", "roles:read", "permissions:read", "system:status", "api:access"]
 
     for perm in readonly_permissions:
-        op.execute(
+        conn = op.get_bind()
+        conn.execute(
             sa.text(
                 """
             INSERT INTO role_permissions (role_id, permission_id)
@@ -752,13 +759,11 @@ def upgrade_schema() -> None:
     # =============================================================================
 
     # Read and execute the PostgreSQL functions file
-    import os
-
     # Get the path to the functions file relative to this migration
-    functions_file = os.path.join(os.path.dirname(__file__), "auth3_functions.sql")
+    functions_file = Path(__file__).parent / "auth3_functions.sql"
 
-    if os.path.exists(functions_file):
-        with open(functions_file) as f:
+    if functions_file.exists():
+        with functions_file.open() as f:
             functions_sql = f.read()
 
         # Execute the functions SQL
