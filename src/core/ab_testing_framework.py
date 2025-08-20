@@ -48,7 +48,7 @@ from .dynamic_loading_integration import ProcessingResult
 logger = logging.getLogger(__name__)
 
 # Database models for A/B testing
-Base = declarative_base()
+BaseModel = declarative_base()
 
 
 class ExperimentType(Enum):
@@ -93,7 +93,7 @@ class VariantType(Enum):
 # Database Models
 
 
-class ExperimentModel(Base):
+class ExperimentModel(BaseModel):  # type: ignore
     """Database model for A/B experiments."""
 
     __tablename__ = "ab_experiments"
@@ -131,7 +131,7 @@ class ExperimentModel(Base):
     created_by = Column(String)
 
 
-class UserAssignmentModel(Base):
+class UserAssignmentModel(BaseModel):  # type: ignore
     """Database model for user-to-experiment assignments."""
 
     __tablename__ = "ab_user_assignments"
@@ -155,7 +155,7 @@ class UserAssignmentModel(Base):
     total_interactions = Column(Integer, default=0)
 
 
-class MetricEventModel(Base):
+class MetricEventModel(BaseModel):  # type: ignore
     """Database model for A/B testing metric events."""
 
     __tablename__ = "ab_metric_events"
@@ -372,7 +372,7 @@ class UserSegmentation:
             )
 
             if existing and not existing.opt_out:
-                return existing.variant, UserSegment(existing.segment)
+                return existing.variant, UserSegment(existing.segment)  # type: ignore
 
             # Check opt-in requirements
             if config.opt_in_only and user_characteristics:

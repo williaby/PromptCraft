@@ -235,7 +235,7 @@ async def revoke_service_token(
     manager = ServiceTokenManager()
 
     try:
-        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.revoke_service_token(
             token_identifier=token_identifier,
             revocation_reason=f"{reason} (revoked by {revoked_by} via API)",
@@ -403,7 +403,7 @@ async def emergency_revoke_all_tokens(
     manager = ServiceTokenManager()
 
     try:
-        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         revoked_count = await manager.emergency_revoke_all_tokens(
             emergency_reason=f"{reason} (emergency revoked by {revoked_by} via API)",
         )

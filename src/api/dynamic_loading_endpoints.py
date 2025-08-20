@@ -51,7 +51,7 @@ class QueryOptimizationRequest(BaseModel):
 
     @field_validator("strategy")
     @classmethod
-    def validate_strategy(cls, v):
+    def validate_strategy(cls, v: str) -> str:
         valid_strategies = ["conservative", "balanced", "aggressive"]
         if v.lower() not in valid_strategies:
             raise ValueError(f"Strategy must be one of: {valid_strategies}")
@@ -59,7 +59,7 @@ class QueryOptimizationRequest(BaseModel):
 
     @field_validator("user_commands")
     @classmethod
-    def validate_commands(cls, v):
+    def validate_commands(cls, v: list[str] | None) -> list[str] | None:
         if v is not None:
             if len(v) > 10:
                 raise ValueError("Maximum 10 user commands allowed")
@@ -110,7 +110,7 @@ class UserCommandRequest(BaseModel):
 
     @field_validator("command")
     @classmethod
-    def validate_command(cls, v):
+    def validate_command(cls, v: str) -> str:
         if not v.startswith("/"):
             raise ValueError("Commands must start with '/'")
         return v
@@ -134,7 +134,7 @@ class DemoRunRequest(BaseModel):
 
     @field_validator("scenario_types")
     @classmethod
-    def validate_scenario_types(cls, v):
+    def validate_scenario_types(cls, v: list[str] | None) -> list[str] | None:
         if v is not None:
             valid_types = [
                 "basic_optimization",
@@ -223,8 +223,8 @@ async def optimize_query(
                 "target_achieved": result.target_achieved,
                 "detection_result": {
                     "categories": result.detection_result.categories,
-                    "confidence": result.detection_result.confidence,
-                    "reasoning": result.detection_result.reasoning,
+                    "confidence_scores": result.detection_result.confidence_scores,
+                    "fallback_applied": result.detection_result.fallback_applied,
                 },
                 "performance_metrics": {
                     "detection_time_ms": result.detection_time_ms,
@@ -550,16 +550,21 @@ async def get_function_registry_stats(
             },
             "tier_breakdown": tier_stats,
             "category_breakdown": category_stats,
-            "optimization_potential": {
-                "max_possible_reduction": (
-                    100.0
-                    - (tier_stats.get("tier_1", {}).get("token_cost", 0) / registry.get_baseline_token_cost() * 100)
-                    if registry.get_baseline_token_cost() > 0
-                    else 0
-                ),
-                "typical_reduction_range": "60-85%",
-                "aggressive_reduction_potential": "80-90%",
-            },
+            "optimization_potential": (
+                lambda: {
+                    "max_possible_reduction": (
+                        100.0 - (float(token_cost) / registry.get_baseline_token_cost() * 100)
+                        if registry.get_baseline_token_cost() > 0
+                        and isinstance(
+                            (token_cost := tier_stats.get("tier_1", {}).get("token_cost", 0)),
+                            (int, float, str),
+                        )
+                        else 0
+                    ),
+                    "typical_reduction_range": "60-85%",
+                    "aggressive_reduction_potential": "80-90%",
+                }
+            )(),
         }
 
         return JSONResponse(content=stats)

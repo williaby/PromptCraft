@@ -127,8 +127,8 @@ class FailureAnalyzer:
 
     def __init__(self, window_size: int = 50) -> None:
         self.window_size = window_size
-        self.failure_history = deque(maxlen=window_size)
-        self.response_times = deque(maxlen=window_size)
+        self.failure_history: deque[dict[str, Any]] = deque(maxlen=window_size)
+        self.response_times: deque[float] = deque(maxlen=window_size)
 
     def record_request(self, success: bool, response_time: float, error_type: str | None = None) -> None:
         """Record a request result for pattern analysis"""
@@ -188,7 +188,7 @@ class FailureAnalyzer:
         avg_time = sum(recent_times) / len(recent_times)
 
         # Consider overload if average response time is significantly elevated
-        return avg_time > 2.0  # 2+ seconds average response time
+        return bool(avg_time > 2.0)  # 2+ seconds average response time
 
     def get_pattern_confidence(self) -> float:
         """Get confidence in current pattern detection (0.0 to 1.0)"""
@@ -303,7 +303,7 @@ class FallbackCircuitBreaker(LoggerMixin):
         self.health_check_interval = 30.0  # 30 seconds
         self.last_health_check = time.time()
 
-    async def execute(self, func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Any:
+    async def execute(self, func: Callable[..., Awaitable[Any]], *args: Any, **kwargs: Any) -> Any:
         """Execute function with circuit breaker protection"""
         request_start = time.time()
 

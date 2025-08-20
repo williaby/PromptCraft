@@ -192,7 +192,7 @@ class TaskDetectionConfig:
     def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary"""
 
-        def convert_enum(obj):
+        def convert_enum(obj: Any) -> Any:
             if isinstance(obj, Enum):
                 return obj.value
             if isinstance(obj, dict):

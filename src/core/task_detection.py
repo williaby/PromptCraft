@@ -85,23 +85,32 @@ class KeywordAnalyzer:
     def analyze(self, query: str) -> dict[str, float]:
         """Analyze query for keyword signals"""
         query_lower = query.lower()
-        category_scores = defaultdict(float)
+        category_scores: dict[str, float] = defaultdict(float)
 
         for category, patterns in self.keyword_patterns.items():
             # Direct keyword matches (highest weight)
-            for keyword in patterns["direct"]:
-                if keyword in query_lower:
-                    category_scores[category] += patterns["confidence"] * 1.0
+            if isinstance(patterns, dict) and "direct" in patterns and isinstance(patterns["direct"], list):
+                for keyword in patterns["direct"]:
+                    if isinstance(keyword, str) and keyword in query_lower:
+                        confidence_val = patterns.get("confidence", 0.5)
+                        if isinstance(confidence_val, (int, float)):
+                            category_scores[category] += float(confidence_val) * 1.0
 
             # Contextual keyword matches (medium weight)
-            for keyword in patterns["contextual"]:
-                if keyword in query_lower:
-                    category_scores[category] += patterns["confidence"] * 0.7
+            if isinstance(patterns, dict) and "contextual" in patterns and isinstance(patterns["contextual"], list):
+                for keyword in patterns["contextual"]:
+                    if isinstance(keyword, str) and keyword in query_lower:
+                        confidence_val = patterns.get("confidence", 0.5)
+                        if isinstance(confidence_val, (int, float)):
+                            category_scores[category] += float(confidence_val) * 0.7
 
             # Action keyword matches (lower weight)
-            for keyword in patterns["action"]:
-                if keyword in query_lower:
-                    category_scores[category] += patterns["confidence"] * 0.5
+            if isinstance(patterns, dict) and "action" in patterns and isinstance(patterns["action"], list):
+                for keyword in patterns["action"]:
+                    if isinstance(keyword, str) and keyword in query_lower:
+                        confidence_val = patterns.get("confidence", 0.5)
+                        if isinstance(confidence_val, (int, float)):
+                            category_scores[category] += float(confidence_val) * 0.5
 
         # Normalize scores to prevent inflation
         return {k: min(1.0, v) for k, v in category_scores.items()}
@@ -146,7 +155,7 @@ class ContextAnalyzer:
 
     def analyze(self, query: str, context: dict[str, Any]) -> dict[str, float]:
         """Analyze context clues for category signals"""
-        category_scores = defaultdict(float)
+        category_scores: dict[str, float] = defaultdict(float)
 
         # File extension analysis
         file_extensions = context.get("file_extensions", [])
@@ -223,7 +232,7 @@ class EnvironmentAnalyzer:
         structure_signals = self.analyze_project_structure(context)
 
         # Combine signals
-        combined = defaultdict(float)
+        combined: dict[str, float] = defaultdict(float)
         for signals in [git_signals, structure_signals]:
             for category, score in signals.items():
                 combined[category] += score
@@ -255,7 +264,7 @@ class SessionAnalyzer:
             recent_functions.extend(functions_used)
 
         # Categorize functions
-        category_usage = defaultdict(int)
+        category_usage: dict[str, int] = defaultdict(int)
         for func in recent_functions:
             for category, funcs in self.function_categories.items():
                 if any(f in func for f in funcs):
@@ -389,7 +398,7 @@ class TaskDetectionScorer:
 
     def calculate_category_scores(self, signals: list[SignalData]) -> dict[str, float]:
         """Calculate weighted scores for each function category"""
-        category_scores = defaultdict(float)
+        category_scores: dict[str, float] = defaultdict(float)
 
         for signal in signals:
             base_weight = self.signal_weights.get(signal.signal_type, 0.5)
@@ -453,27 +462,35 @@ class FunctionLoader:
         fallback_applied = None
 
         # Tier 1: Always load
-        for category in self.tier_definitions["tier1"]["categories"]:
-            decisions[category] = True
+        tier1_cats = self.tier_definitions.get("tier1", {}).get("categories", [])
+        if isinstance(tier1_cats, list):
+            for category in tier1_cats:
+                decisions[category] = True
 
         # Tier 2: Conditional loading
-        for category in self.tier_definitions["tier2"]["categories"]:
-            score = scores.get(category, 0.0)
-            threshold = self.tier_definitions["tier2"]["threshold"]
+        tier2_cats = self.tier_definitions.get("tier2", {}).get("categories", [])
+        tier2_threshold = self.tier_definitions.get("tier2", {}).get("threshold", 0.3)
+        if isinstance(tier2_cats, list) and isinstance(tier2_threshold, (int, float)):
+            for category in tier2_cats:
+                score = scores.get(category, 0.0)
+                threshold = float(tier2_threshold)
 
-            # Apply conservative bias
-            adjusted_threshold = self.apply_conservative_bias(threshold, context)
+                # Apply conservative bias
+                adjusted_threshold = self.apply_conservative_bias(threshold, context)
 
-            if score >= adjusted_threshold:
-                decisions[category] = True
-            else:
-                decisions[category] = False
+                if score >= adjusted_threshold:
+                    decisions[category] = True
+                else:
+                    decisions[category] = False
 
         # Tier 3: High-confidence only
-        for category in self.tier_definitions["tier3"]["categories"]:
-            score = scores.get(category, 0.0)
-            threshold = self.tier_definitions["tier3"]["threshold"]
-            decisions[category] = score >= threshold
+        tier3_cats = self.tier_definitions.get("tier3", {}).get("categories", [])
+        tier3_threshold = self.tier_definitions.get("tier3", {}).get("threshold", 0.6)
+        if isinstance(tier3_cats, list) and isinstance(tier3_threshold, (int, float)):
+            for category in tier3_cats:
+                score = scores.get(category, 0.0)
+                threshold = float(tier3_threshold)
+                decisions[category] = score >= threshold
 
         # Apply fallback logic
         decisions, fallback_applied = self.apply_fallback_logic(decisions, scores, context)
@@ -512,12 +529,16 @@ class FunctionLoader:
         # 3. Low-confidence/ambiguous → Check if conservative bias enabled any functions
         if max_score < 0.4 or self.is_ambiguous(scores):
             # If conservative bias enabled any tier2+ functions, respect those decisions
-            tier2_enabled = any(
-                initial_decisions.get(cat, False) for cat in self.tier_definitions["tier2"]["categories"]
-            )
-            tier3_enabled = any(
-                initial_decisions.get(cat, False) for cat in self.tier_definitions["tier3"]["categories"]
-            )
+            tier2_cats = self.tier_definitions.get("tier2", {}).get("categories", [])
+            tier3_cats = self.tier_definitions.get("tier3", {}).get("categories", [])
+
+            tier2_enabled = False
+            if isinstance(tier2_cats, list):
+                tier2_enabled = any(initial_decisions.get(cat, False) for cat in tier2_cats)
+
+            tier3_enabled = False
+            if isinstance(tier3_cats, list):
+                tier3_enabled = any(initial_decisions.get(cat, False) for cat in tier3_cats)
 
             if tier2_enabled or tier3_enabled:
                 return initial_decisions, "conservative_bias"
@@ -533,8 +554,11 @@ class FunctionLoader:
         expanded = decisions.copy()
 
         # Load top 2 scoring tier2 categories (reduced from 3 to improve precision)
-        tier2_categories = self.tier_definitions["tier2"]["categories"]
-        tier2_scores = {k: v for k, v in scores.items() if k in tier2_categories}
+        tier2_categories = self.tier_definitions.get("tier2", {}).get("categories", [])
+        if isinstance(tier2_categories, list):
+            tier2_scores = {k: v for k, v in scores.items() if k in tier2_categories}
+        else:
+            tier2_scores = {}
 
         top_categories = sorted(tier2_scores.items(), key=lambda x: x[1], reverse=True)[:2]
 
@@ -619,8 +643,8 @@ class TaskDetectionSystem:
         self.loader = FunctionLoader()
 
         # Performance tracking
-        self.cache = {}
-        self.cache_timestamps = {}
+        self.cache: dict[str, DetectionResult] = {}
+        self.cache_timestamps: dict[str, datetime] = {}
         self.max_cache_age = timedelta(hours=1)
 
     @lru_cache(maxsize=1000)
@@ -654,13 +678,19 @@ class TaskDetectionSystem:
             signals = await asyncio.gather(*signal_tasks, return_exceptions=True)
 
             # Filter out exceptions and flatten signals
-            valid_signals = []
-            signals_dict = {}
+            valid_signals: list[SignalData] = []
+            signals_dict: dict[str, dict[str, float]] = {}
 
             for i, signal_result in enumerate(signals):
                 if not isinstance(signal_result, Exception):
-                    valid_signals.extend(signal_result)
-                    signals_dict[f"signal_{i}"] = signal_result
+                    if isinstance(signal_result, list):
+                        valid_signals.extend(signal_result)
+                        # Convert to expected format
+                        combined_scores: dict[str, float] = {}
+                        for signal in signal_result:
+                            for category, score in signal.category_scores.items():
+                                combined_scores[category] = max(combined_scores.get(category, 0.0), score)
+                        signals_dict[f"signal_{i}"] = combined_scores
                 else:
                     logger.warning(f"Signal extraction failed: {signal_result}")
 
@@ -814,7 +844,12 @@ if __name__ == "__main__":
 
         for _i, test_case in enumerate(test_cases):
 
-            result = await detector.detect_categories(test_case["query"], test_case["context"])
+            query = test_case["query"]
+            context = test_case["context"]
+            if isinstance(query, str) and isinstance(context, dict):
+                result = await detector.detect_categories(query, context)
+            else:
+                continue
 
             if result.fallback_applied:
                 pass

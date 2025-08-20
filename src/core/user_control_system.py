@@ -68,7 +68,7 @@ class CategoryManager:
 
     def __init__(self, detection_system: TaskDetectionSystem) -> None:
         self.detection_system = detection_system
-        self.available_categories = {
+        self.available_categories: dict[str, dict[str, Any]] = {
             "core": {
                 "description": "Essential development operations (Read, Write, Edit, Bash)",
                 "functions": ["Read", "Write", "Edit", "MultiEdit", "Bash", "LS", "Glob", "Grep"],
@@ -264,7 +264,7 @@ class TierController:
 
     def __init__(self, detection_system: TaskDetectionSystem) -> None:
         self.detection_system = detection_system
-        self.tier_definitions = {
+        self.tier_definitions: dict[int, dict[str, Any]] = {
             1: {
                 "name": "Essential",
                 "description": "Core functions always loaded for basic operation",
@@ -287,7 +287,7 @@ class TierController:
                 "load_threshold": 0.6,
             },
         }
-        self.current_tier_status = {1: True, 2: False, 3: False}
+        self.current_tier_status: dict[int, bool] = {1: True, 2: False, 3: False}
 
     def load_tier(self, tier: int, force: bool = False) -> CommandResult:
         """Load specific tier of functions"""
@@ -384,7 +384,7 @@ class TierController:
 
     def optimize_for_task(self, task_type: str) -> CommandResult:
         """Optimize tier loading for specific task type"""
-        task_optimizations = {
+        task_optimizations: dict[str, dict[str, Any]] = {
             "debugging": {
                 "required_tiers": [1, 2],
                 "priority_categories": ["debug", "analysis"],
@@ -452,7 +452,7 @@ class PerformanceMonitor:
     """Monitors and reports on function loading performance"""
 
     def __init__(self) -> None:
-        self.metrics = {
+        self.metrics: dict[str, Any] = {
             "loading_times": [],
             "memory_usage": [],
             "cache_hits": 0,
@@ -744,7 +744,7 @@ class CommandParser:
     """Parses and validates user override commands"""
 
     def __init__(self) -> None:
-        self.commands = {
+        self.commands: dict[str, dict[str, Any]] = {
             "load-category": {
                 "handler": "load_category",
                 "params": ["category"],
@@ -969,7 +969,7 @@ class UserControlSystem:
         )
 
         # Usage analytics
-        self.usage_analytics = {
+        self.usage_analytics: dict[str, Any] = {
             "commands_executed": Counter(),
             "categories_used": Counter(),
             "error_patterns": defaultdict(list),
@@ -1005,7 +1005,7 @@ class UserControlSystem:
                 )
 
             # Execute command
-            result = await handler_method(parsed["args"], parsed["flags"])
+            result: CommandResult = await handler_method(parsed["args"], parsed["flags"])
 
             # Record performance
             execution_time = (time.perf_counter() - start_time) * 1000

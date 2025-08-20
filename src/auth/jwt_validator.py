@@ -316,22 +316,22 @@ class JWTValidator:
             return self.validate_token(token, email_whitelist)
         except JWTValidationError as e:
             # Convert specific JWT validation errors to appropriate HTTP exceptions
-            if e.error_code in {"expired_token"}:
+            if e.error_type in {"expired_token"}:
                 raise AuthExceptionHandler.handle_authentication_error(
                     detail="Token has expired",
                     log_message=f"JWT validation failed: {e.message}",
                 ) from e
-            if e.error_code in {"invalid_signature", "invalid_key"}:
+            if e.error_type in {"invalid_signature", "invalid_key"}:
                 raise AuthExceptionHandler.handle_authentication_error(
                     detail="Invalid authentication credentials",
                     log_message=f"JWT signature validation failed: {e.message}",
                 ) from e
-            if e.error_code in {"invalid_format", "missing_kid", "invalid_token"}:
+            if e.error_type in {"invalid_format", "missing_kid", "invalid_token"}:
                 raise AuthExceptionHandler.handle_validation_error(
                     f"Invalid token format: {e.message}",
                     field_name="authorization_token",
                 ) from e
-            if e.error_code == "email_not_authorized":
+            if e.error_type == "email_not_authorized":
                 # This is already handled in validate_token with AuthExceptionHandler
                 raise
             # Generic authentication error for other cases

@@ -147,8 +147,8 @@ class UserNotificationManager:
 
     def __init__(self, config: IntegrationConfig) -> None:
         self.config = config
-        self.notification_history = []
-        self.last_notification_time = {}
+        self.notification_history: list[dict[str, Any]] = []
+        self.last_notification_time: dict[str, float] = {}
         self.notification_cooldown = 300.0  # 5 minutes
 
     async def notify_fallback_activation(self, level: FallbackLevel, query: str, reason: str) -> bool:
@@ -238,8 +238,9 @@ class UserNotificationManager:
 
     def _is_in_cooldown(self, notification_key: str) -> bool:
         """Check if notification is in cooldown period"""
-        last_time = self.last_notification_time.get(notification_key, 0)
-        return time.time() - last_time < self.notification_cooldown
+        last_time: float = self.last_notification_time.get(notification_key, 0)
+        current_time: float = time.time()
+        return current_time - last_time < self.notification_cooldown
 
     def _create_fallback_message(self, level: FallbackLevel, reason: str) -> str:
         """Create user-friendly fallback message"""
@@ -295,10 +296,10 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
 
         # Initialize components
         self.metrics = FallbackIntegrationMetrics()
-        self.notification_manager = UserNotificationManager(integration_config)
+        self.notification_manager = UserNotificationManager(self.integration_config)
 
         # State tracking
-        self.current_fallback_level = None
+        self.current_fallback_level: FallbackLevel | None = None
         self.last_health_check = time.time()
         self.system_healthy = True
 
@@ -387,7 +388,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
                 categories=categories,
                 confidence_scores=self._estimate_confidence_from_fallback(decision),
                 detection_time_ms=(time.time() - fallback_start) * 1000,
-                signals_used={"fallback": decision.rationale},
+                signals_used={"fallback": {"level": float(decision.level.value[0])}},  # Use numeric value from level
                 fallback_applied=decision.level.value,
             )
 
@@ -574,7 +575,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
             categories=safe_categories,
             confidence_scores={"core": 0.5, "git": 0.5, "analysis": 0.5},
             detection_time_ms=1.0,
-            signals_used={"emergency": "safe_fallback"},
+            signals_used={"emergency": {"safety_level": 1.0}},  # Use proper dict[str, float] format
             fallback_applied="emergency_safe_fallback",
         )
 
@@ -695,6 +696,6 @@ class BackwardsCompatibleTaskDetection:
         """Backwards compatible detect_categories method"""
         return await self.enhanced_system.detect_categories(query, context)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Delegate other attributes to original system"""
         return getattr(self.enhanced_system.original_system, name)

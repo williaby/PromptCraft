@@ -90,7 +90,7 @@ class CreateExperimentRequest(BaseModel):
 
     @field_validator("experiment_type")
     @classmethod
-    def validate_experiment_type(cls, v):
+    def validate_experiment_type(cls, v: str) -> str:
         valid_types = ["dynamic_loading", "optimization_strategy", "user_interface", "performance"]
         if v not in valid_types:
             raise ValueError(f"Experiment type must be one of: {valid_types}")
@@ -98,7 +98,7 @@ class CreateExperimentRequest(BaseModel):
 
     @field_validator("rollout_steps")
     @classmethod
-    def validate_rollout_steps(cls, v):
+    def validate_rollout_steps(cls, v: list[int]) -> list[int]:
         if not v or len(v) > 10:
             raise ValueError("Rollout steps must be provided and contain at most 10 steps")
 
@@ -127,14 +127,14 @@ class UserAssignmentRequest(BaseModel):
 
     @field_validator("usage_frequency")
     @classmethod
-    def validate_usage_frequency(cls, v):
+    def validate_usage_frequency(cls, v: str | None) -> str | None:
         if v is not None and v not in ["low", "medium", "high"]:
             raise ValueError("Usage frequency must be 'low', 'medium', or 'high'")
         return v
 
     @field_validator("feature_usage_pattern")
     @classmethod
-    def validate_feature_pattern(cls, v):
+    def validate_feature_pattern(cls, v: str | None) -> str | None:
         if v is not None and v not in ["basic", "intermediate", "advanced"]:
             raise ValueError("Feature usage pattern must be 'basic', 'intermediate', or 'advanced'")
         return v
@@ -166,7 +166,7 @@ class MetricEventRequest(BaseModel):
 
     @field_validator("event_type")
     @classmethod
-    def validate_event_type(cls, v):
+    def validate_event_type(cls, v: str) -> str:
         valid_types = ["performance", "conversion", "error", "engagement", "business"]
         if v not in valid_types:
             raise ValueError(f"Event type must be one of: {valid_types}")

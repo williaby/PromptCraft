@@ -141,9 +141,9 @@ class ClaudeCommandIntegration:
         self.integration_status = IntegrationStatus()
 
         # Integration state
-        self.active_session_id = None
-        self.command_history = []
-        self.performance_metrics = {}
+        self.active_session_id: str | None = None
+        self.command_history: list[dict[str, Any]] = []
+        self.performance_metrics: dict[str, float] = {}
 
         # Initialize command mappings
         self._initialize_command_mappings()
@@ -267,11 +267,16 @@ class ClaudeCommandIntegration:
 
         # Register all commands
         for cmd_name, cmd_info in user_control_commands.items():
+            from typing import cast
+
+            handler = cast(Callable[..., Any], cmd_info["handler"])
+            metadata = cast(CommandMetadata, cmd_info["metadata"])
+            aliases = cast(list[str] | None, cmd_info.get("aliases", []))
             self.command_registry.register_command(
                 cmd_name,
-                cmd_info["handler"],
-                cmd_info["metadata"],
-                cmd_info.get("aliases", []),
+                handler,
+                metadata,
+                aliases,
             )
 
         self.integration_status.command_count = len(user_control_commands)
@@ -285,11 +290,14 @@ class ClaudeCommandIntegration:
 
             # Parse command
             command_parts = self._parse_command_line(command_line)
-            command_name = command_parts.get("command")
+            command_name: str | None = command_parts.get("command")
             arguments = command_parts.get("arguments", [])
 
             # Get command from registry
-            command_info = self.command_registry.get_command(command_name)
+            if command_name:
+                command_info = self.command_registry.get_command(command_name)
+            else:
+                command_info = None
 
             if not command_info:
                 # Try user control system directly
@@ -301,7 +309,7 @@ class ClaudeCommandIntegration:
                 return CommandResult(
                     success=False,
                     message=f"Unknown command: {command_name}",
-                    suggestions=self._suggest_similar_commands(command_name),
+                    suggestions=self._suggest_similar_commands(command_name) if command_name else [],
                 )
 
             # Execute command
@@ -319,7 +327,7 @@ class ClaudeCommandIntegration:
                 success=False,
                 message=f"Command execution error: {e!s}",
                 warnings=["This might be a system error - check logs"],
-                suggestions=self._suggest_similar_commands(command_name) if "command_name" in locals() else [],
+                suggestions=self._suggest_similar_commands(command_name) if command_name else [],
             )
             self._track_command_end(command_line, error_result)
             return error_result
@@ -362,6 +370,9 @@ class ClaudeCommandIntegration:
             self.active_session_id = f"session_{int(datetime.now().timestamp())}"
 
         context = context or {}
+        # Ensure session_id is not None
+        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+
         self.analytics.track_user_action(
             "command_started",
             {
@@ -369,7 +380,7 @@ class ClaudeCommandIntegration:
                 "context": context,
             },
             user_id=context.get("user_id", "default"),
-            session_id=self.active_session_id,
+            session_id=session_id,
             context=context,
         )
 
@@ -377,6 +388,9 @@ class ClaudeCommandIntegration:
         """Track command execution completion"""
         if not self.active_session_id:
             return
+
+        # Ensure session_id is not None
+        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
 
         self.analytics.track_user_action(
             "command_executed",
@@ -389,7 +403,7 @@ class ClaudeCommandIntegration:
                 "warnings_count": len(result.warnings),
             },
             user_id="default",  # Would get from context in real implementation
-            session_id=self.active_session_id,
+            session_id=session_id,
         )
 
         # Add to command history
@@ -449,6 +463,7 @@ class ClaudeCommandIntegration:
 
         # Track category loading
         if result.success:
+            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
             self.analytics.track_user_action(
                 "category_loaded",
                 {
@@ -456,7 +471,7 @@ class ClaudeCommandIntegration:
                     "token_cost": result.data.get("token_cost", 0) if result.data else 0,
                 },
                 user_id=context.get("user_id", "default"),
-                session_id=self.active_session_id,
+                session_id=session_id,
             )
 
         return result
@@ -477,6 +492,7 @@ class ClaudeCommandIntegration:
 
         # Track category unloading
         if result.success:
+            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
             self.analytics.track_user_action(
                 "category_unloaded",
                 {
@@ -484,7 +500,7 @@ class ClaudeCommandIntegration:
                     "tokens_saved": result.data.get("tokens_saved", 0) if result.data else 0,
                 },
                 user_id=context.get("user_id", "default"),
-                session_id=self.active_session_id,
+                session_id=session_id,
             )
 
         return result
@@ -530,6 +546,7 @@ class ClaudeCommandIntegration:
 
         # Track optimization
         if result.success:
+            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
             self.analytics.track_user_action(
                 "optimization_applied",
                 {
@@ -537,7 +554,7 @@ class ClaudeCommandIntegration:
                     "loaded_tiers": result.data.get("loaded_tiers", []) if result.data else [],
                 },
                 user_id=context.get("user_id", "default"),
-                session_id=self.active_session_id,
+                session_id=session_id,
             )
 
         return result
@@ -564,6 +581,7 @@ class ClaudeCommandIntegration:
 
         # Track profile creation
         if result.success:
+            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
             self.analytics.track_user_action(
                 "profile_created",
                 {
@@ -571,7 +589,7 @@ class ClaudeCommandIntegration:
                     "description": description,
                 },
                 user_id=context.get("user_id", "default"),
-                session_id=self.active_session_id,
+                session_id=session_id,
             )
 
         return result
@@ -592,6 +610,7 @@ class ClaudeCommandIntegration:
 
         # Track profile loading
         if result.success:
+            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
             self.analytics.track_user_action(
                 "profile_loaded",
                 {
@@ -599,7 +618,7 @@ class ClaudeCommandIntegration:
                     "categories": result.data.get("categories", {}) if result.data else {},
                 },
                 user_id=context.get("user_id", "default"),
-                session_id=self.active_session_id,
+                session_id=session_id,
             )
 
         return result
@@ -625,6 +644,7 @@ class ClaudeCommandIntegration:
         query = " ".join(args) if args else None
 
         # Track help request
+        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
         self.analytics.track_user_action(
             "help_requested",
             {
@@ -632,7 +652,7 @@ class ClaudeCommandIntegration:
                 "query": query,
             },
             user_id=context.get("user_id", "default"),
-            session_id=self.active_session_id,
+            session_id=session_id,
         )
 
         # Get help from help system
@@ -674,7 +694,7 @@ class ClaudeCommandIntegration:
 
     def _get_command_usage_stats(self) -> dict[str, int]:
         """Get command usage statistics"""
-        command_counts = {}
+        command_counts: dict[str, int] = {}
         for entry in self.command_history:
             command = entry["command"].split()[0]  # Get base command
             command_counts[command] = command_counts.get(command, 0) + 1
@@ -748,7 +768,8 @@ class ClaudeCommandIntegration:
             }
 
             # Determine overall health
-            component_statuses = [status["status"] for status in health_status["components"].values()]
+            components: dict[str, dict[str, Any]] = health_status["components"]  # type: ignore[assignment]
+            component_statuses = [status["status"] for status in components.values()]
             if "error" in component_statuses:
                 health_status["overall"] = "error"
             elif "warning" in component_statuses:

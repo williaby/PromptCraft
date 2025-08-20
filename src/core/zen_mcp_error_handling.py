@@ -757,10 +757,21 @@ def create_error_handler(config: dict[str, Any] | None = None) -> ZenMCPIntegrat
     if config is None:
         config = {}
 
-    return ZenMCPIntegration(
-        circuit_breaker_config=config.get("circuit_breaker", {}),
-        retry_config=config.get("retry", {}),
-    )
+    # Create resilience handler with configs if provided
+    circuit_breaker_config = config.get("circuit_breaker", {})
+    retry_config = config.get("retry", {})
+
+    if circuit_breaker_config or retry_config:
+        # Create configured handlers
+        circuit_breaker = CircuitBreakerStrategy()  # Use config if needed
+        retry_strategy = RetryStrategy()  # Use config if needed
+        resilience_handler: CompositeResilienceHandler = CompositeResilienceHandler(
+            [circuit_breaker, retry_strategy],
+            logging.getLogger(__name__),
+        )
+        return ZenMCPIntegration(resilience_handler=resilience_handler)
+
+    return ZenMCPIntegration()
 
 
 def log_error_with_context(error: Exception, context: dict[str, Any]) -> None:

@@ -83,7 +83,7 @@ class UsageTracker:
 
     def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path or Path("analytics.db")
-        self.session_events = deque(maxlen=10000)  # In-memory buffer
+        self.session_events: deque[UsageEvent] = deque(maxlen=10000)  # In-memory buffer
         self.active_sessions: dict[str, SessionMetrics] = {}
         self._initialize_database()
 
@@ -280,7 +280,7 @@ class UsageTracker:
         """Get recent events with optional filtering"""
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
-        filtered_events = []
+        filtered_events: list[UsageEvent] = []
         for event in self.session_events:
             if event.timestamp < cutoff_time:
                 continue
@@ -298,7 +298,7 @@ class UsageTracker:
     def get_session_summary(self, session_id: str) -> dict[str, Any] | None:
         """Get summary of session metrics"""
         if session_id in self.active_sessions:
-            session = self.active_sessions[session_id]
+            session: SessionMetrics | None = self.active_sessions[session_id]
         else:
             # Try to load from database
             session = self._load_session_from_db(session_id)
@@ -368,7 +368,7 @@ class PatternDetector:
 
     def detect_patterns(self, user_id: str | None = None, days_back: int = 30) -> list[UserBehaviorPattern]:
         """Detect behavior patterns from usage data"""
-        patterns = []
+        patterns: list[UserBehaviorPattern] = []
 
         # Get events for analysis
         events = self.usage_tracker.get_recent_events(
@@ -405,7 +405,7 @@ class PatternDetector:
                 session_commands[event.session_id].append(command)
 
         # Find common sequences
-        sequence_counter = Counter()
+        sequence_counter: Counter[tuple[str, str]] = Counter()
         for commands in session_commands.values():
             if len(commands) >= 2:
                 for i in range(len(commands) - 1):
@@ -486,7 +486,7 @@ class PatternDetector:
         patterns = []
 
         # Analyze performance mode preferences
-        mode_usage = Counter()
+        mode_usage: Counter[str] = Counter()
         for event in events:
             if event.event_type == "performance_mode_changed":
                 mode = event.event_data.get("mode")
@@ -516,7 +516,7 @@ class PatternDetector:
                 )
 
         # Analyze category preferences
-        category_usage = Counter()
+        category_usage: Counter[str] = Counter()
         for event in events:
             if event.event_type == "category_loaded":
                 category = event.event_data.get("category")
@@ -561,7 +561,7 @@ class PatternDetector:
                     session_optimizations[event.session_id].append(task_type)
 
         # Find common optimization workflows
-        optimization_counter = Counter()
+        optimization_counter: Counter[str] = Counter()
         for optimizations in session_optimizations.values():
             for opt in optimizations:
                 optimization_counter[opt] += 1
@@ -781,7 +781,7 @@ class InsightGenerator:
 
     def _generate_learning_insights(self, user_id: str | None) -> list[OptimizationInsight]:
         """Generate learning and education insights"""
-        insights = []
+        insights: list[OptimizationInsight] = []
 
         if not user_id:
             return insights  # Only for specific users
@@ -846,9 +846,9 @@ class InsightGenerator:
         insights = []
 
         # Analyze most common patterns across all users
-        pattern_frequency = Counter()
+        pattern_frequency: Counter[str] = Counter()
         for pattern in patterns:
-            pattern_frequency[pattern.pattern_type] += pattern.frequency
+            pattern_frequency[pattern.pattern_type] += int(pattern.frequency * 100)
 
         # System-wide sequential patterns
         sequential_patterns = [p for p in patterns if p.pattern_type == "sequential"]
@@ -875,10 +875,10 @@ class InsightGenerator:
             )
 
         # Category usage analysis
-        category_usage = Counter()
+        category_usage: Counter[str] = Counter()
         for pattern in patterns:
             for category in pattern.associated_categories:
-                category_usage[category] += pattern.frequency
+                category_usage[category] += int(pattern.frequency * 100)
 
         underused_categories = [cat for cat, freq in category_usage.items() if freq < 0.1]
         if underused_categories:
@@ -927,7 +927,7 @@ class AnalyticsEngine:
 
         # Performance metrics
         self.last_analysis_time = datetime.now()
-        self.analysis_cache = {}
+        self.analysis_cache: dict[str, Any] = {}
         self.cache_ttl = timedelta(hours=1)
 
     def track_user_action(
@@ -956,7 +956,8 @@ class AnalyticsEngine:
             cache_key in self.analysis_cache
             and datetime.now() - self.analysis_cache[cache_key]["timestamp"] < self.cache_ttl
         ):
-            return self.analysis_cache[cache_key]["data"]
+            cached_data = self.analysis_cache[cache_key]["data"]
+            return cached_data if isinstance(cached_data, dict) else {}
 
         # Generate fresh analytics
         recent_events = self.usage_tracker.get_recent_events(
@@ -968,8 +969,8 @@ class AnalyticsEngine:
         insights = self.insight_generator.generate_insights(user_id)
 
         # Calculate usage statistics
-        command_stats = Counter()
-        category_stats = Counter()
+        command_stats: Counter[str] = Counter()
+        category_stats: Counter[str] = Counter()
         error_count = 0
 
         for event in recent_events:
@@ -1034,9 +1035,9 @@ class AnalyticsEngine:
         insights = self.insight_generator.generate_insights()
 
         # User activity analysis
-        user_activity = defaultdict(int)
-        command_popularity = Counter()
-        category_popularity = Counter()
+        user_activity: defaultdict[str, int] = defaultdict(int)
+        command_popularity: Counter[str] = Counter()
+        category_popularity: Counter[str] = Counter()
 
         for event in recent_events:
             user_activity[event.user_id] += 1

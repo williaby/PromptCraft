@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
+
 from .user_control_system import CommandResult, UserControlSystem
 
 
@@ -561,7 +563,7 @@ class InteractiveHelpSystem:
         self.control_system = control_system
         self.context_analyzer = ContextAnalyzer()
         self.content_generator = HelpContentGenerator()
-        self.user_progress = {}  # Would be persisted in real implementation
+        self.user_progress: dict[str, UserProgress] = {}  # Would be persisted in real implementation
 
     def get_help(
         self,
@@ -681,7 +683,7 @@ class InteractiveHelpSystem:
         topic = self.content_generator.help_topics[topic_name]
 
         # Track user progress
-        user.last_accessed[topic_name] = datetime.now()
+        user.last_accessed[topic_name] = utc_now()
 
         # Format based on user preferences
         help_content = self.content_generator._format_guided_help([topic])

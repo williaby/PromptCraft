@@ -13,7 +13,8 @@ automatically inherit permissions from their parent roles.
 import logging
 from typing import Any
 
-from sqlalchemy import delete, insert, select, text, update
+from sqlalchemy import delete, select, text, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 
 from src.database.base_service import DatabaseService
@@ -110,6 +111,7 @@ class RoleManager(DatabaseService):
 
         except IntegrityError as e:
             await self.handle_integrity_error(e, "Role creation", name)
+            raise RoleManagerError(f"Role creation failed due to integrity constraint: {e}") from e
         except Exception as e:
             await self.log_operation_error("Role creation", e, name)
             raise RoleManagerError(f"Failed to create role: {e}") from e
@@ -274,7 +276,7 @@ class RoleManager(DatabaseService):
 
                 # Assign permission to role (ignore if already assigned)
                 await session.execute(
-                    insert(role_permissions_table)
+                    pg_insert(role_permissions_table)
                     .values(role_id=role_id, permission_id=permission_id)
                     .on_conflict_do_nothing(),
                 )

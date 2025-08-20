@@ -173,7 +173,7 @@ async def assign_user_role(
     manager = RoleManager()
 
     try:
-        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.assign_user_role(
             user_email=assignment_request.user_email,
             role_name=assignment_request.role_name,
@@ -205,7 +205,7 @@ async def revoke_user_role(
     manager = RoleManager()
 
     try:
-        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.revoke_user_role(user_email=user_email, role_name=role_name)
 
         if success:
@@ -346,7 +346,7 @@ async def delete_role(
     manager = RoleManager()
 
     try:
-        deleted_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        deleted_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.delete_role(role_name, force=force)
 
         if success:
@@ -405,7 +405,7 @@ async def assign_permission_to_role(
     manager = RoleManager()
 
     try:
-        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        assigned_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.assign_permission_to_role(role_name, permission_request.permission_name)
 
         if success:
@@ -433,7 +433,7 @@ async def revoke_permission_from_role(
     manager = RoleManager()
 
     try:
-        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", "unknown")
+        revoked_by = getattr(current_user, "email", None) or getattr(current_user, "token_name", None) or "unknown"
         success = await manager.revoke_permission_from_role(role_name, permission_name)
 
         if success:

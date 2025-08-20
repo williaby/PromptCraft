@@ -13,6 +13,8 @@ Key Features:
 """
 
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Depends
 from sqlalchemy import text
@@ -43,22 +45,30 @@ async def user_has_permission(user_email: str, permission_name: str) -> bool:
         Exception: If database query fails (logged but not re-raised)
     """
     try:
-        async for session in get_db():
-            # Use the database function for permission checking
-            result = await session.execute(
-                text("SELECT user_has_permission(:user_email, :permission_name)"),
-                {"user_email": user_email, "permission_name": permission_name},
-            )
-            has_permission = result.scalar()
-            logger.debug(f"User {user_email} permission check for '{permission_name}': {has_permission}")
-            return bool(has_permission)
+        db_gen = get_db()
+        try:
+            session = await db_gen.__anext__()  # type: ignore[attr-defined]
+        except AttributeError:
+            if hasattr(db_gen, "__aenter__"):
+                session = await db_gen.__aenter__()  # type: ignore[attr-defined]
+            else:
+                raise RuntimeError("No database session available") from None
+
+        # Use the database function for permission checking
+        result = await session.execute(
+            text("SELECT user_has_permission(:user_email, :permission_name)"),
+            {"user_email": user_email, "permission_name": permission_name},
+        )
+        has_permission = result.scalar()
+        logger.debug(f"User {user_email} permission check for '{permission_name}': {has_permission}")
+        return bool(has_permission)
     except Exception as e:
         logger.error(f"Permission check failed for user {user_email}, permission {permission_name}: {e}")
         # Fail-safe: deny permission on database errors
         return False
 
 
-def require_permission(permission_name: str):
+def require_permission(permission_name: str) -> Callable[..., Any]:
     """FastAPI dependency factory for permission-based access control.
 
     Creates a FastAPI dependency that validates the current user has the specified
@@ -119,7 +129,7 @@ def require_permission(permission_name: str):
     return permission_checker
 
 
-def require_any_permission(*permission_names: str):
+def require_any_permission(*permission_names: str) -> Callable[..., Any]:
     """FastAPI dependency factory for multiple permission options.
 
     Creates a FastAPI dependency that validates the current user has at least one
@@ -190,7 +200,7 @@ def require_any_permission(*permission_names: str):
     return any_permission_checker
 
 
-def require_all_permissions(*permission_names: str):
+def require_all_permissions(*permission_names: str) -> Callable[..., Any]:
     """FastAPI dependency factory for multiple required permissions.
 
     Creates a FastAPI dependency that validates the current user has all

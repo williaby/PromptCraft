@@ -323,9 +323,9 @@ class PerformanceMonitor:
 
     def __init__(self, max_history: int = 1000) -> None:
         self.max_history = max_history
-        self.response_times = deque(maxlen=max_history)
-        self.memory_usage = deque(maxlen=max_history)
-        self.error_rates = deque(maxlen=max_history)
+        self.response_times: deque[float] = deque(maxlen=max_history)
+        self.memory_usage: deque[float] = deque(maxlen=max_history)
+        self.error_rates: deque[float] = deque(maxlen=max_history)
         self.last_health_check = time.time()
 
         # Performance thresholds
@@ -403,8 +403,8 @@ class RecoveryManager:
 
     def __init__(self, config: TaskDetectionConfig | None = None) -> None:
         self.config = config or TaskDetectionConfig()
-        self.retry_attempts = defaultdict(int)
-        self.recovery_history = deque(maxlen=100)
+        self.retry_attempts: defaultdict[str, int] = defaultdict(int)
+        self.recovery_history: deque[dict[str, Any]] = deque(maxlen=100)
         self.max_retry_attempts = 3
         self.base_retry_delay = 1.0
         self.max_retry_delay = 30.0
@@ -512,9 +512,9 @@ class LearningCollector:
 
     def __init__(self, max_samples: int = 1000) -> None:
         self.max_samples = max_samples
-        self.failure_patterns = deque(maxlen=max_samples)
-        self.success_patterns = deque(maxlen=max_samples)
-        self.query_patterns = defaultdict(list)
+        self.failure_patterns: deque[dict[str, Any]] = deque(maxlen=max_samples)
+        self.success_patterns: deque[dict[str, Any]] = deque(maxlen=max_samples)
+        self.query_patterns: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
 
     def record_failure(
         self,
@@ -564,15 +564,15 @@ class LearningCollector:
 
         # Analyze failure patterns
         if self.failure_patterns:
-            error_types = defaultdict(int)
-            fallback_levels = defaultdict(int)
+            error_types: defaultdict[str, int] = defaultdict(int)
+            fallback_levels: defaultdict[str, int] = defaultdict(int)
 
             for pattern in self.failure_patterns:
                 error_types[pattern["error_type"]] += 1
                 fallback_levels[pattern["fallback_level"]] += 1
 
-            most_common_error = max(error_types, key=error_types.get)
-            most_common_fallback = max(fallback_levels, key=fallback_levels.get)
+            most_common_error = max(error_types, key=lambda k: error_types[k])
+            most_common_fallback = max(fallback_levels, key=lambda k: fallback_levels[k])
 
             insights.append(
                 f"Most common error type: {most_common_error} ({error_types[most_common_error]} occurrences)",
@@ -667,7 +667,7 @@ class ConservativeFallbackChain(LoggerMixin):
         self.emergency_mode_duration = 300.0  # 5 minutes
 
         # Function category definitions for fallback levels
-        self.tier_definitions = {
+        self.tier_definitions: dict[FallbackLevel, dict[str, Any]] = {
             FallbackLevel.HIGH_CONFIDENCE: {
                 "categories": set(),  # Determined dynamically based on detection
                 "expected_count": 35,
@@ -903,16 +903,18 @@ class ConservativeFallbackChain(LoggerMixin):
 
         # Get categories for fallback level
         tier_def = self.tier_definitions[level]
+        tier_categories: set[str] = tier_def["categories"]  # Type annotation for clarity
         categories_dict = {
-            cat: cat in tier_def["categories"]
+            cat: cat in tier_categories
             for cat in ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")
         }
 
+        expected_count: int = tier_def["expected_count"]  # Type annotation for clarity
         decision = FallbackDecision(
             level=level,
             categories_to_load=categories_dict,
             confidence_threshold=0.0,
-            expected_function_count=tier_def["expected_count"],
+            expected_function_count=expected_count,
             rationale=rationale,
             performance_impact="high" if level == FallbackLevel.DETECTION_FAILURE else "moderate",
             recovery_strategy=self.error_classifier.get_recommended_recovery_strategy(error_context),
@@ -933,13 +935,15 @@ class ConservativeFallbackChain(LoggerMixin):
 
         # Load absolutely everything
         tier_def = self.tier_definitions[FallbackLevel.SYSTEM_EMERGENCY]
-        categories_dict = dict.fromkeys(tier_def["categories"], True)
+        tier_categories: set[str] = tier_def["categories"]  # Type annotation for clarity
+        categories_dict = dict.fromkeys(tier_categories, True)
 
+        expected_count: int = tier_def["expected_count"]  # Type annotation for clarity
         decision = FallbackDecision(
             level=FallbackLevel.SYSTEM_EMERGENCY,
             categories_to_load=categories_dict,
             confidence_threshold=0.0,
-            expected_function_count=tier_def["expected_count"],
+            expected_function_count=expected_count,
             rationale="EMERGENCY MODE: System unavailable, loading all functions immediately",
             performance_impact="maximum",
             recovery_strategy="emergency_full_load",
@@ -959,16 +963,18 @@ class ConservativeFallbackChain(LoggerMixin):
         self.logger.warning("Circuit breaker is OPEN - using detection failure fallback")
 
         tier_def = self.tier_definitions[FallbackLevel.DETECTION_FAILURE]
+        tier_categories: set[str] = tier_def["categories"]  # Type annotation for clarity
         categories_dict = {
-            cat: cat in tier_def["categories"]
+            cat: cat in tier_categories
             for cat in ("core", "git", "analysis", "debug", "test", "quality", "security", "external", "infrastructure")
         }
 
+        expected_count: int = tier_def["expected_count"]  # Type annotation for clarity
         decision = FallbackDecision(
             level=FallbackLevel.DETECTION_FAILURE,
             categories_to_load=categories_dict,
             confidence_threshold=0.0,
-            expected_function_count=tier_def["expected_count"],
+            expected_function_count=expected_count,
             rationale="Circuit breaker OPEN - using comprehensive fallback",
             performance_impact="high",
             recovery_strategy="circuit_breaker_protection",
@@ -1067,12 +1073,14 @@ def create_conservative_fallback_chain(
 
 
 # Decorator for automatic fallback protection
-def with_conservative_fallback(fallback_chain: ConservativeFallbackChain):
+def with_conservative_fallback(
+    fallback_chain: ConservativeFallbackChain,
+) -> Callable[[Callable[..., Awaitable[Any]]], Callable[..., Awaitable[Any]]]:
     """Decorator to add conservative fallback protection to functions"""
 
     def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(*args, **kwargs)
             except Exception as e:

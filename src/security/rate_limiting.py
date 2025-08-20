@@ -192,7 +192,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     # Return HTTP 429 with rate limit headers
     raise AuthExceptionHandler.handle_rate_limit_error(
         retry_after=retry_after,
-        detail=error_detail,
+        detail=str(error_detail),
         client_identifier=client_ip,
     )
 
