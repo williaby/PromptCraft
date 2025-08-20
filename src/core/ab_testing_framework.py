@@ -466,9 +466,9 @@ class UserSegmentation:
 
     def _assign_variant_consistent(self, user_id: str, experiment_id: str, rollout_percentage: float) -> str:
         """Assign variant using consistent hashing for stable assignments."""
-        # Create consistent hash
+        # Create consistent hash using SHA256 (more secure than MD5)
         hash_input = f"{experiment_id}:{user_id}"
-        hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)
+        hash_value = int(hashlib.sha256(hash_input.encode()).hexdigest()[:8], 16)
 
         # Normalize to 0-100 range
         percentage = (hash_value % 10000) / 100.0

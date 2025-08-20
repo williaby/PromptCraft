@@ -410,17 +410,15 @@ def upgrade_seed_data() -> None:
         params = {"name": name, "description": description, "created_at": datetime.now(UTC)}
 
         if parent_name:
-            parent_id_query = "(SELECT id FROM roles WHERE name = :parent_name)"
             params["parent_name"] = parent_name
 
+            # Use parameterized subquery to avoid SQL injection concerns
             op.execute(
-                sa.text(
-                    f"""
+                sa.text("""
                 INSERT INTO roles (name, description, parent_role_id, created_at, is_active)
-                VALUES (:name, :description, {parent_id_query}, :created_at, true)
+                VALUES (:name, :description, (SELECT id FROM roles WHERE name = :parent_name), :created_at, true)
                 ON CONFLICT (name) DO NOTHING
-            """,
-                ),
+                """),
                 params,
             )
         else:

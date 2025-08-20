@@ -272,7 +272,7 @@ async def get_experiment_manager_dependency() -> ExperimentManager:
     try:
         return await get_experiment_manager()
     except Exception as e:
-        logger.error(f"Failed to get experiment manager: {e}")
+        logger.error("Failed to get experiment manager: %s", repr(str(e)))
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="A/B testing system unavailable",
@@ -365,10 +365,10 @@ async def create_experiment(
         )
 
     except ValueError as e:
-        logger.warning(f"Invalid experiment configuration: {e}")
+        logger.warning("Invalid experiment configuration: %s", repr(str(e)))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to create experiment: {e}", exc_info=True)
+        logger.error("Failed to create experiment: %s", repr(str(e)), exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create experiment")
 
 
@@ -405,7 +405,7 @@ async def start_experiment(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to start experiment {experiment_id}: {e}")
+        logger.error("Failed to start experiment %s: %s", repr(experiment_id), repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to start experiment")
 
 
@@ -442,7 +442,7 @@ async def stop_experiment(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to stop experiment {experiment_id}: {e}")
+        logger.error("Failed to stop experiment %s: %s", repr(experiment_id), repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to stop experiment")
 
 
@@ -491,7 +491,7 @@ async def list_experiments(
             return results
 
     except Exception as e:
-        logger.error(f"Failed to list experiments: {e}")
+        logger.error("Failed to list experiments: %s", repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to list experiments")
 
 
@@ -532,7 +532,7 @@ async def get_experiment(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get experiment {experiment_id}: {e}")
+        logger.error("Failed to get experiment %s: %s", repr(experiment_id), repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get experiment")
 
 
@@ -588,7 +588,7 @@ async def assign_user_to_experiment(
         )
 
     except Exception as e:
-        logger.error(f"Failed to assign user to experiment: {e}")
+        logger.error("Failed to assign user to experiment: %s", repr(str(e)))
         return UserAssignmentResponse(
             user_id=assignment_request.user_id,
             experiment_id=assignment_request.experiment_id,
@@ -622,7 +622,7 @@ async def check_dynamic_loading_assignment(
         )
 
     except Exception as e:
-        logger.error(f"Failed to check dynamic loading assignment: {e}")
+        logger.error("Failed to check dynamic loading assignment: %s", repr(str(e)))
         return JSONResponse(
             content={
                 "user_id": user_id,
@@ -679,7 +679,7 @@ async def record_metric_event(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to record metric event")
 
     except Exception as e:
-        logger.error(f"Failed to record metric event: {e}")
+        logger.error("Failed to record metric event: %s", repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to record metric event")
 
 
@@ -700,7 +700,7 @@ async def get_experiment_dashboard(
         return HTMLResponse(content=html_content)
 
     except Exception as e:
-        logger.error(f"Failed to generate dashboard for experiment {experiment_id}: {e}")
+        logger.error("Failed to generate dashboard for experiment %s: %s", repr(experiment_id), repr(str(e)))
         error_html = f"""
         <html>
         <head><title>Dashboard Error</title></head>
@@ -752,7 +752,7 @@ async def get_dashboard_data(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get dashboard data for experiment {experiment_id}: {e}")
+        logger.error("Failed to get dashboard data for experiment %s: %s", repr(experiment_id), repr(str(e)))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get dashboard data")
 
 
@@ -792,7 +792,7 @@ async def get_experiment_results(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get experiment results for {experiment_id}: {e}")
+        logger.error("Failed to get experiment results for %s: %s", repr(experiment_id), repr(str(e)))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get experiment results",
@@ -834,7 +834,7 @@ async def get_experiments_overview(
         return results
 
     except Exception as e:
-        logger.error(f"Failed to get experiments overview: {e}")
+        logger.error("Failed to get experiments overview: %s", repr(str(e)))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get experiments overview",
@@ -883,7 +883,7 @@ async def quick_setup_dynamic_loading_experiment(
         )
 
     except Exception as e:
-        logger.error(f"Failed to create dynamic loading experiment: {e}")
+        logger.error("Failed to create dynamic loading experiment: %s", repr(str(e)))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create dynamic loading experiment",
@@ -917,7 +917,7 @@ async def ab_testing_health_check(request: Request) -> JSONResponse:
         )
 
     except Exception as e:
-        logger.error(f"A/B testing health check failed: {e}")
+        logger.error("A/B testing health check failed: %s", repr(str(e)))
         return JSONResponse(
             content={
                 "status": "unhealthy",
