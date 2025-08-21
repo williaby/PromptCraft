@@ -19,18 +19,31 @@ Usage:
 
 import asyncio
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from src.core.token_optimization_monitor import (
     TokenOptimizationMonitor,
-    get_token_optimization_monitor,
     initialize_monitoring,
 )
-from src.monitoring.integration_utils import IntegrationManager, get_integration_manager, initialize_integrations
-from src.monitoring.metrics_collector import MetricsCollector, get_metrics_collector, initialize_metrics_collection
-from src.monitoring.performance_dashboard import AlertManager, RealTimeDashboard, get_dashboard_app
 from src.utils.observability import create_structured_logger
+
+from .integration_utils import IntegrationManager, initialize_integrations
+from .metrics_collector import MetricsCollector, initialize_metrics_collection
+from .performance_dashboard import AlertManager, RealTimeDashboard
+
+# Add imports to __all__ for proper module exposure
+__all__ = [
+    "MonitoringSystemConfig",
+    "MonitoringSystem", 
+    "initialize_monitoring_system",
+    "shutdown_monitoring_system",
+    "get_monitoring_system",
+    "TokenOptimizationMonitor",
+    "MetricsCollector",
+    "RealTimeDashboard",
+    "IntegrationManager",
+    "AlertManager",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +51,7 @@ logger = logging.getLogger(__name__)
 class MonitoringSystemConfig:
     """Configuration for the monitoring system."""
 
-    def __init__(self, config_dict: dict[str, Any] | None = None):
+    def __init__(self, config_dict: dict[str, Any] | None = None) -> None:
         config = config_dict or {}
 
         # Core monitoring settings
@@ -90,7 +103,7 @@ class MonitoringSystemConfig:
 class MonitoringSystem:
     """Comprehensive monitoring system orchestrator."""
 
-    def __init__(self, config: MonitoringSystemConfig):
+    def __init__(self, config: MonitoringSystemConfig) -> None:
         self.config = config
         self.logger = create_structured_logger("monitoring_system")
 
@@ -257,7 +270,7 @@ class MonitoringSystem:
         while self.running:
             try:
                 if self.alert_manager:
-                    alerts = await self.alert_manager.check_alerts()
+                    await self.alert_manager.check_alerts()
 
                     # Send metrics to external integrations
                     if self.integration_manager and self.monitor:
@@ -351,7 +364,7 @@ class MonitoringSystem:
         if not self.metrics_collector:
             return {"error": "Metrics collector not initialized"}
 
-        report = await self.metrics_collector.generate_comprehensive_report()
+        report: dict[str, Any] = await self.metrics_collector.generate_comprehensive_report()
 
         if include_recommendations:
             # Add actionable recommendations

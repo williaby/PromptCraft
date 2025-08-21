@@ -165,8 +165,8 @@ backup_*/
 *.service
 zen-mcp.service
 
-# Monitoring (local only)
-monitoring/
+# Monitoring (local only - exclude top-level monitoring directory but not src/monitoring)
+/monitoring/
 
 # Claude Code (only user-specific data)
 .claude/settings.local.json
