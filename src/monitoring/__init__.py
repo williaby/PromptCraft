@@ -33,16 +33,16 @@ from .performance_dashboard import AlertManager, RealTimeDashboard
 
 # Add imports to __all__ for proper module exposure
 __all__ = [
+    "AlertManager",
+    "IntegrationManager",
+    "MetricsCollector",
+    "MonitoringSystem",
     "MonitoringSystemConfig",
-    "MonitoringSystem", 
+    "RealTimeDashboard",
+    "TokenOptimizationMonitor",
+    "get_monitoring_system",
     "initialize_monitoring_system",
     "shutdown_monitoring_system",
-    "get_monitoring_system",
-    "TokenOptimizationMonitor",
-    "MetricsCollector",
-    "RealTimeDashboard",
-    "IntegrationManager",
-    "AlertManager",
 ]
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class MonitoringSystemConfig:
 
         # Dashboard settings
         self.dashboard_enabled = config.get("dashboard_enabled", True)
-        self.dashboard_host = config.get("dashboard_host", "0.0.0.0")  # nosec B104
+        self.dashboard_host = config.get("dashboard_host", "0.0.0.0")  # nosec B104  # noqa: S104
         self.dashboard_port = config.get("dashboard_port", 8080)
 
         # External integrations
@@ -154,7 +154,7 @@ class MonitoringSystem:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to initialize monitoring system: {e}")
+            self.logger.error(f"Failed to initialize monitoring system: {e}")  # noqa: G004
             return False
 
     async def start(self) -> bool:
@@ -191,7 +191,7 @@ class MonitoringSystem:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to start monitoring system: {e}")
+            self.logger.error(f"Failed to start monitoring system: {e}")  # noqa: G004
             return False
 
     async def stop(self) -> bool:
@@ -225,7 +225,7 @@ class MonitoringSystem:
             return True
 
         except Exception as e:
-            self.logger.error(f"Error stopping monitoring system: {e}")
+            self.logger.error(f"Error stopping monitoring system: {e}")  # noqa: G004
             return False
 
     async def _validation_loop(self) -> None:
@@ -261,7 +261,7 @@ class MonitoringSystem:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in validation loop: {e}")
+                self.logger.error(f"Error in validation loop: {e}")  # noqa: G004
                 await asyncio.sleep(3600)
 
     async def _alert_check_loop(self) -> None:
@@ -283,7 +283,7 @@ class MonitoringSystem:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in alert check loop: {e}")
+                self.logger.error(f"Error in alert check loop: {e}")  # noqa: G004
                 await asyncio.sleep(120)
 
     async def _health_check_loop(self) -> None:
@@ -315,7 +315,7 @@ class MonitoringSystem:
                     unhealthy_components = []
 
                 if unhealthy_components:
-                    self.logger.warning(f"Unhealthy monitoring components: {unhealthy_components}")
+                    self.logger.warning(f"Unhealthy monitoring components: {unhealthy_components}")  # noqa: G004
                 else:
                     self.logger.debug("All monitoring components healthy")
 
@@ -325,7 +325,7 @@ class MonitoringSystem:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in health check loop: {e}")
+                self.logger.error(f"Error in health check loop: {e}")  # noqa: G004
                 await asyncio.sleep(900)
 
     async def get_system_status(self) -> dict[str, Any]:
@@ -423,7 +423,7 @@ async def initialize_monitoring_system(
 ) -> tuple[TokenOptimizationMonitor, MetricsCollector, RealTimeDashboard]:
     """Initialize the complete monitoring system."""
 
-    global _monitoring_system
+    global _monitoring_system  # noqa: PLW0603
 
     if _monitoring_system is None:
         monitoring_config = MonitoringSystemConfig(config)
@@ -452,7 +452,7 @@ def get_monitoring_system() -> MonitoringSystem | None:
 async def shutdown_monitoring_system() -> None:
     """Shutdown the monitoring system."""
 
-    global _monitoring_system
+    global _monitoring_system  # noqa: PLW0603
 
     if _monitoring_system:
         await _monitoring_system.stop()
