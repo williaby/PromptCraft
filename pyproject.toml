@@ -270,7 +270,13 @@ skip_glob = ["**/migrations/*", "**/venv/*", "**/.venv/*"]
 
 [tool.mypy]
 python_version = "3.11"
-mypy_path = "src"
+# Exclude backup directories to prevent duplicate module detection
+exclude = [
+    "backup/.*",
+    "temp_cleanup/.*",
+    "__pycache__",
+    ".*_cache/.*"
+]
 # Essential settings for namespace package resolution
 namespace_packages = true
 explicit_package_bases = true
