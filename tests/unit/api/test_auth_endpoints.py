@@ -69,7 +69,7 @@ def create_mock_jwt_user(email: str = "test@example.com", role: str = "admin") -
 def create_mock_service_token_user(
     token_name: str = "test_token",
     token_id: str = "token_123",
-    permissions: list = None,
+    permissions: list | None = None,
     usage_count: int = 5,
 ) -> ServiceTokenUser:
     """Create a mock ServiceTokenUser."""
@@ -94,8 +94,8 @@ class TestCurrentUserEndpoint:
         # Arrange
         mock_request = create_mock_request()
         service_token_user = create_mock_service_token_user(
-            token_name="api_service",
-            token_id="st_123456",
+            token_name="api_service",  # noqa: S106  # Test token name
+            token_id="st_123456",  # noqa: S106  # Test token ID
             permissions=["tokens:create", "tokens:read"],
             usage_count=42,
         )
@@ -106,8 +106,8 @@ class TestCurrentUserEndpoint:
         # Assert
         assert isinstance(result, CurrentUserResponse)
         assert result.user_type == USER_TYPE_SERVICE_TOKEN
-        assert result.token_name == "api_service"
-        assert result.token_id == "st_123456"
+        assert result.token_name == "api_service"  # noqa: S105  # Test constant
+        assert result.token_id == "st_123456"  # noqa: S105  # Test token value
         assert result.permissions == ["tokens:create", "tokens:read"]
         assert result.usage_count == 42
         assert result.email is None
@@ -260,7 +260,7 @@ class TestTokenCreationEndpoint:
         admin_user = create_mock_jwt_user("admin@company.com", "admin")
 
         token_request = TokenCreationRequest(
-            token_name="ci_cd_token",
+            token_name="ci_cd_token",  # noqa: S106  # Test token name
             permissions=["tokens:create", "system:read"],
             expires_days=90,
             purpose="CI/CD automation",
@@ -268,8 +268,8 @@ class TestTokenCreationEndpoint:
         )
 
         mock_manager = Mock()
-        mock_token_value = "st_abcdef123456"
-        mock_token_id = "token_789"
+        mock_token_value = "st_abcdef123456"  # noqa: S105  # Test token value
+        mock_token_id = "token_789"  # noqa: S105  # Test mock value
         mock_manager.create_service_token = AsyncMock(return_value=(mock_token_value, mock_token_id))
         mock_service_token_manager_class.return_value = mock_manager
 
@@ -279,7 +279,7 @@ class TestTokenCreationEndpoint:
         # Assert
         assert isinstance(result, TokenCreationResponse)
         assert result.token_id == mock_token_id
-        assert result.token_name == "ci_cd_token"
+        assert result.token_name == "ci_cd_token"  # noqa: S105  # Test constant
         assert result.token_value == mock_token_value
         assert result.expires_at is not None
         assert result.metadata["permissions"] == ["tokens:create", "system:read"]
@@ -297,7 +297,7 @@ class TestTokenCreationEndpoint:
         admin_user = create_mock_jwt_user()
 
         token_request = TokenCreationRequest(
-            token_name="permanent_token",
+            token_name="permanent_token",  # noqa: S106  # Test token name
             permissions=["tokens:read"],
         )
 
@@ -322,7 +322,7 @@ class TestTokenCreationEndpoint:
         mock_request = create_mock_request()
         service_token_user = create_mock_service_token_user("admin_token", "st_admin")
 
-        token_request = TokenCreationRequest(token_name="new_token")
+        token_request = TokenCreationRequest(token_name="new_token")  # noqa: S106  # Test token name
 
         mock_manager = Mock()
         mock_manager.create_service_token = AsyncMock(return_value=("st_new", "new_id"))
@@ -346,7 +346,7 @@ class TestTokenCreationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_request = TokenCreationRequest(token_name="test_token")
+        token_request = TokenCreationRequest(token_name="test_token")  # noqa: S106  # Test token name
 
         mock_manager = Mock()
         mock_manager.create_service_token = AsyncMock(return_value=None)
@@ -376,7 +376,7 @@ class TestTokenCreationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_request = TokenCreationRequest(token_name="existing_token")
+        token_request = TokenCreationRequest(token_name="existing_token")  # noqa: S106  # Test token name
 
         mock_manager = Mock()
         mock_manager.create_service_token = AsyncMock(side_effect=ValueError("Token name already exists"))
@@ -408,7 +408,7 @@ class TestTokenCreationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_request = TokenCreationRequest(token_name="test_token")
+        token_request = TokenCreationRequest(token_name="test_token")  # noqa: S106  # Test token name
 
         mock_manager = Mock()
         mock_manager.create_service_token = AsyncMock(side_effect=Exception("Unexpected error"))
@@ -436,7 +436,7 @@ class TestTokenRevocationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user("admin@company.com")
-        token_identifier = "test_token_123"
+        token_identifier = "test_token_123"  # noqa: S105  # Test token value
         reason = "Security incident"
 
         mock_manager = Mock()
@@ -465,7 +465,7 @@ class TestTokenRevocationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "nonexistent_token"
+        token_identifier = "nonexistent_token"  # noqa: S105  # Test constant
         reason = "Test"
 
         mock_manager = Mock()
@@ -490,7 +490,7 @@ class TestTokenRevocationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         service_token_user = create_mock_service_token_user("admin_service_token")
-        token_identifier = "target_token"
+        token_identifier = "target_token"  # noqa: S105  # Test constant
         reason = "Automated cleanup"
 
         mock_manager = Mock()
@@ -519,12 +519,12 @@ class TestTokenRotationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user("admin@company.com")
-        token_identifier = "old_token_123"
+        token_identifier = "old_token_123"  # noqa: S105  # Test constant
         reason = "Regular rotation"
 
         mock_manager = Mock()
-        new_token_value = "st_new_token_456"
-        new_token_id = "new_token_id_789"
+        new_token_value = "st_new_token_456"  # noqa: S105  # Test token value
+        new_token_id = "new_token_id_789"  # noqa: S105  # Test constant
         mock_manager.rotate_service_token = AsyncMock(return_value=(new_token_value, new_token_id))
 
         mock_analytics = {
@@ -540,7 +540,7 @@ class TestTokenRotationEndpoint:
         # Assert
         assert isinstance(result, TokenCreationResponse)
         assert result.token_id == new_token_id
-        assert result.token_name == "rotated_service_token"
+        assert result.token_name == "rotated_service_token"  # noqa: S105  # Test constant
         assert result.token_value == new_token_value
         assert result.expires_at is None
         assert result.metadata["rotated_by"] == "admin@company.com"
@@ -558,11 +558,11 @@ class TestTokenRotationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "old_token"
+        token_identifier = "old_token"  # noqa: S105  # Test constant
 
         mock_manager = Mock()
-        new_token_value = "st_new"
-        new_token_id = "new_id"
+        new_token_value = "st_new"  # noqa: S105  # Test token value
+        new_token_id = "new_id"  # noqa: S105  # Test constant
         mock_manager.rotate_service_token = AsyncMock(return_value=(new_token_value, new_token_id))
         mock_manager.get_token_usage_analytics = AsyncMock(return_value={"error": "Token not found"})
         mock_service_token_manager_class.return_value = mock_manager
@@ -571,7 +571,7 @@ class TestTokenRotationEndpoint:
         result = await rotate_service_token(mock_request, token_identifier, "test", admin_user)
 
         # Assert
-        assert result.token_name == "rotated_token"  # Fallback name
+        assert result.token_name == "rotated_token"  # Fallback name  # noqa: S105  # Test constant
 
     @pytest.mark.asyncio
     @patch("src.api.auth_endpoints.ServiceTokenManager")
@@ -581,7 +581,7 @@ class TestTokenRotationEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "nonexistent_token"
+        token_identifier = "nonexistent_token"  # noqa: S105  # Test constant
 
         mock_manager = Mock()
         mock_manager.rotate_service_token = AsyncMock(return_value=None)
@@ -652,13 +652,13 @@ class TestListTokensEndpoint:
 
         token1_info = result[0]
         assert isinstance(token1_info, TokenInfo)
-        assert token1_info.token_name == "token1"
+        assert token1_info.token_name == "token1"  # noqa: S105  # Test constant
         assert token1_info.usage_count == 25
         assert token1_info.is_active is True
         assert token1_info.last_used == datetime.fromisoformat("2024-01-15T10:30:00")
 
         token2_info = result[1]
-        assert token2_info.token_name == "token2"
+        assert token2_info.token_name == "token2"  # noqa: S105  # Test constant
         assert token2_info.usage_count == 5
         assert token2_info.is_active is False
         assert token2_info.last_used is None
@@ -714,7 +714,7 @@ class TestTokenAnalyticsEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "test_token"
+        token_identifier = "test_token"  # noqa: S105  # Test token value
         days = 30
 
         mock_analytics = {
@@ -743,7 +743,7 @@ class TestTokenAnalyticsEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "nonexistent_token"
+        token_identifier = "nonexistent_token"  # noqa: S105  # Test constant
 
         mock_analytics = {"error": "Token not found"}
         mock_manager = Mock()
@@ -766,7 +766,7 @@ class TestTokenAnalyticsEndpoint:
         # Arrange
         mock_request = create_mock_request()
         admin_user = create_mock_jwt_user()
-        token_identifier = "test_token"
+        token_identifier = "test_token"  # noqa: S105  # Test token value
 
         mock_manager = Mock()
         mock_manager.get_token_usage_analytics = AsyncMock(return_value=None)
@@ -962,19 +962,19 @@ class TestPydanticModels:
         """Test TokenCreationRequest validation."""
         # Valid request
         request = TokenCreationRequest(
-            token_name="valid_token",
+            token_name="valid_token",  # noqa: S106  # Test token name
             permissions=["tokens:read"],
             expires_days=30,
             purpose="Testing",
             environment="test",
         )
-        assert request.token_name == "valid_token"
+        assert request.token_name == "valid_token"  # noqa: S105  # Test constant
         assert request.permissions == ["tokens:read"]
         assert request.expires_days == 30
 
     def test_token_creation_request_defaults(self):
         """Test TokenCreationRequest with default values."""
-        request = TokenCreationRequest(token_name="test_token")
+        request = TokenCreationRequest(token_name="test_token")  # noqa: S106  # Test token name
         assert request.permissions == []
         assert request.expires_days is None
         assert request.purpose is None
@@ -984,8 +984,8 @@ class TestPydanticModels:
         """Test CurrentUserResponse for service token."""
         response = CurrentUserResponse(
             user_type=USER_TYPE_SERVICE_TOKEN,
-            token_name="test_token",
-            token_id="token_123",
+            token_name="test_token",  # noqa: S106  # Test token name
+            token_id="token_123",  # noqa: S106  # Test token ID
             permissions=["tokens:read"],
             usage_count=10,
         )
@@ -1024,15 +1024,15 @@ class TestPydanticModels:
         """Test TokenInfo model."""
         now = datetime.now(UTC)
         token_info = TokenInfo(
-            token_id="token_123",
-            token_name="test_token",
+            token_id="token_123",  # noqa: S106  # Test token ID
+            token_name="test_token",  # noqa: S106  # Test token name
             usage_count=50,
             last_used=now,
             is_active=True,
             created_at=now,
             permissions=["tokens:read", "tokens:write"],
         )
-        assert token_info.token_id == "token_123"
+        assert token_info.token_id == "token_123"  # noqa: S105  # Test constant
         assert token_info.usage_count == 50
         assert token_info.is_active is True
         assert len(token_info.permissions) == 2

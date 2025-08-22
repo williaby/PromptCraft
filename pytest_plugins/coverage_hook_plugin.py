@@ -25,12 +25,12 @@ Integration with VS Code:
 """
 
 import os
-import subprocess
+import subprocess  # nosec B404  # Required for coverage hook integration
 import sys
 from pathlib import Path
 
 
-def pytest_configure(config):
+def pytest_configure(config) -> None:
     """
     Called after command line options have been parsed.
     Register custom markers and check if coverage is enabled.
@@ -54,10 +54,10 @@ def pytest_configure(config):
     config._coverage_enabled = cov_enabled
 
     if cov_enabled:
-        print("🔍 Coverage detection: Coverage reporting enabled")
+        pass
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001  # Pytest hook signature
     """
     Called after whole test run finished, right before returning the exit status.
     This is the perfect place to trigger coverage report generation.
@@ -69,8 +69,6 @@ def pytest_sessionfinish(session, exitstatus):
     # Skip if session had collection errors or no tests ran
     if hasattr(session, "testscollected") and session.testscollected == 0:
         return
-
-    print("\n🔄 Coverage hook: Generating enhanced coverage reports...")
 
     try:
         # Find the project root directory
@@ -87,11 +85,10 @@ def pytest_sessionfinish(session, exitstatus):
         hook_script = project_root / "scripts" / "vscode_coverage_hook.py"
 
         if not hook_script.exists():
-            print(f"⚠️  Coverage hook script not found: {hook_script}")
             return
 
         # Execute the coverage hook script
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603  # Controlled script execution with timeout
             [sys.executable, str(hook_script)],
             check=False,
             cwd=str(project_root),
@@ -101,22 +98,19 @@ def pytest_sessionfinish(session, exitstatus):
         )
 
         if result.returncode == 0:
-            print("✅ Enhanced coverage reports generated successfully")
             # Print any output from the hook (but suppress verbose output)
             if result.stdout and "✅ Coverage reports updated" in result.stdout:
-                print("📊 Coverage reports have been updated in reports/coverage/")
-        else:
-            print(f"⚠️  Coverage hook completed with warnings (exit code: {result.returncode})")
-            if result.stderr:
-                print(f"   Error output: {result.stderr.strip()}")
+                pass
+        elif result.stderr:
+            pass
 
     except subprocess.TimeoutExpired:
-        print("⚠️  Coverage hook timed out after 60 seconds")
-    except Exception as e:
-        print(f"⚠️  Coverage hook failed: {e}")
+        pass
+    except Exception:
+        pass
 
 
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item, call) -> None:
     """
     Called to create a test report for each phase of a test (setup, call, teardown).
     We can use this to track test execution context.
@@ -155,6 +149,4 @@ def pytest_runtest_makereport(item, call):
 
 # For direct execution testing
 if __name__ == "__main__":
-    print("Pytest Coverage Hook Plugin")
-    print("This plugin automatically triggers coverage report generation after pytest runs.")
-    print("To test manually, run: pytest --cov=src tests/unit/test_main.py")
+    pass

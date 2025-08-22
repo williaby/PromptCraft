@@ -146,9 +146,11 @@ class TestMultiJourneyInterfaceFunctional:
             temp_path = temp_file.name
 
         try:
-            with patch("mimetypes.guess_type", side_effect=Exception("Unexpected error")):
-                with pytest.raises(Exception, match="Security Error: Unable to validate file content safely"):
-                    interface._validate_file_content_and_mime(temp_path, ".txt")
+            with (
+                patch("mimetypes.guess_type", side_effect=Exception("Unexpected error")),
+                pytest.raises(Exception, match="Security Error: Unable to validate file content safely"),
+            ):
+                interface._validate_file_content_and_mime(temp_path, ".txt")
         finally:
             Path(temp_path).unlink(missing_ok=True)
 

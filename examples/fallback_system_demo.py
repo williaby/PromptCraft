@@ -16,6 +16,7 @@ Run this example to see:
 import asyncio
 import logging
 import time
+import traceback
 from typing import Any
 
 # Configure logging for demo
@@ -343,8 +344,6 @@ async def main() -> None:
         await demonstrate_performance_impact()
 
     except Exception:
-        import traceback
-
         traceback.print_exc()
 
 

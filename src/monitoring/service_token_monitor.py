@@ -15,9 +15,9 @@ from typing import Any
 
 from sqlalchemy import text
 
-from ..auth.service_token_manager import ServiceTokenManager
-from ..config.settings import ApplicationSettings
-from ..database.connection import database_health_check, get_db
+from src.auth.service_token_manager import ServiceTokenManager
+from src.config.settings import ApplicationSettings
+from src.database.connection import database_health_check, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class TokenExpirationAlert:
         usage_count: int,
         last_used: datetime | None = None,
         metadata: dict | None = None,
-    ):
+    ) -> None:
         """Initialize token expiration alert.
 
         Args:
@@ -77,7 +77,7 @@ class TokenExpirationAlert:
 class ServiceTokenMonitor:
     """Service token monitoring and alerting system."""
 
-    def __init__(self, settings: ApplicationSettings | None = None):
+    def __init__(self, settings: ApplicationSettings | None = None) -> None:
         """Initialize service token monitor.
 
         Args:
@@ -139,7 +139,7 @@ class ServiceTokenMonitor:
                     alerts.append(alert)
 
         except Exception as e:
-            logger.error(f"Failed to check expiring tokens: {e}")
+            logger.error("Failed to check expiring tokens: %s", e)
 
         return alerts
 
@@ -236,7 +236,7 @@ class ServiceTokenMonitor:
                     )
 
         except Exception as e:
-            logger.error(f"Failed to get monitoring metrics: {e}")
+            logger.error("Failed to get monitoring metrics: %s", e)
             metrics["error"] = str(e)
 
         return metrics
@@ -282,10 +282,12 @@ class ServiceTokenMonitor:
                     for alert in severity_alerts:
                         logger.log(
                             log_level,
-                            f"SERVICE TOKEN EXPIRATION ALERT [{severity.upper()}]: "
-                            f"Token '{alert.token_name}' expires in {alert.days_until_expiration} days "
-                            f"(usage: {alert.usage_count} times, "
-                            f"active: {'yes' if alert.is_active_token else 'no'})",
+                            "SERVICE TOKEN EXPIRATION ALERT [%s]: Token '%s' expires in %d days (usage: %d times, active: %s)",
+                            severity.upper(),
+                            alert.token_name,
+                            alert.days_until_expiration,
+                            alert.usage_count,
+                            "yes" if alert.is_active_token else "no",
                         )
                         sent_count += 1
 
@@ -298,10 +300,10 @@ class ServiceTokenMonitor:
                 sent_count = await self._send_webhook_alerts(alerts_by_severity)
 
             else:
-                logger.warning(f"Unknown notification method: {notification_method}")
+                logger.warning("Unknown notification method: %s", notification_method)
 
         except Exception as e:
-            logger.error(f"Failed to send expiration alerts: {e}")
+            logger.error("Failed to send expiration alerts: %s", e)
 
         return {"alerts_sent": sent_count, "method": notification_method}
 
@@ -319,9 +321,9 @@ class ServiceTokenMonitor:
 
         total_alerts = sum(len(alerts) for alerts in alerts_by_severity.values())
 
-        logger.info(f"EMAIL ALERT: Would send {total_alerts} token expiration alerts")
+        logger.info("EMAIL ALERT: Would send %d token expiration alerts", total_alerts)
         for severity, alerts in alerts_by_severity.items():
-            logger.info(f"  {severity.upper()}: {len(alerts)} alerts")
+            logger.info("  %s: %d alerts", severity.upper(), len(alerts))
 
         return total_alerts
 
@@ -339,9 +341,9 @@ class ServiceTokenMonitor:
 
         total_alerts = sum(len(alerts) for alerts in alerts_by_severity.values())
 
-        logger.info(f"WEBHOOK ALERT: Would send {total_alerts} token expiration alerts")
+        logger.info("WEBHOOK ALERT: Would send %d token expiration alerts", total_alerts)
         for severity, alerts in alerts_by_severity.items():
-            logger.info(f"  {severity.upper()}: {len(alerts)} alerts")
+            logger.info("  %s: %d alerts", severity.upper(), len(alerts))
 
         return total_alerts
 
@@ -382,7 +384,7 @@ class ServiceTokenMonitor:
             }
 
         except Exception as e:
-            logger.error(f"Scheduled monitoring failed: {e}")
+            logger.error("Scheduled monitoring failed: %s", e)
             return {"status": "failed", "timestamp": start_time.isoformat(), "error": str(e)}
 
     async def start_monitoring_daemon(self, check_interval_minutes: int = 360) -> None:
@@ -391,7 +393,7 @@ class ServiceTokenMonitor:
         Args:
             check_interval_minutes: Minutes between monitoring checks
         """
-        logger.info(f"Starting service token monitoring daemon (interval: {check_interval_minutes} minutes)")
+        logger.info("Starting service token monitoring daemon (interval: %d minutes)", check_interval_minutes)
 
         while True:
             try:
@@ -399,16 +401,16 @@ class ServiceTokenMonitor:
 
                 if result["status"] == "completed":
                     logger.info(
-                        f"Monitoring cycle completed: "
-                        f"{result.get('expiring_tokens_found', 0)} expiring tokens, "
-                        f"{result.get('alerts_sent', 0)} alerts sent, "
-                        f"cleanup: {result.get('cleanup_results', {}).get('expired_tokens_processed', 0)} tokens",
+                        "Monitoring cycle completed: %d expiring tokens, %d alerts sent, cleanup: %d tokens",
+                        result.get("expiring_tokens_found", 0),
+                        result.get("alerts_sent", 0),
+                        result.get("cleanup_results", {}).get("expired_tokens_processed", 0),
                     )
                 else:
-                    logger.error(f"Monitoring cycle failed: {result.get('error', 'Unknown error')}")
+                    logger.error("Monitoring cycle failed: %s", result.get("error", "Unknown error"))
 
             except Exception as e:
-                logger.error(f"Monitoring daemon error: {e}")
+                logger.error("Monitoring daemon error: %s", e)
 
             # Wait for next cycle
             await asyncio.sleep(check_interval_minutes * 60)

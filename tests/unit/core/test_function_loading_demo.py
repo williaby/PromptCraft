@@ -197,11 +197,13 @@ class TestInteractiveFunctionLoadingDemo:
             "functions_used": 5,
         }
 
-        with patch.object(demo, "_run_single_scenario", return_value=mock_result) as mock_run:
-            with patch.object(demo, "_display_scenario_result") as mock_display:
-                with patch.object(demo, "_display_scenarios_summary") as mock_summary:
-                    with patch("src.core.function_loading_demo.asyncio.sleep"):
-                        await demo._run_demo_scenarios()
+        with (
+            patch.object(demo, "_run_single_scenario", return_value=mock_result) as mock_run,
+            patch.object(demo, "_display_scenario_result") as mock_display,
+            patch.object(demo, "_display_scenarios_summary") as mock_summary,
+            patch("src.core.function_loading_demo.asyncio.sleep"),
+        ):
+            await demo._run_demo_scenarios()
 
         # Verify all scenarios were run
         assert mock_run.call_count == len(demo.demo_scenarios)
@@ -400,9 +402,11 @@ class TestInteractiveFunctionLoadingDemo:
         # Mock user input sequence: query, strategy, back
         user_inputs = ["debug failing tests", "2", "back"]  # Query  # Strategy (Balanced)  # Exit
 
-        with patch("builtins.input", side_effect=user_inputs):
-            with patch.object(demo, "_run_interactive_query") as mock_run_query:
-                await demo._interactive_session()
+        with (
+            patch("builtins.input", side_effect=user_inputs),
+            patch.object(demo, "_run_interactive_query") as mock_run_query,
+        ):
+            await demo._interactive_session()
 
         # Verify interactive query was run with correct parameters
         mock_run_query.assert_called_once_with("debug failing tests", LoadingStrategy.BALANCED)
@@ -422,9 +426,11 @@ class TestInteractiveFunctionLoadingDemo:
             "quit",  # Exit
         ]
 
-        with patch("builtins.input", side_effect=user_inputs):
-            with patch.object(demo, "_run_interactive_query") as mock_run_query:
-                await demo._interactive_session()
+        with (
+            patch("builtins.input", side_effect=user_inputs),
+            patch.object(demo, "_run_interactive_query") as mock_run_query,
+        ):
+            await demo._interactive_session()
 
         # Verify all queries were processed
         assert mock_run_query.call_count == 3
@@ -445,9 +451,11 @@ class TestInteractiveFunctionLoadingDemo:
             "exit",  # Exit
         ]
 
-        with patch("builtins.input", side_effect=user_inputs):
-            with patch.object(demo, "_run_interactive_query") as mock_run_query:
-                await demo._interactive_session()
+        with (
+            patch("builtins.input", side_effect=user_inputs),
+            patch.object(demo, "_run_interactive_query") as mock_run_query,
+        ):
+            await demo._interactive_session()
 
         # Only the valid query should be processed
         mock_run_query.assert_called_once_with("valid query", LoadingStrategy.CONSERVATIVE)
@@ -580,7 +588,7 @@ class TestInteractiveFunctionLoadingDemo:
         loading_decisions = []
         session_summaries = []
 
-        for i, strategy in enumerate(
+        for i, _strategy in enumerate(
             [LoadingStrategy.CONSERVATIVE, LoadingStrategy.BALANCED, LoadingStrategy.AGGRESSIVE],
         ):
             decision = MagicMock()
@@ -816,12 +824,14 @@ class TestMainFunction:
         """Test main function in interactive mode."""
         test_args = ["script.py", "--mode", "interactive"]
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         # Verify demo was created and initialized
         mock_demo_class.assert_called_once()
@@ -833,12 +843,14 @@ class TestMainFunction:
         """Test main function in scenarios mode."""
         test_args = ["script.py", "--mode", "scenarios"]
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         mock_demo.initialize.assert_called_once()
         mock_demo._run_demo_scenarios.assert_called_once()
@@ -848,12 +860,14 @@ class TestMainFunction:
         """Test main function in validation mode."""
         test_args = ["script.py", "--mode", "validation"]
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         mock_demo.initialize.assert_called_once()
         mock_demo._validation_report.assert_called_once()
@@ -863,12 +877,14 @@ class TestMainFunction:
         """Test main function in performance mode."""
         test_args = ["script.py", "--mode", "performance"]
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         mock_demo.initialize.assert_called_once()
         mock_demo._performance_comparison.assert_called_once()
@@ -878,12 +894,14 @@ class TestMainFunction:
         """Test main function with default mode (interactive)."""
         test_args = ["script.py"]  # No mode specified
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         # Should default to interactive mode
         mock_demo.run_interactive_demo.assert_called_once()
@@ -893,12 +911,14 @@ class TestMainFunction:
         """Test main function with scenarios argument."""
         test_args = ["script.py", "--mode", "scenarios", "--scenarios", "git", "debug"]
 
-        with patch("sys.argv", test_args):
-            with patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class:
-                mock_demo = AsyncMock()
-                mock_demo_class.return_value = mock_demo
+        with (
+            patch("sys.argv", test_args),
+            patch("src.core.function_loading_demo.InteractiveFunctionLoadingDemo") as mock_demo_class,
+        ):
+            mock_demo = AsyncMock()
+            mock_demo_class.return_value = mock_demo
 
-                await main()
+            await main()
 
         # Scenarios argument is parsed but not currently used in implementation
         mock_demo._run_demo_scenarios.assert_called_once()
@@ -919,11 +939,13 @@ except KeyboardInterrupt:
 
     def test_main_entry_point_exception(self):
         """Test main entry point handling general exception."""
-        with patch("src.core.function_loading_demo.asyncio.run", side_effect=Exception("Test error")):
-            with patch("sys.exit") as mock_exit:
-                if __name__ == "__main__":
-                    exec(
-                        """
+        with (
+            patch("src.core.function_loading_demo.asyncio.run", side_effect=Exception("Test error")),
+            patch("sys.exit"),
+        ):
+            if __name__ == "__main__":
+                exec(
+                    """
 try:
     asyncio.run(main())
 except KeyboardInterrupt:
@@ -931,7 +953,7 @@ except KeyboardInterrupt:
 except Exception:
     sys.exit(1)
 """,
-                    )
+                )
 
 
 class TestInteractiveFunctionLoadingDemoIntegration:
@@ -1119,12 +1141,14 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         """Test initialization when loader creation fails."""
         demo = InteractiveFunctionLoadingDemo()
 
-        with patch(
-            "src.core.function_loading_demo.initialize_dynamic_loading",
-            side_effect=Exception("Loader init failed"),
+        with (
+            patch(
+                "src.core.function_loading_demo.initialize_dynamic_loading",
+                side_effect=Exception("Loader init failed"),
+            ),
+            pytest.raises(Exception, match="Loader init failed"),
         ):
-            with pytest.raises(Exception, match="Loader init failed"):
-                await demo.initialize()
+            await demo.initialize()
 
     @pytest.mark.asyncio
     async def test_scenario_execution_with_loader_errors(self, mock_loader):
@@ -1183,9 +1207,11 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
 
         user_inputs = ["test query", "invalid", "back"]  # Invalid strategy choice
 
-        with patch("builtins.input", side_effect=user_inputs):
-            with patch.object(demo, "_run_interactive_query") as mock_run_query:
-                await demo._interactive_session()
+        with (
+            patch("builtins.input", side_effect=user_inputs),
+            patch.object(demo, "_run_interactive_query") as mock_run_query,
+        ):
+            await demo._interactive_session()
 
         # Should default to BALANCED strategy for invalid input
         mock_run_query.assert_called_once_with("test query", LoadingStrategy.BALANCED)
@@ -1300,10 +1326,9 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         exit_inputs = ["q", "quit", "exit", "Q", "QUIT", "EXIT"]
 
         for exit_input in exit_inputs:
-            with patch.object(demo, "_show_main_menu"):
-                with patch("builtins.input", return_value=exit_input):
-                    # Should exit the loop without calling any menu functions
-                    await demo.run_interactive_demo()
+            with patch.object(demo, "_show_main_menu"), patch("builtins.input", return_value=exit_input):
+                # Should exit the loop without calling any menu functions
+                await demo.run_interactive_demo()
 
     @pytest.mark.asyncio
     async def test_run_interactive_demo_invalid_menu_choices(self, mock_loader):
@@ -1314,11 +1339,13 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         # Test invalid choices followed by quit
         user_inputs = ["0", "7", "invalid", "q"]
 
-        with patch.object(demo, "_show_main_menu"):
-            with patch("builtins.input", side_effect=user_inputs):
-                with patch.object(demo, "_run_demo_scenarios") as mock_scenarios:
-                    with patch.object(demo, "_interactive_session") as mock_session:
-                        await demo.run_interactive_demo()
+        with (
+            patch.object(demo, "_show_main_menu"),
+            patch("builtins.input", side_effect=user_inputs),
+            patch.object(demo, "_run_demo_scenarios") as mock_scenarios,
+            patch.object(demo, "_interactive_session") as mock_session,
+        ):
+            await demo.run_interactive_demo()
 
         # None of the menu functions should be called for invalid choices
         mock_scenarios.assert_not_called()

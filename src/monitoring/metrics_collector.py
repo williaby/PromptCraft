@@ -7,13 +7,14 @@ statistical validation of the 70% token reduction goal.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import sqlite3
 import statistics
 from collections import deque
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -114,7 +115,7 @@ class ValidationResult:
 class MetricsDatabase:
     """SQLite database for persistent metrics storage."""
 
-    def __init__(self, db_path: Path | None = None):
+    def __init__(self, db_path: Path | None = None) -> None:
         self.db_path = db_path or Path("metrics.db")
         self.logger = create_structured_logger("metrics_database")
         self._initialize_database()
@@ -203,7 +204,7 @@ class MetricsDatabase:
                     ),
                 )
         except Exception as e:
-            self.logger.error(f"Failed to store metric point: {e}")
+            self.logger.error("Failed to store metric point: %s", e)
 
     async def store_aggregated_metric(self, metric: AggregatedMetric) -> None:
         """Store an aggregated metric in the database."""
@@ -229,7 +230,7 @@ class MetricsDatabase:
                     ),
                 )
         except Exception as e:
-            self.logger.error(f"Failed to store aggregated metric: {e}")
+            self.logger.error("Failed to store aggregated metric: %s", e)
 
     async def store_validation_result(self, result: ValidationResult) -> None:
         """Store a validation result in the database."""
@@ -256,7 +257,7 @@ class MetricsDatabase:
                     ),
                 )
         except Exception as e:
-            self.logger.error(f"Failed to store validation result: {e}")
+            self.logger.error("Failed to store validation result: %s", e)
 
     async def get_metric_points(
         self,
@@ -277,7 +278,7 @@ class MetricsDatabase:
         if labels:
             # Simple label filtering (in production, use proper JSON queries)
             query += " AND labels LIKE ?"
-            params.append(f"%{list(labels.items())[0][0]}%")
+            params.append(f"%{next(iter(labels.items()))[0]}%")
 
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -297,14 +298,14 @@ class MetricsDatabase:
 
                 return points
         except Exception as e:
-            self.logger.error(f"Failed to retrieve metric points: {e}")
+            self.logger.error("Failed to retrieve metric points: %s", e)
             return []
 
 
 class MetricsAggregator:
     """Aggregate metrics over different time windows."""
 
-    def __init__(self, database: MetricsDatabase):
+    def __init__(self, database: MetricsDatabase) -> None:
         self.database = database
         self.logger = create_structured_logger("metrics_aggregator")
 
@@ -425,7 +426,7 @@ class MetricsAggregator:
 class TrendAnalyzer:
     """Analyze trends in metrics over time."""
 
-    def __init__(self, database: MetricsDatabase):
+    def __init__(self, database: MetricsDatabase) -> None:
         self.database = database
         self.logger = create_structured_logger("trend_analyzer")
 
@@ -438,7 +439,7 @@ class TrendAnalyzer:
         """Analyze trend for a metric over a specified time period."""
 
         if end_time is None:
-            end_time = datetime.now()
+            end_time = datetime.now(UTC)
         start_time = end_time - time_period
 
         # Get metric points
@@ -503,7 +504,7 @@ class TrendAnalyzer:
     ) -> list[MetricPoint]:
         """Detect anomalies in metric values using statistical methods."""
 
-        end_time = datetime.now()
+        end_time = datetime.now(UTC)
         start_time = end_time - time_period
 
         points = await self.database.get_metric_points(metric_name, start_time, end_time)
@@ -528,7 +529,7 @@ class TrendAnalyzer:
 class StatisticalValidator:
     """Perform statistical validation of optimization claims."""
 
-    def __init__(self, database: MetricsDatabase):
+    def __init__(self, database: MetricsDatabase) -> None:
         self.database = database
         self.logger = create_structured_logger("statistical_validator")
 
@@ -539,7 +540,7 @@ class StatisticalValidator:
     ) -> ValidationResult:
         """Validate the token reduction claim with statistical rigor."""
 
-        end_time = datetime.now()
+        end_time = datetime.now(UTC)
         start_time = end_time - time_period
 
         # Get token reduction metrics
@@ -631,7 +632,7 @@ class StatisticalValidator:
         """Validate a single performance claim."""
 
         time_period = timedelta(days=7)
-        end_time = datetime.now()
+        end_time = datetime.now(UTC)
         start_time = end_time - time_period
 
         points = await self.database.get_metric_points(metric_name, start_time, end_time)
@@ -723,14 +724,10 @@ class StatisticalValidator:
         """Determine evidence strength based on statistical measures."""
 
         # Cohen's conventions for effect size
-        if effect_size < 0.2:
-            effect_category = "small"
-        elif effect_size < 0.5:
-            effect_category = "medium"
-        elif effect_size < 0.8:
-            effect_category = "large"
+        if effect_size < 0.2 or effect_size < 0.5 or effect_size < 0.8:
+            pass
         else:
-            effect_category = "very_large"
+            pass
 
         # Overall strength assessment
         if p_value > 0.05:
@@ -751,7 +748,7 @@ class StatisticalValidator:
 class MetricsCollector:
     """Main metrics collection orchestrator."""
 
-    def __init__(self, monitor: TokenOptimizationMonitor, db_path: Path | None = None):
+    def __init__(self, monitor: TokenOptimizationMonitor, db_path: Path | None = None) -> None:
         self.monitor = monitor
         self.database = MetricsDatabase(db_path)
         self.aggregator = MetricsAggregator(self.database)
@@ -793,10 +790,8 @@ class MetricsCollector:
         # Wait for tasks to complete
         for task in [self._collection_task, self._aggregation_task]:
             if task:
-                try:
+                with contextlib.suppress(asyncio.CancelledError):
                     await task
-                except asyncio.CancelledError:
-                    pass
 
         self.logger.info("Stopped metrics collection")
 
@@ -810,7 +805,7 @@ class MetricsCollector:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in metrics collection loop: {e}")
+                self.logger.error("Error in metrics collection loop: %s", e)
                 await asyncio.sleep(self.collection_interval)
 
     async def _aggregation_loop(self) -> None:
@@ -823,13 +818,13 @@ class MetricsCollector:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in metrics aggregation loop: {e}")
+                self.logger.error("Error in metrics aggregation loop: %s", e)
                 await asyncio.sleep(self.aggregation_interval)
 
     async def _collect_current_metrics(self) -> None:
         """Collect current metrics from the monitor."""
 
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # System health metrics
         health_report = await self.monitor.generate_system_health_report()
@@ -898,7 +893,7 @@ class MetricsCollector:
     async def _perform_aggregations(self) -> None:
         """Perform metric aggregations for different time windows."""
 
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # Aggregation configurations
         aggregation_configs = [
@@ -939,12 +934,12 @@ class MetricsCollector:
                         aggregation_types=agg_types,
                     )
                 except Exception as e:
-                    self.logger.error(f"Failed to aggregate {metric_name} for {time_window}: {e}")
+                    self.logger.error("Failed to aggregate %s for %s: %s", metric_name, time_window, e)
 
     async def generate_comprehensive_report(self, time_period: timedelta = timedelta(days=7)) -> dict[str, Any]:
         """Generate comprehensive metrics report."""
 
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # Perform validation
         validation_results = await self.validator.validate_performance_claims()
@@ -965,7 +960,7 @@ class MetricsCollector:
         # Generate export data
         export_data = await self.monitor.export_metrics(include_raw_data=False)
 
-        report = {
+        return {
             "report_timestamp": current_time.isoformat(),
             "analysis_period": {
                 "duration_days": time_period.days,
@@ -976,7 +971,7 @@ class MetricsCollector:
                 "token_reduction_claim": asdict(token_reduction_validation),
                 "performance_claims": [asdict(result) for result in validation_results],
                 "overall_validation_status": all(
-                    result.validated for result in validation_results + [token_reduction_validation]
+                    result.validated for result in [*validation_results, token_reduction_validation]
                 ),
             },
             "trend_analysis": trend_analyses,
@@ -989,12 +984,10 @@ class MetricsCollector:
                 },
                 "confidence_intervals": {
                     result.claim.split(":")[0]: result.confidence_level
-                    for result in validation_results + [token_reduction_validation]
+                    for result in [*validation_results, token_reduction_validation]
                 },
             },
         }
-
-        return report
 
     async def export_for_external_analysis(self, format: str = "json") -> dict[str, Any]:
         """Export metrics data for external analysis tools."""
@@ -1008,7 +1001,7 @@ class MetricsCollector:
             # Convert to Grafana dashboard format would go here
             pass
 
-        return {"export_format": format, "export_timestamp": datetime.now().isoformat(), "data": report}
+        return {"export_format": format, "export_timestamp": datetime.now(UTC).isoformat(), "data": report}
 
 
 # Global metrics collector instance
@@ -1019,7 +1012,9 @@ def get_metrics_collector() -> MetricsCollector:
     """Get the global metrics collector instance."""
     global _global_collector
     if _global_collector is None:
-        from src.core.token_optimization_monitor import get_token_optimization_monitor
+        from src.core.token_optimization_monitor import (
+            get_token_optimization_monitor,  # Lazy loading to avoid circular imports
+        )
 
         monitor = get_token_optimization_monitor()
         _global_collector = MetricsCollector(monitor)

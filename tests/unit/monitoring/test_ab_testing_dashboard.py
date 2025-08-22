@@ -1,7 +1,7 @@
 """Comprehensive test suite for A/B Testing Dashboard."""
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -42,7 +42,7 @@ class TestAlert:
 
     def test_alert_creation(self):
         """Test creating an Alert."""
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(UTC)
         alert = Alert(
             id="alert-1",
             experiment_id="exp-1",
@@ -70,7 +70,7 @@ class TestAlert:
     def test_alert_default_timestamp(self):
         """Test Alert with default timestamp."""
         # Test that an alert without explicit timestamp gets a default timestamp
-        before_creation = datetime.utcnow()
+        before_creation = datetime.now(UTC)
 
         alert = Alert(
             id="alert-2",
@@ -83,7 +83,7 @@ class TestAlert:
             threshold_value=100.0,
         )
 
-        after_creation = datetime.utcnow()
+        after_creation = datetime.now(UTC)
 
         # Verify the timestamp is between before and after creation
         assert before_creation <= alert.timestamp <= after_creation
@@ -91,7 +91,7 @@ class TestAlert:
 
     def test_alert_to_dict(self):
         """Test Alert to_dict conversion."""
-        timestamp = datetime(2024, 1, 1, 12, 0, 0)
+        timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         alert = Alert(
             id="alert-1",
             experiment_id="exp-1",
@@ -129,7 +129,7 @@ class TestDashboardMetrics:
     @pytest.fixture
     def sample_metrics(self):
         """Sample dashboard metrics for testing."""
-        timestamp = datetime(2024, 1, 1, 12, 0, 0)
+        timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         alert = Alert(
             id="alert-1",
             experiment_id="exp-1",
@@ -222,7 +222,7 @@ class TestDashboardMetrics:
     def test_dashboard_metrics_default_timestamp(self):
         """Test DashboardMetrics with default timestamp."""
         # Test that metrics without explicit last_updated gets a default timestamp
-        before_creation = datetime.utcnow()
+        before_creation = datetime.now(UTC)
 
         metrics = DashboardMetrics(
             experiment_id="exp-1",
@@ -246,7 +246,7 @@ class TestDashboardMetrics:
             confidence_level="medium",
         )
 
-        after_creation = datetime.utcnow()
+        after_creation = datetime.now(UTC)
 
         # Verify the timestamp is between before and after creation
         assert before_creation <= metrics.last_updated <= after_creation
@@ -407,13 +407,13 @@ class TestMetricsCollector:
         # Mock database session and events
         mock_db_session = Mock()
         mock_event_1 = Mock()
-        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0)
+        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0, tzinfo=UTC)
         mock_event_1.response_time_ms = 120.0
         mock_event_1.token_reduction_percentage = 25.0
         mock_event_1.success = True
 
         mock_event_2 = Mock()
-        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0)  # Same hour
+        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0, tzinfo=UTC)  # Same hour
         mock_event_2.response_time_ms = 130.0
         mock_event_2.token_reduction_percentage = 30.0
         mock_event_2.success = False
@@ -424,7 +424,7 @@ class TestMetricsCollector:
         ]
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)  # 7 days later
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)  # 7 days later
 
             result = await metrics_collector._collect_performance_timeline(experiment_id, mock_db_session)
 
@@ -453,7 +453,7 @@ class TestMetricsCollector:
 
         # Mock event with missing fields
         mock_event = Mock()
-        mock_event.timestamp = datetime(2024, 1, 1, 10, 30, 0)
+        mock_event.timestamp = datetime(2024, 1, 1, 10, 30, 0, tzinfo=UTC)
         mock_event.response_time_ms = None
         mock_event.token_reduction_percentage = None
         mock_event.success = True
@@ -486,11 +486,11 @@ class TestMetricsCollector:
 
         # Mock conversion events
         mock_event_1 = Mock()
-        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0)
+        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0, tzinfo=UTC)
         mock_event_1.token_reduction_percentage = 75.0  # Above threshold
 
         mock_event_2 = Mock()
-        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0)
+        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0, tzinfo=UTC)
         mock_event_2.token_reduction_percentage = 65.0  # Below threshold
 
         mock_db_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = [
@@ -499,7 +499,7 @@ class TestMetricsCollector:
         ]
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)  # 7 days later
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)  # 7 days later
 
             result = await metrics_collector._collect_conversion_timeline(experiment_id, mock_db_session)
 
@@ -537,12 +537,12 @@ class TestMetricsCollector:
 
         # Mock events with errors
         mock_event_1 = Mock()
-        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0)
+        mock_event_1.timestamp = datetime(2024, 1, 1, 10, 30, 0, tzinfo=UTC)
         mock_event_1.event_type = "performance"
         mock_event_1.success = True
 
         mock_event_2 = Mock()
-        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0)
+        mock_event_2.timestamp = datetime(2024, 1, 1, 10, 45, 0, tzinfo=UTC)
         mock_event_2.event_type = "error"
         mock_event_2.success = False
 
@@ -552,7 +552,7 @@ class TestMetricsCollector:
         ]
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)  # 7 days later
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)  # 7 days later
 
             result = await metrics_collector._collect_error_timeline(experiment_id, mock_db_session)
 
@@ -1066,7 +1066,7 @@ class TestDashboardVisualizer:
     @pytest.fixture
     def sample_metrics(self):
         """Sample dashboard metrics for testing."""
-        timestamp = datetime(2024, 1, 1, 12, 0, 0)
+        timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         alert = Alert(
             id="alert-1",
             experiment_id="exp-1",
@@ -1230,7 +1230,7 @@ class TestABTestingDashboard:
     @pytest.fixture
     def sample_metrics(self):
         """Sample dashboard metrics."""
-        timestamp = datetime(2024, 1, 1, 12, 0, 0)
+        timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         alert = Alert(
             id="alert-1",
             experiment_id="exp-1",
@@ -1376,8 +1376,8 @@ class TestABTestingDashboard:
         mock_experiment_1.id = "exp-1"
         mock_experiment_1.name = "Experiment 1"
         mock_experiment_1.status = "running"
-        mock_experiment_1.created_at = datetime(2024, 1, 1, 10, 0, 0)
-        mock_experiment_1.start_time = datetime(2024, 1, 1, 11, 0, 0)
+        mock_experiment_1.created_at = datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC)
+        mock_experiment_1.start_time = datetime(2024, 1, 1, 11, 0, 0, tzinfo=UTC)
         mock_experiment_1.end_time = None
         mock_experiment_1.current_percentage = 50
         mock_experiment_1.target_percentage = 100
@@ -1386,9 +1386,9 @@ class TestABTestingDashboard:
         mock_experiment_2.id = "exp-2"
         mock_experiment_2.name = "Experiment 2"
         mock_experiment_2.status = "completed"
-        mock_experiment_2.created_at = datetime(2024, 1, 2, 10, 0, 0)
-        mock_experiment_2.start_time = datetime(2024, 1, 2, 11, 0, 0)
-        mock_experiment_2.end_time = datetime(2024, 1, 3, 11, 0, 0)
+        mock_experiment_2.created_at = datetime(2024, 1, 2, 10, 0, 0, tzinfo=UTC)
+        mock_experiment_2.start_time = datetime(2024, 1, 2, 11, 0, 0, tzinfo=UTC)
+        mock_experiment_2.end_time = datetime(2024, 1, 3, 11, 0, 0, tzinfo=UTC)
         mock_experiment_2.current_percentage = 100
         mock_experiment_2.target_percentage = 100
 
@@ -1714,7 +1714,7 @@ class TestIntegrationScenarios:
 
     async def test_complete_dashboard_workflow(self, complete_system):
         """Test complete dashboard generation workflow."""
-        metrics_collector = complete_system["metrics_collector"]
+        complete_system["metrics_collector"]
         experiment_manager = complete_system["experiment_manager"]
 
         # Create dashboard
@@ -2040,7 +2040,7 @@ class TestMetricsCollectorAdvanced:
 
         # Create complex timeline events spanning multiple hours with varying patterns
         timeline_events = []
-        base_time = datetime(2024, 1, 1, 10, 0, 0)
+        base_time = datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC)
 
         for hour in range(6):  # 6 hours of data
             for minute in [0, 15, 30, 45]:  # 4 events per hour
@@ -2057,7 +2057,7 @@ class TestMetricsCollectorAdvanced:
         mock_db_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = timeline_events
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)  # 7 days later
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)  # 7 days later
 
             result = await metrics_collector._collect_performance_timeline(experiment_id, mock_db_session)
 
@@ -2088,7 +2088,7 @@ class TestMetricsCollectorAdvanced:
         )
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)
 
             result = await metrics_collector._collect_conversion_timeline(experiment_id, mock_db_session)
 
@@ -2128,7 +2128,7 @@ class TestMetricsCollectorAdvanced:
         mock_db_session.query.return_value.filter.return_value.order_by.return_value.all.return_value = error_events
 
         with patch("src.monitoring.ab_testing_dashboard.datetime") as mock_datetime:
-            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0)
+            mock_datetime.utcnow.return_value = datetime(2024, 1, 8, 12, 0, 0, tzinfo=UTC)
 
             result = await metrics_collector._collect_error_timeline(experiment_id, mock_db_session)
 
@@ -2334,9 +2334,9 @@ class TestABTestingDashboardAdvanced:
             exp.id = f"exp-{i}"
             exp.name = f"Experiment {i}"
             exp.status = ["draft", "running", "paused", "completed", "failed"][i]
-            exp.created_at = datetime(2024, 1, i + 1, 10, 0, 0)
-            exp.start_time = datetime(2024, 1, i + 1, 11, 0, 0) if i > 0 else None
-            exp.end_time = datetime(2024, 1, i + 1, 15, 0, 0) if i >= 3 else None
+            exp.created_at = datetime(2024, 1, i + 1, 10, 0, 0, tzinfo=UTC)
+            exp.start_time = datetime(2024, 1, i + 1, 11, 0, 0, tzinfo=UTC) if i > 0 else None
+            exp.end_time = datetime(2024, 1, i + 1, 15, 0, 0, tzinfo=UTC) if i >= 3 else None
             exp.current_percentage = [0, 25, 50, 100, 75][i]
             exp.target_percentage = 100
             experiments.append(exp)
@@ -2659,12 +2659,14 @@ class TestGlobalFunctionsAdvanced:
         module._dashboard_instance = None
 
         # Test error in experiment manager creation
-        with patch(
-            "src.monitoring.ab_testing_dashboard.get_experiment_manager",
-            side_effect=Exception("Manager creation failed"),
+        with (
+            patch(
+                "src.monitoring.ab_testing_dashboard.get_experiment_manager",
+                side_effect=Exception("Manager creation failed"),
+            ),
+            pytest.raises(Exception, match="Manager creation failed"),
         ):
-            with pytest.raises(Exception, match="Manager creation failed"):
-                await get_dashboard_instance()
+            await get_dashboard_instance()
 
         # Should still be None after failed creation
         assert module._dashboard_instance is None
@@ -2747,7 +2749,7 @@ class TestFullSystemIntegration:
         conversion_timeline = []
         error_timeline = []
 
-        base_time = datetime.utcnow() - timedelta(days=7)
+        base_time = datetime.now(UTC) - timedelta(days=7)
         for hour in range(168):  # 7 days * 24 hours
             timestamp = (base_time + timedelta(hours=hour)).isoformat()
 
@@ -2814,7 +2816,7 @@ class TestFullSystemIntegration:
     async def test_multi_experiment_dashboard_overview(self, full_system_setup):
         """Test multi-experiment dashboard overview functionality."""
         dashboard = full_system_setup["dashboard"]
-        experiment_manager = full_system_setup["experiment_manager"]
+        full_system_setup["experiment_manager"]
         db_session = full_system_setup["db_session"]
 
         # Create multiple experiments with different characteristics
@@ -2878,10 +2880,10 @@ class TestFullSystemIntegration:
             exp.id = config["id"]
             exp.name = config["name"]
             exp.status = config["status"]
-            exp.created_at = datetime.utcnow() - timedelta(days=len(experiments))
-            exp.start_time = datetime.utcnow() - timedelta(days=len(experiments), hours=1)
+            exp.created_at = datetime.now(UTC) - timedelta(days=len(experiments))
+            exp.start_time = datetime.now(UTC) - timedelta(days=len(experiments), hours=1)
             exp.end_time = (
-                datetime.utcnow() - timedelta(hours=1) if config["status"] in ["completed", "failed"] else None
+                datetime.now(UTC) - timedelta(hours=1) if config["status"] in ["completed", "failed"] else None
             )
             exp.current_percentage = 100 if config["status"] == "completed" else 50
             exp.target_percentage = 100

@@ -1,7 +1,7 @@
 """Comprehensive test suite for Performance Dashboard."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -32,7 +32,7 @@ class MockSystemHealthReport:
         self.total_sessions = 50
         self.fallback_activation_rate = 0.05
         # Use a fixed timestamp for testing
-        self.timestamp = datetime(2024, 1, 1, 12, 0, 0)
+        self.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
 
 class MockFunctionTier:
@@ -65,7 +65,7 @@ class MockSessionMetrics:
         self.optimized_tokens_loaded = 250
         self.optimized_functions_loaded = 5
         self.functions_actually_used = ["func1", "func2", "func3"]
-        self.timestamp = datetime.now()
+        self.timestamp = datetime.now(UTC)
 
 
 class MockOptimizationLevel:
@@ -106,7 +106,7 @@ class MockTokenOptimizationMonitor:
             "token_reduction": 75.0,
             "latency": 150.0,
             "success_rate": 0.98,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     async def get_optimization_report(self, user_id=None):
@@ -115,7 +115,7 @@ class MockTokenOptimizationMonitor:
             "user_id": user_id,
             "token_reduction": 75.0,
             "sessions_optimized": 10,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
@@ -152,10 +152,12 @@ class TestMetricsExporter:
     @pytest.fixture
     def metrics_exporter(self, mock_monitor):
         """Create MetricsExporter instance."""
-        with patch("src.monitoring.performance_dashboard.get_performance_monitor") as mock_get_perf:
+        with (
+            patch("src.monitoring.performance_dashboard.get_performance_monitor") as mock_get_perf,
+            patch("src.monitoring.performance_dashboard.create_structured_logger"),
+        ):
             mock_get_perf.return_value = MockPerformanceMonitor()
-            with patch("src.monitoring.performance_dashboard.create_structured_logger"):
-                return MetricsExporter(mock_monitor)
+            return MetricsExporter(mock_monitor)
 
     @pytest.mark.asyncio
     async def test_export_prometheus_metrics(self, metrics_exporter):
@@ -209,11 +211,13 @@ class TestMetricsExporter:
 
     def test_metrics_exporter_initialization(self, mock_monitor):
         """Test MetricsExporter initialization."""
-        with patch("src.monitoring.performance_dashboard.get_performance_monitor"):
-            with patch("src.monitoring.performance_dashboard.create_structured_logger") as mock_logger:
-                exporter = MetricsExporter(mock_monitor)
-                assert exporter.monitor == mock_monitor
-                mock_logger.assert_called_once_with("metrics_exporter")
+        with (
+            patch("src.monitoring.performance_dashboard.get_performance_monitor"),
+            patch("src.monitoring.performance_dashboard.create_structured_logger") as mock_logger,
+        ):
+            exporter = MetricsExporter(mock_monitor)
+            assert exporter.monitor == mock_monitor
+            mock_logger.assert_called_once_with("metrics_exporter")
 
 
 class TestRealTimeDashboard:
@@ -585,7 +589,7 @@ class TestAlertManager:
             "message": "Test message",
             "metric_value": 50.0,
             "threshold_value": 70.0,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         with patch.object(alert_manager, "_send_notification", new_callable=AsyncMock) as mock_send:
@@ -606,7 +610,7 @@ class TestAlertManager:
             "message": "Test message",
             "metric_value": 50.0,
             "threshold_value": 70.0,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         alert_manager.active_alerts["test_alert"] = alert
 
@@ -625,7 +629,7 @@ class TestAlertManager:
             "level": "warning",
             "title": "Test Alert",
             "message": "Test message",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         mock_channel = AsyncMock()
@@ -644,7 +648,7 @@ class TestAlertManager:
             "level": "warning",
             "title": "Test Alert",
             "message": "Test message",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         mock_channel = AsyncMock()
@@ -668,7 +672,7 @@ class TestAlertManager:
     def test_get_alert_summary(self, alert_manager):
         """Test getting alert summary."""
         # Add some test alerts to history
-        now = datetime.now()
+        now = datetime.now(UTC)
         recent_alert = {"id": "recent_alert", "level": "warning", "timestamp": now.isoformat()}
         old_alert = {"id": "old_alert", "level": "critical", "timestamp": (now - timedelta(hours=25)).isoformat()}
 
@@ -850,9 +854,11 @@ class TestEdgeCases:
     @pytest.fixture
     def metrics_exporter(self, mock_monitor):
         """Create MetricsExporter instance."""
-        with patch("src.monitoring.performance_dashboard.get_performance_monitor"):
-            with patch("src.monitoring.performance_dashboard.create_structured_logger"):
-                return MetricsExporter(mock_monitor)
+        with (
+            patch("src.monitoring.performance_dashboard.get_performance_monitor"),
+            patch("src.monitoring.performance_dashboard.create_structured_logger"),
+        ):
+            return MetricsExporter(mock_monitor)
 
     @pytest.mark.asyncio
     async def test_metrics_export_with_empty_data(self, metrics_exporter):
@@ -895,7 +901,7 @@ class TestEdgeCases:
     def test_alert_manager_with_edge_threshold_values(self, mock_monitor):
         """Test alert manager with values exactly at thresholds."""
         with patch("src.monitoring.performance_dashboard.create_structured_logger"):
-            alert_manager = AlertManager(mock_monitor)
+            AlertManager(mock_monitor)
 
             # Test that exactly at threshold doesn't trigger alert
             health_report = MockSystemHealthReport()

@@ -26,7 +26,7 @@ import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from statistics import mean, median
 from typing import Any
@@ -332,7 +332,7 @@ class FunctionRegistry:
         if function_name in self.functions:
             metadata = self.functions[function_name]
             metadata.usage_count += 1
-            metadata.last_used = datetime.now()
+            metadata.last_used = datetime.now(UTC)
 
             # Update success rate with exponential moving average
             alpha = 0.1
@@ -381,7 +381,7 @@ class DynamicFunctionLoader:
             session_id=session_id,
             user_id=user_id,
             query=query,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             strategy=strategy,
             baseline_tokens=self.function_registry.get_baseline_token_cost(),
         )
@@ -396,7 +396,7 @@ class DynamicFunctionLoader:
             optimization_level=self._strategy_to_optimization_level(strategy),
         )
 
-        logger.info(f"Created loading session {session_id} for user {user_id}")
+        logger.info("Created loading session %s for user %s", session_id, user_id)
         return session_id
 
     async def load_functions_for_query(
@@ -439,29 +439,30 @@ class DynamicFunctionLoader:
             await self._update_monitoring_metrics(session, loading_decision)
 
             logger.info(
-                f"Successfully loaded {len(loading_decision.functions_to_load)} functions "
-                f"for session {session_id} (reduction: "
-                f"{session.calculate_token_reduction()*100:.1f}%)",
+                "Successfully loaded %d functions for session %s (reduction: %.1f%%)",
+                len(loading_decision.functions_to_load),
+                session_id,
+                session.calculate_token_reduction() * 100,
             )
 
             return loading_decision
 
         except Exception as e:
             # Add stack trace for debugging
-            import traceback
+            import traceback  # noqa: PLC0415  # Error handler debugging
 
-            logger.error(f"Function loading exception details for session {session_id}:")
-            logger.error(f"Exception: {e}")
-            logger.error(f"Traceback:\n{traceback.format_exc()}")
+            logger.error("Function loading exception details for session %s:", session_id)
+            logger.error("Exception: %s", e)
+            logger.error("Traceback:\n%s", traceback.format_exc())
 
             session.status = SessionStatus.FAILED
             session.error_count += 1
 
             # Apply fallback if enabled
             if session.enable_fallback:
-                logger.warning(f"Function loading failed for session {session_id}, applying fallback: {e}")
+                logger.warning("Function loading failed for session %s, applying fallback: %s", session_id, e)
                 return await self._apply_fallback_loading(session, str(e))
-            logger.error(f"Function loading failed for session {session_id}: {e}")
+            logger.error("Function loading failed for session %s: %s", session_id, e)
             raise
 
     async def _detect_task_requirements(self, session: LoadingSession) -> DetectionResult:
@@ -470,13 +471,13 @@ class DynamicFunctionLoader:
         # Build context for detection
         # Debug logging to catch dict vs LoadingSession issue
         if isinstance(session, dict):
-            logger.error(f"SESSION IS DICT! Keys: {list(session.keys())}")
-            logger.error(f"Type: {type(session)}")
+            logger.error("SESSION IS DICT! Keys: %s", list(session.keys()))
+            logger.error("Type: %s", type(session))
             raise TypeError(f"Expected LoadingSession but got dict with keys: {list(session.keys())}")
 
         # Ensure session is LoadingSession object
         if not hasattr(session, "timestamp"):
-            logger.error(f"Session missing timestamp! Type: {type(session)}, Attributes: {dir(session)}")
+            logger.error("Session missing timestamp! Type: %s, Attributes: %s", type(session), dir(session))
             raise AttributeError(f"Session missing timestamp attribute. Type: {type(session)}")
 
         context = {
@@ -491,8 +492,8 @@ class DynamicFunctionLoader:
         cache_key = self._generate_detection_cache_key(session.query, context)
         if self.enable_caching and cache_key in self.loading_cache:
             cached_decision, cache_time = self.loading_cache[cache_key]
-            if datetime.now() - cache_time < self.cache_max_age:
-                logger.debug(f"Using cached detection result for session {session.session_id}")
+            if datetime.now(UTC) - cache_time < self.cache_max_age:
+                logger.debug("Using cached detection result for session %s", session.session_id)
                 # Convert cached decision to detection result
                 return self._decision_to_detection_result(cached_decision)
 
@@ -613,7 +614,7 @@ class DynamicFunctionLoader:
                 session.query,
                 {"strategy": session.strategy.value, "user_commands": session.user_commands},
             )
-            self.loading_cache[cache_key] = (loading_decision, datetime.now())
+            self.loading_cache[cache_key] = (loading_decision, datetime.now(UTC))
 
         return loading_decision
 
@@ -680,12 +681,7 @@ class DynamicFunctionLoader:
                     # Prioritize categories with Tier 2 functions for better functionality
                     priority_score = confidence
                     if has_tier2_functions:
-                        if confidence == 1.0:
-                            priority_score = 2.0  # Highest priority for forced categories with Tier 2 functions
-                        else:
-                            priority_score = (
-                                confidence + 0.5
-                            )  # Significant boost for natural categories with Tier 2 functions
+                        priority_score = 2.0 if confidence == 1.0 else confidence + 0.5
 
                     eligible_categories.append((category, priority_score, confidence))
 
@@ -694,7 +690,7 @@ class DynamicFunctionLoader:
         selected_categories = [(cat, conf) for cat, _, conf in eligible_categories[:max_categories]]
 
         # Load functions for selected categories only
-        for category, confidence in selected_categories:
+        for category, _confidence in selected_categories:
             category_functions = self.function_registry.get_functions_by_category(category)
             # Filter to Tier 2 functions only
             tier2_category_functions = {
@@ -737,7 +733,7 @@ class DynamicFunctionLoader:
         selected_categories = eligible_categories[:max_categories]
 
         # Load functions for selected categories only
-        for category, confidence in selected_categories:
+        for category, _confidence in selected_categories:
             category_functions = self.function_registry.get_functions_by_category(category)
             # Filter to Tier 3 functions only
             tier3_category_functions = {
@@ -776,8 +772,10 @@ class DynamicFunctionLoader:
                 )
 
         logger.info(
-            f"Loaded {len(session.functions_loaded)} functions "
-            f"({session.total_tokens_loaded} tokens) for session {session.session_id}",
+            "Loaded %d functions (%d tokens) for session %s",
+            len(session.functions_loaded),
+            session.total_tokens_loaded,
+            session.session_id,
         )
 
     async def _apply_fallback_loading(self, session: LoadingSession, failure_reason: str) -> LoadingDecision:
@@ -831,7 +829,9 @@ class DynamicFunctionLoader:
         )
 
         logger.warning(
-            f"Applied fallback loading for session {session.session_id}: loaded {len(fallback_functions)} functions",
+            "Applied fallback loading for session %s: loaded %d functions",
+            session.session_id,
+            len(fallback_functions),
         )
 
         return fallback_decision
@@ -859,8 +859,9 @@ class DynamicFunctionLoader:
         )
 
         logger.debug(
-            f"Updated monitoring metrics for session {session.session_id}: "
-            f"token reduction {token_reduction*100:.1f}%",
+            "Updated monitoring metrics for session %s: token reduction %.1f%%",
+            session.session_id,
+            token_reduction * 100,
         )
 
     async def record_function_usage(self, session_id: str, function_name: str, success: bool = True) -> None:
@@ -925,7 +926,7 @@ class DynamicFunctionLoader:
         session_summary = {
             "session_id": session_id,
             "user_id": session.user_id,
-            "duration_seconds": (datetime.now() - session.timestamp).total_seconds(),
+            "duration_seconds": (datetime.now(UTC) - session.timestamp).total_seconds(),
             "token_reduction_percentage": session.calculate_token_reduction() * 100,
             "functions_loaded": len(session.functions_loaded),
             "functions_used": len(session.functions_used),
@@ -944,9 +945,10 @@ class DynamicFunctionLoader:
 
         efficiency: float = session_summary.get("usage_efficiency", 0.0)  # type: ignore[assignment]
         logger.info(
-            f"Completed session {session_id}: "
-            f"{session_summary['token_reduction_percentage']:.1f}% token reduction, "
-            f"{efficiency*100:.1f}% function usage efficiency",
+            "Completed session %s: %.1f%% token reduction, %.1f%% function usage efficiency",
+            session_id,
+            session_summary["token_reduction_percentage"],
+            efficiency * 100,
         )
 
         return session_summary
@@ -1036,7 +1038,7 @@ class DynamicFunctionLoader:
             }
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "active_sessions": active_sessions_count,
             "system_health": asdict(health_report),
             "optimization_performance": optimization_report,
@@ -1058,7 +1060,7 @@ _global_loader: DynamicFunctionLoader | None = None
 
 def get_dynamic_function_loader() -> DynamicFunctionLoader:
     """Get the global dynamic function loader instance."""
-    global _global_loader
+    global _global_loader  # noqa: PLW0603
     if _global_loader is None:
         _global_loader = DynamicFunctionLoader()
     return _global_loader
@@ -1114,7 +1116,8 @@ if __name__ == "__main__":
 
             # Create session
             session_id = await loader.create_loading_session(
-                user_id=str(scenario["user_id"]), query=str(scenario["query"])
+                user_id=str(scenario["user_id"]),
+                query=str(scenario["query"]),
             )
 
             # Load functions

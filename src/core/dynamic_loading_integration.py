@@ -689,7 +689,7 @@ class DynamicLoadingIntegration:
                 cache_age = time.time() - cache_entry["cached_at"]
                 if cache_age < self._cache_ttl_seconds:
                     # Create a copy and ensure cache_hit is set
-                    import copy
+                    import copy  # noqa: PLC0415  # Lazy loading for cache operations
 
                     cached_result = cache_entry["result"]
                     if isinstance(cached_result, ProcessingResult):
@@ -959,7 +959,7 @@ async def get_integration_instance(
     force_new: bool = False,
 ) -> DynamicLoadingIntegration:
     """Get or create the global integration instance."""
-    global _integration_instance
+    global _integration_instance  # noqa: PLW0603
 
     if _integration_instance is None or force_new:
         _integration_instance = DynamicLoadingIntegration(mode=mode)

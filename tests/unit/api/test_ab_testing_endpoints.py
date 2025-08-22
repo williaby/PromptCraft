@@ -7,7 +7,7 @@ Fixed to properly handle FastAPI rate limiting and request mocking.
 """
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -182,7 +182,7 @@ class TestExperimentManagementEndpoints:
         self.mock_experiment.planned_duration_hours = 168
         self.mock_experiment.total_users = 0
         self.mock_experiment.statistical_significance = 0.0
-        self.mock_experiment.created_at = datetime(2024, 1, 1, 12, 0, 0)
+        self.mock_experiment.created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         self.mock_experiment.start_time = None
         self.mock_experiment.end_time = None
 
@@ -472,9 +472,11 @@ class TestMetricsEndpoints:
             metric_request = MetricEventRequest(**self.sample_metric_request)
 
             # MetricsCollector is imported inside the function, so we need to patch the import
-            with patch("src.core.ab_testing_framework.MetricsCollector", return_value=mock_collector):
-                with pytest.raises(HTTPException) as exc_info:
-                    await record_metric_event(mock_request, metric_request, self.mock_manager)
+            with (
+                patch("src.core.ab_testing_framework.MetricsCollector", return_value=mock_collector),
+                pytest.raises(HTTPException) as exc_info,
+            ):
+                await record_metric_event(mock_request, metric_request, self.mock_manager)
 
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "Failed to record metric event" in str(exc_info.value.detail)
@@ -507,7 +509,7 @@ class TestHealthEndpoint:
     async def test_ab_testing_health_check_success(self, mock_utc_now, mock_get_manager):
         """Test successful health check."""
         # Arrange
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_manager = MagicMock()
         mock_get_manager.return_value = mock_manager
         mock_db_session = MagicMock()
@@ -539,7 +541,7 @@ class TestHealthEndpoint:
     async def test_ab_testing_health_check_failure(self, mock_utc_now, mock_get_manager):
         """Test health check failure."""
         # Arrange
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_get_manager.side_effect = Exception("Database connection failed")
         mock_request = create_mock_request()
 
@@ -672,7 +674,7 @@ class TestCreateExperimentEndpoint:
         mock_experiment.planned_duration_hours = 168
         mock_experiment.total_users = 0
         mock_experiment.statistical_significance = 0.0
-        mock_experiment.created_at = datetime(2024, 1, 1, 12, 0, 0)
+        mock_experiment.created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_experiment.start_time = None
         mock_experiment.end_time = None
 
@@ -706,7 +708,7 @@ class TestCreateExperimentEndpoint:
     async def test_create_experiment_validation_error(self):
         """Test experiment creation with validation error."""
         # Arrange
-        mock_request = create_mock_request()
+        create_mock_request()
 
         # Act & Assert
         with disable_rate_limiting():
@@ -735,7 +737,7 @@ class TestUserAssignmentEndpoints:
         # Arrange
         from src.core.ab_testing_framework import UserSegment
 
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         self.mock_manager.assign_user_to_experiment = AsyncMock(return_value=("treatment", UserSegment.RANDOM))
         mock_request = create_mock_request()
 
@@ -767,7 +769,7 @@ class TestUserAssignmentEndpoints:
     async def test_assign_user_to_experiment_failure(self, mock_utc_now):
         """Test user assignment failure."""
         # Arrange
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         self.mock_manager.assign_user_to_experiment = AsyncMock(side_effect=Exception("Assignment failed"))
         mock_request = create_mock_request()
 
@@ -791,7 +793,7 @@ class TestUserAssignmentEndpoints:
     async def test_check_dynamic_loading_assignment_success(self, mock_utc_now):
         """Test successful dynamic loading assignment check."""
         # Arrange
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         self.mock_manager.should_use_dynamic_loading = AsyncMock(return_value=True)
         mock_request = create_mock_request()
 
@@ -818,7 +820,7 @@ class TestUserAssignmentEndpoints:
     async def test_check_dynamic_loading_assignment_failure(self, mock_utc_now):
         """Test dynamic loading assignment check failure."""
         # Arrange
-        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+        mock_utc_now.return_value = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         self.mock_manager.should_use_dynamic_loading = AsyncMock(side_effect=Exception("Check failed"))
         mock_request = create_mock_request()
 

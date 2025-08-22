@@ -7,10 +7,11 @@ Prometheus, and provides standalone web-based dashboards.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 class MetricsExporter:
     """Export metrics in Prometheus format."""
 
-    def __init__(self, monitor: TokenOptimizationMonitor):
+    def __init__(self, monitor: TokenOptimizationMonitor) -> None:
         self.monitor = monitor
         self.performance_monitor = get_performance_monitor()
         self.logger = create_structured_logger("metrics_exporter")
@@ -125,7 +126,7 @@ class MetricsExporter:
 class RealTimeDashboard:
     """Real-time web dashboard for monitoring."""
 
-    def __init__(self, monitor: TokenOptimizationMonitor):
+    def __init__(self, monitor: TokenOptimizationMonitor) -> None:
         self.monitor = monitor
         self.metrics_exporter = MetricsExporter(monitor)
         self.connected_clients: list[WebSocket] = []
@@ -147,10 +148,8 @@ class RealTimeDashboard:
         """Stop real-time dashboard updates."""
         if self._update_task and not self._update_task.done():
             self._update_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._update_task
-            except asyncio.CancelledError:
-                pass
 
         self.logger.info("Stopped real-time dashboard updates")
 
@@ -170,7 +169,7 @@ class RealTimeDashboard:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in dashboard update loop: {e}")
+                self.logger.error("Error in dashboard update loop: %s", e)
                 await asyncio.sleep(self.update_interval_seconds)
 
     async def _generate_dashboard_data(self) -> dict[str, Any]:
@@ -233,7 +232,7 @@ class RealTimeDashboard:
                         "token_reduction_percentage": round(token_reduction, 1),
                         "functions_loaded": session.optimized_functions_loaded,
                         "functions_used": len(session.functions_actually_used),
-                        "duration_minutes": round((datetime.now() - session.timestamp).total_seconds() / 60, 1),
+                        "duration_minutes": round((datetime.now(UTC) - session.timestamp).total_seconds() / 60, 1),
                     },
                 )
 
@@ -253,7 +252,7 @@ class RealTimeDashboard:
         }
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "system_health": {
                 "total_sessions": health_report.total_sessions,
                 "concurrent_sessions": health_report.concurrent_sessions_handled,
@@ -283,7 +282,7 @@ class RealTimeDashboard:
                     "level": "warning",
                     "title": "Token Reduction Below Minimum",
                     "message": f"Average token reduction ({health_report.average_token_reduction_percentage:.1f}%) is below minimum threshold ({self.monitor.min_acceptable_reduction * 100}%)",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -294,7 +293,7 @@ class RealTimeDashboard:
                     "level": "error",
                     "title": "High Loading Latency",
                     "message": f"P95 loading latency ({health_report.p95_loading_latency_ms:.1f}ms) exceeds threshold ({self.monitor.max_acceptable_latency_ms}ms)",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -305,7 +304,7 @@ class RealTimeDashboard:
                     "level": "warning",
                     "title": "Low Success Rate",
                     "message": f"Overall success rate ({health_report.overall_success_rate * 100:.1f}%) is below 95%",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -316,7 +315,7 @@ class RealTimeDashboard:
                     "level": "warning",
                     "title": "Low Task Detection Accuracy",
                     "message": f"Task detection accuracy ({health_report.task_detection_accuracy_rate * 100:.1f}%) is below 80%",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -327,7 +326,7 @@ class RealTimeDashboard:
                     "level": "warning",
                     "title": "High Fallback Activation Rate",
                     "message": f"Fallback activation rate ({health_report.fallback_activation_rate * 100:.1f}%) suggests optimization issues",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -361,14 +360,14 @@ class RealTimeDashboard:
         dashboard_data = await self._generate_dashboard_data()
         await websocket.send_text(json.dumps(dashboard_data))
 
-        self.logger.info(f"Dashboard client connected. Total clients: {len(self.connected_clients)}")
+        self.logger.info("Dashboard client connected. Total clients: %d", len(self.connected_clients))
 
     async def remove_client(self, websocket: WebSocket) -> None:
         """Remove a WebSocket client."""
         if websocket in self.connected_clients:
             self.connected_clients.remove(websocket)
 
-        self.logger.info(f"Dashboard client disconnected. Total clients: {len(self.connected_clients)}")
+        self.logger.info("Dashboard client disconnected. Total clients: %d", len(self.connected_clients))
 
     def get_dashboard_html(self) -> str:
         """Generate HTML for the dashboard."""
@@ -770,7 +769,7 @@ class RealTimeDashboard:
 class AlertManager:
     """Manage alerts and notifications for performance issues."""
 
-    def __init__(self, monitor: TokenOptimizationMonitor):
+    def __init__(self, monitor: TokenOptimizationMonitor) -> None:
         self.monitor = monitor
         self.logger = create_structured_logger("alert_manager")
 
@@ -806,7 +805,7 @@ class AlertManager:
                 "message": f"Average token reduction ({health_report.average_token_reduction_percentage:.1f}%) is below minimum threshold ({self.thresholds['token_reduction_min']}%)",
                 "metric_value": health_report.average_token_reduction_percentage,
                 "threshold_value": self.thresholds["token_reduction_min"],
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -818,7 +817,7 @@ class AlertManager:
                 "message": f"Average token reduction ({health_report.average_token_reduction_percentage:.1f}%) is below target ({self.thresholds['token_reduction_target']}%)",
                 "metric_value": health_report.average_token_reduction_percentage,
                 "threshold_value": self.thresholds["token_reduction_target"],
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -831,7 +830,7 @@ class AlertManager:
                 "message": f"P95 loading latency ({health_report.p95_loading_latency_ms:.1f}ms) exceeds threshold ({self.thresholds['latency_max_ms']}ms)",
                 "metric_value": health_report.p95_loading_latency_ms,
                 "threshold_value": self.thresholds["latency_max_ms"],
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -844,7 +843,7 @@ class AlertManager:
                 "message": f"Overall success rate ({health_report.overall_success_rate * 100:.1f}%) is below threshold ({self.thresholds['success_rate_min'] * 100}%)",
                 "metric_value": health_report.overall_success_rate * 100,
                 "threshold_value": self.thresholds["success_rate_min"] * 100,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -857,7 +856,7 @@ class AlertManager:
                 "message": f"Task detection accuracy ({health_report.task_detection_accuracy_rate * 100:.1f}%) is below threshold ({self.thresholds['task_accuracy_min'] * 100}%)",
                 "metric_value": health_report.task_detection_accuracy_rate * 100,
                 "threshold_value": self.thresholds["task_accuracy_min"] * 100,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -870,7 +869,7 @@ class AlertManager:
                 "message": f"Fallback activation rate ({health_report.fallback_activation_rate * 100:.1f}%) exceeds threshold ({self.thresholds['fallback_rate_max'] * 100}%)",
                 "metric_value": health_report.fallback_activation_rate * 100,
                 "threshold_value": self.thresholds["fallback_rate_max"] * 100,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
@@ -891,7 +890,8 @@ class AlertManager:
             if alert["id"] in new_alert_ids:
                 await self._send_notification(alert)
                 self.logger.warning(
-                    f"New alert triggered: {alert['title']}",
+                    "New alert triggered: %s",
+                    alert["title"],
                     alert_id=alert["id"],
                     level=alert["level"],
                     metric_value=alert["metric_value"],
@@ -902,10 +902,10 @@ class AlertManager:
         resolved_alert_ids = previous_alert_ids - current_alert_ids
         for alert_id in resolved_alert_ids:
             resolved_alert = self.active_alerts[alert_id].copy()
-            resolved_alert["resolved_at"] = datetime.now().isoformat()
+            resolved_alert["resolved_at"] = datetime.now(UTC).isoformat()
             self.alert_history.append(resolved_alert)
 
-            self.logger.info(f"Alert resolved: {resolved_alert['title']}", alert_id=alert_id)
+            self.logger.info("Alert resolved: %s", resolved_alert["title"], alert_id=alert_id)
 
         # Update active alerts
         self.active_alerts = {alert["id"]: alert for alert in current_alerts}
@@ -921,17 +921,17 @@ class AlertManager:
             try:
                 await channel.send_alert(alert)
             except Exception as e:
-                self.logger.error(f"Failed to send alert through channel {channel}: {e}")
+                self.logger.error("Failed to send alert through channel %s: %s", channel, e)
 
     def add_notification_channel(self, channel: Any) -> None:
         """Add a notification channel for alerts."""
         self.notification_channels.append(channel)
-        self.logger.info(f"Added notification channel: {type(channel).__name__}")
+        self.logger.info("Added notification channel: %s", type(channel).__name__)
 
     def get_alert_summary(self, hours: int = 24) -> dict[str, Any]:
         """Get alert summary for the specified time period."""
 
-        cutoff_time = datetime.now() - timedelta(hours=hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
         recent_alerts = [
             alert for alert in self.alert_history if datetime.fromisoformat(alert["timestamp"]) >= cutoff_time

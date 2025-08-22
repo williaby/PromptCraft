@@ -39,7 +39,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.config.settings import get_settings
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import ensure_aware, utc_now
 from src.utils.observability import ObservabilityMixin
 from src.utils.performance_monitor import PerformanceMonitor
 
@@ -93,7 +93,7 @@ class VariantType(Enum):
 # Database Models
 
 
-class ExperimentModel(BaseModel):  # type: ignore
+class ExperimentModel(BaseModel):  # type: ignore[misc]
     """Database model for A/B experiments."""
 
     __tablename__ = "ab_experiments"
@@ -131,7 +131,7 @@ class ExperimentModel(BaseModel):  # type: ignore
     created_by = Column(String)
 
 
-class UserAssignmentModel(BaseModel):  # type: ignore
+class UserAssignmentModel(BaseModel):  # type: ignore[misc]
     """Database model for user-to-experiment assignments."""
 
     __tablename__ = "ab_user_assignments"
@@ -155,7 +155,7 @@ class UserAssignmentModel(BaseModel):  # type: ignore
     total_interactions = Column(Integer, default=0)
 
 
-class MetricEventModel(BaseModel):  # type: ignore
+class MetricEventModel(BaseModel):  # type: ignore[misc]
     """Database model for A/B testing metric events."""
 
     __tablename__ = "ab_metric_events"
@@ -372,7 +372,7 @@ class UserSegmentation:
             )
 
             if existing and not existing.opt_out:
-                return existing.variant, UserSegment(existing.segment)  # type: ignore
+                return existing.variant, UserSegment(existing.segment)  # type: ignore[arg-type]
 
             # Check opt-in requirements
             if config.opt_in_only and user_characteristics:
@@ -388,11 +388,8 @@ class UserSegmentation:
                 segment_filter_enums = []
                 for f in config.segment_filters:
                     if isinstance(f, str):
-                        try:
+                        with contextlib.suppress(ValueError):
                             segment_filter_enums.append(UserSegment(f))
-                        except ValueError:
-                            # Skip invalid segment filter values
-                            pass
                     elif hasattr(f, "value"):
                         segment_filter_enums.append(f)
 
@@ -424,13 +421,16 @@ class UserSegmentation:
             self.db_session.commit()
 
             self.logger.info(
-                f"Assigned user {user_id} to variant {variant} in experiment {experiment_id}",
+                "Assigned user %s to variant %s in experiment %s",
+                user_id,
+                variant,
+                experiment_id,
             )
 
             return variant, segment
 
         except Exception as e:
-            self.logger.error(f"Failed to assign user to experiment: {e}")
+            self.logger.error("Failed to assign user to experiment: %s", e)
             self.db_session.rollback()
             return "control", UserSegment.RANDOM
 
@@ -501,7 +501,7 @@ class UserSegmentation:
             return False
 
         except Exception as e:
-            self.logger.error(f"Failed to opt out user: {e}")
+            self.logger.error("Failed to opt out user: %s", e)
             self.db_session.rollback()
             return False
 
@@ -540,7 +540,7 @@ class MetricsCollector:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to record metric event: {e}")
+            self.logger.error("Failed to record metric event: %s", e)
             self.db_session.rollback()
             return False
 
@@ -617,7 +617,7 @@ class MetricsCollector:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to record processing result: {e}")
+            self.logger.error("Failed to record processing result: %s", e)
             return False
 
 
@@ -639,7 +639,7 @@ class StatisticalAnalyzer:
             variant_data = self._collect_variant_data(experiment_id)
 
             if len(variant_data) < 2:
-                self.logger.warning(f"Insufficient variant data for experiment {experiment_id}")
+                self.logger.warning("Insufficient variant data for experiment %s", experiment_id)
                 return None
 
             # Calculate statistical significance
@@ -663,8 +663,6 @@ class StatisticalAnalyzer:
             )
 
             # Calculate duration
-            from src.utils.datetime_compat import ensure_aware
-
             start_time_raw = experiment.start_time or experiment.created_at
             end_time_raw = experiment.end_time or utc_now()
 
@@ -695,7 +693,7 @@ class StatisticalAnalyzer:
             )
 
         except Exception as e:
-            self.logger.error(f"Failed to analyze experiment {experiment_id}: {e}")
+            self.logger.error("Failed to analyze experiment %s: %s", experiment_id, e)
             return None
 
     def _collect_variant_data(self, experiment_id: str) -> dict[str, dict[str, Any]]:
@@ -1045,7 +1043,7 @@ class FeatureFlagManager:
             return default
 
         except Exception as e:
-            self.logger.error(f"Failed to get feature flag {flag_name} for user {user_id}: {e}")
+            self.logger.error("Failed to get feature flag %s for user %s: %s", flag_name, user_id, e)
             return default
 
     def update_feature_flag(self, experiment_id: str, flag_name: str, variant: str, value: Any) -> bool:
@@ -1079,7 +1077,7 @@ class FeatureFlagManager:
             return True
 
         except Exception as e:
-            self.logger.error(f"Failed to update feature flag {flag_name}: {e}")
+            self.logger.error("Failed to update feature flag %s: %s", flag_name, e)
             self.db_session.rollback()
             return False
 
@@ -1091,7 +1089,7 @@ class RolloutController:
         self.db_session = db_session
         self.logger = logging.getLogger(__name__)
 
-    async def execute_rollout_step(self, experiment_id: str) -> bool:
+    async def execute_rollout_step(self, experiment_id: str) -> bool:  # noqa: PLR0911
         """Execute next rollout step for an experiment."""
         try:
             experiment = self.db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
@@ -1110,14 +1108,14 @@ class RolloutController:
                     break
 
             if next_percentage is None:
-                self.logger.info(f"Experiment {experiment_id} has completed all rollout steps")
+                self.logger.info("Experiment %s has completed all rollout steps", experiment_id)
                 return True
 
             # Check if enough time has passed since last step
             if experiment.updated_at:
                 time_since_update = utc_now() - experiment.updated_at
                 if time_since_update.total_seconds() < config.step_duration_hours * 3600:
-                    self.logger.info(f"Experiment {experiment_id} step duration not yet reached")
+                    self.logger.info("Experiment %s step duration not yet reached", experiment_id)
                     return True
 
             # Analyze current performance before proceeding
@@ -1127,7 +1125,7 @@ class RolloutController:
             if results:
                 # Check for failure conditions
                 if any(results.failure_thresholds_exceeded.values()):
-                    self.logger.warning(f"Experiment {experiment_id} failed safety checks, pausing rollout")
+                    self.logger.warning("Experiment %s failed safety checks, pausing rollout", experiment_id)
                     experiment.status = "paused"  # type: ignore[assignment]
                     self.db_session.commit()
                     return False
@@ -1139,18 +1137,22 @@ class RolloutController:
                     self.db_session.commit()
 
                     self.logger.info(
-                        f"Advanced experiment {experiment_id} to {next_percentage}% rollout",
+                        "Advanced experiment %s to %s%% rollout",
+                        experiment_id,
+                        next_percentage,
                     )
                     return True
                 self.logger.info(
-                    f"Experiment {experiment_id} not ready for next step (significance: {results.statistical_significance}%)",
+                    "Experiment %s not ready for next step (significance: %s%%)",
+                    experiment_id,
+                    results.statistical_significance,
                 )
                 return True
 
             return False
 
         except Exception as e:
-            self.logger.error(f"Failed to execute rollout step for experiment {experiment_id}: {e}")
+            self.logger.error("Failed to execute rollout step for experiment %s: %s", experiment_id, e)
             self.db_session.rollback()
             return False
 
@@ -1176,7 +1178,9 @@ class RolloutController:
 
                 if error_rate > config.circuit_breaker_threshold:
                     self.logger.warning(
-                        f"Auto-rollback triggered for experiment {experiment_id} due to high error rate: {error_rate}%",
+                        "Auto-rollback triggered for experiment %s due to high error rate: %s%%",
+                        experiment_id,
+                        error_rate,
                     )
 
                     # Rollback by setting all users to control
@@ -1191,7 +1195,7 @@ class RolloutController:
             return False
 
         except Exception as e:
-            self.logger.error(f"Failed to check auto-rollback for experiment {experiment_id}: {e}")
+            self.logger.error("Failed to check auto-rollback for experiment %s: %s", experiment_id, e)
             return False
 
 
@@ -1274,12 +1278,12 @@ class ExperimentManager(ObservabilityMixin):
                 db_session.add(experiment)
                 db_session.commit()
 
-                self.logger.info(f"Created experiment {experiment_id}: {config.name}")
+                self.logger.info("Created experiment %s: %s", experiment_id, config.name)
 
                 return experiment_id
 
         except Exception as e:
-            self.logger.error(f"Failed to create experiment: {e}")
+            self.logger.error("Failed to create experiment: %s", e)
             raise
 
     async def start_experiment(self, experiment_id: str) -> bool:
@@ -1296,12 +1300,12 @@ class ExperimentManager(ObservabilityMixin):
 
                 db_session.commit()
 
-                self.logger.info(f"Started experiment {experiment_id}")
+                self.logger.info("Started experiment %s", experiment_id)
 
                 return True
 
         except Exception as e:
-            self.logger.error(f"Failed to start experiment {experiment_id}: {e}")
+            self.logger.error("Failed to start experiment %s: %s", experiment_id, e)
             return False
 
     async def stop_experiment(self, experiment_id: str) -> bool:
@@ -1317,12 +1321,12 @@ class ExperimentManager(ObservabilityMixin):
 
                 db_session.commit()
 
-                self.logger.info(f"Stopped experiment {experiment_id}")
+                self.logger.info("Stopped experiment %s", experiment_id)
 
                 return True
 
         except Exception as e:
-            self.logger.error(f"Failed to stop experiment {experiment_id}: {e}")
+            self.logger.error("Failed to stop experiment %s: %s", experiment_id, e)
             return False
 
     async def assign_user_to_experiment(
@@ -1349,7 +1353,7 @@ class ExperimentManager(ObservabilityMixin):
                 )
 
         except Exception as e:
-            self.logger.error(f"Failed to assign user {user_id} to experiment {experiment_id}: {e}")
+            self.logger.error("Failed to assign user %s to experiment %s: %s", user_id, experiment_id, e)
             return "control", UserSegment.RANDOM
 
     async def should_use_dynamic_loading(self, user_id: str, experiment_id: str = "dynamic_loading_rollout") -> bool:
@@ -1359,7 +1363,7 @@ class ExperimentManager(ObservabilityMixin):
             return variant == "treatment"
 
         except Exception as e:
-            self.logger.error(f"Failed to check dynamic loading assignment for user {user_id}: {e}")
+            self.logger.error("Failed to check dynamic loading assignment for user %s: %s", user_id, e)
             return False
 
     async def record_optimization_result(
@@ -1394,7 +1398,7 @@ class ExperimentManager(ObservabilityMixin):
                 )
 
         except Exception as e:
-            self.logger.error(f"Failed to record optimization result: {e}")
+            self.logger.error("Failed to record optimization result: %s", e)
             return False
 
     async def get_experiment_results(self, experiment_id: str) -> ExperimentResults | None:
@@ -1405,7 +1409,7 @@ class ExperimentManager(ObservabilityMixin):
                 return analyzer.analyze_experiment(experiment_id)
 
         except Exception as e:
-            self.logger.error(f"Failed to get experiment results for {experiment_id}: {e}")
+            self.logger.error("Failed to get experiment results for %s: %s", experiment_id, e)
             return None
 
     async def start_monitoring(self) -> None:
@@ -1433,7 +1437,7 @@ class ExperimentManager(ObservabilityMixin):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {e}")
+                self.logger.error("Error in monitoring loop: %s", e)
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def _check_active_experiments(self) -> None:
@@ -1459,11 +1463,13 @@ class ExperimentManager(ObservabilityMixin):
                             db_session.commit()
 
                             self.logger.info(
-                                f"Auto-completed experiment {experiment.id} after {elapsed_hours:.1f} hours",
+                                "Auto-completed experiment %s after %.1f hours",
+                                experiment.id,
+                                elapsed_hours,
                             )
 
         except Exception as e:
-            self.logger.error(f"Failed to check active experiments: {e}")
+            self.logger.error("Failed to check active experiments: %s", e)
 
 
 # Global experiment manager instance
@@ -1472,7 +1478,7 @@ _experiment_manager: ExperimentManager | None = None
 
 async def get_experiment_manager() -> ExperimentManager:
     """Get or create the global experiment manager instance."""
-    global _experiment_manager
+    global _experiment_manager  # noqa: PLW0603
 
     if _experiment_manager is None:
         _experiment_manager = ExperimentManager()

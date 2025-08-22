@@ -420,7 +420,7 @@ class RecoveryManager:
 
         # Check if we've exceeded retry attempts
         if self.retry_attempts[attempt_key] >= self.max_retry_attempts:
-            logger.warning(f"Max retry attempts exceeded for {attempt_key}")
+            logger.warning("Max retry attempts exceeded for %s", attempt_key)
             return None
 
         self.retry_attempts[attempt_key] += 1
@@ -430,8 +430,11 @@ class RecoveryManager:
         delay = min(self.base_retry_delay * (2 ** (current_attempt - 1)), self.max_retry_delay)
 
         logger.info(
-            f"Attempting recovery (attempt {current_attempt}/{self.max_retry_attempts}) "
-            f"after {delay}s delay for error: {error_context.error_type.value}",
+            "Attempting recovery (attempt %d/%d) after %.1fs delay for error: %s",
+            current_attempt,
+            self.max_retry_attempts,
+            delay,
+            error_context.error_type.value,
         )
 
         # Wait before retry
@@ -470,7 +473,7 @@ class RecoveryManager:
             # Reset retry counter on success
             self.retry_attempts[attempt_key] = 0
 
-            logger.info(f"Recovery successful after {recovery_time:.2f}s")
+            logger.info("Recovery successful after %.2fs", recovery_time)
             return result
 
         except Exception as e:
@@ -487,7 +490,7 @@ class RecoveryManager:
                 },
             )
 
-            logger.warning(f"Recovery attempt {current_attempt} failed after {recovery_time:.2f}s: {e}")
+            logger.warning("Recovery attempt %d failed after %.2fs: %s", current_attempt, recovery_time, e)
             return None
 
     def get_recovery_stats(self) -> dict[str, Any]:
@@ -859,8 +862,10 @@ class ConservativeFallbackChain(LoggerMixin):
 
         # Log decision
         self.logger.info(
-            f"Fallback decision: {decision.level.value} - {decision.rationale} "
-            f"(loading {sum(decision.categories_to_load.values())} categories)",
+            "Fallback decision: %s - %s (loading %d categories)",
+            decision.level.value,
+            decision.rationale,
+            sum(decision.categories_to_load.values()),
         )
 
         return decision.categories_to_load
@@ -869,7 +874,9 @@ class ConservativeFallbackChain(LoggerMixin):
         """Handle detection failure with progressive fallback"""
 
         self.logger.warning(
-            f"Detection failure: {error_context.error_type.value} - {error_context.metadata.get('exception_message', 'Unknown error')}",
+            "Detection failure: %s - %s",
+            error_context.error_type.value,
+            error_context.metadata.get("exception_message", "Unknown error"),
         )
 
         # Update error metrics
@@ -1004,7 +1011,7 @@ class ConservativeFallbackChain(LoggerMixin):
 
             if self.circuit_breaker_failure_count >= self.circuit_breaker_threshold:
                 self.circuit_breaker_open = True
-                self.logger.critical(f"Circuit breaker OPENED after {self.circuit_breaker_failure_count} failures")
+                self.logger.critical("Circuit breaker OPENED after %d failures", self.circuit_breaker_failure_count)
 
     def _is_emergency_mode_active(self) -> bool:
         """Check if emergency mode is active"""

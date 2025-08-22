@@ -23,15 +23,15 @@ class TestTokenExpirationAlert:
     def test_init_basic(self):
         """Test basic TokenExpirationAlert initialization."""
         alert = TokenExpirationAlert(
-            token_name="test-token",
-            token_id="123",
+            token_name="test-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=10,
         )
 
-        assert alert.token_name == "test-token"
-        assert alert.token_id == "123"
+        assert alert.token_name == "test-token"  # noqa: S105  # Test constant
+        assert alert.token_id == "123"  # noqa: S105  # Test constant
         assert alert.days_until_expiration == 5
         assert alert.usage_count == 10
         assert alert.last_used is None
@@ -43,8 +43,8 @@ class TestTokenExpirationAlert:
         metadata = {"environment": "production", "service": "api"}
 
         alert = TokenExpirationAlert(
-            token_name="prod-token",
-            token_id="456",
+            token_name="prod-token",  # noqa: S106  # Test token name
+            token_id="456",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=2),
             days_until_expiration=2,
             usage_count=50,
@@ -60,8 +60,8 @@ class TestTokenExpirationAlert:
     def test_severity_critical(self):
         """Test severity property for critical alerts (≤1 day)."""
         alert = TokenExpirationAlert(
-            token_name="critical-token",
-            token_id="123",
+            token_name="critical-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(hours=12),
             days_until_expiration=0,
             usage_count=10,
@@ -76,8 +76,8 @@ class TestTokenExpirationAlert:
     def test_severity_high(self):
         """Test severity property for high alerts (2-7 days)."""
         alert = TokenExpirationAlert(
-            token_name="high-token",
-            token_id="123",
+            token_name="high-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=3),
             days_until_expiration=3,
             usage_count=10,
@@ -92,8 +92,8 @@ class TestTokenExpirationAlert:
     def test_severity_medium(self):
         """Test severity property for medium alerts (8-30 days)."""
         alert = TokenExpirationAlert(
-            token_name="medium-token",
-            token_id="123",
+            token_name="medium-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=15),
             days_until_expiration=15,
             usage_count=10,
@@ -108,8 +108,8 @@ class TestTokenExpirationAlert:
     def test_severity_low(self):
         """Test severity property for low alerts (>30 days)."""
         alert = TokenExpirationAlert(
-            token_name="low-token",
-            token_id="123",
+            token_name="low-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=45),
             days_until_expiration=45,
             usage_count=10,
@@ -120,8 +120,8 @@ class TestTokenExpirationAlert:
     def test_is_active_token_no_last_used(self):
         """Test is_active_token property when last_used is None."""
         alert = TokenExpirationAlert(
-            token_name="unused-token",
-            token_id="123",
+            token_name="unused-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=0,
@@ -136,8 +136,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=10)
 
         alert = TokenExpirationAlert(
-            token_name="active-token",
-            token_id="123",
+            token_name="active-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=25,
@@ -152,8 +152,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=35)
 
         alert = TokenExpirationAlert(
-            token_name="inactive-token",
-            token_id="123",
+            token_name="inactive-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=5,
@@ -168,8 +168,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=30, seconds=1)
 
         alert = TokenExpirationAlert(
-            token_name="edge-token",
-            token_id="123",
+            token_name="edge-token",  # noqa: S106  # Test token name
+            token_id="123",  # noqa: S106  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=10,
@@ -225,7 +225,7 @@ class TestServiceTokenMonitor:
         mock_rows = [
             MagicMock(
                 id=1,
-                token_name="token-1",
+                token_name="token-1",  # noqa: S106  # Test token name
                 expires_at=datetime.now(UTC) + timedelta(days=5),
                 usage_count=10,
                 last_used=datetime.now(UTC) - timedelta(days=2),
@@ -234,7 +234,7 @@ class TestServiceTokenMonitor:
             ),
             MagicMock(
                 id=2,
-                token_name="token-2",
+                token_name="token-2",  # noqa: S106  # Test token name
                 expires_at=datetime.now(UTC) + timedelta(days=1),
                 usage_count=25,
                 last_used=datetime.now(UTC) - timedelta(days=1),
@@ -258,8 +258,8 @@ class TestServiceTokenMonitor:
 
         # Verify first alert
         alert1 = alerts[0]
-        assert alert1.token_name == "token-1"
-        assert alert1.token_id == "1"
+        assert alert1.token_name == "token-1"  # noqa: S105  # Test constant
+        assert alert1.token_id == "1"  # noqa: S105  # Test constant
         assert alert1.days_until_expiration == 5
         assert alert1.usage_count == 10
         assert alert1.metadata == {"env": "prod"}
@@ -267,8 +267,8 @@ class TestServiceTokenMonitor:
 
         # Verify second alert
         alert2 = alerts[1]
-        assert alert2.token_name == "token-2"
-        assert alert2.token_id == "2"
+        assert alert2.token_name == "token-2"  # noqa: S105  # Test constant
+        assert alert2.token_id == "2"  # noqa: S105  # Test constant
         assert alert2.days_until_expiration == 1
         assert alert2.usage_count == 25
         assert alert2.metadata == {}
@@ -300,9 +300,11 @@ class TestServiceTokenMonitor:
             raise Exception("Database connection failed")
             yield  # This won't be reached but satisfies the generator
 
-        with patch("src.monitoring.service_token_monitor.get_db", mock_get_db_error):
-            with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                alerts = await monitor.check_expiring_tokens()
+        with (
+            patch("src.monitoring.service_token_monitor.get_db", mock_get_db_error),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+        ):
+            alerts = await monitor.check_expiring_tokens()
 
         assert len(alerts) == 0
         mock_logger.error.assert_called_once()
@@ -332,8 +334,8 @@ class TestServiceTokenMonitor:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="expiring-token",
-                token_id="123",
+                token_name="expiring-token",  # noqa: S106  # Test token name
+                token_id="123",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -356,15 +358,17 @@ class TestServiceTokenMonitor:
         async def mock_get_db():
             yield mock_session
 
-        with patch("src.monitoring.service_token_monitor.database_health_check", AsyncMock(return_value=mock_health)):
-            with patch.object(
+        with (
+            patch("src.monitoring.service_token_monitor.database_health_check", AsyncMock(return_value=mock_health)),
+            patch.object(
                 monitor.token_manager,
                 "get_token_usage_analytics",
                 AsyncMock(return_value=mock_analytics),
-            ):
-                with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)):
-                    with patch("src.monitoring.service_token_monitor.get_db", mock_get_db):
-                        metrics = await monitor.get_monitoring_metrics()
+            ),
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)),
+            patch("src.monitoring.service_token_monitor.get_db", mock_get_db),
+        ):
+            metrics = await monitor.get_monitoring_metrics()
 
         # Verify basic structure
         assert "timestamp" in metrics
@@ -381,7 +385,7 @@ class TestServiceTokenMonitor:
         # Verify security alerts
         assert len(metrics["security_alerts"]) == 1
         alert = metrics["security_alerts"][0]
-        assert alert["token_name"] == "expiring-token"
+        assert alert["token_name"] == "expiring-token"  # Test token name
 
         # Verify performance metrics
         perf = metrics["performance_metrics"]
@@ -417,15 +421,17 @@ class TestServiceTokenMonitor:
         async def mock_get_db():
             yield mock_session
 
-        with patch("src.monitoring.service_token_monitor.database_health_check", AsyncMock(return_value=mock_health)):
-            with patch.object(
+        with (
+            patch("src.monitoring.service_token_monitor.database_health_check", AsyncMock(return_value=mock_health)),
+            patch.object(
                 monitor.token_manager,
                 "get_token_usage_analytics",
                 AsyncMock(return_value=mock_analytics),
-            ):
-                with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)):
-                    with patch("src.monitoring.service_token_monitor.get_db", mock_get_db):
-                        metrics = await monitor.get_monitoring_metrics()
+            ),
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)),
+            patch("src.monitoring.service_token_monitor.get_db", mock_get_db),
+        ):
+            metrics = await monitor.get_monitoring_metrics()
 
         assert metrics["database_health"] == "unhealthy"
         assert metrics["token_stats"] == {}
@@ -435,12 +441,14 @@ class TestServiceTokenMonitor:
     @pytest.mark.asyncio
     async def test_get_monitoring_metrics_error_handling(self, monitor):
         """Test monitoring metrics error handling."""
-        with patch(
-            "src.monitoring.service_token_monitor.database_health_check",
-            AsyncMock(side_effect=Exception("Health check failed")),
+        with (
+            patch(
+                "src.monitoring.service_token_monitor.database_health_check",
+                AsyncMock(side_effect=Exception("Health check failed")),
+            ),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
         ):
-            with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                metrics = await monitor.get_monitoring_metrics()
+            metrics = await monitor.get_monitoring_metrics()
 
         assert "error" in metrics
         assert metrics["error"] == "Health check failed"
@@ -459,22 +467,22 @@ class TestServiceTokenMonitor:
         """Test sending alerts via log method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="critical-token",
-                token_id="1",
+                token_name="critical-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(hours=12),
                 days_until_expiration=0,
                 usage_count=50,
             ),
             TokenExpirationAlert(
-                token_name="high-token",
-                token_id="2",
+                token_name="high-token",  # noqa: S106  # Test token name
+                token_id="2",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=3),
                 days_until_expiration=3,
                 usage_count=25,
             ),
             TokenExpirationAlert(
-                token_name="medium-token",
-                token_id="3",
+                token_name="medium-token",  # noqa: S106  # Test token name
+                token_id="3",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=15),
                 days_until_expiration=15,
                 usage_count=10,
@@ -491,7 +499,7 @@ class TestServiceTokenMonitor:
         assert mock_logger.log.call_count == 3
 
         # Check that critical alert was logged with CRITICAL level
-        critical_call = [call for call in mock_logger.log.call_args_list if call[0][0] == logging.CRITICAL][0]
+        critical_call = next(call for call in mock_logger.log.call_args_list if call[0][0] == logging.CRITICAL)
         assert "critical-token" in str(critical_call)
 
     @pytest.mark.asyncio
@@ -499,8 +507,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts via email method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",
-                token_id="1",
+                token_name="test-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -519,8 +527,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts via webhook method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",
-                token_id="1",
+                token_name="test-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -539,8 +547,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts with unknown notification method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",
-                token_id="1",
+                token_name="test-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -560,8 +568,8 @@ class TestServiceTokenMonitor:
         """Test error handling during alert sending."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",
-                token_id="1",
+                token_name="test-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -571,7 +579,7 @@ class TestServiceTokenMonitor:
         with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
             # Force an exception by patching logger.log to raise
             mock_logger.log.side_effect = Exception("Logging failed")
-            result = await monitor.send_expiration_alerts(alerts, notification_method="log")
+            await monitor.send_expiration_alerts(alerts, notification_method="log")
 
         mock_logger.error.assert_called()
         assert "Failed to send expiration alerts" in str(mock_logger.error.call_args)
@@ -582,8 +590,8 @@ class TestServiceTokenMonitor:
         alerts_by_severity = {
             "critical": [
                 TokenExpirationAlert(
-                    token_name="critical-token",
-                    token_id="1",
+                    token_name="critical-token",  # noqa: S106  # Test token name
+                    token_id="1",  # noqa: S106  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(hours=12),
                     days_until_expiration=0,
                     usage_count=50,
@@ -591,15 +599,15 @@ class TestServiceTokenMonitor:
             ],
             "high": [
                 TokenExpirationAlert(
-                    token_name="high-token-1",
-                    token_id="2",
+                    token_name="high-token-1",  # noqa: S106  # Test token name
+                    token_id="2",  # noqa: S106  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=3),
                     days_until_expiration=3,
                     usage_count=25,
                 ),
                 TokenExpirationAlert(
-                    token_name="high-token-2",
-                    token_id="3",
+                    token_name="high-token-2",  # noqa: S106  # Test token name
+                    token_id="3",  # noqa: S106  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=5),
                     days_until_expiration=5,
                     usage_count=15,
@@ -627,8 +635,8 @@ class TestServiceTokenMonitor:
         alerts_by_severity = {
             "medium": [
                 TokenExpirationAlert(
-                    token_name="medium-token",
-                    token_id="1",
+                    token_name="medium-token",  # noqa: S106  # Test token name
+                    token_id="1",  # noqa: S106  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=15),
                     days_until_expiration=15,
                     usage_count=20,
@@ -654,8 +662,8 @@ class TestServiceTokenMonitor:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="expiring-token",
-                token_id="1",
+                token_name="expiring-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -668,15 +676,17 @@ class TestServiceTokenMonitor:
         # Mock cleanup results
         mock_cleanup = {"expired_tokens_processed": 2, "status": "completed"}
 
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)):
-            with patch.object(monitor, "send_expiration_alerts", AsyncMock(return_value={"alerts_sent": 1})):
-                with patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)):
-                    with patch.object(
-                        monitor.token_manager,
-                        "cleanup_expired_tokens",
-                        AsyncMock(return_value=mock_cleanup),
-                    ):
-                        result = await monitor.run_scheduled_monitoring()
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)),
+            patch.object(monitor, "send_expiration_alerts", AsyncMock(return_value={"alerts_sent": 1})),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value=mock_cleanup),
+            ),
+        ):
+            result = await monitor.run_scheduled_monitoring()
 
         assert result["status"] == "completed"
         assert "timestamp" in result
@@ -693,14 +703,16 @@ class TestServiceTokenMonitor:
         mock_metrics = {"database_health": "healthy"}
         mock_cleanup = {"expired_tokens_processed": 0}
 
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])):
-            with patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)):
-                with patch.object(
-                    monitor.token_manager,
-                    "cleanup_expired_tokens",
-                    AsyncMock(return_value=mock_cleanup),
-                ):
-                    result = await monitor.run_scheduled_monitoring()
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value=mock_cleanup),
+            ),
+        ):
+            result = await monitor.run_scheduled_monitoring()
 
         assert result["status"] == "completed"
         assert result["expiring_tokens_found"] == 0
@@ -709,9 +721,11 @@ class TestServiceTokenMonitor:
     @pytest.mark.asyncio
     async def test_run_scheduled_monitoring_error_handling(self, monitor):
         """Test scheduled monitoring error handling."""
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(side_effect=Exception("Monitoring failed"))):
-            with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                result = await monitor.run_scheduled_monitoring()
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(side_effect=Exception("Monitoring failed"))),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+        ):
+            result = await monitor.run_scheduled_monitoring()
 
         assert result["status"] == "failed"
         assert "timestamp" in result
@@ -738,25 +752,27 @@ class TestServiceTokenMonitor:
             if len(sleep_calls) >= 1:  # Stop after first cycle
                 raise KeyboardInterrupt("Test completion")
 
-        with patch.object(monitor, "run_scheduled_monitoring", AsyncMock(return_value=mock_result)):
-            with patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep):
-                with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                    with pytest.raises(KeyboardInterrupt):
-                        await monitor.start_monitoring_daemon(check_interval_minutes=1)
+        with (
+            patch.object(monitor, "run_scheduled_monitoring", AsyncMock(return_value=mock_result)),
+            patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+            pytest.raises(KeyboardInterrupt),
+        ):
+            await monitor.start_monitoring_daemon(check_interval_minutes=1)
 
         # Verify daemon started and completed one cycle
         assert len(sleep_calls) == 1
         assert sleep_calls[0] == 60  # 1 minute in seconds
 
         # Verify logging
-        start_log = [
+        start_log = next(
             call for call in mock_logger.info.call_args_list if "Starting service token monitoring daemon" in str(call)
-        ][0]
+        )
         assert "interval: 1 minutes" in str(start_log)
 
-        completion_log = [
+        completion_log = next(
             call for call in mock_logger.info.call_args_list if "Monitoring cycle completed" in str(call)
-        ][0]
+        )
         assert "2 expiring tokens" in str(completion_log)
         assert "1 alerts sent" in str(completion_log)
 
@@ -773,14 +789,16 @@ class TestServiceTokenMonitor:
             if len(sleep_calls) >= 1:
                 raise KeyboardInterrupt("Test completion")
 
-        with patch.object(monitor, "run_scheduled_monitoring", AsyncMock(return_value=mock_result)):
-            with patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep):
-                with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                    with pytest.raises(KeyboardInterrupt):
-                        await monitor.start_monitoring_daemon(check_interval_minutes=1)
+        with (
+            patch.object(monitor, "run_scheduled_monitoring", AsyncMock(return_value=mock_result)),
+            patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+            pytest.raises(KeyboardInterrupt),
+        ):
+            await monitor.start_monitoring_daemon(check_interval_minutes=1)
 
         # Verify error was logged
-        error_log = [call for call in mock_logger.error.call_args_list if "Monitoring cycle failed" in str(call)][0]
+        error_log = next(call for call in mock_logger.error.call_args_list if "Monitoring cycle failed" in str(call))
         assert "Database connection lost" in str(error_log)
 
     @pytest.mark.asyncio
@@ -793,14 +811,16 @@ class TestServiceTokenMonitor:
             if len(sleep_calls) >= 1:
                 raise KeyboardInterrupt("Test completion")
 
-        with patch.object(monitor, "run_scheduled_monitoring", AsyncMock(side_effect=Exception("Unexpected error"))):
-            with patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep):
-                with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                    with pytest.raises(KeyboardInterrupt):
-                        await monitor.start_monitoring_daemon(check_interval_minutes=1)
+        with (
+            patch.object(monitor, "run_scheduled_monitoring", AsyncMock(side_effect=Exception("Unexpected error"))),
+            patch("src.monitoring.service_token_monitor.asyncio.sleep", mock_sleep),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+            pytest.raises(KeyboardInterrupt),
+        ):
+            await monitor.start_monitoring_daemon(check_interval_minutes=1)
 
         # Verify exception was logged
-        error_log = [call for call in mock_logger.error.call_args_list if "Monitoring daemon error" in str(call)][0]
+        error_log = next(call for call in mock_logger.error.call_args_list if "Monitoring daemon error" in str(call))
         assert "Unexpected error" in str(error_log)
 
 
@@ -946,8 +966,8 @@ class TestServiceTokenMonitorIntegration:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="critical-prod-token",
-                token_id="1",
+                token_name="critical-prod-token",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(hours=6),
                 days_until_expiration=0,
                 usage_count=500,
@@ -955,8 +975,8 @@ class TestServiceTokenMonitorIntegration:
                 metadata={"environment": "production", "service": "api"},
             ),
             TokenExpirationAlert(
-                token_name="warning-dev-token",
-                token_id="2",
+                token_name="warning-dev-token",  # noqa: S106  # Test token name
+                token_id="2",  # noqa: S106  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=5),
                 days_until_expiration=5,
                 usage_count=50,
@@ -975,15 +995,17 @@ class TestServiceTokenMonitorIntegration:
         # Mock cleanup results
         mock_cleanup = {"expired_tokens_processed": 1, "status": "completed"}
 
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)):
-            with patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)):
-                with patch.object(
-                    monitor.token_manager,
-                    "cleanup_expired_tokens",
-                    AsyncMock(return_value=mock_cleanup),
-                ):
-                    with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                        result = await monitor.run_scheduled_monitoring()
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value=mock_cleanup),
+            ),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+        ):
+            result = await monitor.run_scheduled_monitoring()
 
         # Verify monitoring completed successfully
         assert result["status"] == "completed"
@@ -1038,17 +1060,19 @@ class TestServiceTokenMonitorIntegration:
             "performance_metrics": {"auth_requests_1h": 10000, "auth_success_rate_1h": 99.8},
         }
 
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)):
-            with patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)):
-                with patch.object(
-                    monitor.token_manager,
-                    "cleanup_expired_tokens",
-                    AsyncMock(return_value={"expired_tokens_processed": 50}),
-                ):
-                    # Measure execution time
-                    start_time = datetime.now(UTC)
-                    result = await monitor.run_scheduled_monitoring()
-                    execution_time = (datetime.now(UTC) - start_time).total_seconds()
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=mock_alerts)),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(return_value=mock_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value={"expired_tokens_processed": 50}),
+            ),
+        ):
+            # Measure execution time
+            start_time = datetime.now(UTC)
+            result = await monitor.run_scheduled_monitoring()
+            execution_time = (datetime.now(UTC) - start_time).total_seconds()
 
         # Verify performance is acceptable (should complete within reasonable time)
         assert execution_time < 5.0  # Should complete within 5 seconds
@@ -1149,16 +1173,18 @@ class TestServiceTokenMonitorEdgeCases:
             call_count += 1
             return result
 
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])):
-            with patch.object(monitor, "get_monitoring_metrics", AsyncMock(side_effect=get_changing_metrics)):
-                with patch.object(
-                    monitor.token_manager,
-                    "cleanup_expired_tokens",
-                    AsyncMock(return_value={"expired_tokens_processed": 0}),
-                ):
-                    # Run multiple monitoring tasks concurrently
-                    tasks = [concurrent_monitoring() for _ in range(3)]
-                    results = await asyncio.gather(*tasks, return_exceptions=True)
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(side_effect=get_changing_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value={"expired_tokens_processed": 0}),
+            ),
+        ):
+            # Run multiple monitoring tasks concurrently
+            tasks = [concurrent_monitoring() for _ in range(3)]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Verify all tasks completed successfully
         for result in results:
@@ -1176,24 +1202,24 @@ class TestServiceTokenMonitorEdgeCases:
         edge_case_alerts = [
             # Token expiring in exactly 1 second (should be 0 days)
             TokenExpirationAlert(
-                token_name="immediate-expiry",
-                token_id="1",
+                token_name="immediate-expiry",  # noqa: S106  # Test token name
+                token_id="1",  # noqa: S106  # Test token ID
                 expires_at=now + timedelta(seconds=1),
                 days_until_expiration=0,
                 usage_count=10,
             ),
             # Token expiring in exactly 24 hours (should be 1 day)
             TokenExpirationAlert(
-                token_name="one-day-expiry",
-                token_id="2",
+                token_name="one-day-expiry",  # noqa: S106  # Test token name
+                token_id="2",  # noqa: S106  # Test token ID
                 expires_at=now + timedelta(hours=24),
                 days_until_expiration=1,
                 usage_count=20,
             ),
             # Token that expired 1 hour ago (negative days)
             TokenExpirationAlert(
-                token_name="already-expired",
-                token_id="3",
+                token_name="already-expired",  # noqa: S106  # Test token name
+                token_id="3",  # noqa: S106  # Test token ID
                 expires_at=now - timedelta(hours=1),
                 days_until_expiration=-1,
                 usage_count=5,
@@ -1225,9 +1251,11 @@ class TestServiceTokenMonitorEdgeCases:
             await asyncio.sleep(0.1)  # Simulate slow operation
             raise TimeoutError("Database operation timed out")
 
-        with patch.object(monitor, "check_expiring_tokens", side_effect=timeout_db_operation):
-            with patch("src.monitoring.service_token_monitor.logger") as mock_logger:
-                result = await monitor.run_scheduled_monitoring()
+        with (
+            patch.object(monitor, "check_expiring_tokens", side_effect=timeout_db_operation),
+            patch("src.monitoring.service_token_monitor.logger") as mock_logger,
+        ):
+            result = await monitor.run_scheduled_monitoring()
 
         assert result["status"] == "failed"
         assert "timed out" in result["error"].lower()
@@ -1309,17 +1337,19 @@ class TestServiceTokenMonitorEdgeCases:
             }
 
         # Run monitoring multiple times with large datasets
-        with patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])):
-            with patch.object(monitor, "get_monitoring_metrics", AsyncMock(side_effect=create_large_metrics)):
-                with patch.object(
-                    monitor.token_manager,
-                    "cleanup_expired_tokens",
-                    AsyncMock(return_value={"expired_tokens_processed": 100}),
-                ):
-                    # Run multiple cycles to check for memory leaks
-                    for _ in range(10):
-                        result = await monitor.run_scheduled_monitoring()
-                        assert result["status"] == "completed"
+        with (
+            patch.object(monitor, "check_expiring_tokens", AsyncMock(return_value=[])),
+            patch.object(monitor, "get_monitoring_metrics", AsyncMock(side_effect=create_large_metrics)),
+            patch.object(
+                monitor.token_manager,
+                "cleanup_expired_tokens",
+                AsyncMock(return_value={"expired_tokens_processed": 100}),
+            ),
+        ):
+            # Run multiple cycles to check for memory leaks
+            for _ in range(10):
+                result = await monitor.run_scheduled_monitoring()
+                assert result["status"] == "completed"
 
         # Test should complete without memory errors
         assert True  # If we reach here, memory usage was acceptable

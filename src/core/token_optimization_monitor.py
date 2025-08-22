@@ -10,7 +10,7 @@ import logging
 import time
 from collections import deque
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from statistics import mean, median
 from typing import Any
@@ -158,7 +158,7 @@ class TokenOptimizationMonitor:
         metrics = TokenUsageMetrics(
             session_id=session_id,
             user_id=user_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             task_type=task_type,
             optimization_level=optimization_level,
         )
@@ -204,7 +204,7 @@ class TokenOptimizationMonitor:
         """Record function loading metrics for a specific tier."""
 
         if session_id not in self.session_metrics:
-            self.logger.warning(f"Recording function loading for unknown session: {session_id}")
+            self.logger.warning("Recording function loading for unknown session: %s", session_id)
             return
 
         session_metrics = self.session_metrics[session_id]
@@ -422,7 +422,7 @@ class TokenOptimizationMonitor:
             return None
 
         session_metrics = self.session_metrics[session_id]
-        session_metrics.session_duration_seconds = (datetime.now() - session_metrics.timestamp).total_seconds()
+        session_metrics.session_duration_seconds = (datetime.now(UTC) - session_metrics.timestamp).total_seconds()
 
         # Calculate token reduction percentage
         if session_metrics.baseline_tokens_loaded > 0:
@@ -527,7 +527,7 @@ class TokenOptimizationMonitor:
     async def generate_system_health_report(self) -> SystemHealthMetrics:
         """Generate comprehensive system health metrics."""
 
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # Calculate token reduction statistics
         recent_sessions = [
@@ -626,13 +626,13 @@ class TokenOptimizationMonitor:
         index = min(index, len(sorted_values) - 1)
         return sorted_values[index]
 
-    async def export_metrics(self, format: str = "json", include_raw_data: bool = False) -> dict[str, Any]:
+    async def export_metrics(self, export_format: str = "json", include_raw_data: bool = False) -> dict[str, Any]:
         """Export comprehensive metrics for analysis."""
 
         health_report = await self.generate_system_health_report()
 
         export_data = {
-            "export_timestamp": datetime.now().isoformat(),
+            "export_timestamp": datetime.now(UTC).isoformat(),
             "validation_status": {
                 "optimization_validated": self.optimization_validated,
                 "validation_confidence": self.validation_confidence,
@@ -688,7 +688,7 @@ class TokenOptimizationMonitor:
                 success_rates.append(success_rate * 100)
 
         return {
-            "report_timestamp": datetime.now().isoformat(),
+            "report_timestamp": datetime.now(UTC).isoformat(),
             "user_id": user_id or "system_wide",
             "sessions_analyzed": len(relevant_sessions),
             "token_optimization": {
@@ -723,7 +723,7 @@ _global_monitor: TokenOptimizationMonitor | None = None
 
 def get_token_optimization_monitor() -> TokenOptimizationMonitor:
     """Get the global token optimization monitor instance."""
-    global _global_monitor
+    global _global_monitor  # noqa: PLW0603
     if _global_monitor is None:
         _global_monitor = TokenOptimizationMonitor()
     return _global_monitor

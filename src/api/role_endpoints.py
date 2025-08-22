@@ -104,7 +104,9 @@ role_router = APIRouter(prefix="/api/v1/roles", tags=["role-management"])
 async def create_role(
     request: Request,  # noqa: ARG001
     role_request: RoleCreateRequest,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_CREATE)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.ROLES_CREATE),
+    ),  # Auth dependency
 ) -> RoleResponse:
     """Create a new role (admin only).
 
@@ -142,7 +144,9 @@ async def create_role(
 async def list_roles(
     request: Request,  # noqa: ARG001
     include_inactive: bool = Query(False, description="Include inactive roles"),
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.ROLES_READ),
+    ),  # Auth dependency
 ) -> list[RoleResponse]:
     """List all roles (admin only).
 
@@ -167,7 +171,7 @@ async def list_roles(
 async def assign_user_role(
     request: Request,  # noqa: ARG001
     assignment_request: UserRoleAssignmentRequest,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),  # Auth dependency
 ) -> dict[str, str]:
     """Assign a role to a user (admin only)."""
     manager = RoleManager()
@@ -199,7 +203,7 @@ async def revoke_user_role(
     request: Request,  # noqa: ARG001
     user_email: str = Query(..., description="User email address"),
     role_name: str = Query(..., description="Role name to revoke"),
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),  # Auth dependency
 ) -> dict[str, str]:
     """Revoke a role from a user (admin only)."""
     manager = RoleManager()
@@ -236,7 +240,9 @@ async def validate_role_hierarchy(
     request: Request,  # noqa: ARG001
     role_name: str = Query(..., description="Role name to modify"),
     parent_role_name: str = Query(..., description="Proposed parent role name"),
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.ROLES_READ),
+    ),  # Auth dependency
 ) -> dict[str, bool | str]:
     """Validate that adding a parent role won't create a circular dependency (admin only)."""
     manager = RoleManager()
@@ -268,7 +274,9 @@ async def validate_role_hierarchy(
 async def get_user_roles(
     request: Request,  # noqa: ARG001
     user_email: str,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.USERS_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.USERS_READ),
+    ),  # Auth dependency
 ) -> list[UserRoleResponse]:
     """Get all roles assigned to a user (admin only)."""
     manager = RoleManager()
@@ -285,7 +293,9 @@ async def get_user_roles(
 async def get_user_permissions(
     request: Request,  # noqa: ARG001
     user_email: str,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.USERS_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.USERS_READ),
+    ),  # Auth dependency
 ) -> UserPermissionsResponse:
     """Get all permissions for a user through their assigned roles (admin only)."""
     manager = RoleManager()
@@ -312,7 +322,9 @@ async def get_user_permissions(
 async def get_role(
     request: Request,  # noqa: ARG001
     role_name: str,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.ROLES_READ),
+    ),  # Auth dependency
 ) -> RoleResponse:
     """Get role information by name (admin only)."""
     manager = RoleManager()
@@ -336,7 +348,7 @@ async def delete_role(
     request: Request,  # noqa: ARG001
     role_name: str,
     force: bool = Query(False, description="Force deletion (removes assignments and child dependencies)"),
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_DELETE)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_DELETE)),  # Auth dependency
 ) -> dict[str, str]:
     """Delete a role (admin only).
 
@@ -376,7 +388,9 @@ async def delete_role(
 async def get_role_permissions(
     request: Request,  # noqa: ARG001
     role_name: str,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.ROLES_READ),
+    ),  # Auth dependency
 ) -> RolePermissionsResponse:
     """Get all permissions for a role including inherited permissions (admin only)."""
     manager = RoleManager()
@@ -399,7 +413,7 @@ async def assign_permission_to_role(
     request: Request,  # noqa: ARG001
     role_name: str,
     permission_request: PermissionAssignmentRequest,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),  # Auth dependency
 ) -> dict[str, str]:
     """Assign a permission to a role (admin only)."""
     manager = RoleManager()
@@ -427,7 +441,7 @@ async def revoke_permission_from_role(
     request: Request,  # noqa: ARG001
     role_name: str,
     permission_name: str,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),  # Auth dependency
 ) -> dict[str, str]:
     """Revoke a permission from a role (admin only)."""
     manager = RoleManager()

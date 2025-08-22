@@ -9,7 +9,8 @@ and other monitoring infrastructure.
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import aiohttp
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ExternalIntegration(ABC):
     """Abstract base class for external monitoring integrations."""
 
-    def __init__(self, name: str, config: dict[str, Any]):
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         self.name = name
         self.config = config
         self.logger = create_structured_logger(f"integration_{name}")
@@ -44,7 +45,7 @@ class ExternalIntegration(ABC):
 class PrometheusIntegration(ExternalIntegration):
     """Integration with Prometheus monitoring system."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__("prometheus", config)
         self.pushgateway_url = config.get("pushgateway_url", "http://localhost:9091")
         self.job_name = config.get("job_name", "token_optimization")
@@ -61,16 +62,15 @@ class PrometheusIntegration(ExternalIntegration):
 
             url = f"{self.pushgateway_url}/metrics/job/{self.job_name}/instance/{self.instance}"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, data=prometheus_metrics) as response:
-                    if response.status == 200:
-                        self.logger.info("Successfully sent metrics to Prometheus")
-                        return True
-                    self.logger.error(f"Failed to send metrics to Prometheus: {response.status}")
-                    return False
+            async with aiohttp.ClientSession() as session, session.post(url, data=prometheus_metrics) as response:
+                if response.status == 200:
+                    self.logger.info("Successfully sent metrics to Prometheus")
+                    return True
+                self.logger.error("Failed to send metrics to Prometheus: %s", response.status)
+                return False
 
         except Exception as e:
-            self.logger.error(f"Error sending metrics to Prometheus: {e}")
+            self.logger.error("Error sending metrics to Prometheus: %s", e)
             return False
 
     async def send_alert(self, alert: dict[str, Any]) -> bool:
@@ -81,7 +81,7 @@ class PrometheusIntegration(ExternalIntegration):
 
         # Prometheus alerts are typically handled by AlertManager
         # This would require additional configuration
-        self.logger.info(f"Alert would be sent to AlertManager: {alert['title']}")
+        self.logger.info("Alert would be sent to AlertManager: %s", alert["title"])
         return True
 
     async def validate_configuration(self) -> bool:
@@ -89,18 +89,17 @@ class PrometheusIntegration(ExternalIntegration):
 
         try:
             url = f"{self.pushgateway_url}/api/v1/metrics"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    return response.status == 200
+            async with aiohttp.ClientSession() as session, session.get(url) as response:
+                return response.status == 200
         except Exception as e:
-            self.logger.error(f"Prometheus configuration validation failed: {e}")
+            self.logger.error("Prometheus configuration validation failed: %s", e)
             return False
 
     def _convert_to_prometheus_format(self, metrics: dict[str, Any]) -> str:
         """Convert metrics to Prometheus exposition format."""
 
         lines = []
-        timestamp = int(datetime.now().timestamp() * 1000)
+        timestamp = int(datetime.now(UTC).timestamp() * 1000)
 
         # System health metrics
         system_health = metrics.get("system_health", {})
@@ -133,7 +132,7 @@ class PrometheusIntegration(ExternalIntegration):
 class GrafanaIntegration(ExternalIntegration):
     """Integration with Grafana for dashboard creation and management."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__("grafana", config)
         self.api_url = config.get("api_url", "http://localhost:3000/api")
         self.api_key = config.get("api_key")
@@ -154,7 +153,7 @@ class GrafanaIntegration(ExternalIntegration):
 
             # Create annotation for the alert
             annotation = {
-                "time": int(datetime.now().timestamp() * 1000),
+                "time": int(datetime.now(UTC).timestamp() * 1000),
                 "text": f"{alert['title']}: {alert['message']}",
                 "tags": ["alert", str(alert["level"])],
                 "title": str(alert["title"]),
@@ -162,16 +161,18 @@ class GrafanaIntegration(ExternalIntegration):
 
             url = f"{self.api_url}/annotations"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json=annotation) as response:
-                    if response.status == 200:
-                        self.logger.info("Successfully sent alert annotation to Grafana")
-                        return True
-                    self.logger.error(f"Failed to send alert to Grafana: {response.status}")
-                    return False
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(url, headers=headers, json=annotation) as response,
+            ):
+                if response.status == 200:
+                    self.logger.info("Successfully sent alert annotation to Grafana")
+                    return True
+                self.logger.error("Failed to send alert to Grafana: %s", response.status)
+                return False
 
         except Exception as e:
-            self.logger.error(f"Error sending alert to Grafana: {e}")
+            self.logger.error("Error sending alert to Grafana: %s", e)
             return False
 
     async def validate_configuration(self) -> bool:
@@ -184,11 +185,10 @@ class GrafanaIntegration(ExternalIntegration):
             headers = {"Authorization": f"Bearer {self.api_key}"}
             url = f"{self.api_url}/org"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    return response.status == 200
+            async with aiohttp.ClientSession() as session, session.get(url, headers=headers) as response:
+                return response.status == 200
         except Exception as e:
-            self.logger.error(f"Grafana configuration validation failed: {e}")
+            self.logger.error("Grafana configuration validation failed: %s", e)
             return False
 
     async def create_dashboard(self, metrics: dict[str, Any]) -> str | None:
@@ -204,18 +204,20 @@ class GrafanaIntegration(ExternalIntegration):
 
             url = f"{self.api_url}/dashboards/db"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json=dashboard_config) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        dashboard_url = result.get("url")
-                        self.logger.info(f"Successfully created/updated Grafana dashboard: {dashboard_url}")
-                        return str(dashboard_url) if dashboard_url else None
-                    self.logger.error(f"Failed to create Grafana dashboard: {response.status}")
-                    return None
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(url, headers=headers, json=dashboard_config) as response,
+            ):
+                if response.status == 200:
+                    result = await response.json()
+                    dashboard_url = result.get("url")
+                    self.logger.info("Successfully created/updated Grafana dashboard: %s", dashboard_url)
+                    return str(dashboard_url) if dashboard_url else None
+                self.logger.error("Failed to create Grafana dashboard: %s", response.status)
+                return None
 
         except Exception as e:
-            self.logger.error(f"Error creating Grafana dashboard: {e}")
+            self.logger.error("Error creating Grafana dashboard: %s", e)
             return None
 
     def _generate_dashboard_config(self, metrics: dict[str, Any]) -> dict[str, Any]:
@@ -282,7 +284,7 @@ class GrafanaIntegration(ExternalIntegration):
 class DataDogIntegration(ExternalIntegration):
     """Integration with DataDog monitoring platform."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__("datadog", config)
         self.api_key = config.get("api_key")
         self.app_key = config.get("app_key")
@@ -302,16 +304,18 @@ class DataDogIntegration(ExternalIntegration):
 
             url = f"{self.api_url}/api/v1/series"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json={"series": datadog_metrics}) as response:
-                    if response.status == 202:
-                        self.logger.info("Successfully sent metrics to DataDog")
-                        return True
-                    self.logger.error(f"Failed to send metrics to DataDog: {response.status}")
-                    return False
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(url, headers=headers, json={"series": datadog_metrics}) as response,
+            ):
+                if response.status == 202:
+                    self.logger.info("Successfully sent metrics to DataDog")
+                    return True
+                self.logger.error("Failed to send metrics to DataDog: %s", response.status)
+                return False
 
         except Exception as e:
-            self.logger.error(f"Error sending metrics to DataDog: {e}")
+            self.logger.error("Error sending metrics to DataDog: %s", e)
             return False
 
     async def send_alert(self, alert: dict[str, Any]) -> bool:
@@ -333,16 +337,15 @@ class DataDogIntegration(ExternalIntegration):
 
             url = f"{self.api_url}/api/v1/events"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json=event) as response:
-                    if response.status == 202:
-                        self.logger.info("Successfully sent alert to DataDog")
-                        return True
-                    self.logger.error(f"Failed to send alert to DataDog: {response.status}")
-                    return False
+            async with aiohttp.ClientSession() as session, session.post(url, headers=headers, json=event) as response:
+                if response.status == 202:
+                    self.logger.info("Successfully sent alert to DataDog")
+                    return True
+                self.logger.error("Failed to send alert to DataDog: %s", response.status)
+                return False
 
         except Exception as e:
-            self.logger.error(f"Error sending alert to DataDog: {e}")
+            self.logger.error("Error sending alert to DataDog: %s", e)
             return False
 
     async def validate_configuration(self) -> bool:
@@ -355,18 +358,17 @@ class DataDogIntegration(ExternalIntegration):
             headers = {"DD-API-KEY": self.api_key}
             url = f"{self.api_url}/api/v1/validate"
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as response:
-                    return response.status == 200
+            async with aiohttp.ClientSession() as session, session.get(url, headers=headers) as response:
+                return response.status == 200
         except Exception as e:
-            self.logger.error(f"DataDog configuration validation failed: {e}")
+            self.logger.error("DataDog configuration validation failed: %s", e)
             return False
 
     def _convert_to_datadog_format(self, metrics: dict[str, Any]) -> list[dict[str, Any]]:
         """Convert metrics to DataDog format."""
 
         series = []
-        timestamp = int(datetime.now().timestamp())
+        timestamp = int(datetime.now(UTC).timestamp())
 
         # System health metrics
         system_health = metrics.get("system_health", {})
@@ -420,7 +422,7 @@ class DataDogIntegration(ExternalIntegration):
 class CloudWatchIntegration(ExternalIntegration):
     """Integration with AWS CloudWatch."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__("cloudwatch", config)
         self.region = config.get("region", "us-east-1")
         self.namespace = config.get("namespace", "TokenOptimization")
@@ -439,7 +441,7 @@ class CloudWatchIntegration(ExternalIntegration):
             self.logger.info("Would send metrics to CloudWatch")
             return True
         except Exception as e:
-            self.logger.error(f"Error sending metrics to CloudWatch: {e}")
+            self.logger.error("Error sending metrics to CloudWatch: %s", e)
             return False
 
     async def send_alert(self, alert: dict[str, Any]) -> bool:
@@ -450,10 +452,10 @@ class CloudWatchIntegration(ExternalIntegration):
 
         try:
             # In a real implementation, you would use boto3 SNS
-            self.logger.info(f"Would send alert to CloudWatch/SNS: {alert['title']}")
+            self.logger.info("Would send alert to CloudWatch/SNS: %s", alert["title"])
             return True
         except Exception as e:
-            self.logger.error(f"Error sending alert to CloudWatch: {e}")
+            self.logger.error("Error sending alert to CloudWatch: %s", e)
             return False
 
     async def validate_configuration(self) -> bool:
@@ -466,7 +468,7 @@ class CloudWatchIntegration(ExternalIntegration):
 class SlackIntegration(ExternalIntegration):
     """Integration with Slack for alert notifications."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__("slack", config)
         self.webhook_url = config.get("webhook_url")
         self.channel = config.get("channel", "#alerts")
@@ -500,21 +502,20 @@ class SlackIntegration(ExternalIntegration):
                             {"title": "Timestamp", "value": alert["timestamp"], "short": True},
                         ],
                         "footer": "Token Optimization Monitor",
-                        "ts": int(datetime.now().timestamp()),
+                        "ts": int(datetime.now(UTC).timestamp()),
                     },
                 ],
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.webhook_url, json=payload) as response:
-                    if response.status == 200:
-                        self.logger.info("Successfully sent alert to Slack")
-                        return True
-                    self.logger.error(f"Failed to send alert to Slack: {response.status}")
-                    return False
+            async with aiohttp.ClientSession() as session, session.post(self.webhook_url, json=payload) as response:
+                if response.status == 200:
+                    self.logger.info("Successfully sent alert to Slack")
+                    return True
+                self.logger.error("Failed to send alert to Slack: %s", response.status)
+                return False
 
         except Exception as e:
-            self.logger.error(f"Error sending alert to Slack: {e}")
+            self.logger.error("Error sending alert to Slack: %s", e)
             return False
 
     async def validate_configuration(self) -> bool:
@@ -530,18 +531,20 @@ class SlackIntegration(ExternalIntegration):
                 "username": self.username,
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.webhook_url, json=test_payload) as response:
-                    return response.status == 200
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(self.webhook_url, json=test_payload) as response,
+            ):
+                return response.status == 200
         except Exception as e:
-            self.logger.error(f"Slack configuration validation failed: {e}")
+            self.logger.error("Slack configuration validation failed: %s", e)
             return False
 
 
 class IntegrationManager:
     """Manager for all external integrations."""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         self.integrations: dict[str, ExternalIntegration] = {}
         self.logger = create_structured_logger("integration_manager")
@@ -565,9 +568,9 @@ class IntegrationManager:
                     integration_class = integration_classes[integration_name]
                     integration = integration_class(integration_config)
                     self.integrations[integration_name] = integration
-                    self.logger.info(f"Initialized {integration_name} integration")
+                    self.logger.info("Initialized %s integration", integration_name)
                 except Exception as e:
-                    self.logger.error(f"Failed to initialize {integration_name} integration: {e}")
+                    self.logger.error("Failed to initialize %s integration: %s", integration_name, e)
 
     async def validate_all_configurations(self) -> dict[str, bool]:
         """Validate all integration configurations."""
@@ -580,12 +583,12 @@ class IntegrationManager:
                 validation_results[name] = is_valid
 
                 if is_valid:
-                    self.logger.info(f"{name} integration configuration is valid")
+                    self.logger.info("%s integration configuration is valid", name)
                 else:
-                    self.logger.warning(f"{name} integration configuration is invalid")
+                    self.logger.warning("%s integration configuration is invalid", name)
 
             except Exception as e:
-                self.logger.error(f"Error validating {name} integration: {e}")
+                self.logger.error("Error validating %s integration: %s", name, e)
                 validation_results[name] = False
 
         return validation_results
@@ -601,10 +604,10 @@ class IntegrationManager:
                 results[name] = success
 
                 if not success:
-                    self.logger.warning(f"Failed to send metrics to {name}")
+                    self.logger.warning("Failed to send metrics to %s", name)
 
             except Exception as e:
-                self.logger.error(f"Error sending metrics to {name}: {e}")
+                self.logger.error("Error sending metrics to %s: %s", name, e)
                 results[name] = False
 
         return results
@@ -620,10 +623,10 @@ class IntegrationManager:
                 results[name] = success
 
                 if not success:
-                    self.logger.warning(f"Failed to send alert to {name}")
+                    self.logger.warning("Failed to send alert to %s", name)
 
             except Exception as e:
-                self.logger.error(f"Error sending alert to {name}: {e}")
+                self.logger.error("Error sending alert to %s: %s", name, e)
                 results[name] = False
 
         return results
@@ -640,7 +643,7 @@ class IntegrationManager:
         """Perform health check on all integrations."""
 
         health_status: dict[str, Any] = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "overall_healthy": True,
             "integrations": {},
         }
@@ -693,7 +696,7 @@ def load_integration_config(config_path: str | None = None) -> dict[str, Any]:
 
     if config_path:
         try:
-            with open(config_path) as f:
+            with Path(config_path).open() as f:
                 file_config = json.load(f)
                 # Merge with defaults
                 for integration_name, integration_config in file_config.items():
@@ -706,7 +709,7 @@ def load_integration_config(config_path: str | None = None) -> dict[str, Any]:
                         if isinstance(config_section, dict):
                             config_section.update(integration_config)
         except Exception as e:
-            logger.error(f"Failed to load integration config from {config_path}: {e}")
+            logger.error("Failed to load integration config from %s: %s", config_path, e)
 
     return default_config
 
@@ -735,8 +738,8 @@ async def initialize_integrations(config_path: str | None = None) -> Integration
     disabled_integrations = [name for name, valid in validation_results.items() if not valid]
 
     logger.info("Initialized external integrations")
-    logger.info(f"Enabled integrations: {enabled_integrations}")
+    logger.info("Enabled integrations: %s", enabled_integrations)
     if disabled_integrations:
-        logger.warning(f"Disabled integrations (invalid config): {disabled_integrations}")
+        logger.warning("Disabled integrations (invalid config): %s", disabled_integrations)
 
     return manager

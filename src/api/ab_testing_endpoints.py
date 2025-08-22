@@ -26,11 +26,15 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import text
 
 from src.core.ab_testing_framework import (
     ExperimentConfig,
     ExperimentManager,
+    ExperimentModel,
     ExperimentType,
+    MetricEvent,
+    MetricsCollector,
     UserCharacteristics,
     UserSegment,
     create_dynamic_loading_experiment,
@@ -276,7 +280,7 @@ async def get_experiment_manager_dependency() -> ExperimentManager:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="A/B testing system unavailable",
-        )
+        ) from None
 
 
 # Experiment Management Endpoints
@@ -285,7 +289,7 @@ async def get_experiment_manager_dependency() -> ExperimentManager:
 @router.post("/experiments", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
 @rate_limit(RateLimits.API_DEFAULT)
 async def create_experiment(
-    request: Request,
+    request: Request,  # Required by FastAPI
     experiment_request: CreateExperimentRequest,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> ExperimentResponse:
@@ -323,8 +327,6 @@ async def create_experiment(
 
         # Get experiment details
         with manager.get_db_session() as db_session:
-            from src.core.ab_testing_framework import ExperimentModel
-
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             if not experiment:
@@ -366,16 +368,19 @@ async def create_experiment(
 
     except ValueError as e:
         logger.warning("Invalid experiment configuration: %s", repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Failed to create experiment: %s", repr(str(e)), exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create experiment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create experiment",
+        ) from None
 
 
 @router.post("/experiments/{experiment_id}/start")
 @rate_limit(RateLimits.API_DEFAULT)
 async def start_experiment(
-    request: Request,
+    request: Request,  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> JSONResponse:
@@ -406,13 +411,16 @@ async def start_experiment(
         raise
     except Exception as e:
         logger.error("Failed to start experiment %s: %s", repr(experiment_id), repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to start experiment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start experiment",
+        ) from None
 
 
 @router.post("/experiments/{experiment_id}/stop")
 @rate_limit(RateLimits.API_DEFAULT)
 async def stop_experiment(
-    request: Request,
+    request: Request,  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> JSONResponse:
@@ -443,13 +451,16 @@ async def stop_experiment(
         raise
     except Exception as e:
         logger.error("Failed to stop experiment %s: %s", repr(experiment_id), repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to stop experiment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to stop experiment",
+        ) from None
 
 
 @router.get("/experiments", response_model=list[ExperimentResponse])
 @rate_limit(RateLimits.API_DEFAULT)
 async def list_experiments(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     status_filter: str | None = None,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -458,8 +469,6 @@ async def list_experiments(
     """List all A/B testing experiments with optional filtering."""
     try:
         with manager.get_db_session() as db_session:
-            from src.core.ab_testing_framework import ExperimentModel
-
             query = db_session.query(ExperimentModel)
 
             if status_filter:
@@ -492,21 +501,22 @@ async def list_experiments(
 
     except Exception as e:
         logger.error("Failed to list experiments: %s", repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to list experiments")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list experiments",
+        ) from None
 
 
 @router.get("/experiments/{experiment_id}", response_model=ExperimentResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> ExperimentResponse:
     """Get details of a specific experiment."""
     try:
         with manager.get_db_session() as db_session:
-            from src.core.ab_testing_framework import ExperimentModel
-
             experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
 
             if not experiment:
@@ -533,7 +543,10 @@ async def get_experiment(
         raise
     except Exception as e:
         logger.error("Failed to get experiment %s: %s", repr(experiment_id), repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get experiment")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get experiment",
+        ) from None
 
 
 # User Assignment Endpoints
@@ -542,7 +555,7 @@ async def get_experiment(
 @router.post("/assign-user", response_model=UserAssignmentResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def assign_user_to_experiment(
-    request: Request,
+    request: Request,  # Required by FastAPI
     assignment_request: UserAssignmentRequest,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> UserAssignmentResponse:
@@ -603,7 +616,7 @@ async def assign_user_to_experiment(
 @router.get("/check-dynamic-loading/{user_id}")
 @rate_limit(RateLimits.API_DEFAULT)
 async def check_dynamic_loading_assignment(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     user_id: str,
     experiment_id: str = "dynamic_loading_rollout",
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
@@ -641,14 +654,12 @@ async def check_dynamic_loading_assignment(
 @router.post("/metrics/record-event")
 @rate_limit(RateLimits.API_DEFAULT)
 async def record_metric_event(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     metric_request: MetricEventRequest,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> JSONResponse:
     """Record a metric event for A/B testing analysis."""
     try:
-        from src.core.ab_testing_framework import MetricEvent
-
         # Create metric event
         event = MetricEvent(
             experiment_id=metric_request.experiment_id,
@@ -667,8 +678,6 @@ async def record_metric_event(
 
         # Record through metrics collector
         with manager.get_db_session() as db_session:
-            from src.core.ab_testing_framework import MetricsCollector
-
             collector = MetricsCollector(db_session)
             success = collector.record_event(event)
 
@@ -680,7 +689,10 @@ async def record_metric_event(
 
     except Exception as e:
         logger.error("Failed to record metric event: %s", repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to record metric event")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record metric event",
+        ) from None
 
 
 # Dashboard and Monitoring Endpoints
@@ -689,7 +701,7 @@ async def record_metric_event(
 @router.get("/dashboard/{experiment_id}", response_class=HTMLResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment_dashboard(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     experiment_id: str,
 ) -> HTMLResponse:
     """Get HTML dashboard for an experiment."""
@@ -718,7 +730,7 @@ async def get_experiment_dashboard(
 @router.get("/dashboard-data/{experiment_id}", response_model=DashboardResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_dashboard_data(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     experiment_id: str,
 ) -> DashboardResponse:
     """Get dashboard data as JSON for an experiment."""
@@ -753,13 +765,16 @@ async def get_dashboard_data(
         raise
     except Exception as e:
         logger.error("Failed to get dashboard data for experiment %s: %s", repr(experiment_id), repr(str(e)))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get dashboard data")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get dashboard data",
+        ) from None
 
 
 @router.get("/experiments/{experiment_id}/results", response_model=ExperimentResultsResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment_results(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> ExperimentResultsResponse:
@@ -796,13 +811,13 @@ async def get_experiment_results(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get experiment results",
-        )
+        ) from None
 
 
 @router.get("/overview", response_model=list[ExperimentResponse])
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiments_overview(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
 ) -> list[ExperimentResponse]:
     """Get overview of all experiments for main dashboard."""
     try:
@@ -838,7 +853,7 @@ async def get_experiments_overview(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get experiments overview",
-        )
+        ) from None
 
 
 # Quick Setup Endpoints
@@ -847,10 +862,10 @@ async def get_experiments_overview(
 @router.post("/quick-setup/dynamic-loading")
 @rate_limit(RateLimits.API_DEFAULT)
 async def quick_setup_dynamic_loading_experiment(
-    request: Request,
+    request: Request,  # Required by FastAPI
     target_percentage: float = Query(default=50.0, ge=0.1, le=100.0),
     duration_hours: int = Query(default=168, ge=1, le=8760),
-    manager: ExperimentManager = Depends(get_experiment_manager_dependency),
+    manager: ExperimentManager = Depends(get_experiment_manager_dependency),  # noqa: ARG001  # FastAPI dependency
 ) -> JSONResponse:
     """Quickly set up a standard dynamic loading A/B test experiment."""
     try:
@@ -887,7 +902,7 @@ async def quick_setup_dynamic_loading_experiment(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create dynamic loading experiment",
-        )
+        ) from None
 
 
 # Health and Status Endpoints
@@ -895,7 +910,7 @@ async def quick_setup_dynamic_loading_experiment(
 
 @router.get("/health")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def ab_testing_health_check(request: Request) -> JSONResponse:
+async def ab_testing_health_check(request: Request) -> JSONResponse:  # noqa: ARG001  # Required by FastAPI
     """Health check endpoint for A/B testing system."""
     try:
         manager = await get_experiment_manager()
@@ -903,8 +918,6 @@ async def ab_testing_health_check(request: Request) -> JSONResponse:
         # Quick health check
         with manager.get_db_session() as db_session:
             # Test database connectivity
-            from sqlalchemy import text
-
             db_session.execute(text("SELECT 1"))
 
         return JSONResponse(

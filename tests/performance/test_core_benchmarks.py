@@ -414,9 +414,8 @@ class TestTaskDetectionPerformance:
         loader = IntelligentFunctionLoader("production")
 
         # Mock file system to prevent directory scanning
-        with patch.object(Path, "cwd", return_value=Path("/test")):
-            with patch.object(Path, "rglob", return_value=[]):
-                result = await loader.load_functions_for_query("test query for performance")
+        with patch.object(Path, "cwd", return_value=Path("/test")), patch.object(Path, "rglob", return_value=[]):
+            result = await loader.load_functions_for_query("test query for performance")
 
         # Verify result structure
         assert "functions" in result

@@ -22,8 +22,9 @@ import contextlib
 import json
 import sys
 import time
+import traceback
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -277,7 +278,7 @@ class ComprehensivePrototypeDemo:
         demo_start_time = time.perf_counter()
         overall_results: dict[str, Any] = {
             "demo_metadata": {
-                "start_time": datetime.now().isoformat(),
+                "start_time": datetime.now(UTC).isoformat(),
                 "mode": self.mode.value,
                 "total_scenarios": len(self.demo_scenarios),
                 "target_reduction": 70.0,
@@ -635,7 +636,7 @@ class ComprehensivePrototypeDemo:
                 stats["avg_time"] /= stats["successful"]
 
         return {
-            "validation_timestamp": datetime.now().isoformat(),
+            "validation_timestamp": datetime.now(UTC).isoformat(),
             "system_health": system_status["integration_health"],
             "component_status": system_status["components"],
             "scenario_type_analysis": type_analysis,
@@ -894,7 +895,7 @@ async def main() -> None:
             output_path = Path(args.export_results)
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(output_path, "w") as f:
+            with Path(output_path).open("w") as f:
                 json.dump(results, f, indent=2, default=str)
 
         # Exit with appropriate code based on results
@@ -907,8 +908,6 @@ async def main() -> None:
     except KeyboardInterrupt:
         sys.exit(130)
     except Exception:
-        import traceback
-
         traceback.print_exc()
         sys.exit(1)
 

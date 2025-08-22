@@ -9,9 +9,10 @@ import asyncio
 import gc
 import os
 import tempfile
-from contextlib import contextmanager
+from collections.abc import AsyncGenerator, Generator
+from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Set
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -23,10 +24,10 @@ class GlobalIsolationManager:
     """Manages global test isolation state across all test components."""
 
     def __init__(self):
-        self._isolation_stack: List[Dict[str, Any]] = []
-        self._active_mocks: Set[Mock] = set()
-        self._temp_directories: List[Path] = []
-        self._environment_backup: Dict[str, str] = {}
+        self._isolation_stack: list[dict[str, Any]] = []
+        self._active_mocks: set[Mock] = set()
+        self._temp_directories: list[Path] = []
+        self._environment_backup: dict[str, str] = {}
 
     def push_isolation_context(self, context_name: str) -> None:
         """Push a new isolation context onto the stack."""
@@ -120,7 +121,7 @@ class GlobalIsolationManager:
 _isolation_manager = GlobalIsolationManager()
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def auto_isolation(request):
     """Automatic isolation fixture that runs for every test function.
 
@@ -150,7 +151,7 @@ def isolation_manager() -> GlobalIsolationManager:
 
 
 @contextmanager
-def isolated_environment_vars(**env_vars: Optional[str]) -> Generator[None, None, None]:
+def isolated_environment_vars(**env_vars: str | None) -> Generator[None, None, None]:
     """Context manager for isolated environment variable changes.
 
     Args:
@@ -209,7 +210,7 @@ def isolated_temp_directory() -> Generator[Path, None, None]:
 
 
 @contextmanager
-def isolated_mock_context(*patches: str, **patch_kwargs: Any) -> Generator[List[Mock], None, None]:
+def isolated_mock_context(*patches: str, **patch_kwargs: Any) -> Generator[list[Mock], None, None]:
     """Context manager for isolated mock patching.
 
     Args:
@@ -288,10 +289,8 @@ async def isolated_async_context() -> AsyncGenerator[None, None]:
             for task in pending:
                 if not task.done():
                     task.cancel()
-                    try:
+                    with suppress(asyncio.CancelledError):
                         await task
-                    except asyncio.CancelledError:
-                        pass
 
 
 @pytest.fixture
@@ -361,9 +360,9 @@ def create_isolated_jwt_test_suite():
         Dict[str, Any]: Test suite components with proper isolation
     """
     from tests.utils.auth_factories import (
-        JWTValidatorFactory,
-        JWTTokenFactory,
         AuthenticatedUserFactory,
+        JWTTokenFactory,
+        JWTValidatorFactory,
     )
 
     return {

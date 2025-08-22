@@ -10,7 +10,7 @@ class QwenTestEngineerAgent(BaseAgent):
     This stub implements only the minimal surface used by unit tests.
     """
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
         self.agent_id = config.get("agent_id", "qwen_test_engineer")
         self.default_test_type = config.get("default_test_type", "unit")

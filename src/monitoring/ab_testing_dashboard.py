@@ -15,7 +15,7 @@ Features:
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -24,12 +24,15 @@ import plotly.graph_objects as go  # type: ignore
 from jinja2 import Template
 from plotly.subplots import make_subplots  # type: ignore
 
-from ..core.ab_testing_framework import (
+from src.core.ab_testing_framework import (
     ExperimentManager,
+    ExperimentModel,
     ExperimentResults,
+    MetricEventModel,
+    UserAssignmentModel,
     get_experiment_manager,
 )
-from ..utils.observability import ObservabilityMixin
+from src.utils.observability import ObservabilityMixin
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +155,7 @@ class DashboardMetrics:
 class MetricsCollector(ObservabilityMixin):
     """Collects and aggregates metrics for dashboard display."""
 
-    def __init__(self, experiment_manager: ExperimentManager):
+    def __init__(self, experiment_manager: ExperimentManager) -> None:
         super().__init__()
         self.experiment_manager = experiment_manager
         self.logger = logging.getLogger(__name__)
@@ -161,8 +164,6 @@ class MetricsCollector(ObservabilityMixin):
         """Collect comprehensive metrics for an experiment."""
         try:
             with self.experiment_manager.get_db_session() as db_session:
-                from ..core.ab_testing_framework import ExperimentModel, UserAssignmentModel
-
                 # Get experiment details
                 experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
                 if not experiment:
@@ -177,7 +178,7 @@ class MetricsCollector(ObservabilityMixin):
                 total_users = results.total_users
 
                 # Get active users in last 24h
-                cutoff_time = datetime.utcnow() - timedelta(hours=24)
+                cutoff_time = datetime.now(UTC) - timedelta(hours=24)
                 active_users_24h = (
                     db_session.query(UserAssignmentModel)
                     .filter(
@@ -235,16 +236,14 @@ class MetricsCollector(ObservabilityMixin):
                 )
 
         except Exception as e:
-            self.logger.error(f"Failed to collect metrics for experiment {experiment_id}: {e}")
+            self.logger.error("Failed to collect metrics for experiment %s: %s", experiment_id, e)
             return None
 
     async def _collect_performance_timeline(self, experiment_id: str, db_session: Any) -> list[dict[str, Any]]:
         """Collect performance metrics over time."""
         try:
-            from ..core.ab_testing_framework import MetricEventModel
-
             # Get performance events from last 7 days
-            cutoff_time = datetime.utcnow() - timedelta(days=7)
+            cutoff_time = datetime.now(UTC) - timedelta(days=7)
 
             events = (
                 db_session.query(MetricEventModel)
@@ -311,16 +310,14 @@ class MetricsCollector(ObservabilityMixin):
             return sorted(result, key=lambda x: x["timestamp"])
 
         except Exception as e:
-            self.logger.error(f"Failed to collect performance timeline: {e}")
+            self.logger.error("Failed to collect performance timeline: %s", e)
             return []
 
     async def _collect_conversion_timeline(self, experiment_id: str, db_session: Any) -> list[dict[str, Any]]:
         """Collect conversion metrics over time."""
         try:
-            from ..core.ab_testing_framework import MetricEventModel
-
             # Get optimization events (successful token reductions are conversions)
-            cutoff_time = datetime.utcnow() - timedelta(days=7)
+            cutoff_time = datetime.now(UTC) - timedelta(days=7)
 
             events = (
                 db_session.query(MetricEventModel)
@@ -365,16 +362,14 @@ class MetricsCollector(ObservabilityMixin):
             return sorted(result, key=lambda x: x["timestamp"])
 
         except Exception as e:
-            self.logger.error(f"Failed to collect conversion timeline: {e}")
+            self.logger.error("Failed to collect conversion timeline: %s", e)
             return []
 
     async def _collect_error_timeline(self, experiment_id: str, db_session: Any) -> list[dict[str, Any]]:
         """Collect error metrics over time."""
         try:
-            from ..core.ab_testing_framework import MetricEventModel
-
             # Get all events from last 7 days
-            cutoff_time = datetime.utcnow() - timedelta(days=7)
+            cutoff_time = datetime.now(UTC) - timedelta(days=7)
 
             events = (
                 db_session.query(MetricEventModel)
@@ -412,7 +407,7 @@ class MetricsCollector(ObservabilityMixin):
             return sorted(result, key=lambda x: x["timestamp"])
 
         except Exception as e:
-            self.logger.error(f"Failed to collect error timeline: {e}")
+            self.logger.error("Failed to collect error timeline: %s", e)
             return []
 
     async def _generate_alerts(self, experiment_id: str, results: ExperimentResults) -> list[Alert]:
@@ -500,7 +495,7 @@ class MetricsCollector(ObservabilityMixin):
                     )
 
         except Exception as e:
-            self.logger.error(f"Failed to generate alerts: {e}")
+            self.logger.error("Failed to generate alerts: %s", e)
 
         return alerts
 
@@ -555,7 +550,7 @@ class MetricsCollector(ObservabilityMixin):
                 recommendations.append("🎯 Review success criteria - some targets may not be achievable.")
 
         except Exception as e:
-            self.logger.error(f"Failed to generate recommendations: {e}")
+            self.logger.error("Failed to generate recommendations: %s", e)
 
         return recommendations
 
@@ -589,7 +584,7 @@ class MetricsCollector(ObservabilityMixin):
             return "low"
 
         except Exception as e:
-            self.logger.error(f"Failed to assess risk level: {e}")
+            self.logger.error("Failed to assess risk level: %s", e)
             return "medium"
 
     def _assess_confidence_level(self, results: ExperimentResults) -> str:
@@ -611,7 +606,7 @@ class MetricsCollector(ObservabilityMixin):
             return "low"
 
         except Exception as e:
-            self.logger.error(f"Failed to assess confidence level: {e}")
+            self.logger.error("Failed to assess confidence level: %s", e)
             return "low"
 
 
@@ -643,7 +638,7 @@ class DashboardVisualizer:
                     x=df["timestamp"],
                     y=df["avg_response_time_ms"],
                     name="Response Time (ms)",
-                    line=dict(color="blue"),
+                    line={"color": "blue"},
                 ),
                 row=1,
                 col=1,
@@ -654,7 +649,7 @@ class DashboardVisualizer:
                     x=df["timestamp"],
                     y=df["avg_token_reduction"],
                     name="Token Reduction (%)",
-                    line=dict(color="green"),
+                    line={"color": "green"},
                     yaxis="y2",
                 ),
                 row=1,
@@ -667,7 +662,7 @@ class DashboardVisualizer:
                     x=df["timestamp"],
                     y=df["success_rate"],
                     name="Success Rate (%)",
-                    line=dict(color="orange"),
+                    line={"color": "orange"},
                     fill="tonexty",
                 ),
                 row=2,
@@ -679,7 +674,7 @@ class DashboardVisualizer:
             return str(fig.to_html(include_plotlyjs="cdn"))
 
         except Exception as e:
-            self.logger.error(f"Failed to create performance chart: {e}")
+            self.logger.error("Failed to create performance chart: %s", e)
             return self._create_empty_chart("Error creating performance chart")
 
     def create_variant_comparison_chart(self, variants: dict[str, dict[str, Any]]) -> str:
@@ -720,7 +715,7 @@ class DashboardVisualizer:
             return str(fig.to_html(include_plotlyjs="cdn"))
 
         except Exception as e:
-            self.logger.error(f"Failed to create variant comparison chart: {e}")
+            self.logger.error("Failed to create variant comparison chart: %s", e)
             return self._create_empty_chart("Error creating variant comparison chart")
 
     def create_conversion_funnel(self, metrics: DashboardMetrics) -> str:
@@ -741,7 +736,7 @@ class DashboardVisualizer:
                     y=stages,
                     x=values,
                     textinfo="value+percent initial",
-                    marker=dict(color=["blue", "lightblue", "green", "lightgreen"]),
+                    marker={"color": ["blue", "lightblue", "green", "lightgreen"]},
                 ),
             )
 
@@ -750,7 +745,7 @@ class DashboardVisualizer:
             return str(fig.to_html(include_plotlyjs="cdn"))
 
         except Exception as e:
-            self.logger.error(f"Failed to create conversion funnel: {e}")
+            self.logger.error("Failed to create conversion funnel: %s", e)
             return self._create_empty_chart("Error creating conversion funnel")
 
     def create_statistical_significance_gauge(self, significance: float) -> str:
@@ -781,7 +776,7 @@ class DashboardVisualizer:
             return str(fig.to_html(include_plotlyjs="cdn"))
 
         except Exception as e:
-            self.logger.error(f"Failed to create significance gauge: {e}")
+            self.logger.error("Failed to create significance gauge: %s", e)
             return self._create_empty_chart("Error creating significance gauge")
 
     def _create_empty_chart(self, message: str) -> str:
@@ -795,16 +790,16 @@ class DashboardVisualizer:
                 x=0.5,
                 y=0.5,
                 showarrow=False,
-                font=dict(size=16),
+                font={"size": 16},
             )
             fig.update_layout(
-                xaxis=dict(showgrid=False, showticklabels=False),
-                yaxis=dict(showgrid=False, showticklabels=False),
+                xaxis={"showgrid": False, "showticklabels": False},
+                yaxis={"showgrid": False, "showticklabels": False},
                 height=300,
             )
             return str(fig.to_html(include_plotlyjs="cdn"))
         except Exception as e:
-            self.logger.error(f"Failed to create empty chart: {e}")
+            self.logger.error("Failed to create empty chart: %s", e)
             # Return a simple HTML error message
             return f"<div class='error-chart'>Error creating chart: {message}</div>"
 
@@ -812,7 +807,7 @@ class DashboardVisualizer:
 class ABTestingDashboard(ObservabilityMixin):
     """Main A/B testing dashboard class."""
 
-    def __init__(self, experiment_manager: ExperimentManager):
+    def __init__(self, experiment_manager: ExperimentManager) -> None:
         super().__init__()
         self.experiment_manager = experiment_manager
         self.metrics_collector = MetricsCollector(experiment_manager)
@@ -843,14 +838,14 @@ class ABTestingDashboard(ObservabilityMixin):
                 "variant_comparison": variant_comparison,
                 "conversion_funnel": conversion_funnel,
                 "significance_gauge": significance_gauge,
-                "last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "last_updated": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
             }
 
             # Render dashboard
             return self.dashboard_template.render(**template_data)
 
         except Exception as e:
-            self.logger.error(f"Failed to generate dashboard for experiment {experiment_id}: {e}")
+            self.logger.error("Failed to generate dashboard for experiment %s: %s", experiment_id, e)
             return self._generate_error_dashboard(f"Error generating dashboard: {e!s}")
 
     async def get_dashboard_data(self, experiment_id: str) -> dict[str, Any] | None:
@@ -858,8 +853,6 @@ class ABTestingDashboard(ObservabilityMixin):
         try:
             # Get experiment info for metadata
             with self.experiment_manager.get_db_session() as db_session:
-                from ..core.ab_testing_framework import ExperimentModel
-
                 experiment = db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
                 if not experiment:
                     return None
@@ -882,15 +875,13 @@ class ABTestingDashboard(ObservabilityMixin):
                 }
 
         except Exception as e:
-            self.logger.error(f"Failed to get dashboard data for experiment {experiment_id}: {e}")
+            self.logger.error("Failed to get dashboard data for experiment %s: %s", experiment_id, e)
             return None
 
     async def get_experiment_summary(self) -> list[dict[str, Any]]:
         """Get summary of all experiments for overview dashboard."""
         try:
             with self.experiment_manager.get_db_session() as db_session:
-                from ..core.ab_testing_framework import ExperimentModel
-
                 experiments = db_session.query(ExperimentModel).all()
                 summaries = []
 
@@ -925,7 +916,7 @@ class ABTestingDashboard(ObservabilityMixin):
                 return summaries
 
         except Exception as e:
-            self.logger.error(f"Failed to get experiment summary: {e}")
+            self.logger.error("Failed to get experiment summary: %s", e)
             return []
 
     def _load_dashboard_template(self) -> Template:

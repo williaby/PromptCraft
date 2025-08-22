@@ -10,8 +10,8 @@ import contextlib
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, cast
 
 from .analytics_engine import AnalyticsEngine
 from .help_system import InteractiveHelpSystem
@@ -75,7 +75,7 @@ class CommandRegistry:
         self.commands[command_name] = {
             "handler": handler,
             "metadata": metadata,
-            "registered_at": datetime.now(),
+            "registered_at": datetime.now(UTC),
         }
 
         # Add to category
@@ -267,8 +267,6 @@ class ClaudeCommandIntegration:
 
         # Register all commands
         for cmd_name, cmd_info in user_control_commands.items():
-            from typing import cast
-
             handler = cast(Callable[..., Any], cmd_info["handler"])
             metadata = cast(CommandMetadata, cmd_info["metadata"])
             aliases = cast(list[str] | None, cmd_info.get("aliases", []))
@@ -294,10 +292,7 @@ class ClaudeCommandIntegration:
             arguments = command_parts.get("arguments", [])
 
             # Get command from registry
-            if command_name:
-                command_info = self.command_registry.get_command(command_name)
-            else:
-                command_info = None
+            command_info = self.command_registry.get_command(command_name) if command_name else None
 
             if not command_info:
                 # Try user control system directly
@@ -322,7 +317,7 @@ class ClaudeCommandIntegration:
             return result
 
         except Exception as e:
-            logger.error(f"Command execution failed: {e}")
+            logger.error("Command execution failed: %s", e)
             error_result = CommandResult(
                 success=False,
                 message=f"Command execution error: {e!s}",
@@ -367,11 +362,11 @@ class ClaudeCommandIntegration:
     def _track_command_start(self, command_line: str, context: dict[str, Any] | None) -> None:
         """Track command execution start"""
         if not self.active_session_id:
-            self.active_session_id = f"session_{int(datetime.now().timestamp())}"
+            self.active_session_id = f"session_{int(datetime.now(UTC).timestamp())}"
 
         context = context or {}
         # Ensure session_id is not None
-        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+        session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
 
         self.analytics.track_user_action(
             "command_started",
@@ -390,7 +385,7 @@ class ClaudeCommandIntegration:
             return
 
         # Ensure session_id is not None
-        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+        session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
 
         self.analytics.track_user_action(
             "command_executed",
@@ -409,7 +404,7 @@ class ClaudeCommandIntegration:
         # Add to command history
         self.command_history.append(
             {
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(UTC),
                 "command": command_line,
                 "success": result.success,
                 "message": result.message,
@@ -463,7 +458,7 @@ class ClaudeCommandIntegration:
 
         # Track category loading
         if result.success:
-            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+            session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
             self.analytics.track_user_action(
                 "category_loaded",
                 {
@@ -492,7 +487,7 @@ class ClaudeCommandIntegration:
 
         # Track category unloading
         if result.success:
-            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+            session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
             self.analytics.track_user_action(
                 "category_unloaded",
                 {
@@ -546,7 +541,7 @@ class ClaudeCommandIntegration:
 
         # Track optimization
         if result.success:
-            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+            session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
             self.analytics.track_user_action(
                 "optimization_applied",
                 {
@@ -573,7 +568,9 @@ class ClaudeCommandIntegration:
             )
 
         profile_name = args[0]
-        description = " ".join(args[1:]) if len(args) > 1 else f"Profile saved on {datetime.now().strftime('%Y-%m-%d')}"
+        description = (
+            " ".join(args[1:]) if len(args) > 1 else f"Profile saved on {datetime.now(UTC).strftime('%Y-%m-%d')}"
+        )
 
         command_line = f'/save-session-profile {profile_name} "{description}"'
 
@@ -581,7 +578,7 @@ class ClaudeCommandIntegration:
 
         # Track profile creation
         if result.success:
-            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+            session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
             self.analytics.track_user_action(
                 "profile_created",
                 {
@@ -610,7 +607,7 @@ class ClaudeCommandIntegration:
 
         # Track profile loading
         if result.success:
-            session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+            session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
             self.analytics.track_user_action(
                 "profile_loaded",
                 {
@@ -644,7 +641,7 @@ class ClaudeCommandIntegration:
         query = " ".join(args) if args else None
 
         # Track help request
-        session_id = self.active_session_id or f"session_{int(datetime.now().timestamp())}"
+        session_id = self.active_session_id or f"session_{int(datetime.now(UTC).timestamp())}"
         self.analytics.track_user_action(
             "help_requested",
             {
@@ -764,7 +761,7 @@ class ClaudeCommandIntegration:
                     "error_rate": self._calculate_error_rate(),
                     "last_activity": self.command_history[-1]["timestamp"] if self.command_history else None,
                 },
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(UTC),
             }
 
             # Determine overall health
@@ -775,15 +772,15 @@ class ClaudeCommandIntegration:
             elif "warning" in component_statuses:
                 health_status["overall"] = "warning"
 
-            self.integration_status.last_health_check = datetime.now()
+            self.integration_status.last_health_check = datetime.now(UTC)
             return health_status
 
         except Exception as e:
-            logger.error(f"Health check failed: {e}")
+            logger.error("Health check failed: %s", e)
             return {
                 "overall": "error",
                 "error": str(e),
-                "timestamp": datetime.now(),
+                "timestamp": datetime.now(UTC),
             }
 
     def _check_user_control_health(self) -> dict[str, Any]:

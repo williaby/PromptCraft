@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -22,7 +22,7 @@ from src.monitoring.metrics_collector import (
 async def test_metrics_database_store_and_query(tmp_path):
     db = MetricsDatabase(tmp_path / "metrics.db")
 
-    ts = datetime.now()
+    ts = datetime.now(UTC)
     point = MetricPoint(
         timestamp=ts,
         metric_name="token_reduction_percentage",
@@ -73,7 +73,7 @@ async def test_metrics_aggregator_aggregate(tmp_path):
     aggr = MetricsAggregator(db)
 
     # Insert points over 1 hour, every 10 minutes
-    end = datetime.now()
+    end = datetime.now(UTC)
     start = end - timedelta(hours=1)
     cur = start
     values = []
@@ -124,7 +124,7 @@ async def test_trend_analyzer_analysis_and_anomalies(tmp_path):
     db = MetricsDatabase(tmp_path / "trend.db")
     ta = TrendAnalyzer(db)
 
-    end = datetime.now()
+    end = datetime.now(UTC)
     # Insufficient data
     for i in range(3):
         await db.store_metric_point(
@@ -163,10 +163,11 @@ async def test_statistical_validator_paths(tmp_path):
 
     # Insufficient data for token reduction claim
     res_insuf = await sv.validate_token_reduction_claim(target_reduction=0.7, time_period=timedelta(days=7))
-    assert res_insuf.validated is False and res_insuf.sample_size < 10
+    assert res_insuf.validated is False
+    assert res_insuf.sample_size < 10
 
     # Enough high reductions -> validated True
-    now = datetime.now()
+    now = datetime.now(UTC)
     for i in range(30):
         # Add slight variance to avoid SciPy precision-loss warnings in t-test
         val = 85.0 + (i % 3) * 0.2
@@ -253,8 +254,8 @@ async def test_metrics_collector_collect_and_report(tmp_path, monkeypatch):
     # Confirm some metrics stored
     pts = await mc.database.get_metric_points(
         "token_reduction_percentage",
-        datetime.now() - timedelta(hours=1),
-        datetime.now() + timedelta(hours=1),
+        datetime.now(UTC) - timedelta(hours=1),
+        datetime.now(UTC) + timedelta(hours=1),
     )
     assert len(pts) >= 1
 
@@ -311,11 +312,13 @@ async def test_metrics_collector_collect_and_report(tmp_path, monkeypatch):
     mc.trend_analyzer = TA()
     report = await mc.generate_comprehensive_report(time_period=timedelta(days=1))
     assert report["validation_results"]["overall_validation_status"] is True
-    assert "trend_analysis" in report and "anomaly_detection" in report
+    assert "trend_analysis" in report
+    assert "anomaly_detection" in report
 
     # Export wrapper
     export = await mc.export_for_external_analysis(format="json")
-    assert export["export_format"] == "json" and "data" in export
+    assert export["export_format"] == "json"
+    assert "data" in export
 
     # Exercise other export format branches
     exp_p = await mc.export_for_external_analysis(format="prometheus")

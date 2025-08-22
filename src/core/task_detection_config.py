@@ -5,6 +5,7 @@ Provides configurable parameters for tuning detection accuracy,
 performance characteristics, and fallback behavior.
 """
 
+import contextlib
 import json
 from dataclasses import dataclass, field
 from enum import Enum
@@ -260,10 +261,10 @@ class TaskDetectionConfig:
         data = self.to_dict()
 
         if file_path.suffix.lower() == ".yaml" or file_path.suffix.lower() == ".yml":
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 yaml.dump(data, f, default_flow_style=False, indent=2)
         else:
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 json.dump(data, f, indent=2)
 
     @classmethod
@@ -275,10 +276,10 @@ class TaskDetectionConfig:
             raise FileNotFoundError(f"Configuration file not found: {file_path}")
 
         if file_path.suffix.lower() == ".yaml" or file_path.suffix.lower() == ".yml":
-            with open(file_path) as f:
+            with file_path.open() as f:
                 data = yaml.safe_load(f)
         else:
-            with open(file_path) as f:
+            with file_path.open() as f:
                 data = json.load(f)
 
         return cls.from_dict(data)
@@ -318,10 +319,10 @@ class TaskDetectionConfig:
             "session_pattern",
         ]
 
-        for field in weight_fields:
-            value = getattr(self.signal_weights, field, 0)
+        for weight_field in weight_fields:
+            value = getattr(self.signal_weights, weight_field, 0)
             if not 0.0 <= value <= 2.0:
-                issues.append(f"signal_weights.{field} should be between 0.0 and 2.0")
+                issues.append(f"signal_weights.{weight_field} should be between 0.0 and 2.0")
 
         # Validate tier definitions
         all_categories = (
@@ -436,10 +437,8 @@ class ConfigManager:
             config = TaskDetectionConfig()
             if config_name != "default":
                 # Try to apply environment preset
-                try:
+                with contextlib.suppress(Exception):
                     config = config.get_environment_preset(config_name)
-                except Exception:  # nosec B110
-                    pass  # Use default if preset fails
 
             # Save default configuration
             config.save_to_file(config_file)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -142,7 +142,9 @@ async def test_grafana_integration_flows(monkeypatch):
 
     # create_dashboard success, failure, exception
     cfg = g._generate_dashboard_config({})
-    assert isinstance(cfg, dict) and "dashboard" in cfg and len(cfg["dashboard"]["panels"]) >= 4
+    assert isinstance(cfg, dict)
+    assert "dashboard" in cfg
+    assert len(cfg["dashboard"]["panels"]) >= 4
 
     monkeypatch.setattr(
         "aiohttp.ClientSession",
@@ -230,14 +232,14 @@ async def test_slack_integration_paths(monkeypatch):
     s_disabled = SlackIntegration({"enabled": False})
     assert (
         await s_disabled.send_alert(
-            {"title": "t", "message": "m", "level": "warning", "timestamp": datetime.now().isoformat()},
+            {"title": "t", "message": "m", "level": "warning", "timestamp": datetime.now(UTC).isoformat()},
         )
         is True
     )
     s_no_hook = SlackIntegration({"enabled": True})
     assert (
         await s_no_hook.send_alert(
-            {"title": "t", "message": "m", "level": "info", "timestamp": datetime.now().isoformat()},
+            {"title": "t", "message": "m", "level": "info", "timestamp": datetime.now(UTC).isoformat()},
         )
         is True
     )
@@ -245,13 +247,13 @@ async def test_slack_integration_paths(monkeypatch):
     # Success
     monkeypatch.setattr("aiohttp.ClientSession", lambda: DummySession(post_status=200))
     assert (
-        await s.send_alert({"title": "t", "message": "m", "level": "error", "timestamp": datetime.now().isoformat()})
+        await s.send_alert({"title": "t", "message": "m", "level": "error", "timestamp": datetime.now(UTC).isoformat()})
         is True
     )
     # Failure
     monkeypatch.setattr("aiohttp.ClientSession", lambda: DummySession(post_status=500))
     assert (
-        await s.send_alert({"title": "t", "message": "m", "level": "error", "timestamp": datetime.now().isoformat()})
+        await s.send_alert({"title": "t", "message": "m", "level": "error", "timestamp": datetime.now(UTC).isoformat()})
         is False
     )
 
@@ -314,7 +316,8 @@ async def test_additional_exception_paths_and_helpers(tmp_path, monkeypatch):
     p = tmp_path / "cfg.json"
     p.write_text(__import__("json").dumps(custom))
     cfg = integ_mod.load_integration_config(str(p))
-    assert cfg["prometheus"]["enabled"] is True and cfg["prometheus"]["instance"] == "ci"
+    assert cfg["prometheus"]["enabled"] is True
+    assert cfg["prometheus"]["instance"] == "ci"
     assert cfg["slack"]["channel"] == "#ci"
 
     # get_integration_manager returns singleton
@@ -334,7 +337,8 @@ async def test_additional_exception_paths_and_helpers(tmp_path, monkeypatch):
 
     monkeypatch.setattr(integ_mod, "get_integration_manager", lambda _=None: FakeMgr())
     ret = await integ_mod.initialize_integrations(str(p))
-    assert isinstance(ret, FakeMgr) and ret.validated is True
+    assert isinstance(ret, FakeMgr)
+    assert ret.validated is True
 
 
 @pytest.mark.asyncio
@@ -401,7 +405,8 @@ async def test_integration_manager_behaviors(monkeypatch):
     # health_check reflects enabled and validation status
     health = await mgr.health_check()
     assert isinstance(health, dict)
-    assert "integrations" in health and "overall_healthy" in health
+    assert "integrations" in health
+    assert "overall_healthy" in health
     # Because b is invalid and enabled, overall_healthy should be False
     assert health["overall_healthy"] is False
 

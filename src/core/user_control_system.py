@@ -153,7 +153,7 @@ class CategoryManager:
             )
 
         # Simulate loading (in real implementation, this would update function availability)
-        logger.info(f"Loading category: {category}")
+        logger.info("Loading category: %s", category)
 
         return CommandResult(
             success=True,
@@ -184,7 +184,7 @@ class CategoryManager:
                 warnings=["Categories 'core' and 'git' are always loaded for safety"],
             )
 
-        logger.info(f"Unloading category: {category}")
+        logger.info("Unloading category: %s", category)
 
         return CommandResult(
             success=True,
@@ -565,7 +565,7 @@ class ProfileManager:
         """Load existing profiles from disk"""
         for profile_file in self.config_dir.glob("*.json"):
             try:
-                with open(profile_file) as f:
+                with profile_file.open() as f:
                     data = json.load(f)
 
                 profile = SessionProfile(
@@ -584,7 +584,7 @@ class ProfileManager:
                 self.profiles[profile.name] = profile
 
             except Exception as e:
-                logger.warning(f"Failed to load profile {profile_file}: {e}")
+                logger.warning("Failed to load profile %s: %s", profile_file, e)
 
     def save_session_profile(
         self,
@@ -614,7 +614,7 @@ class ProfileManager:
         # Save to disk
         profile_file = self.config_dir / f"{name}.json"
         try:
-            with open(profile_file, "w") as f:
+            with profile_file.open("w") as f:
                 json.dump(
                     {
                         "name": profile.name,
@@ -721,7 +721,7 @@ class ProfileManager:
     def _save_profile(self, profile: SessionProfile) -> None:
         """Save profile to disk"""
         profile_file = self.config_dir / f"{profile.name}.json"
-        with open(profile_file, "w") as f:
+        with profile_file.open("w") as f:
             json.dump(
                 {
                     "name": profile.name,
@@ -1027,7 +1027,7 @@ class UserControlSystem:
             return result
 
         except Exception as e:
-            logger.error(f"Command execution failed: {e}")
+            logger.error("Command execution failed: %s", e)
             return CommandResult(
                 success=False,
                 message=f"Command execution failed: {e!s}",

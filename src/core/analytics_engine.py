@@ -11,7 +11,7 @@ import logging
 import sqlite3
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -147,7 +147,7 @@ class UsageTracker:
     ) -> None:
         """Track a usage event"""
         event = UsageEvent(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             event_type=event_type,
             event_data=event_data,
             user_id=user_id,
@@ -224,7 +224,7 @@ class UsageTracker:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Failed to persist event: {e}")
+            logger.error("Failed to persist event: %s", e)
 
     def end_session(self, session_id: str) -> SessionMetrics | None:
         """End a session and persist metrics"""
@@ -232,7 +232,7 @@ class UsageTracker:
             return None
 
         session = self.active_sessions[session_id]
-        session.end_time = datetime.now()
+        session.end_time = datetime.now(UTC)
 
         # Persist session metrics
         self._persist_session_metrics(session)
@@ -269,7 +269,7 @@ class UsageTracker:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Failed to persist session metrics: {e}")
+            logger.error("Failed to persist session metrics: %s", e)
 
     def get_recent_events(
         self,
@@ -278,7 +278,7 @@ class UsageTracker:
         user_id: str | None = None,
     ) -> list[UsageEvent]:
         """Get recent events with optional filtering"""
-        cutoff_time = datetime.now() - timedelta(hours=hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
         filtered_events: list[UsageEvent] = []
         for event in self.session_events:
@@ -354,7 +354,7 @@ class UsageTracker:
                     optimization_applied=bool(row[11]),
                 )
         except Exception as e:
-            logger.error(f"Failed to load session from database: {e}")
+            logger.error("Failed to load session from database: %s", e)
             return None
 
 
@@ -926,7 +926,7 @@ class AnalyticsEngine:
         self.insight_generator = InsightGenerator(self.usage_tracker, self.pattern_detector)
 
         # Performance metrics
-        self.last_analysis_time = datetime.now()
+        self.last_analysis_time = datetime.now(UTC)
         self.analysis_cache: dict[str, Any] = {}
         self.cache_ttl = timedelta(hours=1)
 
@@ -954,7 +954,7 @@ class AnalyticsEngine:
         # Check cache
         if (
             cache_key in self.analysis_cache
-            and datetime.now() - self.analysis_cache[cache_key]["timestamp"] < self.cache_ttl
+            and datetime.now(UTC) - self.analysis_cache[cache_key]["timestamp"] < self.cache_ttl
         ):
             cached_data = self.analysis_cache[cache_key]["data"]
             return cached_data if isinstance(cached_data, dict) else {}
@@ -1021,7 +1021,7 @@ class AnalyticsEngine:
         # Cache results
         self.analysis_cache[cache_key] = {
             "data": analytics,
-            "timestamp": datetime.now(),
+            "timestamp": datetime.now(UTC),
         }
 
         return analytics
@@ -1112,7 +1112,7 @@ class AnalyticsEngine:
         data = self.get_user_analytics(user_id) if user_id else self.get_system_analytics()
 
         return {
-            "export_timestamp": datetime.now().isoformat(),
+            "export_timestamp": datetime.now(UTC).isoformat(),
             "export_type": "user" if user_id else "system",
             "format_version": "1.0",
             "data": data,

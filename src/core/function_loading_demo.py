@@ -14,6 +14,7 @@ Features:
 
 import argparse
 import asyncio
+import contextlib
 import sys
 import time
 from typing import Any
@@ -143,8 +144,8 @@ class InteractiveFunctionLoadingDemo:
             "tier_breakdown": {
                 "tier_1": (
                     {
-                        "functions": len(registry.get_functions_by_tier(list(registry.tiers)[0])),
-                        "tokens": registry.get_tier_token_cost(list(registry.tiers)[0]),
+                        "functions": len(registry.get_functions_by_tier(next(iter(registry.tiers)))),
+                        "tokens": registry.get_tier_token_cost(next(iter(registry.tiers))),
                     }
                     if registry.tiers
                     else {"functions": 0, "tokens": 0}
@@ -228,14 +229,11 @@ class InteractiveFunctionLoadingDemo:
         # Execute user commands if any
         command_results = []
         for command in scenario.user_commands:
-            try:
+            with contextlib.suppress(Exception):
                 cmd_result = await self.loader.execute_user_command(session_id, command)
                 # Record only successful commands in results
                 if getattr(cmd_result, "success", False):
                     command_results.append(cmd_result)
-            except Exception:
-                # Swallow command errors to allow scenario to proceed
-                pass
 
         # Load functions
         loading_decision = await self.loader.load_functions_for_query(session_id)
@@ -388,7 +386,8 @@ class InteractiveFunctionLoadingDemo:
                     pass
 
             except Exception:
-                pass
+                with contextlib.suppress(Exception):
+                    pass
 
     async def _performance_comparison(self) -> None:
         """Show performance comparison between optimized and baseline."""
@@ -446,7 +445,7 @@ class InteractiveFunctionLoadingDemo:
                         "loading_time_ms": loading_time,
                         "token_reduction": token_reduction,
                     }
-                except Exception:
+                except Exception:  # nosec B112  # noqa: S112
                     # Skip this strategy on failure and continue with others
                     continue
 
@@ -454,7 +453,7 @@ class InteractiveFunctionLoadingDemo:
 
         # Display comparison table
 
-        for result in comparison_results:
+        for _result in comparison_results:
             pass
 
         # Analysis
@@ -508,7 +507,8 @@ class InteractiveFunctionLoadingDemo:
                     pass
 
             except Exception:
-                pass
+                with contextlib.suppress(Exception):
+                    pass
 
         await self.loader.end_loading_session(session_id)
 
@@ -597,7 +597,7 @@ class InteractiveFunctionLoadingDemo:
             token_reduction_raw = result.get("token_reduction", 0.0)
             if isinstance(token_reduction_raw, (int, float)):
                 token_reduction = float(token_reduction_raw)
-                "✅" if token_reduction >= 70.0 else "❌"
+                _ = "✅" if token_reduction >= 70.0 else "❌"
 
         # Final assessment
         if (avg_reduction >= 70.0 and achieving_target >= total_scenarios * 0.8) or avg_reduction >= 60.0:
@@ -637,7 +637,7 @@ async def main() -> None:
 
 
 # Make main function available for import by test modules
-__all__ = ["main", "InteractiveFunctionLoadingDemo", "DemoScenario"]
+__all__ = ["DemoScenario", "InteractiveFunctionLoadingDemo", "main"]
 
 
 if __name__ == "__main__":

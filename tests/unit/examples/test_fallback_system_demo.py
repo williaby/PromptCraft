@@ -109,7 +109,7 @@ class TestDemoTaskDetectionSystem:
         system.set_failure_mode("timeout")
 
         # Should take a very long time (10 seconds)
-        start_time = time.time()
+        time.time()
 
         # Use asyncio.wait_for to prevent test hanging
         with pytest.raises(asyncio.TimeoutError):

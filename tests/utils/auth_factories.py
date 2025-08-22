@@ -8,7 +8,7 @@ fresh instances with no shared state between tests.
 import base64
 import json
 from datetime import UTC, datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import Mock
 
 from src.auth.config import AuthenticationConfig
@@ -22,8 +22,8 @@ class JWTValidatorFactory:
 
     @staticmethod
     def create_mock_jwks_client(
-        key_data: Optional[Dict[str, Any]] = None,
-        side_effects: Optional[Dict[str, Any]] = None,
+        key_data: dict[str, Any] | None = None,
+        side_effects: dict[str, Any] | None = None,
     ) -> Mock:
         """Create a mock JWKS client with configurable behavior.
 
@@ -56,7 +56,7 @@ class JWTValidatorFactory:
 
     @staticmethod
     def create_mock_config(
-        email_whitelist: Optional[list[str]] = None,
+        email_whitelist: list[str] | None = None,
         **overrides: Any,
     ) -> Mock:
         """Create a mock AuthenticationConfig with configurable values.
@@ -79,8 +79,8 @@ class JWTValidatorFactory:
 
     @staticmethod
     def create_validator(
-        jwks_client: Optional[Mock] = None,
-        config: Optional[Mock] = None,
+        jwks_client: Mock | None = None,
+        config: Mock | None = None,
         audience: str = "https://test-app.com",
         issuer: str = "https://test.cloudflareaccess.com",
         algorithm: str = "RS256",
@@ -122,7 +122,7 @@ class JWTTokenFactory:
         audience: str = "https://test-app.com",
         exp_minutes: int = 60,
         **overrides: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a JWT payload with configurable claims.
 
         Args:
@@ -157,7 +157,7 @@ class JWTTokenFactory:
         alg: str = "RS256",
         typ: str = "JWT",
         **overrides: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a JWT header with configurable values.
 
         Args:
@@ -175,8 +175,8 @@ class JWTTokenFactory:
 
     @staticmethod
     def encode_token(
-        payload: Dict[str, Any],
-        header: Optional[Dict[str, Any]] = None,
+        payload: dict[str, Any],
+        header: dict[str, Any] | None = None,
         signature: str = "fake-signature",
     ) -> str:
         """Encode a JWT token from payload and header.
@@ -283,7 +283,7 @@ class AuthenticatedUserFactory:
     def create_user(
         email: str = "test@example.com",
         role: UserRole = UserRole.USER,
-        jwt_claims: Optional[Dict[str, Any]] = None,
+        jwt_claims: dict[str, Any] | None = None,
         **overrides: Any,
     ) -> AuthenticatedUser:
         """Create an AuthenticatedUser instance.
@@ -361,10 +361,9 @@ class IsolationHelpers:
         """Reset any module-level state that might leak between tests."""
         # Clear any cached authentication data
         # This can be extended as needed for specific modules
-        pass
 
     @staticmethod
-    def create_isolated_validator_set() -> Dict[str, JWTValidator]:
+    def create_isolated_validator_set() -> dict[str, JWTValidator]:
         """Create a set of isolated validators for comprehensive testing.
 
         Returns:
@@ -377,7 +376,7 @@ class IsolationHelpers:
             "custom_algorithm": JWTValidatorFactory.create_validator(algorithm="HS256"),
             "failing_jwks": JWTValidatorFactory.create_validator(
                 jwks_client=JWTValidatorFactory.create_mock_jwks_client(
-                    side_effects={"get_key_by_kid": Exception("JWKS failure")}
-                )
+                    side_effects={"get_key_by_kid": Exception("JWKS failure")},
+                ),
             ),
         }

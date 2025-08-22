@@ -1341,7 +1341,7 @@ class VectorStoreConfig(BaseModel):
 class ConnectionManager:
     """Basic connection manager for vector store instances."""
 
-    def __init__(self, config: VectorStoreConfig):
+    def __init__(self, config: VectorStoreConfig) -> None:
         """Initialize connection manager with configuration."""
         self.config = config
         self._connection_pool = {}

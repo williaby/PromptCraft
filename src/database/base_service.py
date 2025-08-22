@@ -13,12 +13,14 @@ consistent patterns and eliminate code duplication.
 """
 
 import logging
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Callable, TypeVar
+from typing import Any, TypeVar
 
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
 
 from src.database.connection import DatabaseError, get_database_manager
 
@@ -58,11 +60,11 @@ class DatabaseService:
             try:
                 yield session
             except SQLAlchemyError as e:
-                logger.error(f"Database operation failed: {e}")
+                logger.error("Database operation failed: %s", e)
                 await session.rollback()
                 raise DatabaseError(f"Database operation failed: {e}") from e
             except Exception as e:
-                logger.error(f"Unexpected error during database operation: {e}")
+                logger.error("Unexpected error during database operation: %s", e)
                 await session.rollback()
                 raise
 
@@ -139,13 +141,13 @@ class DatabaseService:
 
         if "unique constraint" in error_msg or "duplicate key" in error_msg:
             message = f"{entity_name} already exists" if entity_name else "Duplicate entry"
-            logger.error(f"{operation_name} failed - {message}: {error}")
+            logger.error("%s failed - %s: %s", operation_name, message, error)
             raise DatabaseError(f"{operation_name} failed: {message}") from error
         if "foreign key" in error_msg:
             message = "Referenced entity does not exist"
-            logger.error(f"{operation_name} failed - {message}: {error}")
+            logger.error("%s failed - %s: %s", operation_name, message, error)
             raise DatabaseError(f"{operation_name} failed: {message}") from error
-        logger.error(f"{operation_name} failed - integrity error: {error}")
+        logger.error("%s failed - integrity error: %s", operation_name, error)
         raise DatabaseError(f"{operation_name} failed: {error}") from error
 
     async def log_operation_success(
@@ -167,7 +169,7 @@ class DatabaseService:
         name_part = f" '{entity_name}'" if entity_name else ""
         info_part = f" - {additional_info}" if additional_info else ""
 
-        logger.info(f"{operation_name}{name_part}{id_part}{info_part}")
+        logger.info("%s%s%s%s", operation_name, name_part, id_part, info_part)
 
     async def log_operation_error(
         self,
@@ -183,7 +185,7 @@ class DatabaseService:
             entity_name: Name of the entity being operated on
         """
         entity_part = f" for {entity_name}" if entity_name else ""
-        logger.error(f"{operation_name} failed{entity_part}: {error}")
+        logger.error("%s failed%s: %s", operation_name, entity_part, error)
 
     async def check_entity_exists(
         self,
@@ -203,9 +205,6 @@ class DatabaseService:
         Returns:
             True if entity exists, False otherwise
         """
-        from sqlalchemy import select
-        from sqlalchemy.sql import Select
-
         query: Select[Any] = select(model_class.id)
         for field, value in filter_conditions.items():
             query = query.where(getattr(model_class, field) == value)
@@ -213,7 +212,7 @@ class DatabaseService:
         result = await session.execute(query)
         exists = result.scalar_one_or_none() is not None
 
-        logger.debug(f"Entity existence check for {entity_name}: {exists}")
+        logger.debug("Entity existence check for %s: %s", entity_name, exists)
         return exists
 
     async def get_entity_by_conditions(
@@ -234,9 +233,6 @@ class DatabaseService:
         Returns:
             Entity if found, None otherwise
         """
-        from sqlalchemy import select
-        from sqlalchemy.sql import Select
-
         query: Select[Any] = select(model_class)
         for field, value in filter_conditions.items():
             query = query.where(getattr(model_class, field) == value)
@@ -245,9 +241,9 @@ class DatabaseService:
         entity = result.scalar_one_or_none()
 
         if entity:
-            logger.debug(f"Found {entity_name} with conditions {filter_conditions}")
+            logger.debug("Found %s with conditions %s", entity_name, filter_conditions)
         else:
-            logger.debug(f"No {entity_name} found with conditions {filter_conditions}")
+            logger.debug("No %s found with conditions %s", entity_name, filter_conditions)
 
         return entity
 

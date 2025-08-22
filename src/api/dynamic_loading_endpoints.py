@@ -19,7 +19,7 @@ input validation, and comprehensive error handling.
 
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -156,11 +156,11 @@ async def get_integration_dependency() -> DynamicLoadingIntegration:
     try:
         return await get_integration_instance(mode=IntegrationMode.PRODUCTION)
     except Exception as e:
-        logger.error(f"Failed to get integration instance: {e}")
+        logger.error("Failed to get integration instance: %s", e)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Dynamic loading system unavailable",
-        )
+        ) from None
 
 
 # Main API Endpoints
@@ -169,7 +169,7 @@ async def get_integration_dependency() -> DynamicLoadingIntegration:
 @router.post("/optimize-query", response_model=QueryOptimizationResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def optimize_query(
-    request: Request,
+    request: Request,  # Required by FastAPI
     query_request: QueryOptimizationRequest,
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> QueryOptimizationResponse:
@@ -238,7 +238,7 @@ async def optimize_query(
         )
 
     except Exception as e:
-        logger.error(f"Query optimization failed: {e}", exc_info=True)
+        logger.error("Query optimization failed: %s", e, exc_info=True)
 
         # Log API error
         processing_time = (time.perf_counter() - start_time) * 1000
@@ -252,13 +252,13 @@ async def optimize_query(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Query optimization failed: {e!s}",
-        )
+        ) from None
 
 
 @router.get("/status", response_model=SystemStatusResponse)
 @rate_limit(RateLimits.HEALTH_CHECK)
 async def get_system_status(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> SystemStatusResponse:
     """
@@ -280,17 +280,17 @@ async def get_system_status(
         )
 
     except Exception as e:
-        logger.error(f"Failed to get system status: {e}")
+        logger.error("Failed to get system status: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve system status",
-        )
+        ) from None
 
 
 @router.get("/performance-report", response_model=PerformanceReportResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_performance_report(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> PerformanceReportResponse:
     """
@@ -312,17 +312,17 @@ async def get_performance_report(
         )
 
     except Exception as e:
-        logger.error(f"Failed to get performance report: {e}")
+        logger.error("Failed to get performance report: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve performance report",
-        )
+        ) from None
 
 
 @router.post("/user-command", response_model=UserCommandResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def execute_user_command(
-    request: Request,
+    request: Request,  # Required by FastAPI
     command_request: UserCommandRequest,
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> UserCommandResponse:
@@ -360,19 +360,19 @@ async def execute_user_command(
         )
 
     except Exception as e:
-        logger.error(f"User command execution failed: {e}")
+        logger.error("User command execution failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Command execution failed: {e!s}",
-        )
+        ) from None
 
 
 @router.post("/demo/run")
 @rate_limit(RateLimits.API_SLOW)
 async def run_comprehensive_demo(
-    request: Request,
+    request: Request,  # Required by FastAPI
     demo_request: DemoRunRequest,
-    integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
+    integration: DynamicLoadingIntegration = Depends(get_integration_dependency),  # noqa: ARG001  # FastAPI dependency
 ) -> JSONResponse:
     """
     Run comprehensive demonstration scenarios.
@@ -436,17 +436,17 @@ async def run_comprehensive_demo(
         )
 
     except Exception as e:
-        logger.error(f"Demo execution failed: {e}", exc_info=True)
+        logger.error("Demo execution failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Demo execution failed: {e!s}",
-        )
+        ) from None
 
 
 @router.get("/metrics/live")
 @rate_limit(RateLimits.HEALTH_CHECK)
 async def get_live_metrics(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> JSONResponse:
     """
@@ -460,7 +460,7 @@ async def get_live_metrics(
         metrics = status_data["metrics"]
 
         live_metrics = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "health_status": status_data["integration_health"],
             "performance": {
                 "queries_processed": metrics["total_queries_processed"],
@@ -487,17 +487,17 @@ async def get_live_metrics(
         return JSONResponse(content=live_metrics)
 
     except Exception as e:
-        logger.error(f"Failed to get live metrics: {e}")
+        logger.error("Failed to get live metrics: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve live metrics",
-        )
+        ) from None
 
 
 @router.get("/function-registry/stats")
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_function_registry_stats(
-    request: Request,
+    request: Request,  # noqa: ARG001  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> JSONResponse:
     """
@@ -546,7 +546,7 @@ async def get_function_registry_stats(
                 "total_categories": len(registry.categories),
                 "total_tiers": len(registry.tiers),
                 "baseline_token_cost": registry.get_baseline_token_cost(),
-                "last_updated": datetime.now().isoformat(),
+                "last_updated": datetime.now(UTC).isoformat(),
             },
             "tier_breakdown": tier_stats,
             "category_breakdown": category_stats,
@@ -570,17 +570,17 @@ async def get_function_registry_stats(
         return JSONResponse(content=stats)
 
     except Exception as e:
-        logger.error(f"Failed to get function registry stats: {e}")
+        logger.error("Failed to get function registry stats: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve function registry statistics",
-        )
+        ) from None
 
 
 # Health check endpoint specifically for dynamic loading
 @router.get("/health")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def dynamic_loading_health_check(request: Request) -> JSONResponse:
+async def dynamic_loading_health_check(request: Request) -> JSONResponse:  # noqa: ARG001  # Required by FastAPI
     """
     Health check endpoint specifically for the dynamic loading system.
 
@@ -601,7 +601,7 @@ async def dynamic_loading_health_check(request: Request) -> JSONResponse:
                     "uptime_hours": status_data["metrics"]["uptime_hours"],
                     "queries_processed": status_data["metrics"]["total_queries_processed"],
                     "success_rate": status_data["metrics"]["success_rate"],
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 status_code=status.HTTP_200_OK,
             )
@@ -610,19 +610,19 @@ async def dynamic_loading_health_check(request: Request) -> JSONResponse:
                 "status": health_status,
                 "service": "dynamic-function-loading",
                 "error": "System not healthy",
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
     except Exception as e:
-        logger.error(f"Dynamic loading health check failed: {e}")
+        logger.error("Dynamic loading health check failed: %s", e)
         return JSONResponse(
             content={
                 "status": "failed",
                 "service": "dynamic-function-loading",
                 "error": str(e),
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )

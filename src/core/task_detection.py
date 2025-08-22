@@ -11,7 +11,7 @@ import logging
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from typing import Any
 
@@ -435,7 +435,7 @@ class FunctionLoader:
 
     def __init__(self) -> None:
         # Import here to avoid circular imports
-        from .task_detection_config import default_config
+        from .task_detection_config import default_config  # noqa: PLC0415  # Avoid circular import
 
         config = default_config
         self.tier_definitions = {
@@ -625,7 +625,7 @@ class FunctionLoader:
         }
 
         # Log for learning system
-        logger.warning(f"Detection failed, using full load fallback. Scores: {scores}, Context: {context}")
+        logger.warning("Detection failed, using full load fallback. Scores: %s, Context: %s", scores, context)
 
         return full_load
 
@@ -647,7 +647,7 @@ class TaskDetectionSystem:
         self.cache_timestamps: dict[str, datetime] = {}
         self.max_cache_age = timedelta(hours=1)
 
-    @lru_cache(maxsize=1000)
+    @lru_cache(maxsize=1000)  # noqa: B019
     def _cached_keyword_analysis(self, query: str) -> dict[str, float]:
         """Cached keyword analysis for performance"""
         return self.keyword_analyzer.analyze(query)
@@ -663,7 +663,7 @@ class TaskDetectionSystem:
         cache_key = self._generate_cache_key(query, context)
         if cache_key in self.cache:
             cached_result = self.cache[cache_key]
-            if datetime.now() - self.cache_timestamps[cache_key] < self.max_cache_age:
+            if datetime.now(UTC) - self.cache_timestamps[cache_key] < self.max_cache_age:
                 return cached_result
 
         try:
@@ -692,7 +692,7 @@ class TaskDetectionSystem:
                                 combined_scores[category] = max(combined_scores.get(category, 0.0), score)
                         signals_dict[f"signal_{i}"] = combined_scores
                 else:
-                    logger.warning(f"Signal extraction failed: {signal_result}")
+                    logger.warning("Signal extraction failed: %s", signal_result)
 
             # Calculate scores
             raw_scores = self.scorer.calculate_category_scores(valid_signals)
@@ -718,12 +718,12 @@ class TaskDetectionSystem:
 
             # Cache result
             self.cache[cache_key] = result
-            self.cache_timestamps[cache_key] = datetime.now()
+            self.cache_timestamps[cache_key] = datetime.now(UTC)
 
             return result
 
         except Exception as e:
-            logger.error(f"Task detection failed: {e}")
+            logger.error("Task detection failed: %s", e)
             # Return safe fallback
             return DetectionResult(
                 categories=self.loader.load_safe_default(context),

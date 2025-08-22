@@ -782,8 +782,6 @@ def log_error_with_context(error: Exception, context: dict[str, Any]) -> None:
         error: Exception to log
         context: Additional context for the error
     """
-    import logging
-
     logger = logging.getLogger("zen_mcp_error_handling")
     context_str = " ".join(f"{k}={v}" for k, v in context.items())
     logger.error("Zen MCP Error: %s | Context: %s", str(error), context_str)

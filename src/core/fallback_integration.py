@@ -264,10 +264,10 @@ class UserNotificationManager:
         try:
             # In a real implementation, this would integrate with the UI system
             # For now, just log the notification
-            logger.info(f"USER_NOTIFICATION [{notification_type.upper()}]: {message}")
+            logger.info("USER_NOTIFICATION [%s]: %s", notification_type.upper(), message)
             return True
         except Exception as e:
-            logger.error(f"Failed to send user notification: {e}")
+            logger.error("Failed to send user notification: %s", e)
             return False
 
 
@@ -431,7 +431,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
                     else:
                         fallback_result = result
                 except Exception as e:
-                    self.logger.warning(f"Shadow mode task failed: {e}")
+                    self.logger.warning("Shadow mode task failed: %s", e)
 
             # Compare results and log differences
             if original_result and fallback_result:
@@ -549,11 +549,14 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
 
         # Log comparison
         self.logger.info(
-            f"Shadow mode comparison - Query: {query[:50]} | "
-            f"Category diff: {category_diff} | "
-            f"Time diff: {time_diff:.2f}ms | "
-            f"Original: {len(orig_categories)} cats, {original.detection_time_ms:.2f}ms | "
-            f"Fallback: {len(fallback_categories)} cats, {fallback.detection_time_ms:.2f}ms",
+            "Shadow mode comparison - Query: %s | Category diff: %d | Time diff: %.2fms | Original: %d cats, %.2fms | Fallback: %d cats, %.2fms",
+            query[:50],
+            len(category_diff),
+            time_diff,
+            len(orig_categories),
+            original.detection_time_ms,
+            len(fallback_categories),
+            fallback.detection_time_ms,
         )
 
     def _create_safe_fallback_result(self) -> DetectionResult:
@@ -588,7 +591,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
             if hasattr(self.original_system, "get_performance_metrics"):
                 original_health = self.original_system.get_performance_metrics()
         except Exception as e:
-            self.logger.warning(f"Failed to get original system health: {e}")
+            self.logger.warning("Failed to get original system health: %s", e)
 
         # Get fallback system health
         fallback_health = {}
@@ -596,7 +599,7 @@ class EnhancedTaskDetectionSystem(LoggerMixin):
             try:
                 fallback_health = self.fallback_chain.get_health_status()
             except Exception as e:
-                self.logger.warning(f"Failed to get fallback system health: {e}")
+                self.logger.warning("Failed to get fallback system health: %s", e)
 
         # Get integration metrics
         integration_metrics = self.metrics.get_metrics_summary()

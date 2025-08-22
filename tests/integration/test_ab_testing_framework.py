@@ -590,7 +590,7 @@ class TestDashboard:
             print(f"DEBUG: {user_id} -> {variant}")
 
         # Count unique variants
-        unique_variants = set(variant for _, variant in variants)
+        unique_variants = {variant for _, variant in variants}
         print(f"DEBUG: Unique variants: {unique_variants}")
 
         # Use first two users with potentially different variants for the processing results

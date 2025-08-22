@@ -416,9 +416,11 @@ class TestOptimizeQueryEndpoint:
         for strategy_str, strategy_enum in strategies.items():
             query_request = QueryOptimizationRequest(query="test", strategy=strategy_str)
 
-            with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.1]):
-                with patch("src.api.dynamic_loading_endpoints.audit_logger_instance"):
-                    await optimize_query(mock_request, query_request, mock_integration)
+            with (
+                patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.1]),
+                patch("src.api.dynamic_loading_endpoints.audit_logger_instance"),
+            ):
+                await optimize_query(mock_request, query_request, mock_integration)
 
             # Verify correct strategy was passed
             calls = mock_integration.process_query.call_args_list

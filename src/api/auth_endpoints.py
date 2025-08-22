@@ -90,7 +90,7 @@ auth_router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 @auth_router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user_info(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUserType = Depends(require_authentication),
+    current_user: AuthenticatedUserType = Depends(require_authentication),  # Auth dependency
 ) -> CurrentUserResponse:
     """Get current authenticated user or service token information.
 
@@ -164,7 +164,7 @@ async def auth_health_check() -> AuthHealthResponse:
 async def create_service_token(
     request: Request,  # noqa: ARG001
     token_request: TokenCreationRequest,
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.TOKENS_CREATE)),
+    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.TOKENS_CREATE)),  # Auth dependency
 ) -> TokenCreationResponse:
     """Create a new service token (admin only).
 
@@ -309,7 +309,9 @@ async def rotate_service_token(
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.TOKENS_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.TOKENS_READ),
+    ),  # Auth dependency
 ) -> list[TokenInfo]:
     """List all service tokens (admin only).
 
@@ -360,7 +362,9 @@ async def get_token_analytics(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUserType = Depends(require_permission(Permissions.TOKENS_READ)),
+    current_user: AuthenticatedUserType = Depends(
+        require_permission(Permissions.TOKENS_READ),
+    ),  # Auth dependency
 ) -> dict:
     """Get detailed analytics for a specific service token (admin only).
 

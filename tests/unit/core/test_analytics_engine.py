@@ -7,9 +7,9 @@ and InsightGenerator in isolation.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -18,7 +18,6 @@ from src.core.analytics_engine import (
     InsightGenerator,
     OptimizationInsight,
     PatternDetector,
-    SessionMetrics,
     UsageEvent,
     UsageTracker,
     UserBehaviorPattern,
@@ -169,7 +168,7 @@ class TestUsageTracker:
 
     def test_get_recent_events(self, usage_tracker: UsageTracker) -> None:
         """Test retrieving recent events with filtering."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         with patch("src.core.analytics_engine.datetime") as mock_dt:
             mock_dt.now.return_value = now
             usage_tracker.track_event("command_executed", {}, "user1", "session1")
@@ -247,10 +246,13 @@ class TestPatternDetector:
         """Test detection of time-based usage patterns."""
         # Simulate high usage at a specific hour
         with patch("src.core.analytics_engine.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime(2023, 1, 1, 14, 30)  # 2 PM
+            mock_dt.now.return_value = datetime(2023, 1, 1, 14, 30, tzinfo=UTC)  # 2 PM
             for _ in range(10):
                 pattern_detector.usage_tracker.track_event(
-                    "category_loaded", {"category": "devops"}, "user1", "session1"
+                    "category_loaded",
+                    {"category": "devops"},
+                    "user1",
+                    "session1",
                 )
 
         patterns = pattern_detector._detect_temporal_patterns(pattern_detector.usage_tracker.session_events)
@@ -266,7 +268,10 @@ class TestPatternDetector:
         # Simulate preference for a performance mode
         for _ in range(5):
             pattern_detector.usage_tracker.track_event(
-                "performance_mode_changed", {"mode": "aggressive"}, "user1", "session1"
+                "performance_mode_changed",
+                {"mode": "aggressive"},
+                "user1",
+                "session1",
             )
         # Simulate preference for a category
         for _ in range(10):
@@ -286,7 +291,10 @@ class TestPatternDetector:
         # Simulate optimization workflow
         for i in range(5):
             pattern_detector.usage_tracker.track_event(
-                "optimization_applied", {"task_type": "testing"}, "user1", f"session{i}"
+                "optimization_applied",
+                {"task_type": "testing"},
+                "user1",
+                f"session{i}",
             )
 
         patterns = pattern_detector._detect_workflow_patterns(pattern_detector.usage_tracker.session_events)
@@ -455,7 +463,7 @@ class TestInsightGenerator:
                     typical_sequence=["a", "b"],
                     performance_impact={"token_savings": 300},
                     suggested_optimizations=[],
-                )
+                ),
             ]
             insights = insight_generator.generate_insights("user1")
             assert len(insights) > 0
@@ -481,21 +489,25 @@ class TestAnalyticsEngine:
         user_id = "user1"
         with patch.object(analytics_engine.usage_tracker, "get_recent_events") as mock_events:
             mock_events.return_value = [
-                UsageEvent(datetime.now(), "command_executed", {"command": "c1"}, user_id, "s1"),
+                UsageEvent(datetime.now(UTC), "command_executed", {"command": "c1"}, user_id, "s1"),
             ]
             analytics = analytics_engine.get_user_analytics(user_id)
             assert analytics["user_id"] == user_id
             assert analytics["total_events"] == 1
 
     @pytest.mark.parametrize(
-        "cache_ttl, first_call_count, second_call_count",
+        ("cache_ttl", "first_call_count", "second_call_count"),
         [
             (timedelta(seconds=10), 2, 2),  # 2 calls: one in get_user_analytics, one in generate_insights
             (timedelta(seconds=-1), 2, 4),  # 4 calls: 2 for first call, 2 more for second call (no cache)
         ],
     )
     def test_get_user_analytics_caching(
-        self, db_path: Path, cache_ttl: timedelta, first_call_count: int, second_call_count: int
+        self,
+        db_path: Path,
+        cache_ttl: timedelta,
+        first_call_count: int,
+        second_call_count: int,
     ) -> None:
         """Test that user analytics results are cached."""
         analytics_engine = AnalyticsEngine(db_path)
@@ -515,8 +527,8 @@ class TestAnalyticsEngine:
         """Test getting system-wide analytics."""
         with patch.object(analytics_engine.usage_tracker, "get_recent_events") as mock_events:
             mock_events.return_value = [
-                UsageEvent(datetime.now(), "command_executed", {"command": "c1"}, "u1", "s1"),
-                UsageEvent(datetime.now(), "category_loaded", {"category": "cat1"}, "u2", "s2"),
+                UsageEvent(datetime.now(UTC), "command_executed", {"command": "c1"}, "u1", "s1"),
+                UsageEvent(datetime.now(UTC), "category_loaded", {"category": "cat1"}, "u2", "s2"),
             ]
             analytics = analytics_engine.get_system_analytics()
             assert analytics["total_events"] == 2

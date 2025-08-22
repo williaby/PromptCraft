@@ -44,7 +44,9 @@ class TestJWTValidatorFactoryPattern:
         """Test that factory allows easy customization of validators."""
         # Create validator with custom configuration
         validator = JWTValidatorFactory.create_validator(
-            audience="https://custom-app.com", issuer="https://custom.cloudflareaccess.com", algorithm="HS256"
+            audience="https://custom-app.com",
+            issuer="https://custom.cloudflareaccess.com",
+            algorithm="HS256",
         )
 
         assert validator.audience == "https://custom-app.com"
@@ -81,12 +83,12 @@ class TestJWTValidatorFactoryPattern:
 
         # Test malformed token
         malformed_token = JWTTokenFactory.create_malformed_token()
-        assert malformed_token == "invalid.token.format"
+        assert malformed_token == "invalid.token.format"  # noqa: S105  # Test constant
 
     def test_validator_with_token_integration(self):
         """Test integration between validator and token factories."""
         # Create validator with mock that will succeed
-        validator = JWTValidatorFactory.create_validator()
+        JWTValidatorFactory.create_validator()
 
         # Create a valid token
         token = JWTTokenFactory.create_valid_token(email="test@example.com")
@@ -100,7 +102,7 @@ class TestJWTValidatorFactoryPattern:
         """Test JWKS client customization through factory."""
         # Create validator with failing JWKS client
         failing_jwks = JWTValidatorFactory.create_mock_jwks_client(
-            side_effects={"get_key_by_kid": Exception("JWKS failure")}
+            side_effects={"get_key_by_kid": Exception("JWKS failure")},
         )
         validator = JWTValidatorFactory.create_validator(jwks_client=failing_jwks)
 
@@ -159,7 +161,7 @@ class TestJWTValidatorFactoryPattern:
         assert validator1.jwks_client is not validator2.jwks_client
 
     @pytest.mark.parametrize(
-        "token_type,expected_error",
+        ("token_type", "expected_error"),
         [
             ("expired", JWTValidationError),
             ("missing_kid", JWTValidationError),
@@ -169,16 +171,16 @@ class TestJWTValidatorFactoryPattern:
     )
     def test_parametrized_token_validation_errors(self, token_type, expected_error):
         """Test parametrized validation of different token error scenarios."""
-        validator = JWTValidatorFactory.create_validator()
+        JWTValidatorFactory.create_validator()
 
         # Create token based on type
-        if token_type == "expired":
+        if token_type == "expired":  # noqa: S105  # Test constant
             token = JWTTokenFactory.create_expired_token()
-        elif token_type == "missing_kid":
+        elif token_type == "missing_kid":  # noqa: S105  # Test constant
             token = JWTTokenFactory.create_token_missing_kid()
-        elif token_type == "missing_email":
+        elif token_type == "missing_email":  # noqa: S105  # Test constant
             token = JWTTokenFactory.create_token_missing_email()
-        elif token_type == "malformed":
+        elif token_type == "malformed":  # noqa: S105  # Test constant
             token = JWTTokenFactory.create_malformed_token()
         else:
             pytest.fail(f"Unknown token type: {token_type}")

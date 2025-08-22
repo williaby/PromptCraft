@@ -325,7 +325,7 @@ class TestIntelligentFunctionLoader:
 
         # Test with context
         context = {"project_type": "security", "has_security_files": True}
-        result = await loader.load_functions_for_query("analyze security issues", context)
+        await loader.load_functions_for_query("analyze security issues", context)
 
         # Check that enhanced context was passed to detection
         call_args = loader.detection_system.detect_categories.call_args
@@ -342,112 +342,146 @@ class TestIntelligentFunctionLoader:
         mock_cwd = Mock()
         mock_cwd.return_value = Path("/test/project")
 
-        with patch("examples.task_detection_integration.Path.cwd", mock_cwd):
-            with patch("examples.task_detection_integration.TaskDetectionSystem"):
-                with patch("examples.task_detection_integration.ConfigManager"):
-                    loader = IntelligentFunctionLoader("production")
+        with (
+            patch("examples.task_detection_integration.Path.cwd", mock_cwd),
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
 
-                    # Mock Path operations by patching at the source
-                    with patch("examples.task_detection_integration.Path") as mock_path_class:
-                        # Create a mock path instance
-                        mock_path_instance = Mock()
-                        mock_path_instance.exists.return_value = True
-                        mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
+            # Mock Path operations by patching at the source
+            with patch("examples.task_detection_integration.Path") as mock_path_class:
+                # Create a mock path instance
+                mock_path_instance = Mock()
+                mock_path_instance.exists.return_value = True
+                mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
 
-                        # Mock file discovery
-                        mock_files = [
-                            Mock(is_file=lambda: True, suffix=".py"),
-                            Mock(is_file=lambda: True, suffix=".js"),
-                            Mock(is_file=lambda: True, suffix=".md"),
-                        ]
-                        mock_path_instance.rglob.return_value = mock_files
+                # Mock file discovery
+                mock_files = [
+                    Mock(is_file=lambda: True, suffix=".py"),
+                    Mock(is_file=lambda: True, suffix=".js"),
+                    Mock(is_file=lambda: True, suffix=".md"),
+                ]
+                mock_path_instance.rglob.return_value = mock_files
 
-                        # Configure the Path class to return our mock instance
-                        mock_path_class.return_value = mock_path_instance
-                        mock_path_class.cwd.return_value = mock_path_instance
+                # Configure the Path class to return our mock instance
+                mock_path_class.return_value = mock_path_instance
+                mock_path_class.cwd.return_value = mock_path_instance
 
-                        # Test context enhancement
-                        base_context = {"user_provided": "value"}
-                        enhanced = await loader._enhance_context(base_context)
+                # Test context enhancement
+                base_context = {"user_provided": "value"}
+                enhanced = await loader._enhance_context(base_context)
 
-                        # Check that original context is preserved
-                        assert enhanced["user_provided"] == "value"
+                # Check that original context is preserved
+                assert enhanced["user_provided"] == "value"
 
-                        # Check that working directory is added
-                        assert "working_directory" in enhanced
+                # Check that working directory is added
+                assert "working_directory" in enhanced
 
-                        # Check that all the boolean indicators are added
-                        expected_indicators = [
-                            "has_git_repo",
-                            "has_test_directories",
-                            "has_security_files",
-                            "has_ci_files",
-                            "has_docs",
-                        ]
-                        for indicator in expected_indicators:
-                            assert indicator in enhanced
+                # Check that all the boolean indicators are added
+                expected_indicators = [
+                    "has_git_repo",
+                    "has_test_directories",
+                    "has_security_files",
+                    "has_ci_files",
+                    "has_docs",
+                ]
+                for indicator in expected_indicators:
+                    assert indicator in enhanced
 
     def test_load_functions_from_detection(self):
         """Test loading functions based on detection result."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager"):
-                loader = IntelligentFunctionLoader("production")
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
 
-                # Create detection result
-                detection_result = DetectionResult(
-                    categories={"core": True, "git": True, "analysis": False},
-                    confidence_scores={"core": 0.9, "git": 0.8, "analysis": 0.2},
-                    detection_time_ms=25.0,
-                    signals_used={},
-                    fallback_applied=None,
-                )
+            # Create detection result
+            detection_result = DetectionResult(
+                categories={"core": True, "git": True, "analysis": False},
+                confidence_scores={"core": 0.9, "git": 0.8, "analysis": 0.2},
+                detection_time_ms=25.0,
+                signals_used={},
+                fallback_applied=None,
+            )
 
-                # Load functions
-                loaded_functions = loader._load_functions_from_detection(detection_result)
+            # Load functions
+            loaded_functions = loader._load_functions_from_detection(detection_result)
 
-                # Check that functions were loaded for enabled categories
-                assert len(loaded_functions) > 0
+            # Check that functions were loaded for enabled categories
+            assert len(loaded_functions) > 0
 
-                # Check that only enabled categories are represented
-                loaded_categories = {func.category for func in loaded_functions}
-                assert "core" in loaded_categories
-                assert "git" in loaded_categories
-                # analysis category should not be loaded
+            # Check that only enabled categories are represented
+            loaded_categories = {func.category for func in loaded_functions}
+            assert "core" in loaded_categories
+            assert "git" in loaded_categories
+            # analysis category should not be loaded
 
     def test_calculate_loading_stats(self):
         """Test loading statistics calculation."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager"):
-                loader = IntelligentFunctionLoader("production")
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
 
-                # Create sample functions
-                functions = loader.function_registry.get_functions_by_category("core")[:3]
+            # Create sample functions
+            functions = loader.function_registry.get_functions_by_category("core")[:3]
 
-                detection_result = DetectionResult(
-                    categories={"core": True},
-                    confidence_scores={"core": 0.9},
-                    detection_time_ms=25.0,
-                    signals_used={},
-                    fallback_applied=None,
-                )
+            detection_result = DetectionResult(
+                categories={"core": True},
+                confidence_scores={"core": 0.9},
+                detection_time_ms=25.0,
+                signals_used={},
+                fallback_applied=None,
+            )
 
-                # Calculate stats
-                stats = loader._calculate_loading_stats(functions, detection_result)
+            # Calculate stats
+            stats = loader._calculate_loading_stats(functions, detection_result)
 
-                assert stats.loaded_functions == len(functions)
-                assert stats.total_functions == len(loader.function_registry.functions)
-                assert stats.detection_time_ms == 25.0
-                assert stats.loaded_tokens > 0
-                assert stats.total_tokens > stats.loaded_tokens
-                assert 0 <= stats.token_savings_percent <= 100
+            assert stats.loaded_functions == len(functions)
+            assert stats.total_functions == len(loader.function_registry.functions)
+            assert stats.detection_time_ms == 25.0
+            assert stats.loaded_tokens > 0
+            assert stats.total_tokens > stats.loaded_tokens
+            assert 0 <= stats.token_savings_percent <= 100
 
     def test_record_loading_decision(self):
         """Test recording of loading decisions."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager"):
-                loader = IntelligentFunctionLoader("production")
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
 
-                # Create sample stats
+            # Create sample stats
+            stats = LoadingStats(
+                total_functions=100,
+                loaded_functions=30,
+                total_tokens=10000,
+                loaded_tokens=3000,
+                detection_time_ms=25.0,
+                token_savings_percent=70.0,
+            )
+
+            # Record decision
+            initial_count = len(loader.loading_history)
+            loader._record_loading_decision("test query", {}, Mock(), stats)
+
+            assert len(loader.loading_history) == initial_count + 1
+            assert loader.loading_history[-1] == stats
+
+    def test_record_loading_decision_history_limit(self):
+        """Test that loading history is limited to prevent memory issues."""
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
+
+            # Fill history beyond limit
+            for i in range(1050):  # More than 1000
                 stats = LoadingStats(
                     total_functions=100,
                     loaded_functions=30,
@@ -456,80 +490,60 @@ class TestIntelligentFunctionLoader:
                     detection_time_ms=25.0,
                     token_savings_percent=70.0,
                 )
+                loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
 
-                # Record decision
-                initial_count = len(loader.loading_history)
-                loader._record_loading_decision("test query", {}, Mock(), stats)
-
-                assert len(loader.loading_history) == initial_count + 1
-                assert loader.loading_history[-1] == stats
-
-    def test_record_loading_decision_history_limit(self):
-        """Test that loading history is limited to prevent memory issues."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager"):
-                loader = IntelligentFunctionLoader("production")
-
-                # Fill history beyond limit
-                for i in range(1050):  # More than 1000
-                    stats = LoadingStats(
-                        total_functions=100,
-                        loaded_functions=30,
-                        total_tokens=10000,
-                        loaded_tokens=3000,
-                        detection_time_ms=25.0,
-                        token_savings_percent=70.0,
-                    )
-                    loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
-
-                # Check that history is limited
-                assert len(loader.loading_history) == 1000
+            # Check that history is limited
+            assert len(loader.loading_history) == 1000
 
     def test_get_performance_summary_empty(self):
         """Test performance summary with no history."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager"):
-                loader = IntelligentFunctionLoader("production")
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
 
-                summary = loader.get_performance_summary()
-                assert summary == {}
+            summary = loader.get_performance_summary()
+            assert summary == {}
 
     def test_get_performance_summary_with_data(self):
         """Test performance summary with historical data."""
-        with patch("examples.task_detection_integration.TaskDetectionSystem"):
-            with patch("examples.task_detection_integration.ConfigManager") as mock_config_manager:
-                # Mock config with performance settings
-                mock_config = Mock()
-                mock_config.performance.max_detection_time_ms = 100.0
-                mock_config_manager.return_value.get_config.return_value = mock_config
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager") as mock_config_manager,
+        ):
+            # Mock config with performance settings
+            mock_config = Mock()
+            mock_config.performance.max_detection_time_ms = 100.0
+            mock_config_manager.return_value.get_config.return_value = mock_config
 
-                loader = IntelligentFunctionLoader("production")
+            loader = IntelligentFunctionLoader("production")
 
-                # Add some history
-                for i in range(10):
-                    stats = LoadingStats(
-                        total_functions=100,
-                        loaded_functions=30,
-                        total_tokens=10000,
-                        loaded_tokens=3000,
-                        detection_time_ms=25.0 + i,
-                        token_savings_percent=70.0 + i,
-                    )
-                    loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
+            # Add some history
+            for i in range(10):
+                stats = LoadingStats(
+                    total_functions=100,
+                    loaded_functions=30,
+                    total_tokens=10000,
+                    loaded_tokens=3000,
+                    detection_time_ms=25.0 + i,
+                    token_savings_percent=70.0 + i,
+                )
+                loader._record_loading_decision(f"query {i}", {}, Mock(), stats)
 
-                summary = loader.get_performance_summary()
+            summary = loader.get_performance_summary()
 
-                assert "average_detection_time_ms" in summary
-                assert "average_token_savings_percent" in summary
-                assert "average_functions_loaded" in summary
-                assert "total_decisions" in summary
-                assert "performance_target_met" in summary
-                assert "token_savings_target_met" in summary
+            assert "average_detection_time_ms" in summary
+            assert "average_token_savings_percent" in summary
+            assert "average_functions_loaded" in summary
+            assert "total_decisions" in summary
+            assert "performance_target_met" in summary
+            assert "token_savings_target_met" in summary
 
-                assert summary["total_decisions"] == 10
-                assert summary["average_functions_loaded"] == 30.0
-                assert summary["performance_target_met"] is True  # 25-34ms < 100ms
-                assert summary["token_savings_target_met"] is True  # 70-79% > 50%
+            assert summary["total_decisions"] == 10
+            assert summary["average_functions_loaded"] == 30.0
+            assert summary["performance_target_met"] is True  # 25-34ms < 100ms
+            assert summary["token_savings_target_met"] is True  # 70-79% > 50%
 
 
 class TestTaskDetectionDemo:
@@ -723,23 +737,25 @@ class TestIntegrationScenarios:
             (temp_path / "auth.py").touch()
             (temp_path / "main.py").touch()
 
-            with patch("examples.task_detection_integration.Path.cwd", return_value=temp_path):
-                with patch("examples.task_detection_integration.TaskDetectionSystem"):
-                    with patch("examples.task_detection_integration.ConfigManager"):
-                        loader = IntelligentFunctionLoader("production")
+            with (
+                patch("examples.task_detection_integration.Path.cwd", return_value=temp_path),
+                patch("examples.task_detection_integration.TaskDetectionSystem"),
+                patch("examples.task_detection_integration.ConfigManager"),
+            ):
+                loader = IntelligentFunctionLoader("production")
 
-                        # Test context enhancement
-                        enhanced = await loader._enhance_context({"custom": "value"})
+                # Test context enhancement
+                enhanced = await loader._enhance_context({"custom": "value"})
 
-                        # Check project detection
-                        assert enhanced["has_git_repo"] is True
-                        assert enhanced["has_test_directories"] is True
-                        assert enhanced["has_security_files"] is True
-                        assert enhanced["has_docs"] is True
-                        assert enhanced["project_language"] == "python"
+                # Check project detection
+                assert enhanced["has_git_repo"] is True
+                assert enhanced["has_test_directories"] is True
+                assert enhanced["has_security_files"] is True
+                assert enhanced["has_docs"] is True
+                assert enhanced["project_language"] == "python"
 
-                        # Check file extensions detected
-                        assert ".py" in enhanced["file_extensions"]
+                # Check file extensions detected
+                assert ".py" in enhanced["file_extensions"]
 
 
 class TestEdgeCases:
@@ -838,7 +854,7 @@ class TestPerformanceCharacteristics:
         import time
 
         start_time = time.time()
-        new_registry = FunctionRegistry()
+        FunctionRegistry()
         creation_time = time.time() - start_time
         assert creation_time < 1.0  # Should be very fast
 
@@ -908,7 +924,6 @@ class TestSecurityAndSafety:
 
         # Get a function definition
         bash_func = registry.functions["bash"]
-        original_cost = bash_func.token_cost
 
         # Attempt to modify (shouldn't affect original due to dataclass behavior)
         try:
@@ -960,14 +975,16 @@ class TestSecurityAndSafety:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            with patch("examples.task_detection_integration.Path.cwd", return_value=temp_path):
-                with patch("examples.task_detection_integration.TaskDetectionSystem"):
-                    with patch("examples.task_detection_integration.ConfigManager"):
-                        loader = IntelligentFunctionLoader("production")
+            with (
+                patch("examples.task_detection_integration.Path.cwd", return_value=temp_path),
+                patch("examples.task_detection_integration.TaskDetectionSystem"),
+                patch("examples.task_detection_integration.ConfigManager"),
+            ):
+                loader = IntelligentFunctionLoader("production")
 
-                        # Test with path traversal attempt
-                        context = {"working_directory": "../../etc"}
-                        enhanced = await loader._enhance_context(context)
+                # Test with path traversal attempt
+                context = {"working_directory": "../../etc"}
+                enhanced = await loader._enhance_context(context)
 
-                        # Should use cwd() rather than the provided path
-                        assert enhanced["working_directory"] == str(temp_path)
+                # Should use cwd() rather than the provided path
+                assert enhanced["working_directory"] == str(temp_path)

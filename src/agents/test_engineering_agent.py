@@ -390,10 +390,7 @@ class TestEngineeringAgent(BaseAgent):
         normalized_path = module_path.replace("/", ".").replace("\\", ".").replace(".py", "")
 
         # Remove src prefix if present
-        if normalized_path.startswith("src."):
-            module_import = normalized_path
-        else:
-            module_import = f"src.{normalized_path}"
+        module_import = normalized_path if normalized_path.startswith("src.") else f"src.{normalized_path}"
 
         # Get module name
         module_name = normalized_path.split(".")[-1]
@@ -497,7 +494,7 @@ class Test{module_name.title()}:
 
         # Execute command
         try:
-            self.logger.info(f"Running tests: {' '.join(cmd)}")
+            self.logger.info("Running tests: %s", " ".join(cmd))
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -632,7 +629,7 @@ class Test{module_name.title()}:
 
         # Execute command
         try:
-            self.logger.info(f"Debugging tests: {' '.join(cmd)}")
+            self.logger.info("Debugging tests: %s", " ".join(cmd))
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -762,7 +759,6 @@ class Test{module_name.title()}:
         failed_tests = []
         lines = output.splitlines()
 
-        current_test = None
         for line in lines:
             # Match test failure lines
             if line.startswith("FAILED "):
@@ -918,7 +914,7 @@ class Test{module_name.title()}:
 
         # Execute command
         try:
-            self.logger.info(f"Analyzing coverage: {' '.join(cmd[:-2])} --cov-report json:[temporary]")
+            self.logger.info("Analyzing coverage: %s --cov-report json:[temporary]", " ".join(cmd[:-2]))
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -932,10 +928,10 @@ class Test{module_name.title()}:
             coverage_data = {}
             if os.path.exists(tmp_filename):
                 try:
-                    with open(tmp_filename) as f:
+                    with Path(tmp_filename).open() as f:
                         coverage_data = json.load(f)
                 except Exception as e:
-                    self.logger.error(f"Failed to read coverage data: {e}")
+                    self.logger.error("Failed to read coverage data: %s", e)
                 finally:
                     # Clean up temporary file
                     os.unlink(tmp_filename)
@@ -1348,7 +1344,7 @@ class Test{module_name.title()}:
             "-" * 32,
         ]
 
-        for error_type, info in error_solutions.items():
+        for _error_type, info in error_solutions.items():
             output_lines.extend(
                 [
                     f"\nProblem: {info['problem']}",

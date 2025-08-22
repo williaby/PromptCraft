@@ -142,7 +142,7 @@ class FailureAnalyzer:
         )
         self.response_times.append(response_time)
 
-    def detect_failure_pattern(self) -> FailurePattern:
+    def detect_failure_pattern(self) -> FailurePattern:  # noqa: PLR0911
         """Detect the current failure pattern"""
         if len(self.failure_history) < 10:
             return FailurePattern.INTERMITTENT
@@ -470,7 +470,7 @@ class FallbackCircuitBreaker(LoggerMixin):
                 if not recovery_successful:
                     self.logger.warning("Recovery strategy failed, remaining in HALF_OPEN")
             except Exception as e:
-                self.logger.error(f"Recovery strategy error: {e}")
+                self.logger.error("Recovery strategy error: %s", e)
 
     def _get_current_thresholds(self) -> dict[str, int | float]:
         """Get current thresholds based on detected failure pattern"""
@@ -524,17 +524,17 @@ class FallbackCircuitBreaker(LoggerMixin):
 
     def force_open(self, reason: str = "manual_intervention") -> None:
         """Manually force circuit breaker open"""
-        self.logger.warning(f"Circuit breaker manually forced OPEN: {reason}")
+        self.logger.warning("Circuit breaker manually forced OPEN: %s", reason)
         # For synchronous force operations, update state directly
         old_state = self.state
         self.state = AdvancedCircuitBreakerState.FORCED_OPEN
         self.state_start_time = time.time()
         self.last_state_change = time.time()
-        self.logger.info(f"STATE_CHANGE: {old_state.value} -> forced_open (reason: {reason})")
+        self.logger.info("STATE_CHANGE: %s -> forced_open (reason: %s)", old_state.value, reason)
 
     def force_close(self, reason: str = "manual_intervention") -> None:
         """Manually force circuit breaker closed"""
-        self.logger.info(f"Circuit breaker manually forced CLOSED: {reason}")
+        self.logger.info("Circuit breaker manually forced CLOSED: %s", reason)
         self.consecutive_failures = 0
         self.consecutive_successes = 0
         # For synchronous force operations, update state directly
@@ -542,7 +542,7 @@ class FallbackCircuitBreaker(LoggerMixin):
         self.state = AdvancedCircuitBreakerState.CLOSED
         self.state_start_time = time.time()
         self.last_state_change = time.time()
-        self.logger.info(f"STATE_CHANGE: {old_state.value} -> closed (reason: {reason})")
+        self.logger.info("STATE_CHANGE: %s -> closed (reason: %s)", old_state.value, reason)
 
     def reset_metrics(self) -> None:
         """Reset all metrics (for testing/admin)"""

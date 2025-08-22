@@ -9,10 +9,9 @@ import signal
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, call
 from typing import Any
+from unittest.mock import Mock, patch
 
-import gradio as gr
 import pytest
 
 from src.ui.multi_journey_interface import MultiJourneyInterface
@@ -49,86 +48,87 @@ class TestMultiJourneyInterfaceDirectIntegration:
         """Test _create_journey1_interface and capture its nested functions for testing."""
 
         # Store references to nested functions
-        captured_functions = {}
 
         # Mock Journey1SmartTemplates to capture function calls
-        with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1:
-            with patch("src.ui.components.shared.export_utils.ExportUtils") as mock_export:
-                # Set up mock instances
-                mock_journey1_instance = Mock()
-                mock_export_instance = Mock()
-                mock_journey1.return_value = mock_journey1_instance
-                mock_export.return_value = mock_export_instance
+        with (
+            patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1,
+            patch("src.ui.components.shared.export_utils.ExportUtils") as mock_export,
+        ):
+            # Set up mock instances
+            mock_journey1_instance = Mock()
+            mock_export_instance = Mock()
+            mock_journey1.return_value = mock_journey1_instance
+            mock_export.return_value = mock_export_instance
 
-                # Configure mocks for nested function behavior
-                mock_journey1_instance.enhance_prompt.return_value = tuple(f"result_{i}" for i in range(10))
-                mock_journey1_instance.copy_code_blocks.return_value = "Copied code blocks"
-                mock_journey1_instance.copy_as_markdown.return_value = "Copied as markdown"
-                mock_export_instance.export_journey1_content.return_value = ("file_path", "file_content")
+            # Configure mocks for nested function behavior
+            mock_journey1_instance.enhance_prompt.return_value = tuple(f"result_{i}" for i in range(10))
+            mock_journey1_instance.copy_code_blocks.return_value = "Copied code blocks"
+            mock_journey1_instance.copy_as_markdown.return_value = "Copied as markdown"
+            mock_export_instance.export_journey1_content.return_value = ("file_path", "file_content")
 
-                # Mock Gradio components to capture click handlers
-                mock_buttons = {}
-                mock_components = {}
+            # Mock Gradio components to capture click handlers
+            mock_buttons = {}
+            mock_components = {}
 
-                def create_mock_button(*args, **kwargs):
-                    button = Mock()
-                    label = kwargs.get("label", "button")
-                    variant = kwargs.get("variant", "secondary")
-                    button_key = (
-                        f"{variant}_{label}".replace(" ", "_")
-                        .replace("🚀", "")
-                        .replace("🗑️", "")
-                        .replace("📋", "")
-                        .replace("💾", "")
-                        .replace("📝", "")
-                        .replace("🔄", "")
-                        .replace("👍", "")
-                        .replace("👎", "")
-                    )
-                    mock_buttons[button_key] = button
-                    return button
+            def create_mock_button(*args, **kwargs):
+                button = Mock()
+                label = kwargs.get("label", "button")
+                variant = kwargs.get("variant", "secondary")
+                button_key = (
+                    f"{variant}_{label}".replace(" ", "_")
+                    .replace("🚀", "")
+                    .replace("🗑️", "")
+                    .replace("📋", "")
+                    .replace("💾", "")
+                    .replace("📝", "")
+                    .replace("🔄", "")
+                    .replace("👍", "")
+                    .replace("👎", "")
+                )
+                mock_buttons[button_key] = button
+                return button
 
-                def create_mock_textbox(*args, **kwargs):
-                    textbox = Mock()
-                    label = kwargs.get("label", "textbox")
-                    mock_components[label] = textbox
-                    return textbox
+            def create_mock_textbox(*args, **kwargs):
+                textbox = Mock()
+                label = kwargs.get("label", "textbox")
+                mock_components[label] = textbox
+                return textbox
 
-                def create_mock_file(*args, **kwargs):
-                    file_comp = Mock()
-                    mock_components["file_upload"] = file_comp
-                    return file_comp
+            def create_mock_file(*args, **kwargs):
+                file_comp = Mock()
+                mock_components["file_upload"] = file_comp
+                return file_comp
 
-                # Patch all Gradio components
-                with (
-                    patch("gradio.Column"),
-                    patch("gradio.HTML"),
-                    patch("gradio.Group"),
-                    patch("gradio.Markdown"),
-                    patch("gradio.Radio"),
-                    patch("gradio.Textbox", side_effect=create_mock_textbox),
-                    patch("gradio.File", side_effect=create_mock_file),
-                    patch("gradio.Row"),
-                    patch("gradio.Dropdown"),
-                    patch("gradio.Slider"),
-                    patch("gradio.Button", side_effect=create_mock_button),
-                    patch("gradio.Accordion"),
-                    patch("gradio.Label"),
-                ):
-                    # Call the method that creates the interface and nested functions
-                    try:
-                        interface._create_journey1_interface(Mock(), Mock(), mock_session_state)
+            # Patch all Gradio components
+            with (
+                patch("gradio.Column"),
+                patch("gradio.HTML"),
+                patch("gradio.Group"),
+                patch("gradio.Markdown"),
+                patch("gradio.Radio"),
+                patch("gradio.Textbox", side_effect=create_mock_textbox),
+                patch("gradio.File", side_effect=create_mock_file),
+                patch("gradio.Row"),
+                patch("gradio.Dropdown"),
+                patch("gradio.Slider"),
+                patch("gradio.Button", side_effect=create_mock_button),
+                patch("gradio.Accordion"),
+                patch("gradio.Label"),
+            ):
+                # Call the method that creates the interface and nested functions
+                try:
+                    interface._create_journey1_interface(Mock(), Mock(), mock_session_state)
 
-                        # The method should have executed without errors
-                        assert True
+                    # The method should have executed without errors
+                    assert True
 
-                        # Verify that the dependencies were initialized
-                        assert mock_journey1.called
-                        assert mock_export.called
+                    # Verify that the dependencies were initialized
+                    assert mock_journey1.called
+                    assert mock_export.called
 
-                    except Exception as e:
-                        # If there are issues, we can still test some components
-                        pytest.skip(f"Interface creation failed: {e}")
+                except Exception as e:
+                    # If there are issues, we can still test some components
+                    pytest.skip(f"Interface creation failed: {e}")
 
     def test_nested_function_behaviors_through_mocking(self, interface):
         """Test the behaviors of nested functions through controlled mocking."""
@@ -182,7 +182,13 @@ class TestMultiJourneyInterfaceDirectIntegration:
 
             # Simulate processing
             result = mock_journey1_instance.enhance_prompt(
-                text_input, files, model_mode, custom_model, reasoning_depth, search_tier, temperature
+                text_input,
+                files,
+                model_mode,
+                custom_model,
+                reasoning_depth,
+                search_tier,
+                temperature,
             )
 
             assert len(result) == 10
@@ -204,7 +210,7 @@ class TestMultiJourneyInterfaceDirectIntegration:
             # Test timeout handling logic
             try:
                 mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
-                assert False, "Should have raised TimeoutError"
+                raise AssertionError("Should have raised TimeoutError")
             except TimeoutError:
                 # This is expected - test the fallback creation
                 timeout_result = interface._create_timeout_fallback_result("test input", "gpt-4o-mini")
@@ -220,7 +226,7 @@ class TestMultiJourneyInterfaceDirectIntegration:
             # Test error handling logic
             try:
                 mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
-                assert False, "Should have raised Exception"
+                raise AssertionError("Should have raised Exception")
             except Exception as e:
                 # This is expected - test the fallback creation
                 error_result = interface._create_error_fallback_result("test input", "gpt-4o-mini", str(e))
@@ -285,7 +291,7 @@ class TestMultiJourneyInterfaceDirectIntegration:
         """Test session tracking and cost calculation logic."""
 
         # Test session initialization logic
-        original_session = mock_session_state.copy()
+        mock_session_state.copy()
 
         # Simulate session setup
         if mock_session_state.get("session_start_time") is None:

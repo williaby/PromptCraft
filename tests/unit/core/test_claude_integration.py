@@ -5,7 +5,7 @@ Tests the Claude Code integration layer including command registration,
 execution, analytics tracking, and health monitoring functionality.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -77,7 +77,7 @@ class TestIntegrationStatus:
 
     def test_integration_status_with_values(self):
         """Test IntegrationStatus with explicit values."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         status = IntegrationStatus(
             user_control_active=True,
             help_system_active=True,
@@ -454,7 +454,12 @@ class TestClaudeCommandIntegration:
 
         # Add more than 100 commands to trigger history management
         for i in range(105):
-            entry = {"timestamp": datetime.now(), "command": f"command-{i}", "success": True, "message": f"Message {i}"}
+            entry = {
+                "timestamp": datetime.now(UTC),
+                "command": f"command-{i}",
+                "success": True,
+                "message": f"Message {i}",
+            }
             integration.command_history.append(entry)
 
         # Trigger history management by calling _track_command_end
@@ -720,8 +725,8 @@ class TestClaudeCommandIntegration:
     def test_health_check_all_healthy(self, integration):
         """Test health check with all systems healthy."""
         integration.command_history = [
-            {"command": "cmd1", "success": True, "timestamp": datetime.now()},
-            {"command": "cmd2", "success": True, "timestamp": datetime.now()},
+            {"command": "cmd1", "success": True, "timestamp": datetime.now(UTC)},
+            {"command": "cmd2", "success": True, "timestamp": datetime.now(UTC)},
         ]
 
         health = integration.health_check()
@@ -776,7 +781,7 @@ class TestClaudeCodeCommandFactory:
         assert "function-loading-optimize" in commands
 
         # Check command structure
-        for cmd_name, cmd_info in commands.items():
+        for _cmd_name, cmd_info in commands.items():
             assert "category" in cmd_info
             assert "complexity" in cmd_info
             assert "estimated_time" in cmd_info
