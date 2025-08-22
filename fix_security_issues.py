@@ -16,7 +16,7 @@ def get_ruff_errors() -> list[dict[str, Any]]:
     """Get all S105/S106 errors from ruff."""
     try:
         result = subprocess.run(
-            [
+            [  # nosec B607  # noqa: S607
                 "poetry",
                 "run",
                 "ruff",
@@ -25,7 +25,7 @@ def get_ruff_errors() -> list[dict[str, Any]]:
                 "S105,S106",
                 "--output-format",
                 "json",
-            ],  # nosec B607  # noqa: S607
+            ],
             capture_output=True,
             text=True,
             check=False,
