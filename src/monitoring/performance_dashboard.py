@@ -120,7 +120,7 @@ class MetricsExporter:
     async def export_json_metrics(self) -> dict[str, Any]:
         """Export metrics in JSON format."""
 
-        return await self.monitor.export_metrics(format="json", include_raw_data=False)
+        return await self.monitor.export_metrics(export_format="json", include_raw_data=False)
 
 
 class RealTimeDashboard:
@@ -1015,7 +1015,7 @@ _dashboard_app: FastAPI | None = None
 
 def get_dashboard_app() -> FastAPI:
     """Get the global dashboard FastAPI app."""
-    global _dashboard_app
+    global _dashboard_app  # noqa: PLW0603  # Legitimate singleton pattern
     if _dashboard_app is None:
         monitor = get_token_optimization_monitor()
         _dashboard_app = create_dashboard_app(monitor)

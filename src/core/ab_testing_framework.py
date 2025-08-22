@@ -93,7 +93,7 @@ class VariantType(Enum):
 # Database Models
 
 
-class ExperimentModel(BaseModel):  # type: ignore[misc]
+class ExperimentModel(BaseModel):  # type: ignore[valid-type,misc]
     """Database model for A/B experiments."""
 
     __tablename__ = "ab_experiments"
@@ -131,7 +131,7 @@ class ExperimentModel(BaseModel):  # type: ignore[misc]
     created_by = Column(String)
 
 
-class UserAssignmentModel(BaseModel):  # type: ignore[misc]
+class UserAssignmentModel(BaseModel):  # type: ignore[valid-type,misc]
     """Database model for user-to-experiment assignments."""
 
     __tablename__ = "ab_user_assignments"
@@ -155,7 +155,7 @@ class UserAssignmentModel(BaseModel):  # type: ignore[misc]
     total_interactions = Column(Integer, default=0)
 
 
-class MetricEventModel(BaseModel):  # type: ignore[misc]
+class MetricEventModel(BaseModel):  # type: ignore[valid-type,misc]
     """Database model for A/B testing metric events."""
 
     __tablename__ = "ab_metric_events"
@@ -372,7 +372,7 @@ class UserSegmentation:
             )
 
             if existing and not existing.opt_out:
-                return existing.variant, UserSegment(existing.segment)  # type: ignore[arg-type]
+                return str(existing.variant), UserSegment(existing.segment)
 
             # Check opt-in requirements
             if config.opt_in_only and user_characteristics:

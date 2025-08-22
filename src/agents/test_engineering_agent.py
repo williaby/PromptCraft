@@ -63,6 +63,7 @@ import json
 import os
 import re
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from src.agents.base_agent import BaseAgent
@@ -926,15 +927,16 @@ class Test{module_name.title()}:
 
             # Read coverage data
             coverage_data = {}
-            if os.path.exists(tmp_filename):
+            tmp_path = Path(tmp_filename)
+            if tmp_path.exists():
                 try:
-                    with Path(tmp_filename).open() as f:
+                    with tmp_path.open() as f:
                         coverage_data = json.load(f)
                 except Exception as e:
                     self.logger.error("Failed to read coverage data: %s", e)
                 finally:
                     # Clean up temporary file
-                    os.unlink(tmp_filename)
+                    tmp_path.unlink()
 
             # Parse coverage data
             if coverage_data and "totals" in coverage_data:
@@ -1106,7 +1108,7 @@ class Test{module_name.title()}:
         for root, _, files in os.walk(directory):
             for file in files:
                 if file.endswith(".py"):
-                    python_files.add(os.path.join(root, file))
+                    python_files.add(str(Path(root) / file))
         return python_files
 
     async def _improve_coverage(self, content: str, context: dict[str, Any] | None) -> dict[str, Any]:

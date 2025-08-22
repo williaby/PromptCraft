@@ -80,29 +80,29 @@ class StructuredLogger:
 
         return context
 
-    def info(self, message: str, **kwargs: Any) -> None:
+    def info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log info message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.info(message, extra={"structured_data": context})
+        self.logger.info(message, *args, extra={"structured_data": context})
 
-    def error(self, message: str, **kwargs: Any) -> None:
+    def error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log error message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.error(message, extra={"structured_data": context})
+        self.logger.error(message, *args, extra={"structured_data": context})
 
-    def warning(self, message: str, **kwargs: Any) -> None:
+    def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.warning(message, extra={"structured_data": context})
+        self.logger.warning(message, *args, extra={"structured_data": context})
 
-    def debug(self, message: str, **kwargs: Any) -> None:
+    def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.debug(message, extra={"structured_data": context})
+        self.logger.debug(message, *args, extra={"structured_data": context})
 
 
 class StructuredFormatter(logging.Formatter):
