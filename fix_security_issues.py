@@ -15,8 +15,17 @@ logger = logging.getLogger(__name__)
 def get_ruff_errors() -> list[dict[str, Any]]:
     """Get all S105/S106 errors from ruff."""
     try:
-        result = subprocess.run(  # nosec B607,S607  # Using trusted Poetry and ruff tools
-            ["poetry", "run", "ruff", "check", "--select", "S105,S106", "--output-format", "json"],
+        result = subprocess.run(
+            [
+                "poetry",
+                "run",
+                "ruff",
+                "check",
+                "--select",
+                "S105,S106",
+                "--output-format",
+                "json",
+            ],  # nosec B607  # noqa: S607
             capture_output=True,
             text=True,
             check=False,
@@ -30,8 +39,11 @@ def get_ruff_errors() -> list[dict[str, Any]]:
 
 
 def add_noqa_comment(
-    file_path: str, line_number: int, rule_code: str, line_content: str
-) -> bool | None:  # noqa: ARG001  # Script interface
+    file_path: str,
+    line_number: int,
+    rule_code: str,
+    line_content: str,  # noqa: ARG001  # Script interface preserves parameter
+) -> bool | None:
     """Add noqa comment to a specific line."""
     try:
         with Path(file_path).open() as f:
@@ -104,8 +116,8 @@ def main() -> None:
 
     # Verify fixes
     logger.info("Verifying fixes...")
-    result = subprocess.run(  # nosec B607,S607  # Using trusted Poetry and ruff tools
-        ["poetry", "run", "ruff", "check", "--select", "S105,S106"],
+    result = subprocess.run(
+        ["poetry", "run", "ruff", "check", "--select", "S105,S106"],  # nosec B607  # noqa: S607
         check=False,
         capture_output=True,
         text=True,

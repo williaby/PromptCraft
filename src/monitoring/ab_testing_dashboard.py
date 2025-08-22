@@ -554,9 +554,11 @@ class MetricsCollector(ObservabilityMixin):
 
         return recommendations
 
-    def _assess_risk_level(
-        self, results: ExperimentResults, error_rate: float
-    ) -> str:  # noqa: PLR0911  # Risk assessment requires multiple return conditions
+    def _assess_risk_level(  # noqa: PLR0911  # Risk assessment requires multiple return conditions
+        self,
+        results: ExperimentResults,
+        error_rate: float,
+    ) -> str:
         """Assess risk level based on experiment performance."""
         try:
             # Critical risk conditions

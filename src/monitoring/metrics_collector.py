@@ -395,9 +395,11 @@ class MetricsAggregator:
 
         return windows
 
-    def _calculate_aggregation(
-        self, values: list[float], agg_type: MetricAggregationType
-    ) -> float:  # noqa: PLR0911  # Aggregation type mapping requires multiple returns
+    def _calculate_aggregation(  # noqa: PLR0911  # Aggregation type mapping requires multiple returns
+        self,
+        values: list[float],
+        agg_type: MetricAggregationType,
+    ) -> float:
         """Calculate aggregated value based on aggregation type."""
 
         if not values:
@@ -722,9 +724,12 @@ class StatisticalValidator:
 
         return float(max(0.0, min(1.0, power)))
 
-    def _determine_evidence_strength(
-        self, effect_size: float, p_value: float, power: float
-    ) -> str:  # noqa: PLR0911  # Evidence strength assessment requires multiple return conditions
+    def _determine_evidence_strength(  # noqa: PLR0911  # Evidence strength assessment requires multiple return conditions
+        self,
+        effect_size: float,
+        p_value: float,
+        power: float,
+    ) -> str:
         """Determine evidence strength based on statistical measures."""
 
         # Cohen's conventions for effect size

@@ -27,7 +27,7 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 
 
 @pytest.fixture
-async def db_session():
+async def db_session():  # noqa: PLR0915  # Complex test fixture with database mocking
     """Create mock database session for integration testing."""
     # Use mock session to simulate PostgreSQL behavior without actual database
     session_mock = MagicMock()
@@ -40,9 +40,10 @@ async def db_session():
     checked_tokens = set()  # Track tokens that have been checked for duplicates
 
     # Mock async context manager behavior
-    async def mock_execute(
-        query, params=None
-    ):  # noqa: PLR0911  # Mock function needs multiple returns for test scenarios
+    async def mock_execute(  # noqa: PLR0911,PLR0912,PLR0915  # Complex mock function for comprehensive test scenarios
+        query,
+        params=None,
+    ):
         """Mock database query execution."""
         nonlocal emergency_revocation_executed, cleanup_executed_tokens, checked_tokens  # Declare nonlocal at the beginning
         mock_result = MagicMock()

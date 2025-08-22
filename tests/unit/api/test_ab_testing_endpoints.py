@@ -718,7 +718,7 @@ class TestCreateExperimentEndpoint:
             invalid_request = self.sample_experiment_request.copy()
             invalid_request["experiment_type"] = "invalid_type"
 
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="invalid_type"):
                 CreateExperimentRequest(**invalid_request)
 
 

@@ -67,8 +67,8 @@ def create_mock_jwt_user(email: str = "test@example.com", role: str = "admin") -
 
 
 def create_mock_service_token_user(
-    token_name: str = "test_token",
-    token_id: str = "token_123",
+    token_name: str = "test_token",  # noqa: S107  # Test fixture with mock token name
+    token_id: str = "token_123",  # noqa: S107  # Test fixture with mock token ID
     permissions: list | None = None,
     usage_count: int = 5,
 ) -> ServiceTokenUser:
