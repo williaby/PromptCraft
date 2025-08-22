@@ -3,7 +3,7 @@
 
 import json
 import logging
-import subprocess
+import subprocess  # nosec B404  # Required for Poetry/ruff tool execution
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def get_ruff_errors() -> list[dict[str, Any]]:
     """Get all S105/S106 errors from ruff."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603  # Trusted Poetry/ruff execution
             [  # nosec B607  # noqa: S607
                 "poetry",
                 "run",
@@ -31,7 +31,7 @@ def get_ruff_errors() -> list[dict[str, Any]]:
             check=False,
         )
         if result.stdout:
-            return json.loads(result.stdout)
+            return json.loads(result.stdout)  # type: ignore[no-any-return]  # JSON output is dynamic
         return []
     except Exception as e:
         logger.error("Error getting ruff errors: %s", e)
@@ -116,7 +116,7 @@ def main() -> None:
 
     # Verify fixes
     logger.info("Verifying fixes...")
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603  # Trusted Poetry/ruff execution
         ["poetry", "run", "ruff", "check", "--select", "S105,S106"],  # nosec B607  # noqa: S607
         check=False,
         capture_output=True,

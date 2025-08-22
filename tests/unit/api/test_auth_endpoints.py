@@ -523,7 +523,7 @@ class TestTokenRotationEndpoint:
         reason = "Regular rotation"
 
         mock_manager = Mock()
-        new_token_value = "st_new_token_456"  # noqa: S105  # Test token value
+        new_token_value = "st_new_token_456"  # noqa: S105  # Test token value  # pragma: allowlist secret
         new_token_id = "new_token_id_789"  # noqa: S105  # Test constant
         mock_manager.rotate_service_token = AsyncMock(return_value=(new_token_value, new_token_id))
 
