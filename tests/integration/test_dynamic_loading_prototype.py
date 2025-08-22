@@ -240,6 +240,7 @@ class TestDynamicLoadingIntegration:
     async def test_error_handling(self, integration):
         """Test error handling and recovery."""
         # Test with invalid input
+        exception_caught = None
         try:
             result = await integration.process_query(
                 query="",  # Empty query
@@ -250,8 +251,15 @@ class TestDynamicLoadingIntegration:
             if not result.success:
                 assert result.error_message is not None
         except Exception as e:
-            # Exception should be meaningful
-            assert "query" in str(e).lower() or "empty" in str(e).lower()
+            # Exception should be meaningful - capture for validation outside except block
+            exception_caught = e
+
+        # If we got here via exception, validate it was meaningful
+        if exception_caught is not None:
+            error_message = str(exception_caught).lower()
+            assert (
+                "query" in error_message or "empty" in error_message
+            ), f"Exception message not meaningful: {exception_caught}"
 
         # Test with very long query
         long_query = "analyze " * 1000  # Very long query
@@ -732,6 +740,9 @@ class TestProductionReadiness:
             successful_recoveries = 0
 
             for query, description in error_scenarios[:-1]:  # Skip None test
+                exception_occurred = False
+                exception_message = ""
+
                 try:
                     result = await integration.process_query(
                         query=query,
@@ -744,9 +755,14 @@ class TestProductionReadiness:
                         successful_recoveries += 1
 
                 except Exception as e:
-                    # Exceptions should be informative
-                    assert len(str(e)) > 0, f"Empty error message for {description}"
+                    # Exceptions should be informative - capture for validation outside except block
+                    exception_occurred = True
+                    exception_message = str(e)
                     successful_recoveries += 1  # Handled gracefully
+
+                # Validate exception outside of except block to avoid PT017
+                if exception_occurred:
+                    assert len(exception_message) > 0, f"Empty error message for {description}"
 
             # System should handle errors gracefully
             recovery_rate = successful_recoveries / (len(error_scenarios) - 1)

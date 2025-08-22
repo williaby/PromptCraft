@@ -27,8 +27,12 @@ from typing import Any
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.dynamic_function_loader import DynamicFunctionLoader, LoadingStrategy, initialize_dynamic_loading
-from src.core.function_loading_demo import InteractiveFunctionLoadingDemo
+from src.core.dynamic_function_loader import (  # noqa: E402
+    DynamicFunctionLoader,
+    LoadingStrategy,
+    initialize_dynamic_loading,
+)
+from src.core.function_loading_demo import InteractiveFunctionLoadingDemo  # noqa: E402
 
 
 class PrototypeRunner:

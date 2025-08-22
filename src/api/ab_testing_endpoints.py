@@ -370,7 +370,7 @@ async def create_experiment(
         logger.warning("Invalid experiment configuration: %s", repr(str(e)))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        logger.error("Failed to create experiment: %s", repr(str(e)), exc_info=True)
+        logger.exception("Failed to create experiment: %s", repr(str(e)))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create experiment",

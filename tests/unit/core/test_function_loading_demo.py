@@ -927,15 +927,14 @@ class TestMainFunction:
         """Test main entry point handling keyboard interrupt."""
         with patch("src.core.function_loading_demo.asyncio.run", side_effect=KeyboardInterrupt):
             # Should not raise exception - KeyboardInterrupt is caught
-            if __name__ == "__main__":
-                exec(
-                    """
-try:
-    asyncio.run(main())
-except KeyboardInterrupt:
-    pass
-""",
-                )
+            try:
+                import asyncio
+
+                from src.core.function_loading_demo import main
+
+                asyncio.run(main())  # nosec B102 - Test code simulating main execution
+            except KeyboardInterrupt:
+                pass  # Expected behavior
 
     def test_main_entry_point_exception(self):
         """Test main entry point handling general exception."""
@@ -943,17 +942,19 @@ except KeyboardInterrupt:
             patch("src.core.function_loading_demo.asyncio.run", side_effect=Exception("Test error")),
             patch("sys.exit"),
         ):
-            if __name__ == "__main__":
-                exec(
-                    """
-try:
-    asyncio.run(main())
-except KeyboardInterrupt:
-    pass
-except Exception:
-    sys.exit(1)
-""",
-                )
+            # Test main entry point exception handling
+            try:
+                import asyncio
+
+                from src.core.function_loading_demo import main
+
+                asyncio.run(main())  # nosec B102 - Test code simulating main execution
+            except KeyboardInterrupt:
+                pass  # Expected behavior
+            except Exception:
+                import sys
+
+                sys.exit(1)  # Expected behavior for general exceptions
 
 
 class TestInteractiveFunctionLoadingDemoIntegration:
@@ -1291,7 +1292,7 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         mock_loader.get_performance_report.return_value = {"status": "completed"}
 
         # Should handle failures gracefully
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r"Loading .* failed"):
             await demo._validation_report()
 
     @pytest.mark.asyncio

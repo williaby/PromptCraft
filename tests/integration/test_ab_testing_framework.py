@@ -54,8 +54,8 @@ def test_db_engine():
 @pytest.fixture
 def test_db_session(test_db_engine):
     """Create test database session."""
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    session = session_local()
     yield session
     session.close()
 

@@ -228,7 +228,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             # Log unexpected errors
-            logger.error(f"Unexpected error in authentication middleware: {e}", exc_info=True)
+            logger.exception("Unexpected error in authentication middleware: %s", e)
 
             # Database event logging for errors (if enabled)
             if self.database_enabled:

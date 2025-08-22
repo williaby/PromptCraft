@@ -385,7 +385,7 @@ class TestServiceTokenMonitor:
         # Verify security alerts
         assert len(metrics["security_alerts"]) == 1
         alert = metrics["security_alerts"][0]
-        assert alert["token_name"] == "expiring-token"  # Test token name
+        assert alert["token_name"] == "expiring-token"  # noqa: S105  # nosec S105 - Test token name
 
         # Verify performance metrics
         perf = metrics["performance_metrics"]

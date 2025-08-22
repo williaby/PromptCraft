@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy import stats  # type: ignore
+from scipy import stats  # type: ignore[import-untyped]
 
 from src.core.token_optimization_monitor import (
     TokenOptimizationMonitor,
@@ -395,7 +395,9 @@ class MetricsAggregator:
 
         return windows
 
-    def _calculate_aggregation(self, values: list[float], agg_type: MetricAggregationType) -> float:
+    def _calculate_aggregation(
+        self, values: list[float], agg_type: MetricAggregationType
+    ) -> float:  # noqa: PLR0911  # Aggregation type mapping requires multiple returns
         """Calculate aggregated value based on aggregation type."""
 
         if not values:
@@ -720,7 +722,9 @@ class StatisticalValidator:
 
         return float(max(0.0, min(1.0, power)))
 
-    def _determine_evidence_strength(self, effect_size: float, p_value: float, power: float) -> str:
+    def _determine_evidence_strength(
+        self, effect_size: float, p_value: float, power: float
+    ) -> str:  # noqa: PLR0911  # Evidence strength assessment requires multiple return conditions
         """Determine evidence strength based on statistical measures."""
 
         # Cohen's conventions for effect size
@@ -989,19 +993,19 @@ class MetricsCollector:
             },
         }
 
-    async def export_for_external_analysis(self, format: str = "json") -> dict[str, Any]:
+    async def export_for_external_analysis(self, format_type: str = "json") -> dict[str, Any]:
         """Export metrics data for external analysis tools."""
 
         report = await self.generate_comprehensive_report()
 
-        if format.lower() == "prometheus":
+        if format_type.lower() == "prometheus":
             # Convert to Prometheus format would go here
             pass
-        elif format.lower() == "grafana":
+        elif format_type.lower() == "grafana":
             # Convert to Grafana dashboard format would go here
             pass
 
-        return {"export_format": format, "export_timestamp": datetime.now(UTC).isoformat(), "data": report}
+        return {"export_format": format_type, "export_timestamp": datetime.now(UTC).isoformat(), "data": report}
 
 
 # Global metrics collector instance
@@ -1010,10 +1014,10 @@ _global_collector: MetricsCollector | None = None
 
 def get_metrics_collector() -> MetricsCollector:
     """Get the global metrics collector instance."""
-    global _global_collector
+    global _global_collector  # noqa: PLW0603  # Legitimate singleton pattern for metrics collector
     if _global_collector is None:
-        from src.core.token_optimization_monitor import (
-            get_token_optimization_monitor,  # Lazy loading to avoid circular imports
+        from src.core.token_optimization_monitor import (  # noqa: PLC0415  # Lazy loading to avoid circular imports
+            get_token_optimization_monitor,
         )
 
         monitor = get_token_optimization_monitor()

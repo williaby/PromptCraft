@@ -14,24 +14,23 @@ Run this example to see:
 """
 
 import asyncio
+import builtins
+import contextlib
 import logging
 import time
 import traceback
 from typing import Any
+
+from src.core.conservative_fallback_chain import create_conservative_fallback_chain
+from src.core.fallback_integration import IntegrationMode, create_enhanced_task_detection
+from src.core.task_detection import DetectionResult
+from src.core.task_detection_config import DetectionMode, TaskDetectionConfig
 
 # Configure logging for demo
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-
-import builtins
-import contextlib
-
-from src.core.conservative_fallback_chain import create_conservative_fallback_chain
-from src.core.fallback_integration import IntegrationMode, create_enhanced_task_detection
-from src.core.task_detection import DetectionResult
-from src.core.task_detection_config import DetectionMode, TaskDetectionConfig
 
 
 class DemoTaskDetectionSystem:
@@ -125,13 +124,10 @@ async def demonstrate_normal_operation() -> None:
 
     for query, _description in test_queries:
 
-        try:
+        with contextlib.suppress(Exception):
             categories, decision = await fallback_chain.get_function_categories(query)
 
             [cat for cat, loaded in categories.items() if loaded]
-
-        except Exception:
-            pass
 
 
 async def demonstrate_failure_scenarios() -> None:
@@ -156,15 +152,12 @@ async def demonstrate_failure_scenarios() -> None:
         # Set failure mode
         demo_system.set_failure_mode(failure_mode)
 
-        try:
+        with contextlib.suppress(Exception):
             categories, decision = await fallback_chain.get_function_categories(
                 "help me debug this issue",
             )
 
             [cat for cat, loaded in categories.items() if loaded]
-
-        except Exception:
-            pass
 
         # Reset to normal
         demo_system.set_failure_mode(None)
@@ -239,7 +232,7 @@ async def demonstrate_integration_modes() -> None:
             integration_mode=mode,
         )
 
-        try:
+        with contextlib.suppress(Exception):
             result = await enhanced_system.detect_categories(
                 "git commit changes",
                 {"user_id": "demo_user"},
@@ -247,9 +240,6 @@ async def demonstrate_integration_modes() -> None:
 
             if result.fallback_applied:
                 pass
-
-        except Exception:
-            pass
 
 
 async def demonstrate_health_monitoring() -> None:

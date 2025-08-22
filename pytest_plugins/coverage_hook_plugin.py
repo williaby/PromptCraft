@@ -24,13 +24,14 @@ Integration with VS Code:
 - Enhanced reports appear in reports/coverage/ directory
 """
 
+import contextlib
 import os
 import subprocess  # nosec B404  # Required for coverage hook integration
 import sys
 from pathlib import Path
 
 
-def pytest_configure(config) -> None:
+def pytest_configure(config: object) -> None:
     """
     Called after command line options have been parsed.
     Register custom markers and check if coverage is enabled.
@@ -57,7 +58,7 @@ def pytest_configure(config) -> None:
         pass
 
 
-def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001  # Pytest hook signature
+def pytest_sessionfinish(session: object, exitstatus: int) -> None:  # noqa: ARG001  # Pytest hook signature
     """
     Called after whole test run finished, right before returning the exit status.
     This is the perfect place to trigger coverage report generation.
@@ -70,7 +71,7 @@ def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001  # Pytest
     if hasattr(session, "testscollected") and session.testscollected == 0:
         return
 
-    try:
+    with contextlib.suppress(subprocess.TimeoutExpired, Exception):
         # Find the project root directory
         project_root = Path.cwd()
         while project_root.parent != project_root:
@@ -88,7 +89,7 @@ def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001  # Pytest
             return
 
         # Execute the coverage hook script
-        result = subprocess.run(  # nosec B603  # Controlled script execution with timeout
+        result = subprocess.run(  # noqa: S603  # nosec B603  # Controlled Python script execution with timeout
             [sys.executable, str(hook_script)],
             check=False,
             cwd=str(project_root),
@@ -104,13 +105,8 @@ def pytest_sessionfinish(session, exitstatus) -> None:  # noqa: ARG001  # Pytest
         elif result.stderr:
             pass
 
-    except subprocess.TimeoutExpired:
-        pass
-    except Exception:
-        pass
 
-
-def pytest_runtest_makereport(item, call) -> None:
+def pytest_runtest_makereport(item: object, call: object) -> None:
     """
     Called to create a test report for each phase of a test (setup, call, teardown).
     We can use this to track test execution context.

@@ -19,10 +19,10 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
-import pandas as pd  # type: ignore
-import plotly.graph_objects as go  # type: ignore
+import pandas as pd  # type: ignore[import-untyped]
+import plotly.graph_objects as go  # type: ignore[import-untyped]
 from jinja2 import Template
-from plotly.subplots import make_subplots  # type: ignore
+from plotly.subplots import make_subplots  # type: ignore[import-untyped]
 
 from src.core.ab_testing_framework import (
     ExperimentManager,
@@ -554,7 +554,9 @@ class MetricsCollector(ObservabilityMixin):
 
         return recommendations
 
-    def _assess_risk_level(self, results: ExperimentResults, error_rate: float) -> str:
+    def _assess_risk_level(
+        self, results: ExperimentResults, error_rate: float
+    ) -> str:  # noqa: PLR0911  # Risk assessment requires multiple return conditions
         """Assess risk level based on experiment performance."""
         try:
             # Critical risk conditions
@@ -1159,7 +1161,7 @@ _dashboard_instance: ABTestingDashboard | None = None
 
 async def get_dashboard_instance() -> ABTestingDashboard:
     """Get or create the global dashboard instance."""
-    global _dashboard_instance
+    global _dashboard_instance  # noqa: PLW0603  # Legitimate singleton pattern for dashboard instance
 
     if _dashboard_instance is None:
         experiment_manager = await get_experiment_manager()

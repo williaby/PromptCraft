@@ -244,7 +244,7 @@ class TestPerformanceMonitor:
         monitor = PerformanceMonitor()
 
         # Record consistently slow operations
-        for i in range(10):
+        for _i in range(10):
             monitor.record_operation(6.0, 50.0, False)  # Slow but not error
 
         assert monitor.should_trigger_emergency_mode() is True

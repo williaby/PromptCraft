@@ -1107,7 +1107,7 @@ class AnalyticsEngine:
         """Clears the analysis cache."""
         self.analysis_cache = {}
 
-    def export_analytics(self, user_id: str | None = None, format: str = "json") -> dict[str, Any]:
+    def export_analytics(self, user_id: str | None = None, format_type: str = "json") -> dict[str, Any]:
         """Export analytics data for external analysis"""
         data = self.get_user_analytics(user_id) if user_id else self.get_system_analytics()
 

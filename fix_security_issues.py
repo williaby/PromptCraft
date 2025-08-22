@@ -2,14 +2,20 @@
 """Script to fix S105/S106 hardcoded password security linting errors by adding noqa comments."""
 
 import json
+import logging
 import subprocess
 from pathlib import Path
+from typing import Any
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def get_ruff_errors():
+def get_ruff_errors() -> list[dict[str, Any]]:
     """Get all S105/S106 errors from ruff."""
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B607,S607  # Using trusted Poetry and ruff tools
             ["poetry", "run", "ruff", "check", "--select", "S105,S106", "--output-format", "json"],
             capture_output=True,
             text=True,
@@ -19,11 +25,13 @@ def get_ruff_errors():
             return json.loads(result.stdout)
         return []
     except Exception as e:
-        print(f"Error getting ruff errors: {e}")
+        logger.error("Error getting ruff errors: %s", e)
         return []
 
 
-def add_noqa_comment(file_path, line_number, rule_code, line_content):  # noqa: ARG001  # Script interface
+def add_noqa_comment(
+    file_path: str, line_number: int, rule_code: str, line_content: str
+) -> bool | None:  # noqa: ARG001  # Script interface
     """Add noqa comment to a specific line."""
     try:
         with Path(file_path).open() as f:
@@ -65,20 +73,20 @@ def add_noqa_comment(file_path, line_number, rule_code, line_content):  # noqa: 
 
         return True
     except Exception as e:
-        print(f"Error fixing line {line_number} in {file_path}: {e}")
+        logger.error("Error fixing line %s in %s: %s", line_number, file_path, e)
         return False
 
 
-def main():
+def main() -> None:
     """Main function to fix all S105/S106 errors."""
-    print("Getting S105/S106 errors from ruff...")
+    logger.info("Getting S105/S106 errors from ruff...")
     errors = get_ruff_errors()
 
     if not errors:
-        print("No S105/S106 errors found!")
+        logger.info("No S105/S106 errors found!")
         return
 
-    print(f"Found {len(errors)} S105/S106 errors to fix...")
+    logger.info("Found %d S105/S106 errors to fix...", len(errors))
 
     fixed_count = 0
     for error in errors:
@@ -90,13 +98,13 @@ def main():
             if add_noqa_comment(file_path, line_number, rule_code, error.get("message", "")):
                 fixed_count += 1
                 if fixed_count % 50 == 0:
-                    print(f"Fixed {fixed_count} errors...")
+                    logger.info("Fixed %d errors...", fixed_count)
 
-    print(f"Fixed {fixed_count} S105/S106 errors")
+    logger.info("Fixed %d S105/S106 errors", fixed_count)
 
     # Verify fixes
-    print("Verifying fixes...")
-    result = subprocess.run(
+    logger.info("Verifying fixes...")
+    result = subprocess.run(  # nosec B607,S607  # Using trusted Poetry and ruff tools
         ["poetry", "run", "ruff", "check", "--select", "S105,S106"],
         check=False,
         capture_output=True,
@@ -104,10 +112,10 @@ def main():
     )
 
     if result.returncode == 0:
-        print("✅ All S105/S106 errors have been fixed!")
+        logger.info("✅ All S105/S106 errors have been fixed!")
     else:
         remaining_count = result.stderr.count("S105") + result.stderr.count("S106")
-        print(f"⚠️  {remaining_count} S105/S106 errors remain")
+        logger.warning("⚠️ %d S105/S106 errors remain", remaining_count)
 
 
 if __name__ == "__main__":

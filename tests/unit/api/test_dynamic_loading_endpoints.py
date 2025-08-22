@@ -21,23 +21,6 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.requests import Request
 
-# Import the module for coverage
-
-
-def create_starlette_request(method="POST", path="/test"):
-    """Utility function to create proper Starlette Request objects for testing."""
-    scope = {
-        "type": "http",
-        "method": method,
-        "path": path,
-        "headers": [],
-        "query_string": b"",
-        "client": ("127.0.0.1", 80),
-    }
-    receive = AsyncMock()
-    return Request(scope, receive)
-
-
 from src.api.dynamic_loading_endpoints import (
     DemoRunRequest,
     PerformanceReportResponse,
@@ -59,6 +42,20 @@ from src.api.dynamic_loading_endpoints import (
 )
 from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import DynamicLoadingIntegration, IntegrationMode
+
+
+def create_starlette_request(method="POST", path="/test"):
+    """Utility function to create proper Starlette Request objects for testing."""
+    scope = {
+        "type": "http",
+        "method": method,
+        "path": path,
+        "headers": [],
+        "query_string": b"",
+        "client": ("127.0.0.1", 80),
+    }
+    receive = AsyncMock()
+    return Request(scope, receive)
 
 
 class TestQueryOptimizationRequest:

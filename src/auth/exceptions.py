@@ -239,7 +239,9 @@ class AuthExceptionHandler:
         )
 
     @classmethod
-    def handle_role_manager_error(cls, error: Exception) -> HTTPException:
+    def handle_role_manager_error(
+        cls, error: Exception
+    ) -> HTTPException:  # noqa: PLR0911  # Exception mapping requires multiple returns
         """Handle role manager domain exceptions with appropriate HTTP mapping.
 
         Maps domain-specific exceptions to appropriate HTTP status codes:

@@ -49,10 +49,8 @@ class GlobalIsolationManager:
         # Clean up mocks
         for mock in context["mocks"]:
             if hasattr(mock, "stop"):
-                try:
+                with suppress(Exception):  # Best effort cleanup
                     mock.stop()
-                except Exception:
-                    pass  # Best effort cleanup
             # Remove from active mocks
             self._active_mocks.discard(mock)
 
@@ -97,10 +95,8 @@ class GlobalIsolationManager:
         # Final cleanup of any remaining resources
         for mock in self._active_mocks:
             if hasattr(mock, "stop"):
-                try:
+                with suppress(Exception):  # Best effort cleanup
                     mock.stop()
-                except Exception:
-                    pass  # Best effort cleanup
 
         self._active_mocks.clear()
 
@@ -305,7 +301,7 @@ def isolated_file_system():
     """
     with isolated_temp_directory() as temp_dir:
         # Change working directory to temp directory for isolation
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(temp_dir)
             yield temp_dir

@@ -720,7 +720,7 @@ _integration_manager: IntegrationManager | None = None
 
 def get_integration_manager(config_path: str | None = None) -> IntegrationManager:
     """Get the global integration manager instance."""
-    global _integration_manager
+    global _integration_manager  # noqa: PLW0603  # Legitimate singleton pattern for integration manager
     if _integration_manager is None:
         config = load_integration_config(config_path)
         _integration_manager = IntegrationManager(config)

@@ -238,7 +238,7 @@ async def optimize_query(
         )
 
     except Exception as e:
-        logger.error("Query optimization failed: %s", e, exc_info=True)
+        logger.exception("Query optimization failed: %s", e)
 
         # Log API error
         processing_time = (time.perf_counter() - start_time) * 1000
@@ -436,7 +436,7 @@ async def run_comprehensive_demo(
         )
 
     except Exception as e:
-        logger.error("Demo execution failed: %s", e, exc_info=True)
+        logger.exception("Demo execution failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Demo execution failed: {e!s}",
@@ -550,21 +550,19 @@ async def get_function_registry_stats(
             },
             "tier_breakdown": tier_stats,
             "category_breakdown": category_stats,
-            "optimization_potential": (
-                lambda: {
-                    "max_possible_reduction": (
-                        100.0 - (float(token_cost) / registry.get_baseline_token_cost() * 100)
-                        if registry.get_baseline_token_cost() > 0
-                        and isinstance(
-                            (token_cost := tier_stats.get("tier_1", {}).get("token_cost", 0)),
-                            (int, float, str),
-                        )
-                        else 0
-                    ),
-                    "typical_reduction_range": "60-85%",
-                    "aggressive_reduction_potential": "80-90%",
-                }
-            )(),
+            "optimization_potential": {
+                "max_possible_reduction": (
+                    100.0 - (float(token_cost) / registry.get_baseline_token_cost() * 100)
+                    if registry.get_baseline_token_cost() > 0
+                    and isinstance(
+                        (token_cost := tier_stats.get("tier_1", {}).get("token_cost", 0)),
+                        (int, float, str),
+                    )
+                    else 0
+                ),
+                "typical_reduction_range": "60-85%",
+                "aggressive_reduction_potential": "80-90%",
+            },
         }
 
         return JSONResponse(content=stats)

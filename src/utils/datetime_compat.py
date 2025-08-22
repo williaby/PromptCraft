@@ -22,7 +22,7 @@ PY_312_PLUS = PY_VERSION >= (3, 12)
 if PY_311_PLUS:
     from datetime import UTC
 else:
-    UTC = UTC
+    UTC = timezone.utc  # noqa: UP017  # Python 3.10 compatibility - datetime.UTC not available
 
 # Export the UTC constant for consistent imports
 __all__ = [

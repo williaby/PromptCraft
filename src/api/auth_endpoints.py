@@ -309,7 +309,7 @@ async def rotate_service_token(
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUserType = Depends(
+    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
         require_permission(Permissions.TOKENS_READ),
     ),  # Auth dependency
 ) -> list[TokenInfo]:
@@ -362,7 +362,7 @@ async def get_token_analytics(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUserType = Depends(
+    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
         require_permission(Permissions.TOKENS_READ),
     ),  # Auth dependency
 ) -> dict:

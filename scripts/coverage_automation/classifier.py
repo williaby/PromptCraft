@@ -3,7 +3,6 @@ Test type classification and coverage analysis.
 """
 
 import re
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -25,6 +24,9 @@ class TestTypeClassifier:
         self.project_root = project_root
         self.config = config
         self.security = SecurityValidator(project_root)
+        # Instance-specific caches to avoid memory leaks from lru_cache on methods
+        self._target_mapping_cache: dict[str, frozenset[str]] = {}
+        self._test_file_analysis_cache: dict[str, frozenset[str]] = {}
 
     def estimate_test_type_coverage(
         self,
@@ -87,12 +89,15 @@ class TestTypeClassifier:
 
         return coverage_by_type
 
-    @lru_cache(maxsize=32)
     def get_test_target_mapping(self, test_type: str) -> frozenset[str]:
         """
         Get the set of source files that are actually tested by the given test type.
         This analyzes test files to determine which source files they target.
         """
+        # Check cache first
+        if test_type in self._target_mapping_cache:
+            return self._target_mapping_cache[test_type]
+
         # Type validation for critical inputs
         if not isinstance(test_type, str):
             raise TypeError(f"test_type must be str, got {type(test_type).__name__}: {test_type}")
@@ -120,14 +125,20 @@ class TestTypeClassifier:
                             targets = self._analyze_test_file_targets(str(test_file))
                             test_targets.update(targets)
 
-        return frozenset(test_targets)
+        result = frozenset(test_targets)
+        # Cache the result
+        self._target_mapping_cache[test_type] = result
+        return result
 
-    @lru_cache(maxsize=256)
     def _analyze_test_file_targets(self, test_file_path_str: str) -> frozenset[str]:
         """
         Analyze a test file to determine which source files it targets.
         This looks at import statements and test structure to infer targets.
         """
+        # Check cache first
+        if test_file_path_str in self._test_file_analysis_cache:
+            return self._test_file_analysis_cache[test_file_path_str]
+
         test_file_path = Path(test_file_path_str)
         targets = set()
 
@@ -183,7 +194,10 @@ class TestTypeClassifier:
         except Exception as e:
             print(f"  ⚠️  Could not analyze test file {test_file_path}: {e}")
 
-        return frozenset(targets)
+        result = frozenset(targets)
+        # Cache the result
+        self._test_file_analysis_cache[test_file_path_str] = result
+        return result
 
     def _get_potential_targets(self, test_relative: Path, module_name: str) -> list[str]:
         """Get potential target files based on test location."""

@@ -660,7 +660,7 @@ class TestIntegrationScenarios:
         registry = FunctionRegistry()
 
         # Test that all function definitions are valid
-        for func_name, func_def in registry.functions.items():
+        for _func_name, func_def in registry.functions.items():
             assert isinstance(func_def.name, str)
             assert isinstance(func_def.category, str)
             assert isinstance(func_def.tier, int)
