@@ -58,7 +58,7 @@ def mock_async_engine():
 @pytest.fixture
 def mock_session_factory():
     """Mock session factory."""
-    factory = AsyncMock(spec=async_sessionmaker)
+    factory = MagicMock(spec=async_sessionmaker)
     mock_session = AsyncMock(spec=AsyncSession)
 
     # Mock session operations
@@ -68,9 +68,15 @@ def mock_session_factory():
     mock_session.close = AsyncMock()
     mock_session.add = AsyncMock()
 
-    # Mock context manager
-    factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-    factory.return_value.__aexit__ = AsyncMock(return_value=None)
+    # Create a proper async context manager
+    async def async_context_manager():
+        return mock_session
+
+    mock_context = AsyncMock()
+    mock_context.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_context.__aexit__ = AsyncMock(return_value=None)
+
+    factory.return_value = mock_context
 
     return factory
 

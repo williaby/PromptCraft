@@ -6,7 +6,7 @@ implementing the basic C.R.E.A.T.E. framework functionality.
 
 import time
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from src.api.models.create_models_core import (
     CreateRequestModel,
@@ -15,6 +15,7 @@ from src.api.models.create_models_core import (
     FrameworkInfoResponseModel,
     HealthResponseModel,
 )
+from src.auth.exceptions import AuthExceptionHandler
 from src.core.create_processor_core import CreateProcessor, ValidationError
 
 # Initialize router
@@ -68,14 +69,18 @@ async def process_prompt(request: CreateRequestModel) -> CreateResponseModel:
         )
 
     except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Validation error: {e}",
+        # Use AuthExceptionHandler for validation errors
+        raise AuthExceptionHandler.handle_validation_error(
+            f"Validation error: {e}",
+            field_name="input_prompt",
         ) from e
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Processing error: {e}",
+        # Use AuthExceptionHandler for internal server errors
+        raise AuthExceptionHandler.handle_internal_error(
+            "C.R.E.A.T.E. framework processing",
+            e,
+            detail="Processing error",
+            expose_error=True,
         ) from e
 
 

@@ -7,13 +7,15 @@ from typing import Any
 
 from pydantic import BaseModel, Field, validator
 
+from .constants import ROLE_ADMIN, ROLE_USER
+
 
 class UserRole(str, Enum):
     """User roles for role-based access control."""
 
-    ADMIN = "admin"
-    USER = "user"
-    VIEWER = "viewer"
+    ADMIN = ROLE_ADMIN
+    USER = ROLE_USER
+    VIEWER = "viewer"  # Not centralized yet, keeping as is
 
 
 class AuthenticatedUser(BaseModel):

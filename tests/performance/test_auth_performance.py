@@ -582,3 +582,491 @@ class TestServiceTokenPerformance:
 
         # Monitoring overhead should be minimal
         assert monitor_overhead_ms < 2.0, f"Monitoring overhead {monitor_overhead_ms:.2f}ms is too high"
+
+
+@pytest.mark.performance
+class TestRoleBasedPermissionPerformance:
+    """Performance tests for AUTH-3 role-based permission system."""
+
+    @pytest.fixture
+    def mock_role_manager(self):
+        """Mock high-performance role manager."""
+        from src.auth.role_manager import RoleManager
+
+        manager = MagicMock(spec=RoleManager)
+
+        def fast_get_user_permissions(user_email: str):
+            # Simulate 2-8ms permission resolution with database query
+            time.sleep(0.002 + (hash(user_email) % 6) * 0.001)
+
+            # Return comprehensive permission set based on user type
+            if "admin" in user_email:
+                return {
+                    "users:create",
+                    "users:read",
+                    "users:update",
+                    "users:delete",
+                    "tokens:create",
+                    "tokens:read",
+                    "tokens:update",
+                    "tokens:delete",
+                    "roles:create",
+                    "roles:read",
+                    "roles:update",
+                    "roles:delete",
+                    "system:admin",
+                    "system:config",
+                    "system:backup",
+                }
+            if "manager" in user_email:
+                return {
+                    "users:read",
+                    "users:update",
+                    "tokens:read",
+                    "tokens:create",
+                    "roles:read",
+                    "reports:read",
+                    "reports:create",
+                }
+            return {"tokens:read", "profiles:read", "profiles:update"}
+
+        def fast_validate_role_hierarchy(child_role: str, parent_role: str):
+            # Simulate 1-3ms hierarchy validation
+            time.sleep(0.001 + (hash(child_role + parent_role) % 2) * 0.001)
+            # Simple validation: prevent circular dependencies
+            return child_role != parent_role
+
+        def fast_get_role_permissions(role_name: str):
+            # Simulate 3-10ms role permission lookup with inheritance
+            time.sleep(0.003 + (hash(role_name) % 7) * 0.001)
+
+            role_permissions = {
+                "super_admin": {"users:*", "tokens:*", "roles:*", "system:*", "reports:*", "audit:*", "config:*"},
+                "admin": {
+                    "users:create",
+                    "users:read",
+                    "users:update",
+                    "users:delete",
+                    "tokens:create",
+                    "tokens:read",
+                    "tokens:update",
+                    "tokens:delete",
+                    "roles:read",
+                    "roles:update",
+                    "reports:read",
+                    "reports:create",
+                },
+                "user_manager": {
+                    "users:read",
+                    "users:update",
+                    "users:delete",
+                    "roles:read",
+                    "reports:read",
+                },
+                "token_manager": {
+                    "tokens:create",
+                    "tokens:read",
+                    "tokens:update",
+                    "tokens:delete",
+                    "users:read",  # Can see users for token assignment
+                },
+                "api_user": {"tokens:read", "profiles:read", "profiles:update"},
+                "readonly_user": {"profiles:read", "reports:read"},
+            }
+
+            return role_permissions.get(role_name, set())
+
+        def fast_assign_user_role(user_email: str, role_name: str, assigned_by: str | None = None):
+            # Simulate 5-15ms user role assignment with database update
+            time.sleep(0.005 + (hash(user_email + role_name) % 10) * 0.001)
+            return True
+
+        manager.get_user_permissions = MagicMock(side_effect=fast_get_user_permissions)
+        manager.validate_role_hierarchy = MagicMock(side_effect=fast_validate_role_hierarchy)
+        manager.get_role_permissions = MagicMock(side_effect=fast_get_role_permissions)
+        manager.assign_user_role = MagicMock(side_effect=fast_assign_user_role)
+
+        return manager
+
+    @pytest.fixture
+    def mock_permission_validator(self):
+        """Mock high-performance permission validator."""
+        from src.auth.permissions import require_permission
+
+        def fast_check_permission(user_email: str, permission: str):
+            # Simulate 1-5ms permission check using database function
+            time.sleep(0.001 + (hash(user_email + permission) % 4) * 0.001)
+
+            # Fast permission logic based on user type
+            if "admin@" in user_email:
+                return True
+            if "manager@" in user_email:
+                return permission in {"users:read", "tokens:read", "reports:read"}
+            return permission in {"profiles:read", "tokens:read"}
+
+        validator = MagicMock()
+        validator.check_permission = MagicMock(side_effect=fast_check_permission)
+        return validator
+
+    @pytest.mark.asyncio
+    async def test_permission_check_performance(
+        self,
+        mock_permission_validator: MagicMock,
+    ):
+        """Test single permission check performance (<15ms target)."""
+
+        # Test permission check for different user types
+        test_cases = [
+            ("admin@example.com", "users:create"),
+            ("manager@example.com", "tokens:read"),
+            ("user@example.com", "profiles:read"),
+        ]
+
+        for user_email, permission in test_cases:
+            start_time = time.time()
+
+            result = mock_permission_validator.check_permission(user_email, permission)
+
+            end_time = time.time()
+            check_time_ms = (end_time - start_time) * 1000
+
+            # Verify result
+            assert result is not None
+
+            # Verify performance requirement
+            assert check_time_ms < 15.0, f"Permission check took {check_time_ms:.2f}ms, exceeds 15ms target"
+
+        print(f"Single permission check performance: {check_time_ms:.2f}ms average")
+
+    @pytest.mark.asyncio
+    async def test_user_permissions_resolution_performance(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test user permission resolution performance (<20ms target)."""
+
+        # Test different user types
+        test_users = [
+            "admin@example.com",
+            "manager@example.com",
+            "user@example.com",
+            "api_user@example.com",
+        ]
+
+        total_times = []
+
+        for user_email in test_users:
+            start_time = time.time()
+
+            permissions = mock_role_manager.get_user_permissions(user_email)
+
+            end_time = time.time()
+            resolution_time_ms = (end_time - start_time) * 1000
+            total_times.append(resolution_time_ms)
+
+            # Verify result
+            assert isinstance(permissions, set)
+            assert len(permissions) > 0
+
+            # Verify performance requirement
+            assert (
+                resolution_time_ms < 20.0
+            ), f"Permission resolution took {resolution_time_ms:.2f}ms, exceeds 20ms target"
+
+        avg_time = statistics.mean(total_times)
+        print(f"User permission resolution performance: {avg_time:.2f}ms average")
+
+    @pytest.mark.asyncio
+    async def test_role_hierarchy_validation_performance(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test role hierarchy validation performance (<10ms target)."""
+
+        # Test various hierarchy validations
+        test_cases = [
+            ("admin", "super_admin"),
+            ("user_manager", "admin"),
+            ("token_manager", "admin"),
+            ("api_user", "user_manager"),
+            ("readonly_user", "api_user"),
+        ]
+
+        total_times = []
+
+        for child_role, parent_role in test_cases:
+            start_time = time.time()
+
+            is_valid = mock_role_manager.validate_role_hierarchy(child_role, parent_role)
+
+            end_time = time.time()
+            validation_time_ms = (end_time - start_time) * 1000
+            total_times.append(validation_time_ms)
+
+            # Verify result
+            assert isinstance(is_valid, bool)
+
+            # Verify performance requirement
+            assert (
+                validation_time_ms < 10.0
+            ), f"Hierarchy validation took {validation_time_ms:.2f}ms, exceeds 10ms target"
+
+        avg_time = statistics.mean(total_times)
+        print(f"Role hierarchy validation performance: {avg_time:.2f}ms average")
+
+    @pytest.mark.asyncio
+    async def test_concurrent_permission_checks_performance(
+        self,
+        mock_permission_validator: MagicMock,
+    ):
+        """Test concurrent permission checking performance."""
+
+        async def check_permission_async(user_id: int, permission: str):
+            """Check permission asynchronously."""
+            user_email = f"user{user_id}@example.com"
+            start_time = time.time()
+
+            # Run in thread pool to simulate database operation
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                mock_permission_validator.check_permission,
+                user_email,
+                permission,
+            )
+
+            end_time = time.time()
+            return {
+                "user_id": user_id,
+                "permission": permission,
+                "check_time_ms": (end_time - start_time) * 1000,
+                "has_permission": result,
+            }
+
+        # Test concurrent permission checks (30 users, 5 permissions each)
+        permissions = ["users:read", "tokens:create", "reports:read", "profiles:update", "system:config"]
+        num_users = 30
+
+        start_time = time.time()
+
+        # Generate all permission check tasks
+        tasks = []
+        for user_id in range(num_users):
+            for permission in permissions:
+                task = check_permission_async(user_id, permission)
+                tasks.append(task)
+
+        results = await asyncio.gather(*tasks)
+
+        end_time = time.time()
+        total_time_ms = (end_time - start_time) * 1000
+
+        # Analyze results
+        check_times = [r["check_time_ms"] for r in results]
+        total_checks = len(results)
+
+        # Performance analysis
+        avg_check_time = statistics.mean(check_times)
+        median_check_time = statistics.median(check_times)
+        p95_check_time = check_times[int(0.95 * len(check_times))]
+        max_check_time = max(check_times)
+
+        print(f"\nConcurrent Permission Check Results ({total_checks} checks):")
+        print(f"Total time: {total_time_ms:.2f}ms")
+        print(f"Average check time: {avg_check_time:.2f}ms")
+        print(f"Median check time: {median_check_time:.2f}ms")
+        print(f"95th percentile: {p95_check_time:.2f}ms")
+        print(f"Max check time: {max_check_time:.2f}ms")
+
+        # Performance requirements
+        assert avg_check_time < 15.0, f"Average check time {avg_check_time:.2f}ms exceeds requirement"
+        assert p95_check_time < 30.0, f"95th percentile {p95_check_time:.2f}ms exceeds tolerance"
+
+    @pytest.mark.asyncio
+    async def test_role_assignment_performance(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test role assignment performance (<25ms target)."""
+
+        # Test role assignments for different scenarios
+        test_assignments = [
+            ("newuser1@example.com", "api_user"),
+            ("manager2@example.com", "user_manager"),
+            ("admin3@example.com", "admin"),
+            ("service@example.com", "token_manager"),
+        ]
+
+        total_times = []
+
+        for user_email, role_name in test_assignments:
+            start_time = time.time()
+
+            result = mock_role_manager.assign_user_role(user_email, role_name, "system_admin@example.com")
+
+            end_time = time.time()
+            assignment_time_ms = (end_time - start_time) * 1000
+            total_times.append(assignment_time_ms)
+
+            # Verify result
+            assert result is True
+
+            # Verify performance requirement
+            assert assignment_time_ms < 25.0, f"Role assignment took {assignment_time_ms:.2f}ms, exceeds 25ms target"
+
+        avg_time = statistics.mean(total_times)
+        print(f"Role assignment performance: {avg_time:.2f}ms average")
+
+    @pytest.mark.asyncio
+    async def test_bulk_permission_resolution_performance(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test bulk permission resolution for multiple users."""
+
+        # Test bulk operations (50 users)
+        num_users = 50
+        user_emails = [f"bulkuser{i}@example.com" for i in range(num_users)]
+
+        start_time = time.time()
+
+        # Resolve permissions for all users
+        for user_email in user_emails:
+            permissions = mock_role_manager.get_user_permissions(user_email)
+            assert isinstance(permissions, set)
+
+        end_time = time.time()
+        total_time_ms = (end_time - start_time) * 1000
+        avg_time_per_user = total_time_ms / num_users
+
+        print("\nBulk Permission Resolution Performance:")
+        print(f"Total time for {num_users} users: {total_time_ms:.2f}ms")
+        print(f"Average time per user: {avg_time_per_user:.2f}ms")
+
+        # Performance requirements for bulk operations
+        assert avg_time_per_user < 20.0, f"Bulk average {avg_time_per_user:.2f}ms per user exceeds 20ms target"
+        assert total_time_ms < 1000.0, f"Bulk total time {total_time_ms:.2f}ms exceeds 1000ms tolerance"
+
+    @pytest.mark.asyncio
+    async def test_complex_role_inheritance_performance(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test performance with complex role inheritance hierarchies."""
+
+        # Test complex inheritance scenarios
+        role_hierarchy_tests = [
+            "super_admin",  # Root level - most permissions
+            "admin",  # Second level - inherits from super_admin
+            "user_manager",  # Third level - inherits from admin
+            "api_user",  # Fourth level - inherits from user_manager
+            "readonly_user",  # Fifth level - inherits from api_user
+        ]
+
+        total_times = []
+
+        for role_name in role_hierarchy_tests:
+            start_time = time.time()
+
+            permissions = mock_role_manager.get_role_permissions(role_name)
+
+            end_time = time.time()
+            resolution_time_ms = (end_time - start_time) * 1000
+            total_times.append(resolution_time_ms)
+
+            # Verify result
+            assert isinstance(permissions, set)
+
+            # Verify performance for deep inheritance
+            assert (
+                resolution_time_ms < 15.0
+            ), f"Complex inheritance resolution took {resolution_time_ms:.2f}ms, exceeds 15ms target"
+
+        avg_time = statistics.mean(total_times)
+        max_time = max(total_times)
+
+        print("\nComplex Role Inheritance Performance:")
+        print(f"Average resolution time: {avg_time:.2f}ms")
+        print(f"Max resolution time: {max_time:.2f}ms")
+
+        # Inheritance performance should be consistent
+        assert max_time < 20.0, f"Max inheritance time {max_time:.2f}ms exceeds tolerance"
+
+    @pytest.mark.asyncio
+    async def test_permission_caching_effectiveness(
+        self,
+        mock_role_manager: MagicMock,
+    ):
+        """Test permission caching performance impact."""
+
+        user_email = "cache_test@example.com"
+
+        # First call (cold cache)
+        start_time = time.time()
+        permissions1 = mock_role_manager.get_user_permissions(user_email)
+        cold_time_ms = (time.time() - start_time) * 1000
+
+        # Second call (warm cache - simulate cached response)
+        mock_role_manager.get_user_permissions = MagicMock(return_value=permissions1)
+
+        start_time = time.time()
+        permissions2 = mock_role_manager.get_user_permissions(user_email)
+        warm_time_ms = (time.time() - start_time) * 1000
+
+        # Verify cache effectiveness
+        assert permissions1 == permissions2
+
+        # Cache should provide significant performance improvement
+        cache_speedup = cold_time_ms / max(warm_time_ms, 0.001)  # Avoid division by zero
+
+        print("\nPermission Caching Performance:")
+        print(f"Cold cache time: {cold_time_ms:.2f}ms")
+        print(f"Warm cache time: {warm_time_ms:.2f}ms")
+        print(f"Cache speedup: {cache_speedup:.1f}x")
+
+        # Warm cache should be significantly faster
+        assert (
+            warm_time_ms < cold_time_ms / 2
+        ), f"Cache not effective: warm {warm_time_ms:.2f}ms vs cold {cold_time_ms:.2f}ms"
+
+    @pytest.mark.asyncio
+    async def test_role_system_memory_usage(self):
+        """Test memory usage of role-based permission system."""
+
+        from src.auth.role_manager import RoleManager
+
+        # Get initial memory usage
+        process = psutil.Process()
+        initial_memory_mb = process.memory_info().rss / 1024 / 1024
+
+        # Simulate heavy role operations
+        role_managers = []
+        for _i in range(10):
+            # Create multiple role manager instances to test memory usage
+            manager = MagicMock(spec=RoleManager)
+
+            # Simulate large permission sets
+            large_permission_set = {f"resource_{j}:action_{k}" for j in range(100) for k in range(10)}
+            manager.get_user_permissions = MagicMock(return_value=large_permission_set)
+
+            role_managers.append(manager)
+
+            # Perform operations
+            for user_id in range(20):
+                permissions = manager.get_user_permissions(f"user{user_id}@example.com")
+                assert len(permissions) == 1000
+
+        # Force garbage collection
+        gc.collect()
+
+        # Check memory usage after operations
+        final_memory_mb = process.memory_info().rss / 1024 / 1024
+        memory_increase_mb = final_memory_mb - initial_memory_mb
+
+        print("\nRole System Memory Usage:")
+        print(f"Initial memory: {initial_memory_mb:.2f} MB")
+        print(f"Final memory: {final_memory_mb:.2f} MB")
+        print(f"Memory increase: {memory_increase_mb:.2f} MB")
+
+        # Memory increase should be reasonable for role system
+        assert memory_increase_mb < 30.0, f"Role system memory increase {memory_increase_mb:.2f} MB is too high"

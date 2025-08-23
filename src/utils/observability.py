@@ -80,29 +80,29 @@ class StructuredLogger:
 
         return context
 
-    def info(self, message: str, **kwargs: Any) -> None:
+    def info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log info message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.info(message, extra={"structured_data": context})
+        self.logger.info(message, *args, extra={"structured_data": context})
 
-    def error(self, message: str, **kwargs: Any) -> None:
+    def error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log error message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.error(message, extra={"structured_data": context})
+        self.logger.error(message, *args, extra={"structured_data": context})
 
-    def warning(self, message: str, **kwargs: Any) -> None:
+    def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.warning(message, extra={"structured_data": context})
+        self.logger.warning(message, *args, extra={"structured_data": context})
 
-    def debug(self, message: str, **kwargs: Any) -> None:
+    def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message with structured context."""
         context = self._get_context()
         context.update(kwargs)
-        self.logger.debug(message, extra={"structured_data": context})
+        self.logger.debug(message, *args, extra={"structured_data": context})
 
 
 class StructuredFormatter(logging.Formatter):
@@ -242,6 +242,54 @@ class NoOpSpan:
 
     def record_exception(self, exception: Exception) -> None:
         pass
+
+
+class ObservabilityMixin:
+    """Mixin class for adding observability capabilities to other classes."""
+
+    def __init__(self) -> None:
+        """Initialize observability capabilities."""
+        if not hasattr(super(), "__init__"):
+            super().__init__()
+
+        # Initialize observability components
+        self._logger = create_structured_logger(self.__class__.__name__)
+        self._instrumentor = get_instrumentor()
+        self._metrics = get_metrics_collector()
+
+    def log_info(self, message: str, **kwargs: Any) -> None:
+        """Log info message with structured context."""
+        self._logger.info(message, **kwargs)
+
+    def log_error(self, message: str, **kwargs: Any) -> None:
+        """Log error message with structured context."""
+        self._logger.error(message, **kwargs)
+
+    def log_warning(self, message: str, **kwargs: Any) -> None:
+        """Log warning message with structured context."""
+        self._logger.warning(message, **kwargs)
+
+    def log_debug(self, message: str, **kwargs: Any) -> None:
+        """Log debug message with structured context."""
+        self._logger.debug(message, **kwargs)
+
+    @contextmanager
+    def trace_operation(self, operation_name: str, **attributes: Any) -> Any:
+        """Context manager for tracing operations."""
+        with self._instrumentor.trace_operation(operation_name, **attributes) as span:
+            yield span
+
+    def increment_metric(self, metric_name: str, value: int = 1) -> None:
+        """Increment a metric counter."""
+        self._metrics.increment_counter(metric_name, value)
+
+    def record_duration(self, metric_name: str, duration: float) -> None:
+        """Record a duration metric."""
+        self._metrics.record_duration(metric_name, duration)
+
+    def get_metrics_snapshot(self) -> dict[str, Any]:
+        """Get current metrics snapshot."""
+        return self._metrics.get_metrics()
 
 
 class AgentMetrics:
@@ -480,6 +528,7 @@ def log_agent_event(event_type: str, agent_id: str, message: str, level: str = "
 # Export public API
 __all__ = [
     "AgentMetrics",
+    "ObservabilityMixin",
     "OpenTelemetryInstrumentor",
     "StructuredLogger",
     "create_structured_logger",

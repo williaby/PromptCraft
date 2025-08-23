@@ -1,6 +1,5 @@
 """
 Configuration management for coverage automation.
-Handles loading and validation of test pattern configurations.
 """
 
 from pathlib import Path
@@ -8,16 +7,12 @@ from typing import Any
 
 import yaml
 
-from .logging_utils import get_logger
-
 
 class TestPatternConfig:
-    """Configuration loader for test pattern definitions with Codecov integration."""
+    """Configuration loader for test pattern definitions."""
 
     def __init__(self, config_path: Path | None = None) -> None:
         """Initialize with config file path. Defaults to config/test_patterns.yaml"""
-        self.logger = get_logger("config")
-
         if config_path is None:
             # Default to config/test_patterns.yaml relative to project root
             project_root = Path(__file__).parent.parent.parent
@@ -25,83 +20,20 @@ class TestPatternConfig:
 
         self.config_path: Path = config_path
         self._config: dict[str, Any] = self._load_config()
-        self._codecov_config: dict[str, Any] = self._load_codecov_config()
-
-        self.logger.info(
-            "Configuration loaded successfully",
-            config_path=str(self.config_path),
-            test_types_count=len(self.get_all_test_types()),
-        )
 
     def _load_config(self) -> dict[str, Any]:
         """Load and parse the YAML configuration file."""
         try:
             with open(self.config_path, encoding="utf-8") as f:
-                config = yaml.safe_load(f)
-
-            # Validate configuration structure
-            self._validate_config(config)
-            return config
-
+                return yaml.safe_load(f)
         except FileNotFoundError:
-            self.logger.warning("Configuration file not found, using fallback", config_path=str(self.config_path))
+            print(f"⚠️  Configuration file not found: {self.config_path}")
+            print("⚠️  Using fallback hardcoded patterns")
             return self._get_fallback_config()
-
         except yaml.YAMLError as e:
-            self.logger.error(
-                "Error parsing YAML config, using fallback",
-                error=str(e),
-                config_path=str(self.config_path),
-            )
+            print(f"⚠️  Error parsing YAML config: {e}")
+            print("⚠️  Using fallback hardcoded patterns")
             return self._get_fallback_config()
-
-        except Exception as e:
-            self.logger.error(
-                "Unexpected error loading config, using fallback",
-                error=str(e),
-                config_path=str(self.config_path),
-            )
-            return self._get_fallback_config()
-
-    def _load_codecov_config(self) -> dict[str, Any]:
-        """Load codecov.yaml to align flag mappings."""
-        try:
-            codecov_path = self.config_path.parent.parent / "codecov.yaml"
-            if codecov_path.exists():
-                with open(codecov_path, encoding="utf-8") as f:
-                    codecov_config = yaml.safe_load(f)
-
-                self.logger.info("Codecov configuration loaded for flag alignment", codecov_path=str(codecov_path))
-                return codecov_config
-            self.logger.warning("Codecov configuration not found")
-            return {}
-
-        except Exception as e:
-            self.logger.error("Error loading codecov configuration", error=str(e))
-            return {}
-
-    def _validate_config(self, config: dict[str, Any]) -> None:
-        """Validate configuration structure and content."""
-        required_sections = ["test_types", "global"]
-        for section in required_sections:
-            if section not in config:
-                raise ValueError(f"Missing required section: {section}")
-
-        # Validate test types structure
-        test_types = config.get("test_types", {})
-        for test_type, test_config in test_types.items():
-            required_fields = ["priority", "description", "patterns"]
-            for field in required_fields:
-                if field not in test_config:
-                    raise ValueError(f"Test type '{test_type}' missing required field: {field}")
-
-            # Validate priority is numeric
-            if not isinstance(test_config["priority"], int):
-                raise ValueError(f"Test type '{test_type}' priority must be integer")
-
-            # Validate patterns is a list
-            if not isinstance(test_config["patterns"], list):
-                raise ValueError(f"Test type '{test_type}' patterns must be a list")
 
     def _get_fallback_config(self) -> dict[str, Any]:
         """Provide fallback configuration if YAML file is unavailable."""
@@ -150,46 +82,29 @@ class TestPatternConfig:
         return list(self._config.get("test_types", {}).keys())
 
     def get_codecov_flag_mapping(self) -> dict[str, list[str]]:
-        """Get Codecov flag to source path mappings for unified views."""
-        flag_mapping = {}
+        """Get Codecov flag mapping from codecov.yaml if available."""
+        codecov_config = self._config.get("codecov_integration", {})
+        if not codecov_config.get("enabled", False):
+            return {}
 
-        if "flags" in self._codecov_config:
-            for flag_name, flag_config in self._codecov_config["flags"].items():
-                paths = flag_config.get("paths", [])
-                flag_mapping[flag_name] = paths
+        # Try to load codecov.yaml
+        project_root = self.config_path.parent.parent
+        codecov_file = project_root / "codecov.yaml"
 
-        return flag_mapping
+        if codecov_file.exists():
+            try:
+                with open(codecov_file, encoding="utf-8") as f:
+                    codecov_data = yaml.safe_load(f)
+                    flags = codecov_data.get("flags", {})
 
-    def get_codecov_status_targets(self) -> dict[str, float]:
-        """Get Codecov status target percentages by flag."""
-        targets = {}
+                    # Convert to simple mapping
+                    flag_mapping = {}
+                    for flag_name, flag_config in flags.items():
+                        paths = flag_config.get("paths", [])
+                        flag_mapping[flag_name] = paths
 
-        coverage_config = self._codecov_config.get("coverage", {})
-        status_config = coverage_config.get("status", {})
-        project_config = status_config.get("project", {})
+                    return flag_mapping
+            except (yaml.YAMLError, OSError):
+                pass
 
-        for target_name, target_config in project_config.items():
-            if isinstance(target_config, dict) and "target" in target_config:
-                target_str = target_config["target"]
-                if isinstance(target_str, str) and target_str.endswith("%"):
-                    try:
-                        targets[target_name] = float(target_str.rstrip("%"))
-                    except ValueError:
-                        continue
-
-        return targets
-
-    def align_with_codecov_flags(self, test_type: str) -> list[str]:
-        """
-        Get source paths for a test type aligned with Codecov flags.
-        Returns paths that should be included for this test type based on Codecov configuration.
-        """
-        codecov_mapping = self.get_codecov_flag_mapping()
-
-        # Direct mapping if test type exists as Codecov flag
-        if test_type in codecov_mapping:
-            return codecov_mapping[test_type]
-
-        # Default patterns if no Codecov alignment
-        test_config = self.get_test_type_config(test_type)
-        return test_config.get("patterns", [])
+        return {}

@@ -9,7 +9,7 @@ from src.database.connection import (
     DatabaseConnectionError,
     DatabaseError,
     DatabaseManager,
-    get_database_manager,
+    get_database_manager_async,
     get_db_session,
 )
 
@@ -366,8 +366,8 @@ class TestGlobalDatabaseManager:
 
             src.database.connection._db_manager = None
 
-            manager1 = await get_database_manager()
-            manager2 = await get_database_manager()
+            manager1 = await get_database_manager_async()
+            manager2 = await get_database_manager_async()
 
             assert manager1 is manager2  # Same instance
 

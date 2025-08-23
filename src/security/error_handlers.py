@@ -51,6 +51,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
 
+from src.auth.exceptions import AuthExceptionHandler
 from src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -389,6 +390,10 @@ def create_secure_http_exception(
 
     Note:
         Custom headers are merged with security headers (security headers take precedence).
+
+        **DEPRECATED**: Consider using AuthExceptionHandler methods instead for
+        standardized authentication, authorization, and validation errors.
+        This function remains for backward compatibility and non-auth errors.
     """
     secure_headers = {
         "X-Content-Type-Options": "nosniff",
@@ -403,3 +408,64 @@ def create_secure_http_exception(
         detail=detail,
         headers=secure_headers,
     )
+
+
+def create_auth_aware_http_exception(
+    status_code: int,
+    detail: str,
+    headers: dict[str, str] | None = None,
+    user_identifier: str = "",
+    log_message: str = "",
+) -> HTTPException:
+    """Create HTTP exception using AuthExceptionHandler for common auth scenarios.
+
+    Wrapper that routes common HTTP errors through AuthExceptionHandler while
+    maintaining backward compatibility with create_secure_http_exception.
+
+    Args:
+        status_code: HTTP status code for the exception
+        detail: Error detail message (should be production-safe)
+        headers: Additional headers to include (optional)
+        user_identifier: User identifier for logging (optional)
+        log_message: Custom log message (optional)
+
+    Returns:
+        HTTPException created via AuthExceptionHandler or fallback
+
+    Example:
+        >>> raise create_auth_aware_http_exception(
+        ...     status_code=401,
+        ...     detail="Authentication required",
+        ...     user_identifier="service_token_xyz"
+        ... )
+    """
+    # Route common auth errors through AuthExceptionHandler
+    if status_code == 401:
+        return AuthExceptionHandler.handle_authentication_error(
+            detail=detail,
+            log_message=log_message or detail,
+            user_identifier=user_identifier,
+        )
+    if status_code == 403:
+        return AuthExceptionHandler.handle_permission_error(
+            permission_name="access",
+            user_identifier=user_identifier,
+            detail=detail,
+        )
+    if status_code == 422:
+        return AuthExceptionHandler.handle_validation_error(
+            detail,
+            field_name="request_data",
+        )
+    if status_code == 429:
+        return AuthExceptionHandler.handle_rate_limit_error(
+            detail=detail,
+            client_identifier=user_identifier,
+        )
+    if status_code == 503:
+        return AuthExceptionHandler.handle_service_unavailable(
+            service_name="application",
+            detail=detail,
+        )
+    # Fallback to original secure exception for non-auth errors
+    return create_secure_http_exception(status_code, detail, headers)

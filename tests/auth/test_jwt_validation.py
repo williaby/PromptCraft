@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
 
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
@@ -21,10 +22,23 @@ class TestJWTValidator:
         return client
 
     @pytest.fixture
-    def jwt_validator(self, mock_jwks_client):
+    def auth_config(self):
+        """Authentication configuration for testing."""
+        from src.auth.config import AuthenticationConfig
+
+        return AuthenticationConfig(
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test-team",
+            email_whitelist=["test@example.com", "@trusted.com"],
+            email_whitelist_enabled=True,
+        )
+
+    @pytest.fixture
+    def jwt_validator(self, mock_jwks_client, auth_config):
         """JWT validator instance."""
         return JWTValidator(
             jwks_client=mock_jwks_client,
+            config=auth_config,
             audience="test-audience",
             issuer="test-issuer",
         )
@@ -190,10 +204,10 @@ class TestJWTValidator:
             mock_from_jwk.return_value = "mock-public-key"
             mock_decode.return_value = sample_jwt_payload
 
-            with pytest.raises(JWTValidationError) as exc_info:
+            with pytest.raises(HTTPException) as exc_info:
                 jwt_validator.validate_token(token, email_whitelist)
 
-            assert exc_info.value.error_type == "email_not_authorized"
+            assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
     def test_determine_admin_role_by_email(self, jwt_validator, mock_jwks_client, sample_jwt_payload, sample_jwk):
         """Test admin role determination by email."""
@@ -221,17 +235,17 @@ class TestJWTValidator:
         """Test email whitelist exact match."""
         email_whitelist = ["test@example.com", "admin@company.com"]
 
-        assert jwt_validator._is_email_allowed("test@example.com", email_whitelist)
-        assert jwt_validator._is_email_allowed("admin@company.com", email_whitelist)
-        assert not jwt_validator._is_email_allowed("other@example.com", email_whitelist)
+        assert jwt_validator.is_email_allowed("test@example.com", email_whitelist)
+        assert jwt_validator.is_email_allowed("admin@company.com", email_whitelist)
+        assert not jwt_validator.is_email_allowed("other@example.com", email_whitelist)
 
     def test_is_email_allowed_domain_match(self, jwt_validator):
         """Test email whitelist domain match."""
         email_whitelist = ["@company.com", "@trusted.org"]
 
-        assert jwt_validator._is_email_allowed("user@company.com", email_whitelist)
-        assert jwt_validator._is_email_allowed("admin@trusted.org", email_whitelist)
-        assert not jwt_validator._is_email_allowed("user@external.com", email_whitelist)
+        assert jwt_validator.is_email_allowed("user@company.com", email_whitelist)
+        assert jwt_validator.is_email_allowed("admin@trusted.org", email_whitelist)
+        assert not jwt_validator.is_email_allowed("user@external.com", email_whitelist)
 
     def test_validate_token_format_valid(self, jwt_validator):
         """Test token format validation for valid token."""

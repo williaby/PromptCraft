@@ -187,7 +187,8 @@ You are now ready to start development!
 
 We welcome contributions! Whether it's a bug report, a new feature, or improvements to our documentation, we
 value your input. Please read our **[Developer Guide & Coding Standards (CONTRIBUTING.md)](./CONTRIBUTING.md)**
-to get started.
+to get started. For a quick reference to project structure, commands, style, and testing conventions, see the
+**[Repository Guidelines](./AGENTS.md)**.
 
 ## License
 

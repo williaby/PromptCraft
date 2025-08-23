@@ -1,0 +1,11 @@
+# GitGuardian configuration for PromptCraft project
+secret:
+  # Exclude test directories and files from scanning to avoid false positives
+  ignored_paths:
+    - "tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/mock_*.py"
+    - "**/*_mock.py"
+    - "**/fixtures/**"
+    - "**/conftest.py"

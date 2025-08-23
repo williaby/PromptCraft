@@ -17,6 +17,7 @@ from unittest.mock import Mock, patch
 
 import jwt
 import pytest
+from fastapi import HTTPException
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidAudienceError,
@@ -48,10 +49,23 @@ class TestJWTValidatorTokenDecoding:
         return client
 
     @pytest.fixture
-    def validator(self, mock_jwks_client):
+    def auth_config(self):
+        """Authentication configuration for testing."""
+        from src.auth.config import AuthenticationConfig
+
+        return AuthenticationConfig(
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test-team",
+            email_whitelist=["test@example.com", "@trusted.com"],
+            email_whitelist_enabled=True,
+        )
+
+    @pytest.fixture
+    def validator(self, mock_jwks_client, auth_config):
         """Create JWT validator instance."""
         return JWTValidator(
             jwks_client=mock_jwks_client,
+            config=auth_config,
             audience="https://test-app.com",
             issuer="https://test.cloudflareaccess.com",
         )
@@ -90,8 +104,9 @@ class TestJWTValidatorTokenDecoding:
         ]
 
         for token in invalid_tokens:
-            with pytest.raises(JWTValidationError, match="Invalid token format"):
+            with pytest.raises(JWTValidationError) as exc_info:
                 validator.validate_token(token)
+            assert exc_info.value.error_type == "invalid_format"
 
     def test_validate_token_format_malformed_json(self, validator):
         """Test validation with malformed JSON in token parts."""
@@ -101,8 +116,9 @@ class TestJWTValidatorTokenDecoding:
         signature = jwt.utils.base64url_encode(b"fake-signature")
         malformed_token = f"{header.decode()}.{payload.decode()}.{signature.decode()}"
 
-        with pytest.raises(JWTValidationError, match="Invalid token format"):
+        with pytest.raises(JWTValidationError) as exc_info:
             validator.validate_token(malformed_token)
+        assert exc_info.value.error_type == "invalid_format"
 
     def test_validate_token_missing_kid_header(self, validator):
         """Test validation when token header is missing 'kid' claim."""
@@ -112,8 +128,9 @@ class TestJWTValidatorTokenDecoding:
         signature = jwt.utils.base64url_encode(b"fake-signature")
         token_without_kid = f"{header.decode()}.{payload.decode()}.{signature.decode()}"
 
-        with pytest.raises(JWTValidationError, match="JWT token missing 'kid' in header"):
+        with pytest.raises(JWTValidationError) as exc_info:
             validator.validate_token(token_without_kid)
+        assert exc_info.value.error_type == "missing_kid"
 
     def test_validate_token_jwks_key_not_found(self, validator):
         """Test validation when JWKS key is not found."""
@@ -200,13 +217,31 @@ class TestJWTValidatorEmailWhitelist:
     def mock_jwks_client(self):
         """Create mock JWKS client."""
         client = Mock(spec=JWKSClient)
-        client.get_key_by_kid.return_value = {"kty": "RSA", "use": "sig"}
+        client.get_key_by_kid.return_value = {
+            "kty": "RSA",
+            "use": "sig",
+            "kid": "test-key-id",
+            "n": "test-modulus",
+            "e": "AQAB",
+        }
         return client
 
     @pytest.fixture
-    def validator(self, mock_jwks_client):
+    def auth_config(self):
+        """Authentication configuration for testing."""
+        from src.auth.config import AuthenticationConfig
+
+        return AuthenticationConfig(
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test-team",
+            email_whitelist=["test@example.com", "@trusted.com"],
+            email_whitelist_enabled=True,
+        )
+
+    @pytest.fixture
+    def validator(self, mock_jwks_client, auth_config):
         """Create JWT validator instance."""
-        return JWTValidator(jwks_client=mock_jwks_client)
+        return JWTValidator(jwks_client=mock_jwks_client, config=auth_config)
 
     def test_is_email_allowed_exact_match(self, validator):
         """Test exact email address matching."""
@@ -310,13 +345,17 @@ class TestJWTValidatorEmailWhitelist:
     @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
     def test_validate_token_email_whitelist_denied(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test validation failure with non-whitelisted email."""
+        from fastapi import HTTPException
+
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": "denied@blocked.com", "sub": "user789"}
 
         whitelist = ["user@example.com", "@company.org"]
 
-        with pytest.raises(JWTValidationError, match="Email .* not authorized"):
+        with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token, email_whitelist=whitelist)
+
+        assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
 
 @pytest.mark.unit
@@ -330,9 +369,21 @@ class TestJWTValidatorRoleDetermination:
         return Mock(spec=JWKSClient)
 
     @pytest.fixture
-    def validator(self, mock_jwks_client):
+    def auth_config(self):
+        """Authentication configuration for testing."""
+        from src.auth.config import AuthenticationConfig
+
+        return AuthenticationConfig(
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test-team",
+            email_whitelist=["test@example.com", "@trusted.com"],
+            email_whitelist_enabled=True,
+        )
+
+    @pytest.fixture
+    def validator(self, mock_jwks_client, auth_config):
         """Create JWT validator instance."""
-        return JWTValidator(jwks_client=mock_jwks_client)
+        return JWTValidator(jwks_client=mock_jwks_client, config=auth_config)
 
     def test_determine_admin_role_admin_email(self, validator):
         """Test admin role determination for admin email."""
@@ -426,13 +477,31 @@ class TestJWTValidatorEdgeCases:
     def mock_jwks_client(self):
         """Create mock JWKS client."""
         client = Mock(spec=JWKSClient)
-        client.get_key_by_kid.return_value = {"kty": "RSA", "use": "sig"}
+        client.get_key_by_kid.return_value = {
+            "kty": "RSA",
+            "use": "sig",
+            "kid": "test-key-id",
+            "n": "test-modulus",
+            "e": "AQAB",
+        }
         return client
 
     @pytest.fixture
-    def validator(self, mock_jwks_client):
+    def auth_config(self):
+        """Authentication configuration for testing."""
+        from src.auth.config import AuthenticationConfig
+
+        return AuthenticationConfig(
+            cloudflare_access_enabled=True,
+            cloudflare_team_domain="test-team",
+            email_whitelist=["test@example.com", "@trusted.com"],
+            email_whitelist_enabled=True,
+        )
+
+    @pytest.fixture
+    def validator(self, mock_jwks_client, auth_config):
         """Create JWT validator instance."""
-        return JWTValidator(jwks_client=mock_jwks_client)
+        return JWTValidator(jwks_client=mock_jwks_client, config=auth_config)
 
     def test_validate_token_extremely_long_token(self, validator):
         """Test validation with extremely long token."""
@@ -446,63 +515,82 @@ class TestJWTValidatorEdgeCases:
         """Test validation with unicode characters in token."""
         unicode_token = "émojis🚀.and.ünïcödé"  # noqa: S105
 
-        with pytest.raises(JWTValidationError):
+        with pytest.raises(JWTValidationError) as exc_info:
             validator.validate_token(unicode_token)
+        assert exc_info.value.error_type == "invalid_format"
 
     @patch("src.auth.jwt_validator.jwt.decode")
     @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
     def test_validate_token_unexpected_error(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test handling of unexpected errors during validation."""
+        from fastapi import HTTPException
+
         mock_from_jwk.return_value = "mock_public_key"
         mock_decode.side_effect = Exception("Unexpected error")
 
-        with pytest.raises(JWTValidationError, match="Token validation failed"):
+        with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
+
+        assert exc_info.value.status_code == 401
 
     @patch("src.auth.jwt_validator.jwt.decode")
     def test_validate_token_none_payload(self, mock_decode, validator, valid_jwt_token):
         """Test handling when decode returns None."""
         mock_decode.return_value = None
 
-        with pytest.raises(JWTValidationError):
+        with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
+        assert exc_info.value.status_code == 401
 
     @patch("src.auth.jwt_validator.jwt.decode")
     def test_validate_token_jwks_client_error(self, mock_decode, validator, valid_jwt_token):
         """Test handling of JWKS client errors."""
+        from fastapi import HTTPException
+
         validator.jwks_client.get_key_by_kid.side_effect = Exception("JWKS error")
         mock_decode.side_effect = jwt.exceptions.InvalidTokenError("Key retrieval failed")
 
-        with pytest.raises(JWTValidationError):
+        with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
+
+        assert exc_info.value.status_code == 401
 
     def test_validator_configuration_edge_cases(self):
         """Test validator with edge case configurations."""
         jwks_client = Mock(spec=JWKSClient)
 
         # Test with very long audience
+        from src.auth.config import AuthenticationConfig
+
+        config = AuthenticationConfig()
         long_audience = "https://" + "a" * 1000 + ".com"
-        validator = JWTValidator(jwks_client, audience=long_audience)
+        validator = JWTValidator(jwks_client, config=config, audience=long_audience)
         assert validator.audience == long_audience
 
         # Test with special characters in issuer
         special_issuer = "https://test-domain_123.example.com/auth"
-        validator = JWTValidator(jwks_client, issuer=special_issuer)
+        validator = JWTValidator(jwks_client, config=config, issuer=special_issuer)
         assert validator.issuer == special_issuer
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_payload_type_errors(self, mock_decode, validator, valid_jwt_token):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_payload_type_errors(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test handling of incorrect payload types."""
+        mock_from_jwk.return_value = "mock_public_key"
         # Test with string payload instead of dict
         mock_decode.return_value = "not-a-dict"
 
-        with pytest.raises(JWTValidationError):
+        with pytest.raises(HTTPException) as exc_info:
             validator.validate_token(valid_jwt_token)
+        assert exc_info.value.status_code == 401
 
     @patch("src.auth.jwt_validator.jwt.decode")
-    def test_validate_token_email_type_error(self, mock_decode, validator, valid_jwt_token):
+    @patch("src.auth.jwt_validator.RSAAlgorithm.from_jwk")
+    def test_validate_token_email_type_error(self, mock_from_jwk, mock_decode, validator, valid_jwt_token):
         """Test handling when email claim is not a string."""
+        mock_from_jwk.return_value = "mock_public_key"
         mock_decode.return_value = {"email": 12345, "sub": "user123"}  # Integer instead of string
 
-        with pytest.raises(JWTValidationError):
+        with pytest.raises(JWTValidationError) as exc_info:
             validator.validate_token(valid_jwt_token)
+        assert exc_info.value.error_type == "invalid_email"

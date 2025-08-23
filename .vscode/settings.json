@@ -34,5 +34,27 @@
         "--cov-report=xml:coverage.xml",
         "--junitxml=reports/junit.xml",
         "--cov-report=term"
-    ]
+    ],
+    "ai-tools": {
+        "validation": {
+            "enabled": true,
+            "checkOnOpen": true,
+            "createTemplates": true,
+            "tools": ["claude", "copilot", "gemini", "qwen", "codex"]
+        },
+        "integration": {
+            "claude": {
+                "enabled": true,
+                "configPath": ".claude/settings.json"
+            },
+            "copilot": {
+                "enabled": true,
+                "configPath": ".github/copilot.yml"
+            },
+            "gemini": {
+                "enabled": true,
+                "configPath": ".gemini/config.json"
+            }
+        }
+    }
 }

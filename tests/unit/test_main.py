@@ -255,24 +255,23 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_all_circuit_breakers")
     def test_health_check_unhealthy(self, mock_circuit_breakers, mock_health_summary) -> None:
         """Test health check when service is unhealthy."""
-        mock_health_summary.return_value = {
+        health_summary = {
             "healthy": False,
             "status": "degraded",
             "environment": "test",
             "version": "1.0.0",
         }
+        mock_health_summary.return_value = health_summary
         mock_circuit_breakers.return_value = {}
 
         response = self.client.get("/health")
 
         assert response.status_code == 503
         data = response.json()
-        # The security error handler processes HTTPException and returns structured error
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_service_unavailable returns detailed error message
+        expected_error = f"Health check failed: configuration unhealthy - {health_summary}"
+        assert data["error"] == expected_error
         assert data["status_code"] == 503
-        assert "timestamp" in data
-        assert data["path"] == "/health"
-        assert "debug" in data
 
     @patch("src.main.get_configuration_health_summary")
     @patch("src.main.get_all_circuit_breakers")
@@ -285,11 +284,10 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # The security error handler processes our custom HTTPException
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+        expected_error = "Health check endpoint failed: Unexpected error"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert "timestamp" in data
-        assert data["path"] == "/health"
 
     @patch("src.main.get_configuration_health_summary")
     @patch("src.main.get_all_circuit_breakers")
@@ -364,11 +362,18 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # Error handler creates structured response with 'error', 'status_code', 'path', 'debug'
-        assert data["error"] == "HTTP error"
+        # With debug mode, error message should contain detailed information
+        from src.config.constants import HEALTH_CHECK_ERROR_LIMIT, HEALTH_CHECK_SUGGESTION_LIMIT
+
+        expected_detail = {
+            "error": "Configuration validation failed",
+            "field_errors": config_error.field_errors[:HEALTH_CHECK_ERROR_LIMIT],
+            "suggestions": config_error.suggestions[:HEALTH_CHECK_SUGGESTION_LIMIT],
+        }
+        full_exception_str = str(config_error)
+        expected_error = f"{expected_detail}: {full_exception_str}"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert "debug" in data
-        assert data["debug"]["error_type"] == "HTTPException"
 
     @patch("src.main.get_settings")
     def test_configuration_health_validation_error_production(self, mock_settings) -> None:
@@ -383,10 +388,14 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # Error handler creates structured response without debug details in production
-        assert data["error"] == "HTTP error"
+        # In production mode, error message should contain minimal detail
+        expected_detail = {
+            "error": "Configuration validation failed",
+            "details": "Contact system administrator",
+        }
+        expected_error = str(expected_detail)
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert data["path"] == "/health/config"
 
     @patch("src.main.get_settings")
     def test_configuration_health_unexpected_error(self, mock_settings) -> None:
@@ -397,10 +406,10 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # Error handler creates structured response for unexpected errors
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+        expected_error = "Configuration health check failed - see application logs: Unexpected error"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert data["path"] == "/health/config"
 
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_success(self, mock_mcp_health) -> None:
@@ -417,16 +426,17 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_unhealthy(self, mock_mcp_health) -> None:
         """Test MCP health check when unhealthy."""
-        mock_mcp_health.return_value = {"healthy": False, "mcp_status": "disconnected"}
+        mcp_health = {"healthy": False, "mcp_status": "disconnected"}
+        mock_mcp_health.return_value = mcp_health
 
         response = self.client.get("/health/mcp")
 
         assert response.status_code == 503
         data = response.json()
-        # Error handler creates structured response for HTTP errors
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_service_unavailable returns detailed error message
+        expected_error = f"MCP integration unhealthy - {mcp_health}"
+        assert data["error"] == expected_error
         assert data["status_code"] == 503
-        assert data["path"] == "/health/mcp"
 
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_import_error(self, mock_mcp_health) -> None:
@@ -437,10 +447,10 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 503
         data = response.json()
-        # Error handler creates structured response for HTTP errors
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_service_unavailable returns detailed error message
+        expected_error = "MCP integration not available"
+        assert data["error"] == expected_error
         assert data["status_code"] == 503
-        assert data["path"] == "/health/mcp"
 
     @patch("src.main.get_mcp_configuration_health")
     def test_mcp_health_check_exception(self, mock_mcp_health) -> None:
@@ -451,10 +461,10 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # Error handler creates structured response for HTTP errors
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+        expected_error = "MCP health check endpoint failed: Unexpected error"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert data["path"] == "/health/mcp"
 
     @patch("src.main.get_all_circuit_breakers")
     def test_circuit_breaker_health_no_breakers(self, mock_circuit_breakers) -> None:
@@ -512,10 +522,10 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        # Error handler creates structured response for HTTP errors
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+        expected_error = "Circuit breaker health check failed: Breaker error"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
-        assert data["path"] == "/health/circuit-breakers"
 
 
 class TestAPIEndpoints:

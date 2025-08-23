@@ -678,6 +678,7 @@ class TestSetupAuthentication:
             # Verify JWT validator creation
             mock_jwt_validator.assert_called_once_with(
                 jwks_client=mock_jwks_instance,
+                config=config,
                 audience=config.cloudflare_audience,
                 issuer=config.cloudflare_issuer,
                 algorithm=config.jwt_algorithm,
