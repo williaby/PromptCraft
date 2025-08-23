@@ -8,6 +8,7 @@ from unittest.mock import Mock
 import jwt
 import pytest
 
+from src.auth.config import AuthenticationConfig
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
 from src.auth.models import UserRole
@@ -16,14 +17,24 @@ from src.auth.models import UserRole
 class TestJWTValidatorCoverage:
     """Test JWTValidator for coverage completion."""
 
+    def _create_test_config(self) -> AuthenticationConfig:
+        """Create a test authentication configuration."""
+        return AuthenticationConfig(
+            cloudflare_team_domain="test-team",
+            cloudflare_access_enabled=True,
+            email_whitelist_enabled=False,
+        )
+
     @pytest.mark.unit
     @pytest.mark.stress
     def test_jwt_validator_initialization(self):
         """Test JWTValidator initialization."""
         mock_jwks_client = Mock(spec=JWKSClient)
+        config = self._create_test_config()
 
         validator = JWTValidator(
             jwks_client=mock_jwks_client,
+            config=config,
             audience="test-audience",
             issuer="test-issuer",
             algorithm="RS256",
@@ -39,8 +50,9 @@ class TestJWTValidatorCoverage:
     def test_jwt_validator_defaults(self):
         """Test JWTValidator with default values."""
         mock_jwks_client = Mock(spec=JWKSClient)
+        config = self._create_test_config()
 
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         assert validator.jwks_client == mock_jwks_client
         assert validator.audience is None
@@ -52,7 +64,8 @@ class TestJWTValidatorCoverage:
     def test_is_email_allowed_exact_match(self):
         """Test _is_email_allowed with exact email match."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         email_whitelist = ["user@example.com", "admin@test.com"]
 
@@ -65,7 +78,8 @@ class TestJWTValidatorCoverage:
     def test_is_email_allowed_domain_match(self):
         """Test _is_email_allowed with domain matching."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         email_whitelist = ["@example.com", "@test.org"]
 
@@ -78,7 +92,8 @@ class TestJWTValidatorCoverage:
     def test_is_email_allowed_mixed(self):
         """Test _is_email_allowed with mixed exact and domain entries."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         email_whitelist = ["specific@exact.com", "@domain.com"]
 
@@ -91,7 +106,8 @@ class TestJWTValidatorCoverage:
     def test_determine_user_role_admin_email(self):
         """Test _determine_user_role with admin in email."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         payload = {"email": "admin@example.com"}
 
@@ -106,7 +122,8 @@ class TestJWTValidatorCoverage:
     def test_determine_user_role_admin_groups(self):
         """Test _determine_user_role with admin in groups."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         payload = {"groups": ["users", "admin-group"]}
 
@@ -118,7 +135,8 @@ class TestJWTValidatorCoverage:
     def test_determine_user_role_default_user(self):
         """Test _determine_user_role default to USER role."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         payload = {"groups": ["users", "viewers"]}
 
@@ -130,7 +148,8 @@ class TestJWTValidatorCoverage:
     def test_determine_user_role_no_groups(self):
         """Test _determine_user_role with no groups in payload."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         payload = {}
 
@@ -142,7 +161,8 @@ class TestJWTValidatorCoverage:
     def test_determine_user_role_invalid_groups(self):
         """Test _determine_user_role with invalid groups format."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         payload = {"groups": "not-a-list"}
 
@@ -154,7 +174,8 @@ class TestJWTValidatorCoverage:
     def test_validate_token_format_valid(self):
         """Test validate_token_format with valid token format."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         # Generate a valid JWT token dynamically for format validation
         # This eliminates GitGuardian false positives from static JWT patterns
@@ -168,7 +189,8 @@ class TestJWTValidatorCoverage:
     def test_validate_token_format_invalid_parts(self):
         """Test validate_token_format with invalid number of parts."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         # Invalid - only 2 parts
         invalid_token = "header.payload"  # noqa: S105
@@ -180,7 +202,8 @@ class TestJWTValidatorCoverage:
     def test_validate_token_format_invalid_base64(self):
         """Test validate_token_format with invalid base64 encoding."""
         mock_jwks_client = Mock(spec=JWKSClient)
-        validator = JWTValidator(jwks_client=mock_jwks_client)
+        config = self._create_test_config()
+        validator = JWTValidator(jwks_client=mock_jwks_client, config=config)
 
         # Invalid - malformed base64
         invalid_token = "invalid.invalid.invalid"  # noqa: S105

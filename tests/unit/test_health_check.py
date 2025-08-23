@@ -452,17 +452,20 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_configuration_health_summary")
     def test_health_endpoint_unhealthy(self, mock_health_summary) -> None:
         """Test /health endpoint when application is unhealthy."""
-        mock_health_summary.return_value = {
+        health_summary = {
             "healthy": False,
             "error": "Configuration validation failed",
             "timestamp": "2024-01-01T00:00:00Z",
         }
+        mock_health_summary.return_value = health_summary
 
         response = self.client.get("/health")
 
         assert response.status_code == 503
         data = response.json()
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_service_unavailable returns detailed error message
+        expected_error = f"Health check failed: configuration unhealthy - {health_summary}"
+        assert data["error"] == expected_error
         assert data["status_code"] == 503
 
     @patch("src.main.get_configuration_health_summary")
@@ -474,7 +477,9 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["error"] == "HTTP error"
+        # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+        expected_error = "Health check endpoint failed: Health check failed"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
 
     @patch("src.main.get_settings")
@@ -543,7 +548,13 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["error"] == "HTTP error"
+        # In production mode (debug=False), the error message should contain minimal detail
+        expected_detail = {
+            "error": "Configuration validation failed",
+            "details": "Contact system administrator",
+        }
+        expected_error = str(expected_detail)
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
 
     @patch("src.main.get_settings")
@@ -551,24 +562,27 @@ class TestHealthCheckEndpoints:
         """Test /health/config endpoint when configuration validation fails in debug mode."""
         # First call in try block raises ConfigurationValidationError
         # Second call in except block for debug check should succeed with debug=True
+        field_errors = [
+            "Error 1",
+            "Error 2",
+            "Error 3",
+            "Error 4",
+            "Error 5",
+            "Error 6",
+        ]
+        suggestions = [
+            "Suggestion 1",
+            "Suggestion 2",
+            "Suggestion 3",
+            "Suggestion 4",
+        ]
+        validation_error = ConfigurationValidationError(
+            "Validation failed",
+            field_errors=field_errors,
+            suggestions=suggestions,
+        )
         mock_get_settings.side_effect = [
-            ConfigurationValidationError(
-                "Validation failed",
-                field_errors=[
-                    "Error 1",
-                    "Error 2",
-                    "Error 3",
-                    "Error 4",
-                    "Error 5",
-                    "Error 6",
-                ],
-                suggestions=[
-                    "Suggestion 1",
-                    "Suggestion 2",
-                    "Suggestion 3",
-                    "Suggestion 4",
-                ],
-            ),
+            validation_error,
             ApplicationSettings(debug=True),  # Second call succeeds with debug=True
         ]
 
@@ -576,7 +590,18 @@ class TestHealthCheckEndpoints:
 
         assert response.status_code == 500
         data = response.json()
-        assert data["error"] == "HTTP error"
+        # In debug mode (debug=True), the error message should contain detailed errors with limits applied
+        # HEALTH_CHECK_ERROR_LIMIT=5, HEALTH_CHECK_SUGGESTION_LIMIT=3
+        expected_detail = {
+            "error": "Configuration validation failed",
+            "field_errors": field_errors[:5],  # First 5 errors (HEALTH_CHECK_ERROR_LIMIT)
+            "suggestions": suggestions[:3],  # First 3 suggestions (HEALTH_CHECK_SUGGESTION_LIMIT)
+        }
+        # With expose_error=True in debug mode, the error message format is: "detail: exception_message"
+        # The exception_message is the full string representation of ConfigurationValidationError
+        full_exception_str = str(validation_error)
+        expected_error = f"{expected_detail}: {full_exception_str}"
+        assert data["error"] == expected_error
         assert data["status_code"] == 500
 
     def test_root_endpoint(self) -> None:

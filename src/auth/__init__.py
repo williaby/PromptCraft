@@ -10,6 +10,7 @@ It includes:
 """
 
 from .config import AuthenticationConfig
+from .exceptions import AuthExceptionHandler
 from .jwks_client import JWKSClient
 from .jwt_validator import JWTValidator
 from .middleware import (
@@ -22,6 +23,7 @@ from .middleware import (
 from .models import AuthenticatedUser, AuthenticationError, JWKSError, JWTValidationError, UserRole
 
 __all__ = [
+    "AuthExceptionHandler",
     "AuthenticatedUser",
     "AuthenticationConfig",
     "AuthenticationError",

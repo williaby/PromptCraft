@@ -72,13 +72,11 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry self add poetry-plugin-export
 
-      # Enhanced caching strategy
+      # Optimized caching strategy - cache only .venv to prevent disk space exhaustion
       - name: Cache Poetry and dependencies
         uses: actions/cache@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ steps.cache-key.outputs.poetry-hash }}
           restore-keys: |
@@ -89,20 +87,23 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           poetry install --sync --no-interaction
 
-      # Pre-install essential type stubs without caching MyPy cache
-      # This prevents the 301MB cache compression timeout issue
-      - name: Install essential MyPy stubs (no cache)
+      # Clean up disk space before cache compression to prevent "No space left on device"
+      - name: Clean up disk space
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          echo "🔧 Installing essential MyPy stubs without caching (performance vs reliability tradeoff)"
-          # Install only essential type stubs to prevent cache bloat
-          poetry run python -m pip install \
-            types-requests \
-            types-pyyaml \
-            types-redis \
-            types-python-dateutil \
-            types-setuptools
-          echo "✅ Essential MyPy stubs installed (no cache compression timeout risk)"
+          echo "🧹 Cleaning up disk space before cache compression..."
+          # Clean pip cache
+          pip cache purge 2>/dev/null || true
+          # Clean Poetry cache
+          poetry cache clear --all . -n 2>/dev/null || true
+          # Clean apt cache
+          sudo apt-get clean 2>/dev/null || true
+          # Remove large unnecessary directories to free up space
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc 2>/dev/null || true
+          # Clean temporary files
+          find /tmp -type f -name "*.tmp" -delete 2>/dev/null || true
+          find ~/.cache -type f -name "*.tmp" -delete 2>/dev/null || true
+          echo "✅ Disk cleanup completed"
+
 
   # Parallel unit test jobs by Python version
   unit-tests:
@@ -136,8 +137,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |
@@ -223,8 +222,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |
@@ -308,8 +305,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |
@@ -385,8 +380,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |
@@ -479,8 +472,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ~/.local/share/pypoetry
-            ~/.cache/pypoetry
             .venv
           key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
           restore-keys: |

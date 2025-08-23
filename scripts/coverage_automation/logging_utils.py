@@ -1,127 +1,73 @@
 """
-Structured logging utilities for coverage automation.
-Provides context-aware logging with proper error handling.
+Logging utilities for coverage automation.
 """
 
 import logging
-import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 
 class ContextAwareLogger:
-    """Logger with context information for better debugging."""
+    """Logger with structured context information."""
 
-    def __init__(self, name: str, log_level: str = "INFO"):
-        """Initialize logger with structured formatting."""
+    def __init__(self, name: str):
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(getattr(logging, log_level.upper()))
 
-        # Avoid duplicate handlers
-        if not self.logger.handlers:
-            handler = logging.StreamHandler(sys.stdout)
-            formatter = logging.Formatter(
-                "%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+    def info(self, message: str, **kwargs):
+        """Log info message with context."""
+        context_str = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        full_message = f"{message} {context_str}".strip()
+        self.logger.info(full_message)
 
-    def info(self, message: str, **context: Any) -> None:
-        """Log info message with optional context."""
-        self._log_with_context(logging.INFO, message, context)
+    def warning(self, message: str, **kwargs):
+        """Log warning message with context."""
+        context_str = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        full_message = f"{message} {context_str}".strip()
+        self.logger.warning(full_message)
 
-    def warning(self, message: str, **context: Any) -> None:
-        """Log warning message with optional context."""
-        self._log_with_context(logging.WARNING, message, context)
-
-    def error(self, message: str, **context: Any) -> None:
-        """Log error message with optional context."""
-        self._log_with_context(logging.ERROR, message, context)
-
-    def debug(self, message: str, **context: Any) -> None:
-        """Log debug message with optional context."""
-        self._log_with_context(logging.DEBUG, message, context)
-
-    def _log_with_context(self, level: int, message: str, context: dict[str, Any]) -> None:
-        """Log message with structured context information."""
-        if context:
-            context_str = " | ".join(f"{k}={v}" for k, v in context.items())
-            formatted_message = f"{message} | {context_str}"
-        else:
-            formatted_message = message
-
-        self.logger.log(level, formatted_message)
+    def error(self, message: str, **kwargs):
+        """Log error message with context."""
+        context_str = " ".join(f"{k}={v}" for k, v in kwargs.items())
+        full_message = f"{message} {context_str}".strip()
+        self.logger.error(full_message)
 
 
 class SecurityLogger:
-    """Specialized logger for security-related events."""
+    """Specialized logger for security events."""
 
     def __init__(self):
-        self.logger = ContextAwareLogger("coverage_automation.security", "WARNING")
+        self.logger = logging.getLogger("security")
 
-    def log_path_validation_failure(self, file_path: Path, reason: str) -> None:
-        """Log path validation security failure."""
-        self.logger.error(
-            "Security: Path validation failed",
-            file_path=str(file_path),
-            reason=reason,
-            timestamp=datetime.now().isoformat(),
-        )
+    def log_path_validation_failure(self, path: Path, reason: str):
+        """Log path validation failure."""
+        self.logger.warning(f"Security: Path validation failed - {reason} path={path}")
 
-    def log_file_size_violation(self, file_path: Path, size_bytes: int, limit_bytes: int) -> None:
-        """Log file size security violation."""
-        self.logger.error(
-            "Security: File size limit exceeded",
-            file_path=str(file_path),
-            size_bytes=size_bytes,
-            limit_bytes=limit_bytes,
-            timestamp=datetime.now().isoformat(),
-        )
-
-    def log_import_path_rejection(self, import_path: str, reason: str) -> None:
-        """Log import path security rejection."""
-        self.logger.error(
-            "Security: Import path rejected",
-            import_path=import_path,
-            reason=reason,
-            timestamp=datetime.now().isoformat(),
-        )
+    def log_file_size_violation(self, path: Path, size_mb: float):
+        """Log file size violation."""
+        self.logger.warning(f"Security: File size violation path={path} size_mb={size_mb}")
 
 
 class PerformanceLogger:
-    """Logger for performance metrics and timing."""
+    """Specialized logger for performance events."""
 
     def __init__(self):
-        self.logger = ContextAwareLogger("coverage_automation.performance", "INFO")
+        self.logger = logging.getLogger("performance")
 
-    def log_operation_timing(self, operation: str, duration_seconds: float, **context: Any) -> None:
-        """Log operation timing with context."""
-        self.logger.info(f"Performance: {operation} completed", duration_seconds=round(duration_seconds, 3), **context)
-
-    def log_cache_stats(self, cache_name: str, hits: int, misses: int, size: int) -> None:
-        """Log cache performance statistics."""
-        hit_rate = hits / (hits + misses) if (hits + misses) > 0 else 0
-        self.logger.info(
-            f"Performance: Cache stats for {cache_name}",
-            hits=hits,
-            misses=misses,
-            size=size,
-            hit_rate=round(hit_rate * 100, 2),
-        )
+    def log_operation_timing(self, operation: str, duration_seconds: float, context: str = ""):
+        """Log operation timing."""
+        context_info = f" context={context}" if context else ""
+        self.logger.info(f"Performance: {operation} completed duration_seconds={duration_seconds}{context_info}")
 
 
-def get_logger(component: str) -> ContextAwareLogger:
-    """Get a context-aware logger for a component."""
-    return ContextAwareLogger(f"coverage_automation.{component}")
+def get_logger(name: str) -> ContextAwareLogger:
+    """Get a context-aware logger."""
+    return ContextAwareLogger(name)
 
 
 def get_security_logger() -> SecurityLogger:
-    """Get the security logger instance."""
+    """Get security logger."""
     return SecurityLogger()
 
 
 def get_performance_logger() -> PerformanceLogger:
-    """Get the performance logger instance."""
+    """Get performance logger."""
     return PerformanceLogger()

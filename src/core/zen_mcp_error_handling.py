@@ -739,3 +739,49 @@ class ZenMCPErrorHandler:
             "circuit_breaker": self.circuit_breaker.get_health_status(),
             "retry_policy": self.retry_policy.get_health_status(),
         }
+
+
+# Factory functions for test compatibility
+
+
+def create_error_handler(config: dict[str, Any] | None = None) -> ZenMCPIntegration:
+    """
+    Create a configured error handler instance.
+
+    Args:
+        config: Optional configuration dictionary
+
+    Returns:
+        ZenMCPIntegration: Configured error handler
+    """
+    if config is None:
+        config = {}
+
+    # Create resilience handler with configs if provided
+    circuit_breaker_config = config.get("circuit_breaker", {})
+    retry_config = config.get("retry", {})
+
+    if circuit_breaker_config or retry_config:
+        # Create configured handlers
+        circuit_breaker = CircuitBreakerStrategy()  # Use config if needed
+        retry_strategy = RetryStrategy()  # Use config if needed
+        resilience_handler: CompositeResilienceHandler = CompositeResilienceHandler(
+            [circuit_breaker, retry_strategy],
+            logging.getLogger(__name__),
+        )
+        return ZenMCPIntegration(resilience_handler=resilience_handler)
+
+    return ZenMCPIntegration()
+
+
+def log_error_with_context(error: Exception, context: dict[str, Any]) -> None:
+    """
+    Log error with additional context information.
+
+    Args:
+        error: Exception to log
+        context: Additional context for the error
+    """
+    logger = logging.getLogger("zen_mcp_error_handling")
+    context_str = " ".join(f"{k}={v}" for k, v in context.items())
+    logger.error("Zen MCP Error: %s | Context: %s", str(error), context_str)

@@ -539,9 +539,9 @@ class TestUserSession:
 
         assert first_seen.nullable is False
         assert last_seen.nullable is False
-        # Both should have default values
-        assert first_seen.default is not None
-        assert last_seen.default is not None
+        # Both should have server default values
+        assert first_seen.server_default is not None
+        assert last_seen.server_default is not None
 
     def test_user_session_session_count_column(self):
         """Test UserSession session_count column properties."""
@@ -688,7 +688,7 @@ class TestAuthenticationEvent:
         table = AuthenticationEvent.__table__
         email_column = table.columns["user_email"]
 
-        assert email_column.nullable is False
+        assert email_column.nullable is True  # Can be None for service token auth
         assert email_column.type.length == 255
         assert hasattr(email_column, "index")
 
@@ -736,7 +736,7 @@ class TestAuthenticationEvent:
         created_column = table.columns["created_at"]
 
         assert created_column.nullable is False
-        assert created_column.default is not None
+        assert created_column.server_default is not None
         assert hasattr(created_column, "index")
 
     def test_authentication_event_creation(self):
@@ -949,7 +949,7 @@ class TestModelConstraints:
             col.name for col in table.columns if not col.nullable and col.name != "id"  # id has default
         ]
 
-        expected_required = ["user_email", "event_type", "success", "created_at"]
+        expected_required = ["event_type", "success", "created_at"]  # user_email is nullable for service token auth
         for column in expected_required:
             assert column in non_nullable_columns
 

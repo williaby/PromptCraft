@@ -38,16 +38,17 @@ class ServiceTokenManager:
         """
         # Handle both real usage and test mocking
         db_gen = get_db()
-        # If it's mocked, it will have __aenter__ method
-        if hasattr(db_gen, "__aenter__"):
-            session: AsyncSession = await db_gen.__aenter__()
+        try:
+            # Try to use as async generator first
+            session: AsyncSession = await db_gen.__anext__()  # type: ignore[attr-defined]
             return session
-        # Real async generator usage
-        async for session in db_gen:
-            return session
-        # This should never be reached in normal operation
-        msg = "No database session available"
-        raise RuntimeError(msg)
+        except AttributeError:
+            # Fall back to context manager pattern
+            if hasattr(db_gen, "__aenter__"):
+                session = await db_gen.__aenter__()
+                return session
+            # Last resort - direct call
+            raise RuntimeError("No database session available") from None
 
     def generate_token(self) -> str:
         """Generate a new cryptographically secure service token.

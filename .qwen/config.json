@@ -1,0 +1,75 @@
+{
+  "project": "PromptCraft-Hybrid",
+  "model": "qwen-coder-plus",
+  "settings": {
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "top_p": 0.9,
+    "presence_penalty": 0.1
+  },
+  "code_assistance": {
+    "languages": {
+      "python": {
+        "style": "black",
+        "line_length": 88,
+        "linting": ["ruff", "mypy"],
+        "testing_framework": "pytest"
+      },
+      "javascript": {
+        "style": "prettier",
+        "linting": ["eslint"]
+      },
+      "markdown": {
+        "line_length": 120,
+        "linting": ["markdownlint"]
+      }
+    },
+    "frameworks": {
+      "fastapi": {
+        "async_preferred": true,
+        "pydantic_models": true,
+        "dependency_injection": true
+      },
+      "gradio": {
+        "version": "4.x",
+        "component_based": true
+      }
+    }
+  },
+  "project_patterns": {
+    "agents": {
+      "base_class": "BaseAgent",
+      "async_methods": true,
+      "type_hints": "required",
+      "naming": "snake_case"
+    },
+    "knowledge": {
+      "format": "markdown",
+      "frontmatter": "yaml",
+      "required_fields": ["title", "version", "status", "agent_id", "tags", "purpose"]
+    },
+    "mcp_integration": {
+      "server_type": "zen-mcp",
+      "async_handlers": true,
+      "error_handling": "comprehensive"
+    }
+  },
+  "context_files": [
+    ".claude/CLAUDE.md",
+    "README.md",
+    "pyproject.toml",
+    "knowledge/"
+  ],
+  "ignore_patterns": [
+    "*.env*",
+    "*.log",
+    "__pycache__",
+    ".venv",
+    "node_modules",
+    "coverage",
+    "reports",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache"
+  ]
+}

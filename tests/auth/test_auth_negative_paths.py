@@ -35,10 +35,11 @@ class TestAuthenticationNegativePaths:
         return Mock(spec=JWKSClient)
 
     @pytest.fixture
-    def jwt_validator(self, mock_jwks_client):
+    def jwt_validator(self, mock_jwks_client, auth_config):
         """JWT validator for testing."""
         return JWTValidator(
             jwks_client=mock_jwks_client,
+            config=auth_config,
             audience="test-aud",
             issuer="test-iss",
         )
@@ -151,6 +152,8 @@ class TestAuthenticationNegativePaths:
 
     def test_unauthorized_email_attempts(self, jwt_validator, mock_jwks_client):
         """Test blocking of unauthorized email addresses."""
+        from fastapi import HTTPException
+
         mock_jwks_client.get_key_by_kid.return_value = {
             "kty": "RSA",
             "kid": "test-kid",
@@ -185,10 +188,10 @@ class TestAuthenticationNegativePaths:
                 mock_from_jwk.return_value = "mock-public-key"
                 mock_decode.return_value = payload
 
-                with pytest.raises(JWTValidationError) as exc_info:
+                with pytest.raises(HTTPException) as exc_info:
                     jwt_validator.validate_token("test.jwt.token", email_whitelist)
 
-                assert exc_info.value.error_type == "email_not_authorized"
+                assert exc_info.value.status_code == 401  # Authorization errors become authentication errors
 
     def test_jwks_endpoint_failures(self):
         """Test various JWKS endpoint failure scenarios."""
@@ -233,12 +236,14 @@ class TestAuthenticationNegativePaths:
     def test_middleware_missing_headers(self, auth_config, jwt_validator):
         """Test middleware behavior with missing authentication headers."""
         from fastapi import FastAPI, Request
+        from fastapi.responses import JSONResponse
 
         app = FastAPI()
         middleware = AuthenticationMiddleware(
             app=app,
             config=auth_config,
             jwt_validator=jwt_validator,
+            database_enabled=False,  # Disable database logging for tests
         )
 
         # Mock request without authentication headers
@@ -255,8 +260,9 @@ class TestAuthenticationNegativePaths:
 
         result = asyncio.run(middleware.dispatch(request, mock_call_next))
 
-        # Should return 401 error
-        assert hasattr(result, "status_code")
+        # Should return JSONResponse with 401 error status
+        assert isinstance(result, JSONResponse)
+        assert result.status_code == 401
 
     def test_rate_limiting_bypass_attempts(self, auth_config):
         """Test various rate limiting bypass attempts."""

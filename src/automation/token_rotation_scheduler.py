@@ -100,7 +100,7 @@ class TokenRotationScheduler:
         rotation_plans = []
 
         try:
-            async for session in get_db():
+            async with get_db() as session:
                 # Find tokens that need rotation based on age
                 cutoff_date = datetime.now(UTC) - timedelta(days=self.default_rotation_age_days)
 
@@ -164,8 +164,6 @@ class TokenRotationScheduler:
                     )
 
                     rotation_plans.append(plan)
-
-                break  # Only need first session
 
         except Exception:
             # Log only a generic error message to avoid leaking sensitive information

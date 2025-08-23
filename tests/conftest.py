@@ -45,7 +45,7 @@ def pytest_runtest_setup(item):
 
 
 # Pytest markers that match codecov flags
-pytest_plugins = []
+pytest_plugins = ["pytest_plugins.coverage_hook_plugin"]
 
 
 def pytest_configure(config):

@@ -12,7 +12,7 @@ import sys
 from datetime import datetime
 
 if sys.version_info >= (3, 11):
-    from datetime import UTC
+    from datetime import timezone
 else:
     from datetime import timezone
 
@@ -81,14 +81,14 @@ class HealthChecker:
                 "healthy": overall_healthy,
                 "configuration": status.model_dump(),
                 "mcp": mcp_health,
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         except Exception as e:
             self.logger.error("Health check failed: %s", e)
             return {
                 "healthy": False,
                 "error": f"Health check failed: {e}",
-                "timestamp": datetime.now(UTC).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
 
@@ -150,7 +150,7 @@ class ConfigurationStatusModel(BaseModel):
     api_port: int = Field(description="API port number")
 
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="When this status was generated (UTC)",
     )
 
@@ -445,14 +445,14 @@ def get_configuration_health_summary() -> dict[str, Any]:
         return {
             "healthy": False,
             "error": "Configuration health check failed",
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception:
         logger.exception("Failed to generate configuration health summary")
         return {
             "healthy": False,
             "error": "Configuration health check failed",
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -488,7 +488,7 @@ async def get_mcp_configuration_health() -> dict[str, Any]:
             "mcp_configuration": config_health,
             "mcp_client": client_health,
             "parallel_executor": executor_health,
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     except ImportError as e:
@@ -496,12 +496,12 @@ async def get_mcp_configuration_health() -> dict[str, Any]:
         return {
             "healthy": False,
             "error": "MCP integration not available",
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as e:
         logger.error("MCP configuration health check failed: %s", e)
         return {
             "healthy": False,
             "error": f"MCP health check failed: {e}",
-            "timestamp": datetime.now(UTC).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }

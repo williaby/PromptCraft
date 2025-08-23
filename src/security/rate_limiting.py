@@ -42,11 +42,12 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+from src.auth.exceptions import AuthExceptionHandler
 from src.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -189,17 +190,10 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     }
 
     # Return HTTP 429 with rate limit headers
-    raise HTTPException(
-        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        detail=error_detail,
-        headers={
-            "Retry-After": str(retry_after),
-            "X-RateLimit-Limit": str(exc.detail) if hasattr(exc, "detail") else str(default_retry_after),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": str(retry_after),
-            "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "DENY",
-        },
+    raise AuthExceptionHandler.handle_rate_limit_error(
+        retry_after=retry_after,
+        detail=str(error_detail),
+        client_identifier=client_ip,
     )
 
 
@@ -241,6 +235,8 @@ class RateLimits:
 
     # Public read-only endpoints (moderate limits)
     PUBLIC_READ = "100/minute"
+    # Slow API endpoints that require more processing time
+    API_SLOW = "20/minute"
 
 
 def get_rate_limit_for_endpoint(endpoint_type: str) -> str:

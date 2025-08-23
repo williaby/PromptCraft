@@ -1,0 +1,81 @@
+{
+  "project": "PromptCraft-Hybrid",
+  "organization": null,
+  "models": {
+    "code": "gpt-4-turbo",
+    "chat": "gpt-4",
+    "completion": "gpt-3.5-turbo"
+  },
+  "settings": {
+    "temperature": 0.1,
+    "max_tokens": 4096,
+    "top_p": 1.0,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0
+  },
+  "code_features": {
+    "completion": {
+      "enabled": true,
+      "languages": ["python", "javascript", "typescript", "yaml", "markdown"],
+      "context_lines": 50,
+      "suggestions_count": 3
+    },
+    "explanation": {
+      "enabled": true,
+      "detail_level": "comprehensive",
+      "include_examples": true
+    },
+    "refactoring": {
+      "enabled": true,
+      "preserve_functionality": true,
+      "optimize_performance": true,
+      "improve_readability": true
+    }
+  },
+  "project_context": {
+    "type": "ai-workbench",
+    "architecture": "microservices",
+    "deployment": "docker-compose",
+    "primary_language": "python",
+    "version": "3.11+",
+    "package_manager": "poetry",
+    "testing": "pytest",
+    "linting": ["black", "ruff", "mypy"],
+    "databases": ["qdrant"],
+    "ai_integration": ["zen-mcp", "heimdall-mcp"]
+  },
+  "coding_standards": {
+    "python": {
+      "formatter": "black",
+      "line_length": 88,
+      "import_sorting": "isort",
+      "type_checking": "mypy",
+      "linting": "ruff",
+      "docstring_style": "google",
+      "async_preferred": true
+    },
+    "documentation": {
+      "format": "markdown",
+      "line_length": 120,
+      "yaml_frontmatter": true,
+      "required_sections": ["title", "version", "status"]
+    }
+  },
+  "prompts": {
+    "system": "You are a coding assistant for the PromptCraft-Hybrid project, an AI workbench with agent-based architecture and MCP integration.",
+    "code_review": "Review this code against PromptCraft standards: async patterns, type hints, security, and MCP integration.",
+    "documentation": "Generate documentation with YAML frontmatter following PromptCraft knowledge base standards.",
+    "testing": "Create pytest tests with 80% coverage minimum, using the project's tiered testing approach."
+  },
+  "exclude_patterns": [
+    "*.env*",
+    "*.log",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/.mypy_cache/**",
+    "**/.pytest_cache/**",
+    "**/coverage/**",
+    "**/reports/**"
+  ]
+}

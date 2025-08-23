@@ -25,6 +25,8 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent
 sys.path.insert(0, str(scripts_dir))
 
+import subprocess  # noqa: E402
+
 from generate_test_coverage_fast import FastCoverageReportGenerator  # noqa: E402
 
 
@@ -87,16 +89,42 @@ def main():
     # Wait for coverage files to be written
     wait_for_coverage_files()
 
-    # Generate reports
+    # Generate fast reports
     generator = FastCoverageReportGenerator(quiet=False)
-    success = generator.run(force=False)
+    fast_success = generator.run(force=False)
 
-    if success:
-        print("✅ Coverage reports updated automatically")
+    # Generate simplified reports (including simplified_report.html)
+    print("🔄 Generating simplified coverage reports...")
+    project_root = Path(__file__).parent.parent
+    simplified_script = project_root / "scripts" / "simplified_coverage_automation.py"
+
+    try:
+        # Security: subprocess used for controlled coverage automation - no user input processed  # noqa: S603
+        result = subprocess.run(
+            [sys.executable, str(simplified_script)],
+            check=False,
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        simplified_success = result.returncode == 0
+        if not simplified_success:
+            print(f"⚠️  Simplified reports failed: {result.stderr}")
+    except Exception as e:
+        print(f"⚠️  Error running simplified coverage automation: {e}")
+        simplified_success = False
+
+    if fast_success and simplified_success:
+        print("✅ All coverage reports updated automatically")
+        print("📊 Updated: Fast reports + simplified_report.html")
         if contexts_enabled:
             print("💡 Real per-test coverage data used (contexts enabled)")
         else:
             print("💡 Simulated per-test coverage used (enable contexts for real data)")
+    elif fast_success:
+        print("✅ Fast coverage reports updated")
+        print("⚠️  Simplified reports had issues - check logs")
     else:
         print("⚠️  Coverage reports not updated - run tests with coverage first")
         sys.exit(1)

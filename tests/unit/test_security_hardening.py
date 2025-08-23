@@ -1139,21 +1139,20 @@ class TestMainErrorHandling:
 
         with patch("src.main.get_configuration_health_summary") as mock_health:
             # Mock unhealthy configuration
-            mock_health.return_value = {
+            health_summary = {
                 "healthy": False,
                 "errors": ["Configuration error"],
                 "warnings": ["Configuration warning"],
             }
+            mock_health.return_value = health_summary
 
             response = client.get("/health")
             assert response.status_code == 503
-            # The error handler transforms the response
+            # AuthExceptionHandler.handle_service_unavailable returns detailed error message
             data = response.json()
-            assert data["error"] == "HTTP error"
+            expected_error = f"Health check failed: configuration unhealthy - {health_summary}"
+            assert data["error"] == expected_error
             assert data["status_code"] == 503
-            # Check the original detail is in the debug info
-            assert "status" in data["debug"]["error_message"]
-            assert "unhealthy" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_health_check_exception_handling(self):
@@ -1166,13 +1165,11 @@ class TestMainErrorHandling:
 
             response = client.get("/health")
             assert response.status_code == 500
-            # The error handler transforms the response
+            # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
             data = response.json()
-            assert data["error"] == "HTTP error"
+            expected_error = "Health check endpoint failed: Health check failed"
+            assert data["error"] == expected_error
             assert data["status_code"] == 500
-            # Check the original detail is in the debug info
-            assert "status" in data["debug"]["error_message"]
-            assert "error" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_configuration_health_validation_error_debug_mode(self):
@@ -1184,23 +1181,28 @@ class TestMainErrorHandling:
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = True
-            mock_get_settings.side_effect = [
-                ConfigurationValidationError(
-                    "Test validation error",
-                    field_errors=["Error 1", "Error 2", "Error 3"],
-                    suggestions=["Suggestion 1", "Suggestion 2"],
-                ),
-                mock_debug_settings,
-            ]
+            validation_error = ConfigurationValidationError(
+                "Test validation error",
+                field_errors=["Error 1", "Error 2", "Error 3"],
+                suggestions=["Suggestion 1", "Suggestion 2"],
+            )
+            mock_get_settings.side_effect = [validation_error, mock_debug_settings]
 
             response = client.get("/health/config")
             assert response.status_code == 500
             data = response.json()
-            # The error handler transforms the response
-            assert data["error"] == "HTTP error"
+            # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+            from src.config.constants import HEALTH_CHECK_ERROR_LIMIT, HEALTH_CHECK_SUGGESTION_LIMIT
+
+            expected_detail = {
+                "error": "Configuration validation failed",
+                "field_errors": ["Error 1", "Error 2", "Error 3"][:HEALTH_CHECK_ERROR_LIMIT],
+                "suggestions": ["Suggestion 1", "Suggestion 2"][:HEALTH_CHECK_SUGGESTION_LIMIT],
+            }
+            full_exception_str = str(validation_error)
+            expected_error = f"{expected_detail}: {full_exception_str}"
+            assert data["error"] == expected_error
             assert data["status_code"] == 500
-            # The original detail is in debug.error_message
-            assert "Configuration validation failed" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_configuration_health_validation_error_production_mode(self):
@@ -1224,11 +1226,14 @@ class TestMainErrorHandling:
             response = client.get("/health/config")
             assert response.status_code == 500
             data = response.json()
-            # The error handler transforms the response
-            assert data["error"] == "HTTP error"
+            # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+            expected_detail = {
+                "error": "Configuration validation failed",
+                "details": "Contact system administrator",
+            }
+            expected_error = str(expected_detail)
+            assert data["error"] == expected_error
             assert data["status_code"] == 500
-            # The original detail is in debug.error_message
-            assert "Configuration validation failed" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_configuration_health_debug_mode_exception(self):
@@ -1251,11 +1256,14 @@ class TestMainErrorHandling:
             response = client.get("/health/config")
             assert response.status_code == 500
             data = response.json()
-            # The error handler transforms the response
-            assert data["error"] == "HTTP error"
+            # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+            expected_detail = {
+                "error": "Configuration validation failed",
+                "details": "Contact system administrator",
+            }
+            expected_error = str(expected_detail)
+            assert data["error"] == expected_error
             assert data["status_code"] == 500
-            # The original detail is in debug.error_message
-            assert "Configuration validation failed" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_configuration_health_general_exception(self):
@@ -1269,11 +1277,10 @@ class TestMainErrorHandling:
             response = client.get("/health/config")
             assert response.status_code == 500
             data = response.json()
-            # The error handler transforms the response
-            assert data["error"] == "HTTP error"
+            # AuthExceptionHandler.handle_internal_error with expose_error=True returns detailed error
+            expected_error = "Configuration health check failed - see application logs: General error"
+            assert data["error"] == expected_error
             assert data["status_code"] == 500
-            # The original detail is in debug.error_message
-            assert "Configuration health check failed" in data["debug"]["error_message"]
 
     @pytest.mark.asyncio
     async def test_root_endpoint_fallback(self):
