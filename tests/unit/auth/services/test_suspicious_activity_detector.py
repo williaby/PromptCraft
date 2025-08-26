@@ -6,7 +6,7 @@ for identifying suspicious user activities with machine learning capabilities.
 
 import asyncio
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -135,7 +135,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="192.168.1.100",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 severity="low",
                 source="auth",
             ),
@@ -219,7 +219,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address=f"192.168.1.{i % 255}",  # US IP range
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="low",
                 source="auth",
                 metadata={"location": {"country": "US", "city": "New York"}},
@@ -248,7 +248,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                 severity="low",
                 source="auth",
@@ -283,7 +283,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="1.2.3.4",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 severity="low",
                 source="auth",
                 metadata={"location": {"country": "JP", "city": "Tokyo", "lat": 35.6762, "lon": 139.6503}},
@@ -408,7 +408,7 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
             event = SecurityEvent(
                 event_type=event_type,
                 user_id=user_id,
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="low",
                 source="auth",
             )
@@ -422,14 +422,14 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
             SecurityEvent(
                 event_type=SecurityEventType.CONFIGURATION_CHANGED,
                 user_id=user_id,
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 severity="high",
                 source="admin",
             ),
             SecurityEvent(
                 event_type=SecurityEventType.SECURITY_ALERT,
                 user_id=user_id,
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 severity="critical",
                 source="system",
             ),
@@ -679,7 +679,7 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="192.168.1.100",
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="low",
                 source="auth",
             )
@@ -782,7 +782,7 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
             event_type=SecurityEventType.BRUTE_FORCE_ATTEMPT,
             user_id=user_id,
             ip_address="malicious.ip.address",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="critical",
             source="security",
         )
@@ -826,7 +826,7 @@ class TestSuspiciousActivityDetectorPerformance:
         event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="perf_test_user",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="low",
             source="auth",
         )
@@ -852,7 +852,7 @@ class TestSuspiciousActivityDetectorPerformance:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="low",
                 source="auth",
             )
@@ -880,7 +880,7 @@ class TestSuspiciousActivityDetectorPerformance:
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 severity="low",
                 source="auth",
             ),
@@ -990,7 +990,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
         event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=None,  # Missing user_id
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="low",
             source="auth",
         )
@@ -1006,7 +1006,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
         event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=user_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="low",
             source="auth",
         )
@@ -1048,7 +1048,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
         event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=user_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="low",
             source="auth",
         )
@@ -1069,7 +1069,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="low",
                 source="auth",
             )
@@ -1101,7 +1101,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
         extreme_event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=user_id,
-            timestamp=datetime.now() + timedelta(days=365 * 10),  # 10 years in future
+            timestamp=datetime.now(UTC) + timedelta(days=365 * 10),  # 10 years in future
             severity="low",
             source="auth",
             metadata={
@@ -1133,7 +1133,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
             activity_volume_stats={"events": list(range(10000))},  # Large stats
             total_events=10000,
             confidence_score=0.9,
-            last_updated=datetime.now(),
+            last_updated=datetime.now(UTC),
         )
 
         # Store large profile
@@ -1143,7 +1143,7 @@ class TestSuspiciousActivityDetectorErrorHandling:
         event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=user_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="low",
             source="auth",
         )

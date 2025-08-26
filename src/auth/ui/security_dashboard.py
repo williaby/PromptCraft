@@ -19,8 +19,8 @@ from typing import Any
 import gradio as gr
 import plotly.graph_objects as go
 
-from ..models import SecurityEventSeverity, SecurityEventType
-from ..services.security_integration import SecurityIntegrationService
+from src.auth.models import SecurityEventSeverity, SecurityEventType
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class SecurityDashboard:

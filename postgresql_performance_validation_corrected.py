@@ -149,7 +149,6 @@ class PostgreSQLCapabilityAnalyzer:
             ),
         }
 
-
     def analyze_sqlite_migration_data(self) -> dict[str, Any]:
         """Analyze existing SQLite databases for migration complexity."""
         logger.info("Analyzing SQLite migration data and complexity...")
@@ -471,7 +470,6 @@ def main():
     with results_file.open("w") as f:
         json.dump(result_dict, f, indent=2, default=str)
 
-
     # Print corrected executive summary
     recommendation = result.corrected_recommendation
 
@@ -486,7 +484,6 @@ def main():
     mitigation = recommendation["risk_mitigation"]
     for _gate in mitigation["performance_gates"]:
         pass
-
 
     return result_dict
 

@@ -116,10 +116,10 @@ class TestAuditServiceReportGeneration:
                 user_id=f"user{i % 10}",
                 ip_address=f"192.168.1.{100 + (i % 50)}",
                 user_agent=f"Browser{i % 3}",
-                severity="medium" if i % 3 == 0 else "low",
+                severity="warning" if i % 3 == 0 else "info",
                 source="auth",
                 timestamp=base_time + timedelta(hours=i),
-                metadata={"session_id": f"sess_{i}", "login_method": "password"},
+                details={"session_id": f"sess_{i}", "login_method": "password"},
             )
             events.append(event)
 
@@ -274,20 +274,20 @@ class TestAuditServiceExportFunctionality:
                 user_id="test_user",
                 ip_address="192.168.1.100",
                 user_agent="Mozilla/5.0",
-                severity="low",
-                source="auth",
+                severity="info",
+                session_id="test_session",
                 timestamp=datetime.now(),
-                metadata={"session_id": "test_session"},
+                details={"login_method": "password"},
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 user_id="test_user2",
                 ip_address="192.168.1.101",
                 user_agent="Chrome/91.0",
-                severity="medium",
-                source="auth",
+                severity="warning",
+                session_id="test_session_2",
                 timestamp=datetime.now() - timedelta(hours=1),
-                metadata={"reason": "invalid_password"},
+                details={"reason": "invalid_password"},
             ),
         ]
 
@@ -337,8 +337,9 @@ class TestAuditServiceExportFunctionality:
             "ip_address",
             "user_agent",
             "severity",
-            "source",
-            "metadata",
+            "session_id",
+            "risk_score",
+            "details",
         ]
         assert all(col in rows[0] for col in expected_columns)
 
@@ -346,7 +347,7 @@ class TestAuditServiceExportFunctionality:
         assert rows[0]["event_type"] == "login_success"
         assert rows[0]["user_id"] == "test_user"
         assert rows[0]["ip_address"] == "192.168.1.100"
-        assert "test_session" in rows[0]["metadata"]
+        assert "test_session" in rows[0]["session_id"]
 
         assert rows[1]["event_type"] == "login_failure"
         assert rows[1]["user_id"] == "test_user2"
@@ -362,11 +363,11 @@ class TestAuditServiceExportFunctionality:
         csv_reader = csv.DictReader(StringIO(csv_output))
         rows = list(csv_reader)
 
-        # Should not include metadata column
-        assert "metadata" not in rows[0]
+        # Should not include details column  
+        assert "details" not in rows[0]
 
         # Should still have other columns
-        expected_columns = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "source"]
+        expected_columns = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "session_id", "risk_score"]
         assert all(col in rows[0] for col in expected_columns)
 
     async def test_export_report_json_format(self, service, sample_report):
@@ -396,9 +397,9 @@ class TestAuditServiceExportFunctionality:
         assert event1["ip_address"] == "192.168.1.100"
         assert "timestamp" in event1
 
-        # Check metadata inclusion
+        # Check details inclusion
         if sample_report.report_request.include_metadata:
-            assert "metadata" in event1
+            assert "details" in event1
 
         # Check statistics
         stats = data["report_metadata"]["statistics"]
@@ -424,10 +425,10 @@ class TestAuditServiceExportFunctionality:
             user_id="用户测试",  # Chinese characters
             ip_address="192.168.1.100",
             user_agent="Mozilla/5.0 «Special» Chars",
-            severity="low",
+            severity="info",
             source="auth",
             timestamp=datetime.now(),
-            metadata={"note": "Special chars: àáâãäå øæå ñ"},
+            details={"note": "Special chars: àáâãäå øæå ñ"},
         )
 
         request = AuditReportRequest(
@@ -628,14 +629,14 @@ class TestAuditServiceStatistics:
 
         # Create diverse set of events for comprehensive statistics
         event_configs = [
-            (SecurityEventType.LOGIN_SUCCESS, "user1", "192.168.1.100", "low"),
-            (SecurityEventType.LOGIN_SUCCESS, "user1", "192.168.1.100", "low"),
-            (SecurityEventType.LOGIN_FAILURE, "user1", "192.168.1.100", "medium"),
-            (SecurityEventType.LOGIN_SUCCESS, "user2", "192.168.1.101", "low"),
-            (SecurityEventType.BRUTE_FORCE_ATTEMPT, "user2", "192.168.1.101", "high"),
+            (SecurityEventType.LOGIN_SUCCESS, "user1", "192.168.1.100", "info"),
+            (SecurityEventType.LOGIN_SUCCESS, "user1", "192.168.1.100", "info"),
+            (SecurityEventType.LOGIN_FAILURE, "user1", "192.168.1.100", "warning"),
+            (SecurityEventType.LOGIN_SUCCESS, "user2", "192.168.1.101", "info"),
+            (SecurityEventType.BRUTE_FORCE_ATTEMPT, "user2", "192.168.1.101", "critical"),
             (SecurityEventType.SECURITY_ALERT, "user3", "192.168.1.102", "critical"),
-            (SecurityEventType.LOGOUT, "user1", "192.168.1.100", "low"),
-            (SecurityEventType.ACCOUNT_LOCKOUT, "user2", "192.168.1.101", "high"),
+            (SecurityEventType.LOGOUT, "user1", "192.168.1.100", "info"),
+            (SecurityEventType.ACCOUNT_LOCKOUT, "user2", "192.168.1.101", "critical"),
         ]
 
         for i, (event_type, user_id, ip_address, severity) in enumerate(event_configs):
@@ -644,9 +645,10 @@ class TestAuditServiceStatistics:
                 user_id=user_id,
                 ip_address=ip_address,
                 severity=severity,
-                source="auth",
+                session_id=f"session_{i}",
                 timestamp=base_time + timedelta(hours=i),
-                metadata={"test_event": i},
+                details={"test_event": i},
+                risk_score=10 + i * 5,
             )
             events.append(event)
 
@@ -673,10 +675,9 @@ class TestAuditServiceStatistics:
         assert statistics.events_by_type["account_lockout"] == 1
 
         # Check events by severity
-        assert statistics.events_by_severity["low"] == 4
-        assert statistics.events_by_severity["medium"] == 1
-        assert statistics.events_by_severity["high"] == 2
-        assert statistics.events_by_severity["critical"] == 1
+        assert statistics.events_by_severity["info"] == 4
+        assert statistics.events_by_severity["warning"] == 1
+        assert statistics.events_by_severity["critical"] == 3
 
         # Check unique counts
         assert statistics.unique_users == 3  # user1, user2, user3
@@ -706,7 +707,7 @@ class TestAuditServiceStatistics:
                 event_type=SecurityEventType.SYSTEM_ERROR,
                 user_id=None,  # None user_id
                 ip_address=None,  # None IP
-                severity="high",
+                severity="critical",
                 source="system",
                 timestamp=datetime.now(),
             ),
@@ -714,7 +715,7 @@ class TestAuditServiceStatistics:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="real_user",
                 ip_address="192.168.1.100",
-                severity="low",
+                severity="info",
                 source="auth",
                 timestamp=datetime.now(),
             ),
@@ -830,7 +831,7 @@ class TestAuditServicePerformanceRequirements:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=f"user{i}",
                 timestamp=datetime.now() - timedelta(hours=i),
-                severity="low",
+                severity="info",
                 source="auth",
             )
             small_events.append(event)
@@ -855,9 +856,9 @@ class TestAuditServicePerformanceRequirements:
                 user_id=f"user{i % 50}",
                 ip_address=f"192.168.1.{i % 255}",
                 timestamp=datetime.now() - timedelta(minutes=i),
-                severity="medium",
+                severity="warning",
                 source="auth",
-                metadata={"session_id": f"session_{i}"},
+                details={"session_id": f"session_{i}"},
             )
             events.append(event)
 
@@ -904,9 +905,9 @@ class TestAuditServicePerformanceRequirements:
                 user_id=f"user{i % 30}",
                 ip_address=f"10.0.{i//100}.{i % 100}",
                 timestamp=datetime.now() - timedelta(seconds=i * 10),
-                severity="high" if i % 10 == 0 else "low",
+                severity="critical" if i % 10 == 0 else "info",
                 source="security" if i % 10 == 0 else "auth",
-                metadata={"complex_data": {"level1": {"level2": [f"item_{j}" for j in range(5)]}}},
+                details={"complex_data": {"level1": {"level2": [f"item_{j}" for j in range(5)]}}},
             )
             events.append(event)
 
@@ -983,7 +984,7 @@ class TestAuditServicePerformanceRequirements:
                     event_type=SecurityEventType.LOGIN_SUCCESS,
                     user_id=f"user_{report_id}",
                     timestamp=datetime.now(),
-                    severity="low",
+                    severity="info",
                     source="auth",
                 ),
             ]
@@ -1035,21 +1036,21 @@ class TestAuditServiceErrorHandling:
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="user1",
-                severity="low",
+                severity="info",
                 source="auth",
                 timestamp=datetime.now(),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="user2",
-                severity="low",
+                severity="info",
                 source="auth",
                 timestamp=datetime.now(),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="user1",
-                severity="low",
+                severity="info",
                 source="auth",
                 timestamp=datetime.now(),
             ),
@@ -1214,9 +1215,10 @@ class TestAuditServiceErrorHandling:
             event_type=SecurityEventType.SECURITY_ALERT,
             user_id="large_metadata_user",
             timestamp=datetime.now(),
-            severity="high",
-            source="system",
-            metadata=large_metadata,
+            severity="critical",
+            session_id="large_session",
+            details=large_metadata,
+            risk_score=85,
         )
 
         request = AuditReportRequest(
@@ -1228,7 +1230,7 @@ class TestAuditServiceErrorHandling:
         statistics = AuditStatistics(
             total_events=1,
             events_by_type={"security_alert": 1},
-            events_by_severity={"high": 1},
+            events_by_severity={"critical": 1},
             unique_users=1,
             unique_ip_addresses=0,
             report_period="test period",
@@ -1252,4 +1254,4 @@ class TestAuditServiceErrorHandling:
         # JSON should be valid despite large size
         json_data = json.loads(json_output)
         assert len(json_data["events"]) == 1
-        assert "large_field" in json_data["events"][0]["metadata"]
+        assert "large_field" in json_data["events"][0]["details"]

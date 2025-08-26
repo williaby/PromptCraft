@@ -624,7 +624,6 @@ async def main():
     with results_file.open("w") as f:
         json.dump(result_dict, f, indent=2, default=str)
 
-
     # Print executive summary
     recommendation = result.executive_recommendation
 
@@ -642,7 +641,6 @@ async def main():
     if "next_steps" in recommendation:
         for _step in recommendation["next_steps"]:
             pass
-
 
     return result_dict
 

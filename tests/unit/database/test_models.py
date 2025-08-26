@@ -2,14 +2,8 @@
 
 import time
 import uuid
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
-
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
 
 import pytest
 from pydantic import ValidationError

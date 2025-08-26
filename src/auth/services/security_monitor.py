@@ -449,7 +449,7 @@ class SecurityMonitor:
             session_id=None,
             details={"alert_type": alert.alert_type, "alert_timestamp": alert.timestamp.isoformat(), **alert.details},
         )
-        
+
         # Trigger alert via AlertEngine
         if self._alert_engine:
             alert_message = f"Security Alert: {alert.alert_type} detected for user {alert.user_id}"
@@ -551,9 +551,9 @@ class SecurityMonitor:
                 user_agent="security_monitor",
                 session_id=None,
                 details={
-                    "unlock_type": "manual", 
+                    "unlock_type": "manual",
                     "admin_user": admin_user,
-                    "unlock_timestamp": datetime.now(UTC).isoformat()
+                    "unlock_timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
@@ -587,7 +587,7 @@ class SecurityMonitor:
         Args:
             user_id: User identifier
             ip_address: IP address of the attempt
-            
+
         Returns:
             True if brute force detected, False otherwise
         """
@@ -595,7 +595,7 @@ class SecurityMonitor:
             raise ValueError("user_id cannot be None")
         if user_id == "":
             raise ValueError("user_id cannot be empty")
-            
+
         alerts = await self.track_failed_authentication(
             user_id=user_id,
             ip_address=ip_address,
@@ -603,7 +603,7 @@ class SecurityMonitor:
             endpoint="/auth/login",
             error_type="login_failure",
         )
-        
+
         # Return True if any brute force alert was generated
         return any(alert.alert_type == "brute_force_attack" for alert in alerts)
 
@@ -619,14 +619,14 @@ class SecurityMonitor:
         """
         current_time = datetime.now(UTC)
         rate_limit_key = f"{user_id}:{endpoint}"
-        
+
         # Clean up old requests outside the time window
         cutoff_time = current_time - timedelta(seconds=self.rate_limit_window_seconds)
         requests_queue = self._rate_limit_tracker[rate_limit_key]
-        
+
         while requests_queue and requests_queue[0] < cutoff_time:
             requests_queue.popleft()
-        
+
         # Check if we've exceeded the rate limit
         if len(requests_queue) >= self.rate_limit_requests:
             # Log rate limit exceeded event
@@ -645,7 +645,7 @@ class SecurityMonitor:
                 },
             )
             return True
-        
+
         # Add current request to tracker
         requests_queue.append(current_time)
         return False
@@ -686,17 +686,17 @@ class SecurityMonitor:
         # Check if IP is in suspicious list
         if ip_address in self._suspicious_ips:
             return True
-            
+
         # Get user's recent login history from database
         try:
             recent_events = await self._db.get_events_by_user_id(user_id, limit=10)
-            
+
             # Extract IP addresses from recent successful logins
             recent_ips = set()
             for event in recent_events:
                 if event.event_type == SecurityEventType.LOGIN_SUCCESS:
                     recent_ips.add(event.ip_address)
-            
+
             # Simple location detection: if IP is completely different from recent IPs
             # This is a basic implementation - real systems would use geolocation APIs
             if recent_ips and ip_address not in recent_ips:
@@ -706,7 +706,7 @@ class SecurityMonitor:
                     recent_network = ".".join(recent_ip.split(".")[:2])
                     if current_network == recent_network:
                         return False  # Same network, not suspicious
-                
+
                 # All recent IPs are from different networks, suspicious
                 await self.security_logger.log_event(
                     event_type=SecurityEventType.SUSPICIOUS_ACTIVITY,
@@ -722,11 +722,11 @@ class SecurityMonitor:
                     },
                 )
                 return True
-                
+
         except Exception:
             # On error, default to not suspicious
             pass
-            
+
         return False
 
     async def detect_multiple_simultaneous_sessions(self, user_id: str) -> bool:

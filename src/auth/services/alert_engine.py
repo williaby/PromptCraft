@@ -19,16 +19,10 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
-
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
 
 from pydantic import BaseModel, Field
 

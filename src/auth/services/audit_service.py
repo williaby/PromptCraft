@@ -14,6 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from src.auth.database import SecurityEventsDatabase
 from src.auth.models import SecurityEvent, SecurityEventType
 from src.database.connection import get_database_manager_async
 
@@ -80,12 +81,14 @@ class AuditService:
     - Performance optimized for large datasets
     """
 
-    def __init__(self, security_logger: SecurityLogger | None = None) -> None:
+    def __init__(self, db: SecurityEventsDatabase | None = None, security_logger: SecurityLogger | None = None) -> None:
         """Initialize audit service.
 
         Args:
+            db: Security events database instance
             security_logger: Security logger for audit events
         """
+        self.db = db or SecurityEventsDatabase()
         self.security_logger = security_logger or SecurityLogger()
 
         # Default retention policies based on plan requirements
@@ -123,9 +126,9 @@ class AuditService:
         This method ensures all dependencies are initialized and performance tracking is ready.
         It's idempotent and can be called multiple times safely.
         """
-        # Initialize database manager
-        db_manager = await get_database_manager_async()
-        await db_manager.initialize()
+        # Initialize database
+        if hasattr(self.db, "initialize"):
+            await self.db.initialize()
 
         # Initialize security logger
         if hasattr(self.security_logger, "initialize"):
@@ -153,8 +156,9 @@ class AuditService:
             if (request.end_date - request.start_date).days > 365:
                 logger.warning("Report period exceeds 1 year, may impact performance")
 
-            # Generate unique report ID
-            report_id = f"audit_{int(datetime.now().timestamp())}_{hash(str(request))}"
+            # Generate unique report ID with microseconds to ensure uniqueness
+            now = datetime.now()
+            report_id = f"audit_{int(now.timestamp())}_{now.microsecond}_{hash(str(request))}"
 
             # Fetch events from database with filters
             events = await self._fetch_filtered_events(request)
@@ -209,10 +213,10 @@ class AuditService:
             CSV-formatted string
         """
         output = StringIO()
-        fieldnames = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "source"]
+        fieldnames = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "session_id", "risk_score"]
 
         if report.report_request.include_metadata:
-            fieldnames.append("metadata")
+            fieldnames.append("details")
 
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
@@ -220,16 +224,17 @@ class AuditService:
         for event in report.events:
             row = {
                 "timestamp": event.timestamp.isoformat(),
-                "event_type": event.event_type.value,
+                "event_type": event.event_type.value if hasattr(event.event_type, "value") else event.event_type,
                 "user_id": event.user_id or "",
                 "ip_address": event.ip_address or "",
                 "user_agent": event.user_agent or "",
-                "severity": event.severity,
-                "source": event.source,
+                "severity": event.severity.value if hasattr(event.severity, "value") else event.severity,
+                "session_id": event.session_id or "",
+                "risk_score": event.risk_score,
             }
 
             if report.report_request.include_metadata:
-                row["metadata"] = json.dumps(event.metadata) if event.metadata else ""
+                row["details"] = json.dumps(event.details) if event.details else ""
 
             writer.writerow(row)
 
@@ -270,16 +275,17 @@ class AuditService:
         for event in report.events:
             event_data = {
                 "timestamp": event.timestamp.isoformat(),
-                "event_type": event.event_type.value,
+                "event_type": event.event_type.value if hasattr(event.event_type, "value") else event.event_type,
                 "user_id": event.user_id,
                 "ip_address": event.ip_address,
                 "user_agent": event.user_agent,
-                "severity": event.severity,
-                "source": event.source,
+                "severity": event.severity.value if hasattr(event.severity, "value") else event.severity,
+                "session_id": event.session_id,
+                "risk_score": event.risk_score,
             }
 
             if report.report_request.include_metadata:
-                event_data["metadata"] = event.metadata
+                event_data["details"] = event.details
 
             report_data["events"].append(event_data)
 
@@ -393,6 +399,7 @@ class AuditService:
                 "average_generation_time": 0.0,
                 "max_generation_time": 0.0,
                 "min_generation_time": 0.0,
+                "total_retention_policies": len(self.retention_policies),
             }
 
         return {
@@ -446,7 +453,8 @@ class AuditService:
         # Count events by type
         events_by_type = {}
         for event in events:
-            event_type = event.event_type.value
+            # Handle both enum objects and string values
+            event_type = event.event_type.value if hasattr(event.event_type, "value") else event.event_type
             events_by_type[event_type] = events_by_type.get(event_type, 0) + 1
 
         # Count events by severity

@@ -18,6 +18,7 @@ validation to support the $30,000+ resource commitment decision.
 
 import json
 import logging
+import math
 import sqlite3
 import time
 from dataclasses import dataclass
@@ -232,11 +233,7 @@ class DatabaseConsolidationAnalyzer:
             if col_name in patterns and "sample_values" in patterns[col_name]:
                 samples = patterns[col_name]["sample_values"]
                 # Heuristic: if text looks like JSON, flag for JSONB conversion
-                json_like = sum(
-                    1
-                    for sample in samples
-                    if isinstance(sample, str) and (sample.startswith(("{", "[")))
-                )
+                json_like = sum(1 for sample in samples if isinstance(sample, str) and (sample.startswith(("{", "["))))
                 if json_like > len(samples) * 0.5 and json_like > 0:
                     risks.append(
                         f"Table {table}.{col_name}: Text column appears to contain JSON, consider JSONB conversion",
@@ -299,7 +296,6 @@ class DatabaseConsolidationAnalyzer:
         # Logarithmic scaling for indexed queries
         if record_count < 1000:
             return base_latency
-        import math
 
         log_factor = math.log10(record_count / 1000)
         return base_latency * (1 + log_factor * 0.5)
@@ -381,7 +377,6 @@ class DatabaseConsolidationAnalyzer:
                 "Track disk I/O and memory usage patterns",
             ],
         }
-
 
     def assess_consolidation_feasibility(self, analyses: list[DatabaseAnalysis]) -> ConsolidationRecommendation:
         """Generate executive recommendation based on all database analyses."""
@@ -513,7 +508,6 @@ def main():
     with results_file.open("w") as f:
         json.dump(results, f, indent=2, default=str)
 
-
     # Print executive summary
     recommendation = results["executive_recommendation"]
 
@@ -524,7 +518,6 @@ def main():
         pass
     if len(recommendation["risk_assessment"]) > 5:
         pass
-
 
     return results
 

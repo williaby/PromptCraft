@@ -14,6 +14,7 @@ Architecture: FastAPI async endpoints with caching and pagination support
 """
 
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from typing import Any
 from uuid import UUID
 
@@ -23,6 +24,11 @@ from pydantic import BaseModel, Field
 
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.alert_engine import AlertSeverity
+from src.auth.services.audit_service import (
+    AuditReportRequest,
+    AuditService,
+    ExportFormat,
+)
 from src.auth.services.security_integration import SecurityIntegrationService
 
 # Aliases for backward compatibility
@@ -278,8 +284,6 @@ class SecurityDashboardEndpoints:
                 events = await self.security_monitor.get_recent_events(limit=limit, offset=offset)
 
             # Convert to response with the expected structure
-            from types import SimpleNamespace
-
             event_list = []
             for event in events:
                 # Create event objects with expected attributes
@@ -329,8 +333,6 @@ class SecurityDashboardEndpoints:
                 warning_count = 0
 
             # Convert to response model with expected structure
-            from types import SimpleNamespace
-
             alert_list = []
             for alert in alerts:
                 # Debug: Check what type alert actually is
@@ -877,10 +879,6 @@ async def generate_audit_report(
         Generated audit report information
     """
     try:
-        from datetime import datetime
-
-        from src.auth.services.audit_service import AuditReportRequest, AuditService, ExportFormat
-
         # Initialize audit service
         audit_service = AuditService()
 
@@ -937,10 +935,6 @@ async def get_audit_statistics(
         Audit statistics summary
     """
     try:
-        from datetime import datetime
-
-        from src.auth.services.audit_service import AuditService
-
         # Parse dates
         start_dt = datetime.fromisoformat(start_date)
         end_dt = datetime.fromisoformat(end_date)
@@ -974,8 +968,6 @@ async def enforce_retention_policies(
         Retention enforcement results
     """
     try:
-        from src.auth.services.audit_service import AuditService
-
         # Initialize audit service
         audit_service = AuditService()
 
@@ -1007,8 +999,6 @@ async def get_retention_policies(service: SecurityIntegrationService = Depends(g
         List of retention policies
     """
     try:
-        from src.auth.services.audit_service import AuditService
-
         # Initialize audit service
         audit_service = AuditService()
 

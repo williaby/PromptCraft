@@ -439,7 +439,6 @@ class SecurityIntegrationService:
             if self._service_failures[service_name] >= self.config.max_service_failures:
                 self.metrics.detector_healthy = False
 
-
     def _is_service_healthy(self, service_name: str) -> bool:
         """Check if a service is healthy based on failure tracking."""
         if not self.config.enable_graceful_degradation:

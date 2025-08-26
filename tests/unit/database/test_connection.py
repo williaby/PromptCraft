@@ -405,6 +405,6 @@ class TestGlobalDatabaseManager:
 
             src.database.connection._db_manager = None
 
+            async_gen = get_db_session()
             with pytest.raises(DatabaseConnectionError):
-                async_gen = get_db_session()
                 await async_gen.__anext__()

@@ -9,13 +9,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
-
 from src.config.settings import ApplicationSettings
 from src.database.connection import DatabaseManager
 
@@ -122,24 +115,26 @@ def mock_database_session():
 def mock_database_manager(mock_database_settings, mock_database_engine, mock_database_session_factory):
     """Mock database manager with dependency injection support."""
     manager = MagicMock(spec=DatabaseManager)
-    
+
     # Configure the manager with mocked components
     manager._engine = mock_database_engine
     manager._session_factory = mock_database_session_factory
     manager._settings = mock_database_settings
     manager._is_initialized = True
-    
+
     # Mock methods
     manager.initialize = AsyncMock()
     manager.close = AsyncMock()
-    manager.health_check = AsyncMock(return_value={
-        "status": "healthy",
-        "engine_initialized": True,
-        "connection_test": True,
-        "response_time_ms": 5.0,
-        "pool_status": {"metrics_available": True}
-    })
-    
+    manager.health_check = AsyncMock(
+        return_value={
+            "status": "healthy",
+            "engine_initialized": True,
+            "connection_test": True,
+            "response_time_ms": 5.0,
+            "pool_status": {"metrics_available": True},
+        },
+    )
+
     # Mock get_session as async context manager
     async def mock_get_session():
         session = mock_database_session()
@@ -147,51 +142,52 @@ def mock_database_manager(mock_database_settings, mock_database_engine, mock_dat
             yield session
         finally:
             await session.close()
-    
+
     manager.get_session.return_value = mock_get_session()
-    
+
     return manager
 
 
 @pytest.fixture
 def database_manager_factory():
     """Factory fixture for creating database managers with custom dependencies."""
+
     def create_manager(settings=None, engine=None, session_factory=None):
         """Create a database manager with optional custom dependencies."""
         manager = DatabaseManager()
-        
+
         if settings:
             manager._settings = settings
         if engine:
             manager._engine = engine
         if session_factory:
             manager._session_factory = session_factory
-            
+
         return manager
-    
+
     return create_manager
 
 
 @pytest.fixture
 def mock_database_dependency_injection():
     """Fixture for testing services that use database dependency injection."""
-    
+
     class MockDatabaseService:
         """Mock service that demonstrates dependency injection pattern."""
-        
+
         def __init__(self, database_manager: DatabaseManager = None):
             self.database_manager = database_manager or DatabaseManager()
-        
+
         async def get_data(self):
             """Example method that uses database."""
             async with self.database_manager.get_session() as session:
                 result = await session.execute("SELECT 1")
                 return result.fetchone()
-    
+
     return MockDatabaseService
 
 
-@pytest.fixture 
+@pytest.fixture
 def isolated_database_config():
     """Provide isolated database configuration for testing."""
     with (
@@ -206,14 +202,14 @@ async def database_integration_test_manager():
     """Provide a database manager for integration testing with real async operations."""
     # This would be used for integration tests that need actual database connections
     # For unit tests, use the mock fixtures above
-    
+
     class IntegrationDatabaseManager:
         """Wrapper for testing database integration scenarios."""
-        
+
         def __init__(self):
             self.manager = None
             self._initialized = False
-        
+
         async def initialize(self, settings=None):
             """Initialize with custom settings for testing."""
             if settings:
@@ -223,15 +219,15 @@ async def database_integration_test_manager():
             else:
                 self.manager = DatabaseManager()
                 await self.manager.initialize()
-            
+
             self._initialized = True
-        
+
         async def cleanup(self):
             """Clean up resources."""
             if self.manager and self._initialized:
                 await self.manager.close()
                 self._initialized = False
-    
+
     integration_manager = IntegrationDatabaseManager()
     yield integration_manager
     await integration_manager.cleanup()
@@ -239,13 +235,13 @@ async def database_integration_test_manager():
 
 # Export the fixtures for easy importing
 __all__ = [
-    "mock_database_settings",
-    "mock_database_engine", 
-    "mock_database_session_factory",
-    "mock_database_session",
-    "mock_database_manager",
-    "database_manager_factory",
-    "mock_database_dependency_injection", 
-    "isolated_database_config",
     "database_integration_test_manager",
+    "database_manager_factory",
+    "isolated_database_config",
+    "mock_database_dependency_injection",
+    "mock_database_engine",
+    "mock_database_manager",
+    "mock_database_session",
+    "mock_database_session_factory",
+    "mock_database_settings",
 ]

@@ -53,13 +53,13 @@ class DatabaseManager:
     """
 
     def __init__(
-        self, 
+        self,
         settings=None,
         engine: AsyncEngine | None = None,
-        session_factory: async_sessionmaker[AsyncSession] | None = None
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
         """Initialize database manager with optional dependency injection.
-        
+
         Args:
             settings: Application settings (defaults to get_settings())
             engine: Pre-configured async engine for testing

@@ -11,7 +11,8 @@ Endpoints:
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
@@ -183,8 +184,6 @@ async def export_security_metrics(
                 f"{metrics_response.suspicious_activities_today}"
             )
 
-            from fastapi.responses import Response
-
             return Response(
                 content=csv_data,
                 media_type="text/csv",
@@ -192,6 +191,4 @@ async def export_security_metrics(
             )
 
     except Exception as e:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=500, detail=f"Failed to export security metrics: {e!s}")

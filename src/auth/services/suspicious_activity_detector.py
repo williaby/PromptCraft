@@ -715,7 +715,6 @@ class SuspiciousActivityDetector:
 
     def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """Calculate distance between two coordinates using Haversine formula."""
-        import math
 
         # Convert to radians
         lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])

@@ -4,6 +4,7 @@ Converted from stateful to stateless design for multi-worker FastAPI deployment.
 All state is now stored in PostgreSQL database using DatabaseConnection.
 """
 
+import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -404,7 +405,6 @@ class SecurityMonitor:
         Note: This method is synchronous for compatibility but uses async database operations.
         Consider making this async in future versions.
         """
-        import asyncio
 
         async def _check_blocked():
             entity_key = f"{id_type}:{identifier}"

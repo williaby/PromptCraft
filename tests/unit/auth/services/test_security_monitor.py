@@ -11,10 +11,10 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from src.auth.models import SecurityEvent, SecurityEventType, SecurityEventSeverity
-from src.auth.services.security_monitor import FailedAttempt, SecurityMonitor
 from tests.fixtures.security_service_mocks import MockSecurityLogger
+
+from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType
+from src.auth.services.security_monitor import FailedAttempt, SecurityMonitor
 
 
 class TestSecurityMonitorInitialization:
@@ -84,14 +84,14 @@ class TestSecurityMonitorBruteForceDetection:
         # Create monitor with injected dependencies
         monitor = SecurityMonitor(
             failed_attempts_threshold=3,  # Lock account after 3 attempts
-            brute_force_threshold=3,      # Detect brute force after 3 attempts
+            brute_force_threshold=3,  # Detect brute force after 3 attempts
             brute_force_window_minutes=5,
             db=mock_db,
             security_logger=mock_logger,
-            alert_engine=mock_alert_engine
+            alert_engine=mock_alert_engine,
         )
 
-        yield monitor
+        return monitor
 
     async def test_record_failed_login_first_attempt(self, monitor):
         """Test recording first failed login attempt."""
@@ -158,16 +158,19 @@ class TestSecurityMonitorBruteForceDetection:
 
         # Mock old attempts outside time window
         old_time = datetime.now(UTC) - timedelta(minutes=monitor.failed_attempts_window_minutes + 1)
-        monitor._failed_attempts_by_user[user_id] = deque([
-            FailedAttempt(
-                timestamp=old_time,
-                ip_address=ip_address,
-                user_agent="test-agent",
-                endpoint="/login",
-                error_type="invalid_password",
-                user_id=user_id,
-            ) for _ in range(5)
-        ])
+        monitor._failed_attempts_by_user[user_id] = deque(
+            [
+                FailedAttempt(
+                    timestamp=old_time,
+                    ip_address=ip_address,
+                    user_agent="test-agent",
+                    endpoint="/login",
+                    error_type="invalid_password",
+                    user_id=user_id,
+                )
+                for _ in range(5)
+            ],
+        )
 
         # New attempt should not trigger brute force (old attempts expired)
         result = await monitor.record_failed_login(user_id, ip_address)

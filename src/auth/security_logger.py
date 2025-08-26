@@ -1,15 +1,9 @@
 """Security logger implementation for AUTH-4 Enhanced Security Event Logging."""
 
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
-
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
 
 from sqlalchemy import text
 

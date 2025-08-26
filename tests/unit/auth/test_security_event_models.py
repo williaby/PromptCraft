@@ -176,7 +176,7 @@ class TestSecurityEventModel:
         # Invalid risk scores should raise validation error
         for invalid_score in [-1, 101, -10, 150]:
             valid_event_data["risk_score"] = invalid_score
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="risk_score"):
                 SecurityEvent(**valid_event_data)
 
     def test_security_event_ip_address_validation(self, valid_event_data):
@@ -219,7 +219,7 @@ class TestSecurityEventModel:
         # Very long user agent should be truncated or rejected
         long_agent = "A" * 1000
         valid_event_data["user_agent"] = long_agent
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="user_agent"):
             SecurityEvent(**valid_event_data)
 
     def test_security_event_details_handling(self, valid_event_data):
@@ -369,22 +369,22 @@ class TestSecurityEventEdgeCases:
 
     def test_invalid_event_type(self):
         """Test invalid event type handling."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="event_type"):
             SecurityEvent(event_type="invalid_event_type", severity=SecurityEventSeverity.INFO)
 
     def test_invalid_severity(self):
         """Test invalid severity handling."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="severity"):
             SecurityEvent(event_type=SecurityEventType.LOGIN_SUCCESS, severity="INVALID_SEVERITY")
 
     def test_empty_required_fields(self):
         """Test validation of required fields."""
         # Missing event_type
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="event_type"):
             SecurityEvent(severity=SecurityEventSeverity.INFO)
 
         # Missing severity
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="severity"):
             SecurityEvent(event_type=SecurityEventType.LOGIN_SUCCESS)
 
     def test_unicode_and_special_characters(self):

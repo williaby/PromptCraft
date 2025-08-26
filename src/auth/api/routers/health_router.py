@@ -12,6 +12,7 @@ Endpoints:
 
 from datetime import UTC, datetime
 
+import psutil
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -242,8 +243,6 @@ async def _get_system_metrics() -> dict[str, float]:
         System metrics dictionary
     """
     try:
-        import psutil
-
         return {
             "cpu_usage": psutil.cpu_percent(interval=1),
             "memory_usage": psutil.virtual_memory().percent,

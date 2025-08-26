@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings.sources import PydanticBaseSettingsSource
 
 from src.utils.encryption import (
     EncryptionError,

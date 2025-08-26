@@ -2,32 +2,24 @@
 
 import re
 import uuid
+from datetime import UTC, datetime
 from enum import Enum
-
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime
-except ImportError:
-    from datetime import datetime, timezone
-    UTC = timezone.utc
-
-# Create aliases for backward compatibility
-EventSeverity = None  # Will be set after class definition
-EventType = None  # Will be set after class definition
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
-from .constants import ROLE_ADMIN, ROLE_USER
+# Create aliases for backward compatibility
+EventSeverity = None  # Will be set after class definition
+EventType = None  # Will be set after class definition
 
 
 class UserRole(str, Enum):
     """User roles for role-based access control."""
 
-    ADMIN = ROLE_ADMIN
-    USER = ROLE_USER
-    VIEWER = "viewer"  # Not centralized yet, keeping as is
+    ADMIN = "admin"
+    USER = "user"
+    VIEWER = "viewer"
 
 
 class AuthenticatedUser(BaseModel):
@@ -89,7 +81,7 @@ class ServiceTokenCreate(BaseModel):
 
     @field_validator("token_name")
     @classmethod
-    def validate_token_name(cls, v: str) -> str:  # noqa: N805
+    def validate_token_name(cls, v: str) -> str:
         """Validate and clean token name."""
         return v.strip()
 
@@ -109,7 +101,7 @@ class ServiceTokenUpdate(BaseModel):
 
     @field_validator("token_name")
     @classmethod
-    def validate_token_name(cls, v: str | None) -> str | None:  # noqa: N805
+    def validate_token_name(cls, v: str | None) -> str | None:
         """Validate and clean token name."""
         if v is not None:
             return v.strip()
@@ -164,7 +156,7 @@ class TokenValidationRequest(BaseModel):
 
     @field_validator("token")
     @classmethod
-    def validate_token(cls, v: str) -> str:  # noqa: N805
+    def validate_token(cls, v: str) -> str:
         """Validate and clean token."""
         return v.strip()
 
@@ -265,7 +257,7 @@ class SecurityEventBase(BaseModel):
             return v
 
         # Remove potentially dangerous characters but keep useful info
-        sanitized = re.sub(r'[<>"\']', "", v)
+        sanitized = re.sub(r'[<>"\"]', "", v)
         return sanitized[:500]  # Enforce max length
 
     @field_validator("details")

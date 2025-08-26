@@ -12,14 +12,8 @@ Key improvements over SQLite implementation:
 """
 
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import Any
-
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
 
 from sqlalchemy import and_, desc, func, select, text
 

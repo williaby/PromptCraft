@@ -4,15 +4,13 @@ This module provides mock implementations and fixtures for all security services
 to enable comprehensive testing without external dependencies.
 """
 
-# Python 3.10 compatibility for UTC
-try:
-    from datetime import UTC, datetime, timedelta
-except ImportError:
-    from datetime import datetime, timedelta, timezone
-    UTC = timezone.utc
-
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
+
+import pytest
+
+from src.auth.models import SecurityEventCreate
 
 # Global event registry for tests to share events between services
 _test_event_registry = []
@@ -22,11 +20,6 @@ def clear_test_event_registry():
     """Clear the global test event registry."""
     global _test_event_registry
     _test_event_registry.clear()
-
-
-import pytest
-
-from src.auth.models import SecurityEventCreate
 
 
 class MockSecurityLogger:
@@ -58,7 +51,7 @@ class MockSecurityLogger:
             "event": event,
         }
         self._call_history["log_event"].append(call_args)
-        
+
         if event:
             # Object-based call
             self._events.append(event)
@@ -75,7 +68,7 @@ class MockSecurityLogger:
                 risk_score=risk_score,
             )
             self._events.append(created_event)
-        
+
         self._metrics["total_events_logged"] += 1
         return True
 
@@ -101,7 +94,7 @@ class MockSecurityLogger:
             "details": details,
         }
         self._call_history["log_security_event"].append(call_args)
-        
+
         global _test_event_registry
 
         if event:
@@ -167,71 +160,71 @@ class MockSecurityLogger:
             "get_metrics": [],
             "flush": [],
         }
-        
+
         # Replace log_security_event with a mock-capable wrapper
         original_method = self.log_security_event
-        
+
         class MockableMethod:
             def __init__(self, method, call_history):
                 self.method = method
                 self.call_history = call_history
-                
+
             async def __call__(self, *args, **kwargs):
                 return await self.method(*args, **kwargs)
-                
+
             @property
             def call_args(self):
                 """Get the last call arguments."""
                 if self.call_history["log_security_event"]:
                     return ([], self.call_history["log_security_event"][-1])
                 return None
-                
+
             def assert_called(self):
                 if not len(self.call_history["log_security_event"]) > 0:
                     raise AssertionError("Expected 'log_security_event' to have been called")
-                    
+
             def assert_called_once(self):
                 count = len(self.call_history["log_security_event"])
                 if count != 1:
                     raise AssertionError(f"Expected 'log_security_event' to be called once. Called {count} times")
-                    
+
             def assert_not_called(self):
                 if len(self.call_history["log_security_event"]) > 0:
                     raise AssertionError("Expected 'log_security_event' not to have been called")
-        
+
         self.log_security_event = MockableMethod(original_method, self._call_history)
-        
+
         # Also make log_event mockable for tests that expect it
         original_log_event = self.log_event
-        
+
         class MockableLogEvent:
             def __init__(self, method, call_history):
                 self.method = method
                 self.call_history = call_history
-                
+
             async def __call__(self, *args, **kwargs):
                 return await self.method(*args, **kwargs)
-                
+
             @property
             def call_args(self):
                 """Get the last call arguments."""
                 if self.call_history["log_event"]:
                     return ([], self.call_history["log_event"][-1])
                 return None
-                
+
             def assert_called(self):
                 if not len(self.call_history["log_event"]) > 0:
                     raise AssertionError("Expected 'log_event' to have been called")
-                    
+
             def assert_called_once(self):
                 count = len(self.call_history["log_event"])
                 if count != 1:
                     raise AssertionError(f"Expected 'log_event' to be called once. Called {count} times")
-                    
+
             def assert_not_called(self):
                 if len(self.call_history["log_event"]) > 0:
                     raise AssertionError("Expected 'log_event' not to have been called")
-        
+
         self.log_event = MockableLogEvent(original_log_event, self._call_history)
 
     async def get_metrics(self) -> dict[str, Any]:
@@ -718,9 +711,7 @@ class MockSuspiciousActivityDetector:
     async def analyze_location_anomaly(self, user_id: str, ip_address: str, **kwargs) -> dict[str, Any]:
         """Analyze location anomaly for user and IP."""
         # Mock logic: consider foreign IPs as anomalies for testing
-        is_anomaly = (
-            ip_address.startswith(("203.0.", "45.")) or user_id == "suspicious_user"  # Test user pattern
-        )
+        is_anomaly = ip_address.startswith(("203.0.", "45.")) or user_id == "suspicious_user"  # Test user pattern
 
         # If anomaly detected, create security event and trigger alert
         if is_anomaly:

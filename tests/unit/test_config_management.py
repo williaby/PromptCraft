@@ -9,15 +9,9 @@ configuration.
 import os
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
-
-# Python 3.10 compatibility for UTC and datetime
-try:
-    from datetime import UTC, datetime
-except ImportError:
-    from datetime import datetime, timezone
-    UTC = timezone.utc
 
 import pytest
 
@@ -126,7 +120,11 @@ class TestApplicationSettings:
             "PROMPTCRAFT_QDRANT_PORT": "6334",
         }
 
-        with patch.dict(os.environ, env_vars):
+        # Clear environment and set only test variables, also disable file loading
+        with (
+            patch.dict(os.environ, env_vars, clear=True),
+            patch("src.config.settings._env_file_settings", return_value={}),
+        ):
             settings = ApplicationSettings()
 
             assert settings.app_name == "Test-App"
@@ -659,10 +657,14 @@ class TestConfigurationHealthChecks:
             )
 
         count = _count_configured_secrets(settings)
-        assert count == 3
+        # Expect 4 secrets: secret_key, database_password, api_key, and auto-generated database_url
+        assert count == 4
 
-        # Test with empty secrets (isolate from environment)
-        with patch.dict(os.environ, {}, clear=True):
+        # Test with empty secrets (isolate from environment and file loading)
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("src.config.settings._env_file_settings", return_value={}),
+        ):
             settings_empty = ApplicationSettings(database_password=None)
 
         count_empty = _count_configured_secrets(settings_empty)
@@ -733,7 +735,8 @@ class TestConfigurationHealthChecks:
                 assert status.config_loaded is True
                 assert status.encryption_enabled is True
                 assert status.validation_status == "passed"
-                assert status.secrets_configured == 2
+                # Expect 3 secrets: secret_key, api_key, and auto-generated database_url
+                assert status.secrets_configured == 3
                 assert status.config_healthy is True
 
     def test_get_configuration_status_with_errors(self):
