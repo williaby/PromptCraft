@@ -24,10 +24,9 @@ from typing import Any
 
 from sqlalchemy import delete
 
+from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
 from src.database.models import SecurityEvent as SecurityEventModel
-
-from ..models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 
 
 @dataclass
@@ -332,9 +331,8 @@ class SecurityLogger:
                     last_batch_time = current_time
                     self.metrics.last_batch_time = datetime.now(UTC)
 
-            except Exception as e:
+            except Exception:
                 # Log error but continue processing
-                print(f"Batch processor error: {e}")  # Simple logging for now
                 batch.clear()  # Clear corrupted batch
 
     async def _process_batch(self, batch: list[SecurityEventCreate]) -> None:
@@ -363,10 +361,9 @@ class SecurityLogger:
 
                 await session.commit()
 
-        except Exception as e:
+        except Exception:
             # On error, increment dropped events count
             self.metrics.total_events_dropped += len(batch)
-            print(f"Failed to process batch: {e}")  # Simple logging for now
 
     async def get_metrics(self) -> dict[str, Any]:
         """Get current logging system metrics.
@@ -446,8 +443,7 @@ class SecurityLogger:
 
                 await session.commit()
 
-        except Exception as e:
-            print(f"Failed to cleanup old events: {e}")
+        except Exception:
             # Return empty stats on error
             cleanup_stats = {severity.value: 0 for severity in severity_retention}
 

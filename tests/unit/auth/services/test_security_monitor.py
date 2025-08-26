@@ -6,13 +6,15 @@ and real-time threat detection with <10ms performance requirements.
 
 import asyncio
 import time
-from datetime import datetime, timedelta
+from collections import deque
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.auth.models import SecurityEvent, SecurityEventType
-from src.auth.services.security_monitor import SecurityMonitor
+from src.auth.models import SecurityEvent, SecurityEventType, SecurityEventSeverity
+from src.auth.services.security_monitor import FailedAttempt, SecurityMonitor
+from tests.fixtures.security_service_mocks import MockSecurityLogger
 
 
 class TestSecurityMonitorInitialization:
@@ -74,23 +76,22 @@ class TestSecurityMonitorBruteForceDetection:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
-                    mock_alert_engine = AsyncMock()
+        # Create mocked dependencies directly
+        mock_db = AsyncMock()
+        mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+        mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+        # Create monitor with injected dependencies
+        monitor = SecurityMonitor(
+            failed_attempts_threshold=3,  # Lock account after 3 attempts
+            brute_force_threshold=3,      # Detect brute force after 3 attempts
+            brute_force_window_minutes=5,
+            db=mock_db,
+            security_logger=mock_logger,
+            alert_engine=mock_alert_engine
+        )
 
-                    monitor = SecurityMonitor(brute_force_threshold=3, brute_force_window_minutes=5)
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
-
-                    yield monitor
+        yield monitor
 
     async def test_record_failed_login_first_attempt(self, monitor):
         """Test recording first failed login attempt."""
@@ -102,7 +103,7 @@ class TestSecurityMonitorBruteForceDetection:
         assert result is False  # Not yet brute force
         assert user_id in monitor._failed_attempts
         assert len(monitor._failed_attempts[user_id]) == 1
-        assert monitor._failed_attempts[user_id][0]["ip_address"] == ip_address
+        assert monitor._failed_attempts[user_id][0].ip_address == ip_address
 
     async def test_record_failed_login_below_threshold(self, monitor):
         """Test recording failed logins below brute force threshold."""
@@ -110,7 +111,7 @@ class TestSecurityMonitorBruteForceDetection:
         ip_address = "192.168.1.100"
 
         # Record attempts below threshold
-        for i in range(monitor.brute_force_threshold - 1):
+        for _i in range(monitor.brute_force_threshold - 1):
             result = await monitor.record_failed_login(user_id, ip_address)
             assert result is False
 
@@ -122,7 +123,7 @@ class TestSecurityMonitorBruteForceDetection:
         ip_address = "192.168.1.100"
 
         # Record attempts up to threshold
-        for i in range(monitor.brute_force_threshold):
+        for _i in range(monitor.brute_force_threshold):
             result = await monitor.record_failed_login(user_id, ip_address)
 
         # Last attempt should trigger brute force detection
@@ -130,8 +131,8 @@ class TestSecurityMonitorBruteForceDetection:
         assert user_id in monitor._locked_accounts
 
         # Verify security event was logged
-        monitor._security_logger.log_security_event.assert_called()
-        call_args = monitor._security_logger.log_security_event.call_args
+        monitor._security_logger.log_event.assert_called()
+        call_args = monitor._security_logger.log_event.call_args
         assert call_args[1]["event_type"] == SecurityEventType.BRUTE_FORCE_ATTEMPT
 
         # Verify alert was triggered
@@ -156,31 +157,40 @@ class TestSecurityMonitorBruteForceDetection:
         ip_address = "192.168.1.100"
 
         # Mock old attempts outside time window
-        old_time = datetime.now() - timedelta(minutes=monitor.brute_force_window_minutes + 1)
-        monitor._failed_attempts[user_id] = [{"ip_address": ip_address, "timestamp": old_time} for _ in range(5)]
+        old_time = datetime.now(UTC) - timedelta(minutes=monitor.failed_attempts_window_minutes + 1)
+        monitor._failed_attempts_by_user[user_id] = deque([
+            FailedAttempt(
+                timestamp=old_time,
+                ip_address=ip_address,
+                user_agent="test-agent",
+                endpoint="/login",
+                error_type="invalid_password",
+                user_id=user_id,
+            ) for _ in range(5)
+        ])
 
         # New attempt should not trigger brute force (old attempts expired)
         result = await monitor.record_failed_login(user_id, ip_address)
         assert result is False
 
         # Old attempts should be cleaned up
-        assert len(monitor._failed_attempts[user_id]) == 1  # Only new attempt
+        assert len(monitor._failed_attempts_by_user[user_id]) == 1  # Only new attempt
 
     async def test_is_account_locked_true(self, monitor):
         """Test account lockout check when account is locked."""
         user_id = "test_user"
 
         # Simulate locked account
-        monitor._locked_accounts[user_id] = {"locked_at": datetime.now(), "ip_address": "192.168.1.100"}
+        monitor._locked_accounts[user_id] = datetime.now(UTC)
 
-        is_locked = await monitor.is_account_locked(user_id)
+        is_locked = monitor.is_account_locked(user_id)
         assert is_locked is True
 
     async def test_is_account_locked_false(self, monitor):
         """Test account lockout check when account is not locked."""
         user_id = "test_user"
 
-        is_locked = await monitor.is_account_locked(user_id)
+        is_locked = monitor.is_account_locked(user_id)
         assert is_locked is False
 
     async def test_is_account_locked_expired_lockout(self, monitor):
@@ -188,10 +198,10 @@ class TestSecurityMonitorBruteForceDetection:
         user_id = "test_user"
 
         # Simulate expired lockout
-        old_lockout_time = datetime.now() - timedelta(minutes=monitor.lockout_duration_minutes + 1)
-        monitor._locked_accounts[user_id] = {"locked_at": old_lockout_time, "ip_address": "192.168.1.100"}
+        old_lockout_time = datetime.now(UTC) - timedelta(minutes=monitor.lockout_duration_minutes + 1)
+        monitor._locked_accounts[user_id] = old_lockout_time
 
-        is_locked = await monitor.is_account_locked(user_id)
+        is_locked = monitor.is_account_locked(user_id)
         assert is_locked is False
 
         # Expired lockout should be removed
@@ -216,7 +226,7 @@ class TestSecurityMonitorBruteForceDetection:
         admin_user = "admin"
 
         # Lock account first
-        monitor._locked_accounts[user_id] = {"locked_at": datetime.now(), "ip_address": "192.168.1.100"}
+        monitor._locked_accounts[user_id] = datetime.now(UTC)
 
         result = await monitor.unlock_account(user_id, admin_user)
 
@@ -224,10 +234,10 @@ class TestSecurityMonitorBruteForceDetection:
         assert user_id not in monitor._locked_accounts
 
         # Verify security event was logged
-        monitor._security_logger.log_security_event.assert_called()
-        call_args = monitor._security_logger.log_security_event.call_args
-        assert call_args[1]["event_type"] == SecurityEventType.ACCOUNT_LOCKOUT
-        assert "unlocked" in call_args[1]["metadata"]["action"]
+        monitor._security_logger.log_event.assert_called()
+        call_args = monitor._security_logger.log_event.call_args
+        assert call_args[1]["event_type"] == SecurityEventType.ACCOUNT_UNLOCK
+        assert call_args[1]["details"]["unlock_type"] == "manual"
 
 
 class TestSecurityMonitorRateLimiting:
@@ -240,7 +250,7 @@ class TestSecurityMonitorRateLimiting:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
+                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
                     mock_alert_engine = AsyncMock()
 
                     mock_db_class.return_value = mock_db
@@ -260,7 +270,7 @@ class TestSecurityMonitorRateLimiting:
         endpoint = "/api/login"
 
         # Make requests within limit
-        for i in range(monitor.rate_limit_requests - 1):
+        for _i in range(monitor.rate_limit_requests - 1):
             is_limited = await monitor.check_rate_limit(user_id, endpoint)
             assert is_limited is False
 
@@ -270,7 +280,7 @@ class TestSecurityMonitorRateLimiting:
         endpoint = "/api/login"
 
         # Make requests up to limit
-        for i in range(monitor.rate_limit_requests):
+        for _i in range(monitor.rate_limit_requests):
             is_limited = await monitor.check_rate_limit(user_id, endpoint)
 
         # Next request should be rate limited
@@ -278,8 +288,8 @@ class TestSecurityMonitorRateLimiting:
         assert is_limited is True
 
         # Verify rate limit event was logged
-        monitor._security_logger.log_security_event.assert_called()
-        call_args = monitor._security_logger.log_security_event.call_args
+        monitor._security_logger.log_event.assert_called()
+        call_args = monitor._security_logger.log_event.call_args
         assert call_args[1]["event_type"] == SecurityEventType.RATE_LIMIT_EXCEEDED
 
     async def test_check_rate_limit_different_endpoints(self, monitor):
@@ -289,7 +299,7 @@ class TestSecurityMonitorRateLimiting:
         endpoint2 = "/api/data"
 
         # Use up rate limit for endpoint1
-        for i in range(monitor.rate_limit_requests):
+        for _i in range(monitor.rate_limit_requests):
             is_limited = await monitor.check_rate_limit(user_id, endpoint1)
 
         # endpoint2 should still be available
@@ -303,7 +313,7 @@ class TestSecurityMonitorRateLimiting:
         endpoint = "/api/login"
 
         # Use up rate limit for user1
-        for i in range(monitor.rate_limit_requests):
+        for _i in range(monitor.rate_limit_requests):
             is_limited = await monitor.check_rate_limit(user1, endpoint)
 
         # user2 should still be available
@@ -316,12 +326,12 @@ class TestSecurityMonitorRateLimiting:
         endpoint = "/api/login"
 
         # Use up rate limit
-        for i in range(monitor.rate_limit_requests):
+        for _i in range(monitor.rate_limit_requests):
             await monitor.check_rate_limit(user_id, endpoint)
 
         # Mock time passing beyond window
         with patch("src.auth.services.security_monitor.datetime") as mock_datetime:
-            future_time = datetime.now() + timedelta(seconds=monitor.rate_limit_window_seconds + 1)
+            future_time = datetime.now(UTC) + timedelta(seconds=monitor.rate_limit_window_seconds + 1)
             mock_datetime.now.return_value = future_time
 
             # Should be able to make requests again
@@ -339,7 +349,7 @@ class TestSecurityMonitorSuspiciousActivity:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
+                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
                     mock_alert_engine = AsyncMock()
 
                     mock_db_class.return_value = mock_db
@@ -364,7 +374,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="192.168.1.100",  # Local IP
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
                 metadata={"location": "US"},
             ),
@@ -377,7 +387,7 @@ class TestSecurityMonitorSuspiciousActivity:
         assert is_suspicious is True
 
         # Verify suspicious activity was logged
-        monitor._security_logger.log_security_event.assert_called()
+        monitor._security_logger.log_event.assert_called()
 
     async def test_detect_unusual_location_known_location(self, monitor):
         """Test no detection for known locations."""
@@ -390,7 +400,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="192.168.1.100",
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
             ),
         ]
@@ -411,7 +421,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 timestamp=datetime.now().replace(hour=hour, minute=0, second=0),
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
             mock_events.append(event)
@@ -435,7 +445,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 timestamp=datetime.now().replace(hour=hour, minute=0, second=0),
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
             mock_events.append(event)
@@ -459,7 +469,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 user_id=user_id,
                 ip_address=f"192.168.1.{i}",
                 timestamp=datetime.now() - timedelta(minutes=5),
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
             for i in range(100, 105)  # 5 different IPs
@@ -486,7 +496,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 timestamp=datetime.now() - timedelta(hours=i),
-                severity="low",
+                severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
             mock_events.append(event)
@@ -513,7 +523,7 @@ class TestSecurityMonitorRealTimeDetection:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
+                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
                     mock_alert_engine = AsyncMock()
 
                     mock_db_class.return_value = mock_db
@@ -533,7 +543,7 @@ class TestSecurityMonitorRealTimeDetection:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="test_user",
             ip_address="192.168.1.100",
-            severity="medium",
+            severity=SecurityEventSeverity.WARNING,
             source="auth",
         )
 
@@ -550,7 +560,7 @@ class TestSecurityMonitorRealTimeDetection:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="test_user",
             ip_address="1.2.3.4",
-            severity="low",
+            severity=SecurityEventSeverity.INFO,
             source="auth",
         )
 
@@ -608,7 +618,7 @@ class TestSecurityMonitorPerformance:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
+                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
                     mock_alert_engine = AsyncMock()
 
                     mock_db_class.return_value = mock_db
@@ -636,7 +646,7 @@ class TestSecurityMonitorPerformance:
     async def test_is_account_locked_performance(self, monitor):
         """Test that account lock check meets <10ms requirement."""
         start_time = time.time()
-        await monitor.is_account_locked("test_user")
+        monitor.is_account_locked("test_user")
         end_time = time.time()
 
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
@@ -659,7 +669,7 @@ class TestSecurityMonitorPerformance:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="test_user",
             ip_address="192.168.1.100",
-            severity="low",
+            severity=SecurityEventSeverity.INFO,
             source="auth",
         )
 
@@ -678,7 +688,7 @@ class TestSecurityMonitorPerformance:
             """Simulate user activity for performance testing."""
             for i in range(operations):
                 await monitor.record_failed_login(user_id, f"192.168.1.{i % 255}")
-                await monitor.is_account_locked(user_id)
+                monitor.is_account_locked(user_id)
                 await monitor.check_rate_limit(user_id, "/api/login")
 
         # Run concurrent monitoring for multiple users
@@ -735,7 +745,7 @@ class TestSecurityMonitorErrorHandling:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
-                    mock_logger = AsyncMock()
+                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
                     mock_alert_engine = AsyncMock()
 
                     mock_db_class.return_value = mock_db
@@ -788,7 +798,7 @@ class TestSecurityMonitorErrorHandling:
         monitor._alert_engine.trigger_alert.side_effect = Exception("Alert error")
 
         # Should not crash on alert error
-        for i in range(monitor.brute_force_threshold):
+        for _i in range(monitor.brute_force_threshold):
             await monitor.record_failed_login("test_user", "192.168.1.100")
 
         # Should still detect brute force despite alert error
@@ -803,7 +813,8 @@ class TestSecurityMonitorErrorHandling:
             tasks = []
             for i in range(10):
                 tasks.append(monitor.record_failed_login(user_id, f"192.168.1.{i}"))
-                tasks.append(monitor.is_account_locked(user_id))
+                # Check account lock status (sync method)
+                monitor.is_account_locked(user_id)
                 tasks.append(monitor.check_rate_limit(user_id, "/api/test"))
 
             await asyncio.gather(*tasks)
@@ -813,7 +824,7 @@ class TestSecurityMonitorErrorHandling:
 
         # System should remain consistent
         # If user got locked, they should stay locked
-        is_locked = await monitor.is_account_locked(user_id)
+        is_locked = monitor.is_account_locked(user_id)
         if is_locked:
             assert user_id in monitor._locked_accounts
 

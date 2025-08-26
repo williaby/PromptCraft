@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class SecurityMetricsResponse(BaseModel):

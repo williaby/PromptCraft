@@ -18,7 +18,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from ..models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
+from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
+
 from .alert_engine import AlertEngine, AlertEngineConfig
 from .security_logger import LoggingConfig, SecurityLogger
 from .security_monitor import MonitoringConfig, SecurityMonitor
@@ -146,8 +147,8 @@ class SecurityIntegrationService:
             # Start background tasks
             self._start_background_tasks()
 
-        except Exception as e:
-            print(f"Error initializing security services: {e}")
+        except Exception:
+            pass
 
     def _create_default_notification_handlers(self) -> list:
         """Create default notification handlers (would be configured externally)."""
@@ -387,8 +388,7 @@ class SecurityIntegrationService:
 
             return enriched_event
 
-        except Exception as e:
-            print(f"Event enrichment failed: {e}")
+        except Exception:
             return event  # Return original event if enrichment fails
 
     def _add_to_correlation_window(self, event: SecurityEventCreate) -> None:
@@ -404,7 +404,7 @@ class SecurityIntegrationService:
         """Find events correlated with the current event."""
         correlated = []
 
-        for timestamp, recent_event in self._recent_events:
+        for _timestamp, recent_event in self._recent_events:
             # Same user correlation
             if (
                 event.user_id and recent_event.user_id == event.user_id and recent_event.event_type != event.event_type
@@ -439,7 +439,6 @@ class SecurityIntegrationService:
             if self._service_failures[service_name] >= self.config.max_service_failures:
                 self.metrics.detector_healthy = False
 
-        print(f"Service error in {service_name}: {error}")
 
     def _is_service_healthy(self, service_name: str) -> bool:
         """Check if a service is healthy based on failure tracking."""
@@ -474,8 +473,7 @@ class SecurityIntegrationService:
             try:
                 await self._perform_health_check()
                 await asyncio.sleep(60)  # Health check every minute
-            except Exception as e:
-                print(f"Health check error: {e}")
+            except Exception:
                 await asyncio.sleep(60)
 
     async def _perform_health_check(self) -> None:
@@ -514,8 +512,7 @@ class SecurityIntegrationService:
             try:
                 await self._perform_cleanup()
                 await asyncio.sleep(300)  # Cleanup every 5 minutes
-            except Exception as e:
-                print(f"Cleanup error: {e}")
+            except Exception:
                 await asyncio.sleep(300)
 
     async def _perform_cleanup(self) -> None:
@@ -529,8 +526,8 @@ class SecurityIntegrationService:
                 pass
 
             # Additional cleanup tasks would go here
-        except Exception as e:
-            print(f"Service cleanup error: {e}")
+        except Exception:
+            pass
 
     async def get_comprehensive_metrics(self) -> dict[str, Any]:
         """Get comprehensive metrics from all services."""

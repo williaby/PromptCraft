@@ -112,10 +112,9 @@ class WebhookHandler:
                 async with self.session.post(self.config.url, json=payload, headers=headers) as response:
                     if response.status == 200:
                         return True
-                    print(f"Webhook failed with status {response.status}: {await response.text()}")
 
-            except Exception as e:
-                print(f"Webhook attempt {attempt + 1} failed: {e}")
+            except Exception:
+                pass
 
             # Wait before retry (except on last attempt)
             if attempt < self.config.retry_attempts - 1:
@@ -224,8 +223,7 @@ class EmailHandler:
 
             return True
 
-        except Exception as e:
-            print(f"Email notification failed: {e}")
+        except Exception:
             return False
 
     def _build_message(self, alert: SecurityAlert) -> MIMEMultipart:
@@ -405,8 +403,7 @@ class SlackHandler:
             async with self.session.post(self.config.webhook_url, json=payload) as response:
                 return response.status == 200
 
-        except Exception as e:
-            print(f"Slack notification failed: {e}")
+        except Exception:
             return False
 
     def _build_slack_payload(self, alert: SecurityAlert) -> dict[str, Any]:

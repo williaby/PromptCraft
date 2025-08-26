@@ -33,7 +33,7 @@ class ServiceHealthLevel(Enum):
 class HealthAssessor:
     """Service for comprehensive system and service health assessment."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache: dict[str, Any] = {}
         self._cache_expiry: dict[str, datetime] = {}
         self._service_registry: dict[str, dict[str, Any]] = {}
@@ -292,7 +292,7 @@ class HealthAssessor:
         self,
         service_url: str,
         timeout_seconds: int = 5,
-        expected_status_codes: list[int] = None,
+        expected_status_codes: list[int] | None = None,
     ) -> dict[str, Any]:
         """Check health of external service endpoint.
 
@@ -360,7 +360,7 @@ class HealthAssessor:
 
         service_scores = []
 
-        for service_name, data in service_data.items():
+        for _service_name, data in service_data.items():
             if data.get("healthy", False):
                 healthy_count += 1
                 service_scores.append(100)

@@ -144,7 +144,7 @@ class TestAUTH4IndividualComponentPerformance:
             # Test brute force detection
             await performance_security_monitor.log_login_attempt(user_id=user_id, ip_address=ip_address, success=False)
 
-            is_brute_force = await performance_security_monitor.check_brute_force_attempt(
+            await performance_security_monitor.check_brute_force_attempt(
                 user_id=user_id,
                 ip_address=ip_address,
             )
@@ -419,7 +419,7 @@ class TestAUTH4ConcurrentPerformance:
         """Test memory usage stays within acceptable limits under load."""
 
         security_monitor = high_performance_setup["security_monitor"]
-        alert_engine = high_performance_setup["alert_engine"]
+        high_performance_setup["alert_engine"]
 
         # Start memory tracking
         tracemalloc.start()
@@ -560,7 +560,7 @@ class TestAUTH4DatabasePerformance:
                 LIMIT 50
             """,
             )
-            results = await cursor.fetchall()
+            await cursor.fetchall()
         query_times["user_activity"] = (time.perf_counter() - start_time) * 1000
 
         # Test 2: Threat pattern analysis
@@ -579,7 +579,7 @@ class TestAUTH4DatabasePerformance:
                 ORDER BY incident_count DESC
             """,
             )
-            results = await cursor.fetchall()
+            await cursor.fetchall()
         query_times["threat_patterns"] = (time.perf_counter() - start_time) * 1000
 
         # Test 3: Time-series analysis
@@ -598,7 +598,7 @@ class TestAUTH4DatabasePerformance:
                 LIMIT 168  -- 7 days * 24 hours
             """,
             )
-            results = await cursor.fetchall()
+            await cursor.fetchall()
         query_times["time_series"] = (time.perf_counter() - start_time) * 1000
 
         # Test 4: IP reputation analysis
@@ -619,7 +619,7 @@ class TestAUTH4DatabasePerformance:
                 LIMIT 100
             """,
             )
-            results = await cursor.fetchall()
+            await cursor.fetchall()
         query_times["ip_reputation"] = (time.perf_counter() - start_time) * 1000
 
         # Performance validation
@@ -891,7 +891,7 @@ class TestAUTH4EndToEndPerformance:
             start_time = time.perf_counter()
 
             # Generate brute force sequence
-            for attempt in range(6):
+            for _attempt in range(6):
                 await security_monitor.log_login_attempt(user_id=user_id, ip_address=ip_address, success=False)
 
             workflow_times["detection_logging"] = (time.perf_counter() - start_time) * 1000
@@ -902,7 +902,7 @@ class TestAUTH4EndToEndPerformance:
             # Allow alert processing
             await asyncio.sleep(0.1)
 
-            alerts = await alert_engine.get_active_alerts()
+            await alert_engine.get_active_alerts()
             workflow_times["alert_processing"] = (time.perf_counter() - start_time) * 1000
 
             # Phase 3: Audit trail creation
@@ -926,7 +926,7 @@ class TestAUTH4EndToEndPerformance:
 
             dashboard_metrics = await dashboard.get_security_metrics(mock_request)
             dashboard_events = await dashboard.get_security_events()
-            dashboard_alerts = await dashboard.get_security_alerts()
+            await dashboard.get_security_alerts()
 
             workflow_times["dashboard_response"] = (time.perf_counter() - start_time) * 1000
 

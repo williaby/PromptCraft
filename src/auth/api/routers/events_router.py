@@ -13,8 +13,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ...models import SecurityEventSeverity, SecurityEventType
-from ...services.security_integration import SecurityIntegrationService
+from src.auth.models import SecurityEventSeverity, SecurityEventType
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class SecurityEventSearchRequest(BaseModel):

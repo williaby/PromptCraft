@@ -1,246 +1,251 @@
-"""Database fixtures for testing AUTH-4 security system.
+"""Comprehensive database fixtures for dependency injection testing.
 
-This module provides comprehensive database fixtures and mocks for testing
-the security event logging and monitoring system.
+This module provides database fixtures that support proper dependency injection
+patterns for testing services that depend on database connections.
 """
 
-import asyncio
-import tempfile
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from src.auth.models import SecurityEventCreate
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime, timedelta
+except ImportError:
+    from datetime import datetime, timedelta, timezone
+    UTC = timezone.utc
 
-
-class MockSecurityEventsDatabase:
-    """Mock implementation of SecurityEventsDatabase for testing."""
-
-    def __init__(self, db_path: str = ":memory:", **kwargs):
-        """Initialize mock database."""
-        self.db_path = db_path
-        self.database_path = Path(db_path) if db_path != ":memory:" else None
-        self.max_connections = kwargs.get("max_connections", 10)
-        self.connection_timeout = kwargs.get("connection_timeout", 30.0)
-        self.enable_wal = kwargs.get("enable_wal", True)
-        self._events = []
-        self._connection_pool = []
-        self._is_initialized = False
-        self._lock = asyncio.Lock()
-
-    async def initialize(self) -> None:
-        """Initialize database with schema."""
-        self._is_initialized = True
-        # Create mock schema
-        self._events = []
-
-    async def close(self) -> None:
-        """Close database connections."""
-        self._is_initialized = False
-        self._events.clear()
-
-    async def create_event(self, event) -> str:
-        """Create a new security event."""
-        event_id = str(uuid4())
-        # Handle both SecurityEventCreate objects and dict inputs
-        if hasattr(event, "dict"):
-            event_data = event.dict()
-        elif isinstance(event, dict):
-            event_data = event
-        else:
-            # Fallback for other types
-            event_data = event.__dict__ if hasattr(event, "__dict__") else {}
-
-        self._events.append({"id": event_id, "timestamp": datetime.now(UTC), **event_data})
-        return event_id
-
-    async def get_event_by_id(self, event_id: str) -> dict[str, Any] | None:
-        """Get event by ID."""
-        for event in self._events:
-            if event["id"] == event_id:
-                return event
-        return None
-
-    async def get_events_by_user_id(self, user_id: str, limit: int = 100) -> list[dict[str, Any]]:
-        """Get events by user ID."""
-        user_events = [e for e in self._events if e.get("user_id") == user_id]
-        return user_events[:limit]
-
-    async def get_events_by_type(self, event_type: str, limit: int = 100) -> list[dict[str, Any]]:
-        """Get events by type."""
-        type_events = [e for e in self._events if e.get("event_type") == event_type]
-        return type_events[:limit]
-
-    async def get_events_by_date_range(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        limit: int = 1000,
-    ) -> list[dict[str, Any]]:
-        """Get events by date range."""
-        range_events = [e for e in self._events if start_date <= e["timestamp"] <= end_date]
-        return range_events[:limit]
-
-    async def cleanup_expired_events(self, days: int = 30) -> int:
-        """Cleanup expired events."""
-        cutoff = datetime.now(UTC) - timedelta(days=days)
-        original_count = len(self._events)
-        self._events = [e for e in self._events if e["timestamp"] > cutoff]
-        return original_count - len(self._events)
-
-    async def vacuum_database(self) -> None:
-        """Vacuum database (no-op for mock)."""
-
-    def get_connection(self):
-        """Get database connection."""
-        return MagicMock()
-
-    async def execute_query(self, query: str, params: dict | None = None) -> Any:
-        """Execute arbitrary query."""
-        return []
-
-
-class MockDatabaseManager:
-    """Mock implementation of DatabaseManager for testing."""
-
-    def __init__(self):
-        """Initialize mock database manager."""
-        self._engine = None
-        self._session_factory = None
-        self._is_initialized = False
-        self._health_check_cache = {}
-
-    async def initialize(self) -> None:
-        """Initialize mock database."""
-        self._is_initialized = True
-
-    async def close(self) -> None:
-        """Close mock database."""
-        self._is_initialized = False
-
-    async def get_session(self) -> AsyncSession:
-        """Get mock database session."""
-        session = AsyncMock(spec=AsyncSession)
-        session.execute = AsyncMock(return_value=MagicMock())
-        session.commit = AsyncMock()
-        session.rollback = AsyncMock()
-        session.close = AsyncMock()
-        return session
-
-    async def health_check(self) -> dict[str, Any]:
-        """Perform health check."""
-        return {
-            "status": "healthy",
-            "database": "mock",
-            "connection_pool": {"size": 10, "checked_out": 0, "overflow": 0, "total": 10},
-        }
-
-    def is_connected(self) -> bool:
-        """Check if connected."""
-        return self._is_initialized
+from src.config.settings import ApplicationSettings
+from src.database.connection import DatabaseManager
 
 
 @pytest.fixture
-async def mock_security_database():
-    """Provide a mock SecurityEventsDatabase for testing."""
-    db = MockSecurityEventsDatabase(":memory:")
-    await db.initialize()
-    yield db
-    await db.close()
+def mock_database_settings():
+    """Mock application settings for database testing."""
+    settings = MagicMock(spec=ApplicationSettings)
+    settings.db_host = "localhost"
+    settings.db_port = 5432
+    settings.db_name = "test_db"
+    settings.db_user = "test_user"
+    settings.db_password = "test_password"  # noqa: S105
+    settings.db_pool_size = 5
+    settings.db_pool_max_overflow = 10
+    settings.db_pool_timeout = 30
+    settings.db_pool_recycle = 3600
+    settings.db_echo = False
+    settings.environment = "test"
+    return settings
 
 
 @pytest.fixture
-async def temp_security_database():
-    """Provide a temporary file-based SecurityEventsDatabase for testing."""
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
-    db_path = temp_file.name
-    temp_file.close()
+def mock_database_engine():
+    """Mock async database engine with proper context manager support."""
+    engine = AsyncMock(spec=AsyncEngine)
 
-    db = MockSecurityEventsDatabase(db_path)
-    await db.initialize()
+    # Mock connection and result objects
+    mock_conn = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.fetchone.return_value = [1]
+    mock_conn.execute.return_value = mock_result
+    mock_conn.commit = AsyncMock()
 
-    yield db
+    # Create proper async context manager for connect()
+    mock_connection_context = AsyncMock()
+    mock_connection_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_connection_context.__aexit__ = AsyncMock(return_value=None)
+    engine.connect.return_value = mock_connection_context
 
-    await db.close()
-    if db.database_path and db.database_path.exists():
-        db.database_path.unlink(missing_ok=True)
+    # Also support begin() for legacy compatibility
+    mock_begin_context = AsyncMock()
+    mock_begin_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_begin_context.__aexit__ = AsyncMock(return_value=None)
+    engine.begin.return_value = mock_begin_context
+
+    # Mock pool with metrics support
+    mock_pool = MagicMock()
+    mock_pool.size.return_value = 5
+    mock_pool.checkedin.return_value = 3
+    mock_pool.checkedout.return_value = 2
+    mock_pool.overflow.return_value = 0
+    engine.pool = mock_pool
+
+    # Mock dispose
+    engine.dispose = AsyncMock()
+
+    return engine
 
 
 @pytest.fixture
-async def mock_database_manager():
-    """Provide a mock DatabaseManager for testing."""
-    manager = MockDatabaseManager()
-    await manager.initialize()
-    yield manager
-    await manager.close()
+def mock_database_session_factory():
+    """Mock session factory with proper async session support."""
+    factory = MagicMock(spec=async_sessionmaker)
+    mock_session = AsyncMock(spec=AsyncSession)
+
+    # Mock session operations
+    mock_session.execute = AsyncMock()
+    mock_session.commit = AsyncMock()
+    mock_session.rollback = AsyncMock()
+    mock_session.close = AsyncMock()
+    mock_session.add = AsyncMock()
+    mock_session.delete = AsyncMock()
+    mock_session.flush = AsyncMock()
+    mock_session.refresh = AsyncMock()
+
+    # Create an async context manager mock
+    mock_context_manager = MagicMock()
+    mock_context_manager.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_context_manager.__aexit__ = AsyncMock(return_value=None)
+
+    # Make the factory return the context manager when called
+    factory.return_value = mock_context_manager
+
+    return factory
 
 
 @pytest.fixture
 def mock_database_session():
-    """Provide a mock database session."""
+    """Mock async database session."""
     session = AsyncMock(spec=AsyncSession)
     session.execute = AsyncMock()
     session.commit = AsyncMock()
     session.rollback = AsyncMock()
     session.close = AsyncMock()
-    session.add = Mock()
+    session.add = AsyncMock()
+    session.delete = AsyncMock()
     session.flush = AsyncMock()
     session.refresh = AsyncMock()
     return session
 
 
 @pytest.fixture
-def mock_connection_pool():
-    """Provide a mock connection pool."""
-    pool = MagicMock()
-    pool.size = 10
-    pool.checked_out = 0
-    pool.overflow = 0
-    pool.total = 10
-    pool.acquire = AsyncMock()
-    pool.release = AsyncMock()
-    return pool
+def mock_database_manager(mock_database_settings, mock_database_engine, mock_database_session_factory):
+    """Mock database manager with dependency injection support."""
+    manager = MagicMock(spec=DatabaseManager)
+    
+    # Configure the manager with mocked components
+    manager._engine = mock_database_engine
+    manager._session_factory = mock_database_session_factory
+    manager._settings = mock_database_settings
+    manager._is_initialized = True
+    
+    # Mock methods
+    manager.initialize = AsyncMock()
+    manager.close = AsyncMock()
+    manager.health_check = AsyncMock(return_value={
+        "status": "healthy",
+        "engine_initialized": True,
+        "connection_test": True,
+        "response_time_ms": 5.0,
+        "pool_status": {"metrics_available": True}
+    })
+    
+    # Mock get_session as async context manager
+    async def mock_get_session():
+        session = mock_database_session()
+        try:
+            yield session
+        finally:
+            await session.close()
+    
+    manager.get_session.return_value = mock_get_session()
+    
+    return manager
 
 
 @pytest.fixture
-def sample_security_event():
-    """Provide a sample SecurityEventCreate for testing."""
-    return SecurityEventCreate(
-        event_type="login_attempt",
-        severity="medium",
-        user_id="test-user-123",
-        ip_address="192.168.1.100",
-        user_agent="Mozilla/5.0 Test Browser",
-        details={"action": "login", "result": "success", "method": "password"},
-    )
+def database_manager_factory():
+    """Factory fixture for creating database managers with custom dependencies."""
+    def create_manager(settings=None, engine=None, session_factory=None):
+        """Create a database manager with optional custom dependencies."""
+        manager = DatabaseManager()
+        
+        if settings:
+            manager._settings = settings
+        if engine:
+            manager._engine = engine
+        if session_factory:
+            manager._session_factory = session_factory
+            
+        return manager
+    
+    return create_manager
 
 
 @pytest.fixture
-def sample_security_events():
-    """Provide multiple sample security events."""
-    events = []
-    for i in range(10):
-        events.append(
-            SecurityEventCreate(
-                event_type="login_attempt" if i % 2 == 0 else "api_access",
-                severity="low" if i < 3 else "medium" if i < 7 else "high",
-                user_id=f"user-{i % 3}",
-                ip_address=f"192.168.1.{100 + i}",
-                user_agent="Test Browser",
-                details={"action": f"action-{i}", "index": i},
-            ),
-        )
-    return events
+def mock_database_dependency_injection():
+    """Fixture for testing services that use database dependency injection."""
+    
+    class MockDatabaseService:
+        """Mock service that demonstrates dependency injection pattern."""
+        
+        def __init__(self, database_manager: DatabaseManager = None):
+            self.database_manager = database_manager or DatabaseManager()
+        
+        async def get_data(self):
+            """Example method that uses database."""
+            async with self.database_manager.get_session() as session:
+                result = await session.execute("SELECT 1")
+                return result.fetchone()
+    
+    return MockDatabaseService
+
+
+@pytest.fixture 
+def isolated_database_config():
+    """Provide isolated database configuration for testing."""
+    with (
+        patch.dict("os.environ", {}, clear=True),
+        patch("src.config.settings._env_file_settings", return_value={}),
+    ):
+        yield
 
 
 @pytest.fixture
-async def populated_security_database(mock_security_database, sample_security_events):
-    """Provide a pre-populated security database."""
-    for event in sample_security_events:
-        await mock_security_database.create_event(event)
-    return mock_security_database
+async def database_integration_test_manager():
+    """Provide a database manager for integration testing with real async operations."""
+    # This would be used for integration tests that need actual database connections
+    # For unit tests, use the mock fixtures above
+    
+    class IntegrationDatabaseManager:
+        """Wrapper for testing database integration scenarios."""
+        
+        def __init__(self):
+            self.manager = None
+            self._initialized = False
+        
+        async def initialize(self, settings=None):
+            """Initialize with custom settings for testing."""
+            if settings:
+                with patch("src.database.connection.get_settings", return_value=settings):
+                    self.manager = DatabaseManager()
+                    await self.manager.initialize()
+            else:
+                self.manager = DatabaseManager()
+                await self.manager.initialize()
+            
+            self._initialized = True
+        
+        async def cleanup(self):
+            """Clean up resources."""
+            if self.manager and self._initialized:
+                await self.manager.close()
+                self._initialized = False
+    
+    integration_manager = IntegrationDatabaseManager()
+    yield integration_manager
+    await integration_manager.cleanup()
+
+
+# Export the fixtures for easy importing
+__all__ = [
+    "mock_database_settings",
+    "mock_database_engine", 
+    "mock_database_session_factory",
+    "mock_database_session",
+    "mock_database_manager",
+    "database_manager_factory",
+    "mock_database_dependency_injection", 
+    "isolated_database_config",
+    "database_integration_test_manager",
+]

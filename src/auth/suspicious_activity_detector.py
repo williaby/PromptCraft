@@ -1,6 +1,7 @@
 """Suspicious activity detection for security monitoring."""
 
 import asyncio
+import contextlib
 import logging
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
@@ -419,10 +420,8 @@ class SuspiciousActivityDetector:
         """Close the suspicious activity detector."""
         if self._analysis_task:
             self._analysis_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._analysis_task
-            except asyncio.CancelledError:
-                pass
 
         self._is_initialized = False
 

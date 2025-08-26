@@ -64,7 +64,7 @@ class DatabaseConsolidationAnalyzer:
     focusing on SQLite → PostgreSQL migration strategy.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize consolidation analyzer."""
         self.target_latency_ms = 10.0  # Executive mandate: <10ms
         self.expected_daily_volume = 50000  # Security events per day
@@ -235,7 +235,7 @@ class DatabaseConsolidationAnalyzer:
                 json_like = sum(
                     1
                     for sample in samples
-                    if isinstance(sample, str) and (sample.startswith("{") or sample.startswith("["))
+                    if isinstance(sample, str) and (sample.startswith(("{", "[")))
                 )
                 if json_like > len(samples) * 0.5 and json_like > 0:
                     risks.append(
@@ -354,7 +354,7 @@ class DatabaseConsolidationAnalyzer:
         """Analyze optimal connection pooling architecture."""
         logger.info("Analyzing connection architecture requirements")
 
-        architecture = {
+        return {
             "current_sqlite_approach": {
                 "connections": "File-based, single-writer",
                 "concurrency": "Limited by SQLite WAL mode",
@@ -382,7 +382,6 @@ class DatabaseConsolidationAnalyzer:
             ],
         }
 
-        return architecture
 
     def assess_consolidation_feasibility(self, analyses: list[DatabaseAnalysis]) -> ConsolidationRecommendation:
         """Generate executive recommendation based on all database analyses."""
@@ -505,12 +504,6 @@ class DatabaseConsolidationAnalyzer:
 
 def main():
     """Execute the database consolidation validation spike."""
-    print("🔍 Database Consolidation Validation Spike")
-    print("=" * 60)
-    print("Executive Mandate: Validate database consolidation strategy")
-    print("Scope: SQLite → PostgreSQL migration feasibility")
-    print("Target: <10ms performance with zero data loss")
-    print("=" * 60)
 
     analyzer = DatabaseConsolidationAnalyzer()
     results = analyzer.run_comprehensive_analysis()
@@ -520,30 +513,18 @@ def main():
     with results_file.open("w") as f:
         json.dump(results, f, indent=2, default=str)
 
-    print(f"\n✅ Analysis completed in {results['analysis_duration_seconds']:.2f} seconds")
-    print(f"📊 Detailed results saved to: {results_file}")
 
     # Print executive summary
     recommendation = results["executive_recommendation"]
-    print("\n" + "=" * 60)
-    print("🔴 EXECUTIVE DECISION REPORT")
-    print("=" * 60)
-    print(f"Decision: {recommendation['go_no_go_decision']}")
-    print(f"Confidence: {recommendation['confidence_level']}")
-    print(f"Success Probability: {recommendation['success_probability']:.0%}")
-    print(f"Estimated Migration Time: {recommendation['migration_time_estimate_hours']:.1f} hours")
 
-    print("\nKey Findings:")
-    for finding in recommendation["key_findings"]:
-        print(f"  • {finding}")
+    for _finding in recommendation["key_findings"]:
+        pass
 
-    print(f"\nRisk Assessment ({len(recommendation['risk_assessment'])} total risks):")
-    for risk in recommendation["risk_assessment"][:5]:  # Show first 5 risks
-        print(f"  ⚠️  {risk}")
+    for _risk in recommendation["risk_assessment"][:5]:  # Show first 5 risks
+        pass
     if len(recommendation["risk_assessment"]) > 5:
-        print(f"  ... and {len(recommendation['risk_assessment']) - 5} more risks")
+        pass
 
-    print("\n" + "=" * 60)
 
     return results
 

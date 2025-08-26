@@ -227,7 +227,7 @@ class HomelabPerformanceTester:
 
                 # Test simple query
                 start_time = time.time()
-                result = await conn.execute(text("SELECT 1 as test"))
+                await conn.execute(text("SELECT 1 as test"))
                 query_time = (time.time() - start_time) * 1000
                 results["simple_query_latency_ms"] = round(query_time, 2)
 
@@ -353,7 +353,7 @@ class HomelabPerformanceTester:
                 """,
                     ),
                 )
-                rows = result.fetchall()
+                result.fetchall()
                 query_time = (time.time() - start_time) * 1000
                 results["query_performance_ms"] = round(query_time, 2)
 
@@ -671,10 +671,7 @@ class HomelabPerformanceTester:
                         "status": "FAILED",
                         "recommendation": "NO-GO",
                         "reason": "Performance targets not met for reliable operation",
-                        "risks": performance_issues
-                        + [
-                            f"Concurrent success rate too low: {success_rate:.1%}",
-                        ],
+                        "risks": [*performance_issues, f"Concurrent success rate too low: {success_rate:.1%}"],
                     },
                 )
 

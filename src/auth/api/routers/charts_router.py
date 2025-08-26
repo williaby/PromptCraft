@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class TimelineDataPoint(BaseModel):
@@ -114,10 +114,7 @@ async def get_event_timeline_chart(
             # Track peak activity
             if event_count > peak_count:
                 peak_count = event_count
-                if granularity == "hour":
-                    peak_hour = timestamp.strftime("%H:00")
-                else:
-                    peak_hour = timestamp.strftime("%Y-%m-%d")
+                peak_hour = timestamp.strftime("%H:00") if granularity == "hour" else timestamp.strftime("%Y-%m-%d")
 
         # Generate time range description
         if hours_back <= 24:

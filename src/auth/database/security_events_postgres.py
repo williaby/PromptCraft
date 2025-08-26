@@ -12,14 +12,20 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
 from typing import Any
+
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime, timedelta
+except ImportError:
+    from datetime import datetime, timedelta, timezone
+    UTC = timezone.utc
 
 from sqlalchemy import and_, desc, func, select, text
 
-from ...database.connection import get_database_manager_async
-from ...database.models import SecurityEvent as SecurityEventModel
-from ..models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
+from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
+from src.database.connection import get_database_manager_async
+from src.database.models import SecurityEvent as SecurityEventModel
 
 logger = logging.getLogger(__name__)
 

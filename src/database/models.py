@@ -7,10 +7,14 @@ This module defines database models for:
 """
 
 import uuid
-from datetime import UTC, datetime
-
-UTC = UTC  # Python 3.10 compatibility
 from typing import Any
+
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime
+except ImportError:
+    from datetime import datetime, timezone
+    UTC = timezone.utc
 
 from sqlalchemy import TIMESTAMP, Boolean, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID

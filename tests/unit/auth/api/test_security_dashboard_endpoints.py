@@ -305,7 +305,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
         endpoints.security_monitor.get_recent_events.return_value = sample_events
 
         # Execute with pagination
-        response = await endpoints.get_security_events(limit=1, offset=1)
+        await endpoints.get_security_events(limit=1, offset=1)
 
         # Verify
         endpoints.security_monitor.get_recent_events.assert_called_once_with(limit=1, offset=1)
@@ -464,7 +464,7 @@ class TestSecurityDashboardEndpointsStatisticsEndpoint:
         endpoints.security_monitor.get_threat_statistics.return_value = sample_statistics
 
         # Execute
-        response = await endpoints.get_security_statistics(period="weekly")
+        await endpoints.get_security_statistics(period="weekly")
 
         # Verify
         endpoints.security_monitor.get_threat_statistics.assert_called_once_with(period="weekly")
@@ -538,7 +538,7 @@ class TestSecurityDashboardEndpointsReportsEndpoint:
         end_date = datetime.utcnow()
 
         # Execute
-        response = await endpoints.generate_audit_report(
+        await endpoints.generate_audit_report(
             start_date=start_date,
             end_date=end_date,
             report_format="detailed",

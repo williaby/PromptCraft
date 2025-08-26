@@ -13,8 +13,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
-from ...services.suspicious_activity_detector import SuspiciousActivityDetector
+from src.auth.services.security_integration import SecurityIntegrationService
+from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
 
 
 class UserRiskProfileResponse(BaseModel):

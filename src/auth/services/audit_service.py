@@ -14,9 +14,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from src.auth.models import SecurityEvent, SecurityEventType
 from src.database.connection import get_database_manager_async
 
-from ..models import SecurityEvent, SecurityEventType
 from .security_logger import SecurityLogger
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class AuditService:
     - Performance optimized for large datasets
     """
 
-    def __init__(self, security_logger: SecurityLogger | None = None):
+    def __init__(self, security_logger: SecurityLogger | None = None) -> None:
         """Initialize audit service.
 
         Args:
@@ -456,8 +456,8 @@ class AuditService:
             events_by_severity[severity] = events_by_severity.get(severity, 0) + 1
 
         # Count unique users and IPs
-        unique_users = len(set(e.user_id for e in events if e.user_id))
-        unique_ips = len(set(e.ip_address for e in events if e.ip_address))
+        unique_users = len({e.user_id for e in events if e.user_id})
+        unique_ips = len({e.ip_address for e in events if e.ip_address})
 
         # Generate human-readable period
         period_days = (request.end_date - request.start_date).days

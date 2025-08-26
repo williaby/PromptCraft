@@ -24,7 +24,7 @@ class DataGenerationMode(Enum):
 class MockDataService:
     """Service for generating mock security and analytics data."""
 
-    def __init__(self, mode: DataGenerationMode = DataGenerationMode.REALISTIC):
+    def __init__(self, mode: DataGenerationMode = DataGenerationMode.REALISTIC) -> None:
         self.mode = mode
         self._cache: dict[str, Any] = {}
 
@@ -55,7 +55,10 @@ class MockDataService:
         self._ip_ranges = ["192.168.1.", "10.0.0.", "172.16.0.", "203.0.113.", "198.51.100.", "93.184.216."]
 
     async def generate_security_events(
-        self, count: int = 100, days_back: int = 30, event_types: list[str] | None = None,
+        self,
+        count: int = 100,
+        days_back: int = 30,
+        event_types: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Generate mock security events.
 
@@ -74,7 +77,7 @@ class MockDataService:
         end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days_back)
 
-        for i in range(count):
+        for _i in range(count):
             # Generate timestamp within the range
             time_offset = random.random() * (end_time - start_time).total_seconds()
             event_time = start_time + timedelta(seconds=time_offset)
@@ -104,7 +107,9 @@ class MockDataService:
         return events
 
     async def generate_user_activity_data(
-        self, user_count: int = 50, activity_window_days: int = 30,
+        self,
+        user_count: int = 50,
+        activity_window_days: int = 30,
     ) -> dict[str, list[dict[str, Any]]]:
         """Generate mock user activity data.
 
@@ -135,7 +140,7 @@ class MockDataService:
             )
             activities = []
 
-            for j in range(activity_count):
+            for _j in range(activity_count):
                 activity_time = datetime.now(UTC) - timedelta(
                     days=random.randint(0, activity_window_days),
                     hours=random.randint(0, 23),
@@ -159,7 +164,9 @@ class MockDataService:
         return user_activities
 
     async def generate_system_metrics(
-        self, hours_back: int = 24, granularity_minutes: int = 15,
+        self,
+        hours_back: int = 24,
+        granularity_minutes: int = 15,
     ) -> list[dict[str, Any]]:
         """Generate mock system performance metrics.
 
@@ -199,7 +206,9 @@ class MockDataService:
         return metrics
 
     async def generate_behavioral_patterns(
-        self, pattern_count: int = 10, min_confidence: float = 70.0,
+        self,
+        pattern_count: int = 10,
+        min_confidence: float = 70.0,
     ) -> list[dict[str, Any]]:
         """Generate mock behavioral patterns for analysis.
 
@@ -223,7 +232,7 @@ class MockDataService:
             "device_anomaly",
         ]
 
-        for i in range(pattern_count):
+        for _i in range(pattern_count):
             pattern_type = random.choice(pattern_types)
             confidence = random.uniform(min_confidence, 100.0)
 
@@ -272,9 +281,10 @@ class MockDataService:
             "Brute Force Attack",
         ]
 
-        for i in range(alert_count):
+        for _i in range(alert_count):
             alert_time = datetime.now(UTC) - timedelta(
-                days=random.randint(0, days_back), hours=random.randint(0, 23),
+                days=random.randint(0, days_back),
+                hours=random.randint(0, 23),
             )
 
             alert_type = random.choice(alert_types)
@@ -304,7 +314,10 @@ class MockDataService:
         return sorted(alerts, key=lambda x: x["timestamp"], reverse=True)
 
     async def generate_investigation_data(
-        self, start_time: datetime, end_time: datetime, entity_count: int = 5,
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        entity_count: int = 5,
     ) -> dict[str, list[dict[str, Any]]]:
         """Generate mock investigation data for incident analysis.
 
@@ -318,7 +331,7 @@ class MockDataService:
         """
         investigation_data = {"entities": []}
 
-        for i in range(entity_count):
+        for _i in range(entity_count):
             entity_type = random.choice(["user", "ip_address", "device"])
 
             if entity_type == "user":

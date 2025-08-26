@@ -204,10 +204,10 @@ class TestAUTH4SecurityWorkflowIntegration:
                 self,
                 limit: int = 100,
                 offset: int = 0,
-                event_type: str = None,
-                start_date: datetime = None,
-                end_date: datetime = None,
-                user_id: str = None,
+                event_type: str | None = None,
+                start_date: datetime | None = None,
+                end_date: datetime | None = None,
+                user_id: str | None = None,
                 **kwargs,
             ) -> list[dict[str, Any]]:
                 """Get security events from the database."""
@@ -506,7 +506,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         user_id = sample_login_attempt["user_id"]
         ip_address = sample_login_attempt["ip_address"]
 
-        for attempt in range(6):  # Exceed brute force threshold (5)
+        for _attempt in range(6):  # Exceed brute force threshold (5)
             await security_monitor.log_login_attempt(
                 user_id=user_id,
                 ip_address=ip_address,
@@ -812,7 +812,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         assert avg_time_per_event < 10, f"Avg processing: {avg_time_per_event}ms/event (>10ms)"
 
         # Phase 5: Verify data integrity under concurrency
-        unique_users = set(event["user_id"] for event in recent_events if event["user_id"])
+        unique_users = {event["user_id"] for event in recent_events if event["user_id"]}
         assert len(unique_users) >= 8  # Most users should have events logged
 
     @pytest.mark.integration

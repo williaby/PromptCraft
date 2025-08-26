@@ -421,7 +421,7 @@ async def main():
 
         # Create backup
         logger.info("Creating backup of SQLite database...")
-        backup_path = migrator.create_backup()
+        migrator.create_backup()
 
         # Initialize PostgreSQL
         logger.info("Initializing PostgreSQL database...")

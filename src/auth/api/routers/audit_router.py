@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class AuditReportRequest(BaseModel):

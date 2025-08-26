@@ -16,8 +16,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsDatabase
+from src.auth.models import SecurityEventSeverity, SecurityEventType
 
-from ..models import SecurityEventSeverity, SecurityEventType
+from .alert_engine import AlertEngine
 from .security_logger import SecurityLogger
 
 
@@ -168,9 +169,6 @@ class SecurityMonitor:
         if alert_engine is not None:
             self._alert_engine = alert_engine
         else:
-            # Import here to avoid circular dependency
-            from .alert_engine import AlertEngine
-
             self._alert_engine = AlertEngine()
 
         # Maintain compatibility
@@ -356,7 +354,7 @@ class SecurityMonitor:
                                 "window_minutes": self.config.failed_attempts_window_minutes,
                                 "lockout_duration_minutes": self.config.account_lockout_duration_minutes,
                                 "recent_endpoints": [attempt.endpoint for attempt in list(attempts)[-5:]],
-                                "error_types": list(set(attempt.error_type for attempt in attempts)),
+                                "error_types": list({attempt.error_type for attempt in attempts}),
                             },
                         ),
                     )
@@ -376,9 +374,9 @@ class SecurityMonitor:
                         "failed_attempts_count": len(brute_force_attempts),
                         "threshold": self.config.brute_force_threshold,
                         "window_minutes": self.config.brute_force_window_minutes,
-                        "unique_ips": len(set(attempt.ip_address for attempt in brute_force_attempts)),
+                        "unique_ips": len({attempt.ip_address for attempt in brute_force_attempts}),
                         "unique_user_agents": len(
-                            set(attempt.user_agent for attempt in brute_force_attempts if attempt.user_agent),
+                            {attempt.user_agent for attempt in brute_force_attempts if attempt.user_agent},
                         ),
                         "attack_pattern": "high_frequency_user_targeting",
                     },
@@ -405,8 +403,8 @@ class SecurityMonitor:
             if ip_address not in self._suspicious_ips:
                 self._suspicious_ips.add(ip_address)
 
-                unique_users = set(attempt.user_id for attempt in attempts if attempt.user_id)
-                unique_endpoints = set(attempt.endpoint for attempt in attempts)
+                unique_users = {attempt.user_id for attempt in attempts if attempt.user_id}
+                unique_endpoints = {attempt.endpoint for attempt in attempts}
 
                 alerts.append(
                     SecurityAlert(
@@ -432,7 +430,7 @@ class SecurityMonitor:
         return alerts
 
     async def _log_security_alert(self, alert: SecurityAlert) -> None:
-        """Log security alert using the security logger."""
+        """Log security alert using the security logger and trigger alert via AlertEngine."""
         event_type_mapping = {
             "account_lockout": SecurityEventType.ACCOUNT_LOCKOUT,
             "brute_force_attack": SecurityEventType.BRUTE_FORCE_ATTEMPT,
@@ -441,6 +439,7 @@ class SecurityMonitor:
 
         event_type = event_type_mapping.get(alert.alert_type, SecurityEventType.SECURITY_ALERT)
 
+        # Log the security event
         await self.security_logger.log_event(
             event_type=event_type,
             severity=alert.severity,
@@ -450,6 +449,15 @@ class SecurityMonitor:
             session_id=None,
             details={"alert_type": alert.alert_type, "alert_timestamp": alert.timestamp.isoformat(), **alert.details},
         )
+        
+        # Trigger alert via AlertEngine
+        if self._alert_engine:
+            alert_message = f"Security Alert: {alert.alert_type} detected for user {alert.user_id}"
+            await self._alert_engine.trigger_alert(
+                event=alert,
+                priority=alert.severity.value,
+                message=alert_message,
+            )
 
     def is_account_locked(self, user_id: str) -> bool:
         """Check if an account is currently locked.
@@ -521,11 +529,12 @@ class SecurityMonitor:
             "timestamp": current_time.isoformat(),
         }
 
-    async def unlock_account(self, user_id: str) -> bool:
+    async def unlock_account(self, user_id: str, admin_user: str | None = None) -> bool:
         """Manually unlock an account.
 
         Args:
             user_id: User identifier to unlock
+            admin_user: Admin user performing the unlock (optional)
 
         Returns:
             True if account was locked and is now unlocked, False otherwise
@@ -541,7 +550,11 @@ class SecurityMonitor:
                 ip_address="system",
                 user_agent="security_monitor",
                 session_id=None,
-                details={"unlock_type": "manual", "unlock_timestamp": datetime.now(UTC).isoformat()},
+                details={
+                    "unlock_type": "manual", 
+                    "admin_user": admin_user,
+                    "unlock_timestamp": datetime.now(UTC).isoformat()
+                },
             )
 
             return True
@@ -564,45 +577,77 @@ class SecurityMonitor:
                     user_id=user_id,
                     ip_address=ip_address or "unknown",
                     user_agent=getattr(event, "user_agent", "unknown"),
-                    event_type="login_failure",
+                    endpoint="/auth/login",
+                    error_type="login_failure",
                 )
 
-    async def record_failed_login(self, user_id: str, ip_address: str) -> None:
+    async def record_failed_login(self, user_id: str, ip_address: str) -> bool:
         """Record a failed login attempt.
 
         Args:
             user_id: User identifier
             ip_address: IP address of the attempt
+            
+        Returns:
+            True if brute force detected, False otherwise
         """
-        await self.track_failed_authentication(
+        if user_id is None:
+            raise ValueError("user_id cannot be None")
+        if user_id == "":
+            raise ValueError("user_id cannot be empty")
+            
+        alerts = await self.track_failed_authentication(
             user_id=user_id,
             ip_address=ip_address,
             user_agent="unknown",
-            event_type="login_failure",
+            endpoint="/auth/login",
+            error_type="login_failure",
         )
+        
+        # Return True if any brute force alert was generated
+        return any(alert.alert_type == "brute_force_attack" for alert in alerts)
 
-    async def check_rate_limit(self, user_id: str, ip_address: str) -> bool:
-        """Check if rate limit is exceeded.
+    async def check_rate_limit(self, user_id: str, endpoint: str) -> bool:
+        """Check if rate limit is exceeded for endpoint requests.
 
         Args:
             user_id: User identifier
-            ip_address: IP address
+            endpoint: API endpoint being accessed
 
         Returns:
             True if rate limit is exceeded
         """
-        # Check user rate limit
-        if user_id in self._failed_attempts_by_user:
-            user_attempts = self._failed_attempts_by_user[user_id]
-            if len(user_attempts) >= self.config.failed_attempts_threshold:
-                return True
-
-        # Check IP rate limit
-        if ip_address in self._failed_attempts_by_ip:
-            ip_attempts = self._failed_attempts_by_ip[ip_address]
-            if len(ip_attempts) >= self.config.brute_force_threshold:
-                return True
-
+        current_time = datetime.now(UTC)
+        rate_limit_key = f"{user_id}:{endpoint}"
+        
+        # Clean up old requests outside the time window
+        cutoff_time = current_time - timedelta(seconds=self.rate_limit_window_seconds)
+        requests_queue = self._rate_limit_tracker[rate_limit_key]
+        
+        while requests_queue and requests_queue[0] < cutoff_time:
+            requests_queue.popleft()
+        
+        # Check if we've exceeded the rate limit
+        if len(requests_queue) >= self.rate_limit_requests:
+            # Log rate limit exceeded event
+            await self.security_logger.log_event(
+                event_type=SecurityEventType.RATE_LIMIT_EXCEEDED,
+                severity=SecurityEventSeverity.WARNING,
+                user_id=user_id,
+                ip_address="unknown",  # Not available in this context
+                user_agent=None,
+                session_id=None,
+                details={
+                    "endpoint": endpoint,
+                    "requests_count": len(requests_queue),
+                    "rate_limit": self.rate_limit_requests,
+                    "window_seconds": self.rate_limit_window_seconds,
+                },
+            )
+            return True
+        
+        # Add current request to tracker
+        requests_queue.append(current_time)
         return False
 
     async def clear_failed_attempts(self, user_id: str) -> None:
@@ -639,7 +684,50 @@ class SecurityMonitor:
             True if location is unusual
         """
         # Check if IP is in suspicious list
-        return ip_address in self._suspicious_ips
+        if ip_address in self._suspicious_ips:
+            return True
+            
+        # Get user's recent login history from database
+        try:
+            recent_events = await self._db.get_events_by_user_id(user_id, limit=10)
+            
+            # Extract IP addresses from recent successful logins
+            recent_ips = set()
+            for event in recent_events:
+                if event.event_type == SecurityEventType.LOGIN_SUCCESS:
+                    recent_ips.add(event.ip_address)
+            
+            # Simple location detection: if IP is completely different from recent IPs
+            # This is a basic implementation - real systems would use geolocation APIs
+            if recent_ips and ip_address not in recent_ips:
+                # Check if IP is from a different network segment (simple heuristic)
+                current_network = ".".join(ip_address.split(".")[:2])
+                for recent_ip in recent_ips:
+                    recent_network = ".".join(recent_ip.split(".")[:2])
+                    if current_network == recent_network:
+                        return False  # Same network, not suspicious
+                
+                # All recent IPs are from different networks, suspicious
+                await self.security_logger.log_event(
+                    event_type=SecurityEventType.SUSPICIOUS_ACTIVITY,
+                    severity=SecurityEventSeverity.WARNING,
+                    user_id=user_id,
+                    ip_address=ip_address,
+                    user_agent=None,
+                    session_id=None,
+                    details={
+                        "activity_type": "unusual_location",
+                        "current_ip": ip_address,
+                        "recent_ips": list(recent_ips),
+                    },
+                )
+                return True
+                
+        except Exception:
+            # On error, default to not suspicious
+            pass
+            
+        return False
 
     async def detect_multiple_simultaneous_sessions(self, user_id: str) -> bool:
         """Detect multiple simultaneous sessions for a user.

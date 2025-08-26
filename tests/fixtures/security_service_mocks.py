@@ -4,7 +4,13 @@ This module provides mock implementations and fixtures for all security services
 to enable comprehensive testing without external dependencies.
 """
 
-from datetime import UTC, datetime, timedelta
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime, timedelta
+except ImportError:
+    from datetime import datetime, timedelta, timezone
+    UTC = timezone.utc
+
 from typing import Any
 from uuid import uuid4
 
@@ -26,25 +32,50 @@ from src.auth.models import SecurityEventCreate
 class MockSecurityLogger:
     """Mock implementation of SecurityLogger for testing."""
 
-    def __init__(self, db=None, audit_service=None, **kwargs):
-        """Initialize mock logger."""
-        self.db = db
-        self.audit_service = audit_service
-        self.batch_size = kwargs.get("batch_size", 10)
-        self.batch_timeout_seconds = kwargs.get("batch_timeout_seconds", 5.0)
-        self.max_queue_size = kwargs.get("max_queue_size", 1000)
-        self._events = []
-        self._metrics = {
-            "total_events_logged": 0,
-            "total_events_dropped": 0,
-            "average_logging_time_ms": 0.0,
-            "current_queue_size": 0,
-            "rate_limit_hits": 0,
+    async def log_event(
+        self,
+        event_type=None,
+        severity=None,
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        session_id: str | None = None,
+        details: dict[str, Any] | None = None,
+        risk_score: int = 0,
+        event: SecurityEventCreate | None = None,
+    ) -> bool:
+        """Log a security event - supports both parameter and object-based calls."""
+        # Track call for mock compatibility
+        call_args = {
+            "event_type": event_type,
+            "severity": severity,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "session_id": session_id,
+            "details": details,
+            "risk_score": risk_score,
+            "event": event,
         }
-
-    async def log_event(self, event: SecurityEventCreate) -> bool:
-        """Log a security event."""
-        self._events.append(event)
+        self._call_history["log_event"].append(call_args)
+        
+        if event:
+            # Object-based call
+            self._events.append(event)
+        else:
+            # Parameter-based call - create SecurityEventCreate object
+            created_event = SecurityEventCreate(
+                event_type=event_type,
+                severity=severity,
+                user_id=user_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                session_id=session_id,
+                details=details or {},
+                risk_score=risk_score,
+            )
+            self._events.append(created_event)
+        
         self._metrics["total_events_logged"] += 1
         return True
 
@@ -59,11 +90,23 @@ class MockSecurityLogger:
         details: dict[str, Any] | None = None,
     ) -> bool:
         """Log a security event with details."""
+        # Track call for mock compatibility
+        call_args = {
+            "event": event,
+            "event_type": event_type,
+            "severity": severity,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "details": details,
+        }
+        self._call_history["log_security_event"].append(call_args)
+        
         global _test_event_registry
 
         if event:
             # Use provided event directly
-            result = await self.log_event(event)
+            result = await self.log_event(event=event)
 
             # Add to global event registry for audit service to pick up
             event_data = {
@@ -86,7 +129,7 @@ class MockSecurityLogger:
                 user_agent=user_agent,
                 details=details or {},
             )
-            result = await self.log_event(event)
+            result = await self.log_event(event=event)
 
             # Also add to global event registry for audit service to pick up
             event_data = {
@@ -101,6 +144,95 @@ class MockSecurityLogger:
             _test_event_registry.append(event_data)
 
         return result
+
+    def __init__(self, db=None, audit_service=None, **kwargs):
+        """Initialize mock logger."""
+        self.db = db
+        self.audit_service = audit_service
+        self.batch_size = kwargs.get("batch_size", 10)
+        self.batch_timeout_seconds = kwargs.get("batch_timeout_seconds", 5.0)
+        self.max_queue_size = kwargs.get("max_queue_size", 1000)
+        self._events = []
+        self._metrics = {
+            "total_events_logged": 0,
+            "total_events_dropped": 0,
+            "average_logging_time_ms": 0.0,
+            "current_queue_size": 0,
+            "rate_limit_hits": 0,
+        }
+        # Track method calls for assert_called() compatibility
+        self._call_history = {
+            "log_event": [],
+            "log_security_event": [],
+            "get_metrics": [],
+            "flush": [],
+        }
+        
+        # Replace log_security_event with a mock-capable wrapper
+        original_method = self.log_security_event
+        
+        class MockableMethod:
+            def __init__(self, method, call_history):
+                self.method = method
+                self.call_history = call_history
+                
+            async def __call__(self, *args, **kwargs):
+                return await self.method(*args, **kwargs)
+                
+            @property
+            def call_args(self):
+                """Get the last call arguments."""
+                if self.call_history["log_security_event"]:
+                    return ([], self.call_history["log_security_event"][-1])
+                return None
+                
+            def assert_called(self):
+                if not len(self.call_history["log_security_event"]) > 0:
+                    raise AssertionError("Expected 'log_security_event' to have been called")
+                    
+            def assert_called_once(self):
+                count = len(self.call_history["log_security_event"])
+                if count != 1:
+                    raise AssertionError(f"Expected 'log_security_event' to be called once. Called {count} times")
+                    
+            def assert_not_called(self):
+                if len(self.call_history["log_security_event"]) > 0:
+                    raise AssertionError("Expected 'log_security_event' not to have been called")
+        
+        self.log_security_event = MockableMethod(original_method, self._call_history)
+        
+        # Also make log_event mockable for tests that expect it
+        original_log_event = self.log_event
+        
+        class MockableLogEvent:
+            def __init__(self, method, call_history):
+                self.method = method
+                self.call_history = call_history
+                
+            async def __call__(self, *args, **kwargs):
+                return await self.method(*args, **kwargs)
+                
+            @property
+            def call_args(self):
+                """Get the last call arguments."""
+                if self.call_history["log_event"]:
+                    return ([], self.call_history["log_event"][-1])
+                return None
+                
+            def assert_called(self):
+                if not len(self.call_history["log_event"]) > 0:
+                    raise AssertionError("Expected 'log_event' to have been called")
+                    
+            def assert_called_once(self):
+                count = len(self.call_history["log_event"])
+                if count != 1:
+                    raise AssertionError(f"Expected 'log_event' to be called once. Called {count} times")
+                    
+            def assert_not_called(self):
+                if len(self.call_history["log_event"]) > 0:
+                    raise AssertionError("Expected 'log_event' not to have been called")
+        
+        self.log_event = MockableLogEvent(original_log_event, self._call_history)
 
     async def get_metrics(self) -> dict[str, Any]:
         """Get logger metrics."""
@@ -475,10 +607,7 @@ class MockAlertEngine:
 
         if should_trigger_alert:
             # Generate appropriate title based on event type
-            if hasattr(event.event_type, "value"):
-                event_type_value = event.event_type.value
-            else:
-                event_type_value = str(event.event_type)
+            event_type_value = event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type)
 
             # Check event details to determine specific alert type
             event_details = getattr(event, "details", {})
@@ -590,9 +719,7 @@ class MockSuspiciousActivityDetector:
         """Analyze location anomaly for user and IP."""
         # Mock logic: consider foreign IPs as anomalies for testing
         is_anomaly = (
-            ip_address.startswith("203.0.")  # Foreign IP pattern
-            or ip_address.startswith("45.")  # Another foreign pattern
-            or user_id == "suspicious_user"  # Test user pattern
+            ip_address.startswith(("203.0.", "45.")) or user_id == "suspicious_user"  # Test user pattern
         )
 
         # If anomaly detected, create security event and trigger alert
@@ -697,9 +824,9 @@ class MockAuditService:
         self,
         limit: int = 100,
         offset: int = 0,
-        event_type: str = None,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        event_type: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         **kwargs,
     ) -> list[dict[str, Any]]:
         """Get security events for auditing."""

@@ -21,9 +21,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from ..models import SecurityEventSeverity, SecurityEventType
-from ..services.alert_engine import AlertSeverity
-from ..services.security_integration import SecurityIntegrationService
+from src.auth.models import SecurityEventSeverity, SecurityEventType
+from src.auth.services.alert_engine import AlertSeverity
+from src.auth.services.security_integration import SecurityIntegrationService
 
 # Aliases for backward compatibility
 EventSeverity = SecurityEventSeverity
@@ -189,7 +189,7 @@ router = APIRouter(prefix="/api/security/dashboard", tags=["security-dashboard"]
 class SecurityDashboardEndpoints:
     """Security dashboard API endpoints class for testing compatibility."""
 
-    def __init__(self, security_monitor=None, alert_engine=None, audit_service=None):
+    def __init__(self, security_monitor=None, alert_engine=None, audit_service=None) -> None:
         """Initialize security dashboard endpoints with services."""
         if security_monitor is None:
             raise ValueError("SecurityMonitor is required")
@@ -879,7 +879,7 @@ async def generate_audit_report(
     try:
         from datetime import datetime
 
-        from ..services.audit_service import AuditReportRequest, AuditService, ExportFormat
+        from src.auth.services.audit_service import AuditReportRequest, AuditService, ExportFormat
 
         # Initialize audit service
         audit_service = AuditService()
@@ -939,7 +939,7 @@ async def get_audit_statistics(
     try:
         from datetime import datetime
 
-        from ..services.audit_service import AuditService
+        from src.auth.services.audit_service import AuditService
 
         # Parse dates
         start_dt = datetime.fromisoformat(start_date)
@@ -974,7 +974,7 @@ async def enforce_retention_policies(
         Retention enforcement results
     """
     try:
-        from ..services.audit_service import AuditService
+        from src.auth.services.audit_service import AuditService
 
         # Initialize audit service
         audit_service = AuditService()
@@ -1007,7 +1007,7 @@ async def get_retention_policies(service: SecurityIntegrationService = Depends(g
         List of retention policies
     """
     try:
-        from ..services.audit_service import AuditService
+        from src.auth.services.audit_service import AuditService
 
         # Initialize audit service
         audit_service = AuditService()
@@ -1113,6 +1113,6 @@ async def _log_alert_acknowledgment(alert_id: str, timestamp: datetime) -> None:
     """Log alert acknowledgment as a background task."""
     try:
         # In production, this would log to security events
-        print(f"Alert {alert_id} acknowledged at {timestamp.isoformat()}")
-    except Exception as e:
-        print(f"Failed to log alert acknowledgment: {e}")
+        pass
+    except Exception:
+        pass

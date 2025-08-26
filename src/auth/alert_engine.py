@@ -1,6 +1,7 @@
 """Alert engine for security event notifications and incident response."""
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -341,7 +342,7 @@ class AlertEngine:
             stats["by_priority"][priority.value] = count
 
         # Count by type
-        alert_types = set(a.alert_type for a in self._alert_history)
+        alert_types = {a.alert_type for a in self._alert_history}
         for alert_type in alert_types:
             count = sum(1 for a in self._alert_history if a.alert_type == alert_type)
             stats["by_type"][alert_type] = count
@@ -361,9 +362,7 @@ class AlertEngine:
         """Close the alert engine."""
         if self._processing_task:
             self._processing_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._processing_task
-            except asyncio.CancelledError:
-                pass
 
         self._is_initialized = False

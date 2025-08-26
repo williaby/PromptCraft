@@ -19,17 +19,22 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
 
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime, timedelta
+except ImportError:
+    from datetime import datetime, timedelta, timezone
+    UTC = timezone.utc
+
 from pydantic import BaseModel, Field
 
 from src.auth.database.security_events_postgres import SecurityEventsDatabase
+from src.auth.models import SecurityEvent, SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.auth.security_logger import SecurityLogger
-
-from ..models import SecurityEvent, SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 
 
 class AlertSeverity(str, Enum):
@@ -424,8 +429,7 @@ class AlertEngine:
                     await self._process_event_batch(batch)
                     batch.clear()
 
-            except Exception as e:
-                print(f"Event processor error: {e}")  # Simple logging
+            except Exception:
                 batch.clear()
 
     async def _process_event_batch(self, events: list[SecurityEventCreate]) -> None:
@@ -444,9 +448,8 @@ class AlertEngine:
 
                 self.metrics.total_events_processed += 1
 
-            except Exception as e:
+            except Exception:
                 self.metrics.total_processing_errors += 1
-                print(f"Error processing event: {e}")
 
     def _update_event_windows(self, event: SecurityEventCreate) -> None:
         """Update sliding time windows for event correlation."""
@@ -549,8 +552,7 @@ class AlertEngine:
 
             return alert
 
-        except Exception as e:
-            print(f"Error generating alert: {e}")
+        except Exception:
             return None
 
     def _generate_alert_description(self, event: SecurityEventCreate, rule: AlertRule) -> str:
@@ -621,7 +623,7 @@ class AlertEngine:
                 )
 
         except asyncio.QueueFull:
-            print(f"Alert queue full, dropping alert: {alert.title}")
+            pass
 
     async def _alert_notifier(self) -> None:
         """Background task for sending alert notifications."""
@@ -634,8 +636,8 @@ class AlertEngine:
 
             except TimeoutError:
                 continue  # No alerts to process
-            except Exception as e:
-                print(f"Alert notifier error: {e}")
+            except Exception:
+                pass
 
     async def _send_notifications(self, alert: SecurityAlert) -> None:
         """Send alert notifications through configured channels."""
@@ -988,9 +990,8 @@ class AlertEngine:
                     handler = self._notification_channels[channel]
                     await handler(alert)
                     return True
-            except Exception as e:
+            except Exception:
                 if attempt == max_retries - 1:
-                    print(f"Failed to send notification after {max_retries} attempts: {e}")
                     return False
                 await asyncio.sleep(2**attempt)  # Exponential backoff
 

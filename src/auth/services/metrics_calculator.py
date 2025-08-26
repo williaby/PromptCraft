@@ -12,7 +12,7 @@ from typing import Any
 class MetricsCalculator:
     """Service for calculating security metrics and system health scores."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cache: dict[str, Any] = {}
         self._cache_expiry: dict[str, datetime] = {}
 

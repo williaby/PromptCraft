@@ -169,7 +169,7 @@ class SecurityMonitor:
         """
         # Get current threshold from database
         stmt = select(MonitoringThreshold).where(
-            and_(MonitoringThreshold.threshold_name == "alert_threshold", MonitoringThreshold.is_active == True),
+            and_(MonitoringThreshold.threshold_name == "alert_threshold", MonitoringThreshold.is_active),
         )
         result = await session.execute(stmt)
         threshold_record = result.scalar_one_or_none()
@@ -177,7 +177,7 @@ class SecurityMonitor:
 
         # Get time window from database
         stmt = select(MonitoringThreshold).where(
-            and_(MonitoringThreshold.threshold_name == "time_window", MonitoringThreshold.is_active == True),
+            and_(MonitoringThreshold.threshold_name == "time_window", MonitoringThreshold.is_active),
         )
         result = await session.execute(stmt)
         window_record = result.scalar_one_or_none()
@@ -284,11 +284,11 @@ class SecurityMonitor:
 
         stmt = stmt.on_conflict_do_update(
             index_elements=["entity_key"],
-            set_=dict(
-                score=ThreatScore.score + stmt.excluded.score,
-                last_updated=func.now(),
-                score_details=stmt.excluded.score_details,
-            ),
+            set_={
+                "score": ThreatScore.score + stmt.excluded.score,
+                "last_updated": func.now(),
+                "score_details": stmt.excluded.score_details,
+            },
         )
 
         await session.execute(stmt)
@@ -341,7 +341,7 @@ class SecurityMonitor:
 
             # Check if already blocked
             stmt = select(BlockedEntity).where(
-                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active == True),
+                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active),
             )
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
@@ -372,7 +372,7 @@ class SecurityMonitor:
 
             # Check if already blocked
             stmt = select(BlockedEntity).where(
-                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active == True),
+                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active),
             )
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
@@ -411,7 +411,7 @@ class SecurityMonitor:
 
             async with self._db_manager.get_session() as session:
                 stmt = select(BlockedEntity).where(
-                    and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active == True),
+                    and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active),
                 )
                 result = await session.execute(stmt)
                 blocked_entity = result.scalar_one_or_none()
@@ -427,7 +427,7 @@ class SecurityMonitor:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # If loop is running, we need to create a task
-                task = asyncio.create_task(_check_blocked())
+                asyncio.create_task(_check_blocked())
                 return False  # Return False for now, proper async handling needed
             return loop.run_until_complete(_check_blocked())
         except RuntimeError:
@@ -448,7 +448,7 @@ class SecurityMonitor:
 
         async with self._db_manager.get_session() as session:
             stmt = select(BlockedEntity).where(
-                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active == True),
+                and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active),
             )
             result = await session.execute(stmt)
             blocked_entity = result.scalar_one_or_none()
@@ -481,13 +481,13 @@ class SecurityMonitor:
 
             # Count blocked entities
             blocked_ips_stmt = select(func.count(BlockedEntity.id)).where(
-                and_(BlockedEntity.entity_type == "ip", BlockedEntity.is_active == True),
+                and_(BlockedEntity.entity_type == "ip", BlockedEntity.is_active),
             )
             blocked_ips_result = await session.execute(blocked_ips_stmt)
             blocked_ips = blocked_ips_result.scalar() or 0
 
             blocked_users_stmt = select(func.count(BlockedEntity.id)).where(
-                and_(BlockedEntity.entity_type == "user", BlockedEntity.is_active == True),
+                and_(BlockedEntity.entity_type == "user", BlockedEntity.is_active),
             )
             blocked_users_result = await session.execute(blocked_users_stmt)
             blocked_users = blocked_users_result.scalar() or 0

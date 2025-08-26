@@ -9,9 +9,15 @@ configuration.
 import os
 import sys
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
+
+# Python 3.10 compatibility for UTC and datetime
+try:
+    from datetime import UTC, datetime
+except ImportError:
+    from datetime import datetime, timezone
+    UTC = timezone.utc
 
 import pytest
 
@@ -81,7 +87,12 @@ class TestApplicationSettings:
 
     def test_application_settings_initialization(self):
         """Test ApplicationSettings initialization with defaults."""
-        settings = ApplicationSettings()
+        # Isolate from any environment variables and environment files that might affect the test
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("src.config.settings._env_file_settings", return_value={}),
+        ):
+            settings = ApplicationSettings()
 
         assert settings.app_name == "PromptCraft-Hybrid"
         assert settings.version == "0.1.0"

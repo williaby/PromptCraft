@@ -124,7 +124,7 @@ class SecurityDashboard:
     def _calculate_uptime_percentage(self, metrics: dict[str, Any]) -> float:
         """Calculate system uptime percentage."""
         service_health = metrics.get("service_health", {})
-        service_failures = metrics.get("service_failures", {})
+        metrics.get("service_failures", {})
 
         # Simplified uptime calculation
         healthy_services = sum(1 for status in service_health.values() if isinstance(status, bool) and status)
@@ -343,11 +343,11 @@ class SecurityDashboard:
             # Alert details section
             with gr.Row():
                 with gr.Column(scale=2):
-                    selected_alert_details = gr.JSON(label="Selected Alert Details", value={}, container=True)
+                    gr.JSON(label="Selected Alert Details", value={}, container=True)
 
                 with gr.Column(scale=1):
-                    acknowledge_btn = gr.Button("✅ Acknowledge Selected", variant="primary")
-                    alert_actions_status = gr.Textbox(
+                    gr.Button("✅ Acknowledge Selected", variant="primary")
+                    gr.Textbox(
                         label="Action Status",
                         value="",
                         interactive=False,
@@ -548,18 +548,18 @@ class SecurityDashboard:
             )
 
             # Event details
-            selected_event_details = gr.JSON(label="Selected Event Details", value={}, container=True)
+            gr.JSON(label="Selected Event Details", value={}, container=True)
 
             # Export functionality
             with gr.Row():
-                export_format = gr.Dropdown(
+                gr.Dropdown(
                     choices=["JSON", "CSV"],
                     value="JSON",
                     label="Export Format",
                     container=True,
                 )
-                export_btn = gr.Button("📤 Export Results", variant="secondary")
-                export_status = gr.Textbox(label="Export Status", value="", interactive=False, container=True)
+                gr.Button("📤 Export Results", variant="secondary")
+                gr.Textbox(label="Export Status", value="", interactive=False, container=True)
 
             def search_events(start_dt, end_dt, event_type, user_id, ip_addr, risk_min_val, risk_max_val):
                 """Search security events with filters."""
@@ -619,8 +619,8 @@ class SecurityDashboard:
                 y=[d["events"] for d in timeline_data],
                 mode="lines+markers",
                 name="Events",
-                line=dict(color="blue", width=2),
-                marker=dict(size=6),
+                line={"color": "blue", "width": 2},
+                marker={"size": 6},
             ),
         )
 
@@ -631,8 +631,8 @@ class SecurityDashboard:
                 y=[d["alerts"] for d in timeline_data],
                 mode="lines+markers",
                 name="Alerts",
-                line=dict(color="red", width=2),
-                marker=dict(size=6),
+                line={"color": "red", "width": 2},
+                marker={"size": 6},
             ),
         )
 
@@ -666,9 +666,9 @@ class SecurityDashboard:
             status = "Acknowledged" if i % 3 == 0 else "Unacknowledged"
 
             # Apply filters
-            if severity_filter != "All" and severity != severity_filter:
+            if severity_filter not in ("All", severity):
                 continue
-            if status_filter != "All" and status != status_filter:
+            if status_filter not in ("All", status):
                 continue
 
             alert_data = [
@@ -794,8 +794,8 @@ class SecurityDashboard:
                     x=[d["date"] for d in risk_data],
                     y=[d["risk_score"] for d in risk_data],
                     mode="lines+markers",
-                    line=dict(color="orange", width=2),
-                    marker=dict(size=4),
+                    line={"color": "orange", "width": 2},
+                    marker={"size": 4},
                 ),
             ],
         )

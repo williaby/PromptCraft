@@ -1,6 +1,7 @@
 """Audit service for comprehensive security event tracking and compliance."""
 
 import asyncio
+import contextlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
@@ -464,16 +465,12 @@ class AuditService:
         """Close the audit service."""
         if self._persistence_task:
             self._persistence_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._persistence_task
-            except asyncio.CancelledError:
-                pass
 
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
         self._is_initialized = False

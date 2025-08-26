@@ -64,8 +64,9 @@ class TestDatabaseManager:
             manager = DatabaseManager()
             connection_string = manager._build_connection_string()
 
+            # SQLAlchemy URL masks passwords in string representation for security
             expected = (
-                f"postgresql+asyncpg://{mock_settings.db_user}:{mock_settings.db_password}"
+                f"postgresql+asyncpg://{mock_settings.db_user}:***"
                 f"@{mock_settings.db_host}:{mock_settings.db_port}/{mock_settings.db_name}"
             )
             assert connection_string == expected
@@ -131,8 +132,8 @@ class TestDatabaseManager:
             # Should not raise exception
             await manager._test_connection()
 
-            # Verify connection test was performed
-            mock_async_engine.begin.assert_called_once()
+            # Verify connection test was performed (using connect() not begin())
+            mock_async_engine.connect.assert_called_once()
 
     async def test_test_connection_failure(self, mock_settings):
         """Test connection test failure."""
@@ -219,7 +220,6 @@ class TestDatabaseManager:
             manager._session_factory = mock_session_factory
 
             # Fix the mock to return the actual session context manager
-            mock_session = mock_session_factory.return_value
 
             async with manager.get_session() as session:
                 assert session is not None

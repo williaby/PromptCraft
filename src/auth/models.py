@@ -2,8 +2,14 @@
 
 import re
 import uuid
-from datetime import UTC, datetime
 from enum import Enum
+
+# Python 3.10 compatibility for UTC
+try:
+    from datetime import UTC, datetime
+except ImportError:
+    from datetime import datetime, timezone
+    UTC = timezone.utc
 
 # Create aliases for backward compatibility
 EventSeverity = None  # Will be set after class definition
@@ -11,7 +17,7 @@ EventType = None  # Will be set after class definition
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from .constants import ROLE_ADMIN, ROLE_USER
 
@@ -81,7 +87,8 @@ class ServiceTokenCreate(BaseModel):
     expires_at: datetime | None = Field(default=None, description="Token expiration datetime")
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
-    @validator("token_name")
+    @field_validator("token_name")
+    @classmethod
     def validate_token_name(cls, v: str) -> str:  # noqa: N805
         """Validate and clean token name."""
         return v.strip()
@@ -100,7 +107,8 @@ class ServiceTokenUpdate(BaseModel):
     expires_at: datetime | None = Field(default=None, description="Token expiration datetime")
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
-    @validator("token_name")
+    @field_validator("token_name")
+    @classmethod
     def validate_token_name(cls, v: str | None) -> str | None:  # noqa: N805
         """Validate and clean token name."""
         if v is not None:
@@ -154,7 +162,8 @@ class TokenValidationRequest(BaseModel):
 
     token: str = Field(..., min_length=1, description="Token to validate")
 
-    @validator("token")
+    @field_validator("token")
+    @classmethod
     def validate_token(cls, v: str) -> str:  # noqa: N805
         """Validate and clean token."""
         return v.strip()
@@ -227,7 +236,8 @@ class SecurityEventBase(BaseModel):
     details: dict[str, Any] | None = Field(default_factory=dict, description="Additional event details (JSON)")
     risk_score: int = Field(0, ge=0, le=100, description="Risk score from 0-100")
 
-    @validator("ip_address")
+    @field_validator("ip_address")
+    @classmethod
     def validate_ip_address(cls, v):
         """Validate IP address format."""
         if v is None:
@@ -242,12 +252,13 @@ class SecurityEventBase(BaseModel):
             return v
 
         # Allow localhost and private networks for development
-        if v in ["localhost", "127.0.0.1", "::1"] or v.startswith("192.168.") or v.startswith("10."):
+        if v in ["localhost", "127.0.0.1", "::1"] or v.startswith(("192.168.", "10.")):
             return v
 
         return v  # Return as-is for complex IPv6 addresses or unknown formats
 
-    @validator("user_agent")
+    @field_validator("user_agent")
+    @classmethod
     def validate_user_agent(cls, v):
         """Sanitize user agent string to prevent injection attacks."""
         if v is None:
@@ -257,7 +268,8 @@ class SecurityEventBase(BaseModel):
         sanitized = re.sub(r'[<>"\']', "", v)
         return sanitized[:500]  # Enforce max length
 
-    @validator("details")
+    @field_validator("details")
+    @classmethod
     def validate_details(cls, v):
         """Validate and sanitize details JSON."""
         if v is None:

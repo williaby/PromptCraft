@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
+from src.auth.services.security_integration import SecurityIntegrationService
 
 
 class HealthStatus(BaseModel):

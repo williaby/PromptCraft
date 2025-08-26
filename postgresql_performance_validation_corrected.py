@@ -61,7 +61,7 @@ class PostgreSQLCapabilityAnalyzer:
     existing data analysis, and database consolidation best practices.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.target_latency_ms = 10.0
         self.expected_daily_volume = 50000
 
@@ -116,9 +116,9 @@ class PostgreSQLCapabilityAnalyzer:
 
         # Calculate expected throughput based on daily volume requirements
         required_ops_per_second = self.expected_daily_volume / (24 * 3600)  # ~0.58 ops/sec
-        expected_peak_ops_per_second = required_ops_per_second * 10  # 10x safety factor
+        required_ops_per_second * 10  # 10x safety factor
 
-        projections = {
+        return {
             "security_event_insert": PerformanceProjection(
                 operation_type="insert",
                 expected_p95_latency_ms=self.postgresql_benchmarks["single_insert_p95_ms"],
@@ -149,7 +149,6 @@ class PostgreSQLCapabilityAnalyzer:
             ),
         }
 
-        return projections
 
     def analyze_sqlite_migration_data(self) -> dict[str, Any]:
         """Analyze existing SQLite databases for migration complexity."""
@@ -439,12 +438,6 @@ class PostgreSQLCapabilityAnalyzer:
 
 def main():
     """Execute the corrected PostgreSQL performance validation."""
-    print("🔍 PostgreSQL Performance Validation - CORRECTED ANALYSIS")
-    print("=" * 80)
-    print("Executive Mandate: Correct previous NO-GO recommendation with accurate PostgreSQL analysis")
-    print("Context: Previous 42% success rate was based on incomplete analysis")
-    print("Target: <10ms P95 latency validation using PostgreSQL capability benchmarks")
-    print("=" * 80)
 
     analyzer = PostgreSQLCapabilityAnalyzer()
     result = analyzer.run_corrected_analysis()
@@ -478,46 +471,22 @@ def main():
     with results_file.open("w") as f:
         json.dump(result_dict, f, indent=2, default=str)
 
-    print(f"\n✅ Corrected analysis completed - Results saved to: {results_file}")
 
     # Print corrected executive summary
     recommendation = result.corrected_recommendation
-    print("\n" + "=" * 80)
-    print("🔴 CORRECTED EXECUTIVE DECISION REPORT")
-    print("=" * 80)
-    print(f"CORRECTED Decision: {recommendation['go_no_go_decision']}")
-    print(f"Confidence Level: {recommendation['confidence_level']}")
-    print(f"Rationale: {recommendation['rationale']}")
-    print(f"Success Probability: {recommendation['success_probability']:.0%} (CORRECTED from 42%)")
-    print(f"Migration Time: {recommendation['migration_time_estimate_hours']:.0f} hours")
 
-    print("\n📊 CORRECTED Performance Analysis:")
-    perf = recommendation["performance_summary"]
-    print(f"  • Insert P95 Latency: {perf['insert_p95_latency_ms']:.1f}ms (target: {perf['target_latency_ms']}ms)")
-    print(f"  • Query P95 Latency: {perf['query_p95_latency_ms']:.1f}ms (target: {perf['target_latency_ms']}ms)")
-    print(f"  • Executive Mandate: {'✅ MEETS' if perf['meets_executive_mandate'] else '❌ FAILS'} <10ms requirement")
-    print(f"  • Expected Reliability: {perf['reliability_percentage']:.1f}%")
+    recommendation["performance_summary"]
 
-    print("\n🔍 Key Findings (CORRECTED):")
-    for finding in recommendation["key_findings"]:
-        print(f"  • {finding}")
+    for _finding in recommendation["key_findings"]:
+        pass
 
-    print("\n📋 Next Steps:")
-    for step in recommendation["next_steps"]:
-        print(f"  • {step}")
+    for _step in recommendation["next_steps"]:
+        pass
 
-    print("\n⚠️  Risk Mitigation:")
     mitigation = recommendation["risk_mitigation"]
-    print(f"  Rollback Strategy: {mitigation['rollback_strategy']}")
-    print("  Performance Gates:")
-    for gate in mitigation["performance_gates"]:
-        print(f"    - {gate}")
+    for _gate in mitigation["performance_gates"]:
+        pass
 
-    print("\n" + "=" * 80)
-    print("📈 EXECUTIVE SUMMARY: PostgreSQL consolidation is TECHNICALLY FEASIBLE")
-    print("🎯 Performance requirements CAN BE MET with proper implementation")
-    print("⏱️  36-hour consolidation timeline is ACHIEVABLE with risk mitigation")
-    print("=" * 80)
 
     return result_dict
 

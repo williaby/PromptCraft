@@ -37,7 +37,7 @@ class AnomalyType(str, Enum):
 
 from typing import Any
 
-from ..models import SecurityEventCreate, SecurityEventType
+from src.auth.models import SecurityEventCreate, SecurityEventType
 
 
 class SuspiciousActivityType(str, Enum):
@@ -139,7 +139,7 @@ class LocationData:
 class RiskScore:
     """Risk score calculation result."""
 
-    def __init__(self, score: int = 0, factors: list[str] | None = None):
+    def __init__(self, score: int = 0, factors: list[str] | None = None) -> None:
         self.score = min(max(score, 0), 100)  # Clamp between 0-100
         self.factors = factors or []
         self.level = self._calculate_level()
@@ -158,7 +158,7 @@ class RiskScore:
 class ActivityPattern:
     """Activity pattern for tracking user behavior."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.ip_addresses: set[str] = set()
         self.user_agents: set[str] = set()
         self.access_times: list[datetime] = []
@@ -170,7 +170,7 @@ class ActivityPattern:
 class BehaviorProfile:
     """User behavior profile for pattern analysis."""
 
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str) -> None:
         self.user_id = user_id
         self.login_patterns: dict[str, Any] = {}
         self.activity_patterns: list[ActivityPattern] = []
@@ -372,7 +372,6 @@ class SuspiciousActivityDetector:
             return result
 
         except Exception as e:
-            print(f"Error in activity analysis: {e}")
             # Return safe default result
             result.risk_score = self.config.base_risk_score
             result.risk_factors["analysis_error"] = str(e)
@@ -664,7 +663,7 @@ class SuspiciousActivityDetector:
         location = LocationData(ip_address=ip_address)
 
         # Simulate some basic geolocation patterns
-        if ip_address.startswith("192.168.") or ip_address.startswith("10.") or ip_address.startswith("127."):
+        if ip_address.startswith(("192.168.", "10.", "127.")):
             # Private IP addresses
             location.country = "Local"
             location.city = "Local Network"

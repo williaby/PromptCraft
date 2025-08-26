@@ -18,6 +18,8 @@ based on analysis without the PostgreSQL server running.
 """
 
 import asyncio
+import builtins
+import contextlib
 import json
 import logging
 import statistics
@@ -81,7 +83,7 @@ class PostgreSQLPerformanceValidator:
     Tests actual server performance to provide accurate executive recommendation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize PostgreSQL performance validator."""
         self.target_latency_ms = 10.0  # Executive mandate: <10ms P95
         self.expected_daily_volume = 50000  # Security events per day
@@ -269,10 +271,8 @@ class PostgreSQLPerformanceValidator:
 
             # Return connection to pool even on error
             if conn:
-                try:
+                with contextlib.suppress(builtins.BaseException):
                     pool_instance.putconn(conn)
-                except:
-                    pass
 
             return PerformanceResult("insert", latency_ms, False, str(e))
 
@@ -297,7 +297,7 @@ class PostgreSQLPerformanceValidator:
             """,
             )
 
-            results = cursor.fetchall()
+            cursor.fetchall()
             cursor.close()
             pool_instance.putconn(conn)
 
@@ -312,10 +312,8 @@ class PostgreSQLPerformanceValidator:
 
             # Return connection to pool even on error
             if conn:
-                try:
+                with contextlib.suppress(builtins.BaseException):
                     pool_instance.putconn(conn)
-                except:
-                    pass
 
             return PerformanceResult("query", latency_ms, False, str(e))
 
@@ -605,12 +603,6 @@ class PostgreSQLPerformanceValidator:
 
 async def main():
     """Execute the PostgreSQL performance validation spike."""
-    print("🔍 PostgreSQL Performance Validation Spike")
-    print("=" * 70)
-    print("Executive Mandate: Re-validate database consolidation with LIVE PostgreSQL server")
-    print("Scope: Test actual performance to correct previous NO-GO recommendation")
-    print("Target: <10ms P95 latency with 95%+ reliability at 3x expected volume")
-    print("=" * 70)
 
     validator = PostgreSQLPerformanceValidator()
     result = await validator.run_comprehensive_validation()
@@ -632,39 +624,25 @@ async def main():
     with results_file.open("w") as f:
         json.dump(result_dict, f, indent=2, default=str)
 
-    print(f"\n✅ Validation completed - Results saved to: {results_file}")
 
     # Print executive summary
     recommendation = result.executive_recommendation
-    print("\n" + "=" * 70)
-    print("🔴 CORRECTED EXECUTIVE DECISION REPORT")
-    print("=" * 70)
-    print(f"Decision: {recommendation['go_no_go_decision']}")
-    print(f"Confidence: {recommendation['confidence_level']}")
-    print(f"Rationale: {recommendation['rationale']}")
 
     if "success_probability" in recommendation:
-        print(f"Success Probability: {recommendation['success_probability']:.0%}")
+        pass
     if "migration_time_estimate_hours" in recommendation:
-        print(f"Estimated Migration Time: {recommendation['migration_time_estimate_hours']:.1f} hours")
+        pass
 
-    print("\nKey Findings:")
-    for finding in recommendation["key_findings"]:
-        print(f"  • {finding}")
+    for _finding in recommendation["key_findings"]:
+        pass
 
     if "performance_summary" in recommendation:
-        print("\nPerformance Summary:")
-        perf = recommendation["performance_summary"]
-        print(f"  • Insert P95 Latency: {perf['insert_p95_latency_ms']:.2f}ms (target: {perf['target_latency_ms']}ms)")
-        print(f"  • Query P95 Latency: {perf['query_p95_latency_ms']:.2f}ms (target: {perf['target_latency_ms']}ms)")
-        print(f"  • Executive Mandate: {'✅ MET' if perf['meets_executive_mandate'] else '❌ NOT MET'}")
+        recommendation["performance_summary"]
 
     if "next_steps" in recommendation:
-        print("\nNext Steps:")
-        for step in recommendation["next_steps"]:
-            print(f"  • {step}")
+        for _step in recommendation["next_steps"]:
+            pass
 
-    print("\n" + "=" * 70)
 
     return result_dict
 

@@ -574,7 +574,7 @@ class TestSuspiciousActivityDetectorRiskScoring:
         test_cases = [(0.2, "LOW"), (0.5, "MEDIUM"), (0.75, "HIGH"), (0.9, "CRITICAL")]
 
         for score, expected_level in test_cases:
-            risk_score = RiskScore(user_id="test_user", overall_score=score, risk_factors={}, timestamp=datetime.now())
+            RiskScore(user_id="test_user", overall_score=score, risk_factors={}, timestamp=datetime.now())
 
             classified_level = await detector.classify_risk_level(score)
             assert classified_level == expected_level

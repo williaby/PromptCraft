@@ -33,36 +33,36 @@ from .suspicious_activity_detector import (
 )
 
 __all__ = [
+    "ActivityAnalysisResult",
+    # Alert engine
+    "AlertEngine",
+    "AlertSeverity",
+    "AlertType",
+    "AuditReportRequest",
+    # Audit service
+    "AuditService",
+    "AuditStatistics",
+    "ComplianceReport",
+    "EmailConfig",
+    "EmailHandler",
+    "ExportFormat",
+    "RetentionPolicy",
+    "SecurityAlert",
+    "SecurityIntegrationConfig",
+    "SecurityIntegrationMetrics",
+    # Security integration
+    "SecurityIntegrationService",
     # Core services
     "SecurityLogger",
     "SecurityMonitor",
-    # Alert engine
-    "AlertEngine",
-    "SecurityAlert",
-    "AlertSeverity",
-    "AlertType",
-    # Notification handlers
-    "WebhookHandler",
-    "EmailHandler",
-    "SlackHandler",
-    "WebhookConfig",
-    "EmailConfig",
     "SlackConfig",
-    "create_notification_handlers",
+    "SlackHandler",
+    "SuspiciousActivityConfig",
     # Suspicious activity detection
     "SuspiciousActivityDetector",
     "SuspiciousActivityType",
-    "ActivityAnalysisResult",
-    "SuspiciousActivityConfig",
-    # Security integration
-    "SecurityIntegrationService",
-    "SecurityIntegrationConfig",
-    "SecurityIntegrationMetrics",
-    # Audit service
-    "AuditService",
-    "ExportFormat",
-    "RetentionPolicy",
-    "AuditReportRequest",
-    "AuditStatistics",
-    "ComplianceReport",
+    "WebhookConfig",
+    # Notification handlers
+    "WebhookHandler",
+    "create_notification_handlers",
 ]

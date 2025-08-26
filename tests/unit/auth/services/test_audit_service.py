@@ -179,7 +179,7 @@ class TestAuditServiceReportGeneration:
         service.db.get_events_by_date_range.return_value = sample_events
 
         with patch("src.auth.services.audit_service.logger") as mock_logger:
-            report = await service.generate_compliance_report(request)
+            await service.generate_compliance_report(request)
 
             # Should generate warning for large date range
             mock_logger.warning.assert_called()
@@ -307,7 +307,7 @@ class TestAuditServiceExportFunctionality:
             report_period="2024-01-01 to 2024-01-02 (1 days)",
         )
 
-        report = ComplianceReport(
+        return ComplianceReport(
             report_id="test_report_123",
             generated_at=datetime.now(),
             report_request=request,
@@ -315,7 +315,6 @@ class TestAuditServiceExportFunctionality:
             events=events,
         )
 
-        return report
 
     async def test_export_report_csv_with_metadata(self, service, sample_report):
         """Test CSV export with metadata included."""
@@ -341,7 +340,7 @@ class TestAuditServiceExportFunctionality:
             "source",
             "metadata",
         ]
-        assert all(col in rows[0].keys() for col in expected_columns)
+        assert all(col in rows[0] for col in expected_columns)
 
         # Check data integrity
         assert rows[0]["event_type"] == "login_success"
@@ -364,11 +363,11 @@ class TestAuditServiceExportFunctionality:
         rows = list(csv_reader)
 
         # Should not include metadata column
-        assert "metadata" not in rows[0].keys()
+        assert "metadata" not in rows[0]
 
         # Should still have other columns
         expected_columns = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "source"]
-        assert all(col in rows[0].keys() for col in expected_columns)
+        assert all(col in rows[0] for col in expected_columns)
 
     async def test_export_report_json_format(self, service, sample_report):
         """Test JSON export format."""
@@ -839,7 +838,7 @@ class TestAuditServicePerformanceRequirements:
         service.db.get_events_by_date_range.return_value = small_events
 
         start_time = time.time()
-        report = await service.generate_compliance_report(request)
+        await service.generate_compliance_report(request)
         end_time = time.time()
 
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
@@ -960,7 +959,7 @@ class TestAuditServicePerformanceRequirements:
         service.db.vacuum_database.return_value = None
 
         start_time = time.time()
-        cleanup_stats = await service.enforce_retention_policies()
+        await service.enforce_retention_policies()
         end_time = time.time()
 
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds

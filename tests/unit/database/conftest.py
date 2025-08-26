@@ -36,10 +36,19 @@ def mock_async_engine():
     mock_result = MagicMock()
     mock_result.fetchone.return_value = [1]
     mock_conn.execute.return_value = mock_result
+    mock_conn.commit = AsyncMock()
 
-    engine.begin.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-    engine.begin.return_value.__aexit__ = AsyncMock(return_value=None)
-    engine.connect = AsyncMock()
+    # Create proper async context manager for connect()
+    mock_connection_context = AsyncMock()
+    mock_connection_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_connection_context.__aexit__ = AsyncMock(return_value=None)
+    engine.connect.return_value = mock_connection_context
+
+    # Also support begin() for legacy compatibility
+    mock_begin_context = AsyncMock()
+    mock_begin_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_begin_context.__aexit__ = AsyncMock(return_value=None)
+    engine.begin.return_value = mock_begin_context
 
     # Mock pool
     mock_pool = MagicMock()

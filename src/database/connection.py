@@ -52,15 +52,26 @@ class DatabaseManager:
     health monitoring, and graceful degradation capabilities.
     """
 
-    def __init__(self) -> None:
-        """Initialize database manager."""
-        self._engine: AsyncEngine | None = None
-        self._session_factory: async_sessionmaker[AsyncSession] | None = None
-        self._settings = get_settings()
+    def __init__(
+        self, 
+        settings=None,
+        engine: AsyncEngine | None = None,
+        session_factory: async_sessionmaker[AsyncSession] | None = None
+    ) -> None:
+        """Initialize database manager with optional dependency injection.
+        
+        Args:
+            settings: Application settings (defaults to get_settings())
+            engine: Pre-configured async engine for testing
+            session_factory: Pre-configured session factory for testing
+        """
+        self._engine: AsyncEngine | None = engine
+        self._session_factory: async_sessionmaker[AsyncSession] | None = session_factory
+        self._settings = settings if settings is not None else get_settings()
         self._connection_lock = asyncio.Lock()
         self._health_check_cache: dict[str, Any] = {}
         self._health_check_ttl = 30.0  # 30 seconds cache
-        self._is_initialized = False
+        self._is_initialized = bool(engine and session_factory)
 
     async def initialize(self) -> None:
         """Initialize database engine and connection pool.

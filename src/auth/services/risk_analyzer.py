@@ -12,7 +12,7 @@ from typing import Any
 class RiskAnalyzer:
     """Service for analyzing user risk profiles and detecting behavioral anomalies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._risk_cache: dict[str, Any] = {}
         self._behavioral_patterns: dict[str, list[dict[str, Any]]] = {}
         self._baseline_metrics: dict[str, dict[str, float]] = {}
@@ -256,7 +256,7 @@ class RiskAnalyzer:
             indicators.append(f"Multiple failed logins: {len(failed_logins)}")
 
         # Analyze geographic variance
-        locations = set(e.get("location", "unknown") for e in login_events)
+        locations = {e.get("location", "unknown") for e in login_events}
         if len(locations) > 3:
             risk_score += 25
             indicators.append(f"Multiple login locations: {len(locations)}")

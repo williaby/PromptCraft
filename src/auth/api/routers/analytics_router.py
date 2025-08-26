@@ -16,8 +16,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from ...services.security_integration import SecurityIntegrationService
-from ...services.suspicious_activity_detector import SuspiciousActivityDetector
+from src.auth.services.security_integration import SecurityIntegrationService
+from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
 
 
 class TrendDataPoint(BaseModel):
@@ -147,7 +147,7 @@ async def get_security_trends(
             category_list = [cat.strip() for cat in categories.split(",")]
 
         # Get trend data from service
-        trend_data = await service.get_security_trends(days_back=days_back, categories=category_list)
+        await service.get_security_trends(days_back=days_back, categories=category_list)
 
         # Available trend categories
         available_categories = [
