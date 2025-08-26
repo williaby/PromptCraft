@@ -657,7 +657,6 @@ class TestQdrantVectorStore:
         with pytest.raises(RuntimeError, match="Qdrant client not available"):
             await store.connect()
 
-    @pytest.mark.skip(reason="Tracemalloc issue with pytest internal error handling")
     @pytest.mark.asyncio
     @patch("src.core.vector_store.QdrantClient")
     async def test_qdrant_connection_success(self, mock_qdrant_client, qdrant_config):
@@ -713,21 +712,24 @@ class TestQdrantVectorStore:
         assert result.status == ConnectionStatus.UNHEALTHY
         assert result.error_message == "Not connected"
 
-    @pytest.mark.skip(reason="Interface delegation to factory causes test interference")
     @pytest.mark.asyncio
     @patch("src.core.vector_store.QDRANT_AVAILABLE", True)
     async def test_qdrant_search_no_client(self, qdrant_config):
         """Test Qdrant search when not connected."""
+        from unittest.mock import AsyncMock
+
         store = QdrantVectorStore(qdrant_config)
         # Ensure no client is set
         store._client = None
 
-        # Mock circuit breaker to return True
-        store._handle_circuit_breaker = AsyncMock(return_value=True)
+        # Mock circuit breaker to return True to allow search attempt
+        if hasattr(store, "_handle_circuit_breaker"):
+            store._handle_circuit_breaker = AsyncMock(return_value=True)
 
         embeddings = [[0.5] * DEFAULT_VECTOR_DIMENSIONS]
         params = SearchParameters(embeddings=embeddings)
 
+        # When no client is available, should return empty results
         results = await store.search(params)
         assert results == []
 

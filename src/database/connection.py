@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy import text
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -77,34 +78,47 @@ class DatabaseManager:
                 db_url = await self._build_database_url()
                 logger.debug("Connecting to PostgreSQL at %s:%s", self._settings.db_host, self._settings.db_port)
 
-                # Create async engine with environment-appropriate configuration
-                engine_kwargs = {
-                    "echo": getattr(self._settings, "db_echo", False),
-                    "connect_args": {
-                        "server_settings": {
-                            "application_name": "promptcraft-auth",
-                            "jit": "off",  # Disable JIT for faster connection times
-                        },
-                        "command_timeout": 5.0,  # 5 second query timeout
-                    },
-                }
+                # Create async engine with connection pooling
+                # NullPool doesn't support pool_size, max_overflow, etc.
+                is_dev = getattr(self._settings, "environment", "prod") == "dev"
 
-                # Use NullPool for dev, connection pooling for production
-                if getattr(self._settings, "environment", "prod") == "dev":
-                    engine_kwargs["poolclass"] = NullPool
-                else:
-                    # Add pool settings only for production
-                    engine_kwargs.update(
-                        {
-                            "pool_size": getattr(self._settings, "db_pool_size", 10),
-                            "max_overflow": getattr(self._settings, "db_pool_max_overflow", 20),
-                            "pool_timeout": getattr(self._settings, "db_pool_timeout", 30),
-                            "pool_recycle": getattr(self._settings, "db_pool_recycle", 3600),
-                            "pool_pre_ping": True,  # Validate connections before use
+                if is_dev:
+                    # Use NullPool for development (no pooling)
+                    self._engine = create_async_engine(
+                        db_url,
+                        pool_recycle=getattr(self._settings, "db_pool_recycle", 3600),
+                        pool_pre_ping=True,  # Validate connections before use
+                        echo=getattr(self._settings, "db_echo", False),
+                        poolclass=NullPool,
+                        # Connection arguments for asyncpg
+                        connect_args={
+                            "server_settings": {
+                                "application_name": "promptcraft-auth",
+                                "jit": "off",  # Disable JIT for faster connection times
+                            },
+                            "command_timeout": 5.0,  # 5 second query timeout
                         },
                     )
-
-                self._engine = create_async_engine(db_url, **engine_kwargs)
+                else:
+                    # Use regular pooling for production
+                    self._engine = create_async_engine(
+                        db_url,
+                        # Connection pool settings for performance
+                        pool_size=getattr(self._settings, "db_pool_size", 10),
+                        max_overflow=getattr(self._settings, "db_pool_max_overflow", 20),
+                        pool_timeout=getattr(self._settings, "db_pool_timeout", 30),
+                        pool_recycle=getattr(self._settings, "db_pool_recycle", 3600),
+                        pool_pre_ping=True,  # Validate connections before use
+                        echo=getattr(self._settings, "db_echo", False),
+                        # Connection arguments for asyncpg
+                        connect_args={
+                            "server_settings": {
+                                "application_name": "promptcraft-auth",
+                                "jit": "off",  # Disable JIT for faster connection times
+                            },
+                            "command_timeout": 5.0,  # 5 second query timeout
+                        },
+                    )
 
                 # Create session factory
                 self._session_factory = async_sessionmaker(
@@ -131,18 +145,18 @@ class DatabaseManager:
                 raise DatabaseConnectionError(f"Database initialization failed: {e}") from e
 
     async def _build_database_url(self) -> str:
-        """Build database URL from configuration."""
-        # Use database_url if provided
+        """Build database URL from configuration with safe credential quoting."""
+        # Use explicit database_url if provided (assumed complete)
         if hasattr(self._settings, "database_url") and self._settings.database_url:
             return self._settings.database_url.get_secret_value()
 
-        # Build URL from components
+        # Build URL from components using SQLAlchemy's URL.create for safe quoting
         host = getattr(self._settings, "db_host", "192.168.1.16")
-        port = getattr(self._settings, "db_port", 5432)
+        port = int(getattr(self._settings, "db_port", 5432))
         database = getattr(self._settings, "db_name", "promptcraft")
         username = getattr(self._settings, "db_user", "promptcraft_app")
 
-        password = ""  # nosec B105
+        password: str | None = None  # nosec B105
         if hasattr(self._settings, "database_password") and self._settings.database_password:
             password = self._settings.database_password.get_secret_value()
         elif hasattr(self._settings, "db_password") and self._settings.db_password:
@@ -152,7 +166,15 @@ class DatabaseManager:
             else:
                 password = str(self._settings.db_password)
 
-        return f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}"
+        url = URL.create(
+            drivername="postgresql+asyncpg",
+            username=username,
+            password=password,
+            host=host,
+            port=port,
+            database=database,
+        )
+        return str(url)
 
     def _build_connection_string(self) -> str:
         """Build PostgreSQL connection string from settings (alternative method).
@@ -161,11 +183,22 @@ class DatabaseManager:
             Database connection URL
         """
         # Use asyncpg driver for async operations - supporting AUTH-1 pattern
-        password = getattr(self._settings, "db_password", "")
-        return (
-            f"postgresql+asyncpg://{self._settings.db_user}:{password}"
-            f"@{self._settings.db_host}:{self._settings.db_port}/{self._settings.db_name}"
+        pwd_val: str | None
+        db_pwd = getattr(self._settings, "db_password", None)
+        if hasattr(db_pwd, "get_secret_value"):
+            pwd_val = db_pwd.get_secret_value()  # type: ignore[union-attr]
+        else:
+            pwd_val = db_pwd if db_pwd is not None else None
+
+        url = URL.create(
+            drivername="postgresql+asyncpg",
+            username=getattr(self._settings, "db_user", "promptcraft_app"),
+            password=pwd_val,
+            host=getattr(self._settings, "db_host", "192.168.1.16"),
+            port=int(getattr(self._settings, "db_port", 5432)),
+            database=getattr(self._settings, "db_name", "promptcraft"),
         )
+        return str(url)
 
     async def _test_connection(self) -> None:
         """Test database connection and basic functionality.
@@ -177,7 +210,8 @@ class DatabaseManager:
             raise DatabaseConnectionError("Database engine not initialized")
 
         try:
-            async with self._engine.begin() as conn:
+            # Use connect() instead of begin() for async engines
+            async with self._engine.connect() as conn:
                 # Test basic connectivity
                 result = await conn.execute(text("SELECT 1 as test"))
                 row = result.fetchone()
@@ -190,6 +224,8 @@ class DatabaseManager:
                 version_row = version_result.fetchone()
                 if version_row:
                     logger.debug("Connected to: %s", version_row[0])
+
+                await conn.commit()
 
         except Exception as e:
             logger.error("Database connection test failed: %s", e)
@@ -224,26 +260,48 @@ class DatabaseManager:
             start_time = time.time()
 
             # Test basic connection
-            async with self._engine.begin() as conn:
+            async with self._engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
                 health_status["connection_test"] = True
+                await conn.commit()
 
-            # Get pool status
+            # Get pool status (gracefully handle NullPool which lacks metrics)
             pool = self._engine.pool
-            health_status["pool_status"] = {
-                "size": pool.size(),  # type: ignore[attr-defined]
-                "checked_in": pool.checkedin(),  # type: ignore[attr-defined]
-                "checked_out": pool.checkedout(),  # type: ignore[attr-defined]
-                "overflow": pool.overflow(),  # type: ignore[attr-defined]
-                "total_connections": pool.size() + pool.overflow(),  # type: ignore[attr-defined]
-            }
+            pool_status: dict[str, Any] = {"implementation": type(pool).__name__}
+            try:
+                if (
+                    hasattr(pool, "size")
+                    and hasattr(pool, "checkedin")
+                    and hasattr(pool, "checkedout")
+                    and hasattr(pool, "overflow")
+                ):
+                    size = pool.size()  # type: ignore[no-untyped-call]
+                    overflow = pool.overflow()  # type: ignore[no-untyped-call]
+                    pool_status.update(
+                        {
+                            "size": size,
+                            "checked_in": pool.checkedin(),  # type: ignore[no-untyped-call]
+                            "checked_out": pool.checkedout(),  # type: ignore[no-untyped-call]
+                            "overflow": overflow,
+                            "total_connections": size + overflow,
+                            "metrics_available": True,
+                        },
+                    )
+                else:
+                    pool_status.update({"metrics_available": False})
+            except Exception as pool_err:  # pragma: no cover - defensive
+                logger.debug("Pool metrics not available: %s", pool_err)
+                pool_status.update({"metrics_available": False})
+
+            health_status["pool_status"] = pool_status
 
             # Calculate response time
             response_time = (time.time() - start_time) * 1000
             health_status["response_time_ms"] = round(response_time, 2)
 
-            # Mark as healthy if all checks pass
+            # Mark as healthy if connection succeeded
             if health_status["connection_test"]:
+                health_status.pop("error", None)
                 health_status["status"] = "healthy"
 
         except Exception as e:
@@ -319,12 +377,23 @@ class DatabaseManager:
         if not self._is_initialized:
             return {"status": "not_initialized"}
 
-        return {
-            "status": "initialized",
-            "pool_size": getattr(self._engine.pool, "size", 0) if self._engine else 0,
-            "checked_in": getattr(self._engine.pool, "checkedin", 0) if self._engine else 0,
-            "checked_out": getattr(self._engine.pool, "checkedout", 0) if self._engine else 0,
-        }
+        pool = self._engine.pool if self._engine else None
+        info: dict[str, Any] = {"status": "initialized"}
+        if pool is None:
+            return info
+
+        info["implementation"] = type(pool).__name__
+        if hasattr(pool, "size"):
+            try:
+                info["pool_size"] = pool.size()  # type: ignore[no-untyped-call]
+                info["checked_in"] = pool.checkedin()  # type: ignore[no-untyped-call]
+                info["checked_out"] = pool.checkedout()  # type: ignore[no-untyped-call]
+            except Exception as e:  # pragma: no cover - defensive
+                logger.debug("Error reading pool metrics: %s", e)
+        else:
+            info["metrics_available"] = False
+
+        return info
 
     # Alias for compatibility with tests
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
@@ -372,7 +441,6 @@ async def get_database_manager_async() -> DatabaseManager:
 
 
 # Legacy compatibility functions
-@asynccontextmanager
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Get database session (legacy compatibility)."""
     db_manager = get_database_manager()
@@ -380,7 +448,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-@asynccontextmanager
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get database session for dependency injection.
 

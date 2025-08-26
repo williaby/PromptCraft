@@ -1,0 +1,1808 @@
+{
+  "ab_testing": {
+    "name": "ab_testing",
+    "file_path": "ab_testing.db",
+    "file_size_mb": 0.203125,
+    "tables": [
+      {
+        "name": "ab_experiments",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "name",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "description",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "experiment_type",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "status",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "config",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type",
+              "Contains datetime-like strings - verify format",
+              "Contains large text values - consider TEXT type"
+            ]
+          },
+          {
+            "name": "variants",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          },
+          {
+            "name": "success_criteria",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          },
+          {
+            "name": "failure_thresholds",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          },
+          {
+            "name": "target_percentage",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "current_percentage",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "segment_filters",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          },
+          {
+            "name": "start_time",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "end_time",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "planned_duration_hours",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "total_users",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "conversion_events",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "statistical_significance",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "created_at",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "updated_at",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "created_by",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "sqlite_autoindex_ab_experiments_1",
+            "table_name": "ab_experiments",
+            "columns": [
+              "id"
+            ],
+            "unique": true,
+            "partial": false,
+            "postgresql_equivalent": "CREATE UNIQUE INDEX idx_ab_experiments_id ON ab_experiments (id)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 90,
+        "estimated_size_mb": 0.09012222290039062,
+        "data_samples": [
+          {
+            "id": "exp_1755317008014_dynamic_loading",
+            "name": "Test Experiment",
+            "description": "Test Description",
+            "experiment_type": "dynamic_loading",
+            "status": "draft",
+            "config": "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+            "variants": "[\"control\", \"treatment\"]",
+            "success_criteria": "{}",
+            "failure_thresholds": "{}",
+            "target_percentage": 50.0,
+            "current_percentage": 0.0,
+            "segment_filters": "[\"random\"]",
+            "start_time": null,
+            "end_time": null,
+            "planned_duration_hours": 168,
+            "total_users": 0,
+            "conversion_events": 0,
+            "statistical_significance": 0.0,
+            "created_at": "2025-08-16 04:03:28.015627",
+            "updated_at": "2025-08-16 04:03:28.015629",
+            "created_by": "api"
+          },
+          {
+            "id": "exp_1755317008187_dynamic_loading",
+            "name": "Dynamic Function Loading Rollout",
+            "description": "A/B test for gradual rollout of dynamic function loading optimization",
+            "experiment_type": "dynamic_loading",
+            "status": "completed",
+            "config": "{\"name\": \"Dynamic Function Loading Rollout\", \"description\": \"A/B test for gradual rollout of dynamic function loading optimization\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 1, \"feature_flags\": {\"dynamic_loading_enabled\": true}, \"variant_configs\": {\"control\": {\"feature_flags\": {\"dynamic_loading_enabled\": false}, \"loading_strategy\": \"baseline\"}, \"treatment\": {\"feature_flags\": {\"dynamic_loading_enabled\": true}, \"loading_strategy\": \"balanced\"}}, \"initial_percentage\": 1.0, \"target_percentage\": 10.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0, 100.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}, \"failure_thresholds\": {\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+            "variants": "[\"control\", \"treatment\"]",
+            "success_criteria": "{\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}",
+            "failure_thresholds": "{\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}",
+            "target_percentage": 10.0,
+            "current_percentage": 1.0,
+            "segment_filters": "[\"random\"]",
+            "start_time": "2025-08-16 04:03:28.194248",
+            "end_time": "2025-08-16 11:55:30.400198",
+            "planned_duration_hours": 1,
+            "total_users": 0,
+            "conversion_events": 0,
+            "statistical_significance": 0.0,
+            "created_at": "2025-08-16 04:03:28.188206",
+            "updated_at": "2025-08-16 11:55:30.400573",
+            "created_by": "system"
+          },
+          {
+            "id": "exp_1755318965493_dynamic_loading",
+            "name": "Test Experiment",
+            "description": "Test Description",
+            "experiment_type": "dynamic_loading",
+            "status": "draft",
+            "config": "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+            "variants": "[\"control\", \"treatment\"]",
+            "success_criteria": "{}",
+            "failure_thresholds": "{}",
+            "target_percentage": 50.0,
+            "current_percentage": 0.0,
+            "segment_filters": "[\"random\"]",
+            "start_time": null,
+            "end_time": null,
+            "planned_duration_hours": 168,
+            "total_users": 0,
+            "conversion_events": 0,
+            "statistical_significance": 0.0,
+            "created_at": "2025-08-16 04:36:05.495333",
+            "updated_at": "2025-08-16 04:36:05.495337",
+            "created_by": "api"
+          }
+        ],
+        "complexity_score": 1,
+        "migration_notes": [
+          "Complex columns requiring attention: config, start_time, end_time, created_at, updated_at",
+          "Recreate 1 indexes after data migration"
+        ]
+      },
+      {
+        "name": "ab_metric_events",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "experiment_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "variant",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "event_type",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "event_name",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "event_value",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "event_data",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "session_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "request_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "timestamp",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP"
+            ]
+          },
+          {
+            "name": "response_time_ms",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "token_reduction_percentage",
+            "sqlite_type": "FLOAT",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "success",
+            "sqlite_type": "BOOLEAN",
+            "postgresql_type": "BOOLEAN",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "error_message",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_ab_metric_events_user_id",
+            "table_name": "ab_metric_events",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_ab_metric_events_user_id ON ab_metric_events (user_id)"
+          },
+          {
+            "name": "ix_ab_metric_events_experiment_id",
+            "table_name": "ab_metric_events",
+            "columns": [
+              "experiment_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_ab_metric_events_experiment_id ON ab_metric_events (experiment_id)"
+          },
+          {
+            "name": "ix_ab_metric_events_timestamp",
+            "table_name": "ab_metric_events",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_ab_metric_events_timestamp ON ab_metric_events (timestamp)"
+          },
+          {
+            "name": "sqlite_autoindex_ab_metric_events_1",
+            "table_name": "ab_metric_events",
+            "columns": [
+              "id"
+            ],
+            "unique": true,
+            "partial": false,
+            "postgresql_equivalent": "CREATE UNIQUE INDEX idx_ab_metric_events_id ON ab_metric_events (id)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 3,
+        "migration_notes": [
+          "Recreate 4 indexes after data migration"
+        ]
+      },
+      {
+        "name": "ab_user_assignments",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "experiment_id",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "variant",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "segment",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_characteristics",
+            "sqlite_type": "JSON",
+            "postgresql_type": "JSONB",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          },
+          {
+            "name": "assignment_time",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "assignment_method",
+            "sqlite_type": "VARCHAR",
+            "postgresql_type": "VARCHAR",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "opt_out",
+            "sqlite_type": "BOOLEAN",
+            "postgresql_type": "BOOLEAN",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "last_interaction",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP",
+              "No sample data available"
+            ]
+          },
+          {
+            "name": "total_interactions",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "ix_ab_user_assignments_user_id",
+            "table_name": "ab_user_assignments",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_ab_user_assignments_user_id ON ab_user_assignments (user_id)"
+          },
+          {
+            "name": "ix_ab_user_assignments_experiment_id",
+            "table_name": "ab_user_assignments",
+            "columns": [
+              "experiment_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_ab_user_assignments_experiment_id ON ab_user_assignments (experiment_id)"
+          },
+          {
+            "name": "sqlite_autoindex_ab_user_assignments_1",
+            "table_name": "ab_user_assignments",
+            "columns": [
+              "id"
+            ],
+            "unique": true,
+            "partial": false,
+            "postgresql_equivalent": "CREATE UNIQUE INDEX idx_ab_user_assignments_id ON ab_user_assignments (id)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 2,
+        "estimated_size_mb": 0.001049041748046875,
+        "data_samples": [
+          {
+            "id": "test_experiment_test_user",
+            "user_id": "test_user",
+            "experiment_id": "test_experiment",
+            "variant": "treatment",
+            "segment": "early_adopter",
+            "user_characteristics": "{}",
+            "assignment_time": "2025-08-16 12:51:34.094358",
+            "assignment_method": "test",
+            "opt_out": 0,
+            "last_interaction": null,
+            "total_interactions": 0
+          },
+          {
+            "id": "exp_1755348888993_dynamic_loading_test_user_fixed3",
+            "user_id": "test_user_fixed3",
+            "experiment_id": "exp_1755348888993_dynamic_loading",
+            "variant": "control",
+            "segment": "early_adopter",
+            "user_characteristics": "{\"user_id\": \"test_user_fixed3\", \"registration_date\": null, \"usage_frequency\": \"high\", \"feature_usage_pattern\": \"unknown\", \"error_rate\": 0.0, \"avg_session_duration\": 0.0, \"preferred_features\": [], \"geographic_region\": null, \"device_type\": null, \"is_early_adopter\": true, \"opt_in_beta\": false}",
+            "assignment_time": "2025-08-16 12:54:49.014947",
+            "assignment_method": "consistent_hash",
+            "opt_out": 0,
+            "last_interaction": null,
+            "total_interactions": 0
+          }
+        ],
+        "complexity_score": 2,
+        "migration_notes": [
+          "Complex columns requiring attention: assignment_time, last_interaction",
+          "Recreate 3 indexes after data migration"
+        ]
+      }
+    ],
+    "total_rows": 92,
+    "overall_complexity": 3,
+    "migration_priority": "LOW",
+    "postgresql_schema": "-- PostgreSQL schema for ab_testing\n-- Generated on 2025-08-24 06:50:00\n\n-- Table: ab_experiments\nCREATE TABLE ab_experiments (\n    id VARCHAR NOT NULL,\n    name VARCHAR NOT NULL,\n    description VARCHAR,\n    experiment_type VARCHAR NOT NULL,\n    status VARCHAR NOT NULL,\n    config JSONB NOT NULL,\n    variants JSONB NOT NULL,\n    success_criteria JSONB NOT NULL,\n    failure_thresholds JSONB NOT NULL,\n    target_percentage REAL NOT NULL,\n    current_percentage REAL NOT NULL,\n    segment_filters JSONB,\n    start_time TIMESTAMP,\n    end_time TIMESTAMP,\n    planned_duration_hours INTEGER,\n    total_users INTEGER,\n    conversion_events INTEGER,\n    statistical_significance REAL,\n    created_at TIMESTAMP,\n    updated_at TIMESTAMP,\n    created_by VARCHAR,\n    PRIMARY KEY (id)\n);\n\n-- Table: ab_metric_events\nCREATE TABLE ab_metric_events (\n    id VARCHAR NOT NULL,\n    experiment_id VARCHAR NOT NULL,\n    user_id VARCHAR NOT NULL,\n    variant VARCHAR NOT NULL,\n    event_type VARCHAR NOT NULL,\n    event_name VARCHAR NOT NULL,\n    event_value REAL,\n    event_data JSONB,\n    session_id VARCHAR,\n    request_id VARCHAR,\n    timestamp TIMESTAMP,\n    response_time_ms REAL,\n    token_reduction_percentage REAL,\n    success BOOLEAN,\n    error_message VARCHAR,\n    PRIMARY KEY (id)\n);\n\n-- Table: ab_user_assignments\nCREATE TABLE ab_user_assignments (\n    id VARCHAR NOT NULL,\n    user_id VARCHAR NOT NULL,\n    experiment_id VARCHAR NOT NULL,\n    variant VARCHAR NOT NULL,\n    segment VARCHAR,\n    user_characteristics JSONB,\n    assignment_time TIMESTAMP,\n    assignment_method VARCHAR,\n    opt_out BOOLEAN,\n    last_interaction TIMESTAMP,\n    total_interactions INTEGER,\n    PRIMARY KEY (id)\n);\n\n-- Indexes for ab_experiments\nCREATE UNIQUE INDEX idx_ab_experiments_id ON ab_experiments (id);\n\n-- Indexes for ab_metric_events\nCREATE INDEX idx_ab_metric_events_user_id ON ab_metric_events (user_id);\nCREATE INDEX idx_ab_metric_events_experiment_id ON ab_metric_events (experiment_id);\nCREATE INDEX idx_ab_metric_events_timestamp ON ab_metric_events (timestamp);\nCREATE UNIQUE INDEX idx_ab_metric_events_id ON ab_metric_events (id);\n\n-- Indexes for ab_user_assignments\nCREATE INDEX idx_ab_user_assignments_user_id ON ab_user_assignments (user_id);\nCREATE INDEX idx_ab_user_assignments_experiment_id ON ab_user_assignments (experiment_id);\nCREATE UNIQUE INDEX idx_ab_user_assignments_id ON ab_user_assignments (id);\n",
+    "migration_strategy": [
+      "Validate JSON data in tables: ab_experiments, ab_user_assignments",
+      "Consider JSONB type for better performance"
+    ]
+  },
+  "analytics": {
+    "name": "analytics",
+    "file_path": "analytics.db",
+    "file_size_mb": 3.97265625,
+    "tables": [
+      {
+        "name": "session_metrics",
+        "columns": [
+          {
+            "name": "session_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "start_time",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "end_time",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "commands_executed",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": "0",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "functions_used",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "categories_loaded",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "performance_mode",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": "'conservative'",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "total_tokens_used",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": "0",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "errors_encountered",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": "0",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "help_requests",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": "0",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "optimization_applied",
+            "sqlite_type": "BOOLEAN",
+            "postgresql_type": "BOOLEAN",
+            "nullable": true,
+            "default_value": "FALSE",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "sqlite_autoindex_session_metrics_1",
+            "table_name": "session_metrics",
+            "columns": [
+              "session_id"
+            ],
+            "unique": true,
+            "partial": false,
+            "postgresql_equivalent": "CREATE UNIQUE INDEX idx_session_metrics_session_id ON session_metrics (session_id)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 1,
+        "migration_notes": [
+          "Recreate 1 indexes after data migration"
+        ]
+      },
+      {
+        "name": "usage_events",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "SERIAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": true,
+            "unique": false,
+            "migration_notes": [
+              "INTEGER PRIMARY KEY converted to SERIAL"
+            ]
+          },
+          {
+            "name": "timestamp",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "event_type",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "event_data",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type",
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "user_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "session_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains datetime-like strings - verify format"
+            ]
+          },
+          {
+            "name": "context",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "Contains JSON-like strings - consider JSONB type"
+            ]
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_events_user",
+            "table_name": "usage_events",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_usage_events_user_id ON usage_events (user_id)"
+          },
+          {
+            "name": "idx_events_timestamp",
+            "table_name": "usage_events",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_usage_events_timestamp ON usage_events (timestamp)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 12808,
+        "estimated_size_mb": 4.2751312255859375,
+        "data_samples": [
+          {
+            "id": 1,
+            "timestamp": "2025-08-15T07:14:01.968361",
+            "event_type": "session_started",
+            "event_data": "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+            "user_id": "test_user",
+            "session_id": "7e560231-bc10-4353-987d-3dff4d587e4d",
+            "context": "{}"
+          },
+          {
+            "id": 2,
+            "timestamp": "2025-08-15T07:14:01.973696",
+            "event_type": "session_completed",
+            "event_data": "{\"session_duration_seconds\": 0.005358, \"token_reduction_percentage\": 100.0, \"function_usage_efficiency\": 0.0, \"commands_successful\": 0, \"commands_failed\": 0, \"fallback_activations\": 0, \"user_overrides\": 0}",
+            "user_id": "test_user",
+            "session_id": "7e560231-bc10-4353-987d-3dff4d587e4d",
+            "context": "{}"
+          },
+          {
+            "id": 3,
+            "timestamp": "2025-08-15T07:14:01.981494",
+            "event_type": "session_started",
+            "event_data": "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+            "user_id": "test_user",
+            "session_id": "82c8508e-56df-40dc-9b62-b1e4918d1616",
+            "context": "{}"
+          }
+        ],
+        "complexity_score": 3,
+        "migration_notes": [
+          "Complex columns requiring attention: event_data",
+          "Recreate 2 indexes after data migration"
+        ]
+      }
+    ],
+    "total_rows": 12808,
+    "overall_complexity": 3,
+    "migration_priority": "MEDIUM",
+    "postgresql_schema": "-- PostgreSQL schema for analytics\n-- Generated on 2025-08-24 06:50:00\n\n-- Table: session_metrics\nCREATE TABLE session_metrics (\n    session_id TEXT,\n    user_id TEXT NOT NULL,\n    start_time TEXT NOT NULL,\n    end_time TEXT,\n    commands_executed INTEGER DEFAULT 0,\n    functions_used TEXT,\n    categories_loaded TEXT,\n    performance_mode TEXT DEFAULT ''conservative'',\n    total_tokens_used INTEGER DEFAULT 0,\n    errors_encountered INTEGER DEFAULT 0,\n    help_requests INTEGER DEFAULT 0,\n    optimization_applied BOOLEAN DEFAULT FALSE,\n    PRIMARY KEY (session_id)\n);\n\n-- Table: usage_events\nCREATE TABLE usage_events (\n    id SERIAL,\n    timestamp TEXT NOT NULL,\n    event_type TEXT NOT NULL,\n    event_data TEXT NOT NULL,\n    user_id TEXT NOT NULL,\n    session_id TEXT NOT NULL,\n    context TEXT,\n    PRIMARY KEY (id)\n);\n\n-- Indexes for session_metrics\nCREATE UNIQUE INDEX idx_session_metrics_session_id ON session_metrics (session_id);\n\n-- Indexes for usage_events\nCREATE INDEX idx_usage_events_user_id ON usage_events (user_id);\nCREATE INDEX idx_usage_events_timestamp ON usage_events (timestamp);\n",
+    "migration_strategy": [
+      "Validate JSON data in tables: usage_events",
+      "Consider JSONB type for better performance"
+    ]
+  },
+  "metrics": {
+    "name": "metrics",
+    "file_path": "metrics.db",
+    "file_size_mb": 0.03515625,
+    "tables": [
+      {
+        "name": "aggregated_metrics",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "SERIAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": true,
+            "unique": false,
+            "migration_notes": [
+              "INTEGER PRIMARY KEY converted to SERIAL"
+            ]
+          },
+          {
+            "name": "metric_name",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "time_window",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "window_start",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "window_end",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "aggregation_type",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "value",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "sample_count",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "labels",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "created_at",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": "CURRENT_TIMESTAMP",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_aggregated_window",
+            "table_name": "aggregated_metrics",
+            "columns": [
+              "window_start",
+              "window_end"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_aggregated_metrics_window_start_window_end ON aggregated_metrics (window_start, window_end)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 2,
+        "migration_notes": [
+          "Recreate 1 indexes after data migration"
+        ]
+      },
+      {
+        "name": "metric_points",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "SERIAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": true,
+            "unique": false,
+            "migration_notes": [
+              "INTEGER PRIMARY KEY converted to SERIAL"
+            ]
+          },
+          {
+            "name": "timestamp",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "metric_name",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "value",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "labels",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "metadata",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "created_at",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": "CURRENT_TIMESTAMP",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_metric_points_name",
+            "table_name": "metric_points",
+            "columns": [
+              "metric_name"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_metric_points_metric_name ON metric_points (metric_name)"
+          },
+          {
+            "name": "idx_metric_points_timestamp",
+            "table_name": "metric_points",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_metric_points_timestamp ON metric_points (timestamp)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 3,
+        "migration_notes": [
+          "Recreate 2 indexes after data migration"
+        ]
+      },
+      {
+        "name": "validation_results",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "SERIAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": true,
+            "unique": false,
+            "migration_notes": [
+              "INTEGER PRIMARY KEY converted to SERIAL"
+            ]
+          },
+          {
+            "name": "claim",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "validated",
+            "sqlite_type": "BOOLEAN",
+            "postgresql_type": "BOOLEAN",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "confidence_level",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "p_value",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "effect_size",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "sample_size",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "statistical_power",
+            "sqlite_type": "REAL",
+            "postgresql_type": "REAL",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "REAL type may have precision differences"
+            ]
+          },
+          {
+            "name": "evidence_strength",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "details",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "created_at",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": "CURRENT_TIMESTAMP",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_validation_created",
+            "table_name": "validation_results",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_validation_results_created_at ON validation_results (created_at)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 5,
+        "migration_notes": [
+          "Recreate 1 indexes after data migration"
+        ]
+      }
+    ],
+    "total_rows": 0,
+    "overall_complexity": 4,
+    "migration_priority": "LOW",
+    "postgresql_schema": "-- PostgreSQL schema for metrics\n-- Generated on 2025-08-24 06:50:00\n\n-- Table: aggregated_metrics\nCREATE TABLE aggregated_metrics (\n    id SERIAL,\n    metric_name TEXT NOT NULL,\n    time_window TEXT NOT NULL,\n    window_start TEXT NOT NULL,\n    window_end TEXT NOT NULL,\n    aggregation_type TEXT NOT NULL,\n    value REAL NOT NULL,\n    sample_count INTEGER NOT NULL,\n    labels TEXT,\n    created_at TEXT DEFAULT 'CURRENT_TIMESTAMP',\n    PRIMARY KEY (id)\n);\n\n-- Table: metric_points\nCREATE TABLE metric_points (\n    id SERIAL,\n    timestamp TEXT NOT NULL,\n    metric_name TEXT NOT NULL,\n    value REAL NOT NULL,\n    labels TEXT,\n    metadata TEXT,\n    created_at TEXT DEFAULT 'CURRENT_TIMESTAMP',\n    PRIMARY KEY (id)\n);\n\n-- Table: validation_results\nCREATE TABLE validation_results (\n    id SERIAL,\n    claim TEXT NOT NULL,\n    validated BOOLEAN NOT NULL,\n    confidence_level REAL NOT NULL,\n    p_value REAL,\n    effect_size REAL,\n    sample_size INTEGER,\n    statistical_power REAL,\n    evidence_strength TEXT,\n    details TEXT,\n    created_at TEXT DEFAULT 'CURRENT_TIMESTAMP',\n    PRIMARY KEY (id)\n);\n\n-- Indexes for aggregated_metrics\nCREATE INDEX idx_aggregated_metrics_window_start_window_end ON aggregated_metrics (window_start, window_end);\n\n-- Indexes for metric_points\nCREATE INDEX idx_metric_points_metric_name ON metric_points (metric_name);\nCREATE INDEX idx_metric_points_timestamp ON metric_points (timestamp);\n\n-- Indexes for validation_results\nCREATE INDEX idx_validation_results_created_at ON validation_results (created_at);\n",
+    "migration_strategy": [
+      "Direct migration suitable - low complexity"
+    ]
+  },
+  "security_events": {
+    "name": "security_events",
+    "file_path": "security_events.db",
+    "file_size_mb": 0.05078125,
+    "tables": [
+      {
+        "name": "security_events",
+        "columns": [
+          {
+            "name": "id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": true,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "timestamp",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP"
+            ]
+          },
+          {
+            "name": "event_type",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "severity",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": false,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "ip_address",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "user_agent",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "session_id",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "details",
+            "sqlite_type": "TEXT",
+            "postgresql_type": "TEXT",
+            "nullable": true,
+            "default_value": null,
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "risk_score",
+            "sqlite_type": "INTEGER",
+            "postgresql_type": "INTEGER",
+            "nullable": true,
+            "default_value": "0",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": []
+          },
+          {
+            "name": "created_at",
+            "sqlite_type": "DATETIME",
+            "postgresql_type": "TIMESTAMP",
+            "nullable": true,
+            "default_value": "CURRENT_TIMESTAMP",
+            "primary_key": false,
+            "auto_increment": false,
+            "unique": false,
+            "migration_notes": [
+              "DateTime strings need parsing to TIMESTAMP"
+            ]
+          }
+        ],
+        "indexes": [
+          {
+            "name": "idx_security_events_user_timestamp",
+            "table_name": "security_events",
+            "columns": [
+              "user_id",
+              "timestamp"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_user_id_timestamp ON security_events (user_id, timestamp)"
+          },
+          {
+            "name": "idx_security_events_type_severity",
+            "table_name": "security_events",
+            "columns": [
+              "event_type",
+              "severity"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_event_type_severity ON security_events (event_type, severity)"
+          },
+          {
+            "name": "idx_security_events_created_at",
+            "table_name": "security_events",
+            "columns": [
+              "created_at"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_created_at ON security_events (created_at)"
+          },
+          {
+            "name": "idx_security_events_risk_score",
+            "table_name": "security_events",
+            "columns": [
+              "risk_score"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_risk_score ON security_events (risk_score)"
+          },
+          {
+            "name": "idx_security_events_session_id",
+            "table_name": "security_events",
+            "columns": [
+              "session_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_session_id ON security_events (session_id)"
+          },
+          {
+            "name": "idx_security_events_ip_address",
+            "table_name": "security_events",
+            "columns": [
+              "ip_address"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_ip_address ON security_events (ip_address)"
+          },
+          {
+            "name": "idx_security_events_user_id",
+            "table_name": "security_events",
+            "columns": [
+              "user_id"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_user_id ON security_events (user_id)"
+          },
+          {
+            "name": "idx_security_events_severity",
+            "table_name": "security_events",
+            "columns": [
+              "severity"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_severity ON security_events (severity)"
+          },
+          {
+            "name": "idx_security_events_event_type",
+            "table_name": "security_events",
+            "columns": [
+              "event_type"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_event_type ON security_events (event_type)"
+          },
+          {
+            "name": "idx_security_events_timestamp",
+            "table_name": "security_events",
+            "columns": [
+              "timestamp"
+            ],
+            "unique": false,
+            "partial": false,
+            "postgresql_equivalent": "CREATE INDEX idx_security_events_timestamp ON security_events (timestamp)"
+          },
+          {
+            "name": "sqlite_autoindex_security_events_1",
+            "table_name": "security_events",
+            "columns": [
+              "id"
+            ],
+            "unique": true,
+            "partial": false,
+            "postgresql_equivalent": "CREATE UNIQUE INDEX idx_security_events_id ON security_events (id)"
+          }
+        ],
+        "foreign_keys": [],
+        "row_count": 0,
+        "estimated_size_mb": 0.0,
+        "data_samples": [],
+        "complexity_score": 6,
+        "migration_notes": [
+          "Recreate 11 indexes after data migration"
+        ]
+      }
+    ],
+    "total_rows": 0,
+    "overall_complexity": 6,
+    "migration_priority": "MEDIUM",
+    "postgresql_schema": "-- PostgreSQL schema for security_events\n-- Generated on 2025-08-24 06:50:00\n\n-- Table: security_events\nCREATE TABLE security_events (\n    id TEXT,\n    timestamp TIMESTAMP NOT NULL,\n    event_type TEXT NOT NULL,\n    severity TEXT NOT NULL,\n    user_id TEXT,\n    ip_address TEXT,\n    user_agent TEXT,\n    session_id TEXT,\n    details TEXT,\n    risk_score INTEGER DEFAULT 0,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n    PRIMARY KEY (id)\n);\n\n-- Indexes for security_events\nCREATE INDEX idx_security_events_user_id_timestamp ON security_events (user_id, timestamp);\nCREATE INDEX idx_security_events_event_type_severity ON security_events (event_type, severity);\nCREATE INDEX idx_security_events_created_at ON security_events (created_at);\nCREATE INDEX idx_security_events_risk_score ON security_events (risk_score);\nCREATE INDEX idx_security_events_session_id ON security_events (session_id);\nCREATE INDEX idx_security_events_ip_address ON security_events (ip_address);\nCREATE INDEX idx_security_events_user_id ON security_events (user_id);\nCREATE INDEX idx_security_events_severity ON security_events (severity);\nCREATE INDEX idx_security_events_event_type ON security_events (event_type);\nCREATE INDEX idx_security_events_timestamp ON security_events (timestamp);\nCREATE UNIQUE INDEX idx_security_events_id ON security_events (id);\n",
+    "migration_strategy": [
+      "Direct migration suitable - low complexity"
+    ]
+  }
+}

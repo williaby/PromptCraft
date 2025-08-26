@@ -198,10 +198,10 @@ class ServiceTokenManager:
 
             # Log revocation event
             revocation_event = AuthenticationEvent(
-                service_token_name=token_record.token_name,
+                user_email=f"service_token:{token_record.token_name}",
                 event_type="service_token_revocation",
                 success=True,
-                error_details={"reason": revocation_reason},
+                error_details={"reason": revocation_reason, "token_name": token_record.token_name},
                 created_at=datetime.now(UTC),
             )
 
@@ -336,11 +336,12 @@ class ServiceTokenManager:
 
             # Log rotation event
             rotation_event = AuthenticationEvent(
-                service_token_name=old_token.token_name,
+                user_email=f"service_token:{old_token.token_name}",
                 event_type="service_token_rotation",
                 success=True,
                 error_details={
                     "reason": rotation_reason,
+                    "token_name": old_token.token_name,
                     "old_token_id": str(old_token.id),
                     "new_token_name": new_token.token_name,
                 },
@@ -426,13 +427,13 @@ class ServiceTokenManager:
                         """
                         SELECT event_type, success, created_at
                         FROM authentication_events
-                        WHERE service_token_name = :token_name
+                        WHERE user_email = :token_email
                           AND created_at >= :cutoff_date
                         ORDER BY created_at DESC
                         LIMIT 100
                     """,
                     ),
-                    {"token_name": token_data.token_name, "cutoff_date": cutoff_date},
+                    {"token_email": f"service_token:{token_data.token_name}", "cutoff_date": cutoff_date},
                 )
 
                 recent_events = [

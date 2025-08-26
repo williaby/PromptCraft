@@ -68,15 +68,13 @@ def mock_session_factory():
     mock_session.close = AsyncMock()
     mock_session.add = AsyncMock()
 
-    # Create a proper async context manager
-    async def async_context_manager():
-        return mock_session
+    # Create an async context manager mock
+    mock_context_manager = MagicMock()
+    mock_context_manager.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_context_manager.__aexit__ = AsyncMock(return_value=None)
 
-    mock_context = AsyncMock()
-    mock_context.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_context.__aexit__ = AsyncMock(return_value=None)
-
-    factory.return_value = mock_context
+    # Make the factory return the context manager when called
+    factory.return_value = mock_context_manager
 
     return factory
 

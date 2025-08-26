@@ -20,7 +20,18 @@ from .middleware import (
     require_role,
     setup_authentication,
 )
-from .models import AuthenticatedUser, AuthenticationError, JWKSError, JWTValidationError, UserRole
+from .models import (
+    AuthenticatedUser,
+    AuthenticationError,
+    JWKSError,
+    JWTValidationError,
+    SecurityEvent,
+    SecurityEventCreate,
+    SecurityEventResponse,
+    SecurityEventSeverity,
+    SecurityEventType,
+    UserRole,
+)
 
 __all__ = [
     "AuthExceptionHandler",
@@ -32,6 +43,11 @@ __all__ = [
     "JWKSError",
     "JWTValidationError",
     "JWTValidator",
+    "SecurityEvent",
+    "SecurityEventCreate",
+    "SecurityEventResponse",
+    "SecurityEventSeverity",
+    "SecurityEventType",
     "UserRole",
     "get_current_user",
     "require_authentication",

@@ -9,7 +9,7 @@ from src.database.connection import (
     DatabaseConnectionError,
     DatabaseError,
     DatabaseManager,
-    get_database_manager_async,
+    get_database_manager,
     get_db_session,
 )
 
@@ -218,6 +218,9 @@ class TestDatabaseManager:
             manager = DatabaseManager()
             manager._session_factory = mock_session_factory
 
+            # Fix the mock to return the actual session context manager
+            mock_session = mock_session_factory.return_value
+
             async with manager.get_session() as session:
                 assert session is not None
 
@@ -366,8 +369,9 @@ class TestGlobalDatabaseManager:
 
             src.database.connection._db_manager = None
 
-            manager1 = await get_database_manager_async()
-            manager2 = await get_database_manager_async()
+            # Use the synchronous function for singleton test
+            manager1 = get_database_manager()
+            manager2 = get_database_manager()
 
             assert manager1 is manager2  # Same instance
 
@@ -384,8 +388,10 @@ class TestGlobalDatabaseManager:
 
             src.database.connection._db_manager = None
 
-            async with get_db_session() as session:
-                assert session is not None
+            # get_db_session returns an async generator, not a context manager
+            async_gen = get_db_session()
+            session = await async_gen.__anext__()
+            assert session is not None
 
     async def test_get_db_session_initialization_failure(self, mock_settings):
         """Test get_db_session with initialization failure."""
@@ -400,5 +406,5 @@ class TestGlobalDatabaseManager:
             src.database.connection._db_manager = None
 
             with pytest.raises(DatabaseConnectionError):
-                async with get_db_session():
-                    pass
+                async_gen = get_db_session()
+                await async_gen.__anext__()

@@ -326,7 +326,7 @@ class ApplicationSettings(BaseSettings):
     )
 
     db_user: str = Field(
-        default="promptcraft_user",
+        default="promptcraft_rw",
         description="PostgreSQL database user",
     )
 
@@ -691,6 +691,55 @@ class ApplicationSettings(BaseSettings):
         case_sensitive=False,
         env_prefix="PROMPTCRAFT_",
     )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        """Customize settings sources to integrate custom .env file loading."""
+        from pydantic_settings.sources import PydanticBaseSettingsSource
+
+        class CustomEnvSettingsSource(PydanticBaseSettingsSource):
+            def get_field_value(self, field_info, field_name: str):
+                # Get values from our custom env loader
+                custom_env_vars = _env_file_settings()
+                if field_name in custom_env_vars:
+                    return custom_env_vars[field_name], field_name
+                return None, None
+
+            def prepare_field_value(self, field_name: str, value, value_origin):
+                return value
+
+            def __call__(self):
+                data = {}
+                custom_env_vars = _env_file_settings()
+                # Only include fields that exist in the settings class
+                for field_name in custom_env_vars:
+                    if field_name in settings_cls.model_fields:
+                        value = custom_env_vars[field_name]
+                        # Handle empty strings for optional SecretStr fields
+                        if value == "":
+                            # For empty strings, check if this is an optional field
+                            field_info = settings_cls.model_fields[field_name]
+                            field_type = str(field_info.annotation)
+                            if "SecretStr" in field_type and ("None" in field_type or "Optional" in field_type):
+                                # This is an optional SecretStr field, set to None instead of empty string
+                                value = None
+                        data[field_name] = value
+                return data
+
+        return (
+            init_settings,
+            CustomEnvSettingsSource(settings_cls),
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
 
     @field_validator("api_host")
     @classmethod

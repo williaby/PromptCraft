@@ -1,0 +1,300 @@
+{
+  "ab_testing": {
+    "row_counts": {
+      "ab_experiments": 90,
+      "ab_user_assignments": 2,
+      "ab_metric_events": 0
+    },
+    "json_validation": {
+      "ab_experiments.config": {
+        "total_checked": 90,
+        "valid_json": 90,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_experiments.variants": {
+        "total_checked": 90,
+        "valid_json": 90,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_experiments.success_criteria": {
+        "total_checked": 90,
+        "valid_json": 90,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_experiments.failure_thresholds": {
+        "total_checked": 90,
+        "valid_json": 90,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_experiments.segment_filters": {
+        "total_checked": 90,
+        "valid_json": 90,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_user_assignments.user_characteristics": {
+        "total_checked": 2,
+        "valid_json": 2,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 100.0
+      },
+      "ab_metric_events.event_data": {
+        "total_checked": 0,
+        "valid_json": 0,
+        "invalid_json": 0,
+        "issues": [],
+        "success_rate": 0
+      }
+    },
+    "numeric_precision": {},
+    "sample_data": {
+      "ab_experiments": [
+        {
+          "id": "exp_1755317008014_dynamic_loading",
+          "name": "Test Experiment",
+          "description": "Test Description",
+          "experiment_type": "dynamic_loading",
+          "status": "draft",
+          "config": "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+          "variants": "[\"control\", \"treatment\"]",
+          "success_criteria": "{}",
+          "failure_thresholds": "{}",
+          "target_percentage": 50.0,
+          "current_percentage": 0.0,
+          "segment_filters": "[\"random\"]",
+          "start_time": null,
+          "end_time": null,
+          "planned_duration_hours": 168,
+          "total_users": 0,
+          "conversion_events": 0,
+          "statistical_significance": 0.0,
+          "created_at": "2025-08-16 04:03:28.015627",
+          "updated_at": "2025-08-16 04:03:28.015629",
+          "created_by": "api"
+        },
+        {
+          "id": "exp_1755317008187_dynamic_loading",
+          "name": "Dynamic Function Loading Rollout",
+          "description": "A/B test for gradual rollout of dynamic function loading optimization",
+          "experiment_type": "dynamic_loading",
+          "status": "completed",
+          "config": "{\"name\": \"Dynamic Function Loading Rollout\", \"description\": \"A/B test for gradual rollout of dynamic function loading optimization\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 1, \"feature_flags\": {\"dynamic_loading_enabled\": true}, \"variant_configs\": {\"control\": {\"feature_flags\": {\"dynamic_loading_enabled\": false}, \"loading_strategy\": \"baseline\"}, \"treatment\": {\"feature_flags\": {\"dynamic_loading_enabled\": true}, \"loading_strategy\": \"balanced\"}}, \"initial_percentage\": 1.0, \"target_percentage\": 10.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0, 100.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}, \"failure_thresholds\": {\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+          "variants": "[\"control\", \"treatment\"]",
+          "success_criteria": "{\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}",
+          "failure_thresholds": "{\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}",
+          "target_percentage": 10.0,
+          "current_percentage": 1.0,
+          "segment_filters": "[\"random\"]",
+          "start_time": "2025-08-16 04:03:28.194248",
+          "end_time": "2025-08-16 11:55:30.400198",
+          "planned_duration_hours": 1,
+          "total_users": 0,
+          "conversion_events": 0,
+          "statistical_significance": 0.0,
+          "created_at": "2025-08-16 04:03:28.188206",
+          "updated_at": "2025-08-16 11:55:30.400573",
+          "created_by": "system"
+        },
+        {
+          "id": "exp_1755318965493_dynamic_loading",
+          "name": "Test Experiment",
+          "description": "Test Description",
+          "experiment_type": "dynamic_loading",
+          "status": "draft",
+          "config": "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+          "variants": "[\"control\", \"treatment\"]",
+          "success_criteria": "{}",
+          "failure_thresholds": "{}",
+          "target_percentage": 50.0,
+          "current_percentage": 0.0,
+          "segment_filters": "[\"random\"]",
+          "start_time": null,
+          "end_time": null,
+          "planned_duration_hours": 168,
+          "total_users": 0,
+          "conversion_events": 0,
+          "statistical_significance": 0.0,
+          "created_at": "2025-08-16 04:36:05.495333",
+          "updated_at": "2025-08-16 04:36:05.495337",
+          "created_by": "api"
+        },
+        {
+          "id": "exp_1755318965829_dynamic_loading",
+          "name": "Dynamic Function Loading Rollout",
+          "description": "A/B test for gradual rollout of dynamic function loading optimization",
+          "experiment_type": "dynamic_loading",
+          "status": "completed",
+          "config": "{\"name\": \"Dynamic Function Loading Rollout\", \"description\": \"A/B test for gradual rollout of dynamic function loading optimization\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 1, \"feature_flags\": {\"dynamic_loading_enabled\": true}, \"variant_configs\": {\"control\": {\"feature_flags\": {\"dynamic_loading_enabled\": false}, \"loading_strategy\": \"baseline\"}, \"treatment\": {\"feature_flags\": {\"dynamic_loading_enabled\": true}, \"loading_strategy\": \"balanced\"}}, \"initial_percentage\": 1.0, \"target_percentage\": 10.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0, 100.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}, \"failure_thresholds\": {\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+          "variants": "[\"control\", \"treatment\"]",
+          "success_criteria": "{\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}",
+          "failure_thresholds": "{\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}",
+          "target_percentage": 10.0,
+          "current_percentage": 1.0,
+          "segment_filters": "[\"random\"]",
+          "start_time": "2025-08-16 04:36:05.840276",
+          "end_time": "2025-08-16 11:55:30.406949",
+          "planned_duration_hours": 1,
+          "total_users": 0,
+          "conversion_events": 0,
+          "statistical_significance": 0.0,
+          "created_at": "2025-08-16 04:36:05.829991",
+          "updated_at": "2025-08-16 11:55:30.407114",
+          "created_by": "system"
+        },
+        {
+          "id": "exp_1755319003102_dynamic_loading",
+          "name": "Test Experiment",
+          "description": "Test Description",
+          "experiment_type": "dynamic_loading",
+          "status": "draft",
+          "config": "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+          "variants": "[\"control\", \"treatment\"]",
+          "success_criteria": "{}",
+          "failure_thresholds": "{}",
+          "target_percentage": 50.0,
+          "current_percentage": 0.0,
+          "segment_filters": "[\"random\"]",
+          "start_time": null,
+          "end_time": null,
+          "planned_duration_hours": 168,
+          "total_users": 0,
+          "conversion_events": 0,
+          "statistical_significance": 0.0,
+          "created_at": "2025-08-16 04:36:43.103755",
+          "updated_at": "2025-08-16 04:36:43.103759",
+          "created_by": "api"
+        }
+      ],
+      "ab_user_assignments": [
+        {
+          "id": "test_experiment_test_user",
+          "user_id": "test_user",
+          "experiment_id": "test_experiment",
+          "variant": "treatment",
+          "segment": "early_adopter",
+          "user_characteristics": "{}",
+          "assignment_time": "2025-08-16 12:51:34.094358",
+          "assignment_method": "test",
+          "opt_out": 0,
+          "last_interaction": null,
+          "total_interactions": 0
+        },
+        {
+          "id": "exp_1755348888993_dynamic_loading_test_user_fixed3",
+          "user_id": "test_user_fixed3",
+          "experiment_id": "exp_1755348888993_dynamic_loading",
+          "variant": "control",
+          "segment": "early_adopter",
+          "user_characteristics": "{\"user_id\": \"test_user_fixed3\", \"registration_date\": null, \"usage_frequency\": \"high\", \"feature_usage_pattern\": \"unknown\", \"error_rate\": 0.0, \"avg_session_duration\": 0.0, \"preferred_features\": [], \"geographic_region\": null, \"device_type\": null, \"is_early_adopter\": true, \"opt_in_beta\": false}",
+          "assignment_time": "2025-08-16 12:54:49.014947",
+          "assignment_method": "consistent_hash",
+          "opt_out": 0,
+          "last_interaction": null,
+          "total_interactions": 0
+        }
+      ],
+      "ab_metric_events": []
+    }
+  },
+  "analytics": {
+    "row_counts": {
+      "usage_events": 12808,
+      "sqlite_sequence": 1,
+      "session_metrics": 0
+    },
+    "json_validation": {},
+    "numeric_precision": {},
+    "sample_data": {
+      "usage_events": [
+        {
+          "id": 1,
+          "timestamp": "2025-08-15T07:14:01.968361",
+          "event_type": "session_started",
+          "event_data": "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+          "user_id": "test_user",
+          "session_id": "7e560231-bc10-4353-987d-3dff4d587e4d",
+          "context": "{}"
+        },
+        {
+          "id": 2,
+          "timestamp": "2025-08-15T07:14:01.973696",
+          "event_type": "session_completed",
+          "event_data": "{\"session_duration_seconds\": 0.005358, \"token_reduction_percentage\": 100.0, \"function_usage_efficiency\": 0.0, \"commands_successful\": 0, \"commands_failed\": 0, \"fallback_activations\": 0, \"user_overrides\": 0}",
+          "user_id": "test_user",
+          "session_id": "7e560231-bc10-4353-987d-3dff4d587e4d",
+          "context": "{}"
+        },
+        {
+          "id": 3,
+          "timestamp": "2025-08-15T07:14:01.981494",
+          "event_type": "session_started",
+          "event_data": "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+          "user_id": "test_user",
+          "session_id": "82c8508e-56df-40dc-9b62-b1e4918d1616",
+          "context": "{}"
+        },
+        {
+          "id": 4,
+          "timestamp": "2025-08-15T07:14:01.986401",
+          "event_type": "fallback_activated",
+          "event_data": "{\"reason\": \"'dict' object has no attribute 'timestamp'\", \"missing_functions\": [], \"fallback_count\": 1}",
+          "user_id": "test_user",
+          "session_id": "82c8508e-56df-40dc-9b62-b1e4918d1616",
+          "context": "{}"
+        },
+        {
+          "id": 5,
+          "timestamp": "2025-08-15T07:14:01.994992",
+          "event_type": "session_completed",
+          "event_data": "{\"session_duration_seconds\": 0.013485, \"token_reduction_percentage\": -75.64999999999999, \"function_usage_efficiency\": 0.0, \"commands_successful\": 0, \"commands_failed\": 0, \"fallback_activations\": 1, \"user_overrides\": 0}",
+          "user_id": "test_user",
+          "session_id": "82c8508e-56df-40dc-9b62-b1e4918d1616",
+          "context": "{}"
+        }
+      ],
+      "sqlite_sequence": [
+        {
+          "name": "usage_events",
+          "seq": 12808
+        }
+      ],
+      "session_metrics": []
+    }
+  },
+  "metrics": {
+    "row_counts": {
+      "metric_points": 0,
+      "sqlite_sequence": 0,
+      "aggregated_metrics": 0,
+      "validation_results": 0
+    },
+    "json_validation": {},
+    "numeric_precision": {},
+    "sample_data": {
+      "metric_points": [],
+      "sqlite_sequence": [],
+      "aggregated_metrics": [],
+      "validation_results": []
+    }
+  },
+  "security_events": {
+    "row_counts": {
+      "security_events": 0
+    },
+    "json_validation": {},
+    "numeric_precision": {},
+    "sample_data": {
+      "security_events": []
+    }
+  }
+}

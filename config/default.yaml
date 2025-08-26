@@ -1,9 +1,9 @@
 bias:
-  complex_query_threshold_multiplier: 0.8
+  complex_query_threshold_multiplier: 0.7
   enable_conservative_expansion: true
   error_context_boost: 0.2
   multi_domain_threshold_multiplier: 0.6
-  new_user_threshold_multiplier: 0.7
+  new_user_threshold_multiplier: 0.6
 calibration:
   calibration_curves:
     analysis:
@@ -70,7 +70,11 @@ learning:
   pattern_history_limit: 1000
   user_pattern_limit: 1000
   weight_adaptation_rate: 0.1
-mode: conservative
+mode:
+  __objclass__: !!python/name:hub.task_detection_config.DetectionMode ''
+  _name_: CONSERVATIVE
+  _sort_order_: 0
+  _value_: conservative
 performance:
   cache_size: 1000
   cache_ttl_hours: 1
@@ -90,25 +94,25 @@ signal_weights:
   session_pattern: 0.8
   session_recent: 0.6
 thresholds:
-  ambiguous_difference_threshold: 0.2
-  high_confidence_threshold: 0.8
-  medium_confidence_threshold: 0.4
-  tier2_base_threshold: 0.3
-  tier3_base_threshold: 0.6
+  ambiguous_difference_threshold: 0.15
+  high_confidence_threshold: 0.9
+  medium_confidence_threshold: 0.6
+  tier2_base_threshold: 0.25
+  tier3_base_threshold: 0.55
 tier_definitions:
   tier1_categories:
-    - core
-    - git
-  tier1_token_cost: 9040
+  - core
+  - git
+  tier1_token_cost: 12300
   tier2_categories:
-    - analysis
-    - quality
-    - debug
-    - test
-    - security
-  tier2_token_cost: 14940
+  - analysis
+  - quality
+  - debug
+  - test
+  - security
+  tier2_token_cost: 19540
   tier3_categories:
-    - external
-    - infrastructure
-  tier3_token_cost: 3850
+  - external
+  - infrastructure
+  tier3_token_cost: 5800
 version: 1.0.0
