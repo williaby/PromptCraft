@@ -145,7 +145,8 @@ class TestAUTH4IndividualComponentPerformance:
             await performance_security_monitor.log_login_attempt(user_id=user_id, ip_address=ip_address, success=False)
 
             is_brute_force = await performance_security_monitor.check_brute_force_attempt(
-                user_id=user_id, ip_address=ip_address,
+                user_id=user_id,
+                ip_address=ip_address,
             )
 
             end_time = time.perf_counter()
@@ -213,7 +214,9 @@ class TestAUTH4IndividualComponentPerformance:
         await audit_service.initialize() if hasattr(audit_service, "initialize") else None
 
         dashboard = SecurityDashboardEndpoints(
-            security_monitor=security_monitor, alert_engine=performance_alert_engine, audit_service=audit_service,
+            security_monitor=security_monitor,
+            alert_engine=performance_alert_engine,
+            audit_service=audit_service,
         )
 
         # Generate some test data using mock logger
@@ -362,7 +365,8 @@ class TestAUTH4ConcurrentPerformance:
                 await security_monitor.log_login_attempt(user_id=user_id, ip_address=ip_address, success=False)
 
                 is_brute_force = await security_monitor.check_brute_force_attempt(
-                    user_id=user_id, ip_address=ip_address,
+                    user_id=user_id,
+                    ip_address=ip_address,
                 )
 
                 detection_time = (time.perf_counter() - start_time) * 1000
@@ -872,7 +876,9 @@ class TestAUTH4EndToEndPerformance:
             await audit_service.initialize()
 
             dashboard = SecurityDashboardEndpoints(
-                security_monitor=security_monitor, alert_engine=alert_engine, audit_service=audit_service,
+                security_monitor=security_monitor,
+                alert_engine=alert_engine,
+                audit_service=audit_service,
             )
 
             # Test complete brute force detection workflow
@@ -903,7 +909,8 @@ class TestAUTH4EndToEndPerformance:
             start_time = time.perf_counter()
 
             audit_events = await audit_service.get_security_events(
-                start_date=datetime.utcnow() - timedelta(minutes=1), end_date=datetime.utcnow() + timedelta(minutes=1),
+                start_date=datetime.utcnow() - timedelta(minutes=1),
+                end_date=datetime.utcnow() + timedelta(minutes=1),
             )
 
             workflow_times["audit_retrieval"] = (time.perf_counter() - start_time) * 1000

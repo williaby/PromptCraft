@@ -144,12 +144,18 @@ class SecurityDashboard:
                 # System status cards
                 with gr.Column(scale=1):
                     system_status = gr.Textbox(
-                        label="🔧 System Status", value="Loading...", interactive=False, container=True,
+                        label="🔧 System Status",
+                        value="Loading...",
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     performance_grade = gr.Textbox(
-                        label="⚡ Performance Grade", value="Loading...", interactive=False, container=True,
+                        label="⚡ Performance Grade",
+                        value="Loading...",
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
@@ -157,29 +163,46 @@ class SecurityDashboard:
 
                 with gr.Column(scale=1):
                     uptime_percentage = gr.Number(
-                        label="⏱️ Uptime %", value=0, precision=1, interactive=False, container=True,
+                        label="⏱️ Uptime %",
+                        value=0,
+                        precision=1,
+                        interactive=False,
+                        container=True,
                     )
 
             with gr.Row():
                 # Event statistics
                 with gr.Column(scale=1):
                     events_processed = gr.Number(
-                        label="📊 Events Processed", value=0, interactive=False, container=True,
+                        label="📊 Events Processed",
+                        value=0,
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     alerts_generated = gr.Number(
-                        label="🚨 Alerts Generated", value=0, interactive=False, container=True,
+                        label="🚨 Alerts Generated",
+                        value=0,
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     suspicious_activities = gr.Number(
-                        label="👁️ Suspicious Activities", value=0, interactive=False, container=True,
+                        label="👁️ Suspicious Activities",
+                        value=0,
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     avg_processing_time = gr.Number(
-                        label="⚡ Avg Processing Time (ms)", value=0, precision=2, interactive=False, container=True,
+                        label="⚡ Avg Processing Time (ms)",
+                        value=0,
+                        precision=2,
+                        interactive=False,
+                        container=True,
                     )
 
             # Service health status
@@ -325,7 +348,10 @@ class SecurityDashboard:
                 with gr.Column(scale=1):
                     acknowledge_btn = gr.Button("✅ Acknowledge Selected", variant="primary")
                     alert_actions_status = gr.Textbox(
-                        label="Action Status", value="", interactive=False, container=True,
+                        label="Action Status",
+                        value="",
+                        interactive=False,
+                        container=True,
                     )
 
             # Alert statistics
@@ -374,7 +400,9 @@ class SecurityDashboard:
 
             with gr.Row():
                 user_search = gr.Textbox(
-                    label="User ID Search", placeholder="Enter user ID to analyze...", container=True,
+                    label="User ID Search",
+                    placeholder="Enter user ID to analyze...",
+                    container=True,
                 )
                 search_btn = gr.Button("🔍 Analyze User", variant="primary")
 
@@ -385,17 +413,26 @@ class SecurityDashboard:
 
                 with gr.Column(scale=1):
                     risk_level_display = gr.Textbox(
-                        label="⚠️ Risk Level", value="Unknown", interactive=False, container=True,
+                        label="⚠️ Risk Level",
+                        value="Unknown",
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     total_logins_display = gr.Number(
-                        label="📊 Total Logins", value=0, interactive=False, container=True,
+                        label="📊 Total Logins",
+                        value=0,
+                        interactive=False,
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     failed_logins_display = gr.Number(
-                        label="❌ Failed Logins Today", value=0, interactive=False, container=True,
+                        label="❌ Failed Logins Today",
+                        value=0,
+                        interactive=False,
+                        container=True,
                     )
 
             # User activity details
@@ -460,7 +497,9 @@ class SecurityDashboard:
             with gr.Row():
                 with gr.Column(scale=1):
                     start_date = gr.DateTime(
-                        label="Start Date", value=datetime.now(UTC) - timedelta(days=1), container=True,
+                        label="Start Date",
+                        value=datetime.now(UTC) - timedelta(days=1),
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
@@ -480,12 +519,16 @@ class SecurityDashboard:
             with gr.Row():
                 with gr.Column(scale=1):
                     user_id_filter = gr.Textbox(
-                        label="User ID Filter", placeholder="Optional user ID...", container=True,
+                        label="User ID Filter",
+                        placeholder="Optional user ID...",
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
                     ip_filter = gr.Textbox(
-                        label="IP Address Filter", placeholder="Optional IP address...", container=True,
+                        label="IP Address Filter",
+                        placeholder="Optional IP address...",
+                        container=True,
                     )
 
                 with gr.Column(scale=1):
@@ -510,7 +553,10 @@ class SecurityDashboard:
             # Export functionality
             with gr.Row():
                 export_format = gr.Dropdown(
-                    choices=["JSON", "CSV"], value="JSON", label="Export Format", container=True,
+                    choices=["JSON", "CSV"],
+                    value="JSON",
+                    label="Export Format",
+                    container=True,
                 )
                 export_btn = gr.Button("📤 Export Results", variant="secondary")
                 export_status = gr.Textbox(label="Export Status", value="", interactive=False, container=True)
@@ -520,7 +566,13 @@ class SecurityDashboard:
                 try:
                     # Generate mock search results
                     events_data = self._generate_mock_events(
-                        start_dt, end_dt, event_type, user_id, ip_addr, risk_min_val, risk_max_val,
+                        start_dt,
+                        end_dt,
+                        event_type,
+                        user_id,
+                        ip_addr,
+                        risk_min_val,
+                        risk_max_val,
                     )
 
                     return events_data
@@ -678,7 +730,10 @@ class SecurityDashboard:
         )
 
         fig.update_layout(
-            title="Alert Trends (Last 7 Days)", xaxis_title="Date", yaxis_title="Alert Count", template="plotly_white",
+            title="Alert Trends (Last 7 Days)",
+            xaxis_title="Date",
+            yaxis_title="Alert Count",
+            template="plotly_white",
         )
 
         return fig
@@ -837,5 +892,8 @@ if __name__ == "__main__":
     # For standalone testing
     dashboard = create_security_dashboard()
     dashboard.launch(
-        server_name="0.0.0.0", server_port=7861, share=False, debug=True,  # Different port to avoid conflicts
+        server_name="0.0.0.0",
+        server_port=7861,
+        share=False,
+        debug=True,  # Different port to avoid conflicts
     )

@@ -265,7 +265,8 @@ class DatabaseConsolidationAnalyzer:
 
         projections["meets_executive_mandate"] = meets_10ms_requirement
         projections["performance_margin_ms"] = self.target_latency_ms - max(
-            projections["estimated_insert_latency_ms"], projections["estimated_query_latency_ms"],
+            projections["estimated_insert_latency_ms"],
+            projections["estimated_query_latency_ms"],
         )
 
         return projections

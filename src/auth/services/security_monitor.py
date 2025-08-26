@@ -575,7 +575,10 @@ class SecurityMonitor:
             ip_address: IP address of the attempt
         """
         await self.track_failed_authentication(
-            user_id=user_id, ip_address=ip_address, user_agent="unknown", event_type="login_failure",
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent="unknown",
+            event_type="login_failure",
         )
 
     async def check_rate_limit(self, user_id: str, ip_address: str) -> bool:

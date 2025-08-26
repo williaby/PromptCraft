@@ -73,7 +73,8 @@ async def get_security_service() -> SecurityIntegrationService:
 
 @router.post("/search", response_model=SecurityEventSearchResponse)
 async def search_security_events(
-    search_request: SecurityEventSearchRequest, service: SecurityIntegrationService = Depends(get_security_service),
+    search_request: SecurityEventSearchRequest,
+    service: SecurityIntegrationService = Depends(get_security_service),
 ) -> SecurityEventSearchResponse:
     """Search security events with advanced filtering and pagination.
 
@@ -98,7 +99,8 @@ async def search_security_events(
             and search_request.risk_score_min > search_request.risk_score_max
         ):
             raise HTTPException(
-                status_code=400, detail="Minimum risk score must be less than or equal to maximum risk score",
+                status_code=400,
+                detail="Minimum risk score must be less than or equal to maximum risk score",
             )
 
         # Build search filters
@@ -156,7 +158,10 @@ async def search_security_events(
         has_more = (search_request.offset + len(events)) < total_count
 
         return SecurityEventSearchResponse(
-            events=events, total_count=total_count, search_time_ms=search_time, has_more=has_more,
+            events=events,
+            total_count=total_count,
+            search_time_ms=search_time,
+            has_more=has_more,
         )
 
     except HTTPException:

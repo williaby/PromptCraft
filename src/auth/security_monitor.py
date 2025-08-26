@@ -266,7 +266,12 @@ class SecurityMonitor:
             await self._upsert_threat_score(session, entity["key"], entity["type"], entity["value"], int(score))
 
     async def _upsert_threat_score(
-        self, session, entity_key: str, entity_type: str, entity_value: str, score_increment: int,
+        self,
+        session,
+        entity_key: str,
+        entity_type: str,
+        entity_value: str,
+        score_increment: int,
     ) -> None:
         """Upsert threat score using PostgreSQL upsert."""
         stmt = insert(ThreatScore).values(

@@ -125,9 +125,6 @@ dmypy.json
 # pytest
 .pytest_cache/
 
-# Coverage files
-coverage.json
-
 # Pyre type checker
 .pyre/
 
@@ -165,8 +162,8 @@ backup_*/
 *.service
 zen-mcp.service
 
-# Monitoring (local only - exclude top-level monitoring directory but not src/monitoring)
-/monitoring/
+# Monitoring (local only)
+monitoring/
 
 # Claude Code (only user-specific data)
 .claude/settings.local.json
@@ -225,9 +222,3 @@ docs/zen/
 # Generated reports (organized)
 reports/
 zen-mcp-server/
-
-# Databases (development data should not be committed)
-# =================================
-*.db
-*.sqlite
-*.sqlite3

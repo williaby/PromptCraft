@@ -91,7 +91,10 @@ async def basic_health_check() -> HealthStatus:
     uptime = (current_time - _app_start_time).total_seconds()
 
     return HealthStatus(
-        status="healthy", timestamp=current_time, version="1.0.0", uptime_seconds=uptime,  # Should come from app config
+        status="healthy",
+        timestamp=current_time,
+        version="1.0.0",
+        uptime_seconds=uptime,  # Should come from app config
     )
 
 

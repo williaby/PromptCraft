@@ -71,7 +71,9 @@ def mock_audit_service():
 def endpoints(mock_security_monitor, mock_alert_engine, mock_audit_service):
     """Create SecurityDashboardEndpoints instance with mocked dependencies."""
     return SecurityDashboardEndpoints(
-        security_monitor=mock_security_monitor, alert_engine=mock_alert_engine, audit_service=mock_audit_service,
+        security_monitor=mock_security_monitor,
+        alert_engine=mock_alert_engine,
+        audit_service=mock_audit_service,
     )
 
 
@@ -264,14 +266,20 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
 
         # Execute with filters
         response = await endpoints.get_security_events(
-            severity="high", event_type="brute_force_attempt", limit=10, offset=0,
+            severity="high",
+            event_type="brute_force_attempt",
+            limit=10,
+            offset=0,
         )
 
         # Verify
         assert len(response.events) == 1
         assert response.events[0].severity == "high"
         endpoints.security_monitor.get_recent_events.assert_called_once_with(
-            severity="high", event_type="brute_force_attempt", limit=10, offset=0,
+            severity="high",
+            event_type="brute_force_attempt",
+            limit=10,
+            offset=0,
         )
 
     @pytest.mark.unit
@@ -531,12 +539,16 @@ class TestSecurityDashboardEndpointsReportsEndpoint:
 
         # Execute
         response = await endpoints.generate_audit_report(
-            start_date=start_date, end_date=end_date, report_format="detailed",
+            start_date=start_date,
+            end_date=end_date,
+            report_format="detailed",
         )
 
         # Verify
         endpoints.audit_service.generate_security_report.assert_called_once_with(
-            start_date=start_date, end_date=end_date, report_format="detailed",
+            start_date=start_date,
+            end_date=end_date,
+            report_format="detailed",
         )
 
     @pytest.mark.unit

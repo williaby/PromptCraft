@@ -142,7 +142,9 @@ class TestSecurityLoggerEventLogging:
         assert logger._is_initialized is False
 
         await logger.log_security_event(
-            event_type=SecurityEventType.SYSTEM_ERROR, severity=SecurityEventSeverity.CRITICAL, user_id="auto_init_test",
+            event_type=SecurityEventType.SYSTEM_ERROR,
+            severity=SecurityEventSeverity.CRITICAL,
+            user_id="auto_init_test",
         )
 
         # Should have auto-initialized
@@ -362,7 +364,8 @@ class TestSecurityLoggerErrorHandling:
         # Should raise exception during logging
         with pytest.raises(Exception, match="Insert failed"):
             await logger.log_security_event(
-                event_type=SecurityEventType.SYSTEM_ERROR, severity=SecurityEventSeverity.CRITICAL,
+                event_type=SecurityEventType.SYSTEM_ERROR,
+                severity=SecurityEventSeverity.CRITICAL,
             )
 
 

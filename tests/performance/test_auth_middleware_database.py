@@ -478,7 +478,11 @@ class TestAuthMiddlewareDatabase:
         assert middleware.database_enabled is False
 
     async def test_update_user_session_success(
-        self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_jwt_validator,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test successful user session update."""
         app = MagicMock()

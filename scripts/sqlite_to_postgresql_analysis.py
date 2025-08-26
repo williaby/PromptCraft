@@ -468,7 +468,11 @@ class SQLiteDatabaseAnalyzer:
         return notes
 
     def _calculate_table_complexity(
-        self, columns: list[ColumnInfo], indexes: list[IndexInfo], foreign_keys: list[ForeignKeyInfo], row_count: int,
+        self,
+        columns: list[ColumnInfo],
+        indexes: list[IndexInfo],
+        foreign_keys: list[ForeignKeyInfo],
+        row_count: int,
     ) -> int:
         """Calculate table migration complexity score (1-10)."""
         score = 1
@@ -499,7 +503,11 @@ class SQLiteDatabaseAnalyzer:
         return min(int(score), 10)
 
     def _generate_table_migration_notes(
-        self, columns: list[ColumnInfo], indexes: list[IndexInfo], foreign_keys: list[ForeignKeyInfo], row_count: int,
+        self,
+        columns: list[ColumnInfo],
+        indexes: list[IndexInfo],
+        foreign_keys: list[ForeignKeyInfo],
+        row_count: int,
     ) -> list[str]:
         """Generate migration notes for table."""
         notes = []

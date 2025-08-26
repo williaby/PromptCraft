@@ -53,7 +53,9 @@ def upgrade() -> None:
 
     # Composite indexes for common queries
     op.create_index(
-        "ix_security_events_monitor_entity_timestamp", "security_events_monitor", ["entity_key", "timestamp"],
+        "ix_security_events_monitor_entity_timestamp",
+        "security_events_monitor",
+        ["entity_key", "timestamp"],
     )
     op.create_index("ix_security_events_monitor_type_severity", "security_events_monitor", ["event_type", "severity"])
 
@@ -92,7 +94,11 @@ def upgrade() -> None:
         sa.Column("entity_value", sa.String(255), nullable=False, index=True),
         sa.Column("score", sa.Integer, nullable=False, default=0),
         sa.Column(
-            "last_updated", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now(), index=True,
+            "last_updated",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+            index=True,
         ),
         sa.Column("score_details", JSONB, nullable=False, server_default="{}"),
         sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.func.now()),

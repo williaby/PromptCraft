@@ -252,7 +252,8 @@ async def get_behavioral_patterns(
 
         # Get behavioral patterns
         pattern_data = await detector.analyze_behavioral_patterns(
-            min_confidence=min_confidence, pattern_types=type_filter,
+            min_confidence=min_confidence,
+            pattern_types=type_filter,
         )
 
         # Convert to response models

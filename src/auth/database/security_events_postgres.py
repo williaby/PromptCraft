@@ -62,7 +62,9 @@ class SecurityEventsPostgreSQL:
             # Verify security events table exists
             async with self.db_manager.get_session() as session:
                 result = await session.execute(
-                    text("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'security_events')"),
+                    text(
+                        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'security_events')",
+                    ),
                 )
                 table_exists = result.scalar()
 
@@ -180,7 +182,10 @@ class SecurityEventsPostgreSQL:
             raise
 
     async def get_events_by_ip(
-        self, ip_address: str, limit: int = 100, hours_back: int = 24,
+        self,
+        ip_address: str,
+        limit: int = 100,
+        hours_back: int = 24,
     ) -> list[SecurityEventResponse]:
         """Get security events from a specific IP address within time window.
 
@@ -203,7 +208,8 @@ class SecurityEventsPostgreSQL:
                     select(SecurityEventModel)
                     .where(
                         and_(
-                            SecurityEventModel.ip_address == ip_address, SecurityEventModel.timestamp >= time_threshold,
+                            SecurityEventModel.ip_address == ip_address,
+                            SecurityEventModel.timestamp >= time_threshold,
                         ),
                     )
                     .order_by(desc(SecurityEventModel.timestamp))
@@ -222,7 +228,10 @@ class SecurityEventsPostgreSQL:
             raise
 
     async def get_recent_events(
-        self, limit: int = 100, hours_back: int = 24, severity_filter: str | None = None,
+        self,
+        limit: int = 100,
+        hours_back: int = 24,
+        severity_filter: str | None = None,
     ) -> list[SecurityEventResponse]:
         """Get recent security events within time window.
 
@@ -301,7 +310,10 @@ class SecurityEventsPostgreSQL:
             raise
 
     async def get_events_by_date_range(
-        self, start_date: datetime, end_date: datetime, limit: int | None = None,
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int | None = None,
     ) -> list[SecurityEventResponse]:
         """Get security events within a date range.
 
@@ -338,7 +350,9 @@ class SecurityEventsPostgreSQL:
             raise
 
     async def cleanup_expired_events(
-        self, cutoff_date: datetime, event_types: list[SecurityEventType] | None = None,
+        self,
+        cutoff_date: datetime,
+        event_types: list[SecurityEventType] | None = None,
     ) -> int:
         """Clean up expired events with optional type filtering.
 
@@ -465,7 +479,10 @@ class SecurityEventsPostgreSQL:
         return await self.get_events_by_user(user_id, limit=10000)  # Large limit for "all"
 
     async def get_events_by_type(
-        self, event_type: SecurityEventType, limit: int = 100, hours_back: int = 24,
+        self,
+        event_type: SecurityEventType,
+        limit: int = 100,
+        hours_back: int = 24,
     ) -> list[SecurityEventResponse]:
         """Get events by type within time window.
 

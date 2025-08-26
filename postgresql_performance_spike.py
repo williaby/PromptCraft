@@ -182,7 +182,9 @@ class PostgreSQLPerformanceValidator:
             )
 
             pool_instance = psycopg2.pool.ThreadedConnectionPool(
-                self.pool_config["minconn"], self.pool_config["maxconn"], connection_string,
+                self.pool_config["minconn"],
+                self.pool_config["maxconn"],
+                connection_string,
             )
 
             logger.info(
@@ -386,7 +388,9 @@ class PostgreSQLPerformanceValidator:
         )
 
     def assess_migration_feasibility(
-        self, insert_result: LoadTestResult, query_result: LoadTestResult,
+        self,
+        insert_result: LoadTestResult,
+        query_result: LoadTestResult,
     ) -> dict[str, Any]:
         """Assess database migration feasibility based on performance results."""
         logger.info("Assessing migration feasibility...")

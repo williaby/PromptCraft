@@ -29,7 +29,8 @@ def upgrade() -> None:
 
     # Add missing columns for SecurityLogger
     op.add_column(
-        "security_events", sa.Column("user_agent", sa.Text, nullable=True, comment="User agent string if applicable"),
+        "security_events",
+        sa.Column("user_agent", sa.Text, nullable=True, comment="User agent string if applicable"),
     )
     op.add_column(
         "security_events",
@@ -55,6 +56,10 @@ def downgrade() -> None:
     op.add_column(
         "security_events",
         sa.Column(
-            "entity_key", sa.String(255), nullable=False, index=True, comment="Entity key (user:id or ip:address)",
+            "entity_key",
+            sa.String(255),
+            nullable=False,
+            index=True,
+            comment="Entity key (user:id or ip:address)",
         ),
     )

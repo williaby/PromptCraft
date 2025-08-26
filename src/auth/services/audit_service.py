@@ -305,7 +305,8 @@ class AuditService:
 
                 # Delete expired events for this policy's event types
                 deleted_count = await self.db.cleanup_expired_events(
-                    cutoff_date=cutoff_date, event_types=policy.event_types,
+                    cutoff_date=cutoff_date,
+                    event_types=policy.event_types,
                 )
 
                 cleanup_stats[policy.description] = deleted_count

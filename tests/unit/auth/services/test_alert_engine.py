@@ -38,7 +38,10 @@ class TestAlertEngineInitialization:
     def test_init_custom_configuration(self):
         """Test alert engine initialization with custom settings."""
         engine = AlertEngine(
-            max_alerts_per_minute=30, escalation_threshold=10, escalation_window_minutes=30, alert_retention_hours=48,
+            max_alerts_per_minute=30,
+            escalation_threshold=10,
+            escalation_window_minutes=30,
+            alert_retention_hours=48,
         )
 
         assert engine.max_alerts_per_minute == 30
@@ -141,7 +144,9 @@ class TestAlertEngineAlertGeneration:
     async def test_trigger_alert_critical_priority_all_channels(self, engine, sample_security_event):
         """Test triggering critical priority alert sends to all channels."""
         alert_id = await engine.trigger_alert(
-            event=sample_security_event, priority=AlertPriority.CRITICAL, message="Critical security breach detected",
+            event=sample_security_event,
+            priority=AlertPriority.CRITICAL,
+            message="Critical security breach detected",
         )
 
         assert alert_id is not None
@@ -177,11 +182,17 @@ class TestAlertEngineAlertGeneration:
 
         # Trigger identical alerts rapidly
         alert_id1 = await engine.trigger_alert(
-            event=sample_security_event, priority=AlertPriority.MEDIUM, message=message, channels=[AlertChannel.EMAIL],
+            event=sample_security_event,
+            priority=AlertPriority.MEDIUM,
+            message=message,
+            channels=[AlertChannel.EMAIL],
         )
 
         alert_id2 = await engine.trigger_alert(
-            event=sample_security_event, priority=AlertPriority.MEDIUM, message=message, channels=[AlertChannel.EMAIL],
+            event=sample_security_event,
+            priority=AlertPriority.MEDIUM,
+            message=message,
+            channels=[AlertChannel.EMAIL],
         )
 
         # Second alert should be suppressed or consolidated
@@ -264,7 +275,10 @@ class TestAlertEngineEscalation:
     async def test_escalation_trigger_threshold_reached(self, engine):
         """Test alert escalation when threshold is reached."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="test_user", severity="medium", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="test_user",
+            severity="medium",
+            source="auth",
         )
 
         # Trigger alerts to reach escalation threshold
@@ -306,13 +320,19 @@ class TestAlertEngineEscalation:
     async def test_escalation_window_expiry(self, engine):
         """Test that escalation window expiry resets escalation state."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="window_test_user", severity="medium", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="window_test_user",
+            severity="medium",
+            source="auth",
         )
 
         # Trigger some alerts
         for i in range(engine.escalation_threshold - 1):
             await engine.trigger_alert(
-                event=event, priority=AlertPriority.LOW, message=f"Alert {i}", channels=[AlertChannel.EMAIL],
+                event=event,
+                priority=AlertPriority.LOW,
+                message=f"Alert {i}",
+                channels=[AlertChannel.EMAIL],
             )
 
         # Mock time passing beyond escalation window
@@ -329,17 +349,26 @@ class TestAlertEngineEscalation:
     async def test_escalation_different_users_independent(self, engine):
         """Test that escalations are independent per user."""
         event1 = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="user1", severity="medium", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="user1",
+            severity="medium",
+            source="auth",
         )
 
         event2 = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="user2", severity="medium", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="user2",
+            severity="medium",
+            source="auth",
         )
 
         # Trigger escalation for user1
         for i in range(engine.escalation_threshold):
             await engine.trigger_alert(
-                event=event1, priority=AlertPriority.MEDIUM, message=f"User1 alert {i}", channels=[AlertChannel.EMAIL],
+                event=event1,
+                priority=AlertPriority.MEDIUM,
+                message=f"User1 alert {i}",
+                channels=[AlertChannel.EMAIL],
             )
 
         # user1 should be escalated, user2 should not
@@ -348,7 +377,10 @@ class TestAlertEngineEscalation:
 
         # Trigger one alert for user2
         await engine.trigger_alert(
-            event=event2, priority=AlertPriority.MEDIUM, message="User2 alert 1", channels=[AlertChannel.EMAIL],
+            event=event2,
+            priority=AlertPriority.MEDIUM,
+            message="User2 alert 1",
+            channels=[AlertChannel.EMAIL],
         )
 
         # user2 still should not be escalated
@@ -514,14 +546,20 @@ class TestAlertEngineRateLimiting:
     async def test_rate_limiting_enforcement(self, engine):
         """Test that rate limiting is enforced."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="rate_limit_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="rate_limit_user",
+            severity="low",
+            source="auth",
         )
 
         # Trigger more alerts than the rate limit
         alert_ids = []
         for i in range(engine.max_alerts_per_minute + 5):
             alert_id = await engine.trigger_alert(
-                event=event, priority=AlertPriority.LOW, message=f"Rate limit test {i}", channels=[AlertChannel.EMAIL],
+                event=event,
+                priority=AlertPriority.LOW,
+                message=f"Rate limit test {i}",
+                channels=[AlertChannel.EMAIL],
             )
             alert_ids.append(alert_id)
 
@@ -535,13 +573,19 @@ class TestAlertEngineRateLimiting:
     async def test_rate_limiting_reset_after_minute(self, engine):
         """Test that rate limiting resets after time window."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="reset_test_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="reset_test_user",
+            severity="low",
+            source="auth",
         )
 
         # Use up rate limit
         for i in range(engine.max_alerts_per_minute):
             await engine.trigger_alert(
-                event=event, priority=AlertPriority.LOW, message=f"Rate limit {i}", channels=[AlertChannel.EMAIL],
+                event=event,
+                priority=AlertPriority.LOW,
+                message=f"Rate limit {i}",
+                channels=[AlertChannel.EMAIL],
             )
 
         # Mock time advancing by more than a minute
@@ -551,7 +595,10 @@ class TestAlertEngineRateLimiting:
 
             # Should be able to send more alerts
             await engine.trigger_alert(
-                event=event, priority=AlertPriority.LOW, message="After reset", channels=[AlertChannel.EMAIL],
+                event=event,
+                priority=AlertPriority.LOW,
+                message="After reset",
+                channels=[AlertChannel.EMAIL],
             )
 
             # This alert should go through (rate limit reset)
@@ -568,7 +615,10 @@ class TestAlertEngineRateLimiting:
 
         # Use up rate limit with low priority alerts
         low_priority_event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_FAILURE, user_id="low_priority_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            user_id="low_priority_user",
+            severity="low",
+            source="auth",
         )
 
         for i in range(engine.max_alerts_per_minute):
@@ -621,12 +671,18 @@ class TestAlertEnginePerformance:
     async def test_trigger_alert_performance(self, engine):
         """Test that trigger_alert meets <10ms requirement."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_SUCCESS, user_id="perf_test_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            user_id="perf_test_user",
+            severity="low",
+            source="auth",
         )
 
         start_time = time.time()
         await engine.trigger_alert(
-            event=event, priority=AlertPriority.LOW, message="Performance test alert", channels=[AlertChannel.EMAIL],
+            event=event,
+            priority=AlertPriority.LOW,
+            message="Performance test alert",
+            channels=[AlertChannel.EMAIL],
         )
         end_time = time.time()
 
@@ -730,7 +786,10 @@ class TestAlertEnginePerformance:
                 source="auth",
             )
             await engine.trigger_alert(
-                event=event, priority=AlertPriority.LOW, message=f"Memory test alert {i}", channels=[AlertChannel.EMAIL],
+                event=event,
+                priority=AlertPriority.LOW,
+                message=f"Memory test alert {i}",
+                channels=[AlertChannel.EMAIL],
             )
 
             # Periodic cleanup to prevent unbounded growth
@@ -918,23 +977,34 @@ class TestAlertEngineErrorHandling:
     async def test_trigger_alert_invalid_priority(self, engine):
         """Test handling of invalid alert priorities."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_SUCCESS, user_id="test_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            user_id="test_user",
+            severity="low",
+            source="auth",
         )
 
         with pytest.raises(ValueError, match="Invalid alert priority"):
             await engine.trigger_alert(
-                event=event, priority="INVALID_PRIORITY", message="Invalid priority test",  # Invalid priority
+                event=event,
+                priority="INVALID_PRIORITY",
+                message="Invalid priority test",  # Invalid priority
             )
 
     async def test_trigger_alert_empty_channels(self, engine):
         """Test handling of empty channel list."""
         event = SecurityEvent(
-            event_type=SecurityEventType.LOGIN_SUCCESS, user_id="test_user", severity="low", source="auth",
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            user_id="test_user",
+            severity="low",
+            source="auth",
         )
 
         # Should not crash with empty channels
         alert_id = await engine.trigger_alert(
-            event=event, priority=AlertPriority.LOW, message="Empty channels test", channels=[],
+            event=event,
+            priority=AlertPriority.LOW,
+            message="Empty channels test",
+            channels=[],
         )
 
         assert alert_id is not None
@@ -944,7 +1014,10 @@ class TestAlertEngineErrorHandling:
         engine._db.create_event.side_effect = Exception("Database error")
 
         event = SecurityEvent(
-            event_type=SecurityEventType.SECURITY_ALERT, user_id="db_error_user", severity="critical", source="system",
+            event_type=SecurityEventType.SECURITY_ALERT,
+            user_id="db_error_user",
+            severity="critical",
+            source="system",
         )
 
         # Should handle gracefully without crashing
@@ -972,7 +1045,9 @@ class TestAlertEngineErrorHandling:
                     source="auth",
                 )
                 await engine.trigger_alert(
-                    event=event, priority=AlertPriority.LOW, message=f"Concurrent test {prefix}_{i}",
+                    event=event,
+                    priority=AlertPriority.LOW,
+                    message=f"Concurrent test {prefix}_{i}",
                 )
 
         # Run concurrent alert generation

@@ -25,7 +25,9 @@ class AuditReportRequest(BaseModel):
     start_date: datetime = Field(..., description="Audit report start date")
     end_date: datetime = Field(..., description="Audit report end date")
     report_type: str = Field(
-        "comprehensive", pattern="^(comprehensive|security|compliance|activity)$", description="Type of audit report",
+        "comprehensive",
+        pattern="^(comprehensive|security|compliance|activity)$",
+        description="Type of audit report",
     )
     include_details: bool = Field(True, description="Include detailed event information")
     format: str = Field("json", pattern="^(json|csv|pdf)$", description="Report output format")
@@ -245,7 +247,8 @@ async def enforce_retention_policies(
 
             # Get count of events that would be affected
             affected_count = await service.count_events_before_date(
-                cutoff_date=cutoff_date, event_types=policy["event_types"],
+                cutoff_date=cutoff_date,
+                event_types=policy["event_types"],
             )
 
             estimated_deletions += affected_count

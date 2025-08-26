@@ -247,7 +247,9 @@ class PostgreSQLCapabilityAnalyzer:
             return 0
 
     def calculate_corrected_success_probability(
-        self, performance_projections: dict[str, PerformanceProjection], migration_analysis: dict[str, Any],
+        self,
+        performance_projections: dict[str, PerformanceProjection],
+        migration_analysis: dict[str, Any],
     ) -> float:
         """Calculate corrected success probability based on PostgreSQL capabilities."""
 
@@ -422,7 +424,9 @@ class PostgreSQLCapabilityAnalyzer:
 
         # Generate corrected executive recommendation
         corrected_recommendation = self.generate_corrected_recommendation(
-            performance_projections, migration_analysis, success_probability,
+            performance_projections,
+            migration_analysis,
+            success_probability,
         )
 
         return CorrectedValidationResult(

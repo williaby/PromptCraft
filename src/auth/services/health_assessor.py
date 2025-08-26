@@ -96,7 +96,9 @@ class HealthAssessor:
 
         # Generate health recommendations
         recommendations = await self._generate_health_recommendations(
-            service_assessment, system_assessment, dependency_assessment,
+            service_assessment,
+            system_assessment,
+            dependency_assessment,
         )
 
         # Calculate system availability estimate
@@ -126,7 +128,10 @@ class HealthAssessor:
         }
 
     async def assess_service_reliability(
-        self, service_name: str, historical_data: list[dict[str, Any]], time_window_hours: int = 24,
+        self,
+        service_name: str,
+        historical_data: list[dict[str, Any]],
+        time_window_hours: int = 24,
     ) -> dict[str, Any]:
         """Assess service reliability metrics over time.
 
@@ -202,7 +207,9 @@ class HealthAssessor:
         }
 
     async def predict_service_failures(
-        self, service_metrics: dict[str, list[float]], prediction_window_minutes: int = 30,
+        self,
+        service_metrics: dict[str, list[float]],
+        prediction_window_minutes: int = 30,
     ) -> dict[str, Any]:
         """Predict potential service failures based on metric trends.
 
@@ -261,7 +268,8 @@ class HealthAssessor:
                 "failure_indicators": {k: round(v, 3) for k, v in failure_indicators.items()},
                 "trend_analysis": trend_analysis,
                 "recommendation": self._generate_failure_prevention_recommendation(
-                    failure_probability, failure_indicators,
+                    failure_probability,
+                    failure_indicators,
                 ),
             }
 
@@ -281,7 +289,10 @@ class HealthAssessor:
         }
 
     async def check_external_service_health(
-        self, service_url: str, timeout_seconds: int = 5, expected_status_codes: list[int] = None,
+        self,
+        service_url: str,
+        timeout_seconds: int = 5,
+        expected_status_codes: list[int] = None,
     ) -> dict[str, Any]:
         """Check health of external service endpoint.
 
@@ -437,7 +448,11 @@ class HealthAssessor:
         }
 
     def _calculate_overall_status(
-        self, overall_score: float, service_failures: int, system_failures: int, dependency_failures: int,
+        self,
+        overall_score: float,
+        service_failures: int,
+        system_failures: int,
+        dependency_failures: int,
     ) -> HealthStatus:
         """Calculate overall health status."""
         total_critical_failures = service_failures + system_failures + dependency_failures
@@ -475,7 +490,9 @@ class HealthAssessor:
         return recommendations
 
     async def _calculate_availability_estimate(
-        self, service_data: dict[str, dict[str, Any]], system_metrics: dict[str, float],
+        self,
+        service_data: dict[str, dict[str, Any]],
+        system_metrics: dict[str, float],
     ) -> dict[str, float]:
         """Calculate system availability estimates."""
         # This would typically use historical data
@@ -619,7 +636,9 @@ class HealthAssessor:
         return (data_quality + trend_consistency) / 2
 
     def _generate_failure_prevention_recommendation(
-        self, failure_probability: float, indicators: dict[str, float],
+        self,
+        failure_probability: float,
+        indicators: dict[str, float],
     ) -> str:
         """Generate recommendation for preventing service failure."""
         if failure_probability < 0.3:

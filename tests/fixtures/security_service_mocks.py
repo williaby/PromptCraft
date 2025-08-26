@@ -537,7 +537,9 @@ class MockSuspiciousActivityDetector:
         self._anomalies = []
 
     async def analyze_activity(
-        self, event: SecurityEventCreate, context: dict[str, Any] | None = None,
+        self,
+        event: SecurityEventCreate,
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Analyze activity for suspicious patterns."""
         result = {"is_suspicious": False, "risk_score": 0, "anomalies": [], "recommendations": []}
@@ -645,7 +647,10 @@ class MockAuditService:
         self._logged_events.append(event_data)
 
     async def generate_compliance_report(
-        self, start_date: datetime, end_date: datetime, filters: dict[str, Any] | None = None,
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        filters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Generate compliance report."""
         report_id = str(uuid4())
@@ -864,7 +869,10 @@ class MockAuditService:
         return base_stats
 
     async def generate_security_report(
-        self, start_date: datetime, end_date: datetime, report_format: str = "detailed",
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        report_format: str = "detailed",
     ) -> dict[str, Any]:
         """Generate comprehensive security report."""
         # Get events for the date range

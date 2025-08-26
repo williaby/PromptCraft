@@ -47,7 +47,10 @@ class TestSuspiciousActivityDetectorInitialization:
     def test_init_custom_configuration(self):
         """Test initialization with custom settings."""
         detector = SuspiciousActivityDetector(
-            suspicious_threshold=0.6, anomaly_threshold=0.9, learning_period_days=14, min_baseline_events=25,
+            suspicious_threshold=0.6,
+            anomaly_threshold=0.9,
+            learning_period_days=14,
+            min_baseline_events=25,
         )
 
         assert detector.suspicious_threshold == 0.6
@@ -228,7 +231,9 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
 
         # Test access from different country
         suspicion_score = await detector.analyze_location_pattern(
-            user_id, "1.2.3.4", {"country": "RU", "city": "Moscow"},  # Different country IP
+            user_id,
+            "1.2.3.4",
+            {"country": "RU", "city": "Moscow"},  # Different country IP
         )
 
         assert suspicion_score > detector.suspicious_threshold
@@ -631,7 +636,9 @@ class TestSuspiciousActivityDetectorRiskScoring:
 
         for context_test in contexts:
             adjusted_risk = await detector.calculate_contextual_risk_score(
-                user_id, base_risk_factors, context_test["context"],
+                user_id,
+                base_risk_factors,
+                context_test["context"],
             )
 
             base_score = await detector.calculate_comprehensive_risk_score(user_id, base_risk_factors)

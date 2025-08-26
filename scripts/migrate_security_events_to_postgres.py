@@ -376,7 +376,9 @@ async def main():
     )
 
     parser.add_argument(
-        "--sqlite-path", default="security_events.db", help="Path to SQLite database file (default: security_events.db)",
+        "--sqlite-path",
+        default="security_events.db",
+        help="Path to SQLite database file (default: security_events.db)",
     )
 
     parser.add_argument("--backup-dir", default="./backups", help="Directory for backup files (default: ./backups)")
@@ -395,7 +397,9 @@ async def main():
     try:
         # Initialize migrator
         migrator = SecurityEventsMigrator(
-            sqlite_path=args.sqlite_path, backup_dir=args.backup_dir, dry_run=args.dry_run,
+            sqlite_path=args.sqlite_path,
+            backup_dir=args.backup_dir,
+            dry_run=args.dry_run,
         )
 
         # Analyze SQLite database

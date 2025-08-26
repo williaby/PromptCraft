@@ -18,7 +18,10 @@ class RiskAnalyzer:
         self._baseline_metrics: dict[str, dict[str, float]] = {}
 
     async def analyze_user_risk_profile(
-        self, user_id: str, activity_data: dict[str, Any], time_window_hours: int = 168,
+        self,
+        user_id: str,
+        activity_data: dict[str, Any],
+        time_window_hours: int = 168,
     ) -> dict[str, Any]:
         """Analyze comprehensive user risk profile.
 
@@ -121,7 +124,10 @@ class RiskAnalyzer:
             }
 
     async def detect_suspicious_activities(
-        self, activity_data: list[dict[str, Any]], sensitivity: float = 0.7, time_window_hours: int = 24,
+        self,
+        activity_data: list[dict[str, Any]],
+        sensitivity: float = 0.7,
+        time_window_hours: int = 24,
     ) -> list[dict[str, Any]]:
         """Detect suspicious activities using behavioral analysis.
 
@@ -164,7 +170,10 @@ class RiskAnalyzer:
         return suspicious_activities
 
     async def calculate_anomaly_score(
-        self, user_id: str, current_behavior: dict[str, Any], historical_baseline: dict[str, Any] | None = None,
+        self,
+        user_id: str,
+        current_behavior: dict[str, Any],
+        historical_baseline: dict[str, Any] | None = None,
     ) -> tuple[float, list[str]]:
         """Calculate anomaly score for current user behavior.
 
@@ -421,7 +430,10 @@ class RiskAnalyzer:
         }
 
     async def _detect_user_suspicious_patterns(
-        self, user_id: str, activities: list[dict[str, Any]], sensitivity: float,
+        self,
+        user_id: str,
+        activities: list[dict[str, Any]],
+        sensitivity: float,
     ) -> list[dict[str, Any]]:
         """Detect suspicious patterns for a specific user."""
         suspicious_patterns = []
@@ -444,7 +456,10 @@ class RiskAnalyzer:
         return suspicious_patterns
 
     async def _detect_rapid_actions(
-        self, user_id: str, activities: list[dict[str, Any]], sensitivity: float,
+        self,
+        user_id: str,
+        activities: list[dict[str, Any]],
+        sensitivity: float,
     ) -> list[dict[str, Any]]:
         """Detect suspiciously rapid action sequences."""
         suspicious = []
@@ -475,7 +490,10 @@ class RiskAnalyzer:
         return suspicious
 
     async def _detect_unusual_sequences(
-        self, user_id: str, activities: list[dict[str, Any]], sensitivity: float,
+        self,
+        user_id: str,
+        activities: list[dict[str, Any]],
+        sensitivity: float,
     ) -> list[dict[str, Any]]:
         """Detect unusual action sequences."""
         suspicious = []
@@ -502,7 +520,10 @@ class RiskAnalyzer:
         return suspicious
 
     async def _detect_escalation_attempts(
-        self, user_id: str, activities: list[dict[str, Any]], sensitivity: float,
+        self,
+        user_id: str,
+        activities: list[dict[str, Any]],
+        sensitivity: float,
     ) -> list[dict[str, Any]]:
         """Detect potential privilege escalation attempts."""
         suspicious = []
@@ -525,9 +546,7 @@ class RiskAnalyzer:
                         "description": f"Potential privilege escalation: {len(user_admin_actions)} admin actions",
                         "admin_actions": user_admin_actions,
                         "timestamp": (
-                            user_admin_actions[-1].get("timestamp")
-                            if user_admin_actions
-                            else datetime.now(UTC)
+                            user_admin_actions[-1].get("timestamp") if user_admin_actions else datetime.now(UTC)
                         ),
                     },
                 )

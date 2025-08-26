@@ -118,7 +118,9 @@ class SecurityLogger:
             self.max_queue_size = max_queue_size
             # Create config from parameters
             self.config = LoggingConfig(
-                batch_size=batch_size, batch_timeout_seconds=batch_timeout_seconds, queue_max_size=max_queue_size,
+                batch_size=batch_size,
+                batch_timeout_seconds=batch_timeout_seconds,
+                queue_max_size=max_queue_size,
             )
 
         self.metrics = LoggingMetrics()
@@ -436,7 +438,8 @@ class SecurityLogger:
 
                     # Delete events older than retention period for this severity
                     delete_stmt = delete(SecurityEventModel).where(
-                        SecurityEventModel.severity == severity.value, SecurityEventModel.timestamp < cutoff_date,
+                        SecurityEventModel.severity == severity.value,
+                        SecurityEventModel.timestamp < cutoff_date,
                     )
                     result = await session.execute(delete_stmt)
                     cleanup_stats[severity.value] = result.rowcount or 0

@@ -310,7 +310,9 @@ class SuspiciousActivityDetector:
         self.tor_exit_nodes: set[str] = set()
 
     async def analyze_activity(
-        self, event: SecurityEventCreate, additional_context: dict[str, Any] | None = None,
+        self,
+        event: SecurityEventCreate,
+        additional_context: dict[str, Any] | None = None,
     ) -> ActivityAnalysisResult:
         """Analyze activity for suspicious patterns.
 
@@ -397,7 +399,9 @@ class SuspiciousActivityDetector:
         return self.user_patterns[user_id]
 
     async def _analyze_location(
-        self, event: SecurityEventCreate, user_pattern: UserPattern | None,
+        self,
+        event: SecurityEventCreate,
+        user_pattern: UserPattern | None,
     ) -> dict[str, Any]:
         """Analyze location-based suspicious activity."""
         result = {"detected_activities": [], "risk_factors": {}, "risk_score_delta": 0}
@@ -438,7 +442,8 @@ class SuspiciousActivityDetector:
             if time_diff_hours < 24:  # Only check for recent activity
                 max_possible_distance = time_diff_hours * self.config.impossible_travel_speed_kmh
                 min_distance = await self._calculate_min_distance_to_known_locations(
-                    location, user_pattern.known_locations,
+                    location,
+                    user_pattern.known_locations,
                 )
 
                 if min_distance > max_possible_distance:
@@ -458,7 +463,9 @@ class SuspiciousActivityDetector:
         return result
 
     async def _analyze_time_patterns(
-        self, event: SecurityEventCreate, user_pattern: UserPattern | None,
+        self,
+        event: SecurityEventCreate,
+        user_pattern: UserPattern | None,
     ) -> dict[str, Any]:
         """Analyze time-based suspicious activity."""
         result = {"detected_activities": [], "risk_factors": {}, "risk_score_delta": 0}
@@ -514,7 +521,9 @@ class SuspiciousActivityDetector:
         return result
 
     async def _analyze_user_agent(
-        self, event: SecurityEventCreate, user_pattern: UserPattern | None,
+        self,
+        event: SecurityEventCreate,
+        user_pattern: UserPattern | None,
     ) -> dict[str, Any]:
         """Analyze user agent for suspicious patterns."""
         result = {"detected_activities": [], "risk_factors": {}, "risk_score_delta": 0}
@@ -557,7 +566,9 @@ class SuspiciousActivityDetector:
         return result
 
     async def _analyze_behavioral_patterns(
-        self, event: SecurityEventCreate, user_pattern: UserPattern | None,
+        self,
+        event: SecurityEventCreate,
+        user_pattern: UserPattern | None,
     ) -> dict[str, Any]:
         """Analyze behavioral patterns for anomalies."""
         result = {"detected_activities": [], "risk_factors": {}, "risk_score_delta": 0}
@@ -679,7 +690,9 @@ class SuspiciousActivityDetector:
         return location
 
     async def _calculate_min_distance_to_known_locations(
-        self, current_location: LocationData, known_location_hashes: set[str],
+        self,
+        current_location: LocationData,
+        known_location_hashes: set[str],
     ) -> float:
         """Calculate minimum distance to any known location."""
         if not current_location.latitude or not current_location.longitude:
@@ -692,7 +705,10 @@ class SuspiciousActivityDetector:
             if location.location_hash in known_location_hashes and location.latitude and location.longitude:
 
                 distance = self._calculate_distance(
-                    current_location.latitude, current_location.longitude, location.latitude, location.longitude,
+                    current_location.latitude,
+                    current_location.longitude,
+                    location.latitude,
+                    location.longitude,
                 )
                 min_distance = min(min_distance, distance)
 

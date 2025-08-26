@@ -280,7 +280,8 @@ class SecurityEventCreate(SecurityEventBase):
     """Model for creating new security events."""
 
     timestamp: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC), description="Event timestamp",
+        default_factory=lambda: datetime.now(UTC),
+        description="Event timestamp",
     )
 
 

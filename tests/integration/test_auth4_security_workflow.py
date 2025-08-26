@@ -121,7 +121,6 @@ class TestAUTH4SecurityWorkflowIntegration:
                 import json
                 from uuid import UUID
 
-
                 if hasattr(query, "text"):
                     # It's a TextClause object, extract the SQL string
                     sql_string = str(query)
@@ -283,7 +282,10 @@ class TestAUTH4SecurityWorkflowIntegration:
                 self._logged_events.append(event_data)
 
             async def generate_compliance_report(
-                self, start_date: datetime, end_date: datetime, filters: dict[str, Any] | None = None,
+                self,
+                start_date: datetime,
+                end_date: datetime,
+                filters: dict[str, Any] | None = None,
             ) -> dict[str, Any]:
                 """Generate compliance report."""
                 report_id = str(uuid.uuid4())
@@ -302,7 +304,11 @@ class TestAUTH4SecurityWorkflowIntegration:
                 return report
 
             async def generate_security_report(
-                self, start_date: datetime, end_date: datetime, report_type: str = "security_summary", **kwargs,
+                self,
+                start_date: datetime,
+                end_date: datetime,
+                report_type: str = "security_summary",
+                **kwargs,
             ) -> dict[str, Any]:
                 """Generate security report."""
                 # Get events for the time period
@@ -362,8 +368,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                         [
                             e
                             for e in events
-                            if e.get("timestamp")
-                            and (datetime.now(UTC) - e["timestamp"]).total_seconds() < 86400
+                            if e.get("timestamp") and (datetime.now(UTC) - e["timestamp"]).total_seconds() < 86400
                         ],
                     ),
                     "events_by_type": {},
@@ -469,7 +474,9 @@ class TestAUTH4SecurityWorkflowIntegration:
     async def dashboard_endpoints(self, security_monitor, alert_engine, audit_service):
         """Create SecurityDashboardEndpoints with all dependencies."""
         return SecurityDashboardEndpoints(
-            security_monitor=security_monitor, alert_engine=alert_engine, audit_service=audit_service,
+            security_monitor=security_monitor,
+            alert_engine=alert_engine,
+            audit_service=audit_service,
         )
 
     @pytest.fixture
@@ -487,7 +494,11 @@ class TestAUTH4SecurityWorkflowIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_complete_security_workflow_brute_force_detection(
-        self, security_monitor, alert_engine, audit_service, sample_login_attempt,
+        self,
+        security_monitor,
+        alert_engine,
+        audit_service,
+        sample_login_attempt,
     ):
         """Test complete workflow: brute force detection → alert → audit trail."""
 
@@ -568,12 +579,17 @@ class TestAUTH4SecurityWorkflowIntegration:
         suspicious_location = {"city": "Foreign City", "country": "XX"}
 
         await security_monitor.log_login_attempt(
-            user_id=user_id, ip_address=suspicious_ip, success=True, location_data=suspicious_location,
+            user_id=user_id,
+            ip_address=suspicious_ip,
+            success=True,
+            location_data=suspicious_location,
         )
 
         # Phase 3: Verify suspicious activity detection
         is_suspicious = await suspicious_activity_detector.analyze_location_anomaly(
-            user_id=user_id, ip_address=suspicious_ip, location_data=suspicious_location,
+            user_id=user_id,
+            ip_address=suspicious_ip,
+            location_data=suspicious_location,
         )
 
         assert is_suspicious["is_anomaly"] is True
@@ -594,7 +610,11 @@ class TestAUTH4SecurityWorkflowIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_dashboard_real_time_metrics_integration(
-        self, dashboard_endpoints, security_monitor, alert_engine, sample_login_attempt,
+        self,
+        dashboard_endpoints,
+        security_monitor,
+        alert_engine,
+        sample_login_attempt,
     ):
         """Test dashboard displays real-time security metrics from actual events."""
 
@@ -614,7 +634,9 @@ class TestAUTH4SecurityWorkflowIntegration:
         # Generate brute force for specific user
         for _ in range(6):
             await security_monitor.log_login_attempt(
-                user_id=user_id, ip_address=sample_login_attempt["ip_address"], success=False,
+                user_id=user_id,
+                ip_address=sample_login_attempt["ip_address"],
+                success=False,
             )
 
         # Phase 2: Test metrics endpoint with real data
@@ -672,7 +694,9 @@ class TestAUTH4SecurityWorkflowIntegration:
         report_end = datetime.utcnow() + timedelta(minutes=1)
 
         audit_report = await audit_service.generate_security_report(
-            start_date=report_start, end_date=report_end, report_format="detailed",
+            start_date=report_start,
+            end_date=report_end,
+            report_format="detailed",
         )
 
         # Phase 3: Validate compliance report
@@ -694,7 +718,9 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 5: Test export functionality
         csv_export = await audit_service.export_security_data(
-            format="csv", start_date=report_start, end_date=report_end,
+            format="csv",
+            start_date=report_start,
+            end_date=report_end,
         )
 
         assert csv_export is not None
@@ -775,7 +801,8 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Check audit service has all events
         recent_events = await audit_service.get_security_events(
-            start_date=datetime.utcnow() - timedelta(minutes=1), end_date=datetime.utcnow() + timedelta(minutes=1),
+            start_date=datetime.utcnow() - timedelta(minutes=1),
+            end_date=datetime.utcnow() + timedelta(minutes=1),
         )
 
         assert len(recent_events) >= total_events_expected * 0.8  # Allow 20% tolerance
@@ -818,7 +845,9 @@ class TestAUTH4SecurityWorkflowIntegration:
         with patch.object(alert_engine, "process_security_event", side_effect=Exception("Alert failure")):
             # Security logging should still work
             await security_monitor.log_login_attempt(
-                user_id="recovery_user_2", ip_address="192.168.1.101", success=False,
+                user_id="recovery_user_2",
+                ip_address="192.168.1.101",
+                success=False,
             )
 
         # Verify event was still logged despite alert failure
@@ -828,7 +857,11 @@ class TestAUTH4SecurityWorkflowIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_data_consistency_across_components(
-        self, security_monitor, alert_engine, audit_service, temp_database,
+        self,
+        security_monitor,
+        alert_engine,
+        audit_service,
+        temp_database,
     ):
         """Test data consistency across all AUTH-4 components."""
 
@@ -840,7 +873,9 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         for event_data in test_events:
             await security_monitor.log_login_attempt(
-                user_id=event_data["user_id"], ip_address=event_data["ip"], success=event_data["success"],
+                user_id=event_data["user_id"],
+                ip_address=event_data["ip"],
+                success=event_data["success"],
             )
 
         await asyncio.sleep(0.2)  # Allow processing
@@ -855,7 +890,8 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 3: Verify data consistency in audit service
         audit_events = await audit_service.get_security_events(
-            start_date=datetime.utcnow() - timedelta(minutes=1), end_date=datetime.utcnow() + timedelta(minutes=1),
+            start_date=datetime.utcnow() - timedelta(minutes=1),
+            end_date=datetime.utcnow() + timedelta(minutes=1),
         )
 
         audit_consistency_events = [
@@ -995,7 +1031,9 @@ class TestAUTH4RealTimeProcessing:
 
         for event in event_sequence:
             await mock_security_monitor.log_login_attempt(
-                user_id=user_id, ip_address=ip_address, success=event["success"],
+                user_id=user_id,
+                ip_address=ip_address,
+                success=event["success"],
             )
             await asyncio.sleep(event["delay"])
 

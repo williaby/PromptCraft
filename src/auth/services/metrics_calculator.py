@@ -17,7 +17,9 @@ class MetricsCalculator:
         self._cache_expiry: dict[str, datetime] = {}
 
     async def calculate_system_health_score(
-        self, service_health: dict[str, bool], performance_metrics: dict[str, float],
+        self,
+        service_health: dict[str, bool],
+        performance_metrics: dict[str, float],
     ) -> float:
         """Calculate overall system health score.
 
@@ -58,7 +60,9 @@ class MetricsCalculator:
         return max(0, health_score)
 
     async def calculate_event_rate_metrics(
-        self, event_counts: dict[str, int], time_period_hours: int = 24,
+        self,
+        event_counts: dict[str, int],
+        time_period_hours: int = 24,
     ) -> dict[str, float]:
         """Calculate event rate metrics.
 
@@ -109,7 +113,9 @@ class MetricsCalculator:
         }
 
     async def calculate_risk_distribution(
-        self, risk_data: dict[str, int], total_items: int | None = None,
+        self,
+        risk_data: dict[str, int],
+        total_items: int | None = None,
     ) -> dict[str, Any]:
         """Calculate risk distribution percentages and metrics.
 
@@ -162,7 +168,9 @@ class MetricsCalculator:
         }
 
     async def calculate_timeline_metrics(
-        self, timeline_data: list[dict[str, Any]], granularity: str = "hour",
+        self,
+        timeline_data: list[dict[str, Any]],
+        granularity: str = "hour",
     ) -> dict[str, Any]:
         """Calculate timeline-based metrics.
 

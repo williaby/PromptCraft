@@ -77,7 +77,10 @@ class MockSecurityEventsDatabase:
         return type_events[:limit]
 
     async def get_events_by_date_range(
-        self, start_date: datetime, end_date: datetime, limit: int = 1000,
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int = 1000,
     ) -> list[dict[str, Any]]:
         """Get events by date range."""
         range_events = [e for e in self._events if start_date <= e["timestamp"] <= end_date]

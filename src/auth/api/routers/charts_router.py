@@ -91,7 +91,9 @@ async def get_event_timeline_chart(
 
         # Get event timeline data
         timeline_data = await service.get_event_timeline(
-            start_time=start_time, end_time=end_time, granularity=granularity,
+            start_time=start_time,
+            end_time=end_time,
+            granularity=granularity,
         )
 
         # Convert to data points
@@ -183,7 +185,10 @@ async def get_risk_distribution_chart(
             percentage = (count / total_items * 100) if total_items > 0 else 0
 
             distribution_item = RiskDistributionData(
-                risk_level=risk_level, count=count, percentage=round(percentage, 1), color=config["color"],
+                risk_level=risk_level,
+                count=count,
+                percentage=round(percentage, 1),
+                color=config["color"],
             )
             distribution.append(distribution_item)
 
@@ -198,7 +203,10 @@ async def get_risk_distribution_chart(
         ) / 100
 
         return RiskDistributionResponse(
-            title=title, total_items=total_items, distribution=distribution, risk_summary=risk_summary,
+            title=title,
+            total_items=total_items,
+            distribution=distribution,
+            risk_summary=risk_summary,
         )
 
     except Exception as e:

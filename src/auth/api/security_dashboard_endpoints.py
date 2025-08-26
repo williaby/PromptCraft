@@ -269,7 +269,10 @@ class SecurityDashboardEndpoints:
         try:
             if severity or event_type:
                 events = await self.security_monitor.get_recent_events(
-                    severity=severity, event_type=event_type, limit=limit, offset=offset,
+                    severity=severity,
+                    event_type=event_type,
+                    limit=limit,
+                    offset=offset,
                 )
             else:
                 events = await self.security_monitor.get_recent_events(limit=limit, offset=offset)
@@ -295,7 +298,9 @@ class SecurityDashboardEndpoints:
 
             # Create proper response model
             response = SecurityEventResponse(
-                events=event_list, total_count=len(event_list), timestamp=datetime.now(UTC),
+                events=event_list,
+                total_count=len(event_list),
+                timestamp=datetime.now(UTC),
             )
 
             return response
@@ -393,7 +398,9 @@ class SecurityDashboardEndpoints:
         try:
             if start_date and end_date:
                 report = await self.audit_service.generate_security_report(
-                    start_date=start_date, end_date=end_date, report_format=report_format,
+                    start_date=start_date,
+                    end_date=end_date,
+                    report_format=report_format,
                 )
             else:
                 report = await self.audit_service.generate_security_report()
@@ -580,7 +587,9 @@ async def acknowledge_alert(
 
         # Add background task to log the acknowledgment
         background_tasks.add_task(
-            _log_alert_acknowledgment, alert_id=str(alert_id), timestamp=datetime.now(UTC),
+            _log_alert_acknowledgment,
+            alert_id=str(alert_id),
+            timestamp=datetime.now(UTC),
         )
 
         return JSONResponse(
@@ -598,7 +607,8 @@ async def acknowledge_alert(
 
 @router.get("/users/{user_id}/risk-profile", response_model=UserRiskProfileResponse)
 async def get_user_risk_profile(
-    user_id: str, service: SecurityIntegrationService = Depends(get_security_service),
+    user_id: str,
+    service: SecurityIntegrationService = Depends(get_security_service),
 ) -> UserRiskProfileResponse:
     """Get comprehensive risk profile for a specific user.
 
@@ -665,7 +675,8 @@ async def get_user_risk_profile(
 
 @router.post("/events/search")
 async def search_security_events(
-    search_request: SecurityEventSearchRequest, service: SecurityIntegrationService = Depends(get_security_service),
+    search_request: SecurityEventSearchRequest,
+    service: SecurityIntegrationService = Depends(get_security_service),
 ) -> dict[str, Any]:
     """Search security events with filtering and pagination.
 
@@ -704,7 +715,12 @@ async def search_security_events(
                 }
 
                 # Apply filters
-                if (search_request.user_id and event["user_id"] != search_request.user_id) or (search_request.ip_address and event["ip_address"] != search_request.ip_address) or (search_request.risk_score_min and event["risk_score"] < search_request.risk_score_min) or (search_request.risk_score_max and event["risk_score"] > search_request.risk_score_max):
+                if (
+                    (search_request.user_id and event["user_id"] != search_request.user_id)
+                    or (search_request.ip_address and event["ip_address"] != search_request.ip_address)
+                    or (search_request.risk_score_min and event["risk_score"] < search_request.risk_score_min)
+                    or (search_request.risk_score_max and event["risk_score"] > search_request.risk_score_max)
+                ):
                     pass  # Skip this event
                 else:
                     mock_events.append(event)
@@ -848,7 +864,8 @@ async def get_risk_distribution_data(
 
 @router.post("/audit/generate-report")
 async def generate_audit_report(
-    request: dict, service: SecurityIntegrationService = Depends(get_security_service),
+    request: dict,
+    service: SecurityIntegrationService = Depends(get_security_service),
 ) -> dict[str, Any]:
     """Generate compliance audit report.
 
@@ -1015,7 +1032,8 @@ async def get_retention_policies(service: SecurityIntegrationService = Depends(g
 
 @router.post("/config")
 async def update_dashboard_config(
-    config_request: DashboardConfigRequest, service: SecurityIntegrationService = Depends(get_security_service),
+    config_request: DashboardConfigRequest,
+    service: SecurityIntegrationService = Depends(get_security_service),
 ) -> JSONResponse:
     """Update dashboard configuration for a user.
 

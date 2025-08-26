@@ -296,7 +296,8 @@ class TestSecurityEventCreate:
     def test_security_event_create_minimal(self):
         """Test SecurityEventCreate with minimal required fields."""
         create_event = SecurityEventCreate(
-            event_type=SecurityEventType.SECURITY_ALERT, severity=SecurityEventSeverity.CRITICAL,
+            event_type=SecurityEventType.SECURITY_ALERT,
+            severity=SecurityEventSeverity.CRITICAL,
         )
 
         assert create_event.event_type == SecurityEventType.SECURITY_ALERT
@@ -405,7 +406,9 @@ class TestSecurityEventEdgeCases:
 
         # Should handle reasonably large details
         event = SecurityEvent(
-            event_type=SecurityEventType.SYSTEM_ERROR, severity=SecurityEventSeverity.WARNING, details=large_details,
+            event_type=SecurityEventType.SYSTEM_ERROR,
+            severity=SecurityEventSeverity.WARNING,
+            details=large_details,
         )
 
         assert len(event.details) == 100

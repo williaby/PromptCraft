@@ -212,7 +212,9 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_performance_tracking(self, service, sample_events):
         """Test that report generation tracks performance metrics."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1), end_date=datetime.now(), format=ExportFormat.CSV,
+            start_date=datetime.now() - timedelta(days=1),
+            end_date=datetime.now(),
+            format=ExportFormat.CSV,
         )
 
         service.db.get_events_by_date_range.return_value = sample_events
@@ -228,7 +230,9 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_error_handling(self, service):
         """Test error handling during report generation."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1), end_date=datetime.now(), format=ExportFormat.JSON,
+            start_date=datetime.now() - timedelta(days=1),
+            end_date=datetime.now(),
+            format=ExportFormat.JSON,
         )
 
         # Mock database error
@@ -815,7 +819,9 @@ class TestAuditServicePerformanceRequirements:
     async def test_report_generation_performance_small_dataset(self, service):
         """Test report generation performance with small dataset."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=7), end_date=datetime.now(), format=ExportFormat.CSV,
+            start_date=datetime.now() - timedelta(days=7),
+            end_date=datetime.now(),
+            format=ExportFormat.CSV,
         )
 
         # Mock small dataset (100 events)
@@ -967,7 +973,9 @@ class TestAuditServicePerformanceRequirements:
         async def generate_test_report(report_id: str):
             """Generate a test report."""
             request = AuditReportRequest(
-                start_date=datetime.now() - timedelta(hours=1), end_date=datetime.now(), format=ExportFormat.CSV,
+                start_date=datetime.now() - timedelta(hours=1),
+                end_date=datetime.now(),
+                format=ExportFormat.CSV,
             )
 
             # Mock small dataset for each report
@@ -1051,7 +1059,9 @@ class TestAuditServiceErrorHandling:
         service.db.get_events_by_date_range.return_value = events
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1), end_date=datetime.now(), user_id="user1",  # Filter by user1
+            start_date=datetime.now() - timedelta(days=1),
+            end_date=datetime.now(),
+            user_id="user1",  # Filter by user1
         )
 
         filtered_events = await service._fetch_filtered_events(request)
@@ -1211,7 +1221,9 @@ class TestAuditServiceErrorHandling:
         )
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1), end_date=datetime.now(), include_metadata=True,
+            start_date=datetime.now() - timedelta(days=1),
+            end_date=datetime.now(),
+            include_metadata=True,
         )
 
         statistics = AuditStatistics(

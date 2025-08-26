@@ -191,7 +191,8 @@ class HomelabPoolAnalyzer:
         if suitable_configs:
             # Recommend the most balanced suitable configuration
             recommended = min(
-                suitable_configs, key=lambda x: abs(x["memory_usage_percent"] - 25),  # Target ~25% memory usage
+                suitable_configs,
+                key=lambda x: abs(x["memory_usage_percent"] - 25),  # Target ~25% memory usage
             )
             assessment["recommendations"].append(
                 {

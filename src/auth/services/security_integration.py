@@ -135,7 +135,8 @@ class SecurityIntegrationService:
                 # Create notification handlers (this would be configured externally in production)
                 notification_handlers = self._create_default_notification_handlers()
                 self.alert_engine = AlertEngine(
-                    config=self.config.alert_engine_config, notification_handlers=notification_handlers,
+                    config=self.config.alert_engine_config,
+                    notification_handlers=notification_handlers,
                 )
 
             # Initialize suspicious activity detector
@@ -166,7 +167,9 @@ class SecurityIntegrationService:
             pass
 
     async def process_security_event(
-        self, event: SecurityEventCreate, additional_context: dict[str, Any] | None = None,
+        self,
+        event: SecurityEventCreate,
+        additional_context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Process security event through all enabled services.
 
@@ -341,7 +344,9 @@ class SecurityIntegrationService:
             return results
 
     async def _enrich_event(
-        self, event: SecurityEventCreate, additional_context: dict[str, Any] | None,
+        self,
+        event: SecurityEventCreate,
+        additional_context: dict[str, Any] | None,
     ) -> SecurityEventCreate:
         """Enrich event with correlation data and additional context."""
         start_time = time.time()
@@ -401,7 +406,9 @@ class SecurityIntegrationService:
 
         for timestamp, recent_event in self._recent_events:
             # Same user correlation
-            if (event.user_id and recent_event.user_id == event.user_id and recent_event.event_type != event.event_type) or (
+            if (
+                event.user_id and recent_event.user_id == event.user_id and recent_event.event_type != event.event_type
+            ) or (
                 event.ip_address
                 and recent_event.ip_address == event.ip_address
                 and recent_event.user_id != event.user_id
