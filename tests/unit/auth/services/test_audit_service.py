@@ -92,7 +92,7 @@ class TestAuditServiceReportGeneration:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -253,7 +253,7 @@ class TestAuditServiceExportFunctionality:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -315,7 +315,6 @@ class TestAuditServiceExportFunctionality:
             events=events,
         )
 
-
     async def test_export_report_csv_with_metadata(self, service, sample_report):
         """Test CSV export with metadata included."""
         csv_output = await service.export_report_csv(sample_report)
@@ -363,11 +362,20 @@ class TestAuditServiceExportFunctionality:
         csv_reader = csv.DictReader(StringIO(csv_output))
         rows = list(csv_reader)
 
-        # Should not include details column  
+        # Should not include details column
         assert "details" not in rows[0]
 
         # Should still have other columns
-        expected_columns = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "session_id", "risk_score"]
+        expected_columns = [
+            "timestamp",
+            "event_type",
+            "user_id",
+            "ip_address",
+            "user_agent",
+            "severity",
+            "session_id",
+            "risk_score",
+        ]
         assert all(col in rows[0] for col in expected_columns)
 
     async def test_export_report_json_format(self, service, sample_report):
@@ -473,7 +481,7 @@ class TestAuditServiceRetentionPolicies:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -609,7 +617,7 @@ class TestAuditServiceStatistics:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -746,7 +754,7 @@ class TestAuditServicePerformanceMetrics:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -803,7 +811,7 @@ class TestAuditServicePerformanceRequirements:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()
@@ -1018,7 +1026,7 @@ class TestAuditServiceErrorHandling:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
                 mock_db = AsyncMock()
                 mock_logger = AsyncMock()

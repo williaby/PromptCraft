@@ -7,14 +7,15 @@ and real-time threat detection with <10ms performance requirements.
 import asyncio
 import time
 from collections import deque
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from tests.fixtures.security_service_mocks import MockSecurityLogger
+from src.utils.time_utils import utc_now
 
 from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType
-from src.auth.services.security_monitor import FailedAttempt, SecurityMonitor
+from src.auth.services.security_monitor import FailedAttempt, MonitoringConfig, SecurityMonitor
 
 
 class TestSecurityMonitorInitialization:
@@ -68,6 +69,61 @@ class TestSecurityMonitorInitialization:
         assert monitor._db == mock_db
         assert monitor._security_logger == mock_logger
         assert monitor._alert_engine == mock_alert_engine
+
+    def test_init_with_monitoring_config(self):
+        """Test initialization with MonitoringConfig object - covers config branch."""
+        # Create custom config
+        config = MonitoringConfig(
+            failed_attempts_threshold=15,
+            failed_attempts_window_minutes=10,
+            brute_force_threshold=30,
+            brute_force_window_minutes=20,
+            account_lockout_duration_minutes=45,
+            account_lockout_enabled=True
+        )
+        
+        monitor = SecurityMonitor(config=config)
+        
+        # Verify config-based initialization path (lines 116-123)
+        assert monitor.config == config
+        assert monitor.failed_attempts_threshold == 15
+        assert monitor.failed_attempts_window_minutes == 10  
+        assert monitor.brute_force_threshold == 30
+        assert monitor.brute_force_window_minutes == 20
+        assert monitor.lockout_duration_minutes == 45
+        assert monitor.account_lockout_enabled is True
+        assert monitor.account_lockout_duration_minutes == 45
+
+    @pytest.mark.asyncio
+    async def test_initialize_method(self):
+        """Test the initialize method - covers lines 192-204."""
+        # Create mocked dependencies
+        mock_db = AsyncMock()
+        mock_logger = AsyncMock()
+        mock_alert_engine = AsyncMock()
+        
+        # Mock hasattr to return True for initialize methods
+        mock_logger.initialize = AsyncMock()
+        mock_alert_engine.initialize = AsyncMock()
+        
+        monitor = SecurityMonitor(
+            db=mock_db, 
+            security_logger=mock_logger, 
+            alert_engine=mock_alert_engine
+        )
+        
+        # Ensure cleanup task condition is met by setting _cleanup_task to None
+        monitor._cleanup_task = None
+        
+        # Mock _start_cleanup_task to avoid background task creation
+        with patch.object(monitor, '_start_cleanup_task') as mock_cleanup:
+            await monitor.initialize()
+        
+        # Verify all initialization calls
+        mock_db.initialize.assert_called_once()
+        mock_logger.initialize.assert_called_once()
+        mock_alert_engine.initialize.assert_called_once()
+        mock_cleanup.assert_called_once()
 
 
 class TestSecurityMonitorBruteForceDetection:
@@ -157,7 +213,7 @@ class TestSecurityMonitorBruteForceDetection:
         ip_address = "192.168.1.100"
 
         # Mock old attempts outside time window
-        old_time = datetime.now(UTC) - timedelta(minutes=monitor.failed_attempts_window_minutes + 1)
+        old_time = utc_now() - timedelta(minutes=monitor.failed_attempts_window_minutes + 1)
         monitor._failed_attempts_by_user[user_id] = deque(
             [
                 FailedAttempt(
@@ -184,7 +240,7 @@ class TestSecurityMonitorBruteForceDetection:
         user_id = "test_user"
 
         # Simulate locked account
-        monitor._locked_accounts[user_id] = datetime.now(UTC)
+        monitor._locked_accounts[user_id] = utc_now()
 
         is_locked = monitor.is_account_locked(user_id)
         assert is_locked is True
@@ -201,7 +257,7 @@ class TestSecurityMonitorBruteForceDetection:
         user_id = "test_user"
 
         # Simulate expired lockout
-        old_lockout_time = datetime.now(UTC) - timedelta(minutes=monitor.lockout_duration_minutes + 1)
+        old_lockout_time = utc_now() - timedelta(minutes=monitor.lockout_duration_minutes + 1)
         monitor._locked_accounts[user_id] = old_lockout_time
 
         is_locked = monitor.is_account_locked(user_id)
@@ -229,7 +285,7 @@ class TestSecurityMonitorBruteForceDetection:
         admin_user = "admin"
 
         # Lock account first
-        monitor._locked_accounts[user_id] = datetime.now(UTC)
+        monitor._locked_accounts[user_id] = utc_now()
 
         result = await monitor.unlock_account(user_id, admin_user)
 
@@ -249,7 +305,7 @@ class TestSecurityMonitorRateLimiting:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
@@ -334,7 +390,7 @@ class TestSecurityMonitorRateLimiting:
 
         # Mock time passing beyond window
         with patch("src.auth.services.security_monitor.datetime") as mock_datetime:
-            future_time = datetime.now(UTC) + timedelta(seconds=monitor.rate_limit_window_seconds + 1)
+            future_time = utc_now() + timedelta(seconds=monitor.rate_limit_window_seconds + 1)
             mock_datetime.now.return_value = future_time
 
             # Should be able to make requests again
@@ -348,7 +404,7 @@ class TestSecurityMonitorSuspiciousActivity:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
@@ -522,7 +578,7 @@ class TestSecurityMonitorRealTimeDetection:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
@@ -617,7 +673,7 @@ class TestSecurityMonitorPerformance:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()
@@ -744,7 +800,7 @@ class TestSecurityMonitorErrorHandling:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsDatabase") as mock_db_class:
+        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
             with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
                 with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
                     mock_db = AsyncMock()

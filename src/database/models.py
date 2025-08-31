@@ -7,7 +7,7 @@ This module defines database models for:
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import TIMESTAMP, Boolean, Integer, String, Text, func
@@ -101,11 +101,11 @@ class ServiceToken(Base):
         if self.expires_at is None:
             return False
         # Ensure both datetimes are timezone-aware and in UTC
-        now_utc = datetime.now(UTC)
+        now_utc = datetime.now(timezone.utc)
         expires_at = self.expires_at
         if expires_at.tzinfo is None:
             # Assume naive expires_at is UTC
-            expires_at = expires_at.replace(tzinfo=UTC)
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
         return now_utc > expires_at
 
     @property
@@ -557,11 +557,11 @@ class BlockedEntity(Base):
         if self.expires_at is None:
             return False
         # Ensure both datetimes are timezone-aware and in UTC
-        now_utc = datetime.now(UTC)
+        now_utc = datetime.now(timezone.utc)
         expires_at = self.expires_at
         if expires_at.tzinfo is None:
             # Assume naive expires_at is UTC
-            expires_at = expires_at.replace(tzinfo=UTC)
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
         return now_utc > expires_at
 
     @property

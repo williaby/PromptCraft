@@ -6,7 +6,7 @@ and all CRUD operations for the SecurityLogger component.
 
 import asyncio
 import time
-from datetime import UTC, datetime
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -14,6 +14,8 @@ import pytest
 
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.auth.security_logger import SecurityLogger
+from src.auth.services.security_logger import LoggingConfig, SecurityLogger as ServicesSecurityLogger
+from src.utils.time_utils import utc_now
 
 
 class TestSecurityLoggerInitialization:
@@ -25,6 +27,66 @@ class TestSecurityLoggerInitialization:
 
         assert logger._db_manager is not None
         assert logger._is_initialized is False
+
+    def test_services_security_logger_parameter_validation(self):
+        """Test parameter validation in ServicesSecurityLogger - covers lines 101-106."""
+        # Test negative batch_size
+        with pytest.raises(ValueError, match="batch_size must be positive"):
+            ServicesSecurityLogger(batch_size=-1)
+            
+        # Test zero batch_size
+        with pytest.raises(ValueError, match="batch_size must be positive"):
+            ServicesSecurityLogger(batch_size=0)
+            
+        # Test negative batch_timeout_seconds
+        with pytest.raises(ValueError, match="batch_timeout_seconds must be positive"):
+            ServicesSecurityLogger(batch_timeout_seconds=-1.0)
+            
+        # Test zero batch_timeout_seconds
+        with pytest.raises(ValueError, match="batch_timeout_seconds must be positive"):
+            ServicesSecurityLogger(batch_timeout_seconds=0.0)
+            
+        # Test negative max_queue_size
+        with pytest.raises(ValueError, match="max_queue_size must be positive"):
+            ServicesSecurityLogger(max_queue_size=-100)
+            
+        # Test zero max_queue_size
+        with pytest.raises(ValueError, match="max_queue_size must be positive"):
+            ServicesSecurityLogger(max_queue_size=0)
+
+    def test_services_security_logger_config_initialization(self):
+        """Test ServicesSecurityLogger initialization with LoggingConfig - covers lines 109-113."""
+        config = LoggingConfig(
+            batch_size=25,
+            batch_timeout_seconds=3.0,
+            queue_max_size=500
+        )
+        
+        logger = ServicesSecurityLogger(config=config)
+        
+        # Verify config is used
+        assert logger.config == config
+        assert logger.batch_size == 25
+        assert logger.batch_timeout_seconds == 3.0
+        assert logger.max_queue_size == 500
+
+    def test_services_security_logger_parameter_initialization(self):
+        """Test ServicesSecurityLogger initialization with parameters - covers lines 114-123.""" 
+        logger = ServicesSecurityLogger(
+            batch_size=15,
+            batch_timeout_seconds=2.5,
+            max_queue_size=750
+        )
+        
+        # Verify parameters are used
+        assert logger.batch_size == 15
+        assert logger.batch_timeout_seconds == 2.5
+        assert logger.max_queue_size == 750
+        
+        # Verify config is created from parameters
+        assert logger.config.batch_size == 15
+        assert logger.config.batch_timeout_seconds == 2.5
+        assert logger.config.queue_max_size == 750
 
     @pytest.mark.asyncio
     async def test_security_logger_async_initialization(self):
@@ -186,7 +248,7 @@ class TestSecurityLoggerQueries:
         mock_row.severity = "info"
         mock_row.user_id = "test_user"
         mock_row.ip_address = "192.168.1.100"
-        mock_row.timestamp = datetime.now(UTC)
+        mock_row.timestamp = utc_now()
         mock_row.risk_score = 0
         mock_row.details = {"test": "data"}
 
@@ -423,3 +485,299 @@ class TestSecurityLoggerIntegration:
         # Verify all events were processed
         assert mock_session.add.call_count == 50
         assert mock_session.commit.call_count == 50
+
+
+class TestServicesSecurityLoggerFunctionality:
+    """Test ServicesSecurityLogger core functionality."""
+
+    def test_rate_limiting_check(self):
+        """Test rate limiting functionality - covers lines 231-246."""
+        # Use very low rate limit for testing
+        config = LoggingConfig(rate_limit_max_events=3)
+        logger = ServicesSecurityLogger(config=config, batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Initially should allow events (first 3 should succeed)
+        assert logger._check_rate_limit() is True
+        assert logger._check_rate_limit() is True 
+        assert logger._check_rate_limit() is True
+            
+        # Should now be rate limited (4th call fails)
+        assert logger._check_rate_limit() is False
+        
+        # Subsequent calls should also fail
+        assert logger._check_rate_limit() is False
+
+    def test_event_sanitization_sensitive_data(self):
+        """Test event detail sanitization - covers lines 248-285."""
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Test sensitive data redaction
+        sensitive_details = {
+            "password": "secret123",
+            "user_token": "abc123def456789",  # Long value > 8 chars
+            "auth_key": "key456789012345",   # Long value > 8 chars
+            "secret_value": "confidential",
+            "normal_field": "normal_value",
+            "count": 42,
+            "is_valid": True,
+            "complex_object": {"nested": "data"}
+        }
+        
+        sanitized = logger._sanitize_event_details(sensitive_details)
+        
+        # Check sensitive fields are redacted
+        assert sanitized["password"] == "[REDACTED]"
+        assert sanitized["user_token"] == "[REDACTED]"
+        assert sanitized["auth_key"] == "[REDACTED]"
+        assert sanitized["secret_value"] == "[REDACTED]"
+        
+        # Check normal fields are preserved
+        assert sanitized["normal_field"] == "normal_value"
+        assert sanitized["count"] == 42
+        assert sanitized["is_valid"] is True
+        assert sanitized["complex_object"] == str({"nested": "data"})[:500]
+
+    def test_event_sanitization_short_sensitive_data(self):
+        """Test sanitization of short sensitive values - covers redaction branch."""
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Test short sensitive data (≤8 characters)
+        details = {"password": "123", "token": "abc"}
+        sanitized = logger._sanitize_event_details(details)
+        
+        assert sanitized["password"] == "[REDACTED_SHORT]"
+        assert sanitized["token"] == "[REDACTED_SHORT]"
+
+    def test_event_sanitization_dangerous_strings(self):
+        """Test sanitization removes dangerous characters - covers string cleaning."""
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Test dangerous character removal
+        details = {
+            "message": "Alert: <script>alert('xss')</script>",
+            "description": 'Quote "test" and \'single\' quotes',
+            "command": "echo `whoami`"
+        }
+        
+        sanitized = logger._sanitize_event_details(details)
+        
+        # Check dangerous characters are removed
+        assert "<" not in sanitized["message"]
+        assert ">" not in sanitized["message"]
+        assert "script" in sanitized["message"]  # Content preserved, tags removed
+        assert '"' not in sanitized["description"]
+        assert "'" not in sanitized["description"]
+        assert "`" not in sanitized["command"]
+
+    def test_metrics_update_exponential_moving_average(self):
+        """Test metrics update with exponential moving average - covers lines 287-299."""
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Initial metrics
+        assert logger.metrics.total_events_logged == 0
+        assert logger.metrics.average_logging_time_ms == 0.0
+        
+        # First update (should set initial value)
+        logger._update_metrics(5.0)
+        assert logger.metrics.total_events_logged == 1
+        assert logger.metrics.average_logging_time_ms == 5.0
+        
+        # Second update (should use exponential moving average)
+        logger._update_metrics(15.0)
+        assert logger.metrics.total_events_logged == 2
+        # EMA calculation: 0.1 * 15.0 + 0.9 * 5.0 = 1.5 + 4.5 = 6.0
+        expected_ema = 0.1 * 15.0 + 0.9 * 5.0
+        assert abs(logger.metrics.average_logging_time_ms - expected_ema) < 0.01
+
+    @pytest.mark.asyncio
+    async def test_log_event_rate_limiting(self):
+        """Test log_event with rate limiting - covers lines 193-199."""
+        config = LoggingConfig(rate_limit_max_events=2)  # Very low limit for testing
+        logger = ServicesSecurityLogger(config=config)
+        
+        from src.auth.models import SecurityEventType, SecurityEventSeverity
+        
+        # First two events should succeed
+        result1 = await logger.log_event(
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            severity=SecurityEventSeverity.INFO
+        )
+        assert result1 is True
+        
+        result2 = await logger.log_event(
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            severity=SecurityEventSeverity.INFO
+        )
+        assert result2 is True
+        
+        # Third event should be rate limited
+        result3 = await logger.log_event(
+            event_type=SecurityEventType.LOGIN_SUCCESS,
+            severity=SecurityEventSeverity.INFO
+        )
+        assert result3 is False
+        
+        # Check metrics were updated
+        assert logger.metrics.rate_limit_hits >= 1
+        assert logger.metrics.total_events_dropped >= 1
+
+    @pytest.mark.asyncio 
+    async def test_log_event_queue_full(self):
+        """Test log_event when queue is full - covers lines 227-229."""
+        # Create logger with very small queue
+        logger = ServicesSecurityLogger(batch_size=100, max_queue_size=1)
+        
+        from src.auth.models import SecurityEventType, SecurityEventSeverity
+        
+        # Fill the queue (first event should succeed)
+        result1 = await logger.log_event(
+            event_type=SecurityEventType.LOGIN_SUCCESS, 
+            severity=SecurityEventSeverity.INFO
+        )
+        assert result1 is True
+        
+        # Second event should fail due to full queue
+        result2 = await logger.log_event(
+            event_type=SecurityEventType.LOGIN_FAILURE,
+            severity=SecurityEventSeverity.WARNING  
+        )
+        assert result2 is False
+        assert logger.metrics.total_events_dropped >= 1
+
+    @pytest.mark.asyncio
+    async def test_services_security_logger_initialize(self):
+        """Test ServicesSecurityLogger.initialize() method - covers lines 141-154."""
+        from unittest.mock import patch, AsyncMock
+        
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Mock the database manager initialization
+        mock_db_manager = AsyncMock()
+        mock_db_manager.initialize = AsyncMock()
+        
+        with patch('src.auth.services.security_logger.get_database_manager_async', return_value=mock_db_manager):
+            await logger.initialize()
+            
+        # Verify database manager was initialized
+        mock_db_manager.initialize.assert_called_once()
+        
+        # Verify batch processor was started
+        assert logger._batch_processor_task is not None
+        
+        # Clean up
+        await logger.shutdown()
+
+    @pytest.mark.asyncio
+    async def test_services_security_logger_get_metrics(self):
+        """Test get_metrics method - covers lines 368-399."""
+        logger = ServicesSecurityLogger(batch_size=10, batch_timeout_seconds=2.5, max_queue_size=200)
+        
+        # Update some metrics
+        logger.metrics.total_events_logged = 42
+        logger.metrics.total_events_dropped = 3
+        logger.metrics.average_logging_time_ms = 4.25
+        logger.metrics.rate_limit_hits = 1
+        
+        metrics = await logger.get_metrics()
+        
+        # Verify metrics structure and values
+        assert "performance" in metrics
+        assert "configuration" in metrics
+        assert "health" in metrics
+        
+        # Check performance metrics
+        assert metrics["performance"]["total_events_logged"] == 42
+        assert metrics["performance"]["total_events_dropped"] == 3
+        assert metrics["performance"]["average_logging_time_ms"] == 4.25
+        assert metrics["performance"]["rate_limit_hits"] == 1
+        
+        # Check configuration metrics
+        assert metrics["configuration"]["batch_size"] == 10
+        assert metrics["configuration"]["batch_timeout_seconds"] == 2.5
+        assert metrics["configuration"]["queue_max_size"] == 200
+        
+        # Check health metrics
+        assert "is_processing" in metrics["health"]
+        assert "queue_utilization_percent" in metrics["health"]
+        assert "avg_processing_performance" in metrics["health"]
+
+    @pytest.mark.asyncio 
+    async def test_services_security_logger_flush(self):
+        """Test flush method - covers lines 401-413."""
+        from unittest.mock import patch, AsyncMock
+        
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Mock the process_batch method
+        with patch.object(logger, '_process_batch', new_callable=AsyncMock) as mock_process:
+            # Add some events to the queue
+            from src.auth.models import SecurityEventType, SecurityEventSeverity
+            await logger.log_event(
+                event_type=SecurityEventType.LOGIN_SUCCESS,
+                severity=SecurityEventSeverity.INFO
+            )
+            
+            # Flush should process remaining events
+            await logger.flush()
+            
+            # Verify batch was processed
+            mock_process.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_services_security_logger_cleanup_old_events(self):
+        """Test cleanup_old_events method - covers lines 415-450."""
+        from unittest.mock import patch, AsyncMock, MagicMock
+        
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Mock database manager and session
+        mock_db_manager = AsyncMock()
+        mock_session = AsyncMock()
+        
+        # Mock execute results for each severity
+        mock_result_info = MagicMock()
+        mock_result_info.rowcount = 5
+        mock_result_warning = MagicMock()
+        mock_result_warning.rowcount = 3 
+        mock_result_critical = MagicMock()
+        mock_result_critical.rowcount = 1
+        
+        # Set up session execute to return different results for different calls
+        mock_session.execute.side_effect = [mock_result_info, mock_result_warning, mock_result_critical]
+        mock_session.commit = AsyncMock()
+        
+        # Create proper async context manager
+        async_context = AsyncMock()
+        async_context.__aenter__ = AsyncMock(return_value=mock_session)
+        async_context.__aexit__ = AsyncMock(return_value=None)
+        mock_db_manager.get_session = MagicMock(return_value=async_context)
+        
+        with patch('src.auth.services.security_logger.get_database_manager_async', return_value=mock_db_manager):
+            cleanup_stats = await logger.cleanup_old_events()
+            
+        # Verify cleanup statistics
+        assert cleanup_stats["info"] == 5
+        assert cleanup_stats["warning"] == 3
+        assert cleanup_stats["critical"] == 1
+        
+        # Verify database interactions
+        assert mock_session.execute.call_count == 3  # One for each severity
+        mock_session.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_services_security_logger_shutdown(self):
+        """Test shutdown method - covers lines 452-464.""" 
+        from unittest.mock import patch
+        
+        logger = ServicesSecurityLogger(batch_size=5, batch_timeout_seconds=1.0, max_queue_size=100)
+        
+        # Start the logger to have a batch processor task
+        await logger.initialize()
+        
+        # Mock flush to avoid actual event processing
+        with patch.object(logger, 'flush', new_callable=AsyncMock) as mock_flush:
+            await logger.shutdown()
+            
+            # Verify shutdown process
+            assert logger._shutdown_event.is_set()
+            mock_flush.assert_called_once()

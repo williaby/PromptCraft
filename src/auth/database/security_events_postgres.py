@@ -12,14 +12,14 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from sqlalchemy import and_, desc, func, select, text
 
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
-from src.database.models import SecurityEvent as SecurityEventModel
+from src.database.models import SecurityEventLogger as SecurityEventModel
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +106,7 @@ class SecurityEventsPostgreSQL:
                     session_id=event.session_id,
                     details=event.details or {},  # PostgreSQL JSONB field
                     risk_score=event.risk_score,
-                    timestamp=event.timestamp or datetime.now(UTC),
-                    source="auth_system",
+                    timestamp=event.timestamp or datetime.now(timezone.utc),
                 )
 
                 session.add(db_event)
@@ -122,13 +121,13 @@ class SecurityEventsPostgreSQL:
                     event_type=SecurityEventType(db_event.event_type),
                     severity=SecurityEventSeverity(db_event.severity),
                     user_id=db_event.user_id,
-                    ip_address=db_event.ip_address,
+                    ip_address=str(db_event.ip_address) if db_event.ip_address else None,
                     user_agent=db_event.user_agent,
                     session_id=db_event.session_id,
                     details=db_event.details,
                     risk_score=db_event.risk_score,
                     timestamp=db_event.timestamp,
-                    source=db_event.source,
+                    source="auth_system",  # Set source as constant since DB doesn't store it
                 )
 
         except Exception as e:
@@ -201,7 +200,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = (
@@ -247,7 +246,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = select(SecurityEventModel).where(SecurityEventModel.timestamp >= time_threshold)
@@ -281,7 +280,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate cutoff date
-            cutoff_date = datetime.now(UTC) - timedelta(days=days_to_keep)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
 
             async with self.db_manager.get_session() as session:
                 # Count events to be deleted
@@ -498,7 +497,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = (
@@ -540,7 +539,7 @@ class SecurityEventsPostgreSQL:
                 total_events = total_result.scalar() or 0
 
                 # Get recent event count (last 24 hours)
-                recent_threshold = datetime.now(UTC) - timedelta(hours=24)
+                recent_threshold = datetime.now(timezone.utc) - timedelta(hours=24)
                 recent_count_query = select(func.count(SecurityEventModel.id)).where(
                     SecurityEventModel.timestamp >= recent_threshold,
                 )
@@ -584,13 +583,13 @@ class SecurityEventsPostgreSQL:
             event_type=SecurityEventType(event.event_type),
             severity=SecurityEventSeverity(event.severity),
             user_id=event.user_id,
-            ip_address=event.ip_address,
+            ip_address=str(event.ip_address) if event.ip_address else None,
             user_agent=event.user_agent,
             session_id=event.session_id,
             details=event.details,
             risk_score=event.risk_score,
             timestamp=event.timestamp,
-            source=event.source,
+            source="auth_system",  # Set source as constant since DB doesn't store it
         )
 
     def _update_query_stats(self, query_count: int = 1) -> None:
