@@ -2,7 +2,7 @@
 
 import base64
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import Any
 from unittest.mock import Mock
 
@@ -10,6 +10,7 @@ import pytest
 
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
+from src.utils.time_utils import utc_now
 
 
 @pytest.fixture
@@ -44,9 +45,9 @@ def valid_jwt_payload():
         "aud": "https://test-app.com",
         "sub": "user123",
         "email": "test@example.com",
-        "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
-        "iat": int(datetime.now(UTC).timestamp()),
-        "nbf": int(datetime.now(UTC).timestamp()),
+        "exp": int((utc_now() + timedelta(hours=1)).timestamp()),
+        "iat": int(utc_now().timestamp()),
+        "nbf": int(utc_now().timestamp()),
     }
 
 
