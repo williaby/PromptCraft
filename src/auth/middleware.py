@@ -253,7 +253,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 sanitized_message = str(e.message).replace("\n", " ").replace("\r", " ")
                 logger.warning(f"Authentication failed: {sanitized_message}")
                 if alerts:
-                    logger.warning(f"Security alerts generated: {[alert.alert_type for alert in alerts]}")
+                    logger.warning(f"Security alerts generated: {[repr(alert.alert_type) for alert in alerts]}")
 
             # Legacy database event logging for failures (if enabled) - maintain backward compatibility
             if self.database_enabled:
@@ -719,7 +719,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     # Validate it looks like an IP address (max 45 chars for IPv6)
                     if len(host_str) <= 45:
                         return host_str
-                except Exception:
+                except Exception:  # nosec B110  # noqa: S110
+                    # Silently ignore IP parsing errors - acceptable for IP extraction
                     pass
 
         return None
