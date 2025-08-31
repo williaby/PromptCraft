@@ -23,7 +23,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.database import DatabaseError, get_database_manager_async
+from src.database import DatabaseError, get_database_manager, get_database_manager_async
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
@@ -76,8 +76,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: FastAPI,
-        config: AuthenticationConfig,
-        jwt_validator: JWTValidator,
+        config: AuthenticationConfig | None = None,
+        jwt_validator: JWTValidator | None = None,
         excluded_paths: list[str] | None = None,
         database_enabled: bool = True,
     ) -> None:
@@ -85,12 +85,13 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         Args:
             app: FastAPI application instance
-            config: Authentication configuration
+            config: Authentication configuration  
             jwt_validator: JWT validator instance
             excluded_paths: List of paths to exclude from authentication
             database_enabled: Whether database integration is enabled
         """
         super().__init__(app)
+        # Store configuration parameters
         self.config = config
         self.jwt_validator = jwt_validator
         self.database_enabled = database_enabled
@@ -761,7 +762,7 @@ def setup_authentication(
     app: FastAPI,
     config: AuthenticationConfig,
     database_enabled: bool = True,
-) -> tuple[AuthenticationMiddleware, Limiter]:
+) -> Limiter:
     """Setup authentication middleware and rate limiting for FastAPI app.
 
     Args:
@@ -770,7 +771,7 @@ def setup_authentication(
         database_enabled: Whether database integration is enabled
 
     Returns:
-        Tuple of (AuthenticationMiddleware, Limiter) instances
+        Limiter instance
     """
     # Create JWKS client
     jwks_client = JWKSClient(
@@ -788,19 +789,16 @@ def setup_authentication(
         algorithm=config.jwt_algorithm,
     )
 
-    # Create authentication middleware
-    auth_middleware = AuthenticationMiddleware(
-        app=app,
+    # Create rate limiter
+    limiter = create_rate_limiter(config)
+
+    # Add middleware using standard FastAPI method with kwargs
+    app.add_middleware(
+        AuthenticationMiddleware,
         config=config,
         jwt_validator=jwt_validator,
         database_enabled=database_enabled,
     )
-
-    # Create rate limiter
-    limiter = create_rate_limiter(config)
-
-    # Add middleware to app
-    app.add_middleware(auth_middleware)
 
     if config.rate_limiting_enabled:
         app.add_middleware(SlowAPIMiddleware)
@@ -809,7 +807,7 @@ def setup_authentication(
 
     logger.info("Authentication middleware and rate limiting configured")
 
-    return auth_middleware, limiter
+    return limiter
 
 
 def get_current_user(request: Request) -> AuthenticatedUser | None:

@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from sqlalchemy import delete
@@ -211,7 +211,7 @@ class SecurityLogger:
             session_id=session_id,
             details=sanitized_details,
             risk_score=min(max(risk_score, 0), 100),  # Clamp to 0-100 range
-            timestamp=datetime.now(UTC),
+            timestamp=datetime.now(timezone.utc),
         )
 
         try:
@@ -329,7 +329,7 @@ class SecurityLogger:
                     await self._process_batch(batch)
                     batch.clear()
                     last_batch_time = current_time
-                    self.metrics.last_batch_time = datetime.now(UTC)
+                    self.metrics.last_batch_time = datetime.now(timezone.utc)
 
             except Exception:
                 # Log error but continue processing
@@ -355,7 +355,7 @@ class SecurityLogger:
                         ip_address=event.ip_address,
                         risk_score=event.risk_score,
                         event_details=event.details or {},
-                        timestamp=event.timestamp or datetime.now(UTC),
+                        timestamp=event.timestamp or datetime.now(timezone.utc),
                     )
                     session.add(db_event)
 
@@ -431,7 +431,7 @@ class SecurityLogger:
             db_manager = await get_database_manager_async()
             async with db_manager.get_session() as session:
                 for severity, retention_days in severity_retention.items():
-                    cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
+                    cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_days)
 
                     # Delete events older than retention period for this severity
                     delete_stmt = delete(SecurityEventModel).where(

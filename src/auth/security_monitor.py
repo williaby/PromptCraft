@@ -6,7 +6,7 @@ All state is now stored in PostgreSQL database using DatabaseConnection.
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from sqlalchemy import and_, delete, func, select, update
@@ -15,9 +15,9 @@ from sqlalchemy.dialects.postgresql import insert
 from src.auth.alert_engine import AlertEngine
 from src.auth.security_logger import SecurityLogger
 from src.database.connection import get_database_manager
-from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, ThreatScore
+from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, SecurityEventLogger, ThreatScore
 
-from .models import EventSeverity, EventType, SecurityEventResponse
+from .models import SecurityEventSeverity, SecurityEventType, SecurityEventResponse
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +134,65 @@ class SecurityMonitor:
 
             await session.commit()
 
+    async def track_events_batch(self, events: list) -> None:
+        """Track multiple security events in a single transaction for performance.
+        
+        Args:
+            events: List of SecurityEventResponse objects to track
+        """
+        if not events:
+            return
+            
+        async with self._db_manager.get_session() as session:
+            # First, store all events efficiently
+            db_events = []
+            for event in events:
+                # Determine entity key
+                entity_key = ""
+                if event.user_id:
+                    entity_key = f"user:{event.user_id}"
+                elif event.ip_address:
+                    entity_key = f"ip:{event.ip_address}"
+                else:
+                    entity_key = "session:unknown"
+                
+                security_event = SecurityEvent(
+                    entity_key=entity_key,
+                    event_type=event.event_type,
+                    severity=event.severity,
+                    user_id=event.user_id,
+                    ip_address=event.ip_address,
+                    risk_score=event.risk_score,
+                    event_details=event.details or {},
+                    timestamp=event.timestamp,
+                )
+                db_events.append(security_event)
+            
+            # Bulk add all events
+            session.add_all(db_events)
+            
+            # Simplified threshold checking - just count events per user/IP
+            user_counts = {}
+            ip_counts = {}
+            
+            for event in events:
+                if event.user_id:
+                    user_counts[event.user_id] = user_counts.get(event.user_id, 0) + 1
+                if event.ip_address:
+                    ip_counts[event.ip_address] = ip_counts.get(event.ip_address, 0) + 1
+            
+            # Trigger alerts for high counts (simplified threshold check)
+            for user_id, count in user_counts.items():
+                if count >= 3:  # Threshold for user alerts
+                    await self._trigger_alert("user_threshold", user_id)
+            
+            for ip_address, count in ip_counts.items():
+                if count >= 3:  # Threshold for IP alerts
+                    await self._trigger_alert("ip_threshold", ip_address)
+            
+            # Single commit for all events
+            await session.commit()
+
     async def _store_security_event(self, session, event: SecurityEventResponse) -> None:
         """Store security event in database."""
         # Determine entity key
@@ -204,7 +263,7 @@ class SecurityMonitor:
             event: Security event to analyze
         """
         # Check for multiple failed logins
-        if event.event_type == EventType.AUTHENTICATION_FAILURE.value:
+        if event.event_type == SecurityEventType.LOGIN_FAILURE.value:
             if event.user_id:
                 entity_key = f"failed_login:{event.user_id}"
                 if await self._check_pattern_threshold(session, entity_key, event.timestamp):
@@ -247,11 +306,9 @@ class SecurityMonitor:
         score = event.risk_score
 
         # Add severity multiplier
-        if event.severity == EventSeverity.CRITICAL.value:
+        if event.severity == SecurityEventSeverity.CRITICAL.value:
             score *= 3
-        elif event.severity == EventSeverity.HIGH.value:
-            score *= 2
-        elif event.severity == EventSeverity.MEDIUM.value:
+        elif event.severity == SecurityEventSeverity.WARNING.value:
             score *= 1.5
 
         # Update scores for IP and user
@@ -517,7 +574,7 @@ class SecurityMonitor:
         Returns:
             Dictionary with cleanup statistics
         """
-        cutoff = datetime.now(UTC) - timedelta(hours=retention_hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=retention_hours)
 
         async with self._db_manager.get_session() as session:
             # Clean old security events
@@ -527,13 +584,13 @@ class SecurityMonitor:
 
             # Clean expired blocks
             blocks_stmt = delete(BlockedEntity).where(
-                and_(BlockedEntity.expires_at.isnot(None), BlockedEntity.expires_at < datetime.now(UTC)),
+                and_(BlockedEntity.expires_at.isnot(None), BlockedEntity.expires_at < datetime.now(timezone.utc)),
             )
             blocks_result = await session.execute(blocks_stmt)
             expired_blocks = blocks_result.rowcount
 
             # Decay threat scores (reduce by 5% for old scores)
-            score_cutoff = datetime.now(UTC) - timedelta(hours=1)
+            score_cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
             decay_stmt = (
                 update(ThreatScore)
                 .where(ThreatScore.last_updated < score_cutoff)
@@ -563,6 +620,65 @@ class SecurityMonitor:
                 "decayed_scores": decayed_scores,
                 "cleaned_scores": cleaned_scores,
             }
+
+    async def get_security_metrics(self) -> dict[str, Any]:
+        """Get comprehensive security metrics.
+
+        Returns:
+            Dictionary with security metrics including monitoring stats
+        """
+        return await self.get_monitoring_stats()
+
+    async def get_recent_events(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        severity: str | None = None,
+        event_type: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get recent security events from the database.
+
+        Args:
+            limit: Maximum number of events to return
+            offset: Number of events to skip
+            severity: Filter by severity level
+            event_type: Filter by event type
+
+        Returns:
+            List of security event dictionaries
+        """
+        async with self._db_manager.get_session() as session:
+            # Build query for recent events
+            stmt = select(SecurityEvent).order_by(SecurityEvent.timestamp.desc()).offset(offset).limit(limit)
+
+            # Apply filters if provided
+            if severity:
+                stmt = stmt.where(SecurityEvent.severity == severity)
+            if event_type:
+                stmt = stmt.where(SecurityEvent.event_type == event_type)
+
+            result = await session.execute(stmt)
+            events = result.scalars().all()
+
+            # Convert to dictionaries
+            event_list = []
+            for event in events:
+                event_dict = {
+                    "id": str(event.id),
+                    "entity_key": event.entity_key,
+                    "event_type": event.event_type,
+                    "severity": event.severity,
+                    "user_id": event.user_id,
+                    "ip_address": str(event.ip_address) if event.ip_address else None,
+                    "risk_score": event.risk_score,
+                    "details": event.event_details,
+                    "timestamp": event.timestamp,
+                    "created_at": event.created_at,
+                    "resolved": False,  # Add default resolved field
+                }
+                event_list.append(event_dict)
+
+            return event_list
 
     async def close(self) -> None:
         """Close the security monitor.

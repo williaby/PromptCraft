@@ -1,7 +1,7 @@
 """Security logger implementation for AUTH-4 Enhanced Security Event Logging."""
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -89,7 +89,7 @@ class SecurityLogger:
 
         # Generate unique ID and timestamp
         event_id = uuid4()
-        timestamp = datetime.now(UTC)
+        timestamp = datetime.now(timezone.utc)
 
         # Insert using SQLAlchemy ORM
         async with self._db_manager.get_session() as session:
@@ -185,7 +185,7 @@ class SecurityLogger:
             await self.initialize()
 
         # Calculate cutoff time
-        cutoff = datetime.now(UTC) - timedelta(hours=hours_back)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_back)
 
         # Build query with filters
         conditions = ["timestamp >= :cutoff"]
@@ -295,6 +295,69 @@ class SecurityLogger:
                 for row in rows
             ]
 
+    async def log_security_events_batch(self, events: list[SecurityEventCreate], audit_service=None) -> list[SecurityEventResponse]:
+        """Log multiple security events in a single transaction for performance.
+        
+        Args:
+            events: List of security events to log
+            audit_service: Optional audit service for compliance logging
+            
+        Returns:
+            List of SecurityEventResponse objects with generated IDs and timestamps
+        """
+        if not self._is_initialized:
+            await self.initialize()
+            
+        if not events:
+            return []
+            
+        responses = []
+        timestamp = datetime.now(timezone.utc)
+        
+        async with self._db_manager.get_session() as session:
+            # Create all events in memory first
+            db_events = []
+            for event in events:
+                event_id = uuid4()
+                db_event = SecurityEventLogger(
+                    id=event_id,
+                    event_type=event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
+                    severity=event.severity.value if hasattr(event.severity, "value") else str(event.severity),
+                    user_id=event.user_id,
+                    ip_address=event.ip_address,
+                    user_agent=event.user_agent,
+                    session_id=event.session_id,
+                    details=event.details or {},
+                    risk_score=event.risk_score,
+                    timestamp=timestamp,
+                )
+                db_events.append(db_event)
+                
+                # Create response object
+                response = SecurityEventResponse(
+                    id=event_id,
+                    event_type=event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
+                    severity=event.severity.value if hasattr(event.severity, "value") else str(event.severity),
+                    user_id=event.user_id,
+                    ip_address=event.ip_address,
+                    timestamp=timestamp,
+                    risk_score=event.risk_score,
+                    details=event.details or {},
+                )
+                responses.append(response)
+            
+            # Add all events to session
+            session.add_all(db_events)
+            # Single commit for all events
+            await session.commit()
+            
+        # Log to audit service if provided (for compliance)
+        if audit_service:
+            for response in responses:
+                await audit_service.log_security_event(response)
+            
+        return responses
+
     async def cleanup_old_events(self, days_to_keep: int = 90) -> int:
         """Clean up old security events from PostgreSQL.
 
@@ -307,7 +370,7 @@ class SecurityLogger:
         if not self._is_initialized:
             await self.initialize()
 
-        cutoff = datetime.now(UTC) - timedelta(days=days_to_keep)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
 
         async with self._db_manager.get_session() as session:
             query = text("DELETE FROM security_events WHERE timestamp < :cutoff RETURNING id")

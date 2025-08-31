@@ -4,10 +4,10 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from .models import EventSeverity, EventType, SecurityEventResponse
+from .models import SecurityEventSeverity, SecurityEventType, SecurityEventResponse
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class ActivityPattern:
         self,
         name: str,
         description: str,
-        severity: EventSeverity,
+        severity: SecurityEventSeverity,
         threshold: int = 5,
         time_window: int = 300,
     ) -> None:
@@ -78,56 +78,56 @@ class SuspiciousActivityDetector:
             "brute_force": ActivityPattern(
                 name="brute_force",
                 description="Multiple failed authentication attempts",
-                severity=EventSeverity.CRITICAL,
+                severity=SecurityEventSeverity.CRITICAL,
                 threshold=5,
                 time_window=60,
             ),
             "credential_stuffing": ActivityPattern(
                 name="credential_stuffing",
                 description="Rapid login attempts with different credentials",
-                severity=EventSeverity.CRITICAL,
+                severity=SecurityEventSeverity.CRITICAL,
                 threshold=10,
                 time_window=120,
             ),
             "privilege_escalation": ActivityPattern(
                 name="privilege_escalation",
                 description="Attempts to access elevated privileges",
-                severity=EventSeverity.CRITICAL,
+                severity=SecurityEventSeverity.CRITICAL,
                 threshold=3,
                 time_window=300,
             ),
             "data_exfiltration": ActivityPattern(
                 name="data_exfiltration",
                 description="Unusual data access patterns",
-                severity=EventSeverity.CRITICAL,
+                severity=SecurityEventSeverity.CRITICAL,
                 threshold=5,
                 time_window=600,
             ),
             "account_takeover": ActivityPattern(
                 name="account_takeover",
                 description="Suspicious account behavior changes",
-                severity=EventSeverity.CRITICAL,
+                severity=SecurityEventSeverity.CRITICAL,
                 threshold=3,
                 time_window=180,
             ),
             "api_abuse": ActivityPattern(
                 name="api_abuse",
                 description="Excessive API requests",
-                severity=EventSeverity.WARNING,
+                severity=SecurityEventSeverity.WARNING,
                 threshold=100,
                 time_window=60,
             ),
             "geo_anomaly": ActivityPattern(
                 name="geo_anomaly",
                 description="Login from unusual geographic location",
-                severity=EventSeverity.WARNING,
+                severity=SecurityEventSeverity.WARNING,
                 threshold=1,
                 time_window=3600,
             ),
             "time_anomaly": ActivityPattern(
                 name="time_anomaly",
                 description="Activity at unusual times",
-                severity=EventSeverity.INFO,
+                severity=SecurityEventSeverity.INFO,
                 threshold=5,
                 time_window=3600,
             ),
@@ -168,12 +168,12 @@ class SuspiciousActivityDetector:
             self._activity_log[entity_key].append((event.timestamp, self._event_to_dict(event)))
 
         # Check for brute force
-        if event.event_type == EventType.AUTHENTICATION_FAILURE.value:
+        if event.event_type == SecurityEventType.LOGIN_FAILURE.value:
             if await self._check_pattern("brute_force", entity_key, event):
                 detected_patterns.append("brute_force")
 
-        # Check for privilege escalation
-        if event.event_type == EventType.PERMISSION_DENIED.value:
+        # Check for privilege escalation (using SUSPICIOUS_ACTIVITY as closest match)
+        if event.event_type == SecurityEventType.SUSPICIOUS_ACTIVITY.value:
             if await self._check_pattern("privilege_escalation", entity_key, event):
                 detected_patterns.append("privilege_escalation")
 
@@ -312,11 +312,11 @@ class SuspiciousActivityDetector:
             self._pattern_scores[pattern_name] += 1.0
 
             # Update entity score based on severity
-            if pattern.severity == EventSeverity.CRITICAL:
+            if pattern.severity == SecurityEventSeverity.CRITICAL:
                 self._entity_scores[entity_key] += 10.0
-            elif pattern.severity == EventSeverity.CRITICAL:
+            elif pattern.severity == SecurityEventSeverity.CRITICAL:
                 self._entity_scores[entity_key] += 5.0
-            elif pattern.severity == EventSeverity.WARNING:
+            elif pattern.severity == SecurityEventSeverity.WARNING:
                 self._entity_scores[entity_key] += 2.0
             else:
                 self._entity_scores[entity_key] += 1.0
@@ -328,7 +328,7 @@ class SuspiciousActivityDetector:
                 await asyncio.sleep(30)  # Analyze every 30 seconds
 
                 # Clean old activity
-                now = datetime.now(UTC)
+                now = datetime.now(timezone.utc)
                 cutoff = now - timedelta(hours=1)
 
                 for entity_key in list(self._activity_log.keys()):
@@ -363,6 +363,10 @@ class SuspiciousActivityDetector:
 
     async def _learn_from_patterns(self) -> None:
         """Learn from detected patterns to improve detection."""
+        # Only learn if learning mode is enabled
+        if not self.learning_mode:
+            return
+        
         # Simulate learning by adjusting thresholds based on detection frequency
         for pattern_name, score in self._pattern_scores.items():
             pattern = self._patterns[pattern_name]

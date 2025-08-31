@@ -2,7 +2,7 @@
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -284,7 +284,7 @@ class SecurityEventCreate(SecurityEventBase):
     """Model for creating new security events."""
 
     timestamp: datetime | None = Field(
-        default_factory=lambda: datetime.now(UTC),
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Event timestamp",
     )
 
@@ -293,7 +293,7 @@ class SecurityEvent(SecurityEventBase):
     """Complete security event model with database fields."""
 
     id: UUID | None = Field(default_factory=uuid4, description="Unique event identifier")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Event timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Event timestamp")
 
     class Config:
         """Pydantic configuration."""
@@ -311,9 +311,12 @@ class SecurityEventResponse(BaseModel):
     severity: str = Field(..., description="Event severity")
     user_id: str | None = Field(None, description="User identifier")
     ip_address: str | None = Field(None, description="IP address")
+    user_agent: str | None = Field(None, description="User agent string")
+    session_id: str | None = Field(None, description="Session identifier")
     timestamp: datetime = Field(..., description="Event timestamp")
     risk_score: int = Field(..., description="Risk score 0-100")
     details: dict[str, Any] = Field(default_factory=dict, description="Event details")
+    source: str | None = Field(None, description="Event source system")
 
     class Config:
         """Pydantic configuration."""

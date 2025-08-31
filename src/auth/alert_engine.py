@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
@@ -61,7 +61,7 @@ class Alert:
         self.target = target
         self.details = details or {}
         self.channels = channels or [AlertChannel.LOG]
-        self.timestamp = datetime.now(UTC)
+        self.timestamp = datetime.now(timezone.utc)
         self.id = f"{alert_type}_{target}_{self.timestamp.timestamp()}"
 
 
@@ -178,7 +178,7 @@ class AlertEngine:
         Returns:
             True if within rate limit
         """
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         # Clean old entries
         if alert_type in self._alert_counts:
@@ -322,6 +322,48 @@ class AlertEngine:
         filtered.sort(key=lambda a: a.timestamp, reverse=True)
         return filtered[:limit]
 
+    async def get_active_alerts(
+        self,
+        limit: int = 50,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """Get active/recent alerts.
+
+        Args:
+            limit: Maximum alerts to return
+            status: Filter by status (optional)
+
+        Returns:
+            Dictionary with alerts data
+        """
+        # Get recent alerts from history
+        recent_alerts = await self.get_alert_history(limit=limit)
+        
+        # Filter by status if provided (for now, treat all alerts as active)
+        if status and status != "active":
+            recent_alerts = []
+        
+        # Convert alerts to dictionary format expected by endpoints
+        alerts_data = []
+        for alert in recent_alerts:
+            alert_dict = {
+                "id": alert.id,
+                "alert_type": alert.alert_type,
+                "message": alert.message,
+                "priority": alert.priority.value,
+                "target": alert.target,
+                "timestamp": alert.timestamp.isoformat(),
+                "details": alert.details,
+                "channels": [channel.value for channel in alert.channels],
+            }
+            alerts_data.append(alert_dict)
+        
+        return {
+            "alerts": alerts_data,
+            "total": len(alerts_data),
+            "active_count": len([a for a in recent_alerts if True]),  # All are considered active for now
+        }
+
     async def get_alert_stats(self) -> dict[str, Any]:
         """Get alert statistics.
 
@@ -348,7 +390,7 @@ class AlertEngine:
             stats["by_type"][alert_type] = count
 
         # Check rate limited types
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         cutoff = now.timestamp() - self.rate_window
 
         for alert_type, timestamps in self._alert_counts.items():

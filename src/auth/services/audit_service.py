@@ -14,9 +14,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.auth.database import SecurityEventsDatabase
+from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventType
-from src.database.connection import get_database_manager_async
 
 from .security_logger import SecurityLogger
 
@@ -28,6 +27,7 @@ class ExportFormat(str, Enum):
 
     CSV = "csv"
     JSON = "json"
+    PDF = "pdf"
 
 
 class RetentionPolicy(BaseModel):
@@ -81,14 +81,14 @@ class AuditService:
     - Performance optimized for large datasets
     """
 
-    def __init__(self, db: SecurityEventsDatabase | None = None, security_logger: SecurityLogger | None = None) -> None:
+    def __init__(self, db: SecurityEventsPostgreSQL | None = None, security_logger: SecurityLogger | None = None) -> None:
         """Initialize audit service.
 
         Args:
             db: Security events database instance
             security_logger: Security logger for audit events
         """
-        self.db = db or SecurityEventsDatabase()
+        self.db = db or SecurityEventsPostgreSQL()
         self.security_logger = security_logger or SecurityLogger()
 
         # Default retention policies based on plan requirements
@@ -213,7 +213,16 @@ class AuditService:
             CSV-formatted string
         """
         output = StringIO()
-        fieldnames = ["timestamp", "event_type", "user_id", "ip_address", "user_agent", "severity", "session_id", "risk_score"]
+        fieldnames = [
+            "timestamp",
+            "event_type",
+            "user_id",
+            "ip_address",
+            "user_agent",
+            "severity",
+            "session_id",
+            "risk_score",
+        ]
 
         if report.report_request.include_metadata:
             fieldnames.append("details")
@@ -368,6 +377,45 @@ class AuditService:
 
         except Exception as e:
             logger.error(f"Failed to get audit statistics: {e}")
+            raise
+
+    async def get_security_events(
+        self, 
+        start_date: datetime, 
+        end_date: datetime,
+        event_types: list[SecurityEventType] | None = None,
+        user_id: str | None = None,
+    ) -> list[SecurityEvent]:
+        """Get security events for specified time period.
+
+        Args:
+            start_date: Start of events period
+            end_date: End of events period
+            event_types: Filter by specific event types
+            user_id: Filter by specific user ID
+
+        Returns:
+            List of security events
+        """
+        try:
+            # Use existing database functionality
+            events = await self.db.get_events_by_date_range(start_date, end_date)
+            
+            # Apply additional filters if provided
+            if user_id:
+                events = [e for e in events if e.user_id == user_id]
+                
+            if event_types:
+                event_type_values = [et.value for et in event_types]
+                events = [
+                    e for e in events 
+                    if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_type_values
+                ]
+                
+            return events
+            
+        except Exception as e:
+            logger.error(f"Failed to get security events: {e}")
             raise
 
     async def schedule_retention_cleanup(self) -> None:

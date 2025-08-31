@@ -77,7 +77,7 @@ class SlackConfig:
         default_factory=lambda: {
             AlertSeverity.LOW: "#36a64f",  # Green
             AlertSeverity.MEDIUM: "#ffaa00",  # Orange
-            AlertSeverity.HIGH: "#ff4444",  # Red
+            AlertSeverity.HIGH: "#fd7e14",  # Red
             AlertSeverity.CRITICAL: "#800000",  # Dark red
         },
     )
@@ -232,7 +232,7 @@ class EmailHandler:
 
         # Build subject
         subject = self.config.subject_template.format(
-            alert_type=alert.alert_type.value.title(),
+            alert_type=alert.alert_type.value.replace('_', ' ').title(),
             severity=alert.severity.value.upper(),
             title=alert.title,
             affected_user=alert.affected_user or "Unknown",
@@ -263,7 +263,7 @@ class EmailHandler:
         """Build plain text email content."""
         if self.config.text_template:
             return self.config.text_template.format(
-                alert_type=alert.alert_type.value.title(),
+                alert_type=alert.alert_type.value.replace('_', ' ').title(),
                 severity=alert.severity.value.upper(),
                 title=alert.title,
                 description=alert.description,
@@ -274,7 +274,7 @@ class EmailHandler:
                 rule_id=alert.rule_id or "Unknown",
             )
         # Default text template
-        return f"""SECURITY ALERT: {alert.alert_type.value.title()}
+        return f"""SECURITY ALERT: {alert.alert_type.value.replace('_', ' ').title()}
 
 Severity: {alert.severity.value.upper()}
 Title: {alert.title}
@@ -296,7 +296,7 @@ This is an automated security alert from PromptCraft Security Monitoring.
         """Build HTML email content."""
         if self.config.html_template:
             return self.config.html_template.format(
-                alert_type=alert.alert_type.value.title(),
+                alert_type=alert.alert_type.value.replace('_', ' ').title(),
                 severity=alert.severity.value.upper(),
                 title=alert.title,
                 description=alert.description,
@@ -330,7 +330,7 @@ This is an automated security alert from PromptCraft Security Monitoring.
 </head>
 <body>
     <div class="header">
-        <h2>🔒 SECURITY ALERT: {alert.alert_type.value.title()}</h2>
+        <h2>🔒 SECURITY ALERT: {alert.alert_type.value.replace('_', ' ').title()}</h2>
     </div>
 
     <div class="content">
@@ -421,7 +421,7 @@ class SlackHandler:
         payload = {
             "username": self.config.username,
             "icon_emoji": self.config.icon_emoji,
-            "text": f"{emoji} *Security Alert: {alert.alert_type.value.title()}*",
+            "text": f"{emoji} *Security Alert: {alert.title}*",
         }
 
         if self.config.channel:
