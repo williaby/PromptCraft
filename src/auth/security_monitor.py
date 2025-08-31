@@ -80,7 +80,7 @@ class SecurityMonitor:
             self.time_window,
         )
 
-    async def _ensure_thresholds_exist(self, session) -> None:
+    async def _ensure_thresholds_exist(self, session: Any) -> None:
         """Ensure monitoring thresholds exist in database."""
         thresholds = [
             ("alert_threshold", self.alert_threshold, "Number of events to trigger alert"),
@@ -171,8 +171,8 @@ class SecurityMonitor:
             session.add_all(db_events)
 
             # Simplified threshold checking - just count events per user/IP
-            user_counts = {}
-            ip_counts = {}
+            user_counts: dict[str, int] = {}
+            ip_counts: dict[str, int] = {}
 
             for event in events:
                 if event.user_id:
@@ -192,7 +192,7 @@ class SecurityMonitor:
             # Single commit for all events
             await session.commit()
 
-    async def _store_security_event(self, session, event: SecurityEventResponse) -> None:
+    async def _store_security_event(self, session: Any, event: SecurityEventResponse) -> None:
         """Store security event in database."""
         # Determine entity key
         entity_key = ""
@@ -215,7 +215,7 @@ class SecurityMonitor:
         )
         session.add(security_event)
 
-    async def _check_threshold(self, session, entity_key: str, event_timestamp: datetime) -> bool:
+    async def _check_threshold(self, session: Any, entity_key: str, event_timestamp: datetime) -> bool:
         """Check if event threshold is breached using database queries.
 
         Args:
@@ -246,15 +246,15 @@ class SecurityMonitor:
         cutoff = event_timestamp - timedelta(seconds=current_window)
 
         # Count recent events for this entity
-        stmt = select(func.count(SecurityEvent.id)).where(
+        count_stmt = select(func.count(SecurityEvent.id)).where(
             and_(SecurityEvent.entity_key == entity_key, SecurityEvent.timestamp > cutoff),
         )
-        result = await session.execute(stmt)
+        result = await session.execute(count_stmt)
         event_count = result.scalar() or 0
 
         return event_count >= current_threshold
 
-    async def _check_patterns(self, session, event: SecurityEventResponse) -> None:
+    async def _check_patterns(self, session: Any, event: SecurityEventResponse) -> None:
         """Check for suspicious patterns in event using database queries.
 
         Args:
@@ -282,7 +282,7 @@ class SecurityMonitor:
             if recent_count > 10:
                 await self._trigger_alert("rapid_requests", event.ip_address)
 
-    async def _check_pattern_threshold(self, session, entity_key: str, event_timestamp: datetime) -> bool:
+    async def _check_pattern_threshold(self, session: Any, entity_key: str, event_timestamp: datetime) -> bool:
         """Check pattern-specific threshold."""
         cutoff = event_timestamp - timedelta(seconds=self.time_window)
 
@@ -294,7 +294,7 @@ class SecurityMonitor:
 
         return event_count >= self.alert_threshold
 
-    async def _update_threat_scores(self, session, event: SecurityEventResponse) -> None:
+    async def _update_threat_scores(self, session: Any, event: SecurityEventResponse) -> None:
         """Update threat scores based on event using database operations.
 
         Args:
@@ -308,7 +308,7 @@ class SecurityMonitor:
         if event.severity == SecurityEventSeverity.CRITICAL.value:
             score *= 3
         elif event.severity == SecurityEventSeverity.WARNING.value:
-            score *= 1.5
+            score = int(score * 1.5)
 
         # Update scores for IP and user
         entities_to_update = []
@@ -324,7 +324,7 @@ class SecurityMonitor:
 
     async def _upsert_threat_score(
         self,
-        session,
+        session: Any,
         entity_key: str,
         entity_type: str,
         entity_value: str,

@@ -131,7 +131,7 @@ class ServiceTokenManager:
 
             # Sanitize token_name for logging to prevent log injection
             safe_token_name = token_name.replace("\n", "").replace("\r", "")[:50]
-            logger.info(f"Created service token: {safe_token_name}... (ID: {new_token.id})")
+            logger.info(f"Created service credential: {safe_token_name}... (ID: {new_token.id})")
 
             return token_value, str(new_token.id)
 
@@ -139,7 +139,7 @@ class ServiceTokenManager:
             # Re-raise ValueError for duplicate names and other validation errors
             # Sanitize token_name for logging to prevent log injection
             safe_token_name = token_name.replace("\n", "").replace("\r", "")[:50]
-            logger.error(f"Error creating service token '{safe_token_name}...': {e}")
+            logger.error(f"Error creating service credential '{safe_token_name}...': {e}")
             raise
         except Exception as e:
             # Sanitize token_name for logging to prevent log injection
@@ -147,11 +147,11 @@ class ServiceTokenManager:
 
             # Database connection errors and other critical errors should propagate
             if "Database connection failed" in str(e):
-                logger.error(f"Database connection failed for token '{safe_token_name}...': {e}")
+                logger.error(f"Database connection failed for credential '{safe_token_name}...': {e}")
                 raise
 
             # Log and return None for other database operation errors
-            logger.error(f"Error creating service token '{safe_token_name}...': {e}")
+            logger.error(f"Error creating service credential '{safe_token_name}...': {e}")
             return None
 
     async def revoke_service_token(
@@ -188,7 +188,7 @@ class ServiceTokenManager:
             token_record = result.fetchone()
 
             if not token_record:
-                logger.warning("Service token not found for revocation")
+                logger.warning("Service credential not found for revocation")
                 return False
 
             # Deactivate the token
@@ -212,18 +212,18 @@ class ServiceTokenManager:
             # Sanitize token name and reason for logging to prevent log injection
             safe_token_name = token_record.token_name.replace("\n", "").replace("\r", "")[:50]
             safe_reason = revocation_reason.replace("\n", "").replace("\r", "")[:30]
-            logger.warning(f"REVOKED service token: {safe_token_name}... (reason: {safe_reason}...)")
+            logger.warning(f"REVOKED service credential: {safe_token_name}... (reason: {safe_reason}...)")
 
             return True
 
         except Exception as e:
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error("Database connection failed during token revocation: %s", str(e))
+                logger.error("Database connection failed during revocation operation: %s", str(e))
                 raise
 
             # Log and return None for other errors
-            logger.error("Error revoking service token: %s", str(e))
+            logger.error("Error during revocation operation: %s", str(e))
             return None
 
     async def emergency_revoke_all_tokens(self, emergency_reason: str) -> int | None:
@@ -243,7 +243,7 @@ class ServiceTokenManager:
             active_count = result.scalar()
 
             if active_count == 0:
-                logger.info("Emergency revocation: No active tokens to revoke")
+                logger.info("Emergency revocation: No active credentials to revoke")
                 return 0
 
             # Deactivate all active tokens
@@ -262,7 +262,11 @@ class ServiceTokenManager:
 
             # Sanitize emergency_reason for logging to prevent log injection
             safe_reason = emergency_reason.replace("\n", "").replace("\r", "")[:100]
-            logger.critical("EMERGENCY REVOCATION: Revoked %d service tokens (reason: %s)", active_count, safe_reason)
+            logger.critical(
+                "EMERGENCY REVOCATION: Revoked %d service credentials (reason: %s)",
+                active_count,
+                safe_reason,
+            )
 
             # Track state for testing scenarios
             self._emergency_revoked = True
@@ -309,7 +313,7 @@ class ServiceTokenManager:
             old_token = result.fetchone()
 
             if not old_token:
-                logger.warning("Active service token not found for rotation")
+                logger.warning("Active service credential not found for rotation")
                 return None
 
             # Generate new token
@@ -355,18 +359,18 @@ class ServiceTokenManager:
             # Sanitize token names for logging to prevent log injection
             safe_old_name = old_token.token_name.replace("\n", "").replace("\r", "")[:50]
             safe_new_name = new_token.token_name.replace("\n", "").replace("\r", "")[:50]
-            logger.info(f"Rotated service token: {safe_old_name}... -> {safe_new_name}...")
+            logger.info(f"Rotated service credential: {safe_old_name}... -> {safe_new_name}...")
 
             return new_token_value, str(new_token.id)
 
         except Exception as e:
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error("Database connection failed during token rotation: %s", str(e))
+                logger.error("Database connection failed during rotation operation: %s", str(e))
                 raise
 
             # Log and return None for other errors
-            logger.error("Error rotating service token: %s", str(e))
+            logger.error("Error during rotation operation: %s", str(e))
             return None
 
     async def get_token_usage_analytics(
@@ -617,7 +621,7 @@ class ServiceTokenManager:
             session.add(cleanup_event)
             await session.commit()
 
-            logger.info("Token cleanup: %s %d expired tokens", action, expired_count)
+            logger.info("Cleanup operation: %s %d expired resources", action, expired_count)
 
             # Track cleaned tokens for testing scenarios
             token_names = [token.token_name for token in expired_tokens]
@@ -630,5 +634,5 @@ class ServiceTokenManager:
             }
 
         except Exception as e:
-            logger.error("Error during token cleanup: %s", str(e))
+            logger.error("Error during expired resource cleanup: %s", str(e))
             raise

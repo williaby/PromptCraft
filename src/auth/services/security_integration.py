@@ -1129,17 +1129,18 @@ class SecurityIntegrationService:
             }
 
         except Exception as e:
-            # Log error but return empty results instead of failing
+            # Log error internally but don't expose details to external users
             if self.security_logger:
                 await self.security_logger.log_security_event(
                     event_type=SecurityEventType.SYSTEM_ERROR,
                     metadata={"error": str(e), "operation": "search_security_events"},
                 )
 
+            # Return generic error message to prevent information disclosure
             return {
                 "events": [],
                 "total_count": 0,
-                "search_metadata": {"error": str(e)},
+                "search_metadata": {"error": "Search operation failed"},
             }
 
     def _simulate_search_results(self, filters: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
@@ -1370,7 +1371,7 @@ class SecurityIntegrationService:
                 "analysis_period": {"error": "Failed to analyze trends"},
                 "categories": categories or [],
                 "trends": {},
-                "summary": {"error": str(e)},
+                "summary": {"error": "Analysis failed"},
             }
 
     async def investigate_security_incident(
@@ -1582,15 +1583,15 @@ class SecurityIntegrationService:
                     },
                 )
 
-            # Return error investigation data
+            # Return error investigation data without exposing internal details
             return {
                 "investigation_metadata": {
-                    "error": str(e),
+                    "error": "Investigation failed",
                     "start_time": start_time.isoformat() if start_time else None,
                     "end_time": end_time.isoformat() if end_time else None,
                 },
                 "entities": [],
-                "summary": {"error": str(e)},
+                "summary": {"error": "Investigation failed"},
             }
 
     def _generate_investigation_recommendations(self, entities: list[dict[str, Any]]) -> list[str]:

@@ -13,7 +13,14 @@ Endpoints:
 import logging
 from datetime import UTC, datetime
 
-import psutil
+try:
+    import psutil  # type: ignore
+
+    _psutil_available = True
+except ImportError:
+    psutil = None
+    _psutil_available = False
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -244,16 +251,18 @@ async def _get_system_metrics() -> dict[str, float]:
     Returns:
         System metrics dictionary
     """
+    if not _psutil_available:
+        # Fallback mock data if psutil not available
+        return {"cpu_usage": 25.5, "memory_usage": 45.2, "disk_usage": 32.1}
+
     try:
         return {
             "cpu_usage": psutil.cpu_percent(interval=1),
             "memory_usage": psutil.virtual_memory().percent,
             "disk_usage": psutil.disk_usage("/").percent,
         }
-    except ImportError:
-        # Fallback mock data if psutil not available
-        return {"cpu_usage": 25.5, "memory_usage": 45.2, "disk_usage": 32.1}
     except Exception:
+        # Fallback in case of psutil runtime errors
         return {"cpu_usage": 0.0, "memory_usage": 0.0, "disk_usage": 0.0}
 
 

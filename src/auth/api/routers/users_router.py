@@ -99,7 +99,7 @@ async def get_user_risk_profile(
             risk_level = "LOW"
 
         # Get suspicious activities
-        suspicious_activities = await detector.get_user_suspicious_activities(user_id, limit=5)
+        suspicious_activities = await detector.get_user_suspicious_activities(user_id)
         activity_descriptions = [activity.get("description", "Unknown activity") for activity in suspicious_activities]
 
         # Generate recommendations based on risk factors

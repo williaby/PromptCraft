@@ -88,7 +88,7 @@ async def setup_service_container(
     global _app_container
 
     try:
-        logger.info(f"Setting up service container for FastAPI app in {environment} environment")
+        logger.info("Setting up service container for FastAPI app in %s environment", environment)
 
         if auto_initialize:
             # Bootstrap services automatically
@@ -110,7 +110,7 @@ async def setup_service_container(
         return container
 
     except Exception as e:
-        logger.error(f"Failed to setup service container: {e}")
+        logger.error("Failed to setup service container: %s", repr(str(e)))
         raise ServiceIntegrationError(f"Container setup failed: {e}") from e
 
 
@@ -152,13 +152,13 @@ def create_service_dependency(service_type: type[T]) -> T:
             container = get_service_container()
             return container.resolve(service_type)
         except ServiceResolutionError as e:
-            logger.error(f"Failed to resolve service {service_type.__name__}: {e}")
+            logger.error("Failed to resolve service %s: %s", service_type.__name__, repr(str(e)))
             raise HTTPException(
                 status_code=500,
                 detail=f"Service resolution failed: {service_type.__name__}",
             ) from e
         except Exception as e:
-            logger.error(f"Unexpected error resolving service {service_type.__name__}: {e}")
+            logger.error("Unexpected error resolving service %s: %s", service_type.__name__, repr(str(e)))
             raise HTTPException(
                 status_code=500,
                 detail="Internal service error",
@@ -213,7 +213,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             metrics = container.get_container_metrics()
             return ContainerMetricsResponse(**metrics)
         except Exception as e:
-            logger.error(f"Failed to get container metrics: {e}")
+            logger.error("Failed to get container metrics: %s", repr(str(e)))
             raise HTTPException(status_code=500, detail="Failed to get container metrics")
 
     @app.get("/health/services")
@@ -253,7 +253,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             return {"services": health_status}
 
         except Exception as e:
-            logger.error(f"Failed to get service health: {e}")
+            logger.error("Failed to get service health: %s", repr(str(e)))
             raise HTTPException(status_code=500, detail="Failed to get service health")
 
     @app.get("/health/service/{service_name}")
@@ -292,7 +292,7 @@ def add_health_check_routes(app: FastAPI) -> None:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Failed to get service health for {service_name}: {e}")
+            logger.error("Failed to get service health for %s: %s", repr(service_name), repr(str(e)))
             raise HTTPException(status_code=500, detail="Failed to get service health")
 
 
@@ -322,7 +322,7 @@ async def service_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("AUTH-4 services started successfully")
 
     except Exception as e:
-        logger.error(f"Failed to start AUTH-4 services: {e}")
+        logger.error("Failed to start AUTH-4 services: %s", repr(str(e)))
         raise ServiceIntegrationError(f"Service startup failed: {e}") from e
 
     # Yield control to the application
@@ -342,7 +342,7 @@ async def service_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("AUTH-4 services shut down successfully")
 
     except Exception as e:
-        logger.error(f"Error during service shutdown: {e}")
+        logger.error("Error during service shutdown: %s", repr(str(e)))
 
 
 def create_fastapi_app(
@@ -384,7 +384,7 @@ def create_fastapi_app(
     if enable_health_checks:
         add_health_check_routes(app)
 
-    logger.info(f"FastAPI application created with AUTH-4 services for {environment} environment")
+    logger.info("FastAPI application created with AUTH-4 services for %s environment", environment)
     return app
 
 

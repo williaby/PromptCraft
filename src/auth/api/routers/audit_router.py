@@ -30,11 +30,15 @@ class AuditReportRequest(BaseModel):
     end_date: datetime = Field(..., description="Audit report end date")
     report_type: str = Field(
         default="comprehensive",
-        regex="^(comprehensive|security|compliance|activity)$",
         description="Type of audit report",
+        pattern="^(comprehensive|security|compliance|activity)$",
     )
     include_details: bool = Field(default=True, description="Include detailed event information")
-    format: str = Field(default="json", regex="^(json|csv|pdf)$", description="Report output format")
+    format: str = Field(
+        default="json",
+        description="Report output format",
+        pattern="^(json|csv|pdf)$",
+    )
 
 
 class AuditReportResponse(BaseModel):
@@ -132,7 +136,7 @@ async def generate_audit_report(
         critical_events = audit_summary.get("critical_events", 0)
 
         # Schedule background report generation
-        background_tasks.add_task(service.generate_audit_report_background, report_id, report_request)
+        background_tasks.add_task(service.generate_audit_report_background, report_id, report_request.model_dump())
 
         return AuditReportResponse(
             report_id=report_id,

@@ -2034,3 +2034,65 @@ class SuspiciousActivityDetector:
         )
 
         return patterns
+
+    async def get_user_activity_summary(self, user_id: str) -> dict[str, Any] | None:
+        """Get user activity summary for risk analysis.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            User activity summary or None if no data found
+        """
+        # Mock implementation for demonstration
+        # In production, this would query the database for actual user activity
+
+        # Generate consistent but pseudo-random data based on user_id
+        user_hash = hash(user_id)
+
+        return {
+            "base_risk_score": 10 + (abs(user_hash) % 41),  # 10-50
+            "failed_logins_today": abs(user_hash) % 8,  # 0-7
+            "unusual_location_count": abs(user_hash) % 3,  # 0-2
+            "total_logins": 50 + (abs(user_hash) % 200),  # 50-249
+            "last_activity": datetime.now(UTC) - timedelta(hours=abs(user_hash) % 48),
+            "known_locations": 1 + (abs(user_hash) % 5),  # 1-5
+        }
+
+    async def get_user_suspicious_activities(self, user_id: str) -> list[dict[str, Any]]:
+        """Get suspicious activities for a specific user.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            List of suspicious activities for the user
+        """
+        # Mock implementation for demonstration
+        # In production, this would query actual suspicious activities from database
+
+        user_hash = abs(hash(user_id))
+
+        activities = []
+        activity_types = [
+            "Unusual login location",
+            "Failed login attempts",
+            "Off-hours activity",
+            "Multiple IP addresses",
+            "Suspicious user agent",
+        ]
+
+        # Generate 0-3 activities based on user hash
+        num_activities = user_hash % 4
+        for i in range(num_activities):
+            activity_type = activity_types[(user_hash + i) % len(activity_types)]
+            activities.append(
+                {
+                    "type": activity_type,
+                    "timestamp": datetime.now(UTC) - timedelta(hours=i + 1),
+                    "severity": "medium" if i == 0 else "low",
+                    "details": f"Activity detected: {activity_type.lower()}",
+                },
+            )
+
+        return activities

@@ -17,7 +17,7 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from src.database.connection import get_database_manager
 from src.database.models import Base
@@ -63,24 +63,15 @@ async def create_tables():
 
         # Verify tables exist
         async with db_manager.get_session() as session:
-            # Check each table
+            # Check each table using SQLAlchemy inspector (safe from SQL injection)
             tables = ["security_events_monitor", "blocked_entities", "threat_scores", "monitoring_thresholds"]
 
-            for table in tables:
-                result = await session.execute(
-                    text(
-                        f"""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables
-                        WHERE table_schema = 'public'
-                        AND table_name = '{table}'
-                    )
-                """,
-                    ),
-                )
-                exists = result.scalar()
+            engine = session.get_bind()
+            inspector = inspect(engine)
+            existing_tables = inspector.get_table_names()
 
-                if exists:
+            for table in tables:
+                if table in existing_tables:
                     print(f"✓ Table '{table}' verified")
                 else:
                     print(f"✗ Table '{table}' not found!")
