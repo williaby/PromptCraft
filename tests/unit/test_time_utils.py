@@ -1,8 +1,9 @@
 """Tests for time_utils module."""
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from src.utils.time_utils import (
+    UTC,
     __all__,
     format_datetime,
     from_timestamp,
@@ -79,7 +80,7 @@ class TestTimeUtils:
         assert isinstance(timestamp, float)
 
         # Should be treated as UTC
-        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         expected_timestamp = dt_utc.timestamp()
         assert timestamp == expected_timestamp
 

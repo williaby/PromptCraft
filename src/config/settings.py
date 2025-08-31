@@ -703,7 +703,6 @@ class ApplicationSettings(BaseSettings):
         file_secret_settings,
     ):
         """Customize settings sources to integrate custom .env file loading."""
-        from pydantic_settings.sources import PydanticBaseSettingsSource
 
         class CustomEnvSettingsSource(PydanticBaseSettingsSource):
             def get_field_value(self, field_info, field_name: str):

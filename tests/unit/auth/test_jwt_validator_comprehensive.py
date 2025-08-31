@@ -12,7 +12,7 @@ This module provides extensive test coverage for JWTValidator class focusing on:
 Aims to achieve 80%+ coverage for auth/jwt_validator.py
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import jwt
@@ -28,6 +28,8 @@ from jwt.exceptions import (
 from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
 from src.auth.models import AuthenticatedUser, JWTValidationError, UserRole
+from src.utils.time_utils import utc_now
+from tests.helpers.token_utils import b64_encode_part, create_invalid_structure_tokens, create_malformed_jwt_token
 
 
 @pytest.mark.unit
@@ -78,9 +80,9 @@ class TestJWTValidatorTokenDecoding:
             "aud": "https://test-app.com",
             "sub": "user123",
             "email": "test@example.com",
-            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
-            "iat": int(datetime.now(UTC).timestamp()),
-            "nbf": int(datetime.now(UTC).timestamp()),
+            "exp": int((utc_now() + timedelta(hours=1)).timestamp()),
+            "iat": int(utc_now().timestamp()),
+            "nbf": int(utc_now().timestamp()),
         }
 
     @pytest.fixture
@@ -92,6 +94,7 @@ class TestJWTValidatorTokenDecoding:
         signature = jwt.utils.base64url_encode(b"fake-signature")
         return f"{header.decode()}.{payload.decode()}.{signature.decode()}"
 
+    @pytest.mark.no_parallel
     def test_validate_token_format_invalid_structure(self, validator):
         """Test validation with malformed token structure."""
         invalid_tokens = [
@@ -108,6 +111,7 @@ class TestJWTValidatorTokenDecoding:
                 validator.validate_token(token)
             assert exc_info.value.error_type == "invalid_format"
 
+    @pytest.mark.no_parallel
     def test_validate_token_format_malformed_json(self, validator):
         """Test validation with malformed JSON in token parts."""
         # Create token with invalid JSON header
@@ -120,6 +124,7 @@ class TestJWTValidatorTokenDecoding:
             validator.validate_token(malformed_token)
         assert exc_info.value.error_type == "invalid_format"
 
+    @pytest.mark.no_parallel
     def test_validate_token_missing_kid_header(self, validator):
         """Test validation when token header is missing 'kid' claim."""
         # Create token with header missing 'kid'
@@ -511,6 +516,7 @@ class TestJWTValidatorEdgeCases:
         with pytest.raises(JWTValidationError):
             validator.validate_token(long_token)
 
+    @pytest.mark.no_parallel
     def test_validate_token_unicode_characters(self, validator):
         """Test validation with unicode characters in token."""
         unicode_token = "émojis🚀.and.ünïcödé"  # noqa: S105

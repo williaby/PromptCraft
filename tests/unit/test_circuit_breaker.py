@@ -6,7 +6,7 @@ external service failures with configurable thresholds and recovery.
 
 import asyncio
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
@@ -596,7 +596,7 @@ class TestCircuitBreakerErrors:
     def test_circuit_breaker_error_creation(self):
         """Test CircuitBreakerError creation."""
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         error = CircuitBreakerError(
             "Test error",
             CircuitBreakerState.OPEN,
@@ -612,7 +612,7 @@ class TestCircuitBreakerErrors:
     def test_circuit_breaker_open_error_creation(self):
         """Test CircuitBreakerOpenError creation."""
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         recovery_time = now + timedelta(seconds=60)
 
         error = CircuitBreakerOpenError(

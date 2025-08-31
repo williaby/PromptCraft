@@ -18,7 +18,10 @@ from fastapi.middleware.cors import CORSMiddleware
 # AUTH-4 Router imports
 from src.auth.api.routers.analytics_router import router as analytics_router
 from src.auth.api.routers.audit_router import router as audit_router
+from src.auth.api.routers.charts_router import router as charts_router
 from src.auth.api.routers.health_router import router as health_router
+from src.auth.api.routers.metrics_router import router as metrics_router
+from src.auth.api.security_dashboard_endpoints import router as security_dashboard_router
 from src.config.constants import (
     CORS_ORIGINS_BY_ENVIRONMENT,
     HEALTH_CHECK_ERROR_LIMIT,
@@ -147,12 +150,12 @@ def create_app() -> FastAPI:
         settings = get_settings(validate_on_startup=False)
     except (ValueError, TypeError, AttributeError) as e:
         logger.warning("Settings format error for app creation: %s", type(e).__name__)
-        # Use defaults if settings unavailable
-        settings = ApplicationSettings()
+        # Use hardcoded defaults if settings unavailable
+        settings = ApplicationSettings(app_name="PromptCraft-Hybrid", version="0.1.0", debug=False)
     except Exception:
         logger.exception("Failed to load settings for app creation")
-        # Use defaults if settings unavailable
-        settings = ApplicationSettings()
+        # Use hardcoded defaults if settings unavailable
+        settings = ApplicationSettings(app_name="PromptCraft-Hybrid", version="0.1.0", debug=False)
 
     app = FastAPI(
         title=settings.app_name,
@@ -198,7 +201,10 @@ def create_app() -> FastAPI:
     # Register AUTH-4 routers
     app.include_router(analytics_router, prefix="/api/v1/auth")
     app.include_router(audit_router, prefix="/api/v1/auth")
+    app.include_router(charts_router, prefix="/api/v1/security/dashboard")
     app.include_router(health_router, prefix="/api/v1/auth")
+    app.include_router(metrics_router, prefix="/api/v1/security/dashboard")
+    app.include_router(security_dashboard_router, prefix="/api/v1")
 
     logger.info("AUTH-4 routers registered successfully")
     logger.info("Security hardening configuration completed")

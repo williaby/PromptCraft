@@ -50,7 +50,8 @@ class TestAppCreation:
         assert app_instance.redoc_url is None
 
     @patch("src.main.get_settings")
-    def test_create_app_with_settings_error(self, mock_get_settings) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_create_app_with_settings_error(self, mock_env_files, mock_get_settings) -> None:
         """Test app creation when settings loading fails."""
         mock_get_settings.side_effect = ValueError("Settings error")
 
@@ -61,7 +62,8 @@ class TestAppCreation:
         assert app_instance.version == "0.1.0"
 
     @patch("src.main.get_settings")
-    def test_create_app_with_unexpected_error(self, mock_get_settings) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_create_app_with_unexpected_error(self, mock_env_files, mock_get_settings) -> None:
         """Test app creation with unexpected error."""
         mock_get_settings.side_effect = RuntimeError("Unexpected error")
 
@@ -313,7 +315,7 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_configuration_status")
     def test_configuration_health_success(self, mock_config_status, mock_settings) -> None:
         """Test successful configuration health check."""
-        from datetime import UTC, datetime
+        from datetime import datetime, timezone
 
         from src.config.health import ConfigurationStatusModel
 
@@ -333,7 +335,7 @@ class TestHealthCheckEndpoints:
             secrets_configured=2,
             api_host="localhost",
             api_port=8000,
-            timestamp=datetime.now(UTC),
+            timestamp=datetime.now(timezone.utc),
         )
 
         response = self.client.get("/health/config")

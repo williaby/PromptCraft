@@ -2,7 +2,7 @@
 
 import time
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -86,14 +86,14 @@ class TestServiceTokenModel:
     def test_is_expired_property_not_expired(self):
         """Test is_expired property when not expired."""
         token = ServiceToken()
-        token.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        token.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
         assert token.is_expired is False
 
     def test_is_expired_property_expired(self):
         """Test is_expired property when expired."""
         token = ServiceToken()
-        token.expires_at = datetime.now(UTC) - timedelta(hours=1)
+        token.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
 
         assert token.is_expired is True
 
@@ -101,7 +101,7 @@ class TestServiceTokenModel:
         """Test is_valid property when active and not expired."""
         token = ServiceToken()
         token.is_active = True
-        token.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        token.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
         assert token.is_valid is True
 
@@ -117,7 +117,7 @@ class TestServiceTokenModel:
         """Test is_valid property when expired."""
         token = ServiceToken()
         token.is_active = True
-        token.expires_at = datetime.now(UTC) - timedelta(hours=1)
+        token.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
 
         assert token.is_valid is False
 
@@ -125,7 +125,7 @@ class TestServiceTokenModel:
         """Test is_expired property for token expiring exactly at current time."""
         token = ServiceToken()
         # Set expiration to exactly now (within 1 second accuracy)
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         token.expires_at = now
 
         # Allow small time difference due to execution time
@@ -137,22 +137,22 @@ class TestServiceTokenModel:
         token = ServiceToken()
 
         # Test with timezone-aware datetime (current best practice)
-        token.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        token.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
         assert token.is_expired is True
 
         # Test with timezone-aware datetime in future
-        token.expires_at = datetime.now(UTC) + timedelta(hours=1)
+        token.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         assert token.is_expired is False
 
-        # Test with timezone-naive datetime (legacy support - assumes UTC)
+        # Test with timezone-naive datetime (legacy support - assumes timezone.utc)
         # This tests the model's defensive handling of naive datetimes
-        # We create naive datetimes by starting with UTC time and removing timezone info
-        utc_now = datetime.now(UTC)
+        # We create naive datetimes by starting with timezone.utc time and removing timezone info
+        utc_now = datetime.now(timezone.utc)
         naive_expired = utc_now.replace(tzinfo=None) - timedelta(seconds=1)
         token.expires_at = naive_expired
         assert token.is_expired is True
 
-        # Test with timezone-naive datetime in future (legacy support - assumes UTC)
+        # Test with timezone-naive datetime in future (legacy support - assumes timezone.utc)
         naive_future = utc_now.replace(tzinfo=None) + timedelta(hours=1)
         token.expires_at = naive_future
         assert token.is_expired is False
@@ -160,9 +160,9 @@ class TestServiceTokenModel:
     def test_timezone_consistency_across_properties(self):
         """Test that timezone handling is consistent across all datetime properties."""
         token = ServiceToken()
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
 
-        # Set times with explicit UTC timezone (recommended practice)
+        # Set times with explicit timezone.utc timezone (recommended practice)
         token.created_at = current_time - timedelta(hours=2)
         token.expires_at = current_time + timedelta(hours=1)
         token.last_used = current_time - timedelta(minutes=30)
@@ -172,36 +172,36 @@ class TestServiceTokenModel:
         assert token.expires_at.tzinfo is not None
         assert token.last_used.tzinfo is not None
 
-        # Verify all datetime fields use UTC timezone specifically
-        assert token.created_at.tzinfo == UTC
-        assert token.expires_at.tzinfo == UTC
-        assert token.last_used.tzinfo == UTC
+        # Verify all datetime fields use timezone.utc timezone specifically
+        assert token.created_at.tzinfo == timezone.utc
+        assert token.expires_at.tzinfo == timezone.utc
+        assert token.last_used.tzinfo == timezone.utc
 
         # Verify token is valid with proper timezone handling
         token.is_active = True
         assert token.is_valid is True
 
     def test_utc_standardization_recommendation(self):
-        """Test demonstrating the recommended UTC standardization approach."""
+        """Test demonstrating the recommended timezone.utc standardization approach."""
         token = ServiceToken()
 
-        # Best practice: Always use UTC timezone for consistency
-        base_time = datetime.now(UTC)
+        # Best practice: Always use timezone.utc timezone for consistency
+        base_time = datetime.now(timezone.utc)
 
-        # All datetime assignments should use UTC
+        # All datetime assignments should use timezone.utc
         token.created_at = base_time - timedelta(days=30)
         token.expires_at = base_time + timedelta(days=90)
         token.last_used = base_time - timedelta(hours=1)
 
-        # Verify consistent UTC usage prevents timezone-related bugs
+        # Verify consistent timezone.utc usage prevents timezone-related bugs
         assert token.created_at < token.last_used < base_time < token.expires_at
 
-        # Verify expiration logic works correctly with UTC standardization
+        # Verify expiration logic works correctly with timezone.utc standardization
         token.is_active = True
         assert token.is_expired is False
         assert token.is_valid is True
 
-        # Test expiration boundary with UTC
+        # Test expiration boundary with timezone.utc
         token.expires_at = base_time - timedelta(microseconds=1)
         assert token.is_expired is True
         assert token.is_valid is False
@@ -252,7 +252,7 @@ class TestServiceTokenCreate:
 
     def test_expiration_in_future(self):
         """Test token creation with future expiration."""
-        future_date = datetime.now(UTC) + timedelta(days=30)
+        future_date = datetime.now(timezone.utc) + timedelta(days=30)
         token = ServiceTokenCreate(token_name="future-token", expires_at=future_date)  # noqa: S106
         assert token.expires_at == future_date
 
@@ -272,7 +272,7 @@ class TestServiceTokenUpdate:
 
     def test_all_fields_update(self):
         """Test update with all fields."""
-        future_date = datetime.now(UTC) + timedelta(days=30)
+        future_date = datetime.now(timezone.utc) + timedelta(days=30)
         data = {
             "token_name": "updated-token",
             "is_active": False,
@@ -304,7 +304,7 @@ class TestServiceTokenResponse:
         token = MagicMock()
         token.id = uuid.uuid4()
         token.token_name = "test-token"  # noqa: S105
-        token.created_at = datetime.now(UTC)
+        token.created_at = datetime.now(timezone.utc)
         token.last_used = None
         token.usage_count = 0
         token.expires_at = None
@@ -329,7 +329,7 @@ class TestServiceTokenResponse:
     def test_direct_creation(self):
         """Test direct response creation."""
         token_id = uuid.uuid4()
-        created_at = datetime.now(UTC)
+        created_at = datetime.now(timezone.utc)
 
         response = ServiceTokenResponse(
             id=token_id,
@@ -358,7 +358,7 @@ class TestServiceTokenListResponse:
             ServiceTokenResponse(
                 id=uuid.uuid4(),
                 token_name="token-1",  # noqa: S106
-                created_at=datetime.now(UTC),
+                created_at=datetime.now(timezone.utc),
                 last_used=None,
                 usage_count=0,
                 expires_at=None,
@@ -421,7 +421,7 @@ class TestTokenValidationResponse:
     def test_valid_response(self):
         """Test valid token response."""
         token_id = uuid.uuid4()
-        expires_at = datetime.now(UTC) + timedelta(days=30)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
 
         response = TokenValidationResponse(
             valid=True,
@@ -539,7 +539,7 @@ class TestUserSession:
 
         assert first_seen.nullable is False
         assert last_seen.nullable is False
-        # Both should have server default values
+        # Both should have server_default values
         assert first_seen.server_default is not None
         assert last_seen.server_default is not None
 
@@ -580,15 +580,17 @@ class TestUserSession:
         assert session.user_metadata == {"last_login": "2025-01-01T00:00:00Z"}
 
     def test_user_session_creation_with_defaults(self):
-        """Test UserSession creation uses default values."""
+        """Test UserSession creation with explicit default values."""
         session = UserSession(
             email="test@example.com",
             cloudflare_sub="cf-sub-123",
+            preferences={},
+            user_metadata={},
         )
 
         assert session.email == "test@example.com"
         assert session.cloudflare_sub == "cf-sub-123"
-        # Should use defaults
+        # Should use provided default values
         assert session.preferences == {}
         assert session.user_metadata == {}
 
@@ -688,7 +690,7 @@ class TestAuthenticationEvent:
         table = AuthenticationEvent.__table__
         email_column = table.columns["user_email"]
 
-        assert email_column.nullable is True  # Can be None for service token auth
+        assert email_column.nullable is False
         assert email_column.type.length == 255
         assert hasattr(email_column, "index")
 
@@ -762,15 +764,16 @@ class TestAuthenticationEvent:
         assert event.performance_metrics == {"jwt_time_ms": 5.2, "total_time_ms": 45.1}
 
     def test_authentication_event_creation_with_defaults(self):
-        """Test AuthenticationEvent creation uses default values."""
+        """Test AuthenticationEvent creation with explicit default values."""
         event = AuthenticationEvent(
             user_email="test@example.com",
             event_type="login",
+            success=True,
         )
 
         assert event.user_email == "test@example.com"
         assert event.event_type == "login"
-        # Should use defaults
+        # Should use provided default value
         assert event.success is True
 
     def test_authentication_event_failure_case(self):
@@ -949,7 +952,7 @@ class TestModelConstraints:
             col.name for col in table.columns if not col.nullable and col.name != "id"  # id has default
         ]
 
-        expected_required = ["event_type", "success", "created_at"]  # user_email is nullable for service token auth
+        expected_required = ["user_email", "event_type", "success", "created_at"]
         for column in expected_required:
             assert column in non_nullable_columns
 

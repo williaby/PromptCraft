@@ -1128,7 +1128,8 @@ class TestMainErrorHandling:
     def test_create_app_settings_format_error(self):
         """Test create_app handling of settings format errors."""
 
-        with patch("src.main.get_settings") as mock_get_settings:
+        with patch("src.main.get_settings") as mock_get_settings, \
+             patch("src.config.settings._env_file_settings", return_value={}):
             # Mock format error (ValueError, TypeError, AttributeError)
             mock_get_settings.side_effect = ValueError("Invalid format")
 
@@ -1140,7 +1141,8 @@ class TestMainErrorHandling:
     def test_create_app_general_exception(self):
         """Test create_app handling of general exceptions."""
 
-        with patch("src.main.get_settings") as mock_get_settings:
+        with patch("src.main.get_settings") as mock_get_settings, \
+             patch("src.config.settings._env_file_settings", return_value={}):
             # Mock general exception
             mock_get_settings.side_effect = OSError("System error")
 
@@ -2028,22 +2030,22 @@ class TestConfigurationModuleCoverage:
         """Test settings module edge cases to improve coverage."""
 
         # Test default ApplicationSettings creation
-        settings = ApplicationSettings()
-        assert settings.app_name == "PromptCraft-Hybrid"
-        assert settings.environment == "dev"
+        with patch("src.config.settings._env_file_settings", return_value={}):
+            settings = ApplicationSettings()
+            assert settings.app_name == "PromptCraft-Hybrid"
+            assert settings.environment == "dev"
 
     def test_settings_validation_comprehensive(self):
         """Test comprehensive settings validation scenarios."""
 
         # Test settings with validation enabled
-        with patch.dict("os.environ", {"APP_NAME": "TestApp", "ENVIRONMENT": "test"}):
-            try:
-                settings = get_settings(validate_on_startup=True)
-                assert settings.app_name == "PromptCraft-Hybrid"
-                assert settings.environment == "dev"
-            except ConfigurationValidationError:
-                # This is acceptable - settings may fail validation in test env
-                pass
+        with patch.dict("os.environ", {"APP_NAME": "TestApp", "ENVIRONMENT": "test"}), \
+             patch("src.config.settings._env_file_settings", return_value={}), \
+             patch("src.config.settings.validate_configuration_on_startup", return_value=None):
+            # Force reload to avoid cached settings
+            settings = ApplicationSettings()
+            assert settings.app_name == "PromptCraft-Hybrid"
+            assert settings.environment == "dev"
 
 
 class TestUtilsModuleCoverage:

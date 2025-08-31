@@ -8,7 +8,7 @@ Uses proper pytest markers for codecov integration per codecov.yml config compon
 """
 
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -61,7 +61,7 @@ class TestConfigurationStatusModel:
 
     def test_model_initialization_complete(self):
         """Test model initialization with all fields."""
-        timestamp = datetime.now(UTC)
+        timestamp = datetime.now(timezone.utc)
         validation_errors = ["Error 1", "Error 2"]
 
         status = ConfigurationStatusModel(
@@ -664,7 +664,7 @@ class TestGetConfigurationHealthSummary:
         mock_status.version = "1.0.0"
         mock_status.config_loaded = True
         mock_status.encryption_enabled = True
-        mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
         with (
             patch("src.config.health.get_settings", return_value=mock_settings),
@@ -689,7 +689,7 @@ class TestGetConfigurationHealthSummary:
         mock_status.version = "1.0.0"
         mock_status.config_loaded = False
         mock_status.encryption_enabled = False
-        mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+        mock_status.timestamp = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
         with (
             patch("src.config.health.get_settings", return_value=mock_settings),

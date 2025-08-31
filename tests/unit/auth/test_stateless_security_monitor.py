@@ -4,7 +4,7 @@ Tests the conversion from stateful to stateless design for multi-worker deployme
 All monitoring state is now persisted in PostgreSQL database.
 """
 
-from datetime import UTC, datetime
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -13,6 +13,7 @@ import pytest
 from src.auth.models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.auth.security_monitor import SecurityMonitor
 from src.database.models import SecurityEvent
+from src.utils.time_utils import utc_now
 
 
 class TestStatelessSecurityMonitor:
@@ -39,7 +40,7 @@ class TestStatelessSecurityMonitor:
             severity=SecurityEventSeverity.WARNING.value,
             user_id="test_user_123",
             ip_address="192.168.1.100",
-            timestamp=datetime.now(UTC),
+            timestamp=utc_now(),
             risk_score=75,
             details={"user_agent": "TestBrowser", "reason": "invalid_credentials"},
         )
@@ -76,14 +77,23 @@ class TestStatelessSecurityMonitor:
         # Mock threshold queries returning default values
         threshold_mock = MagicMock()
         threshold_mock.threshold_value = 5
-        mock_session.execute.side_effect = [
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # alert_threshold
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # time_window
-            MagicMock(scalar=MagicMock(return_value=2)),  # event count for IP
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # alert_threshold
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # time_window
-            MagicMock(scalar=MagicMock(return_value=1)),  # event count for user
-        ]
+        
+        # Create comprehensive mock responses for all database queries
+        mock_threshold_result = MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock))
+        mock_count_result = MagicMock(scalar=MagicMock(return_value=2))
+        
+        # Setup alternating return values for different query types
+        def mock_execute_side_effect(*args, **kwargs):
+            # Check query type by analyzing the SQL or parameters
+            query_str = str(args[0])
+            if "count(" in query_str.lower():
+                return mock_count_result
+            else:
+                return mock_threshold_result
+        
+        mock_session.execute.side_effect = mock_execute_side_effect
+        mock_session.add = AsyncMock()
+        mock_session.commit = AsyncMock()
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -112,7 +122,7 @@ class TestStatelessSecurityMonitor:
         ]
 
         entity_key = "ip:192.168.1.100"
-        event_timestamp = datetime.now(UTC)
+        event_timestamp = utc_now()
 
         result = await security_monitor._check_threshold(mock_session, entity_key, event_timestamp)
 
@@ -134,7 +144,11 @@ class TestStatelessSecurityMonitor:
     async def test_block_ip_database_storage(self, security_monitor):
         """Test that IP blocking uses database storage."""
         mock_session = AsyncMock()
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None  # Not already blocked
+        
+        # Mock for checking if IP is already blocked (returns None = not blocked)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mock_result
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -147,7 +161,11 @@ class TestStatelessSecurityMonitor:
     async def test_block_user_database_storage(self, security_monitor):
         """Test that user blocking uses database storage."""
         mock_session = AsyncMock()
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None  # Not already blocked
+        
+        # Mock for checking if user is already blocked (returns None = not blocked)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mock_result
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -164,7 +182,10 @@ class TestStatelessSecurityMonitor:
         # Mock blocked entity
         blocked_entity = MagicMock()
         blocked_entity.is_valid_block = True
-        mock_session.execute.return_value.scalar_one_or_none.return_value = blocked_entity
+        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = blocked_entity
+        mock_session.execute.return_value = mock_result
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -176,7 +197,10 @@ class TestStatelessSecurityMonitor:
     async def test_get_threat_score_database_query(self, security_monitor):
         """Test that threat score retrieval uses database queries."""
         mock_session = AsyncMock()
-        mock_session.execute.return_value.scalar.return_value = 85
+        
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = 85
+        mock_session.execute.return_value = mock_result
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -258,7 +282,7 @@ class TestStatelessSecurityMonitor:
             severity=SecurityEventSeverity.WARNING.value,
             user_id="test_user_123",
             ip_address="192.168.1.100",
-            timestamp=datetime.now(UTC),
+            timestamp=utc_now(),
             risk_score=75,
             details={},
         )
@@ -334,18 +358,16 @@ class TestStatelessSecurityMonitor:
 
         mock_session = AsyncMock()
 
-        # Mock all database operations
-        threshold_mock = MagicMock()
-        threshold_mock.threshold_value = 5
-        mock_session.execute.side_effect = [
-            # Initialization
-            MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # alert_threshold
-            MagicMock(scalar_one_or_none=MagicMock(return_value=None)),  # time_window
-            # Track event
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # threshold check
-            MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),  # window check
-            MagicMock(scalar=MagicMock(return_value=2)),  # event count
-        ]
+        # Create a mock query result that can handle different query types
+        def mock_execute_side_effect(*args, **kwargs):
+            result = MagicMock()
+            # Default to returning None for scalar_one_or_none queries
+            result.scalar_one_or_none.return_value = None
+            # Return low counts for scalar queries to avoid triggering alerts  
+            result.scalar.return_value = 1
+            return result
+            
+        mock_session.execute.side_effect = mock_execute_side_effect
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
 
@@ -371,6 +393,17 @@ class TestStatelessSecurityMonitorPerformance:
 
             monitor = SecurityMonitor()
 
+            # Create a reusable mock execute function to avoid StopIteration
+            def mock_execute_side_effect(*args, **kwargs):
+                result = MagicMock()
+                # Default to returning None for threshold queries
+                result.scalar_one_or_none.return_value = None
+                # Return low counts to avoid triggering alerts
+                result.scalar.return_value = 0
+                return result
+            
+            mock_session.execute.side_effect = mock_execute_side_effect
+
             # Process many events
             for i in range(100):
                 event = SecurityEventResponse(
@@ -379,20 +412,10 @@ class TestStatelessSecurityMonitorPerformance:
                     severity=SecurityEventSeverity.INFO.value,
                     user_id=f"user_{i}",
                     ip_address=f"192.168.1.{i % 255}",
-                    timestamp=datetime.now(UTC),
+                    timestamp=utc_now(),
                     risk_score=10,
                     details={},
                 )
-
-                # Mock database responses to avoid threshold triggers
-                mock_session.execute.side_effect = [
-                    MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
-                    MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
-                    MagicMock(scalar=MagicMock(return_value=0)),
-                    MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
-                    MagicMock(scalar_one_or_none=MagicMock(return_value=None)),
-                    MagicMock(scalar=MagicMock(return_value=0)),
-                ]
 
                 await monitor.track_event(event)
 
@@ -410,17 +433,18 @@ class TestStatelessSecurityMonitorPerformance:
 
             monitor = SecurityMonitor()
 
-            # Mock minimal database responses
-            threshold_mock = MagicMock()
-            threshold_mock.threshold_value = 10
-            mock_session.execute.side_effect = [
-                MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),
-                MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),
-                MagicMock(scalar=MagicMock(return_value=1)),
-                MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),
-                MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock)),
-                MagicMock(scalar=MagicMock(return_value=1)),
-            ]
+            # Create a reusable mock execute function to avoid StopIteration
+            def mock_execute_side_effect(*args, **kwargs):
+                result = MagicMock()
+                # For threshold queries, return a configured threshold
+                threshold_mock = MagicMock()
+                threshold_mock.threshold_value = 10
+                result.scalar_one_or_none.return_value = threshold_mock
+                # For count queries, return low counts to avoid triggering alerts
+                result.scalar.return_value = 1
+                return result
+            
+            mock_session.execute.side_effect = mock_execute_side_effect
 
             event = SecurityEventResponse(
                 id=uuid4(),
@@ -428,7 +452,7 @@ class TestStatelessSecurityMonitorPerformance:
                 severity=SecurityEventSeverity.INFO.value,
                 user_id="test_user",
                 ip_address="192.168.1.1",
-                timestamp=datetime.now(UTC),
+                timestamp=utc_now(),
                 risk_score=5,
                 details={},
             )

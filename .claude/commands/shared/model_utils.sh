@@ -206,11 +206,13 @@ zen_mcp_call() {
     fi
 }
 
-# Multi-model consensus wrapper
+# Multi-model layered consensus wrapper (uses sophisticated layered analysis)
 zen_mcp_consensus() {
     local models_arg=""
     local topic=""
     local request=""
+    local org_level="startup"
+    local cost_threshold="balanced"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -227,27 +229,103 @@ zen_mcp_consensus() {
                 request="$2"
                 shift 2
                 ;;
+            --org-level)
+                org_level="$2"
+                shift 2
+                ;;
+            --cost-threshold)
+                cost_threshold="$2"
+                shift 2
+                ;;
             *)
                 shift
                 ;;
         esac
     done
 
-    echo "🤝 Building consensus across models: $models_arg"
-
-    # Convert comma-separated models to array
+    # Convert comma-separated models to array and count them
     IFS=',' read -ra MODELS <<< "$models_arg"
+    model_count=${#MODELS[@]}
 
-    # Use Zen consensus tool if available, otherwise sequential calls
-    if command -v zen >/dev/null && zen consensus --help >/dev/null 2>&1; then
-        zen consensus --models="$models_arg" --topic="$topic" --request="$request"
-    else
-        echo "🔄 Sequential consensus (zen consensus not available)"
-        for model in "${MODELS[@]}"; do
-            echo "--- $model perspective ---"
-            zen_mcp_call "$model" --request "$request (Topic: $topic)"
-        done
+    echo "🧠 Building layered consensus across $model_count models: $models_arg"
+    echo "📋 Topic: $topic"
+    echo "🎯 Organization level: $org_level, Cost preference: $cost_threshold"
+
+    # Note: This function is now a wrapper for documentation purposes
+    # The actual MCP calls should be made directly from slash commands using:
+    # mcp__zen__layered_consensus --question "$request (Topic: $topic)" --org-level "$org_level" --model-count "$model_count" --layers "$layers" --cost-threshold "$cost_threshold" --model "google/gemini-2.5-flash"
+    
+    echo "✨ Zen MCP layered consensus available for: $request (Topic: $topic)"
+    echo "🎯 Organization: $org_level, Models: $model_count, Cost: $cost_threshold"
+    echo "💡 Call mcp__zen__layered_consensus directly from your slash commands"
+    return 0
+    
+    # Final fallback to sequential calls
+    echo "🔄 Sequential consensus (zen tools not available)"
+    for model in "${MODELS[@]}"; do
+        echo "--- $model perspective ---"
+        zen_mcp_call "$model" --request "$request (Topic: $topic)"
+    done
+}
+
+# Dedicated layered consensus function for advanced multi-layer analysis
+zen_mcp_layered_consensus() {
+    local question=""
+    local org_level="startup"
+    local model_count="5"
+    local layers="strategic,analytical,practical"
+    local cost_threshold="balanced"
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --question)
+                question="$2"
+                shift 2
+                ;;
+            --org-level)
+                org_level="$2"
+                shift 2
+                ;;
+            --model-count)
+                model_count="$2"
+                shift 2
+                ;;
+            --layers)
+                layers="$2"
+                shift 2
+                ;;
+            --cost-threshold)
+                cost_threshold="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    if [[ -z "$question" ]]; then
+        echo "❌ Error: --question is required for layered consensus"
+        return 1
     fi
+
+    echo "🧠 Advanced Layered Consensus Analysis"
+    echo "❓ Question: $question"
+    echo "🏢 Organization level: $org_level"
+    echo "🤖 Models: $model_count"
+    echo "📊 Analysis layers: $layers"
+    echo "💰 Cost preference: $cost_threshold"
+    echo ""
+
+    # Note: This function is now a wrapper for documentation purposes
+    # The actual MCP calls should be made directly from slash commands using:
+    # mcp__zen__layered_consensus --question "$question" --org-level "$org_level" --model-count "$model_count" --layers "$layers" --cost-threshold "$cost_threshold" --model "google/gemini-2.5-flash"
+    
+    echo "✨ Zen MCP layered consensus available for: $question"
+    echo "🎯 Organization: $org_level, Models: $model_count, Layers: $layers, Cost: $cost_threshold"
+    echo "💡 Call mcp__zen__layered_consensus directly from your slash commands"
+    return 0
 }
 
 # Export functions for use in slash commands
@@ -260,3 +338,4 @@ export -f select_available_model
 export -f smart_model_select
 export -f zen_mcp_call
 export -f zen_mcp_consensus
+export -f zen_mcp_layered_consensus

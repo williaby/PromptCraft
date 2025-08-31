@@ -4,7 +4,7 @@ Tests all Pydantic models for validation, serialization, and edge cases.
 Validates all 19 security event types and severity levels.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -17,6 +17,7 @@ from src.auth.models import (
     SecurityEventSeverity,
     SecurityEventType,
 )
+from src.utils.time_utils import utc_now, UTC
 
 
 class TestSecurityEventType:
@@ -161,7 +162,7 @@ class TestSecurityEventModel:
         assert isinstance(event.id, UUID)
 
         # Timestamp should be UTC and recent
-        now = datetime.now(UTC)
+        now = utc_now()
         assert event.timestamp.tzinfo == UTC
         assert (now - event.timestamp).total_seconds() < 1.0
 

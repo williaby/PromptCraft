@@ -642,6 +642,11 @@ class TestVectorStoreConnection:
 class TestQdrantVectorStore:
     """Test QdrantVectorStore implementation (mocked)."""
 
+    @pytest.fixture(autouse=True)
+    def clear_cache(self):
+        """Clear all caches before each test."""
+        clear_all_caches()
+
     @pytest.fixture
     def qdrant_config(self):
         """Provide Qdrant configuration."""
@@ -658,6 +663,7 @@ class TestQdrantVectorStore:
             await store.connect()
 
     @pytest.mark.asyncio
+    @patch("src.core.vector_store.QDRANT_AVAILABLE", True)
     @patch("src.core.vector_store.QdrantClient")
     async def test_qdrant_connection_success(self, mock_qdrant_client, qdrant_config):
         """Test successful Qdrant connection."""
@@ -668,17 +674,16 @@ class TestQdrantVectorStore:
 
         store = QdrantVectorStore(qdrant_config)
 
-        # Mock QDRANT_AVAILABLE as True for this test
-        with patch("src.core.vector_store.QDRANT_AVAILABLE", True), patch("builtins.__import__", return_value=Mock()):
-            await store.connect()
+        # Test connection
+        await store.connect()
 
-            assert store.get_connection_status() == ConnectionStatus.HEALTHY
-            mock_qdrant_client.assert_called_once_with(
-                host="192.168.1.16",
-                port=6333,
-                api_key="test_key",
-                timeout=30.0,
-            )
+        assert store.get_connection_status() == ConnectionStatus.HEALTHY
+        mock_qdrant_client.assert_called_once_with(
+            host="192.168.1.16",
+            port=6333,
+            api_key="test_key",
+            timeout=30.0,
+        )
 
     @pytest.mark.asyncio
     async def test_qdrant_health_check_healthy(self, qdrant_config):

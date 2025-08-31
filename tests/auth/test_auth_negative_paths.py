@@ -240,7 +240,7 @@ class TestAuthenticationNegativePaths:
 
         app = FastAPI()
         middleware = AuthenticationMiddleware(
-            app=app,
+            app,
             config=auth_config,
             jwt_validator=jwt_validator,
             database_enabled=False,  # Disable database logging for tests

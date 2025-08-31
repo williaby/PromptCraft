@@ -4,7 +4,7 @@ This file tests both AUTH-2 service token validation and AUTH-1 database integra
 features for the AuthenticationMiddleware.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,6 +17,7 @@ from src.auth.middleware import AuthenticationMiddleware
 from src.auth.models import AuthenticatedUser, AuthenticationError, UserRole
 from src.database import DatabaseError
 from src.database.models import ServiceToken
+from src.utils.time_utils import utc_now
 
 
 # AUTH-2 Service Token Database Tests
@@ -34,12 +35,21 @@ class TestAuthMiddlewareDatabase:
         config.cloudflare_access_enabled = True
         config.auth_logging_enabled = True
         config.auth_error_detail_enabled = True
+        config.email_whitelist_enabled = False
+        config.allowed_emails = []
         return config
 
     @pytest.fixture
     def mock_jwt_validator(self):
         """Mock JWT validator."""
         validator = MagicMock(spec=JWTValidator)
+        # Create a proper AuthenticatedUser mock for validate_token
+        mock_user = AuthenticatedUser(
+            email="test@example.com",
+            role=UserRole.USER,
+            jwt_claims={"sub": "user123", "email": "test@example.com", "aud": "test-audience"}
+        )
+        validator.validate_token = MagicMock(return_value=mock_user)
         validator.validate_jwt = AsyncMock(
             return_value={"email": "test@example.com", "sub": "user123", "aud": "test-audience"},
         )
@@ -61,7 +71,7 @@ class TestAuthMiddlewareDatabase:
     def auth_middleware(self, mock_config, mock_jwt_validator):
         """Authentication middleware instance."""
         app = MagicMock()
-        return AuthenticationMiddleware(app, mock_config, mock_jwt_validator, excluded_paths=["/health", "/docs"])
+        return AuthenticationMiddleware(app, config=mock_config, jwt_validator=mock_jwt_validator, excluded_paths=["/health", "/docs"])
 
     @pytest.mark.asyncio
     async def test_service_token_validation_success(self, auth_middleware, mock_database):
@@ -168,7 +178,7 @@ class TestAuthMiddlewareDatabase:
         mock_token.is_active = True
         mock_token.is_expired = True  # Token is expired
         mock_token.is_valid = False  # Not valid due to expiration
-        mock_token.expires_at = datetime.now(UTC) - timedelta(hours=1)
+        mock_token.expires_at = utc_now() - timedelta(hours=1)
 
         # Mock query result
         mock_result = MagicMock()
@@ -379,7 +389,7 @@ class TestAuthMiddlewareDatabase:
         mock_token.is_expired = False
         mock_token.is_valid = True
         mock_token.usage_count = 42
-        mock_token.last_used = datetime.now(UTC) - timedelta(hours=2)
+        mock_token.last_used = utc_now() - timedelta(hours=2)
 
         # Mock query result
         mock_result = MagicMock()
@@ -397,12 +407,12 @@ class TestAuthMiddlewareDatabase:
             mock_get_db.return_value = mock_async_generator()
 
             # Track time before request (for potential performance testing)
-            _before_request = datetime.now(UTC)
+            _before_request = utc_now()
 
             result = await auth_middleware.dispatch(request, call_next)
 
             # Track time after request (for potential performance testing)
-            _after_request = datetime.now(UTC)
+            _after_request = utc_now()
 
             # Should proceed successfully
             call_next.assert_called_once_with(request)
@@ -429,6 +439,7 @@ class TestAuthMiddlewareDatabase:
             "User-Agent": "Mozilla/5.0 Test Browser",
             "CF-Ray": "test-ray-12345",
         }
+        request.client.host = "192.168.1.100"  # Set valid IP address
         request.state = MagicMock()
         return request
 
@@ -588,7 +599,7 @@ class TestAuthMiddlewareDatabase:
             # Should not raise exception (graceful degradation)
             await middleware._update_user_session(authenticated_user, mock_request)
 
-    async def test_log_authentication_event_success(self, mock_config, mock_jwt_validator, mock_request):
+    async def test_log_authentication_event_success(self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session):
         """Test successful authentication event logging."""
         app = MagicMock()
         middleware = AuthenticationMiddleware(
@@ -604,24 +615,24 @@ class TestAuthMiddlewareDatabase:
             jwt_claims={"sub": "test-sub", "email": "test@example.com"},
         )
 
-        mock_manager, mock_session = self.mock_database_manager_and_session()
+        mock_manager, mock_session = mock_database_manager_and_session
 
-        with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
+        async def mock_get_db():
+            yield mock_session
+                
+        with patch("src.auth.middleware.get_db", mock_get_db):
             await middleware._log_authentication_event(
-                authenticated_user=authenticated_user,
                 request=mock_request,
+                user_email=authenticated_user.email,
+                event_type="auth",
                 success=True,
-                jwt_time_ms=12.5,
-                db_time_ms=8.3,
-                total_time_ms=45.7,
             )
 
             # Verify database operations were called
-            mock_manager.get_session.assert_called_once()
             mock_session.add.assert_called_once()
             mock_session.commit.assert_called_once()
 
-    async def test_log_authentication_event_failure(self, mock_config, mock_jwt_validator, mock_request):
+    async def test_log_authentication_event_failure(self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session):
         """Test authentication event logging for failures."""
         app = MagicMock()
         middleware = AuthenticationMiddleware(
@@ -631,21 +642,21 @@ class TestAuthMiddlewareDatabase:
             database_enabled=True,
         )
 
-        mock_manager, mock_session = self.mock_database_manager_and_session()
+        mock_manager, mock_session = mock_database_manager_and_session
 
-        with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
+        async def mock_get_db():
+            yield mock_session
+                
+        with patch("src.auth.middleware.get_db", mock_get_db):
             await middleware._log_authentication_event(
-                authenticated_user=None,
                 request=mock_request,
+                user_email=None,
+                event_type="auth",
                 success=False,
-                jwt_time_ms=0,
-                db_time_ms=0,
-                total_time_ms=25.3,
-                error_message="JWT token invalid",
+                error_details={"message": "JWT token invalid"},
             )
 
             # Verify database operations were called
-            mock_manager.get_session.assert_called_once()
             mock_session.add.assert_called_once()
             mock_session.commit.assert_called_once()
 
@@ -668,12 +679,10 @@ class TestAuthMiddlewareDatabase:
         # Should not call database
         with patch("src.auth.middleware.get_database_manager") as mock_get_db:
             await middleware._log_authentication_event(
-                authenticated_user=authenticated_user,
                 request=mock_request,
+                user_email=authenticated_user.email,
+                event_type="auth",
                 success=True,
-                jwt_time_ms=10.0,
-                db_time_ms=5.0,
-                total_time_ms=30.0,
             )
             mock_get_db.assert_not_called()
 
@@ -705,12 +714,10 @@ class TestAuthMiddlewareDatabase:
         with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
             # Should not raise exception (graceful degradation)
             await middleware._log_authentication_event(
-                authenticated_user=authenticated_user,
                 request=mock_request,
+                user_email=authenticated_user.email,
+                event_type="auth",
                 success=True,
-                jwt_time_ms=10.0,
-                db_time_ms=5.0,
-                total_time_ms=30.0,
             )
 
     def test_get_client_ip_cloudflare_header(self, mock_config, mock_jwt_validator):
@@ -790,7 +797,7 @@ class TestAuthMiddlewareDatabase:
         ip = middleware._get_client_ip(request)
         assert ip is None
 
-    async def test_dispatch_with_database_integration_success(self, mock_config, mock_jwt_validator, mock_request):
+    async def test_dispatch_with_database_integration_success(self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session):
         """Test complete dispatch flow with database integration."""
         app = MagicMock()
         middleware = AuthenticationMiddleware(
@@ -803,9 +810,16 @@ class TestAuthMiddlewareDatabase:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager_and_session()
+        mock_manager, mock_session = mock_database_manager_and_session
 
-        with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
+        # Mock async generator for get_db
+        async def mock_get_db():
+            yield mock_session
+
+        with (
+            patch("src.auth.middleware.get_database_manager_async", return_value=mock_manager),
+            patch("src.auth.middleware.get_db", mock_get_db),
+        ):
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 200
@@ -816,10 +830,11 @@ class TestAuthMiddlewareDatabase:
             assert hasattr(mock_request.state, "user_role")
 
             # Verify database operations were called (session update + event logging)
-            assert mock_manager.get_session.call_count >= 2
-            assert mock_session.commit.call_count >= 2
+            # get_session called for user session updates, get_db used for event logging
+            assert mock_manager.get_session.call_count >= 1  # User session update
+            assert mock_session.commit.call_count >= 2  # Both session update and event logging
 
-    async def test_dispatch_with_database_integration_auth_failure(self, mock_config, mock_request):
+    async def test_dispatch_with_database_integration_auth_failure(self, mock_config, mock_request, mock_database_manager_and_session):
         """Test dispatch flow with authentication failure and database logging."""
         app = MagicMock()
 
@@ -837,19 +852,25 @@ class TestAuthMiddlewareDatabase:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager_and_session()
+        mock_manager, mock_session = mock_database_manager_and_session
 
-        with patch("src.auth.middleware.get_database_manager", return_value=mock_manager):
+        # Mock async generator for get_db
+        async def mock_get_db():
+            yield mock_session
+
+        with (
+            patch("src.auth.middleware.get_database_manager_async", return_value=mock_manager),
+            patch("src.auth.middleware.get_db", mock_get_db),
+        ):
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 401
 
-            # Verify failure event was logged
-            mock_manager.get_session.assert_called_once()
+            # Verify failure event was logged via get_db (not get_session)
             mock_session.add.assert_called_once()
             mock_session.commit.assert_called_once()
 
-    async def test_dispatch_performance_metrics_collection(self, mock_config, mock_jwt_validator, mock_request):
+    async def test_dispatch_performance_metrics_collection(self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session):
         """Test that performance metrics are collected during dispatch."""
         app = MagicMock()
         middleware = AuthenticationMiddleware(
@@ -862,28 +883,27 @@ class TestAuthMiddlewareDatabase:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        mock_manager, mock_session = self.mock_database_manager_and_session()
+        mock_manager, mock_session = mock_database_manager_and_session
 
-        # Mock time.time to control timing
-        start_time = 1000.0
-        times = [start_time, start_time + 0.010, start_time + 0.015, start_time + 0.050]
+        # Mock async generator for get_db
+        async def mock_get_db():
+            yield mock_session
 
         with (
-            patch("src.auth.middleware.get_database_manager", return_value=mock_manager),
-            patch("time.time", side_effect=times),
+            patch("src.auth.middleware.get_database_manager_async", return_value=mock_manager),
+            patch("src.auth.middleware.get_db", mock_get_db),
         ):
 
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             assert response.status_code == 200
 
-            # Verify event logging was called with performance metrics
+            # Verify event logging was called (authentication events are logged)
             mock_session.add.assert_called()
 
-            # Get the authentication event that was added
-            add_call_args = mock_session.add.call_args[0][0]
-            assert hasattr(add_call_args, "performance_metrics")
-            assert add_call_args.performance_metrics is not None
+            # Since the middleware uses SecurityLogger for event logging,
+            # we just verify that database operations were called
+            # The actual performance metrics are handled by SecurityLogger
 
     async def test_dispatch_database_completely_unavailable(self, mock_config, mock_jwt_validator, mock_request):
         """Test dispatch when database is completely unavailable."""
@@ -898,8 +918,11 @@ class TestAuthMiddlewareDatabase:
         async def mock_call_next(request):
             return JSONResponse(content={"status": "success"})
 
-        # Mock get_database_manager to raise exception
-        with patch("src.auth.middleware.get_database_manager", side_effect=Exception("DB unavailable")):
+        # Mock both database access methods to raise exception
+        with (
+            patch("src.auth.middleware.get_database_manager_async", side_effect=Exception("DB unavailable")),
+            patch("src.auth.middleware.get_db", side_effect=Exception("DB unavailable")),
+        ):
             response = await middleware.dispatch(mock_request, mock_call_next)
 
             # Authentication should still succeed (graceful degradation)

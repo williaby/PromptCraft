@@ -359,6 +359,7 @@ markers = [
 
     # Component-specific markers
     "auth: authentication and authorization tests",
+    "api: API endpoint and router tests",
 ]
 
 # Note: Test execution profiles are implemented via Makefile and noxfile.py

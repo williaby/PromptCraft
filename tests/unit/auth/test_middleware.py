@@ -42,7 +42,7 @@ class TestAuthenticationMiddleware:
         )
         jwt_validator = Mock(spec=JWTValidator)
 
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         assert middleware.config == config
         assert middleware.jwt_validator == jwt_validator
@@ -63,7 +63,7 @@ class TestAuthenticationMiddleware:
         jwt_validator = Mock(spec=JWTValidator)
         custom_paths = ["/custom", "/api/public"]
 
-        middleware = AuthenticationMiddleware(app, config, jwt_validator, custom_paths)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator, excluded_paths=custom_paths)
 
         assert middleware.excluded_paths == custom_paths
 
@@ -77,7 +77,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request for excluded path
         request = Mock(spec=Request)
@@ -102,7 +102,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request for protected path
         request = Mock(spec=Request)
@@ -128,7 +128,7 @@ class TestAuthenticationMiddleware:
             auth_logging_enabled=True,
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock authenticated user
         authenticated_user = AuthenticatedUser(
@@ -171,7 +171,7 @@ class TestAuthenticationMiddleware:
             auth_error_detail_enabled=True,
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request
         request = Mock(spec=Request)
@@ -200,7 +200,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request
         request = Mock(spec=Request)
@@ -227,7 +227,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         assert middleware._is_excluded_path("/health") is True
         assert middleware._is_excluded_path("/metrics") is True
@@ -242,7 +242,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         assert middleware._is_excluded_path("/health/check") is True
         assert middleware._is_excluded_path("/docs/swagger") is True
@@ -257,7 +257,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         assert middleware._is_excluded_path("/api/users") is False
         assert middleware._is_excluded_path("/protected") is False
@@ -273,7 +273,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request without token
         request = Mock(spec=Request)
@@ -297,7 +297,7 @@ class TestAuthenticationMiddleware:
             email_whitelist=["@example.com"],
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock authenticated user
         authenticated_user = AuthenticatedUser(
@@ -326,7 +326,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock JWT validation error
         jwt_error = JWTValidationError("Invalid token", "invalid_token")
@@ -351,7 +351,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with Cloudflare header
         request = Mock(spec=Request)
@@ -370,7 +370,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with Authorization header
         request = Mock(spec=Request)
@@ -389,7 +389,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with custom header
         request = Mock(spec=Request)
@@ -408,7 +408,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with all headers
         request = Mock(spec=Request)
@@ -434,7 +434,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with invalid Authorization header
         request = Mock(spec=Request)
@@ -453,7 +453,7 @@ class TestAuthenticationMiddleware:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request without relevant headers
         request = Mock(spec=Request)
@@ -473,7 +473,7 @@ class TestAuthenticationMiddleware:
             auth_error_detail_enabled=True,
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         error = AuthenticationError("Token has expired", 401)
 
@@ -498,7 +498,7 @@ class TestAuthenticationMiddleware:
             auth_error_detail_enabled=False,
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         error = AuthenticationError("Detailed error message", 403)
 
@@ -662,9 +662,8 @@ class TestSetupAuthentication:
             mock_validator_instance = Mock()
             mock_jwt_validator.return_value = mock_validator_instance
 
-            auth_middleware, limiter = setup_authentication(app, config)
+            limiter = setup_authentication(app, config)
 
-            assert isinstance(auth_middleware, AuthenticationMiddleware)
             assert isinstance(limiter, Limiter)
 
             # Verify JWKS client creation
@@ -700,7 +699,7 @@ class TestSetupAuthentication:
             patch.object(app, "add_middleware") as mock_add_middleware,
             patch.object(app, "add_exception_handler") as mock_add_handler,
         ):
-            auth_middleware, limiter = setup_authentication(app, config)
+            limiter = setup_authentication(app, config)
 
             # Verify middleware was added
             assert mock_add_middleware.call_count >= 1
@@ -726,13 +725,13 @@ class TestSetupAuthentication:
             patch.object(app, "add_middleware") as mock_add_middleware,
             patch.object(app, "add_exception_handler") as mock_add_handler,
         ):
-            auth_middleware, limiter = setup_authentication(app, config)
+            limiter = setup_authentication(app, config)
 
             # Verify only authentication middleware was added
             # (not SlowAPI middleware)
             middleware_calls = [call[0][0] for call in mock_add_middleware.call_args_list]
-            assert AuthenticationMiddleware in [type(call) for call in middleware_calls]
-            assert SlowAPIMiddleware not in [type(call) for call in middleware_calls]
+            assert AuthenticationMiddleware in middleware_calls
+            assert SlowAPIMiddleware not in middleware_calls
 
             # Verify no rate limit exception handler was added
             mock_add_handler.assert_not_called()
@@ -894,7 +893,7 @@ class TestIntegrationScenarios:
         )
         jwt_validator.validate_token.return_value = authenticated_user
 
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with valid token
         request = Mock(spec=Request)
@@ -934,7 +933,7 @@ class TestIntegrationScenarios:
         jwt_error = JWTValidationError("Token has expired", "expired_token")
         jwt_validator.validate_token.side_effect = jwt_error
 
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with expired token
         request = Mock(spec=Request)
@@ -961,7 +960,7 @@ class TestIntegrationScenarios:
             cloudflare_jwks_url="https://test.com/jwks",
         )
         jwt_validator = Mock(spec=JWTValidator)
-        middleware = AuthenticationMiddleware(app, config, jwt_validator)
+        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator)
 
         # Mock request with multiple token headers
         request = Mock(spec=Request)

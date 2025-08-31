@@ -33,6 +33,7 @@ from src.mcp_integration.mcp_client import (
 )
 
 
+
 class TestMCPClientFactory:
     """Test MCPClientFactory for comprehensive coverage."""
 
@@ -130,7 +131,7 @@ class TestMockMCPClient:
     @pytest.fixture
     def mock_client(self):
         """Create mock client with failure simulation."""
-        return MockMCPClient(simulate_failures=True, failure_rate=1.0)  # Always fail
+        return MockMCPClient(simulate_failures=True, failure_rate=1.0, response_delay=0.0)  # Always fail, no delay
 
     @pytest.mark.asyncio
     async def test_connect_failure(self, mock_client):
@@ -316,7 +317,9 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_health_check_httpx_not_available(self, zen_client):
         """Test health check when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None), pytest.raises(RetryError):
+        with patch("src.mcp_integration.mcp_client.httpx", None), \
+             patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.health_check()
 
     @pytest.mark.asyncio
@@ -326,7 +329,8 @@ class TestZenMCPClient:
         zen_client.connection_state = MCPConnectionState.DISCONNECTED
         zen_client.session = None
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with pytest.raises(RetryError):
+        with patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.health_check()
 
     @pytest.mark.asyncio
@@ -345,7 +349,8 @@ class TestZenMCPClient:
         zen_client.session.get.return_value = mock_response
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with pytest.raises(RetryError):
+        with patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.health_check()
 
     @pytest.mark.asyncio
@@ -356,7 +361,8 @@ class TestZenMCPClient:
         zen_client.session.get.side_effect = httpx.TimeoutException("Timeout")
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with pytest.raises(RetryError):
+        with patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.health_check()
 
     @pytest.mark.asyncio
@@ -367,7 +373,8 @@ class TestZenMCPClient:
         zen_client.session.get.side_effect = httpx.ConnectError("Cannot connect")
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with pytest.raises(RetryError):
+        with patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.health_check()
 
     @pytest.mark.asyncio
@@ -465,7 +472,9 @@ class TestZenMCPClient:
     @pytest.mark.asyncio
     async def test_orchestrate_agents_httpx_not_available(self, zen_client):
         """Test orchestration when httpx not available."""
-        with patch("src.mcp_integration.mcp_client.httpx", None), pytest.raises(RetryError):
+        with patch("src.mcp_integration.mcp_client.httpx", None), \
+             patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.orchestrate_agents([])
 
     @pytest.mark.asyncio
@@ -535,7 +544,8 @@ class TestZenMCPClient:
         zen_client.session.post.side_effect = httpx.TimeoutException("Timeout")
 
         steps = [WorkflowStep(step_id="test", agent_id="agent", input_data={})]
-        with pytest.raises(RetryError):
+        with patch('asyncio.sleep', new_callable=AsyncMock), \
+             pytest.raises(RetryError):
             await zen_client.orchestrate_agents(steps)
 
     @pytest.mark.asyncio
@@ -632,9 +642,9 @@ class TestMCPConnectionManager:
         """Create connection manager."""
         return MCPConnectionManager(
             client=mock_client,
-            health_check_interval=0.1,  # Fast for testing
+            health_check_interval=0.01,  # Much faster for testing
             max_consecutive_failures=2,
-            circuit_breaker_timeout=0.5,
+            circuit_breaker_timeout=0.1,
         )
 
     @pytest.mark.asyncio
@@ -715,8 +725,8 @@ class TestMCPConnectionManager:
         """Test circuit breaker opens after max failures."""
         mock_client.health_check = AsyncMock(side_effect=Exception("Always fails"))
 
-        # Execute multiple times to trigger circuit breaker
-        for _ in range(3):
+        # Execute exactly max_consecutive_failures times to trigger circuit breaker
+        for _ in range(connection_manager.max_consecutive_failures):
             await connection_manager.execute_with_fallback("health_check")
 
         assert connection_manager.is_circuit_breaker_open is True
@@ -751,23 +761,33 @@ class TestMCPConnectionManager:
         mock_client.connect = AsyncMock(return_value=True)
         mock_client.disconnect = AsyncMock()
 
-        # Mock health check to return failed state once
-        failed_health = MCPHealthStatus(
-            connection_state=MCPConnectionState.FAILED,
-            error_count=5,
-        )
-        mock_client.health_check = AsyncMock(return_value=failed_health)
+        # Mock health check to return failed state once, then succeed
+        call_count = 0
+        async def health_check_side_effect():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return MCPHealthStatus(
+                    connection_state=MCPConnectionState.FAILED,
+                    error_count=5,
+                )
+            return MCPHealthStatus(
+                connection_state=MCPConnectionState.CONNECTED,
+                error_count=0,
+            )
+        
+        mock_client.health_check = AsyncMock(side_effect=health_check_side_effect)
 
-        # Start the manager (this starts the health monitor)
+        # Start the manager (this starts the health monitor)  
         await connection_manager.start()
 
-        # Wait a bit for health monitor to run
-        await asyncio.sleep(0.2)
+        # Wait briefly for health monitor to run
+        await asyncio.sleep(0.02)
 
         # Stop to clean up
         await connection_manager.stop()
 
-        # Should have attempted reconnection
+        # Should have attempted reconnection after failure
         assert mock_client.disconnect.call_count >= 1
         assert mock_client.connect.call_count >= 2  # Initial + reconnection
 
