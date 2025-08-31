@@ -37,30 +37,20 @@ class AlertSummaryResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
-# Dependency to get security integration service
-_security_integration_service: SecurityIntegrationService | None = None
-_alert_engine: AlertEngine | None = None
-
-
-async def get_security_service() -> SecurityIntegrationService:
+# Dependency injection functions
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
-async def get_alert_engine() -> AlertEngine:
+def get_alert_engine() -> AlertEngine:
     """Get alert engine instance."""
-    global _alert_engine
-    if not _alert_engine:
-        _alert_engine = AlertEngine()
-    return _alert_engine
+    return AlertEngine()
 
 
 @router.get("/", response_model=list[AlertSummaryResponse])
 async def get_security_alerts(
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     severity: str | None = Query(None, regex="^(low|medium|high|critical)$", description="Filter by severity"),
     acknowledged: bool | None = Query(None, description="Filter by acknowledgment status"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum alerts to return"),
@@ -136,17 +126,17 @@ async def get_security_alerts(
         return paginated_alerts
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve security alerts: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve security alerts: {e!s}") from e
 
 
 @router.post("/{alert_id}/acknowledge")
 async def acknowledge_alert(
     alert_id: UUID,
     background_tasks: BackgroundTasks,
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     user_id: str = Query(..., description="User acknowledging the alert"),
     notes: str | None = Query(None, description="Acknowledgment notes"),
-):
+) -> dict[str, str | datetime]:
     """Acknowledge a security alert.
 
     Args:
@@ -185,9 +175,11 @@ async def acknowledge_alert(
                 pass
 
             background_tasks.add_task(log_acknowledgment)
-        except Exception:
+        except Exception as bg_error:
             # Background task setup failed, but acknowledgment still succeeds
-            pass
+            # Log the error but don't fail the acknowledgment
+            import logging
+            logging.warning(f"Failed to setup background task: {bg_error}")
 
         return {
             "message": "Alert acknowledged successfully",
@@ -201,4 +193,4 @@ async def acknowledge_alert(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {e!s}") from e
