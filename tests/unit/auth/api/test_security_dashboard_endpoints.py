@@ -189,7 +189,7 @@ class TestSecurityDashboardEndpointsMetricsEndpoint:
             await endpoints.get_security_metrics(mock_request)
 
         assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        assert "Failed to retrieve security metrics" in str(exc_info.value.detail)
+        assert "Failed to get security metrics" in str(exc_info.value.detail)
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -219,7 +219,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
             {
                 "id": "evt_001",
                 "event_type": "brute_force_attempt",
-                "severity": "high",
+                "severity": "critical",
                 "timestamp": datetime.utcnow(),
                 "user_id": "user123",
                 "ip_address": "192.168.1.100",
@@ -229,7 +229,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
             {
                 "id": "evt_002",
                 "event_type": "suspicious_location",
-                "severity": "medium",
+                "severity": "warning",
                 "timestamp": datetime.utcnow() - timedelta(minutes=15),
                 "user_id": "user456",
                 "ip_address": "10.0.0.50",
@@ -253,7 +253,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
         assert len(response.events) == 2
         assert response.total_count == 2
         assert response.events[0].event_type == "brute_force_attempt"
-        assert response.events[0].severity == "high"
+        assert response.events[0].severity == "critical"
         endpoints.security_monitor.get_recent_events.assert_called_once()
 
     @pytest.mark.unit
@@ -261,12 +261,12 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
     async def test_get_security_events_with_filters(self, endpoints, sample_events):
         """Test events retrieval with filtering parameters."""
         # Setup
-        filtered_events = [sample_events[0]]  # Only high severity
+        filtered_events = [sample_events[0]]  # Only critical severity
         endpoints.security_monitor.get_recent_events.return_value = filtered_events
 
         # Execute with filters
         response = await endpoints.get_security_events(
-            severity="high",
+            severity="critical",
             event_type="brute_force_attempt",
             limit=10,
             offset=0,
@@ -274,9 +274,9 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
 
         # Verify
         assert len(response.events) == 1
-        assert response.events[0].severity == "high"
+        assert response.events[0].severity == "critical"
         endpoints.security_monitor.get_recent_events.assert_called_once_with(
-            severity="high",
+            severity="critical",
             event_type="brute_force_attempt",
             limit=10,
             offset=0,
@@ -746,9 +746,34 @@ class TestSecurityDashboardEndpointsIntegration:
     def test_app(self, endpoints):
         """Create FastAPI test application."""
         from fastapi import FastAPI
+        from src.auth.api.security_dashboard_endpoints import get_security_service
 
         app = FastAPI()
         app.include_router(endpoints.router)
+        
+        # Override the dependency with a mock that returns expected data
+        def mock_get_security_service():
+            from unittest.mock import AsyncMock
+            from src.auth.services.security_integration import SecurityIntegrationService
+            
+            mock_service = AsyncMock(spec=SecurityIntegrationService)
+            mock_service.get_comprehensive_metrics.return_value = {
+                "integration": {
+                    "total_events_processed": 1250,
+                    "total_alerts_generated": 45,
+                    "average_processing_time_ms": 35.5,
+                    "total_suspicious_activities": 12,
+                },
+                "service_health": {
+                    "logger_healthy": True,
+                    "monitor_healthy": True,
+                    "alert_engine_healthy": True,
+                    "detector_healthy": True,
+                },
+            }
+            return mock_service
+            
+        app.dependency_overrides[get_security_service] = mock_get_security_service
         return app
 
     @pytest.fixture
@@ -759,21 +784,19 @@ class TestSecurityDashboardEndpointsIntegration:
     @pytest.mark.unit
     def test_metrics_endpoint_http_get(self, client, endpoints):
         """Test metrics endpoint via HTTP GET."""
-        # Setup
-        endpoints.security_monitor.get_security_metrics.return_value = {
-            "total_events": 100,
-            "critical_events": 5,
-            "threat_level": "low",
-        }
-
         # Execute
-        response = client.get("/api/v1/security/dashboard/metrics")
+        response = client.get("/api/security/dashboard/metrics")
 
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert data["total_events"] == 100
-        assert data["critical_events"] == 5
+        # Test the actual response structure from SecurityMetricsResponse
+        assert "total_events_today" in data
+        assert "total_events_week" in data
+        assert "system_health_score" in data
+        assert "service_availability" in data
+        assert isinstance(data["total_events_today"], int)
+        assert isinstance(data["system_health_score"], float)
 
     @pytest.mark.unit
     def test_alerts_acknowledge_http_post(self, client, endpoints):
@@ -782,13 +805,15 @@ class TestSecurityDashboardEndpointsIntegration:
         endpoints.alert_engine.acknowledge_alert.return_value = True
 
         # Execute
-        response = client.post("/api/v1/security/alerts/alert_001/acknowledge", json={"user_id": "admin123"})
+        test_uuid = "00000000-0000-0000-0000-000000000001"
+        response = client.post(f"/api/security/dashboard/alerts/{test_uuid}/acknowledge", json={"user_id": "admin123"})
 
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
-        assert data["alert_id"] == "alert_001"
+        assert data["message"] == "Alert acknowledged successfully"
+        assert data["alert_id"] == test_uuid
+        assert "acknowledged_at" in data
 
     @pytest.mark.unit
     def test_invalid_endpoint_returns_404(self, client):

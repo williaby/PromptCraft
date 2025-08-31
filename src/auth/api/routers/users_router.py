@@ -75,7 +75,7 @@ async def get_user_risk_profile(
         # Get user activity data from detector
         user_activity = await detector.get_user_activity_summary(user_id)
 
-        if not user_activity:
+        if user_activity is None:
             raise HTTPException(status_code=404, detail=f"No activity data found for user {user_id}")
 
         # Calculate risk score based on multiple factors

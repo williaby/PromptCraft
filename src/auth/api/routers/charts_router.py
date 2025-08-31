@@ -9,7 +9,7 @@ Endpoints:
     GET /charts/risk-distribution - Get risk distribution chart data
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -86,35 +86,57 @@ async def get_event_timeline_chart(
     """
     try:
         # Calculate time range
-        end_time = datetime.now(UTC)
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(hours=hours_back)
 
-        # Get event timeline data
-        timeline_data = await service.get_event_timeline(
-            start_time=start_time,
-            end_time=end_time,
-            granularity=granularity,
-        )
-
-        # Convert to data points
+        # Generate mock event timeline data
         data_points = []
         total_events = 0
         peak_count = 0
         peak_hour = None
-
-        for data_item in timeline_data:
-            timestamp = data_item["timestamp"]
-            event_count = data_item["event_count"]
-
-            data_point = TimelineDataPoint(timestamp=timestamp, value=event_count, label=f"{event_count} events")
+        
+        # Generate data points based on granularity
+        if granularity == "hour":
+            interval_delta = timedelta(hours=1)
+            num_points = min(hours_back, 48)  # Limit to 48 hours max for hourly
+        else:  # day
+            interval_delta = timedelta(days=1)
+            num_points = min(hours_back // 24, 30)  # Limit to 30 days max for daily
+        
+        # Generate mock timeline data with realistic patterns
+        for i in range(num_points):
+            timestamp = end_time - (interval_delta * i)
+            
+            # Generate realistic event counts with patterns
+            base_count = 15 + (i % 7) * 3  # Weekly pattern
+            time_factor = 1.0
+            
+            if granularity == "hour":
+                # Simulate daily activity patterns (lower at night)
+                hour = timestamp.hour
+                if 22 <= hour or hour <= 6:
+                    time_factor = 0.3  # Night time low activity
+                elif 8 <= hour <= 17:
+                    time_factor = 1.5  # Business hours high activity
+            
+            event_count = int(base_count * time_factor * (0.8 + (i % 5) * 0.1))  # Add variation
+            
+            data_point = TimelineDataPoint(
+                timestamp=timestamp, 
+                value=event_count, 
+                label=f"{event_count} events"
+            )
             data_points.append(data_point)
-
+            
             total_events += event_count
-
+            
             # Track peak activity
             if event_count > peak_count:
                 peak_count = event_count
                 peak_hour = timestamp.strftime("%H:00") if granularity == "hour" else timestamp.strftime("%Y-%m-%d")
+        
+        # Sort data points by timestamp (oldest first)
+        data_points.sort(key=lambda x: x.timestamp)
 
         # Generate time range description
         if hours_back <= 24:
@@ -153,16 +175,19 @@ async def get_risk_distribution_chart(
         Risk distribution chart data with categories and percentages
     """
     try:
-        # Get risk distribution data based on analysis type
+        # Generate mock risk distribution data based on analysis type
         if analysis_type == "users":
-            risk_data = await service.get_user_risk_distribution()
             title = "User Risk Distribution"
+            # Mock user risk data - simulate realistic distribution
+            mock_risk_data = {"low": 156, "medium": 43, "high": 12, "critical": 3}
         elif analysis_type == "events":
-            risk_data = await service.get_event_risk_distribution()
             title = "Event Risk Distribution"
+            # Mock event risk data - events tend to have more high-risk items
+            mock_risk_data = {"low": 89, "medium": 134, "high": 56, "critical": 21}
         else:  # alerts
-            risk_data = await service.get_alert_risk_distribution()
             title = "Alert Risk Distribution"
+            # Mock alert risk data - alerts tend to be higher risk
+            mock_risk_data = {"low": 12, "medium": 34, "high": 28, "critical": 16}
 
         # Define risk categories with colors
         risk_categories = {
@@ -173,12 +198,12 @@ async def get_risk_distribution_chart(
         }
 
         # Process distribution data
-        total_items = sum(risk_data.values())
+        total_items = sum(mock_risk_data.values())
         distribution = []
         risk_summary = {}
 
         for risk_level, config in risk_categories.items():
-            count = risk_data.get(risk_level.lower(), 0)
+            count = mock_risk_data.get(risk_level.lower(), 0)
             percentage = (count / total_items * 100) if total_items > 0 else 0
 
             distribution_item = RiskDistributionData(

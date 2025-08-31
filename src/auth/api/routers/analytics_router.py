@@ -10,7 +10,7 @@ Endpoints:
     POST /analytics/investigate - Investigate security incidents
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -170,7 +170,7 @@ async def get_security_trends(
 
             # Generate trend data points (in production, this would come from actual data)
             trend_points = []
-            base_time = datetime.now(UTC) - timedelta(days=days_back)
+            base_time = datetime.now(timezone.utc) - timedelta(days=days_back)
 
             for i in range(days_back):
                 timestamp = base_time + timedelta(days=i)
@@ -243,7 +243,7 @@ async def get_behavioral_patterns(
         Behavioral pattern analysis with recommendations
     """
     try:
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
 
         # Parse pattern types if provided
         type_filter = None

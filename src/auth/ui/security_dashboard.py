@@ -13,7 +13,7 @@ Performance target: < 2s page load time with real-time updates
 Architecture: Gradio interface with async backend integration
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 import gradio as gr
@@ -30,17 +30,17 @@ class SecurityDashboard:
         """Initialize the security dashboard."""
         self.security_service = SecurityIntegrationService()
         self.refresh_interval = 30  # seconds
-        self.last_refresh = datetime.now(UTC)
+        self.last_refresh = datetime.now(timezone.utc)
 
         # Cache for dashboard data to improve performance
         self._metrics_cache: dict[str, Any] | None = None
         self._alerts_cache: list[dict] | None = None
-        self._cache_expiry = datetime.now(UTC)
+        self._cache_expiry = datetime.now(timezone.utc)
         self._cache_duration_seconds = 30
 
     async def get_security_metrics(self) -> dict[str, Any]:
         """Get security metrics with caching."""
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
 
         # Check cache validity
         if self._metrics_cache and current_time < self._cache_expiry:
@@ -269,7 +269,7 @@ class SecurityDashboard:
                         integration.get("average_processing_time_ms", 0),
                         health_data,
                         timeline_fig,
-                        datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
                     ]
 
                 except Exception as e:
@@ -498,12 +498,12 @@ class SecurityDashboard:
                 with gr.Column(scale=1):
                     start_date = gr.DateTime(
                         label="Start Date",
-                        value=datetime.now(UTC) - timedelta(days=1),
+                        value=datetime.now(timezone.utc) - timedelta(days=1),
                         container=True,
                     )
 
                 with gr.Column(scale=1):
-                    end_date = gr.DateTime(label="End Date", value=datetime.now(UTC), container=True)
+                    end_date = gr.DateTime(label="End Date", value=datetime.now(timezone.utc), container=True)
 
                 with gr.Column(scale=1):
                     event_type_filter = gr.Dropdown(
@@ -592,7 +592,7 @@ class SecurityDashboard:
     def _create_timeline_chart(self) -> go.Figure:
         """Create timeline chart for dashboard."""
         # Generate mock timeline data
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         timeline_data = []
 
         for i in range(24):  # Last 24 hours
@@ -649,7 +649,7 @@ class SecurityDashboard:
     def _generate_mock_alerts(self, severity_filter, status_filter, time_filter) -> list[list]:
         """Generate mock alerts data for demonstration."""
         alerts = []
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
 
         # Parse time filter
         hours_back = {"Last Hour": 1, "Last 6 Hours": 6, "Last 24 Hours": 24, "Last Week": 168}
@@ -708,7 +708,7 @@ class SecurityDashboard:
     def _create_alert_trends_chart(self) -> go.Figure:
         """Create alert trends chart."""
         # Generate mock trend data
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         trend_data = []
 
         for i in range(7):  # Last 7 days
@@ -774,7 +774,7 @@ class SecurityDashboard:
     def _create_user_risk_chart(self, user_id: str) -> go.Figure:
         """Create user risk trend chart."""
         # Generate mock risk trend data
-        current_time = datetime.now(UTC)
+        current_time = datetime.now(timezone.utc)
         risk_data = []
 
         base_risk = hash(user_id) % 100
