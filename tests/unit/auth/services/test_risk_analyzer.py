@@ -660,7 +660,9 @@ class TestDetectionPatterns:
         ]
 
         suspicious = await analyzer._detect_unusual_sequences(
-            "repeat_user", repetitive_activities, 0.9,
+            "repeat_user",
+            repetitive_activities,
+            0.9,
         )  # Higher sensitivity
 
         assert len(suspicious) > 0

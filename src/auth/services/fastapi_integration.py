@@ -372,7 +372,8 @@ def create_fastapi_app(
     # Add middleware for request context (if needed)
     @app.middleware("http")
     async def service_context_middleware(
-        request: Request, call_next,
+        request: Request,
+        call_next,
     ):  # nosemgrep: python.lang.correctness.useless-inner-function
         """Middleware to provide service context for requests."""
         # Add request ID or other context if needed

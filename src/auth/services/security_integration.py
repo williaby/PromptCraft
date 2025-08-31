@@ -13,6 +13,7 @@ Architecture: Event-driven orchestration with async service coordination
 """
 
 import asyncio
+import logging
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -24,6 +25,8 @@ from .alert_engine import AlertEngine, AlertEngineConfig
 from .security_logger import LoggingConfig, SecurityLogger
 from .security_monitor import MonitoringConfig, SecurityMonitor
 from .suspicious_activity_detector import SuspiciousActivityConfig, SuspiciousActivityDetector
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -272,7 +275,8 @@ class SecurityIntegrationService:
             if self.suspicious_activity_detector and self._is_service_healthy("detector"):
                 try:
                     analysis_result = await self.suspicious_activity_detector.analyze_activity(
-                        event, additional_context,
+                        event,
+                        additional_context,
                     )
 
                     if analysis_result.is_suspicious:
@@ -506,7 +510,8 @@ class SecurityIntegrationService:
             if self.security_logger:
                 logger_metrics = await self.security_logger.get_metrics()
                 self.metrics.logger_healthy = logger_metrics.get("health", {}).get("is_processing", False)
-        except:
+        except Exception as e:
+            logger.warning("Failed to get logger health metrics: %s", e)
             self.metrics.logger_healthy = False
 
         # Similar health checks for other services would go here...
@@ -542,8 +547,9 @@ class SecurityIntegrationService:
                 pass
 
             # Additional cleanup tasks would go here
-        except Exception:
-            pass
+        except Exception as e:
+            # Log cleanup failure but don't raise - this is best effort cleanup
+            logger.warning("Cleanup task failed: %s", e)
 
     async def get_integration_health(self) -> dict[str, Any]:
         """Get health status of all integration services."""
@@ -611,20 +617,23 @@ class SecurityIntegrationService:
         try:
             if self.security_logger:
                 metrics["logger"] = await self.security_logger.get_metrics()
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to get logger metrics: %s", e)
+            metrics["logger"] = {"error": "metrics unavailable"}
 
         try:
             if self.security_monitor:
                 metrics["monitor"] = await self.security_monitor.get_metrics()
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to get monitor metrics: %s", e)
+            metrics["monitor"] = {"error": "metrics unavailable"}
 
         try:
             if self.alert_engine:
                 metrics["alert_engine"] = await self.alert_engine.get_metrics()
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to get alert engine metrics: %s", e)
+            metrics["alert_engine"] = {"error": "metrics unavailable"}
 
         return metrics
 
@@ -1206,14 +1215,14 @@ class SecurityIntegrationService:
         try:
             if self.security_logger:
                 await self.security_logger.shutdown()
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to shutdown security logger: %s", e)
 
         try:
             if self.alert_engine:
                 await self.alert_engine.shutdown()
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to shutdown alert engine: %s", e)
 
     async def get_security_trends(
         self,

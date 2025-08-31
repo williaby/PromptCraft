@@ -147,7 +147,11 @@ class TestGenerateAuditReportEndpoint:
 
     @pytest.mark.asyncio
     async def test_generate_report_success(
-        self, test_client, mock_security_service, sample_audit_report_request, sample_audit_report_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_audit_report_request,
+        sample_audit_report_response,
     ):
         """Test successful audit report generation."""
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
@@ -163,7 +167,10 @@ class TestGenerateAuditReportEndpoint:
 
     @pytest.mark.asyncio
     async def test_generate_report_different_types(
-        self, test_client, mock_security_service, sample_audit_report_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_audit_report_response,
     ):
         """Test audit report generation with different report types."""
         report_types = ["comprehensive", "security", "compliance", "activity"]
@@ -187,7 +194,10 @@ class TestGenerateAuditReportEndpoint:
 
     @pytest.mark.asyncio
     async def test_generate_report_different_formats(
-        self, test_client, mock_security_service, sample_audit_report_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_audit_report_response,
     ):
         """Test audit report generation with different output formats."""
         formats = ["json", "csv", "pdf"]
@@ -253,7 +263,11 @@ class TestGenerateAuditReportEndpoint:
 
     @pytest.mark.asyncio
     async def test_generate_report_with_background_tasks(
-        self, test_client, mock_security_service, sample_audit_report_request, sample_audit_report_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_audit_report_request,
+        sample_audit_report_response,
     ):
         """Test audit report generation triggers background tasks."""
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
@@ -550,7 +564,8 @@ class TestAuditRouterIntegration:
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
 
         report_response = test_client.post(
-            "/audit/generate-report", json=sample_audit_report_request.model_dump(mode="json"),
+            "/audit/generate-report",
+            json=sample_audit_report_request.model_dump(mode="json"),
         )
         assert report_response.status_code == 200
 

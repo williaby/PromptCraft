@@ -72,7 +72,10 @@ class TestAuthMiddlewareDatabase:
         """Authentication middleware instance."""
         app = MagicMock()
         return AuthenticationMiddleware(
-            app, config=mock_config, jwt_validator=mock_jwt_validator, excluded_paths=["/health", "/docs"],
+            app,
+            config=mock_config,
+            jwt_validator=mock_jwt_validator,
+            excluded_paths=["/health", "/docs"],
         )
 
     @pytest.mark.asyncio
@@ -602,7 +605,11 @@ class TestAuthMiddlewareDatabase:
             await middleware._update_user_session(authenticated_user, mock_request)
 
     async def test_log_authentication_event_success(
-        self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_jwt_validator,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test successful authentication event logging."""
         app = MagicMock()
@@ -637,7 +644,11 @@ class TestAuthMiddlewareDatabase:
             mock_session.commit.assert_called_once()
 
     async def test_log_authentication_event_failure(
-        self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_jwt_validator,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test authentication event logging for failures."""
         app = MagicMock()
@@ -804,7 +815,11 @@ class TestAuthMiddlewareDatabase:
         assert ip is None
 
     async def test_dispatch_with_database_integration_success(
-        self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_jwt_validator,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test complete dispatch flow with database integration."""
         app = MagicMock()
@@ -843,7 +858,10 @@ class TestAuthMiddlewareDatabase:
             assert mock_session.commit.call_count >= 2  # Both session update and event logging
 
     async def test_dispatch_with_database_integration_auth_failure(
-        self, mock_config, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test dispatch flow with authentication failure and database logging."""
         app = MagicMock()
@@ -881,7 +899,11 @@ class TestAuthMiddlewareDatabase:
             mock_session.commit.assert_called_once()
 
     async def test_dispatch_performance_metrics_collection(
-        self, mock_config, mock_jwt_validator, mock_request, mock_database_manager_and_session,
+        self,
+        mock_config,
+        mock_jwt_validator,
+        mock_request,
+        mock_database_manager_and_session,
     ):
         """Test that performance metrics are collected during dispatch."""
         app = MagicMock()

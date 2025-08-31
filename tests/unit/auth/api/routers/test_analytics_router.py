@@ -187,7 +187,10 @@ class TestGetSecurityTrendsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_trends_with_time_range(
-        self, test_client, mock_security_service, sample_security_trends_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_security_trends_response,
     ):
         """Test trends retrieval with custom time range."""
         mock_security_service.get_security_trends.return_value = {"status": "success"}
@@ -277,7 +280,10 @@ class TestGetBehaviorPatternsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_patterns_with_risk_filter(
-        self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_behavior_patterns,
     ):
         """Test patterns retrieval with risk level filtering."""
         high_risk_patterns = [p for p in sample_behavior_patterns if p.risk_level == "high"]
@@ -312,7 +318,10 @@ class TestGetBehaviorPatternsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_patterns_with_limit(
-        self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_behavior_patterns,
     ):
         """Test patterns retrieval with limit parameter."""
         PatternAnalysisResponse(
@@ -488,7 +497,10 @@ class TestIncidentInvestigationEndpoint:
 
     @pytest.mark.asyncio
     async def test_investigate_incident_service_error(
-        self, test_client, mock_security_service, sample_investigation_request,
+        self,
+        test_client,
+        mock_security_service,
+        sample_investigation_request,
     ):
         """Test incident investigation when service raises exception."""
         mock_security_service.investigate_security_incident.side_effect = Exception("Investigation failed")
@@ -499,7 +511,10 @@ class TestIncidentInvestigationEndpoint:
 
     @pytest.mark.asyncio
     async def test_investigate_incident_empty_result(
-        self, test_client, mock_security_service, sample_investigation_request,
+        self,
+        test_client,
+        mock_security_service,
+        sample_investigation_request,
     ):
         """Test incident investigation with no findings."""
         IncidentInvestigationResponse(
@@ -680,7 +695,8 @@ class TestAnalyticsRouterIntegration:
         }
 
         investigate_response = test_client.post(
-            "/analytics/investigate", json=sample_investigation_request.model_dump(mode="json"),
+            "/analytics/investigate",
+            json=sample_investigation_request.model_dump(mode="json"),
         )
         assert investigate_response.status_code == 200
 
@@ -691,7 +707,10 @@ class TestAnalyticsRouterPerformance:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_trends_analysis_performance(
-        self, test_client, mock_security_service, sample_security_trends_response,
+        self,
+        test_client,
+        mock_security_service,
+        sample_security_trends_response,
     ):
         """Test trends analysis performance with large dataset."""
         # Simulate large trend dataset
@@ -715,7 +734,10 @@ class TestAnalyticsRouterPerformance:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_incident_investigation_performance(
-        self, test_client, mock_security_service, sample_investigation_request,
+        self,
+        test_client,
+        mock_security_service,
+        sample_investigation_request,
     ):
         """Test incident investigation performance."""
         IncidentInvestigationResponse(

@@ -7,7 +7,7 @@ reporting, event archival, and automated retention policy enforcement.
 import csv
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from io import StringIO
 from typing import Any
@@ -82,7 +82,9 @@ class AuditService:
     """
 
     def __init__(
-        self, db: SecurityEventsPostgreSQL | None = None, security_logger: SecurityLogger | None = None,
+        self,
+        db: SecurityEventsPostgreSQL | None = None,
+        security_logger: SecurityLogger | None = None,
     ) -> None:
         """Initialize audit service.
 
@@ -148,7 +150,7 @@ class AuditService:
         Raises:
             ValueError: If request parameters are invalid
         """
-        start_time = datetime.now()
+        start_time = datetime.now(UTC)
 
         try:
             # Validate request
@@ -159,7 +161,7 @@ class AuditService:
                 logger.warning("Report period exceeds 1 year, may impact performance")
 
             # Generate unique report ID with microseconds to ensure uniqueness
-            now = datetime.now()
+            now = datetime.now(UTC)
             report_id = f"audit_{int(now.timestamp())}_{now.microsecond}_{hash(str(request))}"
 
             # Fetch events from database with filters
@@ -171,14 +173,14 @@ class AuditService:
             # Create compliance report
             report = ComplianceReport(
                 report_id=report_id,
-                generated_at=datetime.now(),
+                generated_at=datetime.now(UTC),
                 report_request=request,
                 statistics=statistics,
                 events=events,
             )
 
             # Track performance
-            generation_time = (datetime.now() - start_time).total_seconds()
+            generation_time = (datetime.now(UTC) - start_time).total_seconds()
             self._report_generation_times.append(generation_time)
 
             # Log audit report generation
@@ -311,14 +313,14 @@ class AuditService:
         Raises:
             Exception: If cleanup operation fails
         """
-        start_time = datetime.now()
+        start_time = datetime.now(UTC)
         cleanup_stats = {}
         total_deleted = 0
 
         try:
             for policy in self.retention_policies:
                 # Calculate cutoff date for this policy
-                cutoff_date = datetime.now() - timedelta(days=policy.retention_days)
+                cutoff_date = datetime.now(UTC) - timedelta(days=policy.retention_days)
 
                 # Delete expired events for this policy's event types
                 deleted_count = await self.db.cleanup_expired_events(
@@ -335,7 +337,7 @@ class AuditService:
             if total_deleted > 0:
                 await self.db.vacuum_database()
 
-            cleanup_time = (datetime.now() - start_time).total_seconds()
+            cleanup_time = (datetime.now(UTC) - start_time).total_seconds()
 
             # Log retention enforcement
             await self.security_logger.log_security_event(

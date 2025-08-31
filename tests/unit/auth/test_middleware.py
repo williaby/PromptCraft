@@ -64,7 +64,10 @@ class TestAuthenticationMiddleware:
         custom_paths = ["/custom", "/api/public"]
 
         middleware = AuthenticationMiddleware(
-            app, config=config, jwt_validator=jwt_validator, excluded_paths=custom_paths,
+            app,
+            config=config,
+            jwt_validator=jwt_validator,
+            excluded_paths=custom_paths,
         )
 
         assert middleware.excluded_paths == custom_paths

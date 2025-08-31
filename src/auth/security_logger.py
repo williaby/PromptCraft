@@ -5,10 +5,13 @@ import json
 import logging
 import re
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from sqlalchemy import and_, desc, select, text
+if TYPE_CHECKING:
+    from .audit_service import AuditService
+
+from sqlalchemy import desc, select, text
 
 from src.database.connection import get_database_manager
 from src.database.models import SecurityEventLogger
@@ -83,7 +86,7 @@ def sanitize_event_details(details: dict[str, Any] | None) -> dict[str, Any]:
     return sanitized
 
 
-class RateLimitExceeded(Exception):
+class RateLimitExceededError(Exception):
     """Raised when rate limit is exceeded for security logging."""
 
     def __init__(self, message: str, retry_after: int) -> None:
@@ -138,7 +141,7 @@ class SecurityLogger:
             key: Rate limiting key (e.g., IP address, user ID)
 
         Raises:
-            RateLimitExceeded: If rate limit is exceeded
+            RateLimitExceededError: If rate limit is exceeded
         """
         async with self._rate_lock:
             current_time = datetime.now(UTC)
@@ -155,7 +158,7 @@ class SecurityLogger:
             if len(self._rate_tracker[key]) >= self._rate_limit:
                 oldest_time = min(self._rate_tracker[key])
                 retry_after = int((oldest_time + timedelta(seconds=self._rate_window) - current_time).total_seconds())
-                raise RateLimitExceeded(
+                raise RateLimitExceededError(
                     f"Rate limit exceeded for key '{key}': {self._rate_limit} events per {self._rate_window}s",
                     retry_after=max(1, retry_after),
                 )
@@ -231,7 +234,7 @@ class SecurityLogger:
         rate_key = self._get_rate_limit_key(event)
         try:
             await self._check_rate_limit(rate_key)
-        except RateLimitExceeded as e:
+        except RateLimitExceededError as e:
             logger.warning("Security event rate limit exceeded: %s", e)
             # For rate limit violations, still create a response but mark as rate limited
             event_id = uuid4()
@@ -436,7 +439,7 @@ class SecurityLogger:
     async def log_security_events_batch(
         self,
         events: list[SecurityEventCreate],
-        audit_service=None,
+        audit_service: "AuditService | None" = None,
     ) -> list[SecurityEventResponse]:
         """Log multiple security events in a single transaction for performance.
 
@@ -528,12 +531,17 @@ class SecurityLogger:
         await self._db_manager.close()
         self._is_initialized = False
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SecurityLogger":
         """Async context manager entry."""
         await self.initialize()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object | None,
+    ) -> bool:
         """Async context manager exit."""
         await self.close()
         return False

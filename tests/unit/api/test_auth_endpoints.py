@@ -192,7 +192,9 @@ class TestAuthEndpoints:
 
         monkeypatch.setattr(ServiceTokenManager, "__init__", lambda self: None)
         monkeypatch.setattr(
-            ServiceTokenManager, "create_service_token", mock_service_token_manager.create_service_token,
+            ServiceTokenManager,
+            "create_service_token",
+            mock_service_token_manager.create_service_token,
         )
 
         token_request = {
