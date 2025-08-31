@@ -792,7 +792,8 @@ async def get_user_risk_profile(
                 )
             except Exception as e:
                 # Log detailed error for debugging but don't expose to client
-                logger.error(f"Service error getting user risk profile for {user_id}: {e!s}", exc_info=True)
+                safe_user_id = str(user_id).replace("\r", "").replace("\n", "")
+                logger.error(f"Service error getting user risk profile for {safe_user_id}: {e!s}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
         # Fallback: generate mock risk profile if service doesn't provide it
@@ -842,7 +843,8 @@ async def get_user_risk_profile(
         )
 
     except Exception as e:
-        logger.error(f"Failed to get user risk profile for user {user_id}: {e!s}", exc_info=True)
+        sanitized_user_id = user_id.replace('\r', '').replace('\n', '')
+        logger.error(f"Failed to get user risk profile for user {sanitized_user_id}: {e!s}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
 
@@ -1407,7 +1409,8 @@ async def get_user_risk_profile(
 
             except Exception as e:
                 # Log detailed error for debugging but don't expose to client
-                logger.error(f"Service error getting user risk profile for {user_id}: {e!s}", exc_info=True)
+                safe_user_id = str(user_id).replace("\r", "").replace("\n", "")
+                logger.error(f"Service error getting user risk profile for {safe_user_id}: {e!s}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
         # Fallback to mock data for demo/testing
@@ -1455,7 +1458,8 @@ async def get_user_risk_profile(
         )
 
     except Exception as e:
-        logger.error(f"Failed to get user risk profile for user {user_id}: {e!s}", exc_info=True)
+        sanitized_user_id = user_id.replace('\r', '').replace('\n', '')
+        logger.error(f"Failed to get user risk profile for user {sanitized_user_id}: {e!s}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
 

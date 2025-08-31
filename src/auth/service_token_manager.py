@@ -188,9 +188,7 @@ class ServiceTokenManager:
             token_record = result.fetchone()
 
             if not token_record:
-                # Sanitize token_identifier for logging to prevent log injection
-                safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
-                logger.warning(f"Service token not found for revocation: {safe_identifier}...")
+                logger.warning("Service token not found for revocation")
                 return False
 
             # Deactivate the token
@@ -219,16 +217,13 @@ class ServiceTokenManager:
             return True
 
         except Exception as e:
-            # Sanitize token_identifier for logging to prevent log injection
-            safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
-
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error("Database connection failed for token revocation '%s...': %s", safe_identifier, str(e))
+                logger.error("Database connection failed during token revocation: %s", str(e))
                 raise
 
             # Log and return None for other errors
-            logger.error("Error revoking service token '%s...': %s", safe_identifier, str(e))
+            logger.error("Error revoking service token: %s", str(e))
             return None
 
     async def emergency_revoke_all_tokens(self, emergency_reason: str) -> int | None:
@@ -314,9 +309,7 @@ class ServiceTokenManager:
             old_token = result.fetchone()
 
             if not old_token:
-                # Sanitize token_identifier for logging to prevent log injection
-                safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
-                logger.warning(f"Active service token not found for rotation: {safe_identifier}...")
+                logger.warning("Active service token not found for rotation")
                 return None
 
             # Generate new token
@@ -367,16 +360,13 @@ class ServiceTokenManager:
             return new_token_value, str(new_token.id)
 
         except Exception as e:
-            # Sanitize token_identifier for logging to prevent log injection
-            safe_identifier = token_identifier.replace("\n", "").replace("\r", "")[:50]
-
             # Database connection errors should propagate
             if "Database connection failed" in str(e):
-                logger.error(f"Database connection failed for token rotation '{safe_identifier}...': {e}")
+                logger.error("Database connection failed during token rotation: %s", str(e))
                 raise
 
             # Log and return None for other errors
-            logger.error(f"Error rotating service token '{safe_identifier}...': {e}")
+            logger.error("Error rotating service token: %s", str(e))
             return None
 
     async def get_token_usage_analytics(
