@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **Always Use TodoWrite Tool**: Create and maintain TODO lists for ALL tasks to track progress
 2. **Assign Tasks to Agents**: Each TODO item should be assigned to a specialized agent via Zen MCP Server
 3. **Review Agent Work**: Validate all agent outputs before proceeding to next steps
-4. **Use Temporary Reference Files**: Create `.tmp-` prefixed files to store detailed context that might be lost during compaction
+4. **Use Temporary Reference Files**: Create `.tmp-` prefixed files in `tmp_cleanup/` folder to store detailed context that might be lost during compaction
 5. **Maintain Continuity**: Use reference files to preserve TODO details across conversation compactions
 
 ### Agent Assignment Patterns
@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Multi-step workflows span multiple conversation turns
 - Agent assignments and progress need tracking
 
-**Naming Convention**: `.tmp-{task-type}-{timestamp}.md` (e.g., `.tmp-auth4-implementation-20250125.md`)
+**Naming Convention**: `tmp_cleanup/.tmp-{task-type}-{timestamp}.md` (e.g., `tmp_cleanup/.tmp-auth4-implementation-20250125.md`)
 
 ## Project Overview
 
@@ -183,7 +183,7 @@ purpose: [Single sentence ending with period]
 1. **Create TODO List**: Use TodoWrite tool to break down the task into specific, actionable items
 2. **Agent Assignment**: Assign each TODO item to the most appropriate specialized agent
 3. **Progress Tracking**: Mark items as in_progress when assigned, completed when validated
-4. **Reference File Creation**: For complex tasks, create `.tmp-` reference files immediately
+4. **Reference File Creation**: For complex tasks, create `.tmp-` reference files in `tmp_cleanup/` folder immediately
 5. **Agent Output Validation**: Review all agent work before marking items complete
 
 ### Multi-Agent Coordination
@@ -235,7 +235,7 @@ purpose: [Single sentence ending with period]
 
 - **ALWAYS** use TodoWrite tool for task tracking and agent coordination
 - **ASSIGN** each TODO item to appropriate specialized agents via Zen MCP Server
-- **CREATE** temporary reference files for complex multi-step tasks
+- **CREATE** temporary reference files in `tmp_cleanup/` folder for complex multi-step tasks
 - **VALIDATE** all agent outputs before marking TODO items as completed
 - **ALWAYS** run file-specific linters before committing changes
 - **FOLLOW** all naming conventions exactly as specified
