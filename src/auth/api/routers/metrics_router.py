@@ -9,6 +9,7 @@ Endpoints:
     GET /export/metrics - Export metrics data
 """
 
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,6 +17,8 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityMetricsResponse(BaseModel):
@@ -136,7 +139,8 @@ async def get_security_metrics(
 
     except Exception as e:
         # Log the error (in production)
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve security metrics: {e!s}") from e
+        logger.error(f"Security metrics retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve security metrics") from e
 
 
 @router.get("/export")
@@ -188,4 +192,5 @@ async def export_security_metrics(
         return metrics_response
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to export security metrics: {e!s}") from e
+        logger.error(f"Security metrics export failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to export security metrics") from e

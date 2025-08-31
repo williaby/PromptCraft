@@ -11,6 +11,7 @@ Endpoints:
     GET /audit/retention/policies - Get retention policies
 """
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -18,6 +19,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+
+logger = logging.getLogger(__name__)
 
 
 class AuditReportRequest(BaseModel):
@@ -143,7 +146,8 @@ async def generate_audit_report(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}") from e
+        logger.error(f"Audit report generation failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to generate audit report") from e
 
 
 @router.get("/statistics", response_model=AuditStatisticsResponse)
@@ -204,7 +208,8 @@ async def get_audit_statistics(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get audit statistics: {e!s}") from e
+        logger.error(f"Audit statistics retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get audit statistics") from e
 
 
 @router.post("/retention/enforce")
@@ -275,7 +280,8 @@ async def enforce_retention_policies(
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to enforce retention policies: {e!s}") from e
+        logger.error(f"Retention policy enforcement failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to enforce retention policies") from e
 
 
 @router.get("/retention/policies", response_model=list[RetentionPolicy])
@@ -314,4 +320,5 @@ async def get_retention_policies(
         return policies
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get retention policies: {e!s}") from e
+        logger.error(f"Retention policy retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get retention policies") from e

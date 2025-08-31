@@ -8,6 +8,7 @@ Endpoints:
     GET /users/{user_id}/risk-profile - Get user risk profile
 """
 
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Path
@@ -15,6 +16,8 @@ from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
 from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
+
+logger = logging.getLogger(__name__)
 
 
 class UserRiskProfileResponse(BaseModel):
@@ -132,4 +135,5 @@ async def get_user_risk_profile(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}") from e
+        logger.error(f"User risk profile retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get user risk profile") from e

@@ -20,6 +20,8 @@ from src.auth.services.alert_engine import AlertEngine
 from src.auth.services.security_integration import SecurityIntegrationService
 from src.utils.datetime_compat import UTC
 
+logger = logging.getLogger(__name__)
+
 
 class AlertSummaryResponse(BaseModel):
     """Response model for alert summary."""
@@ -128,7 +130,8 @@ async def get_security_alerts(
         return paginated_alerts
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve security alerts: {e!s}") from e
+        logger.error(f"Security alerts retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve security alerts") from e
 
 
 @router.post("/{alert_id}/acknowledge")
@@ -194,4 +197,5 @@ async def acknowledge_alert(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {e!s}") from e
+        logger.error(f"Alert acknowledgment failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to acknowledge alert") from e

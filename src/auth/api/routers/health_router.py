@@ -10,6 +10,7 @@ Endpoints:
     GET /health/services - Individual service health
 """
 
+import logging
 from datetime import UTC, datetime
 
 import psutil
@@ -17,6 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+
+logger = logging.getLogger(__name__)
 
 
 class HealthStatus(BaseModel):
@@ -182,7 +185,8 @@ async def detailed_health_check(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to perform detailed health check: {e!s}") from e
+        logger.error(f"Detailed health check failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to perform detailed health check") from e
 
 
 @router.get("/services", response_model=dict[str, ServiceHealth])
@@ -230,7 +234,8 @@ async def get_service_health(
         return services
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get service health: {e!s}") from e
+        logger.error(f"Service health retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get service health") from e
 
 
 async def _get_system_metrics() -> dict[str, float]:

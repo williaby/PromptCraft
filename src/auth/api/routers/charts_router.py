@@ -9,12 +9,15 @@ Endpoints:
     GET /charts/risk-distribution - Get risk distribution chart data
 """
 
+import logging
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+
+logger = logging.getLogger(__name__)
 
 
 class TimelineDataPoint(BaseModel):
@@ -82,7 +85,6 @@ async def get_event_timeline_chart(
     try:
         # Calculate time range
         end_time = datetime.now(UTC)
-        end_time - timedelta(hours=hours_back)
 
         # Generate mock event timeline data
         data_points = []
@@ -152,7 +154,8 @@ async def get_event_timeline_chart(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get event timeline chart: {e!s}") from e
+        logger.error(f"Event timeline chart generation failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get event timeline chart") from e
 
 
 @router.get("/risk-distribution", response_model=RiskDistributionResponse)
@@ -227,4 +230,5 @@ async def get_risk_distribution_chart(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get risk distribution chart: {e!s}") from e
+        logger.error(f"Risk distribution chart generation failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get risk distribution chart") from e

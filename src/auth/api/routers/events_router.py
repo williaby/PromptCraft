@@ -8,6 +8,7 @@ Endpoints:
     POST /events/search - Search security events
 """
 
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,6 +17,8 @@ from pydantic import BaseModel, Field
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
 from src.utils.datetime_compat import UTC
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityEventSearchRequest(BaseModel):
@@ -164,4 +167,5 @@ async def search_security_events(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to search security events: {e!s}") from e
+        logger.error(f"Security event search failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to search security events") from e

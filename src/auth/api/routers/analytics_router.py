@@ -10,6 +10,7 @@ Endpoints:
     POST /analytics/investigate - Investigate security incidents
 """
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -18,6 +19,8 @@ from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
 from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
+
+logger = logging.getLogger(__name__)
 
 
 class TrendDataPoint(BaseModel):
@@ -212,7 +215,8 @@ async def get_security_trends(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get security trends: {e!s}") from e
+        logger.error(f"Security trends retrieval failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get security trends") from e
 
 
 @router.get("/patterns", response_model=PatternAnalysisResponse)
@@ -292,7 +296,8 @@ async def get_behavioral_patterns(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get behavioral patterns: {e!s}") from e
+        logger.error(f"Behavioral patterns analysis failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to get behavioral patterns") from e
 
 
 @router.post("/investigate", response_model=IncidentInvestigationResponse)
@@ -413,7 +418,8 @@ async def investigate_security_incident(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to investigate security incident: {e!s}") from e
+        logger.error(f"Security incident investigation failed: {e!s}")
+        raise HTTPException(status_code=500, detail="Failed to investigate security incident") from e
 
 
 def _calculate_risk_level(risk_score: float) -> str:
