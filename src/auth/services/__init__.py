@@ -70,24 +70,14 @@ __all__ = [
     # Audit service
     "AuditService",
     "AuditStatistics",
-    # Service bootstrap and initialization
-    "bootstrap_services_async",
     # Dependency injection container
     "CircularDependencyError",
     "ComplianceReport",
-    "configure_container",
-    "create_development_container",
-    "create_production_container",
-    "create_test_container",
     "EmailConfig",
     "EmailHandler",
     "ExportFormat",
-    "get_container",
-    "get_container_for_environment",
     "IServiceContainer",
-    "initialize_container_async",
     "RetentionPolicy",
-    "reset_container",
     "SecurityAlert",
     "SecurityIntegrationConfig",
     "SecurityIntegrationMetrics",
@@ -108,9 +98,19 @@ __all__ = [
     # Suspicious activity detection
     "SuspiciousActivityDetector",
     "SuspiciousActivityType",
-    "validate_container_configuration",
     "WebhookConfig",
     # Notification handlers
     "WebhookHandler",
+    # Service bootstrap and initialization
+    "bootstrap_services_async",
+    "configure_container",
+    "create_development_container",
     "create_notification_handlers",
+    "create_production_container",
+    "create_test_container",
+    "get_container",
+    "get_container_for_environment",
+    "initialize_container_async",
+    "reset_container",
+    "validate_container_configuration",
 ]

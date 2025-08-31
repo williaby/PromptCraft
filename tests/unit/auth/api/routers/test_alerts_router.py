@@ -4,19 +4,19 @@ Tests all endpoints in the alerts router including security alert retrieval,
 alert acknowledgment, and error handling scenarios.
 """
 
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
 import pytest
-from datetime import datetime, timezone
-from uuid import uuid4, UUID
-from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from src.auth.api.routers.alerts_router import (
-    router,
     AlertSummaryResponse,
-    get_security_service,
     get_alert_engine,
+    get_security_service,
+    router,
 )
 from src.auth.services.alert_engine import AlertEngine
 from src.auth.services.security_integration import SecurityIntegrationService
@@ -25,15 +25,13 @@ from src.auth.services.security_integration import SecurityIntegrationService
 @pytest.fixture
 def mock_security_service():
     """Mock security integration service."""
-    service = AsyncMock(spec=SecurityIntegrationService)
-    return service
+    return AsyncMock(spec=SecurityIntegrationService)
 
 
 @pytest.fixture
 def mock_alert_engine():
     """Mock alert engine."""
-    engine = AsyncMock(spec=AlertEngine)
-    return engine
+    return AsyncMock(spec=AlertEngine)
 
 
 @pytest.fixture
@@ -41,11 +39,11 @@ def test_app(mock_security_service, mock_alert_engine):
     """Create test FastAPI app with mocked dependencies."""
     app = FastAPI()
     app.include_router(router)
-    
+
     # Override dependencies
     app.dependency_overrides[get_security_service] = lambda: mock_security_service
     app.dependency_overrides[get_alert_engine] = lambda: mock_alert_engine
-    
+
     return app
 
 
@@ -63,7 +61,7 @@ def sample_alert_data():
         "alert_type": "brute_force_attempt",
         "severity": "high",
         "title": "Brute Force Attack Detected",
-        "timestamp": datetime.now(timezone.utc),
+        "timestamp": datetime.now(UTC),
         "affected_user": "test_user@example.com",
         "affected_ip": "192.168.1.100",
         "acknowledged": False,
@@ -118,14 +116,14 @@ class TestGetSecurityAlertsEndpoint:
     async def test_get_alerts_success(self, test_client):
         """Test successful alert retrieval."""
         response = test_client.get("/alerts/")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Should return at least some alerts (the endpoint generates mock data)
         assert isinstance(data, list)
         assert len(data) >= 0
-        
+
         if len(data) > 0:
             # Validate first alert structure
             first_alert = data[0]
@@ -133,12 +131,12 @@ class TestGetSecurityAlertsEndpoint:
             for field in required_fields:
                 assert field in first_alert
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_get_alerts_with_severity_filter(self, test_client):
         """Test alert retrieval with severity filtering."""
-        
+
         response = test_client.get("/alerts/?severity=high")
-        
+
         assert response.status_code == 200
         data = response.json()
         for alert in data:
@@ -148,7 +146,7 @@ class TestGetSecurityAlertsEndpoint:
     async def test_get_alerts_with_acknowledged_filter(self, test_client):
         """Test alert retrieval with acknowledgment filtering."""
         response = test_client.get("/alerts/?acknowledged=false")
-        
+
         assert response.status_code == 200
         data = response.json()
         for alert in data:
@@ -158,7 +156,7 @@ class TestGetSecurityAlertsEndpoint:
     async def test_get_alerts_with_pagination(self, test_client):
         """Test alert retrieval with pagination parameters."""
         response = test_client.get("/alerts/?limit=3&offset=0")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert len(data) <= 3
@@ -167,14 +165,14 @@ class TestGetSecurityAlertsEndpoint:
     async def test_get_alerts_invalid_severity(self, test_client):
         """Test alert retrieval with invalid severity parameter."""
         response = test_client.get("/alerts/?severity=invalid")
-        
+
         assert response.status_code == 422  # Unprocessable Entity
-        
+
     @pytest.mark.asyncio
     async def test_get_alerts_invalid_limit(self, test_client):
         """Test alert retrieval with invalid limit parameter."""
         response = test_client.get("/alerts/?limit=0")
-        
+
         assert response.status_code == 422  # Unprocessable Entity
 
     @pytest.mark.asyncio
@@ -183,16 +181,16 @@ class TestGetSecurityAlertsEndpoint:
         # The endpoint generates mock data directly, so it should always succeed
         # unless there's an internal server error
         response = test_client.get("/alerts/")
-        
+
         # Should succeed since no external service calls are made
         assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_get_alerts_empty_result(self, test_client):
         """Test alert retrieval with limit that may return empty result."""
-        # Test with very high offset to get empty results  
+        # Test with very high offset to get empty results
         response = test_client.get("/alerts/?offset=1000&limit=10")
-        
+
         assert response.status_code == 200
         data = response.json()
         # Should return empty list due to high offset
@@ -207,9 +205,9 @@ class TestAcknowledgeAlertEndpoint:
         """Test successful alert acknowledgment."""
         # Use a normal UUID (not starting with special patterns)
         alert_id = "12345678-1234-5678-9012-123456789012"
-        
+
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
@@ -221,9 +219,9 @@ class TestAcknowledgeAlertEndpoint:
         """Test acknowledging non-existent alert."""
         # Use UUID starting with 'ffffffff' to trigger 404
         alert_id = "ffffffff-1234-5678-9012-123456789012"
-        
+
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
-        
+
         assert response.status_code == 404
         data = response.json()
         assert "not found" in data["detail"].lower()
@@ -232,7 +230,7 @@ class TestAcknowledgeAlertEndpoint:
     async def test_acknowledge_alert_invalid_uuid(self, test_client):
         """Test acknowledging alert with invalid UUID."""
         response = test_client.post("/alerts/invalid-uuid/acknowledge")
-        
+
         assert response.status_code == 422  # Unprocessable Entity
 
     @pytest.mark.asyncio
@@ -242,9 +240,9 @@ class TestAcknowledgeAlertEndpoint:
         # simulate engine errors. However, internal server errors would return 500.
         # This test validates the endpoint's error handling structure.
         alert_id = "12345678-1234-5678-9012-123456789012"
-        
+
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
-        
+
         # Normal UUID should succeed (testing that 500 would be returned for actual errors)
         assert response.status_code == 200
 
@@ -252,9 +250,9 @@ class TestAcknowledgeAlertEndpoint:
     async def test_acknowledge_alert_with_background_tasks(self, test_client):
         """Test alert acknowledgment triggers background tasks."""
         alert_id = "12345678-1234-5678-9012-123456789012"
-        
+
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
-        
+
         assert response.status_code == 200
         # Verify background task was triggered (indirectly through successful response)
         # The endpoint sets up background tasks but we can't directly verify them in tests
@@ -268,7 +266,7 @@ class TestAlertSummaryResponseModel:
     def test_alert_summary_response_model_creation(self, sample_alert_data):
         """Test creating AlertSummaryResponse model with valid data."""
         response = AlertSummaryResponse(**sample_alert_data)
-        
+
         assert response.id == sample_alert_data["id"]
         assert response.alert_type == sample_alert_data["alert_type"]
         assert response.severity == sample_alert_data["severity"]
@@ -282,13 +280,13 @@ class TestAlertSummaryResponseModel:
             "alert_type": "test_alert",
             "severity": "low",
             "title": "Test Alert",
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "affected_user": None,
             "affected_ip": None,
             "acknowledged": False,
             "risk_score": 10,
         }
-        
+
         response = AlertSummaryResponse(**data)
         assert response.affected_user is None
         assert response.affected_ip is None
@@ -299,9 +297,9 @@ class TestAlertSummaryResponseModel:
             AlertSummaryResponse(
                 id="invalid-uuid",  # Invalid UUID
                 alert_type="test",
-                severity="low", 
+                severity="low",
                 title="Test",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 acknowledged=False,
                 risk_score=10,
             )
@@ -317,14 +315,14 @@ class TestAlertsRouterIntegration:
         response = test_client.get("/alerts/?acknowledged=false")
         assert response.status_code == 200
         alerts = response.json()
-        
+
         # Step 2: Acknowledge first alert
         if alerts:
             alert_id = alerts[0]["id"]
-            
+
             ack_response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
             assert ack_response.status_code == 200
-            
+
             data = ack_response.json()
             assert data["alert_id"] == alert_id
             assert data["acknowledged_by"] == "test_user"
@@ -335,12 +333,12 @@ class TestAlertsRouterIntegration:
         # Get endpoint should succeed (generates data directly)
         get_response = test_client.get("/alerts/")
         assert get_response.status_code == 200
-        
+
         # Test acknowledge endpoint with 404 pattern (UUID starting with 'ffffffff')
         ack_response = test_client.post("/alerts/ffffffff-1234-5678-9012-123456789012/acknowledge?user_id=test_user")
         assert ack_response.status_code == 404
-        
-        # Test acknowledge endpoint with 409 pattern (UUID starting with 'aaaaaaaa')  
+
+        # Test acknowledge endpoint with 409 pattern (UUID starting with 'aaaaaaaa')
         conflict_response = test_client.post("/alerts/aaaaaaaa-1234-5678-9012-123456789012/acknowledge?user_id=test_user")
         assert conflict_response.status_code == 409
 
@@ -352,31 +350,31 @@ class TestAlertsRouterPerformance:
     @pytest.mark.asyncio
     async def test_get_alerts_performance(self, test_client):
         """Test alert retrieval performance - endpoint generates data internally."""
-        
+
         import time
         start_time = time.time()
-        
+
         response = test_client.get("/alerts/?limit=100")
-        
+
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         assert response.status_code == 200
         assert response_time < 2.0  # Should respond within 2 seconds
-        
-    @pytest.mark.performance 
+
+    @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_acknowledge_alert_performance(self, test_client):
         """Test alert acknowledgment performance."""
         alert_id = "12345678-1234-5678-9012-123456789012"
-        
+
         import time
         start_time = time.time()
-        
+
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")
-        
+
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         assert response.status_code == 200
         assert response_time < 1.0  # Should respond within 1 second

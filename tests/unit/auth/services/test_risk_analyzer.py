@@ -4,8 +4,7 @@ Test suite for Risk Analyzer Service.
 Tests risk assessment, behavioral analysis, and anomaly detection functionality.
 """
 
-from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -18,7 +17,7 @@ class TestRiskAnalyzerInitialization:
     def test_init_default_configuration(self):
         """Test risk analyzer initializes with default configuration."""
         analyzer = RiskAnalyzer()
-        
+
         assert analyzer._risk_cache == {}
         assert analyzer._behavioral_patterns == {}
         assert analyzer._baseline_metrics == {}
@@ -35,7 +34,7 @@ class TestUserRiskProfileAnalysis:
     @pytest.fixture
     def sample_activity_data(self):
         """Create sample activity data for testing."""
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
         return {
             "login_events": [
                 {"success": True, "location": "New York", "timestamp": base_time - timedelta(hours=i)}
@@ -72,15 +71,15 @@ class TestUserRiskProfileAnalysis:
         result = await analyzer.analyze_user_risk_profile(
             user_id="test_user_001",
             activity_data=sample_activity_data,
-            time_window_hours=168
+            time_window_hours=168,
         )
-        
+
         assert result["user_id"] == "test_user_001"
         assert "analysis_timestamp" in result
         assert result["time_window_hours"] == 168
         assert 0 <= result["overall_risk_score"] <= 100
         assert result["risk_level"] in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        
+
         # Verify risk factors are analyzed
         assert "risk_factors" in result
         risk_factors = result["risk_factors"]
@@ -88,12 +87,12 @@ class TestUserRiskProfileAnalysis:
         assert "access_patterns" in risk_factors
         assert "behavioral_anomalies" in risk_factors
         assert "temporal_patterns" in risk_factors
-        
+
         # Verify recommendations are provided
         assert "recommendations" in result
         assert isinstance(result["recommendations"], list)
         assert len(result["recommendations"]) > 0
-        
+
         # Verify confidence score
         assert 0 <= result["confidence_score"] <= 100
 
@@ -101,10 +100,10 @@ class TestUserRiskProfileAnalysis:
         """Test risk analysis for high-risk user scenario."""
         high_risk_data = {
             "login_events": [
-                {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(timezone.utc) - timedelta(hours=i)}
+                {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(UTC) - timedelta(hours=i)}
                 for i in range(10)  # Many failed logins from different locations
             ] + [
-                {"success": True, "location": "Unknown", "timestamp": datetime.now(timezone.utc).replace(hour=3)}
+                {"success": True, "location": "Unknown", "timestamp": datetime.now(UTC).replace(hour=3)}
                 for _ in range(60)  # High frequency logins at unusual hours
             ],
             "access_events": [
@@ -124,21 +123,21 @@ class TestUserRiskProfileAnalysis:
                 "clustering_score": 90.0,  # Potential automation
                 "timezone_variance": 5,  # Multiple timezones
             },
-            "last_activity_timestamp": datetime.now(timezone.utc) - timedelta(minutes=30),
+            "last_activity_timestamp": datetime.now(UTC) - timedelta(minutes=30),
         }
-        
+
         result = await analyzer.analyze_user_risk_profile(
             user_id="high_risk_user",
-            activity_data=high_risk_data
+            activity_data=high_risk_data,
         )
-        
+
         # Should be high or critical risk
         assert result["overall_risk_score"] >= 60
         assert result["risk_level"] in ["HIGH", "CRITICAL"]
-        
+
         # Should have many risk indicators
         assert len(result["risk_indicators"]) >= 5
-        
+
         # Should have security-focused recommendations
         recommendations = result["recommendations"]
         security_recommendations = [r for r in recommendations if "security" in r.lower() or "review" in r.lower()]
@@ -148,7 +147,7 @@ class TestUserRiskProfileAnalysis:
         """Test risk analysis for low-risk user scenario."""
         low_risk_data = {
             "login_events": [
-                {"success": True, "location": "Office", "timestamp": datetime.now(timezone.utc).replace(hour=10)}
+                {"success": True, "location": "Office", "timestamp": datetime.now(UTC).replace(hour=10)}
                 for _ in range(5)  # Few successful logins during business hours
             ],
             "access_events": [
@@ -168,18 +167,18 @@ class TestUserRiskProfileAnalysis:
                 "clustering_score": 20.0,
                 "timezone_variance": 1,
             },
-            "last_activity_timestamp": datetime.now(timezone.utc) - timedelta(hours=1),
+            "last_activity_timestamp": datetime.now(UTC) - timedelta(hours=1),
         }
-        
+
         result = await analyzer.analyze_user_risk_profile(
             user_id="low_risk_user",
-            activity_data=low_risk_data
+            activity_data=low_risk_data,
         )
-        
+
         # Should be low risk
         assert result["overall_risk_score"] <= 40
         assert result["risk_level"] in ["LOW", "MEDIUM"]
-        
+
         # Should have basic monitoring recommendation
         recommendations = result["recommendations"]
         baseline_recommendations = [r for r in recommendations if "baseline" in r.lower() or "low risk" in r.lower()]
@@ -193,17 +192,17 @@ class TestUserRiskProfileAnalysis:
             "behavior_metrics": {},
             "temporal_patterns": {},
         }
-        
+
         result = await analyzer.analyze_user_risk_profile(
             user_id="empty_user",
-            activity_data=empty_data
+            activity_data=empty_data,
         )
-        
+
         assert result["user_id"] == "empty_user"
         assert result["overall_risk_score"] == 0.0
         assert result["risk_level"] == "LOW"
         assert len(result["risk_indicators"]) == 0
-        
+
         # Should still provide basic recommendations
         assert len(result["recommendations"]) > 0
 
@@ -211,18 +210,18 @@ class TestUserRiskProfileAnalysis:
         """Test risk analysis exception handling."""
         # Patch one of the analysis methods to raise an exception
         original_method = analyzer._analyze_login_patterns
-        
+
         async def failing_method(*args, **kwargs):
             raise ValueError("Simulated analysis error")
-        
+
         analyzer._analyze_login_patterns = failing_method
-        
+
         try:
             result = await analyzer.analyze_user_risk_profile(
                 user_id="error_user",
-                activity_data={"login_events": [{"test": "data"}]}
+                activity_data={"login_events": [{"test": "data"}]},
             )
-            
+
             assert "error" in result
             assert result["overall_risk_score"] == 50.0  # Default moderate risk
             assert result["risk_level"] == "MEDIUM"
@@ -243,13 +242,13 @@ class TestSuspiciousActivityDetection:
     @pytest.fixture
     def sample_activity_list(self):
         """Create sample activity list for testing."""
-        base_time = datetime.now(timezone.utc)
+        base_time = datetime.now(UTC)
         return [
             {
                 "user_id": "user_001",
                 "action_type": "login",
                 "timestamp": base_time - timedelta(minutes=i),
-                "location": "Office"
+                "location": "Office",
             }
             for i in range(10)
         ] + [
@@ -257,7 +256,7 @@ class TestSuspiciousActivityDetection:
                 "user_id": "user_002",
                 "action_type": "data_export",
                 "timestamp": base_time - timedelta(seconds=i),  # Rapid actions
-                "location": "Remote"
+                "location": "Remote",
             }
             for i in range(5)
         ]
@@ -267,15 +266,15 @@ class TestSuspiciousActivityDetection:
         suspicious = await analyzer.detect_suspicious_activities(
             activity_data=sample_activity_list,
             sensitivity=0.7,
-            time_window_hours=24
+            time_window_hours=24,
         )
-        
+
         assert isinstance(suspicious, list)
-        
+
         # Should detect rapid actions from user_002
         rapid_patterns = [s for s in suspicious if s.get("pattern_type") == "rapid_actions"]
         assert len(rapid_patterns) > 0
-        
+
         # Results should be sorted by suspicion score
         if len(suspicious) > 1:
             for i in range(1, len(suspicious)):
@@ -287,20 +286,20 @@ class TestSuspiciousActivityDetection:
             {
                 "user_id": "rapid_user",
                 "action_type": "data_access",
-                "timestamp": datetime.now(timezone.utc) - timedelta(milliseconds=100 * i),
+                "timestamp": datetime.now(UTC) - timedelta(milliseconds=100 * i),
             }
             for i in range(10)
         ]
-        
+
         suspicious = await analyzer.detect_suspicious_activities(
             activity_data=rapid_activities,
             sensitivity=0.9,
-            time_window_hours=24
+            time_window_hours=24,
         )
-        
+
         # High sensitivity should detect more patterns
         assert len(suspicious) > 0
-        
+
         # Should have high suspicion scores
         max_score = max(s["suspicion_score"] for s in suspicious) if suspicious else 0
         assert max_score > 80
@@ -309,9 +308,9 @@ class TestSuspiciousActivityDetection:
         """Test suspicious activity detection with empty data."""
         suspicious = await analyzer.detect_suspicious_activities(
             activity_data=[],
-            sensitivity=0.7
+            sensitivity=0.7,
         )
-        
+
         assert suspicious == []
 
     async def test_detect_suspicious_activities_repetitive_patterns(self, analyzer):
@@ -320,20 +319,20 @@ class TestSuspiciousActivityDetection:
             {
                 "user_id": "repeat_user",
                 "action_type": "same_action",
-                "timestamp": datetime.now(timezone.utc) - timedelta(minutes=i),
+                "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
             for i in range(50)  # Same action repeated many times (need more for threshold)
         ]
-        
+
         suspicious = await analyzer.detect_suspicious_activities(
             activity_data=repetitive_activities,
-            sensitivity=1.0  # Higher sensitivity to lower the threshold: 50 * (0.8 / 1.0) = 40
+            sensitivity=1.0,  # Higher sensitivity to lower the threshold: 50 * (0.8 / 1.0) = 40
         )
-        
+
         # Should detect repetitive patterns
         repetitive_patterns = [s for s in suspicious if s.get("pattern_type") == "repetitive_actions"]
         assert len(repetitive_patterns) > 0
-        
+
         repetitive_pattern = repetitive_patterns[0]
         assert repetitive_pattern["repetition_count"] == 50
         assert repetitive_pattern["suspicion_score"] > 50
@@ -344,20 +343,20 @@ class TestSuspiciousActivityDetection:
             {
                 "user_id": "escalation_user",
                 "action_type": action_type,
-                "timestamp": datetime.now(timezone.utc) - timedelta(minutes=i),
+                "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
             for i, action_type in enumerate(["user_management", "permission_change", "role_assignment"] * 2)
         ]
-        
+
         suspicious = await analyzer.detect_suspicious_activities(
             activity_data=escalation_activities,
-            sensitivity=0.7
+            sensitivity=0.7,
         )
-        
+
         # Should detect privilege escalation
         escalation_patterns = [s for s in suspicious if s.get("pattern_type") == "privilege_escalation"]
         assert len(escalation_patterns) > 0
-        
+
         escalation_pattern = escalation_patterns[0]
         assert escalation_pattern["suspicion_score"] > 50
         assert len(escalation_pattern["admin_actions"]) == 6
@@ -379,7 +378,7 @@ class TestAnomalyScoreCalculation:
             "access_volume": 50.0,
             "geographic_variance": 3.0,
         }
-        
+
         baseline = {
             "login_frequency": 3.0,
             "login_frequency_std": 1.0,
@@ -390,19 +389,19 @@ class TestAnomalyScoreCalculation:
             "geographic_variance": 1.0,
             "geographic_variance_std": 0.5,
         }
-        
+
         score, reasons = await analyzer.calculate_anomaly_score(
             user_id="test_user",
             current_behavior=current_behavior,
-            historical_baseline=baseline
+            historical_baseline=baseline,
         )
-        
+
         assert 0 <= score <= 100
         assert isinstance(reasons, list)
-        
+
         # Should detect anomalies in multiple metrics
         assert len(reasons) > 0
-        
+
         # Check specific anomaly reasons
         login_anomaly = any("login frequency" in reason.lower() for reason in reasons)
         session_anomaly = any("session duration" in reason.lower() for reason in reasons)
@@ -414,13 +413,13 @@ class TestAnomalyScoreCalculation:
             "login_frequency": 5.0,
             "session_duration": 60.0,
         }
-        
+
         # Should create and use baseline
         score, reasons = await analyzer.calculate_anomaly_score(
             user_id="new_user",
-            current_behavior=current_behavior
+            current_behavior=current_behavior,
         )
-        
+
         assert 0 <= score <= 100
         assert isinstance(reasons, list)
 
@@ -428,15 +427,15 @@ class TestAnomalyScoreCalculation:
         """Test anomaly score when no baseline data is available."""
         # Mock the baseline method to return None
         analyzer._baseline_metrics = {}  # Ensure no cached baseline
-        
+
         current_behavior = {"login_frequency": 5.0}
-        
+
         # This will generate a mock baseline in _get_user_baseline
         score, reasons = await analyzer.calculate_anomaly_score(
             user_id="no_baseline_user",
-            current_behavior=current_behavior
+            current_behavior=current_behavior,
         )
-        
+
         assert 0 <= score <= 100
         assert isinstance(reasons, list)
 
@@ -444,12 +443,12 @@ class TestAnomalyScoreCalculation:
         """Test anomaly score calculation exception handling."""
         # Pass invalid data to trigger exception
         invalid_behavior = None
-        
+
         score, reasons = await analyzer.calculate_anomaly_score(
             user_id="error_user",
-            current_behavior=invalid_behavior  # This will cause an exception
+            current_behavior=invalid_behavior,  # This will cause an exception
         )
-        
+
         assert score == 0.0
         assert len(reasons) == 1
         assert "error" in reasons[0].lower()
@@ -481,11 +480,11 @@ class TestPrivateHelperMethods:
             "access_events": [{"id": i} for i in range(25)],
             "behavior_metrics": {"avg_session_duration": 45},
             "temporal_patterns": {"off_hours_percentage": 10},
-            "last_activity_timestamp": datetime.now(timezone.utc) - timedelta(hours=12),
+            "last_activity_timestamp": datetime.now(UTC) - timedelta(hours=12),
         }
-        
+
         confidence = analyzer._calculate_confidence_score(activity_data)
-        
+
         # Should have high confidence with complete, recent data
         assert confidence >= 80.0
 
@@ -494,11 +493,11 @@ class TestPrivateHelperMethods:
         activity_data = {
             "login_events": [{"id": i} for i in range(3)],
             "access_events": [{"id": i} for i in range(2)],
-            "last_activity_timestamp": datetime.now(timezone.utc) - timedelta(days=10),
+            "last_activity_timestamp": datetime.now(UTC) - timedelta(days=10),
         }
-        
+
         confidence = analyzer._calculate_confidence_score(activity_data)
-        
+
         # Should have lower confidence with limited, old data
         assert confidence <= 60.0
 
@@ -509,21 +508,21 @@ class TestPrivateHelperMethods:
             "access_events": [{"id": i} for i in range(10)],
             # No last_activity_timestamp
         }
-        
+
         confidence = analyzer._calculate_confidence_score(activity_data)
-        
+
         # Should still calculate confidence but with penalty for missing timestamp
         assert 0 <= confidence <= 100
 
     async def test_get_user_baseline_caching(self, analyzer):
         """Test user baseline caching mechanism."""
         user_id = "cache_test_user"
-        
+
         # First call should create baseline
         baseline1 = await analyzer._get_user_baseline(user_id)
         assert baseline1 is not None
         assert "login_frequency" in baseline1
-        
+
         # Second call should return cached baseline
         baseline2 = await analyzer._get_user_baseline(user_id)
         assert baseline1 == baseline2
@@ -542,19 +541,19 @@ class TestRiskFactorAnalysis:
         """Test login pattern analysis for high-risk scenario."""
         high_risk_login_data = {
             "login_events": [
-                {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(timezone.utc).replace(hour=3)}
+                {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(UTC).replace(hour=3)}
                 for i in range(10)  # Many failed logins at unusual hours from different locations
             ] + [
-                {"success": True, "location": "Unknown", "timestamp": datetime.now(timezone.utc)}
+                {"success": True, "location": "Unknown", "timestamp": datetime.now(UTC)}
                 for _ in range(60)  # High frequency successful logins
-            ]
+            ],
         }
-        
+
         result = await analyzer._analyze_login_patterns("test_user", high_risk_login_data)
-        
+
         assert result["risk_score"] > 50
         assert len(result["indicators"]) >= 2
-        
+
         # Should detect high frequency and failed logins
         indicators_text = " ".join(result["indicators"])
         assert "frequency" in indicators_text.lower() or "failed" in indicators_text.lower()
@@ -568,14 +567,14 @@ class TestRiskFactorAnalysis:
             ] + [
                 {"access_type": "read", "sensitivity": "high", "record_count": 1}
                 for _ in range(150)  # High volume access
-            ]
+            ],
         }
-        
+
         result = await analyzer._analyze_access_patterns("test_user", bulk_access_data)
-        
+
         assert result["risk_score"] > 40
         assert len(result["indicators"]) >= 1
-        
+
         # Should detect bulk operations and high volume
         indicators_text = " ".join(result["indicators"])
         assert "bulk" in indicators_text.lower() or "volume" in indicators_text.lower()
@@ -589,17 +588,18 @@ class TestRiskFactorAnalysis:
                 "error_rate_percent": 30.0,  # High error rate
                 "unique_pages_visited": 1,
                 "total_page_views": 1000,  # Extremely repetitive
-            }
+            },
         }
-        
+
         result = await analyzer._analyze_behavioral_anomalies("test_user", extreme_behavior_data)
-        
+
         assert result["risk_score"] > 60
         assert len(result["indicators"]) >= 3
-        
+
         # Should detect multiple behavioral anomalies
         indicators_text = " ".join(result["indicators"])
-        assert "session" in indicators_text.lower() and "activity" in indicators_text.lower()
+        assert "session" in indicators_text.lower()
+        assert "activity" in indicators_text.lower()
 
     async def test_analyze_temporal_patterns_off_hours_activity(self, analyzer):
         """Test temporal pattern analysis with high off-hours activity."""
@@ -609,17 +609,17 @@ class TestRiskFactorAnalysis:
                 "weekend_percentage": 80.0,   # High weekend activity
                 "clustering_score": 95.0,     # Potential automation
                 "timezone_variance": 6,       # Many timezones
-            }
+            },
         }
-        
+
         result = await analyzer._analyze_temporal_patterns("test_user", off_hours_data)
-        
+
         assert result["risk_score"] > 50
         assert len(result["indicators"]) >= 3
-        
+
         # Should detect off-hours, automation, and timezone variance
         indicators_text = " ".join(result["indicators"])
-        assert any(keyword in indicators_text.lower() 
+        assert any(keyword in indicators_text.lower()
                   for keyword in ["off-hours", "automated", "timezone"])
 
 
@@ -637,15 +637,15 @@ class TestDetectionPatterns:
             {
                 "user_id": "rapid_user",
                 "action_type": "data_access",
-                "timestamp": datetime.now(timezone.utc) - timedelta(milliseconds=50 * i),
+                "timestamp": datetime.now(UTC) - timedelta(milliseconds=50 * i),
             }
             for i in range(5)
         ]
-        
+
         suspicious = await analyzer._detect_rapid_actions("rapid_user", rapid_activities, 0.8)
-        
+
         assert len(suspicious) > 0
-        
+
         # Should have high suspicion scores for rapid actions
         for pattern in suspicious:
             assert pattern["pattern_type"] == "rapid_actions"
@@ -657,15 +657,15 @@ class TestDetectionPatterns:
         repetitive_activities = [
             {
                 "action_type": "same_action",
-                "timestamp": datetime.now(timezone.utc) - timedelta(minutes=i),
+                "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
             for i in range(50)  # Need more repetitions for threshold (50 > 50 * (0.8/0.6) = 66.7 - so use higher sensitivity)
         ]
-        
+
         suspicious = await analyzer._detect_unusual_sequences("repeat_user", repetitive_activities, 0.9)  # Higher sensitivity
-        
+
         assert len(suspicious) > 0
-        
+
         repetitive_pattern = suspicious[0]
         assert repetitive_pattern["pattern_type"] == "repetitive_actions"
         assert repetitive_pattern["repetition_count"] == 50
@@ -676,18 +676,18 @@ class TestDetectionPatterns:
         admin_activities = [
             {
                 "action_type": action_type,
-                "timestamp": datetime.now(timezone.utc) - timedelta(minutes=i),
+                "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
             for i, action_type in enumerate([
-                "user_management", "permission_change", "system_config", 
-                "security_setting", "role_assignment"
+                "user_management", "permission_change", "system_config",
+                "security_setting", "role_assignment",
             ])
         ]
-        
+
         suspicious = await analyzer._detect_escalation_attempts("admin_user", admin_activities, 0.7)
-        
+
         assert len(suspicious) > 0
-        
+
         escalation_pattern = suspicious[0]
         assert escalation_pattern["pattern_type"] == "privilege_escalation"
         assert len(escalation_pattern["admin_actions"]) == 5
@@ -698,12 +698,12 @@ class TestDetectionPatterns:
         limited_admin_activities = [
             {
                 "action_type": "user_management",
-                "timestamp": datetime.now(timezone.utc),
-            }
+                "timestamp": datetime.now(UTC),
+            },
         ]
-        
+
         suspicious = await analyzer._detect_escalation_attempts("limited_user", limited_admin_activities, 0.3)
-        
+
         # With low sensitivity and limited admin actions, suspicion should be low
         if suspicious:
             assert suspicious[0]["suspicion_score"] <= 50

@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import json
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -51,7 +51,7 @@ class AuditEntry:
             details: Additional details
             result: Result of action (success/failure)
         """
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
         self.action = action
         self.resource = resource
         self.user_id = user_id
@@ -242,7 +242,7 @@ class AuditService:
                     for e in self._audit_index.get(entry.user_id, [])
                     if e.action == AuditAction.LOGIN
                     and e.result == "failure"
-                    and e.timestamp > datetime.now(timezone.utc) - timedelta(hours=1)
+                    and e.timestamp > datetime.now(UTC) - timedelta(hours=1)
                 ]
 
                 if len(recent_failures) > self._compliance_rules["max_failed_logins"]:
@@ -389,7 +389,7 @@ class AuditService:
                 await asyncio.sleep(60)  # Persist every minute
 
                 # Get current date for file name
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 filename = self.audit_dir / f"audit_{now.strftime('%Y%m%d')}.jsonl"
 
                 # Write new entries
@@ -404,7 +404,7 @@ class AuditService:
             except asyncio.CancelledError:
                 # Final persist before shutdown
                 try:
-                    filename = self.audit_dir / f"audit_{datetime.now(timezone.utc).strftime('%Y%m%d')}.jsonl"
+                    filename = self.audit_dir / f"audit_{datetime.now(UTC).strftime('%Y%m%d')}.jsonl"
                     with open(filename, "a") as f:
                         for entry in self._audit_log:
                             f.write(json.dumps(entry.to_dict()) + "\n")
@@ -421,7 +421,7 @@ class AuditService:
                 await asyncio.sleep(3600)  # Check hourly
 
                 # Calculate cutoff date
-                cutoff = datetime.now(timezone.utc) - timedelta(days=self.retention_days)
+                cutoff = datetime.now(UTC) - timedelta(days=self.retention_days)
 
                 # Remove old files
                 for file in self.audit_dir.glob("audit_*.jsonl"):
@@ -445,7 +445,7 @@ class AuditService:
         """Load recent audit logs from disk."""
         try:
             # Load today's logs
-            today = datetime.now(timezone.utc)
+            today = datetime.now(UTC)
             filename = self.audit_dir / f"audit_{today.strftime('%Y%m%d')}.jsonl"
 
             if filename.exists():
@@ -462,20 +462,20 @@ class AuditService:
             logger.error("Error loading recent logs: %s", e)
 
     async def get_security_events(
-        self, 
-        start_date: datetime, 
+        self,
+        start_date: datetime,
         end_date: datetime,
         event_types: list[str] | None = None,
         user_id: str | None = None,
     ) -> list[SecurityEventResponse]:
         """Get security events for specified time period.
-        
+
         Args:
             start_date: Start of events period
             end_date: End of events period
             event_types: Filter by specific event types
             user_id: Filter by specific user ID
-        
+
         Returns:
             List of security events
         """
@@ -487,7 +487,7 @@ class AuditService:
                 action=AuditAction.SECURITY_EVENT,
                 user_id=user_id,
             )
-            
+
             # Convert audit entries to SecurityEventResponse objects
             security_events = []
             for entry in audit_entries:
@@ -496,11 +496,11 @@ class AuditService:
                 event_type = entry.details.get("event_type", "unknown")
                 severity = entry.details.get("severity", "info")
                 risk_score = entry.details.get("risk_score", 0)
-                
+
                 # Filter by event types if specified
                 if event_types and event_type not in event_types:
                     continue
-                
+
                 # Create SecurityEventResponse object
                 security_event = SecurityEventResponse(
                     id=event_id,
@@ -513,9 +513,9 @@ class AuditService:
                     details=entry.details,
                 )
                 security_events.append(security_event)
-                
+
             return security_events
-                
+
         except Exception as e:
             logger.error(f"Failed to get security events: {e}")
             raise

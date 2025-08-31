@@ -6,10 +6,8 @@ Automatically imports all API router fixtures and provides test configuration.
 
 # Import all fixtures from the central fixtures file
 # This makes them available to all test files in this directory
-from tests.fixtures.api_router_fixtures import *  # noqa: F401, F403
-
 import pytest
-
+from tests.fixtures.api_router_fixtures import *  # noqa: F403
 
 # =================== TEST CONFIGURATION ===================
 
@@ -28,15 +26,13 @@ def setup_test_environment():
     # This fixture runs automatically before each test
     # Can be used to set environment variables, initialize logging, etc.
     import os
-    
+
     # Ensure test environment is properly configured
     os.environ["TESTING"] = "true"
     os.environ["LOG_LEVEL"] = "DEBUG"
-    
-    yield
-    
+
+
     # Cleanup after test (if needed)
-    pass
 
 
 @pytest.fixture

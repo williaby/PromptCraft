@@ -9,7 +9,7 @@ Endpoints:
     GET /export/metrics - Export metrics data
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
@@ -78,7 +78,7 @@ async def get_security_metrics(
         metrics = await service.get_comprehensive_metrics()
 
         # Calculate derived metrics
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Event statistics
         total_events_today = metrics["integration"]["total_events_processed"]

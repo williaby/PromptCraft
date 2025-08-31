@@ -7,7 +7,7 @@ Extracted from router business logic for reusability and centralized management.
 
 import random
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -74,7 +74,7 @@ class MockDataService:
             event_types = self._event_types
 
         events = []
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(days=days_back)
 
         for _i in range(count):
@@ -131,7 +131,7 @@ class MockDataService:
                 "role": random.choice(["admin", "user", "viewer", "analyst"]),
                 "department": random.choice(["IT", "Finance", "HR", "Marketing", "Operations"]),
                 "risk_level": random.choice(self._risk_levels),
-                "last_login": datetime.now(timezone.utc) - timedelta(days=random.randint(0, 7)),
+                "last_login": datetime.now(UTC) - timedelta(days=random.randint(0, 7)),
             }
 
             # Generate activities for this user
@@ -141,7 +141,7 @@ class MockDataService:
             activities = []
 
             for _j in range(activity_count):
-                activity_time = datetime.now(timezone.utc) - timedelta(
+                activity_time = datetime.now(UTC) - timedelta(
                     days=random.randint(0, activity_window_days),
                     hours=random.randint(0, 23),
                     minutes=random.randint(0, 59),
@@ -178,7 +178,7 @@ class MockDataService:
             List of system metric snapshots
         """
         metrics = []
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         start_time = end_time - timedelta(hours=hours_back)
 
         current_time = start_time
@@ -247,8 +247,8 @@ class MockDataService:
                 "confidence_score": round(confidence, 1),
                 "risk_score": risk_score,
                 "affected_users": affected_users,
-                "first_observed": datetime.now(timezone.utc) - timedelta(days=random.randint(1, 30)),
-                "last_observed": datetime.now(timezone.utc) - timedelta(hours=random.randint(1, 24)),
+                "first_observed": datetime.now(UTC) - timedelta(days=random.randint(1, 30)),
+                "last_observed": datetime.now(UTC) - timedelta(hours=random.randint(1, 24)),
                 "frequency": random.choice(["rare", "occasional", "frequent", "persistent"]),
                 "indicators": self._generate_pattern_indicators(pattern_type),
                 "related_events": random.randint(5, 100),
@@ -282,7 +282,7 @@ class MockDataService:
         ]
 
         for _i in range(alert_count):
-            alert_time = datetime.now(timezone.utc) - timedelta(
+            alert_time = datetime.now(UTC) - timedelta(
                 days=random.randint(0, days_back),
                 hours=random.randint(0, 23),
             )
@@ -528,7 +528,7 @@ class MockDataService:
         """
         # Generate deterministic but varied risk scores based on user_id
         risk_score = hash(user_id) % 100
-        
+
         # Determine risk level based on score
         if risk_score < 30:
             risk_level = "low"
@@ -563,7 +563,7 @@ class MockDataService:
             "risk_level": risk_level,
             "total_logins": hash(user_id + "logins") % 500 + 10,  # 10-510 logins
             "failed_logins_today": hash(user_id + "failed") % 10,  # 0-9 failed logins
-            "last_activity": datetime.now(timezone.utc) - timedelta(hours=hash(user_id) % 48),
+            "last_activity": datetime.now(UTC) - timedelta(hours=hash(user_id) % 48),
             "known_locations": hash(user_id + "locations") % 10 + 1,  # 1-10 locations
             "suspicious_activities": suspicious_activities,
             "recommendations": recommendations,
@@ -578,7 +578,7 @@ class MockDataService:
         Returns:
             Timeline data formatted for chart display
         """
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         start_time = current_time - timedelta(hours=hours_back)
 
         timeline_data = []
@@ -622,7 +622,7 @@ class MockDataService:
         # Generate realistic risk distribution
         risk_distribution_data = [
             {"risk_level": "low", "count": 150},      # 0-29 risk score
-            {"risk_level": "medium", "count": 75},    # 30-59 risk score  
+            {"risk_level": "medium", "count": 75},    # 30-59 risk score
             {"risk_level": "high", "count": 25},      # 60-79 risk score
             {"risk_level": "critical", "count": 5},   # 80-100 risk score
         ]

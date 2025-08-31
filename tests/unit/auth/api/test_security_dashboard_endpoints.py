@@ -746,16 +746,18 @@ class TestSecurityDashboardEndpointsIntegration:
     def test_app(self, endpoints):
         """Create FastAPI test application."""
         from fastapi import FastAPI
+
         from src.auth.api.security_dashboard_endpoints import get_security_service
 
         app = FastAPI()
         app.include_router(endpoints.router)
-        
+
         # Override the dependency with a mock that returns expected data
         def mock_get_security_service():
             from unittest.mock import AsyncMock
+
             from src.auth.services.security_integration import SecurityIntegrationService
-            
+
             mock_service = AsyncMock(spec=SecurityIntegrationService)
             mock_service.get_comprehensive_metrics.return_value = {
                 "integration": {
@@ -772,7 +774,7 @@ class TestSecurityDashboardEndpointsIntegration:
                 },
             }
             return mock_service
-            
+
         app.dependency_overrides[get_security_service] = mock_get_security_service
         return app
 

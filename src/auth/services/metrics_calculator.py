@@ -5,7 +5,7 @@ Handles calculation and aggregation of security metrics.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -241,7 +241,7 @@ class MetricsCalculator:
             return None
 
         expiry_time = self._cache_expiry.get(cache_key)
-        if not expiry_time or datetime.now(timezone.utc) > expiry_time:
+        if not expiry_time or datetime.now(UTC) > expiry_time:
             # Remove expired cache entry
             self._cache.pop(cache_key, None)
             self._cache_expiry.pop(cache_key, None)
@@ -258,4 +258,4 @@ class MetricsCalculator:
             cache_ttl_seconds: Cache time-to-live in seconds
         """
         self._cache[cache_key] = data
-        self._cache_expiry[cache_key] = datetime.now(timezone.utc) + timedelta(seconds=cache_ttl_seconds)
+        self._cache_expiry[cache_key] = datetime.now(UTC) + timedelta(seconds=cache_ttl_seconds)

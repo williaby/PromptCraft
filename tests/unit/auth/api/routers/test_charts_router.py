@@ -3,19 +3,18 @@
 Tests dashboard visualization and chart data endpoints.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
-from fastapi.testclient import TestClient
+
+import pytest
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from src.auth.api.routers.charts_router import (
-    router,
-    TimelineDataPoint,
-    EventTimelineResponse,
     RiskDistributionData,
-    RiskDistributionResponse,
+    TimelineDataPoint,
     get_security_service,
+    router,
 )
 from src.auth.services.security_integration import SecurityIntegrationService
 
@@ -44,7 +43,7 @@ def test_client(test_app):
 @pytest.fixture
 def sample_timeline_data_hourly():
     """Sample timeline data with hourly granularity."""
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(UTC)
     return [
         {
             "timestamp": current_time - timedelta(hours=23),
@@ -76,7 +75,7 @@ def sample_timeline_data_hourly():
 @pytest.fixture
 def sample_timeline_data_daily():
     """Sample timeline data with daily granularity."""
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(UTC)
     return [
         {
             "timestamp": current_time - timedelta(days=6),
@@ -147,7 +146,7 @@ class TestTimelineDataPoint:
 
     def test_timeline_data_point_creation(self):
         """Test creating timeline data point."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         point = TimelineDataPoint(
             timestamp=timestamp,
             value=42,
@@ -160,7 +159,7 @@ class TestTimelineDataPoint:
 
     def test_timeline_data_point_without_label(self):
         """Test creating timeline data point without label."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         point = TimelineDataPoint(
             timestamp=timestamp,
             value=0,
@@ -172,12 +171,12 @@ class TestTimelineDataPoint:
 
     def test_timeline_data_point_validation(self):
         """Test timeline data point with edge values."""
-        timestamp = datetime.now(timezone.utc)
-        
+        timestamp = datetime.now(UTC)
+
         # Test with zero value
         point = TimelineDataPoint(timestamp=timestamp, value=0)
         assert point.value == 0
-        
+
         # Test with large value
         point = TimelineDataPoint(timestamp=timestamp, value=999999)
         assert point.value == 999999
@@ -211,7 +210,7 @@ class TestRiskDistributionData:
         )
         assert data.count == 0
         assert data.percentage == 0.0
-        
+
         # Test with maximum values
         data = RiskDistributionData(
             risk_level="CRITICAL",
@@ -238,14 +237,14 @@ class TestChartsRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "Security Events Timeline - Last 24 hours"
         assert data["time_range"] == "Last 24 hours"
         assert isinstance(data["data_points"], list)
         assert len(data["data_points"]) >= 0  # Generated mock data length varies
         assert isinstance(data["total_events"], int)
         assert data["peak_hour"] is not None if data["data_points"] else None
-        
+
         # Verify data points structure if any exist
         if data["data_points"]:
             assert all("timestamp" in point for point in data["data_points"])
@@ -259,7 +258,7 @@ class TestChartsRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "Security Events Timeline - Last 7 days"
         assert data["time_range"] == "Last 7 days"
         assert isinstance(data["data_points"], list)
@@ -274,7 +273,7 @@ class TestChartsRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "Security Events Timeline - Last 1 hours"
         assert isinstance(data["data_points"], list)
         assert isinstance(data["total_events"], int)
@@ -285,15 +284,15 @@ class TestChartsRouter:
         # Test hours_back too small
         response = test_client.get("/charts/event-timeline?hours_back=0")
         assert response.status_code == 422
-        
+
         # Test hours_back too large
         response = test_client.get("/charts/event-timeline?hours_back=200")
         assert response.status_code == 422
-        
+
         # Test invalid granularity
         response = test_client.get("/charts/event-timeline?granularity=minute")
         assert response.status_code == 422
-        
+
         # Test valid parameters
         response = test_client.get("/charts/event-timeline?hours_back=72&granularity=day")
         # Should not return validation error (may return 500 if service not mocked)
@@ -304,7 +303,7 @@ class TestChartsRouter:
         # Test different time ranges
         test_cases = [
             (1, "Last 1 hours"),
-            (12, "Last 12 hours"), 
+            (12, "Last 12 hours"),
             (24, "Last 24 hours"),
             (48, "Last 2 days"),
             (72, "Last 3 days"),
@@ -339,24 +338,24 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "User Risk Distribution"
         assert isinstance(data["total_items"], int)
         assert len(data["distribution"]) == 4
-        
+
         # Verify distribution structure
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}
-        
+
         # Verify all risk levels exist
         assert "LOW" in distribution_by_level
         assert "MEDIUM" in distribution_by_level
         assert "HIGH" in distribution_by_level
         assert "CRITICAL" in distribution_by_level
-        
+
         # Verify color scheme
         assert distribution_by_level["LOW"]["color"] == "#28a745"
         assert distribution_by_level["CRITICAL"]["color"] == "#dc3545"
-        
+
         # Verify risk summary structure
         risk_summary = data["risk_summary"]
         assert "low" in risk_summary
@@ -370,11 +369,11 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "Event Risk Distribution"
         assert isinstance(data["total_items"], int)
         assert len(data["distribution"]) == 4
-        
+
         # Verify distribution structure
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}
         assert "LOW" in distribution_by_level
@@ -387,11 +386,11 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         assert data["title"] == "Alert Risk Distribution"
         assert isinstance(data["total_items"], int)
         assert len(data["distribution"]) == 4
-        
+
         # Verify distribution structure
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}
         assert "CRITICAL" in distribution_by_level
@@ -399,7 +398,7 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_get_risk_distribution_chart_empty_data(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test risk distribution chart with empty data."""
         # The charts router generates its own mock data, no service methods needed
@@ -408,20 +407,20 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # The charts router generates its own mock data, so test the structure
         assert "total_items" in data
         assert "distribution" in data
         assert len(data["distribution"]) == 4  # Shows all risk categories
         assert isinstance(data["total_items"], int)
-        
+
         # Verify all required fields are present
         for item in data["distribution"]:
             assert "risk_level" in item
             assert "count" in item
             assert "percentage" in item
             assert "color" in item
-        
+
         # Verify risk summary structure (values are generated, so just check structure)
         assert "risk_summary" in data
         assert "average_risk" in data["risk_summary"]
@@ -433,7 +432,7 @@ class TestRiskDistributionChart:
         # Test invalid analysis_type
         response = test_client.get("/charts/risk-distribution?analysis_type=invalid")
         assert response.status_code == 422
-        
+
         # Test valid analysis types
         valid_types = ["users", "events", "alerts"]
         for analysis_type in valid_types:
@@ -443,7 +442,7 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_risk_distribution_average_calculation(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test average risk calculation in risk distribution."""
         # The charts router generates its own mock data, test the calculation structure
@@ -452,16 +451,16 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # Test that average risk calculation works with generated data
         assert "risk_summary" in data
         assert "average_risk" in data["risk_summary"]
         average_risk = data["risk_summary"]["average_risk"]
-        
+
         # Average should be a reasonable value (between 0 and 100)
         assert isinstance(average_risk, (int, float))
         assert 0 <= average_risk <= 100
-        
+
         # Verify that the calculation makes sense with the distribution data
         assert len(data["distribution"]) == 4
         total_percentage = sum(item["percentage"] for item in data["distribution"])
@@ -469,7 +468,7 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_get_risk_distribution_chart_service_error(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test risk distribution chart handles edge cases gracefully."""
         # Since the charts router generates its own data, test it works reliably
@@ -477,7 +476,7 @@ class TestRiskDistributionChart:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # Should always return valid structure
         assert "title" in data
         assert "distribution" in data
@@ -491,7 +490,7 @@ class TestChartsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_event_timeline_performance(
-        self, test_client, mock_security_service, sample_timeline_data_hourly
+        self, test_client, mock_security_service, sample_timeline_data_hourly,
     ):
         """Test event timeline chart performance."""
         # The charts router generates its own mock data, no service methods needed
@@ -510,7 +509,7 @@ class TestChartsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_risk_distribution_performance(
-        self, test_client, mock_security_service, sample_user_risk_distribution
+        self, test_client, mock_security_service, sample_user_risk_distribution,
     ):
         """Test risk distribution chart performance."""
         # The charts router generates its own mock data, no service methods needed
@@ -528,26 +527,26 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_large_timeline_data_handling(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test handling of large timeline datasets."""
         # Generate large dataset (168 hours = 1 week)
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         large_timeline_data = []
-        
+
         for i in range(168):
             large_timeline_data.append({
                 "timestamp": current_time - timedelta(hours=i),
                 "event_count": i * 10,  # Increasing event counts
             })
-        
+
         # The charts router generates its own mock data, no service methods needed
 
         response = test_client.get("/charts/event-timeline?hours_back=168&granularity=hour")
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # The charts router limits hourly data to 48 hours maximum
         assert len(data["data_points"]) == 48
         # Test structure instead of hardcoded calculation since data is generated
@@ -557,62 +556,56 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_extreme_risk_distribution_values(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test risk distribution with extreme values."""
-        extreme_distribution = {
-            "low": 0,
-            "medium": 0,
-            "high": 0,
-            "critical": 1000000,  # All items are critical risk
-        }
-        
+
         # The charts router generates its own mock data, no service methods needed
 
         response = test_client.get("/charts/risk-distribution?analysis_type=users")
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # The charts router generates its own realistic mock data
         assert isinstance(data["total_items"], int)
         assert data["total_items"] > 0
-        
+
         # Verify all risk categories are present with valid data
         assert len(data["distribution"]) == 4
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}
-        
+
         # Check all expected risk levels exist
         expected_levels = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
         for level in expected_levels:
             assert level in distribution_by_level
             assert isinstance(distribution_by_level[level]["percentage"], (int, float))
             assert 0 <= distribution_by_level[level]["percentage"] <= 100
-        
+
         # Test that average risk is calculated and reasonable
         assert "risk_summary" in data
         assert isinstance(data["risk_summary"]["average_risk"], (int, float))
         assert 0 <= data["risk_summary"]["average_risk"] <= 100
 
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_timeline_peak_detection_edge_cases(
-        self, test_client, mock_security_service
+        self, test_client, mock_security_service,
     ):
         """Test peak detection with edge cases."""
         # Test with all equal values
-        current_time = datetime.now(timezone.utc)
-        equal_values_data = [
+        current_time = datetime.now(UTC)
+        [
             {"timestamp": current_time - timedelta(hours=i), "event_count": 50}
             for i in range(5)
         ]
-        
+
         # The charts router generates its own mock data, no service methods needed
 
         response = test_client.get("/charts/event-timeline?hours_back=5&granularity=hour")
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # The charts router generates realistic varied data, test the structure
         assert data["peak_hour"] is not None
         assert len(data["data_points"]) == 5
@@ -621,7 +614,7 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_charts_data_consistency(
-        self, test_client, mock_security_service, sample_timeline_data_hourly, sample_user_risk_distribution
+        self, test_client, mock_security_service, sample_timeline_data_hourly, sample_user_risk_distribution,
     ):
         """Test data consistency across chart endpoints."""
         # The charts router generates its own mock data, no service methods needed
@@ -642,7 +635,7 @@ class TestChartsIntegration:
         assert "title" in distribution_data
         assert "data_points" in timeline_data
         assert "distribution" in distribution_data
-        
+
         # Verify timestamps are properly formatted
         for point in timeline_data["data_points"]:
             assert "timestamp" in point
@@ -651,7 +644,7 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_color_scheme_consistency(
-        self, test_client, mock_security_service, sample_user_risk_distribution
+        self, test_client, mock_security_service, sample_user_risk_distribution,
     ):
         """Test color scheme consistency in risk distribution charts."""
         # The charts router generates its own mock data, no service methods needed
@@ -664,12 +657,12 @@ class TestChartsIntegration:
         # Verify standard color scheme is used
         expected_colors = {
             "LOW": "#28a745",      # Green
-            "MEDIUM": "#ffc107",   # Yellow  
+            "MEDIUM": "#ffc107",   # Yellow
             "HIGH": "#fd7e14",     # Orange
             "CRITICAL": "#dc3545", # Red
         }
 
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}
-        
+
         for risk_level, expected_color in expected_colors.items():
             assert distribution_by_level[risk_level]["color"] == expected_color

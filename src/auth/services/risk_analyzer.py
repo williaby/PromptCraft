@@ -5,7 +5,7 @@ Handles user risk assessment, behavioral analysis, and anomaly detection.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -34,7 +34,7 @@ class RiskAnalyzer:
             Comprehensive risk profile analysis
         """
         try:
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(UTC)
 
             # Calculate base risk factors
             login_risk = await self._analyze_login_patterns(user_id, activity_data)
@@ -144,7 +144,7 @@ class RiskAnalyzer:
         if not activity_data:
             return suspicious_activities
 
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         cutoff_time = current_time - timedelta(hours=time_window_hours)
 
         # Filter to time window
@@ -513,7 +513,7 @@ class RiskAnalyzer:
                         "description": f"Highly repetitive action: {action_type} repeated {count} times",
                         "action_type": action_type,
                         "repetition_count": count,
-                        "timestamp": activities[-1].get("timestamp") if activities else datetime.now(timezone.utc),
+                        "timestamp": activities[-1].get("timestamp") if activities else datetime.now(UTC),
                     },
                 )
 
@@ -546,7 +546,7 @@ class RiskAnalyzer:
                         "description": f"Potential privilege escalation: {len(user_admin_actions)} admin actions",
                         "admin_actions": user_admin_actions,
                         "timestamp": (
-                            user_admin_actions[-1].get("timestamp") if user_admin_actions else datetime.now(timezone.utc)
+                            user_admin_actions[-1].get("timestamp") if user_admin_actions else datetime.now(UTC)
                         ),
                     },
                 )
@@ -608,7 +608,7 @@ class RiskAnalyzer:
         # Data recency factor
         last_activity = activity_data.get("last_activity_timestamp")
         if last_activity:
-            hours_since_activity = (datetime.now(timezone.utc) - last_activity).total_seconds() / 3600
+            hours_since_activity = (datetime.now(UTC) - last_activity).total_seconds() / 3600
             if hours_since_activity <= 24:
                 confidence_factors.append(90.0)
             elif hours_since_activity <= 72:

@@ -19,17 +19,14 @@ Test Coverage:
 
 import asyncio
 import json
-import tempfile
 import time
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import patch
 
 import pytest
 
 from src.auth.api.security_dashboard_endpoints import SecurityDashboardEndpoints
-from src.auth.database.security_events_postgres import SecurityEventsDatabase
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 
 # Import security service fixtures to make them available
@@ -43,7 +40,7 @@ class TestAUTH4SecurityWorkflowIntegration:
     async def temp_database(self):
         """Create temporary PostgreSQL database for testing."""
         from tests.fixtures.security_service_mocks import MockSecurityDatabase
-        
+
         # Use MockSecurityDatabase instead of actual PostgreSQL for integration tests
         database = MockSecurityDatabase()
         await database.initialize()
@@ -118,7 +115,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                             "test-session",  # session_id
                             json.dumps({}),  # details - stored as JSON string in database
                             50 + (i % 50),  # risk_score - must be int 0-100
-                            datetime.now(timezone.utc) - timedelta(minutes=i),  # timestamp - vary timestamps
+                            datetime.now(UTC) - timedelta(minutes=i),  # timestamp - vary timestamps
                         ]
                         # Create description for column mapping
                         description = [
@@ -203,10 +200,10 @@ class TestAUTH4SecurityWorkflowIntegration:
 
                 if hasattr(query, "text"):
                     # It's a TextClause object, extract the SQL string
-                    sql_string = str(query)
+                    str(query)
                 else:
                     # It's already a string
-                    sql_string = query
+                    pass
 
                 # Convert UUID objects and dicts to strings for compatibility
                 if params:
@@ -272,7 +269,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                         ip_address=f"192.168.1.{100 + (i % 50)}",
                         details={},
                         risk_score=50 + (i % 50),
-                        timestamp=datetime.now(timezone.utc) - timedelta(minutes=i),
+                        timestamp=datetime.now(UTC) - timedelta(minutes=i),
                     ),
                 )
 
@@ -292,7 +289,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                     ip_address="192.168.1.100",
                     details={},
                     risk_score=90,  # Must be int 0-100
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                 ),
             ]
 
@@ -375,8 +372,8 @@ class TestAUTH4SecurityWorkflowIntegration:
                             # Calculate hours from date range
                             # Ensure start_date is timezone-aware
                             if start_date.tzinfo is None:
-                                start_date = start_date.replace(tzinfo=timezone.utc)
-                            time_diff = datetime.now(timezone.utc) - start_date
+                                start_date = start_date.replace(tzinfo=UTC)
+                            time_diff = datetime.now(UTC) - start_date
                             hours_back = max(int(time_diff.total_seconds() / 3600), 1)
 
                         events = await self.security_logger.get_recent_events(
@@ -427,12 +424,12 @@ class TestAUTH4SecurityWorkflowIntegration:
                             if event_time:
                                 # Make start_date and end_date timezone-aware if they aren't
                                 if start_date.tzinfo is None:
-                                    start_date = start_date.replace(tzinfo=timezone.utc)
+                                    start_date = start_date.replace(tzinfo=UTC)
                                 if end_date.tzinfo is None:
-                                    end_date = end_date.replace(tzinfo=timezone.utc)
+                                    end_date = end_date.replace(tzinfo=UTC)
                                 if event_time < start_date or event_time > end_date:
                                     continue
-                        
+
                         # Convert to dict format
                         result.append({
                             "id": str(event.get("id", "")),
@@ -444,7 +441,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                             "risk_score": event.get("risk_score", 0),
                             "details": event.get("details", {}),
                         })
-                    
+
                     print(f"DEBUG: get_security_events returning {len(result)} total events")
                     return result
                 except Exception as e:
@@ -453,7 +450,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 
             async def log_event(self, event_data: dict[str, Any]) -> None:
                 """Log an event for audit tracking."""
-                event_data["logged_at"] = datetime.now(timezone.utc)
+                event_data["logged_at"] = datetime.now(UTC)
                 self._logged_events.append(event_data)
 
             async def generate_compliance_report(
@@ -473,7 +470,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                     "events_by_type": {},
                     "events_by_severity": {},
                     "compliance_status": "compliant",
-                    "generated_at": datetime.now(timezone.utc),
+                    "generated_at": datetime.now(UTC),
                 }
                 self._reports.append(report)
                 return report
@@ -488,7 +485,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                 """Generate security report."""
                 # Get events for the time period
                 events = await self.get_security_events(start_date=start_date, end_date=end_date, **kwargs)
-                
+
                 print(f"DEBUG: DatabaseConnectedAuditService found {len(events)} events")
                 print(f"DEBUG: Event severities: {[e.get('severity') for e in events]}")
 
@@ -497,7 +494,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                 high_priority_events = [e for e in events if e.get("severity") in ["critical", "warning"]]
                 medium_priority_events = [e for e in events if e.get("severity") == "warning"]
                 security_incidents = len([e for e in events if e.get("severity") in ["critical", "warning"]])
-                
+
                 print(f"DEBUG: critical_events={len(critical_events)}, medium_priority_events={len(medium_priority_events)}")
 
                 report_id = str(uuid.uuid4())
@@ -506,7 +503,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                     "report_type": report_type,
                     "start_date": start_date,
                     "end_date": end_date,
-                    "generated_at": datetime.now(timezone.utc),
+                    "generated_at": datetime.now(UTC),
                     "summary": {
                         "total_events": len(events),
                         "security_incidents": security_incidents,
@@ -548,14 +545,14 @@ class TestAUTH4SecurityWorkflowIntegration:
                         [
                             e
                             for e in events
-                            if e.get("timestamp") and (datetime.now(timezone.utc) - e["timestamp"]).total_seconds() < 86400
+                            if e.get("timestamp") and (datetime.now(UTC) - e["timestamp"]).total_seconds() < 86400
                         ],
                     ),
                     "events_by_type": {},
                     "events_by_severity": {},
                     "avg_risk_score": 0,
                     "system_health": "healthy",
-                    "last_updated": datetime.now(timezone.utc),
+                    "last_updated": datetime.now(UTC),
                 }
 
                 # Calculate statistics
@@ -580,7 +577,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                 events = await self.get_security_events(limit=10000)
 
                 # Mock retention policy: keep events for 90 days
-                cutoff_date = datetime.now(timezone.utc) - timedelta(days=90)
+                cutoff_date = datetime.now(UTC) - timedelta(days=90)
 
                 # Count events by retention status
                 events_to_keep = []
@@ -603,8 +600,8 @@ class TestAUTH4SecurityWorkflowIntegration:
                     "events_within_retention_period": len(events_to_keep),
                     "retention_policy_compliance": compliance_percentage,
                     "retention_period_days": 90,
-                    "last_cleanup_date": datetime.now(timezone.utc) - timedelta(hours=24),
-                    "next_cleanup_scheduled": datetime.now(timezone.utc) + timedelta(hours=24),
+                    "last_cleanup_date": datetime.now(UTC) - timedelta(hours=24),
+                    "next_cleanup_scheduled": datetime.now(UTC) + timedelta(hours=24),
                 }
 
             async def export_security_data(
@@ -639,7 +636,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                             "format": format,
                             "start_date": start_date.isoformat() if start_date else None,
                             "end_date": end_date.isoformat() if end_date else None,
-                            "exported_at": datetime.now(timezone.utc).isoformat(),
+                            "exported_at": datetime.now(UTC).isoformat(),
                             "total_events": len(events),
                         },
                         "events": events,
@@ -982,7 +979,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         # Check audit service has all events - use more specific time range
         test_end_time = datetime.utcnow() + timedelta(seconds=10)  # Allow small buffer
         test_start_time = datetime.utcnow() - timedelta(minutes=2)   # Wider window
-        
+
         recent_events = await audit_service.get_security_events(
             start_date=test_start_time,
             end_date=test_end_time,
@@ -1019,9 +1016,9 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 2: Test recovery after errors - operations should work again
         await security_monitor.log_login_attempt(
-            user_id="recovery_user", 
-            ip_address="192.168.1.100", 
-            success=True
+            user_id="recovery_user",
+            ip_address="192.168.1.100",
+            success=True,
         )
         recovery_successful = True
 
@@ -1076,7 +1073,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         temp_database,
     ):
         """Test data consistency across all AUTH-4 components."""
-        
+
         # Clean up existing data in temp_database for test isolation
         try:
             # PostgreSQL cleanup - delete all existing events to ensure clean test
@@ -1103,9 +1100,9 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 2: Verify data consistency in database using timestamp-based filtering
         from datetime import datetime, timedelta
-        test_start_time = datetime.now(timezone.utc) - timedelta(seconds=10)  # Events from last 10 seconds
-        test_end_time = datetime.now(timezone.utc) + timedelta(seconds=1)
-        
+        test_start_time = datetime.now(UTC) - timedelta(seconds=10)  # Events from last 10 seconds
+        test_end_time = datetime.now(UTC) + timedelta(seconds=1)
+
         db_events = await temp_database.get_events_by_date_range(test_start_time, test_end_time, limit=20)
         print(f"DEBUG: Found {len(db_events)} events in temp_database (id={id(temp_database)}) within last 10 seconds")
         for event in db_events:

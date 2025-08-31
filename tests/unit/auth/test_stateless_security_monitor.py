@@ -4,7 +4,6 @@ Tests the conversion from stateful to stateless design for multi-worker deployme
 All monitoring state is now persisted in PostgreSQL database.
 """
 
-from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -77,20 +76,19 @@ class TestStatelessSecurityMonitor:
         # Mock threshold queries returning default values
         threshold_mock = MagicMock()
         threshold_mock.threshold_value = 5
-        
+
         # Create comprehensive mock responses for all database queries
         mock_threshold_result = MagicMock(scalar_one_or_none=MagicMock(return_value=threshold_mock))
         mock_count_result = MagicMock(scalar=MagicMock(return_value=2))
-        
+
         # Setup alternating return values for different query types
         def mock_execute_side_effect(*args, **kwargs):
             # Check query type by analyzing the SQL or parameters
             query_str = str(args[0])
             if "count(" in query_str.lower():
                 return mock_count_result
-            else:
-                return mock_threshold_result
-        
+            return mock_threshold_result
+
         mock_session.execute.side_effect = mock_execute_side_effect
         mock_session.add = AsyncMock()
         mock_session.commit = AsyncMock()
@@ -144,7 +142,7 @@ class TestStatelessSecurityMonitor:
     async def test_block_ip_database_storage(self, security_monitor):
         """Test that IP blocking uses database storage."""
         mock_session = AsyncMock()
-        
+
         # Mock for checking if IP is already blocked (returns None = not blocked)
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -161,7 +159,7 @@ class TestStatelessSecurityMonitor:
     async def test_block_user_database_storage(self, security_monitor):
         """Test that user blocking uses database storage."""
         mock_session = AsyncMock()
-        
+
         # Mock for checking if user is already blocked (returns None = not blocked)
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -182,7 +180,7 @@ class TestStatelessSecurityMonitor:
         # Mock blocked entity
         blocked_entity = MagicMock()
         blocked_entity.is_valid_block = True
-        
+
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = blocked_entity
         mock_session.execute.return_value = mock_result
@@ -197,7 +195,7 @@ class TestStatelessSecurityMonitor:
     async def test_get_threat_score_database_query(self, security_monitor):
         """Test that threat score retrieval uses database queries."""
         mock_session = AsyncMock()
-        
+
         mock_result = MagicMock()
         mock_result.scalar.return_value = 85
         mock_session.execute.return_value = mock_result
@@ -363,10 +361,10 @@ class TestStatelessSecurityMonitor:
             result = MagicMock()
             # Default to returning None for scalar_one_or_none queries
             result.scalar_one_or_none.return_value = None
-            # Return low counts for scalar queries to avoid triggering alerts  
+            # Return low counts for scalar queries to avoid triggering alerts
             result.scalar.return_value = 1
             return result
-            
+
         mock_session.execute.side_effect = mock_execute_side_effect
 
         security_monitor._db_manager.get_session.return_value.__aenter__.return_value = mock_session
@@ -401,7 +399,7 @@ class TestStatelessSecurityMonitorPerformance:
                 # Return low counts to avoid triggering alerts
                 result.scalar.return_value = 0
                 return result
-            
+
             mock_session.execute.side_effect = mock_execute_side_effect
 
             # Process many events
@@ -443,7 +441,7 @@ class TestStatelessSecurityMonitorPerformance:
                 # For count queries, return low counts to avoid triggering alerts
                 result.scalar.return_value = 1
                 return result
-            
+
             mock_session.execute.side_effect = mock_execute_side_effect
 
             event = SecurityEventResponse(

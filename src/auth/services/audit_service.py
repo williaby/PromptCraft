@@ -380,8 +380,8 @@ class AuditService:
             raise
 
     async def get_security_events(
-        self, 
-        start_date: datetime, 
+        self,
+        start_date: datetime,
         end_date: datetime,
         event_types: list[SecurityEventType] | None = None,
         user_id: str | None = None,
@@ -400,20 +400,20 @@ class AuditService:
         try:
             # Use existing database functionality
             events = await self.db.get_events_by_date_range(start_date, end_date)
-            
+
             # Apply additional filters if provided
             if user_id:
                 events = [e for e in events if e.user_id == user_id]
-                
+
             if event_types:
                 event_type_values = [et.value for et in event_types]
                 events = [
-                    e for e in events 
+                    e for e in events
                     if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_type_values
                 ]
-                
+
             return events
-            
+
         except Exception as e:
             logger.error(f"Failed to get security events: {e}")
             raise

@@ -7,7 +7,7 @@ This module provides FastAPI endpoints for service token management including:
 - Usage analytics and audit logging
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
@@ -145,7 +145,7 @@ async def auth_health_check(
 
     return AuthHealthResponse(
         status=status,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         database_status=database_status,
         active_tokens=active_tokens,
         recent_authentications=recent_authentications,
@@ -177,7 +177,7 @@ async def create_service_token(
     # Calculate expiration
     expires_at = None
     if token_request.expires_days:
-        expires_at = datetime.now(timezone.utc) + timedelta(days=token_request.expires_days)
+        expires_at = datetime.now(UTC) + timedelta(days=token_request.expires_days)
 
     try:
         result = await manager.create_service_token(
@@ -393,7 +393,7 @@ async def emergency_revoke_all_tokens(
             "tokens_revoked": revoked_count or 0,
             "revoked_by": current_user.email,
             "reason": reason,
-            "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat() + "Z",
         }
 
     except Exception as e:
@@ -421,7 +421,7 @@ async def system_status(
 
     return {
         "status": "operational",
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
         "version": "1.0.0",
         "authenticated_as": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }
@@ -434,7 +434,7 @@ async def system_health() -> dict[str, str]:
     This endpoint is excluded from authentication middleware and can be used
     for basic health monitoring without credentials.
     """
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat() + "Z"}
+    return {"status": "healthy", "timestamp": datetime.now(UTC).isoformat() + "Z"}
 
 
 # Audit endpoints for CI/CD logging
@@ -462,7 +462,7 @@ async def log_cicd_event(
 
     return {
         "status": "logged",
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat() + "Z",
         "event_type": event_data.get("event_type", "unknown"),
         "logged_by": getattr(current_user, "email", getattr(current_user, "token_name", "unknown")),
     }

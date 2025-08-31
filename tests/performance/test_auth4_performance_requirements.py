@@ -33,7 +33,7 @@ import statistics
 import time
 import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Dict, List, Tuple
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -44,7 +44,14 @@ from src.auth.alert_engine import AlertEngine
 from src.auth.api.security_dashboard_endpoints import SecurityDashboardEndpoints
 from src.auth.audit_service import AuditService
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
-from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType, SecurityEventCreate, EventSeverity, EventType
+from src.auth.models import (
+    EventSeverity,
+    EventType,
+    SecurityEvent,
+    SecurityEventCreate,
+    SecurityEventSeverity,
+    SecurityEventType,
+)
 from src.auth.security_logger import SecurityLogger
 from src.auth.security_monitor import SecurityMonitor
 from src.auth.suspicious_activity_detector import SuspiciousActivityDetector
@@ -271,8 +278,13 @@ class TestAUTH4ConcurrentPerformance:
     async def high_performance_setup(self):
         """Setup optimized for high-performance concurrent testing with mock database."""
         # Use MockSecurityDatabase to avoid PostgreSQL table dependency
-        from tests.fixtures.security_service_mocks import MockSecurityDatabase, MockSecurityLogger, MockSecurityMonitor, MockAlertEngine
-        
+        from tests.fixtures.security_service_mocks import (
+            MockAlertEngine,
+            MockSecurityDatabase,
+            MockSecurityLogger,
+            MockSecurityMonitor,
+        )
+
         database = MockSecurityDatabase()
         await database.initialize()
 
@@ -280,7 +292,7 @@ class TestAUTH4ConcurrentPerformance:
         security_logger = MockSecurityLogger()
         await security_logger.initialize()
 
-        # Use MockSecurityMonitor to avoid database dependency 
+        # Use MockSecurityMonitor to avoid database dependency
         security_monitor = MockSecurityMonitor(
             alert_threshold=5,
             time_window=60,
@@ -306,7 +318,7 @@ class TestAUTH4ConcurrentPerformance:
     async def test_concurrent_event_throughput(self, high_performance_setup):
         """Test system achieves >500 events/second throughput requirement."""
 
-        security_monitor = high_performance_setup["security_monitor"]
+        high_performance_setup["security_monitor"]
 
         async def generate_events_batch(batch_id: int, events_per_batch: int) -> float:
             """Generate a batch of events and return processing time."""
@@ -317,7 +329,7 @@ class TestAUTH4ConcurrentPerformance:
                 # Create authentication event based on success rate
                 event_type = SecurityEventType.LOGIN_SUCCESS if (i % 4 != 0) else SecurityEventType.LOGIN_FAILURE
                 severity = SecurityEventSeverity.INFO if (i % 4 != 0) else SecurityEventSeverity.WARNING
-                
+
                 await security_logger.log_security_event(
                     event_type=event_type,
                     severity=severity,
@@ -447,17 +459,17 @@ class TestAUTH4ConcurrentPerformance:
         async def sustained_load():
             security_logger = high_performance_setup["security_logger"]
             batch_size = 100  # Process events in batches to reduce memory overhead
-            
+
             for batch_start in range(0, 1000, batch_size):
                 batch_end = min(batch_start + batch_size, 1000)
                 batch_events = []
-                
-                # Create batch of events  
+
+                # Create batch of events
                 for i in range(batch_start, batch_end):
                     # Create authentication event (success or failure)
                     event_type = SecurityEventType.LOGIN_SUCCESS if (i % 6 != 0) else SecurityEventType.LOGIN_FAILURE
                     severity = SecurityEventSeverity.INFO if (i % 6 != 0) else SecurityEventSeverity.WARNING
-                    
+
                     event = await security_logger.log_security_event(
                         event_type=event_type,
                         severity=severity,
@@ -466,7 +478,7 @@ class TestAUTH4ConcurrentPerformance:
                         details={"memory_test": True, "iteration": i},
                     )
                     batch_events.append(event)
-                
+
                 # Track events in batch for better memory efficiency
                 await security_monitor.track_events_batch(batch_events)
 
@@ -787,11 +799,11 @@ class TestAUTH4StressAndRecovery:
                         tasks = []
                         for i in range(batch_size):
                             event_id = events_generated + i
-                            
+
                             # Create authentication event based on success rate
                             event_type = SecurityEventType.LOGIN_SUCCESS if (event_id % 5 != 0) else SecurityEventType.LOGIN_FAILURE
                             severity = SecurityEventSeverity.INFO if (event_id % 5 != 0) else SecurityEventSeverity.WARNING
-                            
+
                             async def log_stress_event():
                                 event = await security_logger.log_security_event(
                                     event_type=event_type,
@@ -801,7 +813,7 @@ class TestAUTH4StressAndRecovery:
                                     details={"stress_test": True, "event_id": event_id},
                                 )
                                 await security_monitor.track_event(event)
-                            
+
                             task = log_stress_event()
                             tasks.append(task)
 
@@ -948,10 +960,10 @@ class TestAUTH4EndToEndPerformance:
                     details={"e2e_test": True, "attempt": attempt},
                 )
                 events_to_create.append(event_create)
-            
+
             # Batch log all events in single transaction (with audit logging)
             logged_events = await security_logger.log_security_events_batch(events_to_create, audit_service)
-            
+
             # Batch track all events in single transaction
             await security_monitor.track_events_batch(logged_events)
 
@@ -970,8 +982,8 @@ class TestAUTH4EndToEndPerformance:
             start_time = time.perf_counter()
 
             audit_events = await audit_service.get_security_events(
-                start_date=datetime.now(timezone.utc) - timedelta(minutes=1),
-                end_date=datetime.now(timezone.utc) + timedelta(minutes=1),
+                start_date=datetime.now(UTC) - timedelta(minutes=1),
+                end_date=datetime.now(UTC) + timedelta(minutes=1),
             )
 
             workflow_times["audit_retrieval"] = (time.perf_counter() - start_time) * 1000

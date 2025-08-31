@@ -3,20 +3,20 @@
 Tests user risk profile and monitoring endpoints.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
-from fastapi.testclient import TestClient
+
+import pytest
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from src.auth.api.routers.users_router import (
-    router,
     UserRiskProfileResponse,
     get_security_service,
     get_suspicious_activity_detector,
+    router,
 )
 from src.auth.services.security_integration import SecurityIntegrationService
-from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def sample_low_risk_activity():
         "unusual_location_count": 0,
         "off_hours_activity_count": 0,
         "total_logins": 45,
-        "last_activity": datetime.now(timezone.utc) - timedelta(hours=2),
+        "last_activity": datetime.now(UTC) - timedelta(hours=2),
         "known_location_count": 3,
     }
 
@@ -77,7 +77,7 @@ def sample_high_risk_activity():
         "unusual_location_count": 3,
         "off_hours_activity_count": 1,
         "total_logins": 125,
-        "last_activity": datetime.now(timezone.utc) - timedelta(minutes=30),
+        "last_activity": datetime.now(UTC) - timedelta(minutes=30),
         "known_location_count": 2,
     }
 
@@ -91,7 +91,7 @@ def sample_critical_risk_activity():
         "unusual_location_count": 8,  # Many unusual locations
         "off_hours_activity_count": 10,  # Excessive off-hours activity
         "total_logins": 200,
-        "last_activity": datetime.now(timezone.utc) - timedelta(minutes=5),
+        "last_activity": datetime.now(UTC) - timedelta(minutes=5),
         "known_location_count": 1,
     }
 
@@ -100,7 +100,7 @@ def sample_critical_risk_activity():
 def sample_suspicious_activities_low():
     """Sample suspicious activities for low-risk user."""
     return [
-        {"description": "Login from new device", "severity": "low", "timestamp": datetime.now(timezone.utc)},
+        {"description": "Login from new device", "severity": "low", "timestamp": datetime.now(UTC)},
     ]
 
 
@@ -108,10 +108,10 @@ def sample_suspicious_activities_low():
 def sample_suspicious_activities_high():
     """Sample suspicious activities for high-risk user."""
     return [
-        {"description": "Multiple failed login attempts", "severity": "high", "timestamp": datetime.now(timezone.utc)},
-        {"description": "Login from unusual location", "severity": "medium", "timestamp": datetime.now(timezone.utc) - timedelta(hours=1)},
-        {"description": "Off-hours data access", "severity": "medium", "timestamp": datetime.now(timezone.utc) - timedelta(hours=3)},
-        {"description": "Suspicious API usage pattern", "severity": "high", "timestamp": datetime.now(timezone.utc) - timedelta(hours=6)},
+        {"description": "Multiple failed login attempts", "severity": "high", "timestamp": datetime.now(UTC)},
+        {"description": "Login from unusual location", "severity": "medium", "timestamp": datetime.now(UTC) - timedelta(hours=1)},
+        {"description": "Off-hours data access", "severity": "medium", "timestamp": datetime.now(UTC) - timedelta(hours=3)},
+        {"description": "Suspicious API usage pattern", "severity": "high", "timestamp": datetime.now(UTC) - timedelta(hours=6)},
     ]
 
 
@@ -120,7 +120,7 @@ class TestUserRiskProfileResponse:
 
     def test_user_risk_profile_response_creation(self):
         """Test creating user risk profile response."""
-        last_activity = datetime.now(timezone.utc)
+        last_activity = datetime.now(UTC)
         profile = UserRiskProfileResponse(
             user_id="user123@example.com",
             risk_score=45,
@@ -170,7 +170,7 @@ class TestUserRiskProfileResponse:
             risk_level="CRITICAL",
             total_logins=10000,
             failed_logins_today=50,
-            last_activity=datetime.now(timezone.utc),
+            last_activity=datetime.now(UTC),
             known_locations=25,
             suspicious_activities=[f"Activity {i}" for i in range(10)],  # Many activities
             recommendations=[f"Recommendation {i}" for i in range(8)],    # Many recommendations
@@ -192,11 +192,11 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_low_risk(
-        self, 
-        test_client, 
-        mock_suspicious_activity_detector, 
-        sample_low_risk_activity, 
-        sample_suspicious_activities_low
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_low_risk_activity,
+        sample_suspicious_activities_low,
     ):
         """Test getting risk profile for low-risk user."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_low_risk_activity
@@ -218,11 +218,11 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_high_risk(
-        self, 
-        test_client, 
-        mock_suspicious_activity_detector, 
-        sample_high_risk_activity, 
-        sample_suspicious_activities_high
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_high_risk_activity,
+        sample_suspicious_activities_high,
     ):
         """Test getting risk profile for high-risk user."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_high_risk_activity
@@ -239,11 +239,11 @@ class TestUsersRouter:
         expected_risk = min(100, 35 + min(30, 6*5) + min(20, 3*3) + min(15, 1*2))
         assert data["risk_score"] == expected_risk
         assert data["risk_level"] == "HIGH"
-        
+
         assert data["failed_logins_today"] == 6
         assert len(data["suspicious_activities"]) == 4
-        
-        # Check for specific recommendations based on risk factors  
+
+        # Check for specific recommendations based on risk factors
         recommendations = data["recommendations"]
         assert any("password policy" in rec for rec in recommendations)  # failed_logins_today=6 > 5
         assert any("login locations" in rec for rec in recommendations)  # unusual_location_count=3 > 2
@@ -252,18 +252,16 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_critical_risk(
-        self, 
-        test_client, 
-        mock_suspicious_activity_detector, 
-        sample_critical_risk_activity, 
-        sample_suspicious_activities_high
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_critical_risk_activity,
+        sample_suspicious_activities_high,
     ):
         """Test getting risk profile for critical-risk user."""
         # Add more suspicious activities for critical user
-        critical_activities = sample_suspicious_activities_high + [
-            {"description": "Privilege escalation attempt", "severity": "critical"},
-        ]
-        
+        critical_activities = [*sample_suspicious_activities_high, {"description": "Privilege escalation attempt", "severity": "critical"}]
+
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_critical_risk_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = critical_activities
 
@@ -276,14 +274,14 @@ class TestUsersRouter:
         # Expected risk score should be very high and capped at 100
         assert data["risk_score"] >= 80
         assert data["risk_score"] <= 100
-        
+
         # Check for critical-level recommendations
         recommendations = data["recommendations"]
         assert any("security review required" in rec for rec in recommendations)  # risk_score > 70
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_user_not_found(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test getting risk profile for non-existent user."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = None
@@ -295,7 +293,7 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_empty_activity(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test getting risk profile with empty activity data."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = {}
@@ -315,7 +313,7 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_service_error(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test getting risk profile when detector service raises exception."""
         mock_suspicious_activity_detector.get_user_activity_summary.side_effect = Exception("Service unavailable")
@@ -327,7 +325,7 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_risk_score_calculation_edge_cases(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test risk score calculation with edge case values."""
         # Test with extreme values that should be capped
@@ -339,7 +337,7 @@ class TestUsersRouter:
             "total_logins": 1000,
             "known_location_count": 10,
         }
-        
+
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = extreme_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = []
 
@@ -347,7 +345,7 @@ class TestUsersRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # Risk score should be: 50 + min(30, 100*5) + min(20, 50*3) + min(15, 50*2) = 50 + 30 + 20 + 15 = 115
         # But capped at 100
         assert data["risk_score"] == 100
@@ -355,7 +353,7 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_risk_score_calculation_negative_values(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test risk score calculation with negative base values."""
         negative_activity = {
@@ -366,7 +364,7 @@ class TestUsersRouter:
             "total_logins": 50,
             "known_location_count": 5,
         }
-        
+
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = negative_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = []
 
@@ -374,14 +372,14 @@ class TestUsersRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # Risk score should be capped at minimum 0
         assert data["risk_score"] == 0
         assert data["risk_level"] == "LOW"  # Should still be LOW even with 0 score
 
     @pytest.mark.asyncio
     async def test_recommendations_logic(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test recommendation generation logic with specific conditions."""
         specific_activity = {
@@ -392,11 +390,11 @@ class TestUsersRouter:
             "total_logins": 100,
             "known_location_count": 2,
         }
-        
+
         many_suspicious_activities = [
             {"description": f"Activity {i}"} for i in range(4)  # > 3 activities
         ]
-        
+
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = specific_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = many_suspicious_activities
 
@@ -404,15 +402,15 @@ class TestUsersRouter:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         recommendations = data["recommendations"]
-        
+
         # Verify specific recommendations are generated
         assert any("password policy" in rec for rec in recommendations)
-        assert any("login locations" in rec for rec in recommendations) 
+        assert any("login locations" in rec for rec in recommendations)
         assert any("timing patterns" in rec for rec in recommendations)
         assert any("Enhanced monitoring" in rec for rec in recommendations)
-        
+
         # Risk score > 70 should also trigger security review
         if data["risk_score"] > 70:
             assert any("security review required" in rec for rec in recommendations)
@@ -424,7 +422,7 @@ class TestUsersIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_user_risk_profile_performance(
-        self, test_client, mock_suspicious_activity_detector, sample_low_risk_activity
+        self, test_client, mock_suspicious_activity_detector, sample_low_risk_activity,
     ):
         """Test user risk profile endpoint performance."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_low_risk_activity
@@ -463,7 +461,7 @@ class TestUsersIntegration:
 
     @pytest.mark.asyncio
     async def test_risk_level_boundaries(
-        self, test_client, mock_suspicious_activity_detector
+        self, test_client, mock_suspicious_activity_detector,
     ):
         """Test risk level classification boundary conditions."""
         boundary_test_cases = [
@@ -485,7 +483,7 @@ class TestUsersIntegration:
                 "total_logins": 50,
                 "known_location_count": 3,
             }
-            
+
             mock_suspicious_activity_detector.get_user_activity_summary.return_value = activity_data
             mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = []
 

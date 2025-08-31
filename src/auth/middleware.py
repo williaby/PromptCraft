@@ -23,7 +23,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.database import DatabaseError, get_database_manager, get_database_manager_async
+from src.database import DatabaseError, get_database_manager_async
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
@@ -85,7 +85,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         Args:
             app: FastAPI application instance
-            config: Authentication configuration  
+            config: Authentication configuration
             jwt_validator: JWT validator instance
             excluded_paths: List of paths to exclude from authentication
             database_enabled: Whether database integration is enabled
@@ -249,7 +249,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
             # Traditional logging
             if self.config.auth_logging_enabled:
-                logger.warning(f"Authentication failed: {e.message}")
+                # Sanitize error message to prevent log injection
+                sanitized_message = str(e.message).replace("\n", " ").replace("\r", " ")
+                logger.warning(f"Authentication failed: {sanitized_message}")
                 if alerts:
                     logger.warning(f"Security alerts generated: {[alert.alert_type for alert in alerts]}")
 

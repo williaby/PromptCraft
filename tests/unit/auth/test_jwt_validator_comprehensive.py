@@ -29,7 +29,6 @@ from src.auth.jwks_client import JWKSClient
 from src.auth.jwt_validator import JWTValidator
 from src.auth.models import AuthenticatedUser, JWTValidationError, UserRole
 from src.utils.time_utils import utc_now
-from tests.helpers.token_utils import b64_encode_part, create_invalid_structure_tokens, create_malformed_jwt_token
 
 
 @pytest.mark.unit

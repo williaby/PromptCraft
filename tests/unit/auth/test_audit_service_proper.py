@@ -242,9 +242,8 @@ class TestAuditServiceLogAction:
         """Test log_action initializes service if not initialized."""
         assert service._is_initialized is False
 
-        with patch.object(service, "initialize") as mock_init:
-            with patch.object(service, "_check_compliance"):
-                await service.log_action(AuditAction.LOGIN, "session")
+        with patch.object(service, "initialize") as mock_init, patch.object(service, "_check_compliance"):
+            await service.log_action(AuditAction.LOGIN, "session")
 
         mock_init.assert_called_once()
 
@@ -373,7 +372,7 @@ class TestAuditServiceSecurityEvent:
         with patch.object(service, "log_action") as mock_log:
             mock_log.return_value = AuditEntry(AuditAction.SECURITY_EVENT, "test")
 
-            result = await service.log_security_event(security_event)
+            await service.log_security_event(security_event)
 
         # Check log_action was called with correct parameters
         mock_log.assert_called_once()
@@ -881,13 +880,12 @@ class TestAuditServicePersistence:
         recent_file.touch()
 
         # Mock asyncio.sleep to avoid waiting, and mock the file processing to avoid timezone issues
-        with patch("asyncio.sleep") as mock_sleep:
-            with patch.object(Path, "glob") as mock_glob:
-                mock_sleep.side_effect = [None, asyncio.CancelledError()]
-                mock_glob.return_value = [old_file]  # Only return old file for deletion
+        with patch("asyncio.sleep") as mock_sleep, patch.object(Path, "glob") as mock_glob:
+            mock_sleep.side_effect = [None, asyncio.CancelledError()]
+            mock_glob.return_value = [old_file]  # Only return old file for deletion
 
-                # Test cleanup task
-                await service._cleanup_old_logs()
+            # Test cleanup task
+            await service._cleanup_old_logs()
 
         # Old file should be removed (we mocked glob to only return old_file)
         # Recent file is untouched since it wasn't returned by the mocked glob

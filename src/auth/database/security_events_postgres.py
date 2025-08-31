@@ -12,7 +12,7 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, desc, func, select, text
@@ -106,7 +106,7 @@ class SecurityEventsPostgreSQL:
                     session_id=event.session_id,
                     details=event.details or {},  # PostgreSQL JSONB field
                     risk_score=event.risk_score,
-                    timestamp=event.timestamp or datetime.now(timezone.utc),
+                    timestamp=event.timestamp or datetime.now(UTC),
                 )
 
                 session.add(db_event)
@@ -200,7 +200,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = (
@@ -246,7 +246,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = select(SecurityEventModel).where(SecurityEventModel.timestamp >= time_threshold)
@@ -280,7 +280,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate cutoff date
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
+            cutoff_date = datetime.now(UTC) - timedelta(days=days_to_keep)
 
             async with self.db_manager.get_session() as session:
                 # Count events to be deleted
@@ -497,7 +497,7 @@ class SecurityEventsPostgreSQL:
 
         try:
             # Calculate time threshold
-            time_threshold = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+            time_threshold = datetime.now(UTC) - timedelta(hours=hours_back)
 
             async with self.db_manager.get_session() as session:
                 query = (
@@ -539,7 +539,7 @@ class SecurityEventsPostgreSQL:
                 total_events = total_result.scalar() or 0
 
                 # Get recent event count (last 24 hours)
-                recent_threshold = datetime.now(timezone.utc) - timedelta(hours=24)
+                recent_threshold = datetime.now(UTC) - timedelta(hours=24)
                 recent_count_query = select(func.count(SecurityEventModel.id)).where(
                     SecurityEventModel.timestamp >= recent_threshold,
                 )

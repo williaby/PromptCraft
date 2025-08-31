@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -61,7 +61,7 @@ class Alert:
         self.target = target
         self.details = details or {}
         self.channels = channels or [AlertChannel.LOG]
-        self.timestamp = datetime.now(timezone.utc)
+        self.timestamp = datetime.now(UTC)
         self.id = f"{alert_type}_{target}_{self.timestamp.timestamp()}"
 
 
@@ -178,7 +178,7 @@ class AlertEngine:
         Returns:
             True if within rate limit
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Clean old entries
         if alert_type in self._alert_counts:
@@ -338,11 +338,11 @@ class AlertEngine:
         """
         # Get recent alerts from history
         recent_alerts = await self.get_alert_history(limit=limit)
-        
+
         # Filter by status if provided (for now, treat all alerts as active)
         if status and status != "active":
             recent_alerts = []
-        
+
         # Convert alerts to dictionary format expected by endpoints
         alerts_data = []
         for alert in recent_alerts:
@@ -357,7 +357,7 @@ class AlertEngine:
                 "channels": [channel.value for channel in alert.channels],
             }
             alerts_data.append(alert_dict)
-        
+
         return {
             "alerts": alerts_data,
             "total": len(alerts_data),
@@ -390,7 +390,7 @@ class AlertEngine:
             stats["by_type"][alert_type] = count
 
         # Check rate limited types
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff = now.timestamp() - self.rate_window
 
         for alert_type, timestamps in self._alert_counts.items():

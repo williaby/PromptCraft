@@ -2,7 +2,7 @@
 
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -284,7 +284,7 @@ class SecurityEventCreate(SecurityEventBase):
     """Model for creating new security events."""
 
     timestamp: datetime | None = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Event timestamp",
     )
 
@@ -293,7 +293,7 @@ class SecurityEvent(SecurityEventBase):
     """Complete security event model with database fields."""
 
     id: UUID | None = Field(default_factory=uuid4, description="Unique event identifier")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Event timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Event timestamp")
 
     class Config:
         """Pydantic configuration."""

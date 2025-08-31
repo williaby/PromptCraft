@@ -232,7 +232,7 @@ class EmailHandler:
 
         # Build subject
         subject = self.config.subject_template.format(
-            alert_type=alert.alert_type.value.replace('_', ' ').title(),
+            alert_type=alert.alert_type.value.replace("_", " ").title(),
             severity=alert.severity.value.upper(),
             title=alert.title,
             affected_user=alert.affected_user or "Unknown",
@@ -263,7 +263,7 @@ class EmailHandler:
         """Build plain text email content."""
         if self.config.text_template:
             return self.config.text_template.format(
-                alert_type=alert.alert_type.value.replace('_', ' ').title(),
+                alert_type=alert.alert_type.value.replace("_", " ").title(),
                 severity=alert.severity.value.upper(),
                 title=alert.title,
                 description=alert.description,
@@ -296,7 +296,7 @@ This is an automated security alert from PromptCraft Security Monitoring.
         """Build HTML email content."""
         if self.config.html_template:
             return self.config.html_template.format(
-                alert_type=alert.alert_type.value.replace('_', ' ').title(),
+                alert_type=alert.alert_type.value.replace("_", " ").title(),
                 severity=alert.severity.value.upper(),
                 title=alert.title,
                 description=alert.description,

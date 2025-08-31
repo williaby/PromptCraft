@@ -1,5 +1,6 @@
 """Tests for the main FastAPI application module."""
 
+from datetime import UTC
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -315,7 +316,7 @@ class TestHealthCheckEndpoints:
     @patch("src.main.get_configuration_status")
     def test_configuration_health_success(self, mock_config_status, mock_settings) -> None:
         """Test successful configuration health check."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from src.config.health import ConfigurationStatusModel
 
@@ -335,7 +336,7 @@ class TestHealthCheckEndpoints:
             secrets_configured=2,
             api_host="localhost",
             api_port=8000,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         response = self.client.get("/health/config")

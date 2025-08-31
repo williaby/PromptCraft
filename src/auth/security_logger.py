@@ -1,7 +1,10 @@
 """Security logger implementation for AUTH-4 Enhanced Security Event Logging."""
 
+import asyncio
+import json
 import logging
-from datetime import datetime, timezone, timedelta
+import re
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -20,13 +23,98 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
-class SecurityLogger:
-    """Stateless security event logger with direct PostgreSQL persistence."""
+def sanitize_event_details(details: dict[str, Any] | None) -> dict[str, Any]:
+    """Sanitize security event details to prevent injection attacks.
 
-    def __init__(self) -> None:
-        """Initialize security logger."""
+    Args:
+        details: Raw event details dictionary
+
+    Returns:
+        Sanitized details dictionary safe for database storage
+    """
+    if not details:
+        return {}
+
+    sanitized = {}
+
+    for key, value in details.items():
+        # Sanitize key - only allow alphanumeric and underscores
+        clean_key = re.sub(r"[^a-zA-Z0-9_]", "", str(key)[:50])
+        if not clean_key:
+            continue
+
+        # Sanitize value based on type
+        if isinstance(value, str):
+            # Remove potential SQL injection characters and limit length
+            clean_value = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", value[:1000])
+            # Remove potential script tags for XSS prevention
+            clean_value = re.sub(r"<[^>]*>", "", clean_value)
+            sanitized[clean_key] = clean_value
+        elif isinstance(value, (int, float, bool)):
+            sanitized[clean_key] = value
+        elif isinstance(value, dict):
+            # Recursively sanitize nested dictionaries (max depth 3)
+            try:
+                json_str = json.dumps(value)[:2000]  # Limit JSON size
+                sanitized[clean_key] = json.loads(json_str)
+            except (TypeError, ValueError, json.JSONDecodeError):
+                sanitized[clean_key] = str(value)[:500]
+        elif isinstance(value, list):
+            # Sanitize lists (max 10 items)
+            clean_list = []
+            for item in value[:10]:
+                if isinstance(item, str):
+                    clean_item = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", str(item)[:200])
+                    clean_list.append(clean_item)
+                elif isinstance(item, (int, float, bool)):
+                    clean_list.append(item)
+                else:
+                    clean_list.append(str(item)[:200])
+            sanitized[clean_key] = clean_list
+        else:
+            # Convert unknown types to string with length limit
+            sanitized[clean_key] = str(value)[:500]
+
+    # Limit total number of keys
+    if len(sanitized) > 20:
+        logger.warning("Security event details truncated - too many keys")
+        sanitized = dict(list(sanitized.items())[:20])
+
+    return sanitized
+
+
+class RateLimitExceeded(Exception):
+    """Raised when rate limit is exceeded for security logging."""
+
+    def __init__(self, message: str, retry_after: int) -> None:
+        """Initialize rate limit exception.
+
+        Args:
+            message: Error message
+            retry_after: Seconds to wait before retrying
+        """
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+class SecurityLogger:
+    """Stateless security event logger with direct PostgreSQL persistence and rate limiting."""
+
+    def __init__(self, rate_limit: int = 100, rate_window: int = 60) -> None:
+        """Initialize security logger with rate limiting.
+
+        Args:
+            rate_limit: Maximum events per rate window
+            rate_window: Rate limiting window in seconds
+        """
         self._db_manager = get_database_manager()
         self._is_initialized = False
+
+        # Rate limiting configuration
+        self._rate_limit = rate_limit
+        self._rate_window = rate_window
+        self._rate_tracker: dict[str, list[datetime]] = {}
+        self._rate_lock = asyncio.Lock()
 
     async def initialize(self) -> None:
         """Initialize the security logger and database."""
@@ -37,7 +125,59 @@ class SecurityLogger:
         await self._db_manager.initialize()
 
         self._is_initialized = True
-        logger.info("SecurityLogger initialized with stateless PostgreSQL backend")
+        logger.info(
+            "SecurityLogger initialized with stateless PostgreSQL backend (rate limit: %d/%ds)",
+            self._rate_limit,
+            self._rate_window,
+        )
+
+    async def _check_rate_limit(self, key: str = "global") -> None:
+        """Check if rate limit is exceeded.
+
+        Args:
+            key: Rate limiting key (e.g., IP address, user ID)
+
+        Raises:
+            RateLimitExceeded: If rate limit is exceeded
+        """
+        async with self._rate_lock:
+            current_time = datetime.now(UTC)
+
+            # Initialize tracker for this key if needed
+            if key not in self._rate_tracker:
+                self._rate_tracker[key] = []
+
+            # Remove old entries outside the time window
+            cutoff_time = current_time - timedelta(seconds=self._rate_window)
+            self._rate_tracker[key] = [timestamp for timestamp in self._rate_tracker[key] if timestamp > cutoff_time]
+
+            # Check if rate limit would be exceeded
+            if len(self._rate_tracker[key]) >= self._rate_limit:
+                oldest_time = min(self._rate_tracker[key])
+                retry_after = int((oldest_time + timedelta(seconds=self._rate_window) - current_time).total_seconds())
+                raise RateLimitExceeded(
+                    f"Rate limit exceeded for key '{key}': {self._rate_limit} events per {self._rate_window}s",
+                    retry_after=max(1, retry_after),
+                )
+
+            # Add current timestamp
+            self._rate_tracker[key].append(current_time)
+
+    def _get_rate_limit_key(self, event: SecurityEventCreate) -> str:
+        """Generate rate limiting key based on event characteristics.
+
+        Args:
+            event: Security event to generate key for
+
+        Returns:
+            Rate limiting key
+        """
+        # Use IP address if available, fallback to user ID, then global
+        if event.ip_address:
+            return f"ip:{event.ip_address}"
+        if event.user_id:
+            return f"user:{event.user_id}"
+        return "global"
 
     async def log_security_event(
         self,
@@ -83,13 +223,38 @@ class SecurityLogger:
         )
 
     async def _log_event_internal(self, event: SecurityEventCreate) -> SecurityEventResponse:
-        """Internal method to log an event directly to database."""
+        """Internal method to log an event directly to database with rate limiting."""
         if not self._is_initialized:
             await self.initialize()
 
+        # Apply rate limiting
+        rate_key = self._get_rate_limit_key(event)
+        try:
+            await self._check_rate_limit(rate_key)
+        except RateLimitExceeded as e:
+            logger.warning("Security event rate limit exceeded: %s", e)
+            # For rate limit violations, still create a response but mark as rate limited
+            event_id = uuid4()
+            timestamp = datetime.now(UTC)
+            return SecurityEventResponse(
+                id=event_id,
+                event_type="RATE_LIMITED",
+                severity="WARNING",
+                user_id=event.user_id,
+                ip_address=event.ip_address,
+                timestamp=timestamp,
+                risk_score=10,
+                details={
+                    "original_event_type": str(event.event_type),
+                    "rate_limit_key": rate_key,
+                    "retry_after": e.retry_after,
+                    "message": str(e),
+                },
+            )
+
         # Generate unique ID and timestamp
         event_id = uuid4()
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
 
         # Insert using SQLAlchemy ORM
         async with self._db_manager.get_session() as session:
@@ -101,7 +266,7 @@ class SecurityLogger:
                 ip_address=event.ip_address,
                 user_agent=event.user_agent,
                 session_id=event.session_id,
-                details=event.details or {},
+                details=sanitize_event_details(event.details),
                 risk_score=event.risk_score,
                 timestamp=timestamp,
             )
@@ -118,7 +283,7 @@ class SecurityLogger:
             ip_address=event.ip_address,
             timestamp=timestamp,
             risk_score=event.risk_score,
-            details=event.details or {},
+            details=sanitize_event_details(event.details),
         )
 
     async def log_event(
@@ -157,7 +322,7 @@ class SecurityLogger:
             ip_address=ip_address,
             user_agent=user_agent,
             session_id=session_id,
-            details=details or {},
+            details=sanitize_event_details(details),
             risk_score=risk_score,
         )
 
@@ -185,7 +350,7 @@ class SecurityLogger:
             await self.initialize()
 
         # Calculate cutoff time
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_back)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours_back)
 
         # Build query with filters
         conditions = ["timestamp >= :cutoff"]
@@ -295,25 +460,29 @@ class SecurityLogger:
                 for row in rows
             ]
 
-    async def log_security_events_batch(self, events: list[SecurityEventCreate], audit_service=None) -> list[SecurityEventResponse]:
+    async def log_security_events_batch(
+        self,
+        events: list[SecurityEventCreate],
+        audit_service=None,
+    ) -> list[SecurityEventResponse]:
         """Log multiple security events in a single transaction for performance.
-        
+
         Args:
             events: List of security events to log
             audit_service: Optional audit service for compliance logging
-            
+
         Returns:
             List of SecurityEventResponse objects with generated IDs and timestamps
         """
         if not self._is_initialized:
             await self.initialize()
-            
+
         if not events:
             return []
-            
+
         responses = []
-        timestamp = datetime.now(timezone.utc)
-        
+        timestamp = datetime.now(UTC)
+
         async with self._db_manager.get_session() as session:
             # Create all events in memory first
             db_events = []
@@ -327,12 +496,12 @@ class SecurityLogger:
                     ip_address=event.ip_address,
                     user_agent=event.user_agent,
                     session_id=event.session_id,
-                    details=event.details or {},
+                    details=sanitize_event_details(event.details),
                     risk_score=event.risk_score,
                     timestamp=timestamp,
                 )
                 db_events.append(db_event)
-                
+
                 # Create response object
                 response = SecurityEventResponse(
                     id=event_id,
@@ -342,20 +511,20 @@ class SecurityLogger:
                     ip_address=event.ip_address,
                     timestamp=timestamp,
                     risk_score=event.risk_score,
-                    details=event.details or {},
+                    details=sanitize_event_details(event.details),
                 )
                 responses.append(response)
-            
+
             # Add all events to session
             session.add_all(db_events)
             # Single commit for all events
             await session.commit()
-            
+
         # Log to audit service if provided (for compliance)
         if audit_service:
             for response in responses:
                 await audit_service.log_security_event(response)
-            
+
         return responses
 
     async def cleanup_old_events(self, days_to_keep: int = 90) -> int:
@@ -370,7 +539,7 @@ class SecurityLogger:
         if not self._is_initialized:
             await self.initialize()
 
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
+        cutoff = datetime.now(UTC) - timedelta(days=days_to_keep)
 
         async with self._db_manager.get_session() as session:
             query = text("DELETE FROM security_events WHERE timestamp < :cutoff RETURNING id")

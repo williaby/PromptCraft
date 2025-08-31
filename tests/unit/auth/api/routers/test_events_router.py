@@ -3,21 +3,19 @@
 Tests security event search endpoint functionality.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
-from uuid import uuid4
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
-from fastapi.testclient import TestClient
+from uuid import uuid4
+
+import pytest
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from src.auth.api.routers.events_router import (
-    router,
-    SecurityEventSearchRequest,
     SecurityEventResponse,
-    SecurityEventSearchResponse,
     get_security_service,
+    router,
 )
-from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
 
 
@@ -50,26 +48,26 @@ def sample_events():
             id=str(uuid4()),
             event_type="login_failure",
             severity="critical",
-            timestamp=datetime.now(timezone.utc) - timedelta(hours=1),
+            timestamp=datetime.now(UTC) - timedelta(hours=1),
             user_id="user1@example.com",
             ip_address="192.168.1.100",
             user_agent="Mozilla/5.0",
             risk_score=85,
             details={"reason": "invalid_password", "attempts": 5},
-            tags=["brute_force", "suspicious"]
+            tags=["brute_force", "suspicious"],
         ),
         SecurityEventResponse(
             id=str(uuid4()),
             event_type="login_success",
             severity="info",
-            timestamp=datetime.now(timezone.utc) - timedelta(hours=2),
+            timestamp=datetime.now(UTC) - timedelta(hours=2),
             user_id="user2@example.com",
             ip_address="10.0.0.50",
             user_agent="Chrome/91.0",
             risk_score=10,
             details={"method": "password", "duration": "normal"},
-            tags=["normal_activity"]
-        )
+            tags=["normal_activity"],
+        ),
     ]
 
 
@@ -104,16 +102,16 @@ class TestEventsRouter:
             "total_count": len(sample_events),
         }
         mock_security_service.search_security_events.return_value = search_results
-        
+
         search_request = {
-            "start_date": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-            "end_date": datetime.now(timezone.utc).isoformat(),
+            "start_date": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
+            "end_date": datetime.now(UTC).isoformat(),
             "limit": 100,
-            "offset": 0
+            "offset": 0,
         }
-        
+
         response = test_client.post("/events/search", json=search_request)
-        
+
         if response.status_code != 200:
             print(f"Error response: {response.json()}")
         assert response.status_code == 200
@@ -148,18 +146,18 @@ class TestEventsRouter:
             "total_count": 1,
         }
         mock_security_service.search_security_events.return_value = search_results
-        
+
         search_request = {
-            "start_date": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-            "end_date": datetime.now(timezone.utc).isoformat(),
+            "start_date": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
+            "end_date": datetime.now(UTC).isoformat(),
             "severity_levels": ["critical"],
             "event_types": ["login_failure"],
             "risk_score_min": 80,
-            "user_id": "user1@example.com"
+            "user_id": "user1@example.com",
         }
-        
+
         response = test_client.post("/events/search", json=search_request)
-        
+
         if response.status_code != 200:
             print(f"Error response: {response.json()}")
         assert response.status_code == 200
@@ -177,20 +175,20 @@ class TestEventsRouter:
             "total_count": 10000,
         }
         mock_security_service.search_security_events.return_value = large_results
-        
+
         search_request = {
-            "start_date": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(),
-            "end_date": datetime.now(timezone.utc).isoformat(),
-            "limit": 1000
+            "start_date": (datetime.now(UTC) - timedelta(days=30)).isoformat(),
+            "end_date": datetime.now(UTC).isoformat(),
+            "limit": 1000,
         }
-        
+
         import time
         start_time = time.time()
-        
+
         response = test_client.post("/events/search", json=search_request)
-        
+
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         assert response.status_code == 200
         assert response_time < 2.0  # Should respond within 2 seconds

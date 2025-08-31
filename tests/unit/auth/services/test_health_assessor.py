@@ -4,11 +4,11 @@ Tests system health assessment, service monitoring, reliability analysis,
 and failure prediction functionality.
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, patch
 
-from src.auth.services.health_assessor import HealthAssessor, HealthStatus, ServiceHealthLevel
+import pytest
+
+from src.auth.services.health_assessor import HealthAssessor, HealthStatus
 
 
 class TestHealthAssessorInitialization:
@@ -71,11 +71,11 @@ class TestOverallSystemHealthAssessment:
         }
 
     async def test_assess_overall_system_health_healthy_system(
-        self, assessor, sample_service_data, sample_system_metrics, sample_external_dependencies
+        self, assessor, sample_service_data, sample_system_metrics, sample_external_dependencies,
     ):
         """Test overall health assessment for healthy system."""
         result = await assessor.assess_overall_system_health(
-            sample_service_data, sample_system_metrics, sample_external_dependencies
+            sample_service_data, sample_system_metrics, sample_external_dependencies,
         )
 
         assert "overall_status" in result
@@ -105,7 +105,7 @@ class TestOverallSystemHealthAssessment:
         assert result["next_assessment"] > result["assessment_time"]
 
     async def test_assess_overall_system_health_critical_failures(
-        self, assessor, sample_system_metrics, sample_external_dependencies
+        self, assessor, sample_system_metrics, sample_external_dependencies,
     ):
         """Test health assessment with critical service failures."""
         critical_service_data = {
@@ -114,7 +114,7 @@ class TestOverallSystemHealthAssessment:
         }
 
         result = await assessor.assess_overall_system_health(
-            critical_service_data, sample_system_metrics, sample_external_dependencies
+            critical_service_data, sample_system_metrics, sample_external_dependencies,
         )
 
         # System should be unhealthy due to critical failures
@@ -456,14 +456,14 @@ class TestMetricAnalysis:
         """Test stability score calculation."""
         # Stable data (no state changes)
         stable_data = [
-            {"healthy": True}, {"healthy": True}, {"healthy": True}, {"healthy": True}
+            {"healthy": True}, {"healthy": True}, {"healthy": True}, {"healthy": True},
         ]
         score = assessor._calculate_stability_score(stable_data)
         assert score == 1.0
 
         # Unstable data (frequent changes)
         unstable_data = [
-            {"healthy": True}, {"healthy": False}, {"healthy": True}, {"healthy": False}
+            {"healthy": True}, {"healthy": False}, {"healthy": True}, {"healthy": False},
         ]
         score = assessor._calculate_stability_score(unstable_data)
         assert score < 1.0
@@ -496,7 +496,7 @@ class TestMetricAnalysis:
             {"healthy": False}, {"healthy": False}, {"healthy": False},
             {"healthy": True}, {"healthy": True}, {"healthy": True},
             {"healthy": True}, {"healthy": True}, {"healthy": True},
-            {"healthy": True}
+            {"healthy": True},
         ]
         result = assessor._analyze_reliability_trends(improving_data)
         assert result["trend"] == "improving"

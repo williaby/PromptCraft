@@ -11,7 +11,7 @@ Endpoints:
     GET /audit/retention/policies - Get retention policies
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -143,7 +143,7 @@ async def generate_audit_report(
             critical_events=critical_events,
             status="generating",
             download_url=f"/audit/reports/{report_id}/download",
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+            expires_at=datetime.now(UTC) + timedelta(days=7),
         )
 
     except Exception as e:
@@ -168,7 +168,7 @@ async def get_audit_statistics(
         # Get comprehensive audit statistics
         stats = await service.get_comprehensive_audit_statistics(days_back=days_back)
 
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Calculate period-specific event counts
         total_audit_events = stats.get("total_events", 0)
@@ -243,7 +243,7 @@ async def enforce_retention_policies(
         enforcement_results = []
         for policy in policies:
             # Calculate data to be affected
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=policy["retention_days"])
+            cutoff_date = datetime.now(UTC) - timedelta(days=policy["retention_days"])
 
             # Get count of events that would be affected
             affected_count = await service.count_events_before_date(
@@ -275,7 +275,7 @@ async def enforce_retention_policies(
             "total_policies": total_policies,
             "estimated_deletions": estimated_deletions,
             "enforcement_results": enforcement_results,
-            "scheduled_at": datetime.now(timezone.utc).isoformat() if not dry_run else None,
+            "scheduled_at": datetime.now(UTC).isoformat() if not dry_run else None,
         }
 
     except Exception as e:

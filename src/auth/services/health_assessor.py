@@ -5,7 +5,7 @@ Handles system health assessment, service monitoring, and availability checks.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -66,7 +66,7 @@ class HealthAssessor:
         Returns:
             Comprehensive system health assessment
         """
-        assessment_time = datetime.now(timezone.utc)
+        assessment_time = datetime.now(UTC)
 
         # Assess individual components
         service_assessment = await self._assess_service_health(service_health_data)
@@ -203,7 +203,7 @@ class HealthAssessor:
             "reliability_factors": {k: round(v, 1) for k, v in reliability_factors.items()},
             "trend_analysis": self._analyze_reliability_trends(historical_data),
             "recommendations": recommendations,
-            "assessment_time": datetime.now(timezone.utc),
+            "assessment_time": datetime.now(UTC),
         }
 
     async def predict_service_failures(
@@ -221,7 +221,7 @@ class HealthAssessor:
             Service failure predictions
         """
         predictions = {}
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         for service_name, metrics in service_metrics.items():
             if len(metrics) < 5:  # Need minimum data points
@@ -307,13 +307,13 @@ class HealthAssessor:
         if expected_status_codes is None:
             expected_status_codes = [200, 201, 202, 204]
 
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             timeout = aiohttp.ClientTimeout(total=timeout_seconds)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(service_url) as response:
-                    end_time = datetime.now(timezone.utc)
+                    end_time = datetime.now(UTC)
                     response_time = (end_time - start_time).total_seconds() * 1000
 
                     is_healthy = response.status in expected_status_codes

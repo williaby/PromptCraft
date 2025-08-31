@@ -4,9 +4,8 @@ Converted from stateful to stateless design for multi-worker FastAPI deployment.
 All state is now stored in PostgreSQL database using DatabaseConnection.
 """
 
-import asyncio
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, delete, func, select, update
@@ -15,9 +14,9 @@ from sqlalchemy.dialects.postgresql import insert
 from src.auth.alert_engine import AlertEngine
 from src.auth.security_logger import SecurityLogger
 from src.database.connection import get_database_manager
-from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, SecurityEventLogger, ThreatScore
+from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, ThreatScore
 
-from .models import SecurityEventSeverity, SecurityEventType, SecurityEventResponse
+from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 
 logger = logging.getLogger(__name__)
 
@@ -136,13 +135,13 @@ class SecurityMonitor:
 
     async def track_events_batch(self, events: list) -> None:
         """Track multiple security events in a single transaction for performance.
-        
+
         Args:
             events: List of SecurityEventResponse objects to track
         """
         if not events:
             return
-            
+
         async with self._db_manager.get_session() as session:
             # First, store all events efficiently
             db_events = []
@@ -155,7 +154,7 @@ class SecurityMonitor:
                     entity_key = f"ip:{event.ip_address}"
                 else:
                     entity_key = "session:unknown"
-                
+
                 security_event = SecurityEvent(
                     entity_key=entity_key,
                     event_type=event.event_type,
@@ -167,29 +166,29 @@ class SecurityMonitor:
                     timestamp=event.timestamp,
                 )
                 db_events.append(security_event)
-            
+
             # Bulk add all events
             session.add_all(db_events)
-            
+
             # Simplified threshold checking - just count events per user/IP
             user_counts = {}
             ip_counts = {}
-            
+
             for event in events:
                 if event.user_id:
                     user_counts[event.user_id] = user_counts.get(event.user_id, 0) + 1
                 if event.ip_address:
                     ip_counts[event.ip_address] = ip_counts.get(event.ip_address, 0) + 1
-            
+
             # Trigger alerts for high counts (simplified threshold check)
             for user_id, count in user_counts.items():
                 if count >= 3:  # Threshold for user alerts
                     await self._trigger_alert("user_threshold", user_id)
-            
+
             for ip_address, count in ip_counts.items():
                 if count >= 3:  # Threshold for IP alerts
                     await self._trigger_alert("ip_threshold", ip_address)
-            
+
             # Single commit for all events
             await session.commit()
 
@@ -452,44 +451,25 @@ class SecurityMonitor:
     def is_blocked(self, identifier: str, id_type: str = "ip") -> bool:
         """Check if identifier is blocked using database query.
 
+        DEPRECATED: Use is_blocked_async() instead for proper async handling.
+
         Args:
             identifier: IP address or user ID
             id_type: Type of identifier
 
         Returns:
-            True if blocked
+            True if blocked, False if not blocked or async check fails
 
-        Note: This method is synchronous for compatibility but uses async database operations.
-        Consider making this async in future versions.
+        Note: This method is deprecated due to async/sync mixing issues.
+        Returns False by default and logs a warning. Use is_blocked_async() instead.
         """
-
-        async def _check_blocked():
-            entity_key = f"{id_type}:{identifier}"
-
-            async with self._db_manager.get_session() as session:
-                stmt = select(BlockedEntity).where(
-                    and_(BlockedEntity.entity_key == entity_key, BlockedEntity.is_active),
-                )
-                result = await session.execute(stmt)
-                blocked_entity = result.scalar_one_or_none()
-
-                if blocked_entity:
-                    # Check if block has expired
-                    return blocked_entity.is_valid_block
-
-                return False
-
-        # Run async check in current event loop or create new one
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, we need to create a task
-                asyncio.create_task(_check_blocked())
-                return False  # Return False for now, proper async handling needed
-            return loop.run_until_complete(_check_blocked())
-        except RuntimeError:
-            # No event loop, create one
-            return asyncio.run(_check_blocked())
+        logger.warning(
+            "is_blocked() is deprecated due to sync/async issues. Use is_blocked_async() instead. "
+            "Returning False for identifier: %s (type: %s)",
+            identifier,
+            id_type,
+        )
+        return False
 
     async def is_blocked_async(self, identifier: str, id_type: str = "ip") -> bool:
         """Async version of is_blocked for better performance.
@@ -574,7 +554,7 @@ class SecurityMonitor:
         Returns:
             Dictionary with cleanup statistics
         """
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=retention_hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=retention_hours)
 
         async with self._db_manager.get_session() as session:
             # Clean old security events
@@ -584,13 +564,13 @@ class SecurityMonitor:
 
             # Clean expired blocks
             blocks_stmt = delete(BlockedEntity).where(
-                and_(BlockedEntity.expires_at.isnot(None), BlockedEntity.expires_at < datetime.now(timezone.utc)),
+                and_(BlockedEntity.expires_at.isnot(None), BlockedEntity.expires_at < datetime.now(UTC)),
             )
             blocks_result = await session.execute(blocks_stmt)
             expired_blocks = blocks_result.rowcount
 
             # Decay threat scores (reduce by 5% for old scores)
-            score_cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+            score_cutoff = datetime.now(UTC) - timedelta(hours=1)
             decay_stmt = (
                 update(ThreatScore)
                 .where(ThreatScore.last_updated < score_cutoff)

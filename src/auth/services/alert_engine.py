@@ -19,7 +19,7 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -91,7 +91,7 @@ class Alert(BaseModel):
     channels: list[Any] = Field(default_factory=list)  # List of channels for test compatibility
     title: str
     message: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = Field(default_factory=dict)
     event: Any | None = None  # Security event that triggered the alert
     user_id: str | None = None  # User ID associated with the alert (for analytics)
@@ -139,7 +139,7 @@ class SecurityAlert:
     affected_ip: str | None = None
 
     # Metadata
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     rule_id: str | None = None
     risk_score: int = 0
 
@@ -250,7 +250,7 @@ class AlertEngine:
         self._event_windows: dict[str, deque] = defaultdict(deque)  # For time windows
         self._user_activity: dict[str, list[dict]] = defaultdict(list)  # User tracking
         self._ip_activity: dict[str, list[dict]] = defaultdict(list)  # IP tracking
-        
+
         # Rate limiting tracking (for notifications)
         self._notification_timestamps: deque = deque()
         self._escalation_tracking: dict[str, dict] = {}  # Escalation state tracking
@@ -560,7 +560,7 @@ class AlertEngine:
 
     async def _should_send_alert(self, alert: SecurityAlert) -> bool:
         """Check if alert should be sent based on rate limiting and cooldown."""
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Check alert rate limiting
         if not self._check_alert_rate_limit():
@@ -687,7 +687,7 @@ class AlertEngine:
 
         Returns:
             Alert ID or None if rate limited
-            
+
         Raises:
             ValueError: If invalid priority is provided
         """
@@ -695,7 +695,7 @@ class AlertEngine:
         valid_priorities = {AlertPriority.LOW, AlertPriority.MEDIUM, AlertPriority.HIGH, AlertPriority.CRITICAL}
         if priority not in valid_priorities:
             raise ValueError(f"Invalid alert priority: {priority}")
-            
+
         # Validate channels if provided
         if channels:
             valid_channels = {AlertChannel.EMAIL, AlertChannel.SLACK, AlertChannel.SMS, AlertChannel.WEBHOOK, AlertChannel.DASHBOARD}
@@ -722,7 +722,7 @@ class AlertEngine:
             channels=channels or [],  # Set channels list
             title="Security Alert",
             message=message,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             metadata={"event": event},
             event=event,  # Store the event directly
         )
@@ -732,24 +732,24 @@ class AlertEngine:
         if user_id and priority != AlertPriority.LOW:
             # Use a temporary tracking list to count recent alerts for this user
             user_recent_alerts = []
-            
-            # Collect recent alerts for this user from the alert history 
-            cutoff = datetime.now(timezone.utc) - timedelta(minutes=self.escalation_window_minutes)
+
+            # Collect recent alerts for this user from the alert history
+            cutoff = datetime.now(UTC) - timedelta(minutes=self.escalation_window_minutes)
             for existing_alert in self._alert_history:
                 # Check if alert is from the same user and within the escalation window
-                if (hasattr(existing_alert, "event") and existing_alert.event and 
+                if (hasattr(existing_alert, "event") and existing_alert.event and
                     getattr(existing_alert.event, "user_id", None) == user_id and
                     hasattr(existing_alert, "timestamp") and existing_alert.timestamp > cutoff):
                     # Also check that it's not a LOW priority alert
                     if existing_alert.priority != AlertPriority.LOW:
                         user_recent_alerts.append(existing_alert)
-            
+
             # Add current alert to the count
             user_recent_alerts.append(alert)
-        
+
         # Store in history (after counting for escalation)
         self._alert_history.append(alert)
-        
+
         # Continue with escalation logic
         if user_id and priority != AlertPriority.LOW:
             # Check if we need to escalate
@@ -760,9 +760,9 @@ class AlertEngine:
                         "alerts": user_recent_alerts,
                         "count": len(user_recent_alerts),
                         "escalated": True,
-                        "last_escalation_time": datetime.now(timezone.utc),
+                        "last_escalation_time": datetime.now(UTC),
                     }
-                    
+
                     # Trigger escalation
                     escalation_alert = Alert(
                         id=str(uuid4()),
@@ -778,7 +778,7 @@ class AlertEngine:
                         },
                     )
                     self._alert_history.append(escalation_alert)
-                    
+
                     # Send escalation notifications via SMS
                     if AlertChannel.SMS in self._notification_channels:
                         await self._send_notification(escalation_alert, AlertChannel.SMS)
@@ -806,7 +806,7 @@ class AlertEngine:
         Args:
             channel: Channel type
             handler: Channel handler function
-            
+
         Raises:
             ValueError: If invalid channel type is provided
         """
@@ -814,7 +814,7 @@ class AlertEngine:
         valid_channels = {AlertChannel.EMAIL, AlertChannel.SLACK, AlertChannel.SMS, AlertChannel.WEBHOOK, AlertChannel.DASHBOARD}
         if channel not in valid_channels:
             raise ValueError(f"Invalid notification channel: {channel}")
-            
+
         self._notification_channels[channel] = handler
 
     async def add_rule(self, rule: AlertRule) -> None:
@@ -859,10 +859,10 @@ class AlertEngine:
 
     def get_escalation_info(self, user_id: str) -> dict[str, Any] | None:
         """Get escalation information for a specific user.
-        
+
         Args:
             user_id: User ID to get escalation info for
-            
+
         Returns:
             Dictionary with escalation info or None if no escalation data exists
         """
@@ -872,11 +872,11 @@ class AlertEngine:
 
     async def _send_notification(self, alert: Alert, channel: AlertChannel) -> bool:
         """Send notification through a specific channel.
-        
+
         Args:
             alert: Alert to send
             channel: Channel to send through
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -884,28 +884,28 @@ class AlertEngine:
             # Check rate limiting first (but skip for CRITICAL alerts)
             if alert.severity != AlertSeverity.CRITICAL:
                 current_time = time.time()
-                
+
                 # Clean up old timestamps (older than 1 minute)
                 while self._notification_timestamps and self._notification_timestamps[0] < current_time - 60:
                     self._notification_timestamps.popleft()
-                
+
                 # Check if we're at the rate limit
                 if len(self._notification_timestamps) >= self.max_alerts_per_minute:
                     # Rate limited - don't send notification
                     return False
-                
+
                 # Add current timestamp
                 self._notification_timestamps.append(current_time)
-            
+
             if channel not in self._notification_channels:
                 await self._security_logger.log_security_event(
                     event_type=SecurityEventType.SECURITY_ALERT,
                     user_id=None,
                     severity=SecurityEventSeverity.WARNING,
-                    details={"error": f"Unregistered notification channel: {channel}"}
+                    details={"error": f"Unregistered notification channel: {channel}"},
                 )
                 return False
-                
+
             handler = self._notification_channels[channel]
             if hasattr(handler, "send_notification"):
                 # This should raise the exception from the mock
@@ -913,25 +913,25 @@ class AlertEngine:
             else:
                 await handler(alert)
             return True
-            
+
         except Exception as e:
             # Log notification failure
             await self._security_logger.log_security_event(
                 event_type=SecurityEventType.SECURITY_ALERT,
                 user_id=None,
                 severity=SecurityEventSeverity.WARNING,
-                details={"error": f"Notification failed for channel {channel}: {str(e)}"}
+                details={"error": f"Notification failed for channel {channel}: {e!s}"},
             )
             return False
 
     async def _send_notification_with_retry(self, alert: Alert, channel: AlertChannel, max_retries: int = 3) -> bool:
         """Send notification with retry logic.
-        
+
         Args:
             alert: Alert to send
             channel: Channel to send through
             max_retries: Maximum retry attempts
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -944,7 +944,7 @@ class AlertEngine:
 
     async def _send_notifications(self, alert: Alert) -> None:
         """Send notifications to all configured channels for the alert.
-        
+
         Args:
             alert: Alert to send notifications for
         """
@@ -991,7 +991,7 @@ class AlertEngine:
             AlertPriority.HIGH: AlertSeverity.HIGH,
             AlertPriority.CRITICAL: AlertSeverity.CRITICAL,
         }
-        
+
         # Generate alert
         alert = Alert(
             severity=severity_mapping.get(priority, AlertSeverity.MEDIUM),
@@ -1035,7 +1035,7 @@ class AlertEngine:
             alerts_by_priority[priority_key] = alerts_by_priority.get(priority_key, 0) + 1
 
             # Count by event type
-            if hasattr(alert, 'event_type') and alert.event_type:
+            if hasattr(alert, "event_type") and alert.event_type:
                 event_type_key = str(alert.event_type.value if hasattr(alert.event_type, "value") else alert.event_type)
                 alerts_by_event_type[event_type_key] = alerts_by_event_type.get(event_type_key, 0) + 1
 
@@ -1045,11 +1045,11 @@ class AlertEngine:
                 alerts_by_channel[channel_key] = alerts_by_channel.get(channel_key, 0) + 1
 
             # Track unique users
-            if hasattr(alert, 'user_id') and alert.user_id:
+            if hasattr(alert, "user_id") and alert.user_id:
                 unique_users.add(alert.user_id)
 
         # Calculate average alerts per hour (based on last 24 hours of data)
-        recent_alerts = [a for a in self._alert_history if (datetime.now(timezone.utc) - a.timestamp).total_seconds() < 86400]
+        recent_alerts = [a for a in self._alert_history if (datetime.now(UTC) - a.timestamp).total_seconds() < 86400]
         average_alerts_per_hour = len(recent_alerts) / 24.0 if recent_alerts else 0.0
 
         return {
@@ -1061,7 +1061,7 @@ class AlertEngine:
             "average_alerts_per_hour": round(average_alerts_per_hour, 2),
             "unique_users_alerted": len(unique_users),
             "recent_alerts": len(
-                [a for a in self._alert_history if (datetime.now(timezone.utc) - a.timestamp).total_seconds() < 3600],
+                [a for a in self._alert_history if (datetime.now(UTC) - a.timestamp).total_seconds() < 3600],
             ),
         }
 
@@ -1074,7 +1074,7 @@ class AlertEngine:
         Returns:
             Dictionary containing hourly distribution, peak hour, and total alerts
         """
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=time_window_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=time_window_hours)
         hourly_counts = {}
         total_alerts_period = 0
 
@@ -1087,13 +1087,13 @@ class AlertEngine:
         # Create hourly distribution (ensure all hours in period are included)
         hourly_distribution = []
         start_time = cutoff_time.replace(minute=0, second=0, microsecond=0)
-        
+
         for hour_offset in range(time_window_hours):
             hour_time = start_time + timedelta(hours=hour_offset)
             count = hourly_counts.get(hour_time, 0)
             hourly_distribution.append({
                 "timestamp": hour_time.isoformat(),
-                "count": count
+                "count": count,
             })
 
         # Find peak hour
@@ -1107,7 +1107,7 @@ class AlertEngine:
         return {
             "hourly_distribution": hourly_distribution,
             "peak_hour": peak_hour,
-            "total_alerts_period": total_alerts_period
+            "total_alerts_period": total_alerts_period,
         }
 
     async def get_top_alert_sources(self, limit: int = 10) -> list[dict[str, Any]]:
@@ -1147,22 +1147,22 @@ class AlertEngine:
 
         # Calculate delivery success rate
         successful_deliveries = len([
-            a for a in self._alert_history 
+            a for a in self._alert_history
             if a.metadata and a.metadata.get("delivery_successful", False)
         ])
         delivery_success_rate = (successful_deliveries / total_alerts) * 100
 
         # Calculate average delivery time
         delivery_times = [
-            a.metadata.get("delivery_time_ms", 0) 
-            for a in self._alert_history 
+            a.metadata.get("delivery_time_ms", 0)
+            for a in self._alert_history
             if a.metadata and "delivery_time_ms" in a.metadata
         ]
         average_delivery_time_ms = sum(delivery_times) / len(delivery_times) if delivery_times else 0.0
 
         # Calculate acknowledgment rate
         acknowledged_alerts = len([
-            a for a in self._alert_history 
+            a for a in self._alert_history
             if a.metadata and a.metadata.get("acknowledged", False)
         ])
         acknowledgment_rate = (acknowledged_alerts / total_alerts) * 100
@@ -1189,7 +1189,7 @@ class AlertEngine:
             try:
                 if channel in self._notification_channels:
                     handler = self._notification_channels[channel]
-                    if hasattr(handler, 'send_notification'):
+                    if hasattr(handler, "send_notification"):
                         # Mock handler with send_notification method
                         await handler.send_notification(alert)
                     else:
@@ -1213,7 +1213,7 @@ class AlertEngine:
         Returns:
             Number of alerts cleaned up
         """
-        cutoff_time = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=max_age_hours)
         original_count = len(self._alert_history)
 
         # Keep only recent alerts
@@ -1223,7 +1223,7 @@ class AlertEngine:
 
     async def _cleanup_expired_escalations(self) -> None:
         """Clean up expired escalation tracking."""
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         expired_keys = []
 
         for key, escalation in self._escalation_tracking.items():

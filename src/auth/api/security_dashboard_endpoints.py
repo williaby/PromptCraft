@@ -14,7 +14,7 @@ Architecture: FastAPI async endpoints with caching and pagination support
 """
 
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
 from uuid import UUID
@@ -201,10 +201,10 @@ class SecurityDashboardEndpoints:
         if security_monitor is None:
             raise ValueError("SecurityMonitor is required")
         if alert_engine is None:
-            raise ValueError("AlertEngine is required")  
+            raise ValueError("AlertEngine is required")
         if audit_service is None:
             raise ValueError("AuditService is required")
-            
+
         self.security_monitor = security_monitor
         self.alert_engine = alert_engine
         self.audit_service = audit_service
@@ -240,7 +240,7 @@ class SecurityDashboardEndpoints:
 
             # Create response model with required fields
             response = SecurityMetricsResponse(
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 total_events_today=metrics.get("total_events", 1250),
                 total_events_week=metrics.get("total_events", 1250) * 7,
                 event_rate_per_hour=metrics.get("events_per_minute", 15.2) * 60,
@@ -281,17 +281,17 @@ class SecurityDashboardEndpoints:
                 valid_severities = [e.value for e in SecurityEventSeverity]
                 if severity not in valid_severities:
                     raise HTTPException(
-                        status_code=400, 
-                        detail=f"Invalid severity level: {severity}. Valid options are: {valid_severities}"
+                        status_code=400,
+                        detail=f"Invalid severity level: {severity}. Valid options are: {valid_severities}",
                     )
-            
-            # Validate event_type parameter  
+
+            # Validate event_type parameter
             if event_type is not None:
                 valid_event_types = [e.value for e in SecurityEventType]
                 if event_type not in valid_event_types:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Invalid event type: {event_type}. Valid options are: {valid_event_types}"
+                        detail=f"Invalid event type: {event_type}. Valid options are: {valid_event_types}",
                     )
             if severity or event_type:
                 events = await self.security_monitor.get_recent_events(
@@ -311,7 +311,7 @@ class SecurityDashboardEndpoints:
                     event_id=event.get("id", "evt_001"),
                     event_type=event.get("event_type", "brute_force_attempt"),
                     severity=event.get("severity", "high"),
-                    timestamp=event.get("timestamp", datetime.now(timezone.utc)),
+                    timestamp=event.get("timestamp", datetime.now(UTC)),
                     user_id=event.get("user_id"),
                     ip_address=event.get("ip_address"),
                     details=event.get("details", {}),
@@ -324,7 +324,7 @@ class SecurityDashboardEndpoints:
             response = SecurityEventResponse(
                 events=event_list,
                 total_count=len(event_list),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
             return response
@@ -366,7 +366,7 @@ class SecurityDashboardEndpoints:
                     alert_type=alert.get("type", alert.get("title", "Security Alert")),
                     severity=alert.get("severity", "critical"),
                     status=alert.get("status", "active"),
-                    timestamp=alert.get("created_at", alert.get("timestamp", datetime.now(timezone.utc))),
+                    timestamp=alert.get("created_at", alert.get("timestamp", datetime.now(UTC))),
                     message=alert.get("message", alert.get("title", "Security alert")),
                     affected_resources=alert.get("affected_resources", alert.get("affected_users", [])),
                     title=alert.get("title", "Security Alert"),
@@ -381,7 +381,7 @@ class SecurityDashboardEndpoints:
                 total_count=total_count,
                 critical_count=critical_count,
                 warning_count=warning_count,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
             return response
@@ -415,7 +415,7 @@ class SecurityDashboardEndpoints:
                 weekly_trends=stats.get("weekly_trends", {"event_growth": 0.15}),
                 threat_breakdown=stats.get("threat_breakdown", {"brute_force": 45}),
                 performance_metrics=stats.get("performance_metrics", {"avg_detection_time_ms": 12.5}),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
             return response
         except Exception as e:
@@ -469,7 +469,7 @@ async def get_security_metrics(
         metrics = await service.get_comprehensive_metrics(hours_back=hours_back)
 
         # Calculate derived metrics (simplified for demo)
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Event statistics (in production, these would come from database queries)
         total_events_today = metrics["integration"]["total_events_processed"]
@@ -537,14 +537,14 @@ async def get_security_metrics(
 # Standalone function for get_security_metrics (matching test expectations)
 async def get_security_metrics(
     service: SecurityIntegrationService,
-    hours_back: int = 24
+    hours_back: int = 24,
 ) -> SecurityMetricsResponse:
     """Standalone get_security_metrics function for direct testing.
-    
+
     Args:
         service: Security integration service
         hours_back: Number of hours to analyze
-        
+
     Returns:
         Security metrics response object
     """
@@ -553,7 +553,7 @@ async def get_security_metrics(
         metrics = await service.get_comprehensive_metrics(hours_back=hours_back)
 
         # Calculate derived metrics (simplified for demo)
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Event statistics (in production, these would come from database queries)
         total_events_today = metrics["integration"]["total_events_processed"]
@@ -613,7 +613,7 @@ async def get_security_metrics(
             top_risk_users=top_risk_users,
             top_threat_ips=top_threat_ips,
         )
-        
+
     except AttributeError:
         # Let AttributeError pass through for None service testing
         raise
@@ -644,55 +644,52 @@ async def get_recent_alerts(
     try:
         # Handle FastAPI Query objects when called directly (not through HTTP)
         # Extract actual values from Query objects if present
-        if hasattr(severity, 'default'):
+        if hasattr(severity, "default"):
             severity = severity.default
-        if hasattr(acknowledged, 'default'):
+        if hasattr(acknowledged, "default"):
             acknowledged = acknowledged.default
-        if hasattr(limit, 'default'):
+        if hasattr(limit, "default"):
             limit = limit.default
-        if hasattr(hours_back, 'default'):
+        if hasattr(hours_back, "default"):
             hours_back = hours_back.default
-            
+
         # Get alerts from service
         service_alerts = await service.get_recent_alerts(
             limit=limit,
             severity=severity,
             acknowledged=acknowledged,
-            hours_back=hours_back
+            hours_back=hours_back,
         )
-        
+
         # Convert service alerts to AlertItem objects, or generate mock data if none
         alert_items = []
-        
+
         if service_alerts and any(alert_data for alert_data in service_alerts):
             # Use service alerts if we have valid data
             for alert_data in service_alerts:
                 if alert_data:  # Skip empty dicts
                     alert_item = AlertItem(**alert_data)
                     alert_items.append(alert_item)
-        
+
         # If no valid service alerts, generate mock alert data for testing
         if not alert_items:
             for i in range(min(limit, 3)):  # Generate up to limit alerts, max 3
                 # Use severity filter if provided, otherwise generate mixed severities
-                if severity:
-                    alert_severity = severity.value
-                else:
-                    alert_severity = "high" if i == 0 else "medium"
-                
+                alert_severity = severity.value if severity else "high" if i == 0 else "medium"
+
                 mock_alert = {
                     "alert_id": f"alert_{i+1}_{hash('mock')%1000}",
                     "alert_type": "security_alert",
                     "severity": alert_severity,
                     "title": f"Mock Security Alert {i+1}",
-                    "description": f"Generated mock alert for testing",
-                    "timestamp": datetime.now(timezone.utc),
+                    "description": "Generated mock alert for testing",
+                    "timestamp": datetime.now(UTC),
                     "status": "acknowledged" if acknowledged else "active",
                     "source": "mock_generator",
-                    "risk_score": 75 - (i * 10)
+                    "risk_score": 75 - (i * 10),
                 }
                 alert_items.append(AlertItem(**mock_alert))
-            
+
         return alert_items
 
     except Exception as e:
@@ -720,7 +717,7 @@ async def acknowledge_alert_endpoint(
     try:
         # Convert UUID to string for consistency
         alert_id_str = str(alert_id)
-        
+
         # In production, this would update the alert in the database
         # Check if alert exists (mock check)
         if not alert_id_str:
@@ -730,7 +727,7 @@ async def acknowledge_alert_endpoint(
         background_tasks.add_task(
             _log_alert_acknowledgment,
             alert_id=alert_id_str,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         # Return format expected by tests
@@ -738,7 +735,7 @@ async def acknowledge_alert_endpoint(
             "status": "acknowledged",
             "alert_id": alert_id_str,
             "message": "Alert acknowledged successfully",
-            "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+            "acknowledged_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
 
@@ -764,18 +761,18 @@ async def get_user_risk_profile(
     """
     try:
         # Check if service has the get_user_risk_profile method and use it
-        if hasattr(service, 'get_user_risk_profile') and callable(getattr(service, 'get_user_risk_profile')):
+        if hasattr(service, "get_user_risk_profile") and callable(service.get_user_risk_profile):
             try:
                 # For AsyncMock objects, this might be a coroutine or direct return value
                 service_result = service.get_user_risk_profile(user_id)
-                
+
                 # Handle both coroutines and direct values
                 import asyncio
                 if asyncio.iscoroutine(service_result):
                     service_data = await service_result
                 else:
                     service_data = service_result
-                
+
                 # Use service data to create the response
                 return UserRiskProfileResponse(
                     user_id=service_data["user_id"],
@@ -832,7 +829,7 @@ async def get_user_risk_profile(
             risk_level=risk_level,
             total_logins=hash(user_id + "logins") % 500 + 10,  # 10-510 logins
             failed_logins_today=hash(user_id + "failed") % 10,  # 0-9 failed logins
-            last_activity=datetime.now(timezone.utc) - timedelta(hours=hash(user_id) % 48),
+            last_activity=datetime.now(UTC) - timedelta(hours=hash(user_id) % 48),
             known_locations=hash(user_id + "locations") % 10 + 1,  # 1-10 locations
             suspicious_activities=suspicious_activities,
             recommendations=recommendations,
@@ -862,13 +859,13 @@ async def search_security_events(
             raise HTTPException(status_code=400, detail="End date must be after start date")
 
         # Validate risk score range if both min and max are provided
-        if (search_request.risk_score_min is not None and 
+        if (search_request.risk_score_min is not None and
             search_request.risk_score_max is not None and
             search_request.risk_score_min > search_request.risk_score_max):
             raise HTTPException(status_code=400, detail="Minimum risk score must be less than or equal to maximum")
 
         # Call the service to search for events
-        if hasattr(service, 'search_security_events'):
+        if hasattr(service, "search_security_events"):
             result = await service.search_security_events(
                 start_date=search_request.start_date,
                 end_date=search_request.end_date,
@@ -881,16 +878,16 @@ async def search_security_events(
                 limit=search_request.limit,
                 offset=search_request.offset,
             )
-            
+
             # Handle different response formats from service
             if isinstance(result, dict):
                 events = result.get("events", [])
-                
+
                 # If service returns the paginated format, use it directly
                 if "pagination" in result:
                     return result
                 # If service returns simple format, convert to paginated format
-                elif "total_count" in result:
+                if "total_count" in result:
                     return {
                         "events": events,
                         "pagination": {
@@ -915,18 +912,17 @@ async def search_security_events(
                         },
                     }
                 # Handle the format expected by actual coverage tests
-                elif "total" in result:
+                if "total" in result:
                     return result
-            
+
             return result
-        else:
-            # Fallback for testing/demo - return expected structure
-            return {
-                "events": [],
-                "total": 0,
-                "page": 1,
-                "page_size": search_request.limit,
-            }
+        # Fallback for testing/demo - return expected structure
+        return {
+            "events": [],
+            "total": 0,
+            "page": 1,
+            "page_size": search_request.limit,
+        }
 
     except HTTPException:
         raise
@@ -969,7 +965,7 @@ async def get_event_timeline_data(
         Timeline data formatted for chart display
     """
     try:
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         start_time = current_time - timedelta(hours=hours_back)
 
         # Generate mock timeline data
@@ -1231,7 +1227,7 @@ async def update_dashboard_config(
             content={
                 "message": "Dashboard configuration updated successfully",
                 "user_id": config_request.user_id,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
                 "config": config_request.dict(),
             },
         )
@@ -1262,7 +1258,7 @@ async def export_metrics_report(
 
         # Add export metadata
         export_data = {
-            "export_timestamp": datetime.now(timezone.utc).isoformat(),
+            "export_timestamp": datetime.now(UTC).isoformat(),
             "export_format": format,
             "time_range_hours": hours_back,
             "metrics": metrics,
@@ -1291,47 +1287,47 @@ async def acknowledge_alert(
     alert_id: str,
     service: SecurityIntegrationService,
     background_tasks = None,
-    user_id: str | None = None
+    user_id: str | None = None,
 ) -> Any:
     """Standalone acknowledge alert function for direct testing.
-    
+
     Args:
         alert_id: Alert ID to acknowledge
-        service: Security integration service 
+        service: Security integration service
         user_id: Optional user ID for acknowledgment
-    
+
     Returns:
         Acknowledgment result dict with status and alert_id
     """
     try:
         # In production, this would update the alert in the database
         # For testing, mock the service call
-        if hasattr(service, 'acknowledge_alert'):
+        if hasattr(service, "acknowledge_alert"):
             result = await service.acknowledge_alert(alert_id, user_id=user_id)
             if not result:
                 raise HTTPException(status_code=404, detail=f"Alert not found: {alert_id}")
-        
+
         # Create response object with status_code and body attributes (for test compatibility)
         response_data = {
             "status": "acknowledged",
             "alert_id": alert_id,
             "message": "Alert acknowledged successfully",
-            "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+            "acknowledged_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
-        
+
         class MockResponse:
-            def __init__(self, data, status_code=200):
+            def __init__(self, data, status_code=200) -> None:
                 self.status_code = status_code
                 self.body = json.dumps(data)
                 self._data = data
-                
+
             def __getitem__(self, key):
                 """Support dictionary-style access for test compatibility."""
                 return self._data[key]
-        
+
         return MockResponse(response_data)
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1354,21 +1350,21 @@ async def get_user_risk_profile(
     """
     try:
         # Check if service has the get_user_risk_profile method and use it
-        if hasattr(service, 'get_user_risk_profile') and callable(getattr(service, 'get_user_risk_profile')):
+        if hasattr(service, "get_user_risk_profile") and callable(service.get_user_risk_profile):
             try:
                 # For AsyncMock objects, this might be a coroutine or direct return value
                 service_result = service.get_user_risk_profile(user_id)
-                
+
                 # Handle both coroutines and direct values
                 import asyncio
                 if asyncio.iscoroutine(service_result):
                     service_data = await service_result
                 else:
                     service_data = service_result
-                
+
                 # Check if service_data is a proper dictionary (not MagicMock)
-                if isinstance(service_data, dict) and all(key in service_data for key in 
-                    ["user_id", "risk_score", "risk_level", "total_logins", "failed_logins_today", 
+                if isinstance(service_data, dict) and all(key in service_data for key in
+                    ["user_id", "risk_score", "risk_level", "total_logins", "failed_logins_today",
                      "last_activity", "known_locations", "suspicious_activities", "recommendations"]):
                     # Use service data to create the response
                     return UserRiskProfileResponse(
@@ -1382,10 +1378,8 @@ async def get_user_risk_profile(
                         suspicious_activities=service_data["suspicious_activities"],
                         recommendations=service_data["recommendations"],
                     )
-                else:
-                    # Service data is not valid (probably MagicMock), fall back to mock data
-                    pass
-                    
+                # Service data is not valid (probably MagicMock), fall back to mock data
+
             except Exception as e:
                 # Raise HTTPException for service errors instead of falling back to mock data
                 raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
@@ -1428,7 +1422,7 @@ async def get_user_risk_profile(
             risk_level=risk_level,
             total_logins=hash(user_id + "logins") % 500 + 10,  # 10-510 logins
             failed_logins_today=hash(user_id + "failed") % 10,  # 0-9 failed logins
-            last_activity=datetime.now(timezone.utc) - timedelta(hours=hash(user_id) % 48),
+            last_activity=datetime.now(UTC) - timedelta(hours=hash(user_id) % 48),
             known_locations=hash(user_id + "locations") % 10 + 1,  # 1-10 locations
             suspicious_activities=suspicious_activities,
             recommendations=recommendations,
@@ -1455,7 +1449,7 @@ async def generate_audit_report(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'generate_security_report'):
+        if hasattr(service, "generate_security_report"):
             result = await service.generate_security_report(
                 start_date=report_request.start_date,
                 end_date=report_request.end_date,
@@ -1463,13 +1457,13 @@ async def generate_audit_report(
             )
             if result:
                 return result
-        
+
         # Fallback for testing/demo - return expected structure
         return {
-            "report_id": f"audit-report-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}",
+            "report_id": f"audit-report-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}",
             "status": "completed",
             "download_url": f"/reports/audit-{report_request.format.value.lower()}.{report_request.format.value.lower()}",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -1489,11 +1483,11 @@ async def get_audit_statistics(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'get_audit_statistics'):
+        if hasattr(service, "get_audit_statistics"):
             result = await service.get_audit_statistics()
             if result:
                 return result
-        
+
         # Fallback for testing/demo - return expected structure
         return {
             "total_reports_generated": 25,
@@ -1521,7 +1515,7 @@ async def update_dashboard_config(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'update_dashboard_config'):
+        if hasattr(service, "update_dashboard_config"):
             result = await service.update_dashboard_config(config_request)
             if result:
                 # If service returns a dict, ensure it has required fields and wrap in MockResponse
@@ -1530,48 +1524,48 @@ async def update_dashboard_config(
                     response_data = {
                         "status": "updated",
                         "user_id": config_request.user_id,
-                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(UTC).isoformat(),
                         "message": "Dashboard configuration updated successfully",
-                        **result  # Include service response data
+                        **result,  # Include service response data
                     }
-                    
+
                     class MockResponse:
-                        def __init__(self, data, status_code=200):
+                        def __init__(self, data, status_code=200) -> None:
                             self.status_code = status_code
                             self.body = json.dumps(data)
                             self._data = data
                             # Also set data fields as attributes for direct access
                             for key, value in data.items():
                                 setattr(self, key, value)
-                        
+
                         def __getitem__(self, key):
                             """Support dictionary-style access for test compatibility."""
                             return self._data[key]
                     return MockResponse(response_data)
                 return result
-        
+
         # Fallback for testing/demo - return expected structure with MockResponse
         response_data = {
             "status": "updated",
             "user_id": config_request.user_id,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "message": "Dashboard configuration updated successfully",
         }
-        
+
         # Return MockResponse for test compatibility
         class MockResponse:
-            def __init__(self, data, status_code=200):
+            def __init__(self, data, status_code=200) -> None:
                 self.status_code = status_code
                 self.body = json.dumps(data)
                 self._data = data
                 # Also set data fields as attributes for direct access
                 for key, value in data.items():
                     setattr(self, key, value)
-            
+
             def __getitem__(self, key):
                 """Support dictionary-style access for test compatibility."""
                 return self._data[key]
-        
+
         return MockResponse(response_data)
 
     except Exception as e:
@@ -1605,9 +1599,9 @@ async def export_metrics_report(
                 csv_content += "2024-01-01T00:00:00Z,login_attempts,42\n"
                 csv_content += "2024-01-01T01:00:00Z,failed_logins,3\n"
                 return csv_content
-        
+
         # Call service method if available
-        if hasattr(service, 'export_metrics_report'):
+        if hasattr(service, "export_metrics_report"):
             try:
                 result = await service.export_metrics_report(
                     export_format=export_format,
@@ -1619,26 +1613,26 @@ async def export_metrics_report(
             except (AttributeError, TypeError):
                 # Service method exists but isn't properly implemented, fall through to fallback
                 pass
-        
+
         # Fallback for testing/demo - return expected structure with required fields
-        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
         format_ext = export_format.value.lower()
-        
+
         return {
             "export_url": f"/exports/metrics-{timestamp}.{format_ext}",
             "format": export_format.value.upper(),
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "size_mb": 1.5,
             "records_count": 1000,
             # Add fields expected by tests
-            "export_timestamp": datetime.now(timezone.utc).isoformat(),
+            "export_timestamp": datetime.now(UTC).isoformat(),
             "time_range_hours": hours_back,
             "metrics": {
                 "authentication_events": 150,
                 "security_alerts": 5,
                 "failed_logins": 12,
-                "successful_logins": 138
-            }
+                "successful_logins": 138,
+            },
         }
 
     except Exception as e:
@@ -1658,11 +1652,11 @@ async def enforce_retention_policies(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'enforce_retention_policies'):
+        if hasattr(service, "enforce_retention_policies"):
             result = await service.enforce_retention_policies()
             if result:
                 return result
-        
+
         # Fallback for testing/demo - return expected structure
         return {
             "records_deleted": 100,
@@ -1692,11 +1686,11 @@ async def get_retention_policies(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'get_retention_policies'):
+        if hasattr(service, "get_retention_policies"):
             result = await service.get_retention_policies()
             if result:
                 return result
-        
+
         # Fallback for testing/demo - return expected structure
         return {
             "policies": [
@@ -1705,7 +1699,7 @@ async def get_retention_policies(
                 {"name": "audit_logs", "retention_days": 365, "description": "Audit logs retention"},
             ],
             "total_policies": 3,
-            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "last_updated": datetime.now(UTC).isoformat(),
         }
 
     except Exception as e:
@@ -1728,13 +1722,13 @@ async def get_event_timeline_data(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'get_event_timeline_data'):
+        if hasattr(service, "get_event_timeline_data"):
             timeline_data = await service.get_event_timeline_data(hours_back=hours_back)
             if timeline_data:
                 return timeline_data
 
         # Fallback to mock data generation
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         start_time = current_time - timedelta(hours=hours_back)
 
         timeline_data = []
@@ -1786,7 +1780,7 @@ async def get_risk_distribution_data(
     """
     try:
         # Call service method if available
-        if hasattr(service, 'get_risk_distribution_data'):
+        if hasattr(service, "get_risk_distribution_data"):
             distribution_data = await service.get_risk_distribution_data()
             if distribution_data:
                 return distribution_data
@@ -1803,15 +1797,15 @@ async def get_risk_distribution_data(
 
         # Convert to percentage
         risk_percentages = {
-            level: (count / total_users * 100) if total_users > 0 else 0 
+            level: (count / total_users * 100) if total_users > 0 else 0
             for level, count in risk_distribution.items()
         }
 
         return {
             "distribution": {
-                "counts": risk_distribution, 
-                "percentages": risk_percentages, 
-                "total_users": total_users
+                "counts": risk_distribution,
+                "percentages": risk_percentages,
+                "total_users": total_users,
             },
             "chart_data": [
                 {"label": level.title(), "value": count, "percentage": risk_percentages[level]}
@@ -1850,7 +1844,7 @@ async def get_recent_alerts_for_testing(
     status: str | None = None,
 ) -> AlertSummaryResponse:
     """Standalone function for testing get_recent_alerts endpoint.
-    
+
     Args:
         service: Security integration service
         limit: Maximum number of alerts to return
@@ -1858,7 +1852,7 @@ async def get_recent_alerts_for_testing(
         acknowledged: Optional acknowledgment status filter
         hours_back: Hours to look back for alerts
         status: Optional status filter (for test compatibility)
-        
+
     Returns:
         AlertSummaryResponse with active_alerts list
     """
@@ -1866,29 +1860,27 @@ async def get_recent_alerts_for_testing(
         # Call service with appropriate parameters
         # If status is provided, use it for acknowledged mapping
         if status is not None:
-            if status == "active":
-                acknowledged = False
-            elif status == "acknowledged":
-                acknowledged = True
-        
+            if status in {"active", "acknowledged"}:
+                pass
+
         service_alerts = await service.get_recent_alerts(
             limit=limit,
             status=status,  # Pass status parameter as expected by test
         )
-        
+
         # Handle service response - ensure it's a list
         if not isinstance(service_alerts, list):
             service_alerts = []
-            
+
         # Use the existing BaseModel AlertSummaryResponse with required fields
         return AlertSummaryResponse(
             active_alerts=service_alerts,
             total_count=len(service_alerts),
             critical_count=0,  # Default value as tests may not provide this
             warning_count=0,   # Default value as tests may not provide this
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(UTC),
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get alerts: {e!s}")
 
@@ -1899,32 +1891,32 @@ async def acknowledge_alert(
     user_id: str | None = None,
 ) -> dict[str, Any]:
     """Standalone function for testing acknowledge_alert endpoint.
-    
+
     Args:
         alert_id: Alert ID to acknowledge
-        service: Security integration service  
+        service: Security integration service
         user_id: Optional user ID for acknowledgment
-        
+
     Returns:
         Acknowledgment confirmation dict
     """
     try:
         # Call service to acknowledge alert
         result = await service.acknowledge_alert(alert_id, user_id=user_id)
-        
+
         # If service returns False, alert not found
         if result is False:
             raise HTTPException(status_code=404, detail="Alert not found or could not be acknowledged")
-            
+
         # Return format expected by tests
         return {
             "status": "acknowledged",
             "alert_id": alert_id,
-            "message": "Alert acknowledged successfully", 
-            "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+            "message": "Alert acknowledged successfully",
+            "acknowledged_at": datetime.now(UTC).isoformat(),
             "user_id": user_id,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:

@@ -17,7 +17,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -78,7 +78,7 @@ class TestAuthenticationIntegration:
         mock_session.execute.return_value = mock_result
         mock_session.scalar_one_or_none.return_value = existing_session
 
-        yield mock_session
+        return mock_session
 
     @pytest.fixture
     async def mock_database_manager(
@@ -88,14 +88,14 @@ class TestAuthenticationIntegration:
         """Mock database manager for integration testing."""
         mock_manager = AsyncMock(spec=DatabaseManager)
 
-        # Create proper async context manager mock        
+        # Create proper async context manager mock
         @asynccontextmanager
         async def mock_session_context():
             try:
                 yield mock_database_session
             finally:
                 pass
-        
+
         # Mock session context manager - return the function, not the result of calling it
         mock_manager.get_session = mock_session_context
 
@@ -109,8 +109,8 @@ class TestAuthenticationIntegration:
                 "size": 10,
                 "checked_in": 8,
                 "checked_out": 2,
-                "overflow": 0
-            }
+                "overflow": 0,
+            },
         })
 
         # Mock database initialization
@@ -537,7 +537,7 @@ class TestServiceTokenIntegration:
         created_token.id = uuid.uuid4()
         created_token.token_name = token_create_data.token_name
         created_token.token_hash = hashlib.sha256(b"test-token-value").hexdigest()
-        created_token.created_at = datetime.now(timezone.utc)
+        created_token.created_at = datetime.now(UTC)
         created_token.is_active = True
         created_token.usage_count = 0
         created_token.token_metadata = token_create_data.metadata
@@ -592,26 +592,26 @@ class TestDatabaseIntegration:
             patch("src.database.connection.async_sessionmaker") as mock_session_maker,
         ):
             mock_engine = AsyncMock()
-            mock_session_factory = AsyncMock()
+            AsyncMock()
             mock_session = AsyncMock()
 
             mock_engine_create.return_value = mock_engine
-            
+
             # Create async context manager for session factory
             class MockSessionContext:
                 def __init__(self):
                     pass
-                    
+
                 async def __aenter__(self):
                     return mock_session
-                    
+
                 async def __aexit__(self, exc_type, exc_val, exc_tb):
                     pass
-            
+
             # Create a callable session factory that returns the context manager
             def mock_session_factory_callable():
                 return MockSessionContext()
-                
+
             # async_sessionmaker should return our callable session factory
             mock_session_maker.return_value = mock_session_factory_callable
 
@@ -621,42 +621,42 @@ class TestDatabaseIntegration:
             mock_result.fetchone.return_value = [1]
             mock_conn.execute.return_value = mock_result
             mock_conn.commit = AsyncMock()
-            
+
             # Create proper async context manager for engine.connect()
             class MockConnectManager:
                 def __init__(self):
                     self.call_count = 0
-                
+
                 def __call__(self):
                     self.call_count += 1
                     return self
-                    
+
                 async def __aenter__(self):
                     return mock_conn
-                    
+
                 async def __aexit__(self, exc_type, exc_val, exc_tb):
                     pass
-                    
+
                 def assert_called(self):
                     assert self.call_count > 0, "Expected method to be called"
-                    
+
             class MockBeginManager:
                 def __init__(self):
                     self.call_count = 0
-                
+
                 def __call__(self):
                     self.call_count += 1
                     return self
-                    
+
                 async def __aenter__(self):
                     return mock_conn
-                    
+
                 async def __aexit__(self, exc_type, exc_val, exc_tb):
                     pass
-                    
+
                 def assert_called(self):
                     assert self.call_count > 0, "Expected method to be called"
-            
+
             # Mock both connect() and begin() for compatibility with call tracking
             mock_engine.connect = MockConnectManager()
             mock_engine.begin = MockBeginManager()
@@ -774,6 +774,6 @@ class TestDatabaseIntegration:
                     if attempt == 2:  # Last attempt
                         raise
                     await asyncio.sleep(0.01)  # Small delay between retries
-            
+
             assert result == "success"
             assert call_count == 3

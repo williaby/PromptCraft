@@ -3,24 +3,23 @@
 Tests health monitoring endpoints and system status functionality.
 """
 
-import pytest
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
-from fastapi.testclient import TestClient
-from fastapi import FastAPI
 
-import src.auth.api.routers.health_router as health_router_module
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from src.auth.api.routers.health_router import (
-    router,
     HealthStatus,
     ServiceHealth,
-    DetailedHealthResponse,
-    get_security_service,
-    _get_system_metrics,
-    _check_qdrant_health,
     _check_azure_ai_health,
     _check_notification_service_health,
+    _check_qdrant_health,
+    _get_system_metrics,
+    get_security_service,
+    router,
 )
 from src.auth.services.security_integration import SecurityIntegrationService
 
@@ -54,32 +53,32 @@ def sample_service_health():
             "status": "healthy",
             "healthy": True,
             "response_time_ms": 25.5,
-            "last_check": datetime.now(timezone.utc),
+            "last_check": datetime.now(UTC),
         },
         "activity_monitor": {
             "status": "healthy",
             "healthy": True,
             "response_time_ms": 15.2,
-            "last_check": datetime.now(timezone.utc),
+            "last_check": datetime.now(UTC),
         },
         "alert_engine": {
             "status": "degraded",
             "healthy": False,
             "response_time_ms": 125.0,
-            "last_check": datetime.now(timezone.utc),
+            "last_check": datetime.now(UTC),
             "error_message": "High response time detected",
         },
         "suspicious_activity_detector": {
             "status": "healthy",
             "healthy": True,
             "response_time_ms": 35.8,
-            "last_check": datetime.now(timezone.utc),
+            "last_check": datetime.now(UTC),
         },
         "audit_service": {
             "status": "healthy",
             "healthy": True,
             "response_time_ms": 18.9,
-            "last_check": datetime.now(timezone.utc),
+            "last_check": datetime.now(UTC),
         },
     }
 
@@ -95,7 +94,7 @@ class TestHealthStatus:
 
     def test_health_status_creation(self):
         """Test creating health status."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         health = HealthStatus(
             status="healthy",
             timestamp=timestamp,
@@ -110,17 +109,17 @@ class TestHealthStatus:
 
     def test_health_status_validation(self):
         """Test health status field validation."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
 
         # Valid status
         health = HealthStatus(
-            status="healthy", timestamp=timestamp, version="1.0.0", uptime_seconds=0.0
+            status="healthy", timestamp=timestamp, version="1.0.0", uptime_seconds=0.0,
         )
         assert health.status == "healthy"
 
         # Test with negative uptime (should be allowed)
         health = HealthStatus(
-            status="unhealthy", timestamp=timestamp, version="2.0.0", uptime_seconds=-1.0
+            status="unhealthy", timestamp=timestamp, version="2.0.0", uptime_seconds=-1.0,
         )
         assert health.uptime_seconds == -1.0
 
@@ -130,7 +129,7 @@ class TestServiceHealth:
 
     def test_service_health_creation(self):
         """Test creating service health."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         service = ServiceHealth(
             name="test_service",
             status="healthy",
@@ -149,7 +148,7 @@ class TestServiceHealth:
 
     def test_service_health_with_error(self):
         """Test service health with error message."""
-        timestamp = datetime.now(timezone.utc)
+        timestamp = datetime.now(UTC)
         service = ServiceHealth(
             name="failing_service",
             status="unhealthy",
@@ -186,13 +185,13 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_all_healthy(
-        self, test_client, mock_security_service, sample_service_health, sample_database_health
+        self, test_client, mock_security_service, sample_service_health, sample_database_health,
     ):
         """Test detailed health check with all services healthy."""
         # The health router generates its own mock data, not from service
         # These mocked methods are not used in the actual implementation
 
-        with patch.object(sys.modules['src.auth.api.routers.health_router'], '_get_system_metrics') as mock_metrics:
+        with patch.object(sys.modules["src.auth.api.routers.health_router"], "_get_system_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "cpu_usage": 25.5,
                 "memory_usage": 45.2,
@@ -213,21 +212,14 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_degraded_services(
-        self, test_client, mock_security_service, sample_database_health
+        self, test_client, mock_security_service, sample_database_health,
     ):
         """Test detailed health check with some services degraded."""
-        degraded_services = {
-            "security_logger": {"status": "healthy", "healthy": True},
-            "activity_monitor": {"status": "unhealthy", "healthy": False, "error_message": "Service down"},
-            "alert_engine": {"status": "unhealthy", "healthy": False, "error_message": "Connection failed"},
-            "suspicious_activity_detector": {"status": "healthy", "healthy": True},
-            "audit_service": {"status": "unhealthy", "healthy": False, "error_message": "Database error"},
-        }
 
         # The health router generates its own mock data, not from service
         # These mocked methods are not used in the actual implementation
 
-        with patch.object(sys.modules['src.auth.api.routers.health_router'], '_get_system_metrics') as mock_metrics:
+        with patch.object(sys.modules["src.auth.api.routers.health_router"], "_get_system_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "cpu_usage": 85.5,
                 "memory_usage": 92.1,
@@ -247,24 +239,16 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_unhealthy_system(
-        self, test_client, mock_security_service, sample_database_health
+        self, test_client, mock_security_service, sample_database_health,
     ):
         """Test detailed health check with mostly unhealthy services."""
-        unhealthy_services = {
-            "security_logger": {"status": "unhealthy", "healthy": False, "error_message": "Critical error"},
-            "activity_monitor": {"status": "unhealthy", "healthy": False, "error_message": "Service down"},
-            "alert_engine": {"status": "healthy", "healthy": True},
-            "suspicious_activity_detector": {"status": "unhealthy", "healthy": False},
-            "audit_service": {"status": "unhealthy", "healthy": False, "error_message": "Database error"},
-        }
 
         # Database also unhealthy
-        unhealthy_db = {"connected": False, "response_time_ms": None}
 
         # The health router generates its own mock data, not from service
         # These mocked methods are not used in the actual implementation
 
-        with patch.object(sys.modules['src.auth.api.routers.health_router'], '_get_system_metrics') as mock_metrics:
+        with patch.object(sys.modules["src.auth.api.routers.health_router"], "_get_system_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "cpu_usage": 95.0,
                 "memory_usage": 98.5,
@@ -278,12 +262,12 @@ class TestHealthRouter:
         data = response.json()
         assert data["overall_status"] == "degraded"  # 4/5 services healthy but not all
         assert data["healthy_services"] == 4
-        assert data["database_connected"] is True  # Always True in implementation 
+        assert data["database_connected"] is True  # Always True in implementation
         assert all(status for status in data["external_services"].values())  # All True
 
     @pytest.mark.asyncio
     async def test_get_service_health_success(
-        self, test_client, mock_security_service, sample_service_health
+        self, test_client, mock_security_service, sample_service_health,
     ):
         """Test get service health endpoint."""
         # The health router generates its own mock data, not from service
@@ -350,8 +334,8 @@ class TestSystemMetrics:
     async def test_get_system_metrics_psutil_unavailable(self):
         """Test system metrics when psutil not available."""
         with patch("psutil.cpu_percent") as mock_cpu, \
-             patch("psutil.virtual_memory") as mock_mem, \
-             patch("psutil.disk_usage") as mock_disk:
+             patch("psutil.virtual_memory"), \
+             patch("psutil.disk_usage"):
             mock_cpu.side_effect = ImportError("psutil not available")
 
             metrics = await _get_system_metrics()
@@ -365,8 +349,8 @@ class TestSystemMetrics:
     async def test_get_system_metrics_exception(self):
         """Test system metrics when exception occurs."""
         with patch("psutil.cpu_percent") as mock_cpu, \
-             patch("psutil.virtual_memory") as mock_mem, \
-             patch("psutil.disk_usage") as mock_disk:
+             patch("psutil.virtual_memory"), \
+             patch("psutil.disk_usage"):
             mock_cpu.side_effect = Exception("System error")
 
             metrics = await _get_system_metrics()
@@ -442,13 +426,13 @@ class TestHealthIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_detailed_health_check_performance(
-        self, test_client, mock_security_service, sample_service_health, sample_database_health
+        self, test_client, mock_security_service, sample_service_health, sample_database_health,
     ):
         """Test detailed health check performance."""
         # The health router generates its own mock data, not from service
         # These mocked methods are not used in the actual implementation
 
-        with patch.object(sys.modules['src.auth.api.routers.health_router'], '_get_system_metrics') as mock_metrics:
+        with patch.object(sys.modules["src.auth.api.routers.health_router"], "_get_system_metrics") as mock_metrics:
             mock_metrics.return_value = {
                 "cpu_usage": 25.5,
                 "memory_usage": 45.2,
@@ -468,15 +452,15 @@ class TestHealthIntegration:
 
     @pytest.mark.asyncio
     async def test_health_status_transitions(
-        self, test_client, mock_security_service, sample_database_health
+        self, test_client, mock_security_service, sample_database_health,
     ):
         """Test health status transitions between healthy/degraded/unhealthy."""
         # Start with all healthy
-        healthy_services = {
+        {
             service: {"status": "healthy", "healthy": True}
             for service in [
                 "security_logger",
-                "activity_monitor", 
+                "activity_monitor",
                 "alert_engine",
                 "suspicious_activity_detector",
                 "audit_service",
@@ -486,7 +470,7 @@ class TestHealthIntegration:
         # The health router generates its own mock data, not from service
         # These mocked methods are not used in the actual implementation
 
-        with patch.object(sys.modules['src.auth.api.routers.health_router'], '_get_system_metrics') as mock_metrics:
+        with patch.object(sys.modules["src.auth.api.routers.health_router"], "_get_system_metrics") as mock_metrics:
             mock_metrics.return_value = {"cpu_usage": 25.5, "memory_usage": 45.2, "disk_usage": 32.1}
             # External service checks return True by default, no patching needed
             response = test_client.get("/health/detailed")

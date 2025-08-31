@@ -9,7 +9,7 @@ Endpoints:
     GET /charts/risk-distribution - Get risk distribution chart data
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -86,15 +86,15 @@ async def get_event_timeline_chart(
     """
     try:
         # Calculate time range
-        end_time = datetime.now(timezone.utc)
-        start_time = end_time - timedelta(hours=hours_back)
+        end_time = datetime.now(UTC)
+        end_time - timedelta(hours=hours_back)
 
         # Generate mock event timeline data
         data_points = []
         total_events = 0
         peak_count = 0
         peak_hour = None
-        
+
         # Generate data points based on granularity
         if granularity == "hour":
             interval_delta = timedelta(hours=1)
@@ -102,39 +102,39 @@ async def get_event_timeline_chart(
         else:  # day
             interval_delta = timedelta(days=1)
             num_points = min(hours_back // 24, 30)  # Limit to 30 days max for daily
-        
+
         # Generate mock timeline data with realistic patterns
         for i in range(num_points):
             timestamp = end_time - (interval_delta * i)
-            
+
             # Generate realistic event counts with patterns
             base_count = 15 + (i % 7) * 3  # Weekly pattern
             time_factor = 1.0
-            
+
             if granularity == "hour":
                 # Simulate daily activity patterns (lower at night)
                 hour = timestamp.hour
-                if 22 <= hour or hour <= 6:
+                if hour >= 22 or hour <= 6:
                     time_factor = 0.3  # Night time low activity
                 elif 8 <= hour <= 17:
                     time_factor = 1.5  # Business hours high activity
-            
+
             event_count = int(base_count * time_factor * (0.8 + (i % 5) * 0.1))  # Add variation
-            
+
             data_point = TimelineDataPoint(
-                timestamp=timestamp, 
-                value=event_count, 
-                label=f"{event_count} events"
+                timestamp=timestamp,
+                value=event_count,
+                label=f"{event_count} events",
             )
             data_points.append(data_point)
-            
+
             total_events += event_count
-            
+
             # Track peak activity
             if event_count > peak_count:
                 peak_count = event_count
                 peak_hour = timestamp.strftime("%H:00") if granularity == "hour" else timestamp.strftime("%Y-%m-%d")
-        
+
         # Sort data points by timestamp (oldest first)
         data_points.sort(key=lambda x: x.timestamp)
 

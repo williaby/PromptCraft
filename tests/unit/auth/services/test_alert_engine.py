@@ -6,14 +6,14 @@ and performance requirements for security event alerting system.
 
 import asyncio
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 
 from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType
 from src.auth.services.alert_engine import Alert, AlertChannel, AlertEngine, AlertPriority, AlertSeverity, SecurityAlert
-from uuid import uuid4
 
 
 class TestAlertEngineInitialization:
@@ -743,7 +743,7 @@ class TestAlertEnginePerformance:
     async def test_alert_history_cleanup_performance(self, engine):
         """Test performance of alert history cleanup."""
         # Create many old alerts
-        old_time = datetime.now(timezone.utc) - timedelta(hours=engine.alert_retention_hours + 1)
+        old_time = datetime.now(UTC) - timedelta(hours=engine.alert_retention_hours + 1)
         for i in range(1000):
             alert = Alert(
                 id=f"old_alert_{i}",
@@ -824,7 +824,7 @@ class TestAlertEngineAnalytics:
     async def test_get_alert_statistics_comprehensive(self, engine):
         """Test comprehensive alert statistics collection."""
         # Create sample alert history
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         priorities = [AlertPriority.LOW, AlertPriority.MEDIUM, AlertPriority.HIGH, AlertPriority.CRITICAL]
         event_types = [
             SecurityEventType.LOGIN_FAILURE,
@@ -864,7 +864,7 @@ class TestAlertEngineAnalytics:
     async def test_get_alert_trends_time_series(self, engine):
         """Test alert trend analysis over time."""
         # Create alerts with time distribution
-        base_time = datetime.now(timezone.utc) - timedelta(hours=24)
+        base_time = datetime.now(UTC) - timedelta(hours=24)
 
         # Create hourly distribution of alerts
         for hour in range(24):
@@ -907,7 +907,7 @@ class TestAlertEngineAnalytics:
                     id=f"source_alert_{user_id}_{i}",
                     severity=AlertSeverity.HIGH,
                     title=f"Source Alert {user_id} {i}",
-                    timestamp=datetime.now(timezone.utc) - timedelta(minutes=i),
+                    timestamp=datetime.now(UTC) - timedelta(minutes=i),
                     priority=AlertPriority.MEDIUM,
                     message=f"Alert from {user_id}",
                     channels=[AlertChannel.EMAIL],
@@ -936,7 +936,7 @@ class TestAlertEngineAnalytics:
                 id=f"effectiveness_alert_{i}",
                 severity=AlertSeverity.HIGH,
                 title=f"Effectiveness Test Alert {i}",
-                timestamp=datetime.now(timezone.utc) - timedelta(minutes=i),
+                timestamp=datetime.now(UTC) - timedelta(minutes=i),
                 priority=AlertPriority.MEDIUM,
                 message=f"Effectiveness test alert {i}",
                 channels=[AlertChannel.EMAIL, AlertChannel.SLACK],
@@ -1069,7 +1069,7 @@ class TestAlertEngineErrorHandling:
         """Test handling of alert serialization errors."""
         # Create event with complex details that might cause serialization issues
         complex_details = {"nested": {"deep": {"value": "test"}}, "list": [1, 2, 3]}
-        
+
         event = SecurityEvent(
             event_type=SecurityEventType.SECURITY_ALERT,
             user_id="serialization_test",
@@ -1133,13 +1133,13 @@ class TestAlertEngineAdditionalCoverage:
     async def test_get_escalation_info_existing_user(self, engine):
         """Test get_escalation_info for user with existing escalation."""
         user_id = "test_user_with_escalation"
-        
+
         # Set up escalation data in _escalated_alerts (not _escalation_tracking)
         escalation_data = {
             "user_id": user_id,
             "alert_count": 3,
-            "first_alert": datetime.now(timezone.utc) - timedelta(minutes=15),
-            "last_alert": datetime.now(timezone.utc) - timedelta(minutes=5),
+            "first_alert": datetime.now(UTC) - timedelta(minutes=15),
+            "last_alert": datetime.now(UTC) - timedelta(minutes=5),
             "escalation_level": "high",
         }
         engine._escalated_alerts[user_id] = escalation_data
@@ -1156,45 +1156,45 @@ class TestAlertEngineAdditionalCoverage:
     async def test_get_escalation_info_nonexistent_user(self, engine):
         """Test get_escalation_info for user without escalation."""
         nonexistent_user = "nonexistent_user_123"
-        
+
         escalation_info = engine.get_escalation_info(nonexistent_user)
-        
+
         assert escalation_info is None
 
     async def test_initialize_method(self, engine):
         """Test initialize method sets up engine properly."""
         # Test that initialize method completes without errors
         await engine.initialize()
-        
+
         # Verify engine is properly initialized (methods exist and work)
-        assert hasattr(engine, 'rules')
-        assert hasattr(engine, 'metrics')
-        assert hasattr(engine, '_alert_history')
+        assert hasattr(engine, "rules")
+        assert hasattr(engine, "metrics")
+        assert hasattr(engine, "_alert_history")
 
     async def test_cleanup_expired_escalations_removes_old(self, engine):
         """Test cleanup_expired_escalations removes old escalation data."""
-        current_time = datetime.now(timezone.utc)
-        
+        current_time = datetime.now(UTC)
+
         # The actual implementation uses _escalation_tracking, not _escalated_alerts
         fresh_escalation = {
             "user_id": "fresh_user",
             "last_alert_time": current_time - timedelta(minutes=5),  # 5 minutes ago
         }
         expired_escalation = {
-            "user_id": "expired_user", 
+            "user_id": "expired_user",
             "last_alert_time": current_time - timedelta(hours=2),  # 2 hours ago
         }
-        
+
         engine._escalation_tracking["fresh_user"] = fresh_escalation
         engine._escalation_tracking["expired_user"] = expired_escalation
-        
+
         assert len(engine._escalation_tracking) == 2
-        
+
         # Set escalation_window_minutes on config (since method uses self.config.escalation_window_minutes)
         engine.config.escalation_window_minutes = 30  # 30 minute window
-        
+
         await engine._cleanup_expired_escalations()
-        
+
         # Only fresh escalation should remain (expired 2 hours > 30 minutes)
         assert len(engine._escalation_tracking) == 1
         assert "fresh_user" in engine._escalation_tracking
@@ -1202,8 +1202,8 @@ class TestAlertEngineAdditionalCoverage:
 
     async def test_cleanup_old_alerts_removes_old_alerts(self, engine):
         """Test cleanup_old_alerts removes alerts older than max_age."""
-        current_time = datetime.now(timezone.utc)
-        
+        current_time = datetime.now(UTC)
+
         # Create fresh and old alerts using proper SecurityAlert constructor
         fresh_alert = SecurityAlert(
             id=uuid4(),
@@ -1211,23 +1211,23 @@ class TestAlertEngineAdditionalCoverage:
             title="Fresh alert",
             description="Fresh alert description",
             timestamp=current_time - timedelta(minutes=30),
-            affected_user="test_user"
+            affected_user="test_user",
         )
         old_alert = SecurityAlert(
             id=uuid4(),
             severity=AlertSeverity.LOW,
             title="Old alert",
-            description="Old alert description", 
+            description="Old alert description",
             timestamp=current_time - timedelta(hours=25),  # Older than 24h default
-            affected_user="test_user"
+            affected_user="test_user",
         )
-        
+
         engine._alert_history = [fresh_alert, old_alert]
-        
+
         assert len(engine._alert_history) == 2
-        
+
         removed_count = await engine._cleanup_old_alerts(max_age_hours=24)
-        
+
         # One old alert should be removed
         assert removed_count == 1
         assert len(engine._alert_history) == 1
@@ -1237,12 +1237,12 @@ class TestAlertEngineAdditionalCoverage:
         """Test shutdown method gracefully stops engine."""
         # Start the engine's background tasks
         engine._processors_started = True
-        
+
         # Mock the shutdown event
         engine._shutdown_event = AsyncMock()
-        
+
         await engine.shutdown()
-        
+
         # Verify shutdown event was set
         engine._shutdown_event.set.assert_called_once()
 
@@ -1251,27 +1251,27 @@ class TestAlertEngineAdditionalCoverage:
         # Clear existing rules to test loading
         engine.rules.clear()
         initial_rule_count = len(engine.rules)
-        
+
         engine._load_default_rules()
-        
+
         # Should have added some default rules
         assert len(engine.rules) > initial_rule_count
-        
+
         # Verify we have some common rules
         rule_ids = {rule.rule_id for rule in engine.rules.values()}
-        expected_rules = {'brute_force_detection', 'account_lockout', 'suspicious_activity'}
+        expected_rules = {"brute_force_detection", "account_lockout", "suspicious_activity"}
         assert expected_rules.intersection(rule_ids), f"Expected some of {expected_rules} in {rule_ids}"
 
     async def test_update_processing_metrics(self, engine):
         """Test _update_processing_metrics updates metrics properly."""
         initial_avg = engine.metrics.average_processing_time_ms
-        
+
         processing_time = 125.5
         engine._update_processing_metrics(processing_time)
-        
+
         # The method updates the average processing time (doesn't increment total_events_processed)
         assert engine.metrics.average_processing_time_ms == processing_time
-        
+
         # Verify the average changed from initial value
         if initial_avg == 0.0:  # First update sets it directly
             assert engine.metrics.average_processing_time_ms == processing_time
@@ -1281,9 +1281,9 @@ class TestAlertEngineAdditionalCoverage:
     async def test_update_notification_metrics(self, engine):
         """Test _update_notification_metrics updates notification metrics."""
         initial_avg = engine.metrics.average_notification_time_ms
-        
+
         notification_time = 85.3
         engine._update_notification_metrics(notification_time)
-        
+
         # Should update average notification time
         assert engine.metrics.average_notification_time_ms != initial_avg

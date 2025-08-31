@@ -47,7 +47,7 @@ class TestAuthMiddlewareDatabase:
         mock_user = AuthenticatedUser(
             email="test@example.com",
             role=UserRole.USER,
-            jwt_claims={"sub": "user123", "email": "test@example.com", "aud": "test-audience"}
+            jwt_claims={"sub": "user123", "email": "test@example.com", "aud": "test-audience"},
         )
         validator.validate_token = MagicMock(return_value=mock_user)
         validator.validate_jwt = AsyncMock(
@@ -619,7 +619,7 @@ class TestAuthMiddlewareDatabase:
 
         async def mock_get_db():
             yield mock_session
-                
+
         with patch("src.auth.middleware.get_db", mock_get_db):
             await middleware._log_authentication_event(
                 request=mock_request,
@@ -646,7 +646,7 @@ class TestAuthMiddlewareDatabase:
 
         async def mock_get_db():
             yield mock_session
-                
+
         with patch("src.auth.middleware.get_db", mock_get_db):
             await middleware._log_authentication_event(
                 request=mock_request,

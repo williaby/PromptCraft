@@ -15,7 +15,7 @@ Architecture: Event-driven orchestration with async service coordination
 import asyncio
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
@@ -104,7 +104,7 @@ class SecurityIntegrationService:
 
         # Service failure tracking
         self._service_failures: dict[str, int] = {"logger": 0, "monitor": 0, "alert_engine": 0, "detector": 0}
-        self._last_failure_reset = datetime.now(timezone.utc)
+        self._last_failure_reset = datetime.now(UTC)
 
         # Event correlation storage
         self._recent_events: list[tuple[datetime, SecurityEventCreate]] = []
@@ -162,7 +162,6 @@ class SecurityIntegrationService:
         """Initialize all security services based on configuration."""
         # This method is now replaced by _initialize_services_sync() called during __init__
         # and background tasks are started separately in initialize()
-        pass
 
     def _create_default_notification_handlers(self) -> list:
         """Create default notification handlers (would be configured externally)."""
@@ -199,7 +198,7 @@ class SecurityIntegrationService:
 
         results = {
             "event_id": getattr(event, "id", None),
-            "processed_at": datetime.now(timezone.utc).isoformat(),
+            "processed_at": datetime.now(UTC).isoformat(),
             "services_processed": [],
             "alerts_generated": [],
             "monitoring_alerts": [],
@@ -381,7 +380,7 @@ class SecurityIntegrationService:
 
             # Add processing metadata
             enriched_details["processed_by_integration"] = True
-            enriched_details["enrichment_timestamp"] = datetime.now(timezone.utc).isoformat()
+            enriched_details["enrichment_timestamp"] = datetime.now(UTC).isoformat()
 
             # Create enriched event
             enriched_event = SecurityEventCreate(
@@ -407,7 +406,7 @@ class SecurityIntegrationService:
 
     def _add_to_correlation_window(self, event: SecurityEventCreate) -> None:
         """Add event to correlation window for future correlation analysis."""
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         self._recent_events.append((current_time, event))
 
         # Clean up old events outside correlation window
@@ -491,10 +490,10 @@ class SecurityIntegrationService:
 
     async def _perform_health_check(self) -> None:
         """Perform health check on all services."""
-        self.metrics.last_health_check = datetime.now(timezone.utc)
+        self.metrics.last_health_check = datetime.now(UTC)
 
         # Check if it's time to reset failure counts
-        time_since_reset = datetime.now(timezone.utc) - self._last_failure_reset
+        time_since_reset = datetime.now(UTC) - self._last_failure_reset
         if time_since_reset.total_seconds() > (self.config.failure_reset_interval_minutes * 60):
             self._reset_failure_counts()
 
@@ -511,7 +510,7 @@ class SecurityIntegrationService:
     def _reset_failure_counts(self) -> None:
         """Reset service failure counts."""
         self._service_failures = dict.fromkeys(self._service_failures, 0)
-        self._last_failure_reset = datetime.now(timezone.utc)
+        self._last_failure_reset = datetime.now(UTC)
 
         # Reset health status
         self.metrics.logger_healthy = True
@@ -546,27 +545,27 @@ class SecurityIntegrationService:
         """Get health status of all integration services."""
         services = {
             "security_logger": {
-                "status": "healthy" if self.security_logger and self.metrics.logger_healthy else "unhealthy"
+                "status": "healthy" if self.security_logger and self.metrics.logger_healthy else "unhealthy",
             },
             "security_monitor": {
-                "status": "healthy" if self.security_monitor and self.metrics.monitor_healthy else "unhealthy"
+                "status": "healthy" if self.security_monitor and self.metrics.monitor_healthy else "unhealthy",
             },
             "alert_engine": {
-                "status": "healthy" if self.alert_engine and self.metrics.alert_engine_healthy else "unhealthy"
+                "status": "healthy" if self.alert_engine and self.metrics.alert_engine_healthy else "unhealthy",
             },
             "suspicious_activity_detector": {
-                "status": "healthy" if self.suspicious_activity_detector and self.metrics.detector_healthy else "unhealthy"
-            }
+                "status": "healthy" if self.suspicious_activity_detector and self.metrics.detector_healthy else "unhealthy",
+            },
         }
-        
+
         # Calculate overall status
         all_healthy = all(service["status"] == "healthy" for service in services.values())
         overall_status = "healthy" if all_healthy else "degraded"
-        
+
         return {
             "overall_status": overall_status,
             "services": services,
-            "last_check": self.metrics.last_health_check.isoformat() if self.metrics.last_health_check else None
+            "last_check": self.metrics.last_health_check.isoformat() if self.metrics.last_health_check else None,
         }
 
     async def get_comprehensive_metrics(self) -> dict[str, Any]:
@@ -630,12 +629,12 @@ class SecurityIntegrationService:
         event_types: list[SecurityEventType] | None = None,
     ) -> dict[str, Any]:
         """Get audit event summary for specified time period.
-        
+
         Args:
             start_date: Start date for audit summary
             end_date: End date for audit summary
             event_types: Optional list of event types to filter
-            
+
         Returns:
             Dictionary with audit summary including total and critical events
         """
@@ -643,36 +642,36 @@ class SecurityIntegrationService:
             # Input validation
             if end_date <= start_date:
                 raise ValueError("End date must be after start date")
-            
+
             # Get events from logger's database
-            if self.logger and hasattr(self.security_logger, 'db'):
+            if self.logger and hasattr(self.security_logger, "db"):
                 events = await self.security_logger.db.get_events_by_date_range(start_date, end_date)
-                
+
                 # Apply event type filtering if specified
                 if event_types:
                     event_type_values = [et.value for et in event_types]
                     events = [
-                        e for e in events 
+                        e for e in events
                         if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_type_values
                     ]
             else:
                 # Fallback to in-memory simulation for testing/degraded mode
                 events = []
-            
+
             # Calculate summary statistics
             total_events = len(events)
             critical_events = sum(
-                1 for event in events 
-                if hasattr(event, 'severity') and event.severity in ['critical', 'high', SecurityEventSeverity.CRITICAL]
+                1 for event in events
+                if hasattr(event, "severity") and event.severity in ["critical", "high", SecurityEventSeverity.CRITICAL]
             )
-            
+
             return {
                 "total_events": total_events,
                 "critical_events": critical_events,
                 "time_range_days": (end_date - start_date).days,
                 "event_types_analyzed": len(event_types) if event_types else "all",
             }
-            
+
         except Exception as e:
             # Log error but don't fail completely
             if self.security_logger:
@@ -680,7 +679,7 @@ class SecurityIntegrationService:
                     event_type=SecurityEventType.SYSTEM_ERROR,
                     metadata={"error": str(e), "operation": "get_audit_event_summary"},
                 )
-            
+
             # Return degraded response
             return {
                 "total_events": 0,
@@ -696,7 +695,7 @@ class SecurityIntegrationService:
         request: dict[str, Any],
     ) -> None:
         """Generate audit report in background task.
-        
+
         Args:
             report_id: Unique report identifier
             request: Report request parameters
@@ -713,11 +712,11 @@ class SecurityIntegrationService:
                         "status": "started",
                     },
                 )
-            
+
             # Simulate background report generation
             # In production, this would generate and store the actual report
             await asyncio.sleep(2)  # Simulate processing time
-            
+
             # Log completion
             if self.security_logger:
                 await self.security_logger.log_security_event(
@@ -730,7 +729,7 @@ class SecurityIntegrationService:
                         "generation_time_seconds": 2.0,
                     },
                 )
-                
+
         except Exception as e:
             # Log background task failure
             if self.security_logger:
@@ -745,10 +744,10 @@ class SecurityIntegrationService:
 
     async def get_comprehensive_audit_statistics(self, days_back: int) -> dict[str, Any]:
         """Get comprehensive audit statistics for specified period.
-        
+
         Args:
             days_back: Number of days to analyze
-            
+
         Returns:
             Dictionary with comprehensive audit statistics
         """
@@ -756,33 +755,33 @@ class SecurityIntegrationService:
             # Input validation
             if days_back < 1 or days_back > 365:
                 raise ValueError("days_back must be between 1 and 365")
-            
+
             # Calculate date ranges
-            end_date = datetime.now(timezone.utc)
+            end_date = datetime.now(UTC)
             start_date = end_date - timedelta(days=days_back)
-            
+
             # Get events from logger's database
-            if self.logger and hasattr(self.security_logger, 'db'):
+            if self.logger and hasattr(self.security_logger, "db"):
                 all_events = await self.security_logger.db.get_events_by_date_range(start_date, end_date)
             else:
                 # Fallback simulation
                 all_events = []
-            
+
             # Calculate time-based event counts
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             events_24h = len([
-                e for e in all_events 
-                if hasattr(e, 'timestamp') and e.timestamp >= now - timedelta(days=1)
+                e for e in all_events
+                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=1)
             ])
             events_week = len([
-                e for e in all_events 
-                if hasattr(e, 'timestamp') and e.timestamp >= now - timedelta(days=7)
+                e for e in all_events
+                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=7)
             ])
             events_month = len([
-                e for e in all_events 
-                if hasattr(e, 'timestamp') and e.timestamp >= now - timedelta(days=30)
+                e for e in all_events
+                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=30)
             ])
-            
+
             return {
                 "total_events": len(all_events),
                 "events_24h": events_24h,
@@ -791,7 +790,7 @@ class SecurityIntegrationService:
                 "analysis_period_days": days_back,
                 "data_coverage_percentage": min(100.0, (len(all_events) / max(1, days_back * 10)) * 100),
             }
-            
+
         except Exception as e:
             # Log error and return degraded response
             if self.security_logger:
@@ -799,7 +798,7 @@ class SecurityIntegrationService:
                     event_type=SecurityEventType.SYSTEM_ERROR,
                     metadata={"error": str(e), "operation": "get_comprehensive_audit_statistics"},
                 )
-            
+
             return {
                 "total_events": 0,
                 "events_24h": 0,
@@ -816,11 +815,11 @@ class SecurityIntegrationService:
         active_only: bool = True,
     ) -> list[dict[str, Any]]:
         """Get audit data retention policies.
-        
+
         Args:
             policy_ids: Specific policy IDs to retrieve (None for all)
             active_only: Return only active policies
-            
+
         Returns:
             List of retention policy dictionaries
         """
@@ -832,7 +831,7 @@ class SecurityIntegrationService:
                     "name": "Standard Security Events",
                     "event_types": [
                         "LOGIN_SUCCESS",
-                        "LOGIN_FAILURE", 
+                        "LOGIN_FAILURE",
                         "LOGOUT",
                         "PASSWORD_CHANGED",
                         "SESSION_EXPIRED",
@@ -840,8 +839,8 @@ class SecurityIntegrationService:
                     "retention_days": 90,
                     "auto_delete": True,
                     "compliance_requirement": "Internal Security Policy",
-                    "created_at": datetime.now(timezone.utc) - timedelta(days=30),
-                    "updated_at": datetime.now(timezone.utc) - timedelta(days=5),
+                    "created_at": datetime.now(UTC) - timedelta(days=30),
+                    "updated_at": datetime.now(UTC) - timedelta(days=5),
                 },
                 {
                     "policy_id": "rp_critical_events",
@@ -856,8 +855,8 @@ class SecurityIntegrationService:
                     "retention_days": 365,
                     "auto_delete": True,
                     "compliance_requirement": "SOC 2 Type II",
-                    "created_at": datetime.now(timezone.utc) - timedelta(days=30),
-                    "updated_at": datetime.now(timezone.utc) - timedelta(days=2),
+                    "created_at": datetime.now(UTC) - timedelta(days=30),
+                    "updated_at": datetime.now(UTC) - timedelta(days=2),
                 },
                 {
                     "policy_id": "rp_audit_logs",
@@ -870,22 +869,22 @@ class SecurityIntegrationService:
                     "retention_days": 2555,  # 7 years for compliance
                     "auto_delete": False,
                     "compliance_requirement": "PCI DSS",
-                    "created_at": datetime.now(timezone.utc) - timedelta(days=30),
-                    "updated_at": datetime.now(timezone.utc) - timedelta(days=1),
+                    "created_at": datetime.now(UTC) - timedelta(days=30),
+                    "updated_at": datetime.now(UTC) - timedelta(days=1),
                 },
             ]
-            
+
             # Filter by policy IDs if specified
             if policy_ids:
                 all_policies = [p for p in all_policies if p["policy_id"] in policy_ids]
-            
+
             # Filter by active status if requested (for this simulation, all are active)
             if active_only:
                 # In production, this would filter by an 'active' field
                 pass
-                
+
             return all_policies
-            
+
         except Exception as e:
             # Log error and return empty list
             if self.security_logger:
@@ -901,36 +900,35 @@ class SecurityIntegrationService:
         event_types: list[str] | None = None,
     ) -> int:
         """Count events before specified cutoff date.
-        
+
         Args:
             cutoff_date: Date cutoff for counting events
             event_types: Optional list of event types to filter
-            
+
         Returns:
             Number of events that would be affected by retention policy
         """
         try:
             # Get events from logger's database
-            if self.logger and hasattr(self.security_logger, 'db'):
+            if self.logger and hasattr(self.security_logger, "db"):
                 # Get all events before cutoff date
-                start_date = datetime.now(timezone.utc) - timedelta(days=3650)  # 10 years back
+                start_date = datetime.now(UTC) - timedelta(days=3650)  # 10 years back
                 events = await self.security_logger.db.get_events_by_date_range(start_date, cutoff_date)
-                
+
                 # Apply event type filtering if specified
                 if event_types:
                     events = [
-                        e for e in events 
+                        e for e in events
                         if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_types
                     ]
-                
+
                 return len(events)
-            else:
-                # Fallback simulation for testing/degraded mode
-                # Simulate some old events that would be affected
-                days_old = (datetime.now(timezone.utc) - cutoff_date).days
-                simulated_count = max(0, min(1000, days_old * 5))  # ~5 events per day
-                return simulated_count
-                
+            # Fallback simulation for testing/degraded mode
+            # Simulate some old events that would be affected
+            days_old = (datetime.now(UTC) - cutoff_date).days
+            simulated_count = max(0, min(1000, days_old * 5))  # ~5 events per day
+            return simulated_count
+
         except Exception as e:
             # Log error and return 0
             if self.security_logger:
@@ -945,14 +943,14 @@ class SecurityIntegrationService:
         policy_ids: list[str] | None = None,
     ) -> None:
         """Enforce retention policies in background task.
-        
+
         Args:
             policy_ids: Specific policy IDs to enforce (None for all)
         """
         try:
             # Get policies to enforce
             policies = await self.get_retention_policies(policy_ids=policy_ids)
-            
+
             # Log enforcement start
             if self.security_logger:
                 await self.security_logger.log_security_event(
@@ -963,30 +961,30 @@ class SecurityIntegrationService:
                         "status": "started",
                     },
                 )
-            
+
             total_deleted = 0
-            
+
             # Process each policy
             for policy in policies:
                 if not policy.get("auto_delete", False):
                     continue  # Skip policies that don't allow auto-deletion
-                
+
                 # Calculate cutoff date
-                cutoff_date = datetime.now(timezone.utc) - timedelta(days=policy["retention_days"])
-                
+                cutoff_date = datetime.now(UTC) - timedelta(days=policy["retention_days"])
+
                 # Count events that would be deleted
                 affected_count = await self.count_events_before_date(
                     cutoff_date=cutoff_date,
                     event_types=policy["event_types"],
                 )
-                
+
                 # In production, this would actually delete the events
                 # For simulation, we just track the counts
                 total_deleted += affected_count
-                
+
                 # Simulate processing time
                 await asyncio.sleep(0.5)
-            
+
             # Log completion
             if self.security_logger:
                 await self.security_logger.log_security_event(
@@ -998,7 +996,7 @@ class SecurityIntegrationService:
                         "status": "completed",
                     },
                 )
-                
+
         except Exception as e:
             # Log background task failure
             if self.security_logger:
@@ -1012,10 +1010,10 @@ class SecurityIntegrationService:
 
     async def search_security_events(self, filters: dict[str, Any]) -> dict[str, Any]:
         """Search security events with filtering and pagination.
-        
+
         Args:
             filters: Search filters including date range, event types, etc.
-            
+
         Returns:
             Dictionary with events list, total count, and metadata
         """
@@ -1031,53 +1029,53 @@ class SecurityIntegrationService:
             ip_address = filters.get("ip_address")
             risk_score_min = filters.get("risk_score_min")
             risk_score_max = filters.get("risk_score_max")
-            
+
             # Get events from logger if available
             events_data = []
             total_count = 0
-            
-            if self.logger and hasattr(self.security_logger, 'db'):
+
+            if self.logger and hasattr(self.security_logger, "db"):
                 try:
                     # Get events from database
                     events = await self.security_logger.db.get_events_by_date_range(start_date, end_date)
-                    
+
                     # Apply filtering
                     filtered_events = events
-                    
+
                     if event_types:
                         filtered_events = [
-                            e for e in filtered_events 
+                            e for e in filtered_events
                             if (e.event_type.value if hasattr(e.event_type, "value") else str(e.event_type)) in event_types
                         ]
-                    
+
                     if severity_levels:
                         filtered_events = [
                             e for e in filtered_events
                             if (e.severity.value if hasattr(e.severity, "value") else str(e.severity)) in severity_levels
                         ]
-                    
+
                     if user_id:
                         filtered_events = [e for e in filtered_events if e.user_id == user_id]
-                    
+
                     if ip_address:
                         filtered_events = [e for e in filtered_events if str(e.ip_address) == ip_address]
-                    
+
                     if risk_score_min is not None:
                         filtered_events = [e for e in filtered_events if e.risk_score >= risk_score_min]
-                        
+
                     if risk_score_max is not None:
                         filtered_events = [e for e in filtered_events if e.risk_score <= risk_score_max]
-                    
+
                     total_count = len(filtered_events)
-                    
+
                     # Apply pagination
                     paginated_events = filtered_events[offset:offset + limit]
-                    
+
                     # Convert to dict format
                     events_data = []
                     for event in paginated_events:
                         event_dict = {
-                            "id": str(event.id) if hasattr(event, 'id') else f"evt_{hash(str(event))}",
+                            "id": str(event.id) if hasattr(event, "id") else f"evt_{hash(str(event))}",
                             "event_type": event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
                             "severity": event.severity.value if hasattr(event.severity, "value") else str(event.severity),
                             "timestamp": event.timestamp,
@@ -1085,28 +1083,28 @@ class SecurityIntegrationService:
                             "ip_address": str(event.ip_address) if event.ip_address else None,
                             "user_agent": event.user_agent,
                             "risk_score": event.risk_score,
-                            "details": event.details if hasattr(event, 'details') else {},
-                            "tags": getattr(event, 'tags', [])
+                            "details": event.details if hasattr(event, "details") else {},
+                            "tags": getattr(event, "tags", []),
                         }
                         events_data.append(event_dict)
-                        
+
                 except Exception as e:
                     # Fall back to simulation if database fails
                     await self._handle_service_error("logger", e)
-                    
+
             # Fallback simulation if no logger or database access fails
             if not events_data:
                 events_data, total_count = self._simulate_search_results(filters)
-            
+
             return {
                 "events": events_data,
                 "total_count": total_count,
                 "search_metadata": {
                     "filters_applied": len([k for k, v in filters.items() if v is not None]),
-                    "pagination": {"limit": limit, "offset": offset}
-                }
+                    "pagination": {"limit": limit, "offset": offset},
+                },
             }
-            
+
         except Exception as e:
             # Log error but return empty results instead of failing
             if self.security_logger:
@@ -1114,13 +1112,13 @@ class SecurityIntegrationService:
                     event_type=SecurityEventType.SYSTEM_ERROR,
                     metadata={"error": str(e), "operation": "search_security_events"},
                 )
-            
+
             return {
                 "events": [],
                 "total_count": 0,
-                "search_metadata": {"error": str(e)}
+                "search_metadata": {"error": str(e)},
             }
-    
+
     def _simulate_search_results(self, filters: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
         """Simulate search results for testing/fallback scenarios."""
         # Extract parameters
@@ -1131,10 +1129,10 @@ class SecurityIntegrationService:
         event_types = filters.get("event_types", [])
         severity_levels = filters.get("severity_levels", [])
         user_id = filters.get("user_id")
-        
+
         # Generate simulated data
         base_count = min(1000, max(10, hash(str(filters)) % 500))
-        
+
         # Simulate filtering effects
         if event_types:
             base_count = int(base_count * 0.7)  # Filtering reduces results
@@ -1142,34 +1140,34 @@ class SecurityIntegrationService:
             base_count = int(base_count * 0.5)
         if user_id:
             base_count = int(base_count * 0.1)  # User filtering is very selective
-            
+
         total_count = max(1, base_count)
-        
+
         # Generate events for current page
         events = []
         for i in range(min(limit, total_count - offset)):
             event_id = f"sim_event_{hash(str(filters) + str(i)) % 100000:05d}"
-            
+
             # Generate realistic event data
             event_types_pool = event_types if event_types else ["login_success", "login_failure", "data_access", "permission_change"]
             severity_pool = severity_levels if severity_levels else ["info", "warning", "high", "critical"]
-            
+
             event_data = {
                 "id": event_id,
                 "event_type": event_types_pool[i % len(event_types_pool)],
                 "severity": severity_pool[i % len(severity_pool)],
                 "timestamp": start_date + timedelta(
-                    seconds=(end_date - start_date).total_seconds() * (i / max(1, limit))
-                ) if start_date and end_date else datetime.now(timezone.utc),
+                    seconds=(end_date - start_date).total_seconds() * (i / max(1, limit)),
+                ) if start_date and end_date else datetime.now(UTC),
                 "user_id": user_id if user_id else f"user_{hash(event_id) % 100}",
                 "ip_address": f"192.168.{(hash(event_id) % 255)}.{((hash(event_id) // 255) % 255)}",
                 "user_agent": "Mozilla/5.0 (Test Browser)",
                 "risk_score": min(100, max(0, hash(event_id) % 100)),
                 "details": {"simulated": True, "sequence": i},
-                "tags": ["simulated", "search_result"]
+                "tags": ["simulated", "search_result"],
             }
             events.append(event_data)
-        
+
         return events, total_count
 
     async def shutdown(self) -> None:
@@ -1199,14 +1197,14 @@ class SecurityIntegrationService:
     async def get_security_trends(
         self,
         days_back: int = 30,
-        categories: list[str] | None = None
+        categories: list[str] | None = None,
     ) -> dict[str, Any]:
         """Get security trend data for analytics.
-        
+
         Args:
             days_back: Number of days to analyze
             categories: Specific trend categories to analyze
-            
+
         Returns:
             Dictionary containing trend analysis data
         """
@@ -1214,31 +1212,31 @@ class SecurityIntegrationService:
             # Define available categories
             all_categories = [
                 "failed_logins",
-                "suspicious_activities", 
+                "suspicious_activities",
                 "policy_violations",
                 "unusual_access_patterns",
                 "risk_score_trends",
-                "alert_frequency"
+                "alert_frequency",
             ]
-            
+
             # Use specified categories or all
             analysis_categories = categories if categories else all_categories
-            
+
             # Calculate time period
-            end_time = datetime.now(timezone.utc)
+            end_time = datetime.now(UTC)
             start_time = end_time - timedelta(days=days_back)
-            
+
             trend_data = {
                 "analysis_period": {
                     "start_time": start_time.isoformat(),
                     "end_time": end_time.isoformat(),
-                    "days_analyzed": days_back
+                    "days_analyzed": days_back,
                 },
                 "categories": analysis_categories,
                 "trends": {},
-                "summary": {}
+                "summary": {},
             }
-            
+
             # Generate trend data for each category
             for category in analysis_categories:
                 # Simulate trend analysis based on category
@@ -1247,42 +1245,42 @@ class SecurityIntegrationService:
                         "current_period": min(500, days_back * 15 + (hash(category) % 100)),
                         "previous_period": min(400, days_back * 12 + (hash(category) % 80)),
                         "trend_direction": "increasing",
-                        "percentage_change": 12.5
+                        "percentage_change": 12.5,
                     }
                 elif category == "suspicious_activities":
                     trend_data["trends"][category] = {
                         "current_period": min(200, days_back * 6 + (hash(category) % 50)),
                         "previous_period": min(180, days_back * 5 + (hash(category) % 40)),
                         "trend_direction": "increasing",
-                        "percentage_change": 11.1
+                        "percentage_change": 11.1,
                     }
                 elif category == "policy_violations":
                     trend_data["trends"][category] = {
                         "current_period": min(100, days_back * 3 + (hash(category) % 25)),
                         "previous_period": min(120, days_back * 4 + (hash(category) % 30)),
-                        "trend_direction": "decreasing", 
-                        "percentage_change": -16.7
+                        "trend_direction": "decreasing",
+                        "percentage_change": -16.7,
                     }
                 elif category == "unusual_access_patterns":
                     trend_data["trends"][category] = {
                         "current_period": min(150, days_back * 4 + (hash(category) % 35)),
                         "previous_period": min(130, days_back * 3 + (hash(category) % 30)),
                         "trend_direction": "increasing",
-                        "percentage_change": 15.4
+                        "percentage_change": 15.4,
                     }
                 elif category == "risk_score_trends":
                     trend_data["trends"][category] = {
                         "current_average": min(100, 45 + (hash(category) % 30)),
                         "previous_average": min(100, 38 + (hash(category) % 25)),
                         "trend_direction": "increasing",
-                        "percentage_change": 18.4
+                        "percentage_change": 18.4,
                     }
                 elif category == "alert_frequency":
                     trend_data["trends"][category] = {
                         "current_period": min(300, days_back * 8 + (hash(category) % 60)),
                         "previous_period": min(280, days_back * 7 + (hash(category) % 55)),
                         "trend_direction": "increasing",
-                        "percentage_change": 7.1
+                        "percentage_change": 7.1,
                     }
                 else:
                     # Generic trend data for unknown categories
@@ -1290,23 +1288,23 @@ class SecurityIntegrationService:
                         "current_period": max(10, days_back * 2 + (hash(category) % 20)),
                         "previous_period": max(8, days_back * 1 + (hash(category) % 15)),
                         "trend_direction": "stable",
-                        "percentage_change": 0.0
+                        "percentage_change": 0.0,
                     }
-            
+
             # Generate summary statistics
-            increasing_trends = sum(1 for trend in trend_data["trends"].values() 
+            increasing_trends = sum(1 for trend in trend_data["trends"].values()
                                  if trend.get("trend_direction") == "increasing")
             decreasing_trends = sum(1 for trend in trend_data["trends"].values()
                                   if trend.get("trend_direction") == "decreasing")
-            
+
             trend_data["summary"] = {
                 "total_categories_analyzed": len(analysis_categories),
                 "increasing_trends": increasing_trends,
                 "decreasing_trends": decreasing_trends,
                 "stable_trends": len(analysis_categories) - increasing_trends - decreasing_trends,
-                "overall_security_posture": "moderate_concern" if increasing_trends > decreasing_trends else "improving"
+                "overall_security_posture": "moderate_concern" if increasing_trends > decreasing_trends else "improving",
             }
-            
+
             # Log trend analysis
             if self.security_logger:
                 await self.security_logger.log_security_event(
@@ -1319,9 +1317,9 @@ class SecurityIntegrationService:
                         "decreasing_trends": decreasing_trends,
                     },
                 )
-            
+
             return trend_data
-            
+
         except Exception as e:
             # Log error but don't propagate to maintain API stability
             if self.security_logger:
@@ -1332,13 +1330,13 @@ class SecurityIntegrationService:
                         "operation": "get_security_trends",
                     },
                 )
-            
+
             # Return empty trends data on error
             return {
                 "analysis_period": {"error": "Failed to analyze trends"},
                 "categories": categories or [],
                 "trends": {},
-                "summary": {"error": str(e)}
+                "summary": {"error": str(e)},
             }
 
     async def investigate_security_incident(
@@ -1348,10 +1346,10 @@ class SecurityIntegrationService:
         user_ids: list[str] | None = None,
         ip_addresses: list[str] | None = None,
         event_types: list[str] | None = None,
-        risk_threshold: int = 50
+        risk_threshold: int = 50,
     ) -> dict[str, Any]:
         """Investigate security incidents with comprehensive analysis.
-        
+
         Args:
             start_time: Investigation start time
             end_time: Investigation end time
@@ -1359,7 +1357,7 @@ class SecurityIntegrationService:
             ip_addresses: Specific IP addresses to investigate
             event_types: Event types to focus on
             risk_threshold: Minimum risk threshold for findings
-            
+
         Returns:
             Comprehensive investigation results
         """
@@ -1367,7 +1365,7 @@ class SecurityIntegrationService:
             # Validate time range
             if end_time <= start_time:
                 raise ValueError("End time must be after start time")
-            
+
             # Initialize investigation data
             investigation_data = {
                 "investigation_metadata": {
@@ -1378,23 +1376,23 @@ class SecurityIntegrationService:
                     "focus_criteria": {
                         "user_ids": user_ids or [],
                         "ip_addresses": ip_addresses or [],
-                        "event_types": event_types or []
-                    }
+                        "event_types": event_types or [],
+                    },
                 },
                 "entities": [],
-                "summary": {}
+                "summary": {},
             }
-            
+
             # Simulate entity analysis
             entities_to_analyze = []
-            
+
             # Add user entities
             if user_ids:
                 for user_id in user_ids:
                     entities_to_analyze.append({
                         "entity_type": "user",
                         "entity_id": user_id,
-                        "focus_reason": "explicitly_requested"
+                        "focus_reason": "explicitly_requested",
                     })
             else:
                 # Generate some example user entities
@@ -1402,65 +1400,65 @@ class SecurityIntegrationService:
                     entities_to_analyze.append({
                         "entity_type": "user",
                         "entity_id": f"user_{hash(str(start_time) + str(i)) % 10000:04d}",
-                        "focus_reason": "high_risk_activity_detected"
+                        "focus_reason": "high_risk_activity_detected",
                     })
-            
-            # Add IP entities  
+
+            # Add IP entities
             if ip_addresses:
                 for ip in ip_addresses:
                     entities_to_analyze.append({
                         "entity_type": "ip_address",
                         "entity_id": ip,
-                        "focus_reason": "explicitly_requested"
+                        "focus_reason": "explicitly_requested",
                     })
             else:
                 # Generate some example IP entities
                 for i in range(min(3, max(1, risk_threshold // 30))):
                     ip_hash = hash(str(end_time) + str(i)) % 256
                     entities_to_analyze.append({
-                        "entity_type": "ip_address", 
+                        "entity_type": "ip_address",
                         "entity_id": f"192.168.{ip_hash // 16}.{ip_hash % 16}",
-                        "focus_reason": "suspicious_activity_pattern"
+                        "focus_reason": "suspicious_activity_pattern",
                     })
-            
+
             # Analyze each entity
             high_risk_entities = 0
-            
+
             for entity_info in entities_to_analyze:
                 entity_type = entity_info["entity_type"]
                 entity_id = entity_info["entity_id"]
-                
+
                 # Calculate entity risk score
                 base_risk = hash(entity_id) % 100
                 if entity_info["focus_reason"] == "explicitly_requested":
                     base_risk = min(100, base_risk + 20)  # Boost explicitly requested entities
-                
+
                 # Generate anomaly indicators
                 anomaly_indicators = []
                 if base_risk > 70:
                     anomaly_indicators.extend([
                         "Multiple failed login attempts",
-                        "Access from unusual locations"
+                        "Access from unusual locations",
                     ])
                 if base_risk > 80:
                     anomaly_indicators.extend([
                         "Off-hours access pattern",
-                        "Unusual request velocity"
+                        "Unusual request velocity",
                     ])
                 if base_risk > 90:
                     anomaly_indicators.append("Privilege escalation attempts")
-                
+
                 # Generate event timeline
                 events = []
                 event_count = min(20, max(5, base_risk // 10))
-                
+
                 for i in range(event_count):
                     # Generate realistic event times within investigation period
                     time_offset = timedelta(
-                        seconds=(end_time - start_time).total_seconds() * (i / event_count)
+                        seconds=(end_time - start_time).total_seconds() * (i / event_count),
                     )
                     event_time = start_time + time_offset
-                    
+
                     # Generate event based on entity type and risk
                     if entity_type == "user":
                         if base_risk > 80:
@@ -1469,23 +1467,22 @@ class SecurityIntegrationService:
                             event_type = ["login_success", "data_access", "permission_change"][i % 3]
                         else:
                             event_type = ["login_success", "data_access"][i % 2]
-                    else:  # IP address
-                        if base_risk > 80:
-                            event_type = ["failed_request", "rate_limit_exceeded", "blocked_access"][i % 3]
-                        else:
-                            event_type = ["successful_request", "data_access"][i % 2]
-                    
+                    elif base_risk > 80:
+                        event_type = ["failed_request", "rate_limit_exceeded", "blocked_access"][i % 3]
+                    else:
+                        event_type = ["successful_request", "data_access"][i % 2]
+
                     events.append({
                         "timestamp": event_time.isoformat(),
                         "event_type": event_type,
                         "risk_score": min(100, base_risk + (hash(str(event_time)) % 20) - 10),
-                        "description": f"{event_type.replace('_', ' ').title()} for {entity_id}"
+                        "description": f"{event_type.replace('_', ' ').title()} for {entity_id}",
                     })
-                
+
                 # Track high risk entities
                 if base_risk >= risk_threshold:
                     high_risk_entities += 1
-                
+
                 # Create entity analysis result
                 entity_result = {
                     "entity_type": entity_type,
@@ -1493,11 +1490,11 @@ class SecurityIntegrationService:
                     "risk_score": base_risk,
                     "anomaly_indicators": anomaly_indicators,
                     "events": events,
-                    "focus_reason": entity_info["focus_reason"]
+                    "focus_reason": entity_info["focus_reason"],
                 }
-                
+
                 investigation_data["entities"].append(entity_result)
-            
+
             # Generate investigation summary
             investigation_data["summary"] = {
                 "total_entities_analyzed": len(entities_to_analyze),
@@ -1505,13 +1502,13 @@ class SecurityIntegrationService:
                 "investigation_duration_hours": (end_time - start_time).total_seconds() / 3600,
                 "risk_distribution": {
                     "critical": sum(1 for e in investigation_data["entities"] if e["risk_score"] >= 90),
-                    "high": sum(1 for e in investigation_data["entities"] if 70 <= e["risk_score"] < 90), 
+                    "high": sum(1 for e in investigation_data["entities"] if 70 <= e["risk_score"] < 90),
                     "medium": sum(1 for e in investigation_data["entities"] if 40 <= e["risk_score"] < 70),
-                    "low": sum(1 for e in investigation_data["entities"] if e["risk_score"] < 40)
+                    "low": sum(1 for e in investigation_data["entities"] if e["risk_score"] < 40),
                 },
-                "recommendations": self._generate_investigation_recommendations(investigation_data["entities"])
+                "recommendations": self._generate_investigation_recommendations(investigation_data["entities"]),
             }
-            
+
             # Log investigation activity
             if self.security_logger:
                 await self.security_logger.log_security_event(
@@ -1523,9 +1520,9 @@ class SecurityIntegrationService:
                         "duration_hours": (end_time - start_time).total_seconds() / 3600,
                     },
                 )
-            
+
             return investigation_data
-            
+
         except Exception as e:
             # Log error but return structured error response
             if self.security_logger:
@@ -1536,7 +1533,7 @@ class SecurityIntegrationService:
                         "operation": "investigate_security_incident",
                     },
                 )
-            
+
             # Return error investigation data
             return {
                 "investigation_metadata": {
@@ -1545,47 +1542,47 @@ class SecurityIntegrationService:
                     "end_time": end_time.isoformat() if end_time else None,
                 },
                 "entities": [],
-                "summary": {"error": str(e)}
+                "summary": {"error": str(e)},
             }
 
     def _generate_investigation_recommendations(self, entities: list[dict[str, Any]]) -> list[str]:
         """Generate investigation recommendations based on entity analysis.
-        
+
         Args:
             entities: List of analyzed entities
-            
+
         Returns:
             List of actionable recommendations
         """
         recommendations = []
-        
+
         # Count high-risk entities
         high_risk_count = sum(1 for e in entities if e["risk_score"] >= 80)
         critical_count = sum(1 for e in entities if e["risk_score"] >= 90)
-        
+
         # Risk-based recommendations
         if critical_count > 0:
             recommendations.append("CRITICAL: Immediate incident response required for high-risk entities")
             recommendations.append("Consider temporary account/IP restrictions pending investigation")
         elif high_risk_count > 0:
             recommendations.append("Enhanced monitoring recommended for high-risk entities")
-        
+
         # Pattern-based recommendations
         user_entities = [e for e in entities if e["entity_type"] == "user"]
         ip_entities = [e for e in entities if e["entity_type"] == "ip_address"]
-        
+
         if len(user_entities) > 5:
             recommendations.append("Multiple user accounts involved - investigate potential coordinated attack")
         if len(ip_entities) > 3:
             recommendations.append("Multiple IP addresses involved - check for distributed attack pattern")
-        
+
         # Anomaly-based recommendations
         entities_with_anomalies = [e for e in entities if e.get("anomaly_indicators")]
         if len(entities_with_anomalies) > len(entities) * 0.6:
             recommendations.append("High percentage of entities show anomalies - review security policies")
-        
+
         # Default recommendation
         if not recommendations:
             recommendations.append("Continue standard monitoring - no immediate action required")
-        
+
         return recommendations

@@ -10,7 +10,7 @@ Endpoints:
     GET /health/services - Individual service health
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import psutil
 from fastapi import APIRouter, Depends, HTTPException
@@ -70,7 +70,7 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 # Dependencies
 _security_integration_service: SecurityIntegrationService | None = None
-_app_start_time = datetime.now(timezone.utc)
+_app_start_time = datetime.now(UTC)
 
 
 async def get_security_service() -> SecurityIntegrationService:
@@ -88,7 +88,7 @@ async def basic_health_check() -> HealthStatus:
     Returns:
         Basic health status information
     """
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(UTC)
     uptime = (current_time - _app_start_time).total_seconds()
 
     return HealthStatus(
@@ -112,7 +112,7 @@ async def detailed_health_check(
         Detailed health status with all system metrics
     """
     try:
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
         uptime = (current_time - _app_start_time).total_seconds()
 
         # Generate mock service health data
@@ -131,7 +131,7 @@ async def detailed_health_check(
         for i, service_name in enumerate(service_names):
             # Most services are healthy, with occasional degraded status
             is_healthy = i != 2  # Make alert_engine occasionally unhealthy for testing
-            
+
             service_health = ServiceHealth(
                 name=service_name,
                 status="healthy" if is_healthy else "degraded",
@@ -202,7 +202,7 @@ async def get_service_health(
         Health status for each service
     """
     try:
-        current_time = datetime.now(timezone.utc)
+        current_time = datetime.now(UTC)
 
         # Generate mock service health data
         service_names = [
@@ -219,7 +219,7 @@ async def get_service_health(
         for i, service_name in enumerate(service_names):
             # Most services are healthy, with occasional degraded status
             is_healthy = i != 2  # Make alert_engine occasionally unhealthy for testing
-            
+
             service_health = ServiceHealth(
                 name=service_name,
                 status="healthy" if is_healthy else "degraded",

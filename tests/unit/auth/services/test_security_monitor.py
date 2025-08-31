@@ -12,10 +12,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from tests.fixtures.security_service_mocks import MockSecurityLogger
-from src.utils.time_utils import utc_now
 
 from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_monitor import FailedAttempt, MonitoringConfig, SecurityMonitor
+from src.utils.time_utils import utc_now
 
 
 class TestSecurityMonitorInitialization:
@@ -79,15 +79,15 @@ class TestSecurityMonitorInitialization:
             brute_force_threshold=30,
             brute_force_window_minutes=20,
             account_lockout_duration_minutes=45,
-            account_lockout_enabled=True
+            account_lockout_enabled=True,
         )
-        
+
         monitor = SecurityMonitor(config=config)
-        
+
         # Verify config-based initialization path (lines 116-123)
         assert monitor.config == config
         assert monitor.failed_attempts_threshold == 15
-        assert monitor.failed_attempts_window_minutes == 10  
+        assert monitor.failed_attempts_window_minutes == 10
         assert monitor.brute_force_threshold == 30
         assert monitor.brute_force_window_minutes == 20
         assert monitor.lockout_duration_minutes == 45
@@ -101,24 +101,24 @@ class TestSecurityMonitorInitialization:
         mock_db = AsyncMock()
         mock_logger = AsyncMock()
         mock_alert_engine = AsyncMock()
-        
+
         # Mock hasattr to return True for initialize methods
         mock_logger.initialize = AsyncMock()
         mock_alert_engine.initialize = AsyncMock()
-        
+
         monitor = SecurityMonitor(
-            db=mock_db, 
-            security_logger=mock_logger, 
-            alert_engine=mock_alert_engine
+            db=mock_db,
+            security_logger=mock_logger,
+            alert_engine=mock_alert_engine,
         )
-        
+
         # Ensure cleanup task condition is met by setting _cleanup_task to None
         monitor._cleanup_task = None
-        
+
         # Mock _start_cleanup_task to avoid background task creation
-        with patch.object(monitor, '_start_cleanup_task') as mock_cleanup:
+        with patch.object(monitor, "_start_cleanup_task") as mock_cleanup:
             await monitor.initialize()
-        
+
         # Verify all initialization calls
         mock_db.initialize.assert_called_once()
         mock_logger.initialize.assert_called_once()
@@ -138,7 +138,7 @@ class TestSecurityMonitorBruteForceDetection:
         mock_alert_engine = AsyncMock()
 
         # Create monitor with injected dependencies
-        monitor = SecurityMonitor(
+        return SecurityMonitor(
             failed_attempts_threshold=3,  # Lock account after 3 attempts
             brute_force_threshold=3,  # Detect brute force after 3 attempts
             brute_force_window_minutes=5,
@@ -147,7 +147,6 @@ class TestSecurityMonitorBruteForceDetection:
             alert_engine=mock_alert_engine,
         )
 
-        return monitor
 
     async def test_record_failed_login_first_attempt(self, monitor):
         """Test recording first failed login attempt."""

@@ -81,30 +81,30 @@ async def get_security_alerts(
         # Generate mock alert data (following security_dashboard_endpoints.py pattern)
         alerts = []
         current_time = datetime.now()
-        
+
         # Generate sample alerts with variety
         alert_types = ["brute_force_attempt", "suspicious_login", "failed_authentication", "unusual_activity", "security_violation"]
         severities = ["low", "medium", "high", "critical"]
         users = ["user_001", "admin_user", "service_account", "test_user", None]
         ips = ["192.168.1.100", "10.0.0.50", "172.16.1.20", "203.0.113.45", None]
-        
+
         # Generate more alerts than needed to handle filtering and pagination
         total_to_generate = min(limit + offset + 50, 200)
-        
+
         for i in range(total_to_generate):
             alert_severity = severities[i % len(severities)]
-            
+
             # Skip this alert if severity filter doesn't match
             if severity and alert_severity != severity:
                 continue
-                
+
             # Alternate acknowledged status
             is_acknowledged = i % 3 == 0
-            
+
             # Skip this alert if acknowledged filter doesn't match
             if acknowledged is not None and is_acknowledged != acknowledged:
                 continue
-                
+
             alert = AlertSummaryResponse(
                 id=UUID(f"00000000-0000-4000-8000-{i:012d}"),
                 alert_type=alert_types[i % len(alert_types)],
@@ -116,16 +116,16 @@ async def get_security_alerts(
                 acknowledged=is_acknowledged,
                 risk_score=min(100, (i % 10 + 1) * 10),
             )
-            
+
             alerts.append(alert)
-            
+
             # Stop when we have enough results including offset
             if len(alerts) >= limit + offset:
                 break
 
         # Apply offset and limit
         paginated_alerts = alerts[offset:offset + limit]
-        
+
         return paginated_alerts
 
     except Exception as e:
@@ -156,27 +156,27 @@ async def acknowledge_alert(
         # Mock alert verification - simulate checking if alert exists
         # Convert UUID to deterministic format for checking "existence"
         alert_uuid_str = str(alert_id).lower()
-        
+
         # Consider alert "not found" if UUID starts with 'ffffffff'
-        if alert_uuid_str.startswith('ffffffff'):
+        if alert_uuid_str.startswith("ffffffff"):
             raise HTTPException(status_code=404, detail=f"Alert with ID {alert_id} not found")
-        
+
         # Consider alert "already acknowledged" if UUID starts with 'aaaaaaaa'
-        if alert_uuid_str.startswith('aaaaaaaa'):
+        if alert_uuid_str.startswith("aaaaaaaa"):
             raise HTTPException(status_code=409, detail=f"Alert {alert_id} is already acknowledged")
 
         # Mock acknowledgment success
         acknowledgment_time = datetime.now()
-        
+
         # Simulate logging the acknowledgment in background
         # Note: We can't verify if service.log_security_event exists, so use try/except
         try:
             # Create a proper background task function
-            def log_acknowledgment():
+            def log_acknowledgment() -> None:
                 # Mock background logging task
                 # In real implementation, this would call service.log_security_event
                 pass
-            
+
             background_tasks.add_task(log_acknowledgment)
         except Exception:
             # Background task setup failed, but acknowledgment still succeeds

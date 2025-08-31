@@ -13,7 +13,7 @@ Tests cover:
 
 import asyncio
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -68,7 +68,7 @@ async def db_session():
             else:
                 mock_record.is_active = True
             mock_record.is_expired = False
-            mock_record.created_at = datetime.now(timezone.utc)
+            mock_record.created_at = datetime.now(UTC)
             mock_record.expires_at = None
             mock_record.token_hash = "mock_hash"
             mock_result.fetchone = MagicMock(return_value=mock_record)
@@ -84,19 +84,19 @@ async def db_session():
                 mock_event.id = i + 1
                 mock_event.event_type = event_type
                 mock_event.success = True
-                mock_event.created_at = datetime.now(timezone.utc)
+                mock_event.created_at = datetime.now(UTC)
                 mock_event.service_token_name = "audit-test-token"
                 mock_events.append(mock_event)
-            
+
             # Add one more auth event to reach >= 5 total
             mock_event = MagicMock()
             mock_event.id = 5
             mock_event.event_type = "service_token_auth"
             mock_event.success = True
-            mock_event.created_at = datetime.now(timezone.utc)
+            mock_event.created_at = datetime.now(UTC)
             mock_event.service_token_name = "audit-test-token"
             mock_events.append(mock_event)
-            
+
             mock_result.fetchall = MagicMock(return_value=mock_events)
             mock_result.fetchone = MagicMock(return_value=mock_events[0] if mock_events else None)
             mock_result.scalar = MagicMock(return_value=len(mock_events))
@@ -148,14 +148,14 @@ class TestServiceTokenIntegration:
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
-        
+
         with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
             try:
                 # Create a token
                 token_value, token_id = await token_manager.create_service_token(
                     token_name="integration-test-token",
                     metadata={"permissions": ["api_read", "system_status"], "environment": "test"},
-                    expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+                    expires_at=datetime.now(UTC) + timedelta(days=30),
                 )
 
                 # Verify token format
@@ -172,15 +172,14 @@ class TestServiceTokenIntegration:
                 assert token_record is not None
                 assert token_record.token_name == "integration-test-token"
                 assert token_record.is_active is True
-                
+
             except Exception as e:
                 # If the service token manager doesn't exist or has schema mismatches, verify basic functionality
                 pytest.skip(f"Service token manager not available or schema mismatch: {e}")
-                
+
                 # Create a mock token for validation
                 token_value = "sk_" + "a" * 64  # 67 char token
-                token_id = 12345
-                
+
                 # Verify basic token format
                 assert token_value.startswith("sk_")
                 assert len(token_value) == 67
@@ -192,7 +191,7 @@ class TestServiceTokenIntegration:
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
-        
+
         with (
             patch("src.auth.service_token_manager.get_db", return_value=async_context_manager),
             patch("src.auth.middleware.get_db", return_value=async_context_manager),
@@ -233,7 +232,7 @@ class TestServiceTokenIntegration:
                     assert authenticated_user.has_permission("api_read")
                     assert authenticated_user.has_permission("system_status")
                     assert not authenticated_user.has_permission("admin")
-                    
+
                 except ImportError as import_error:
                     pytest.skip(f"Required authentication modules not available: {import_error}")
 
@@ -257,7 +256,7 @@ class TestServiceTokenIntegration:
                     "created_by": "admin@example.com",
                     "purpose": "GitHub Actions CI/CD",
                 },
-                expires_at=datetime.now(timezone.utc) + timedelta(days=365),  # Long-lived for CI/CD
+                expires_at=datetime.now(UTC) + timedelta(days=365),  # Long-lived for CI/CD
             )
 
             # Simulate multiple CI/CD requests
@@ -268,7 +267,7 @@ class TestServiceTokenIntegration:
                 # Update usage count
                 await db_session.execute(
                     "UPDATE service_tokens SET usage_count = usage_count + 1, last_used = ? WHERE token_hash = ?",
-                    (datetime.now(timezone.utc), token_hash),
+                    (datetime.now(UTC), token_hash),
                 )
                 await db_session.commit()
 
@@ -279,7 +278,7 @@ class TestServiceTokenIntegration:
                     success=True,
                     ip_address="192.168.1.100",
                     user_agent="GitHub-Actions/PromptCraft-CI",
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 )
                 db_session.add(auth_event)
                 await db_session.commit()
@@ -313,13 +312,13 @@ class TestServiceTokenIntegration:
             await token_manager.create_service_token(
                 token_name="expiring-soon",
                 metadata={"permissions": ["api_read"]},
-                expires_at=datetime.now(timezone.utc) + timedelta(days=3),  # Expires soon
+                expires_at=datetime.now(UTC) + timedelta(days=3),  # Expires soon
             )
 
             await token_manager.create_service_token(
                 token_name="expiring-later",
                 metadata={"permissions": ["api_read"]},
-                expires_at=datetime.now(timezone.utc) + timedelta(days=60),  # Expires later
+                expires_at=datetime.now(UTC) + timedelta(days=60),  # Expires later
             )
 
             await token_manager.create_service_token(
@@ -368,7 +367,7 @@ class TestServiceTokenIntegration:
             # Manually set creation date to simulate old token
             await db_session.execute(
                 "UPDATE service_tokens SET created_at = ? WHERE id = ?",
-                (datetime.now(timezone.utc) - timedelta(days=100), old_token_id),
+                (datetime.now(UTC) - timedelta(days=100), old_token_id),
             )
             await db_session.commit()
 
@@ -449,7 +448,7 @@ class TestServiceTokenIntegration:
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
-        
+
         with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
             # Create tokens concurrently
             async def create_token(i):
@@ -459,15 +458,15 @@ class TestServiceTokenIntegration:
                         metadata={"permissions": ["api_read"], "test_id": i},
                         is_active=True,
                     )
-                except Exception as e:
+                except Exception:
                     # Return mock result if service token manager is not available
                     return (f"sk_{'a' * 64}", i)
 
             # Create 5 tokens concurrently (reduced for stability)
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
             tasks = [create_token(i) for i in range(5)]
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            end_time = datetime.now(timezone.utc)
+            end_time = datetime.now(UTC)
 
             # Check that most operations succeeded
             successful_results = [r for r in results if not isinstance(r, Exception)]
@@ -488,7 +487,7 @@ class TestServiceTokenIntegration:
             expired_token_value, expired_token_id = await token_manager.create_service_token(
                 token_name="expired-token",
                 metadata={"permissions": ["api_read"]},
-                expires_at=datetime.now(timezone.utc) - timedelta(days=1),  # Already expired
+                expires_at=datetime.now(UTC) - timedelta(days=1),  # Already expired
                 is_active=True,
             )
 
@@ -496,7 +495,7 @@ class TestServiceTokenIntegration:
             active_token_value, active_token_id = await token_manager.create_service_token(
                 token_name="active-token",
                 metadata={"permissions": ["api_read"]},
-                expires_at=datetime.now(timezone.utc) + timedelta(days=30),  # Not expired
+                expires_at=datetime.now(UTC) + timedelta(days=30),  # Not expired
                 is_active=True,
             )
 
@@ -522,7 +521,7 @@ class TestServiceTokenIntegration:
         async_context_manager = AsyncMock()
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
-        
+
         with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
             try:
                 # Test duplicate token name handling
@@ -572,7 +571,7 @@ class TestServiceTokenIntegration:
             except Exception as e:
                 # If service token manager not available, test graceful degradation
                 pytest.skip(f"Service token manager not available, testing graceful degradation: {e}")
-                
+
                 # Test that system continues to function without service tokens
                 assert token_manager is not None
 
@@ -598,7 +597,7 @@ class TestServiceTokenIntegration:
                     success=True,
                     ip_address=f"192.168.1.{100+i}",
                     user_agent="Test-Client",
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 )
                 db_session.add(auth_event)
             await db_session.commit()

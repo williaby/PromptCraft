@@ -33,7 +33,6 @@ from src.mcp_integration.mcp_client import (
 )
 
 
-
 class TestMCPClientFactory:
     """Test MCPClientFactory for comprehensive coverage."""
 
@@ -318,7 +317,7 @@ class TestZenMCPClient:
     async def test_health_check_httpx_not_available(self, zen_client):
         """Test health check when httpx not available."""
         with patch("src.mcp_integration.mcp_client.httpx", None), \
-             patch('asyncio.sleep', new_callable=AsyncMock), \
+             patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.health_check()
 
@@ -329,7 +328,7 @@ class TestZenMCPClient:
         zen_client.connection_state = MCPConnectionState.DISCONNECTED
         zen_client.session = None
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with patch('asyncio.sleep', new_callable=AsyncMock), \
+        with patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.health_check()
 
@@ -349,7 +348,7 @@ class TestZenMCPClient:
         zen_client.session.get.return_value = mock_response
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with patch('asyncio.sleep', new_callable=AsyncMock), \
+        with patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.health_check()
 
@@ -361,7 +360,7 @@ class TestZenMCPClient:
         zen_client.session.get.side_effect = httpx.TimeoutException("Timeout")
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with patch('asyncio.sleep', new_callable=AsyncMock), \
+        with patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.health_check()
 
@@ -373,7 +372,7 @@ class TestZenMCPClient:
         zen_client.session.get.side_effect = httpx.ConnectError("Cannot connect")
 
         # The health_check method has a retry decorator, so it will raise RetryError after retries
-        with patch('asyncio.sleep', new_callable=AsyncMock), \
+        with patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.health_check()
 
@@ -473,7 +472,7 @@ class TestZenMCPClient:
     async def test_orchestrate_agents_httpx_not_available(self, zen_client):
         """Test orchestration when httpx not available."""
         with patch("src.mcp_integration.mcp_client.httpx", None), \
-             patch('asyncio.sleep', new_callable=AsyncMock), \
+             patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.orchestrate_agents([])
 
@@ -544,7 +543,7 @@ class TestZenMCPClient:
         zen_client.session.post.side_effect = httpx.TimeoutException("Timeout")
 
         steps = [WorkflowStep(step_id="test", agent_id="agent", input_data={})]
-        with patch('asyncio.sleep', new_callable=AsyncMock), \
+        with patch("asyncio.sleep", new_callable=AsyncMock), \
              pytest.raises(RetryError):
             await zen_client.orchestrate_agents(steps)
 
@@ -775,10 +774,10 @@ class TestMCPConnectionManager:
                 connection_state=MCPConnectionState.CONNECTED,
                 error_count=0,
             )
-        
+
         mock_client.health_check = AsyncMock(side_effect=health_check_side_effect)
 
-        # Start the manager (this starts the health monitor)  
+        # Start the manager (this starts the health monitor)
         await connection_manager.start()
 
         # Wait briefly for health monitor to run

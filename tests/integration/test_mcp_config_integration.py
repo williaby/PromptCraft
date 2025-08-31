@@ -199,11 +199,11 @@ class TestMCPConfigurationIntegration:
                 assert health_status["mcp_configuration"]["configuration_valid"] is True
                 assert health_status["mcp_client"]["overall_status"] == "healthy"
                 assert health_status["parallel_executor"]["status"] == "healthy"
-                
+
             except Exception as e:
                 # Skip if MCP health check module not available or has import issues
                 pytest.skip(f"MCP health check functionality not available: {e}")
-                
+
                 # Verify basic configuration structure instead
                 assert test_settings.mcp_enabled is True
                 assert test_settings.mcp_server_url == "http://localhost:3000"
@@ -322,11 +322,11 @@ class TestMCPConfigurationIntegration:
                     # Test connection
                     connected = await client.connect()
                     assert connected is True
-                    
+
             except Exception as e:
                 # Skip if MCP client modules are not available
                 pytest.skip(f"MCP client functionality not available: {e}")
-                
+
                 # Verify basic configuration instead
                 assert test_settings.mcp_enabled is True
                 assert test_settings.mcp_server_url == "http://localhost:3000"
@@ -389,11 +389,11 @@ class TestMCPConfigurationIntegration:
 
                     # Verify client state
                     assert client.connection_state != "connected"
-                    
+
             except Exception as e:
                 # Skip if MCP client modules are not available
                 pytest.skip(f"MCP client error handling not available: {e}")
-                
+
                 # Verify configuration can handle missing components gracefully
                 assert test_settings.mcp_enabled is True
                 assert test_settings.mcp_server_url == "http://localhost:3000"

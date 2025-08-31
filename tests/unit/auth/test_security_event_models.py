@@ -4,7 +4,7 @@ Tests all Pydantic models for validation, serialization, and edge cases.
 Validates all 19 security event types and severity levels.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -17,7 +17,7 @@ from src.auth.models import (
     SecurityEventSeverity,
     SecurityEventType,
 )
-from src.utils.time_utils import utc_now, UTC
+from src.utils.time_utils import UTC, utc_now
 
 
 class TestSecurityEventType:

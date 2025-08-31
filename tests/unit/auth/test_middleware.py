@@ -725,7 +725,7 @@ class TestSetupAuthentication:
             patch.object(app, "add_middleware") as mock_add_middleware,
             patch.object(app, "add_exception_handler") as mock_add_handler,
         ):
-            limiter = setup_authentication(app, config)
+            setup_authentication(app, config)
 
             # Verify only authentication middleware was added
             # (not SlowAPI middleware)

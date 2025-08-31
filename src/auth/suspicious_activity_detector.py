@@ -4,10 +4,10 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from .models import SecurityEventSeverity, SecurityEventType, SecurityEventResponse
+from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +328,7 @@ class SuspiciousActivityDetector:
                 await asyncio.sleep(30)  # Analyze every 30 seconds
 
                 # Clean old activity
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 cutoff = now - timedelta(hours=1)
 
                 for entity_key in list(self._activity_log.keys()):
@@ -366,7 +366,7 @@ class SuspiciousActivityDetector:
         # Only learn if learning mode is enabled
         if not self.learning_mode:
             return
-        
+
         # Simulate learning by adjusting thresholds based on detection frequency
         for pattern_name, score in self._pattern_scores.items():
             pattern = self._patterns[pattern_name]
