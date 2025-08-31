@@ -56,21 +56,16 @@ class RiskDistributionResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/charts", tags=["charts"])
 
+
 # Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
-
-
-async def get_security_service() -> SecurityIntegrationService:
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
 @router.get("/event-timeline", response_model=EventTimelineResponse)
 async def get_event_timeline_chart(
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to chart"),
     granularity: str = Query("hour", regex="^(hour|day)$", description="Data granularity"),
 ) -> EventTimelineResponse:
@@ -157,12 +152,12 @@ async def get_event_timeline_chart(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get event timeline chart: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get event timeline chart: {e!s}") from e
 
 
 @router.get("/risk-distribution", response_model=RiskDistributionResponse)
 async def get_risk_distribution_chart(
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     analysis_type: str = Query("users", regex="^(users|events|alerts)$", description="Type of items to analyze"),
 ) -> RiskDistributionResponse:
     """Get risk distribution chart data for dashboard visualization.
@@ -232,4 +227,4 @@ async def get_risk_distribution_chart(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get risk distribution chart: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get risk distribution chart: {e!s}") from e

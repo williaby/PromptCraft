@@ -60,16 +60,11 @@ class SecurityEventSearchResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/events", tags=["events"])
 
+
 # Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
-
-
-async def get_security_service() -> SecurityIntegrationService:
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
 @router.post("/search", response_model=SecurityEventSearchResponse)
@@ -169,4 +164,4 @@ async def search_security_events(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to search security events: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to search security events: {e!s}") from e

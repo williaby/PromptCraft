@@ -69,16 +69,12 @@ class DetailedHealthResponse(BaseModel):
 router = APIRouter(prefix="/health", tags=["health"])
 
 # Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
 _app_start_time = datetime.now(UTC)
 
 
-async def get_security_service() -> SecurityIntegrationService:
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
 @router.get("/", response_model=HealthStatus)
@@ -101,7 +97,7 @@ async def basic_health_check() -> HealthStatus:
 
 @router.get("/detailed", response_model=DetailedHealthResponse)
 async def detailed_health_check(
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
 ) -> DetailedHealthResponse:
     """Comprehensive health check with all system components.
 
@@ -186,12 +182,12 @@ async def detailed_health_check(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to perform detailed health check: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to perform detailed health check: {e!s}") from e
 
 
 @router.get("/services", response_model=dict[str, ServiceHealth])
 async def get_service_health(
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
 ) -> dict[str, ServiceHealth]:
     """Get health status of individual services.
 
@@ -234,7 +230,7 @@ async def get_service_health(
         return services
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get service health: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get service health: {e!s}") from e
 
 
 async def _get_system_metrics() -> dict[str, float]:

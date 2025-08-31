@@ -34,31 +34,22 @@ class UserRiskProfileResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/users", tags=["users"])
 
+
 # Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
-_suspicious_activity_detector: SuspiciousActivityDetector | None = None
-
-
-async def get_security_service() -> SecurityIntegrationService:
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
-async def get_suspicious_activity_detector() -> SuspiciousActivityDetector:
+def get_suspicious_activity_detector() -> SuspiciousActivityDetector:
     """Get suspicious activity detector instance."""
-    global _suspicious_activity_detector
-    if not _suspicious_activity_detector:
-        _suspicious_activity_detector = SuspiciousActivityDetector()
-    return _suspicious_activity_detector
+    return SuspiciousActivityDetector()
 
 
 @router.get("/{user_id}/risk-profile", response_model=UserRiskProfileResponse)
 async def get_user_risk_profile(
     user_id: str = Path(..., description="User ID to analyze"),
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     detector: SuspiciousActivityDetector = Depends(get_suspicious_activity_detector),
 ) -> UserRiskProfileResponse:
     """Get comprehensive risk profile for a specific user.
@@ -141,4 +132,4 @@ async def get_user_risk_profile(
         # Re-raise HTTP exceptions
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}") from e

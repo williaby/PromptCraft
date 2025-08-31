@@ -12,6 +12,7 @@ Endpoints:
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -25,12 +26,12 @@ class AuditReportRequest(BaseModel):
     start_date: datetime = Field(..., description="Audit report start date")
     end_date: datetime = Field(..., description="Audit report end date")
     report_type: str = Field(
-        "comprehensive",
+        default="comprehensive",
         regex="^(comprehensive|security|compliance|activity)$",
         description="Type of audit report",
     )
-    include_details: bool = Field(True, description="Include detailed event information")
-    format: str = Field("json", regex="^(json|csv|pdf)$", description="Report output format")
+    include_details: bool = Field(default=True, description="Include detailed event information")
+    format: str = Field(default="json", regex="^(json|csv|pdf)$", description="Report output format")
 
 
 class AuditReportResponse(BaseModel):
@@ -75,16 +76,11 @@ class RetentionPolicy(BaseModel):
 # Create router
 router = APIRouter(prefix="/audit", tags=["audit"])
 
-# Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
 
-
-async def get_security_service() -> SecurityIntegrationService:
+# Dependency injection functions
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
 @router.post("/generate-report", response_model=AuditReportResponse)
@@ -133,7 +129,7 @@ async def generate_audit_report(
         critical_events = audit_summary.get("critical_events", 0)
 
         # Schedule background report generation
-        background_tasks.add_task(service.generate_audit_report_background, report_id=report_id, request=report_request)
+        background_tasks.add_task(service.generate_audit_report_background, report_id, report_request)
 
         return AuditReportResponse(
             report_id=report_id,
@@ -147,7 +143,7 @@ async def generate_audit_report(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}") from e
 
 
 @router.get("/statistics", response_model=AuditStatisticsResponse)
@@ -208,7 +204,7 @@ async def get_audit_statistics(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get audit statistics: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get audit statistics: {e!s}") from e
 
 
 @router.post("/retention/enforce")
@@ -217,7 +213,7 @@ async def enforce_retention_policies(
     service: SecurityIntegrationService = Depends(get_security_service),
     policy_ids: list[str] | None = Query(None, description="Specific policy IDs to enforce"),
     dry_run: bool = Query(False, description="Preview changes without applying"),
-):
+) -> dict[str, Any]:
     """Enforce audit data retention policies.
 
     Args:
@@ -279,7 +275,7 @@ async def enforce_retention_policies(
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to enforce retention policies: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to enforce retention policies: {e!s}") from e
 
 
 @router.get("/retention/policies", response_model=list[RetentionPolicy])
@@ -318,4 +314,4 @@ async def get_retention_policies(
         return policies
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get retention policies: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get retention policies: {e!s}") from e

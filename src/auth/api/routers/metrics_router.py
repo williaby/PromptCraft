@@ -47,22 +47,17 @@ class SecurityMetricsResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
+
 # Dependency to get security integration service
-_security_integration_service: SecurityIntegrationService | None = None
-
-
-async def get_security_service() -> SecurityIntegrationService:
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
 @router.get("/", response_model=SecurityMetricsResponse)
 async def get_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    hours_back: int = Query(24, ge=1, le=168, description="Hours of data to analyze"),
+    hours_back: int = Query(24, ge=1, le=168, description="Hours of data to analyze"),  # noqa: ARG001
 ) -> SecurityMetricsResponse:
     """Get comprehensive security metrics for the dashboard.
 
@@ -141,15 +136,15 @@ async def get_security_metrics(
 
     except Exception as e:
         # Log the error (in production)
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve security metrics: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve security metrics: {e!s}") from e
 
 
 @router.get("/export")
 async def export_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    format: str = Query("json", regex="^(json|csv)$", description="Export format"),
+    export_format: str = Query("json", regex="^(json|csv)$", description="Export format", alias="format"),
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to export"),
-):
+) -> Response | SecurityMetricsResponse:
     """Export security metrics data.
 
     Args:
@@ -164,9 +159,9 @@ async def export_security_metrics(
         # Get the same metrics as the main endpoint
         metrics_response = await get_security_metrics(service, hours_back)
 
-        if format == "json":
+        if export_format == "json":
             return metrics_response
-        if format == "csv":
+        if export_format == "csv":
             # Convert to CSV format
             csv_data = (
                 "timestamp,total_events_today,total_events_week,event_rate_per_hour,"
@@ -189,6 +184,8 @@ async def export_security_metrics(
                 media_type="text/csv",
                 headers={"Content-Disposition": "attachment; filename=security_metrics.csv"},
             )
+        # This should never happen due to regex validation, but satisfy mypy
+        return metrics_response
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to export security metrics: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to export security metrics: {e!s}") from e

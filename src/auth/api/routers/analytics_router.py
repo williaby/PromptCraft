@@ -103,25 +103,16 @@ class IncidentInvestigationResponse(BaseModel):
 # Create router
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
-# Dependencies
-_security_integration_service: SecurityIntegrationService | None = None
-_suspicious_activity_detector: SuspiciousActivityDetector | None = None
 
-
-async def get_security_service() -> SecurityIntegrationService:
+# Dependency injection functions
+def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return SecurityIntegrationService()
 
 
-async def get_suspicious_activity_detector() -> SuspiciousActivityDetector:
+def get_suspicious_activity_detector() -> SuspiciousActivityDetector:
     """Get suspicious activity detector instance."""
-    global _suspicious_activity_detector
-    if not _suspicious_activity_detector:
-        _suspicious_activity_detector = SuspiciousActivityDetector()
-    return _suspicious_activity_detector
+    return SuspiciousActivityDetector()
 
 
 @router.get("/trends", response_model=SecurityTrendsResponse)
@@ -221,13 +212,13 @@ async def get_security_trends(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get security trends: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get security trends: {e!s}") from e
 
 
 @router.get("/patterns", response_model=PatternAnalysisResponse)
 async def get_behavioral_patterns(
     detector: SuspiciousActivityDetector = Depends(get_suspicious_activity_detector),
-    service: SecurityIntegrationService = Depends(get_security_service),
+    service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     min_confidence: float = Query(70.0, ge=0, le=100, description="Minimum pattern confidence"),
     pattern_types: str | None = Query(None, description="Comma-separated pattern types"),
 ) -> PatternAnalysisResponse:
@@ -301,14 +292,14 @@ async def get_behavioral_patterns(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get behavioral patterns: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to get behavioral patterns: {e!s}") from e
 
 
 @router.post("/investigate", response_model=IncidentInvestigationResponse)
 async def investigate_security_incident(
     investigation_request: IncidentInvestigationRequest,
     service: SecurityIntegrationService = Depends(get_security_service),
-    detector: SuspiciousActivityDetector = Depends(get_suspicious_activity_detector),
+    detector: SuspiciousActivityDetector = Depends(get_suspicious_activity_detector),  # noqa: ARG001
 ) -> IncidentInvestigationResponse:
     """Investigate security incidents with comprehensive analysis.
 
@@ -422,7 +413,7 @@ async def investigate_security_incident(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to investigate security incident: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to investigate security incident: {e!s}") from e
 
 
 def _calculate_risk_level(risk_score: float) -> str:
