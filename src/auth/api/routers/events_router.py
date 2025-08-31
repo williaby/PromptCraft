@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC
 
 
 class SecurityEventSearchRequest(BaseModel):
@@ -86,7 +87,7 @@ async def search_security_events(
         Search results with matching events and metadata
     """
     try:
-        start_time = datetime.now()
+        start_time = datetime.now(UTC)
 
         # Validate date range
         if search_request.end_date <= search_request.start_date:
@@ -151,7 +152,7 @@ async def search_security_events(
             events.append(event_response)
 
         # Calculate search time
-        search_time = (datetime.now() - start_time).total_seconds() * 1000
+        search_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         # Determine if there are more results
         total_count = search_results.get("total_count", len(events))

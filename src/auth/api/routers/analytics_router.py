@@ -321,7 +321,7 @@ async def investigate_security_incident(
         Comprehensive investigation results with recommendations
     """
     try:
-        start_time = datetime.now()
+        start_time = datetime.now(UTC)
 
         # Validate time range
         if investigation_request.end_time <= investigation_request.start_time:
@@ -382,7 +382,7 @@ async def investigate_security_incident(
             results.append(result)
 
         # Calculate investigation time
-        investigation_time = (datetime.now() - start_time).total_seconds() * 1000
+        investigation_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         # Generate overall risk assessment
         if high_risk_count > 0:

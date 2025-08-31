@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.services.alert_engine import AlertEngine
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC
 
 
 class AlertSummaryResponse(BaseModel):
@@ -80,7 +81,7 @@ async def get_security_alerts(
     try:
         # Generate mock alert data (following security_dashboard_endpoints.py pattern)
         alerts = []
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         # Generate sample alerts with variety
         alert_types = [
@@ -172,7 +173,7 @@ async def acknowledge_alert(
             raise HTTPException(status_code=409, detail=f"Alert {alert_id} is already acknowledged")
 
         # Mock acknowledgment success
-        acknowledgment_time = datetime.now()
+        acknowledgment_time = datetime.now(UTC)
 
         # Simulate logging the acknowledgment in background
         # Note: We can't verify if service.log_security_event exists, so use try/except

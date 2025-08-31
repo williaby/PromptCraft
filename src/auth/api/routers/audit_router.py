@@ -109,7 +109,7 @@ async def generate_audit_report(
             raise HTTPException(status_code=400, detail="End date must be after start date")
 
         # Generate report ID
-        report_id = f"audit_{report_request.report_type}_{int(datetime.now().timestamp())}"
+        report_id = f"audit_{report_request.report_type}_{int(datetime.now(UTC).timestamp())}"
 
         # Calculate time range description
         delta = report_request.end_date - report_request.start_date
