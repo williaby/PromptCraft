@@ -83,7 +83,13 @@ async def get_security_alerts(
         current_time = datetime.now()
 
         # Generate sample alerts with variety
-        alert_types = ["brute_force_attempt", "suspicious_login", "failed_authentication", "unusual_activity", "security_violation"]
+        alert_types = [
+            "brute_force_attempt",
+            "suspicious_login",
+            "failed_authentication",
+            "unusual_activity",
+            "security_violation",
+        ]
         severities = ["low", "medium", "high", "critical"]
         users = ["user_001", "admin_user", "service_account", "test_user", None]
         ips = ["192.168.1.100", "10.0.0.50", "172.16.1.20", "203.0.113.45", None]
@@ -124,7 +130,7 @@ async def get_security_alerts(
                 break
 
         # Apply offset and limit
-        paginated_alerts = alerts[offset:offset + limit]
+        paginated_alerts = alerts[offset : offset + limit]
 
         return paginated_alerts
 

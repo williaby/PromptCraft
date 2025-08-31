@@ -26,11 +26,11 @@ class AuditReportRequest(BaseModel):
     end_date: datetime = Field(..., description="Audit report end date")
     report_type: str = Field(
         "comprehensive",
-        pattern="^(comprehensive|security|compliance|activity)$",
+        regex="^(comprehensive|security|compliance|activity)$",
         description="Type of audit report",
     )
     include_details: bool = Field(True, description="Include detailed event information")
-    format: str = Field("json", pattern="^(json|csv|pdf)$", description="Report output format")
+    format: str = Field("json", regex="^(json|csv|pdf)$", description="Report output format")
 
 
 class AuditReportResponse(BaseModel):

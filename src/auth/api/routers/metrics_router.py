@@ -147,7 +147,7 @@ async def get_security_metrics(
 @router.get("/export")
 async def export_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    format: str = Query("json", pattern="^(json|csv)$", description="Export format"),
+    format: str = Query("json", regex="^(json|csv)$", description="Export format"),
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to export"),
 ):
     """Export security metrics data.
