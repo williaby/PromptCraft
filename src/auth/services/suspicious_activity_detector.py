@@ -2027,9 +2027,10 @@ class SuspiciousActivityDetector:
         # Sort by risk score (highest first)
         patterns.sort(key=lambda p: p["risk_score"], reverse=True)
 
-        # Log pattern analysis activity
+        # Log pattern analysis activity (sanitize user input)
+        safe_min_confidence = str(min_confidence).replace("\n", "").replace("\r", "")
         logger.info(
-            f"Analyzed behavioral patterns: {len(patterns)} patterns found with min_confidence={min_confidence}",
+            f"Analyzed behavioral patterns: {len(patterns)} patterns found with min_confidence={safe_min_confidence}",
         )
 
         return patterns

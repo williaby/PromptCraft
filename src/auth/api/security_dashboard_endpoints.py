@@ -14,6 +14,7 @@ Architecture: FastAPI async endpoints with caching and pagination support
 """
 
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
@@ -188,6 +189,9 @@ class DashboardConfigRequest(BaseModel):
     email_notifications: bool = Field(True, description="Enable email notifications")
     chart_preferences: dict[str, Any] = Field(default_factory=dict, description="Chart display preferences")
 
+
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/security/dashboard", tags=["security-dashboard"])
@@ -787,8 +791,9 @@ async def get_user_risk_profile(
                     recommendations=service_data["recommendations"],
                 )
             except Exception as e:
-                # Raise HTTPException for service errors instead of falling back to mock data
-                raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
+                # Log detailed error for debugging but don't expose to client
+                logger.error(f"Service error getting user risk profile for {user_id}: {e!s}", exc_info=True)
+                raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
         # Fallback: generate mock risk profile if service doesn't provide it
         risk_score = hash(user_id) % 100  # Deterministic but varied risk scores
@@ -837,7 +842,8 @@ async def get_user_risk_profile(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
+        logger.error(f"Failed to get user risk profile for user {user_id}: {e!s}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
 
 # Standalone function for direct testing (matching test expectations)
@@ -933,7 +939,8 @@ async def search_security_events(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to search events: {e!s}")
+        logger.error(f"Failed to search security events: {e!s}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while searching security events")
 
 
 @router.post("/events/search")
@@ -1399,8 +1406,9 @@ async def get_user_risk_profile(
                 # Service data is not valid (probably MagicMock), fall back to mock data
 
             except Exception as e:
-                # Raise HTTPException for service errors instead of falling back to mock data
-                raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
+                # Log detailed error for debugging but don't expose to client
+                logger.error(f"Service error getting user risk profile for {user_id}: {e!s}", exc_info=True)
+                raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
         # Fallback to mock data for demo/testing
         risk_score = hash(user_id) % 100  # Deterministic but varied risk scores
@@ -1447,7 +1455,8 @@ async def get_user_risk_profile(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get user risk profile: {e!s}")
+        logger.error(f"Failed to get user risk profile for user {user_id}: {e!s}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error while retrieving user risk profile")
 
 
 # Standalone functions for audit and config endpoints (matching test expectations)
@@ -1842,8 +1851,12 @@ async def _log_alert_acknowledgment(alert_id: str, timestamp: datetime) -> None:
     try:
         # In production, this would log to security events
         pass
-    except Exception:
-        pass
+    except Exception as e:
+        # Log exception but don't raise - this is best effort activity detection
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("Activity detection failed: %s", e)
 
 
 # ==============================================================================
