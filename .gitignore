@@ -223,3 +223,9 @@ docs/zen/
 # Generated reports (organized)
 reports/
 zen-mcp-server/
+
+# Security: Performance spike files with potential secrets
+# =================================
+*_performance_spike.py
+*_spike.py
+# Prevent accidental commit of files with hardcoded credentials
