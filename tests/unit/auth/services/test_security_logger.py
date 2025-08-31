@@ -515,7 +515,7 @@ class TestServicesSecurityLoggerFunctionality:
         sensitive_details = {
             "password": "secret123",
             "user_token": "abc123def456789",  # Long value > 8 chars
-            "auth_key": "key456789012345",   # Long value > 8 chars
+            "auth_key": "key456789012345",  # Long value > 8 chars
             "secret_value": "confidential",
             "normal_field": "normal_value",
             "count": 42,
@@ -555,7 +555,7 @@ class TestServicesSecurityLoggerFunctionality:
         # Test dangerous character removal
         details = {
             "message": "Alert: <script>alert('xss')</script>",
-            "description": 'Quote "test" and \'single\' quotes',
+            "description": "Quote \"test\" and 'single' quotes",
             "command": "echo `whoami`",
         }
 
@@ -712,6 +712,7 @@ class TestServicesSecurityLoggerFunctionality:
         with patch.object(logger, "_process_batch", new_callable=AsyncMock) as mock_process:
             # Add some events to the queue
             from src.auth.models import SecurityEventSeverity, SecurityEventType
+
             await logger.log_event(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 severity=SecurityEventSeverity.INFO,

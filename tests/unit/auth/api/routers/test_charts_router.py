@@ -398,7 +398,9 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_get_risk_distribution_chart_empty_data(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test risk distribution chart with empty data."""
         # The charts router generates its own mock data, no service methods needed
@@ -442,7 +444,9 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_risk_distribution_average_calculation(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test average risk calculation in risk distribution."""
         # The charts router generates its own mock data, test the calculation structure
@@ -468,7 +472,9 @@ class TestRiskDistributionChart:
 
     @pytest.mark.asyncio
     async def test_get_risk_distribution_chart_service_error(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test risk distribution chart handles edge cases gracefully."""
         # Since the charts router generates its own data, test it works reliably
@@ -490,7 +496,10 @@ class TestChartsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_event_timeline_performance(
-        self, test_client, mock_security_service, sample_timeline_data_hourly,
+        self,
+        test_client,
+        mock_security_service,
+        sample_timeline_data_hourly,
     ):
         """Test event timeline chart performance."""
         # The charts router generates its own mock data, no service methods needed
@@ -509,7 +518,10 @@ class TestChartsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_risk_distribution_performance(
-        self, test_client, mock_security_service, sample_user_risk_distribution,
+        self,
+        test_client,
+        mock_security_service,
+        sample_user_risk_distribution,
     ):
         """Test risk distribution chart performance."""
         # The charts router generates its own mock data, no service methods needed
@@ -527,7 +539,9 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_large_timeline_data_handling(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test handling of large timeline datasets."""
         # Generate large dataset (168 hours = 1 week)
@@ -535,10 +549,12 @@ class TestChartsIntegration:
         large_timeline_data = []
 
         for i in range(168):
-            large_timeline_data.append({
-                "timestamp": current_time - timedelta(hours=i),
-                "event_count": i * 10,  # Increasing event counts
-            })
+            large_timeline_data.append(
+                {
+                    "timestamp": current_time - timedelta(hours=i),
+                    "event_count": i * 10,  # Increasing event counts
+                },
+            )
 
         # The charts router generates its own mock data, no service methods needed
 
@@ -556,7 +572,9 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_extreme_risk_distribution_values(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test risk distribution with extreme values."""
 
@@ -589,15 +607,14 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_timeline_peak_detection_edge_cases(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test peak detection with edge cases."""
         # Test with all equal values
         current_time = datetime.now(UTC)
-        [
-            {"timestamp": current_time - timedelta(hours=i), "event_count": 50}
-            for i in range(5)
-        ]
+        [{"timestamp": current_time - timedelta(hours=i), "event_count": 50} for i in range(5)]
 
         # The charts router generates its own mock data, no service methods needed
 
@@ -614,7 +631,11 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_charts_data_consistency(
-        self, test_client, mock_security_service, sample_timeline_data_hourly, sample_user_risk_distribution,
+        self,
+        test_client,
+        mock_security_service,
+        sample_timeline_data_hourly,
+        sample_user_risk_distribution,
     ):
         """Test data consistency across chart endpoints."""
         # The charts router generates its own mock data, no service methods needed
@@ -644,7 +665,10 @@ class TestChartsIntegration:
 
     @pytest.mark.asyncio
     async def test_color_scheme_consistency(
-        self, test_client, mock_security_service, sample_user_risk_distribution,
+        self,
+        test_client,
+        mock_security_service,
+        sample_user_risk_distribution,
     ):
         """Test color scheme consistency in risk distribution charts."""
         # The charts router generates its own mock data, no service methods needed
@@ -656,10 +680,10 @@ class TestChartsIntegration:
 
         # Verify standard color scheme is used
         expected_colors = {
-            "LOW": "#28a745",      # Green
-            "MEDIUM": "#ffc107",   # Yellow
-            "HIGH": "#fd7e14",     # Orange
-            "CRITICAL": "#dc3545", # Red
+            "LOW": "#28a745",  # Green
+            "MEDIUM": "#ffc107",  # Yellow
+            "HIGH": "#fd7e14",  # Orange
+            "CRITICAL": "#dc3545",  # Red
         }
 
         distribution_by_level = {item["risk_level"]: item for item in data["distribution"]}

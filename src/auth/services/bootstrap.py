@@ -268,9 +268,7 @@ def create_production_container() -> ServiceContainer:
         dependencies=[SecurityEventsPostgreSQL, SecurityLogger],
         factory_func=create_alert_engine_production,
         health_check=lambda engine: (
-            hasattr(engine, "_processor_task")
-            and engine._processor_task
-            and not engine._processor_task.done()
+            hasattr(engine, "_processor_task") and engine._processor_task and not engine._processor_task.done()
         ),
     )
 
@@ -494,8 +492,7 @@ async def initialize_container_async(container: ServiceContainer) -> dict[type, 
         # Check for critical service failures
         critical_services = [SecurityEventsPostgreSQL, SecurityLogger]
         failed_critical = [
-            service_type for service_type in critical_services
-            if service_type in results and not results[service_type]
+            service_type for service_type in critical_services if service_type in results and not results[service_type]
         ]
 
         if failed_critical:

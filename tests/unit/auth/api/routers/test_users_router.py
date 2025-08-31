@@ -109,9 +109,21 @@ def sample_suspicious_activities_high():
     """Sample suspicious activities for high-risk user."""
     return [
         {"description": "Multiple failed login attempts", "severity": "high", "timestamp": datetime.now(UTC)},
-        {"description": "Login from unusual location", "severity": "medium", "timestamp": datetime.now(UTC) - timedelta(hours=1)},
-        {"description": "Off-hours data access", "severity": "medium", "timestamp": datetime.now(UTC) - timedelta(hours=3)},
-        {"description": "Suspicious API usage pattern", "severity": "high", "timestamp": datetime.now(UTC) - timedelta(hours=6)},
+        {
+            "description": "Login from unusual location",
+            "severity": "medium",
+            "timestamp": datetime.now(UTC) - timedelta(hours=1),
+        },
+        {
+            "description": "Off-hours data access",
+            "severity": "medium",
+            "timestamp": datetime.now(UTC) - timedelta(hours=3),
+        },
+        {
+            "description": "Suspicious API usage pattern",
+            "severity": "high",
+            "timestamp": datetime.now(UTC) - timedelta(hours=6),
+        },
     ]
 
 
@@ -173,7 +185,7 @@ class TestUserRiskProfileResponse:
             last_activity=datetime.now(UTC),
             known_locations=25,
             suspicious_activities=[f"Activity {i}" for i in range(10)],  # Many activities
-            recommendations=[f"Recommendation {i}" for i in range(8)],    # Many recommendations
+            recommendations=[f"Recommendation {i}" for i in range(8)],  # Many recommendations
         )
 
         assert profile.risk_score == 100
@@ -226,7 +238,9 @@ class TestUsersRouter:
     ):
         """Test getting risk profile for high-risk user."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_high_risk_activity
-        mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = sample_suspicious_activities_high
+        mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = (
+            sample_suspicious_activities_high
+        )
 
         response = test_client.get("/users/highrisk@example.com/risk-profile")
 
@@ -236,7 +250,7 @@ class TestUsersRouter:
         assert data["risk_level"] == "HIGH"
         # Expected risk score: 35 + min(30, 6*5) + min(20, 3*3) + min(15, 1*2) = 35 + 30 + 9 + 2 = 76
         # This should be HIGH level (60-79)
-        expected_risk = min(100, 35 + min(30, 6*5) + min(20, 3*3) + min(15, 1*2))
+        expected_risk = min(100, 35 + min(30, 6 * 5) + min(20, 3 * 3) + min(15, 1 * 2))
         assert data["risk_score"] == expected_risk
         assert data["risk_level"] == "HIGH"
 
@@ -260,7 +274,10 @@ class TestUsersRouter:
     ):
         """Test getting risk profile for critical-risk user."""
         # Add more suspicious activities for critical user
-        critical_activities = [*sample_suspicious_activities_high, {"description": "Privilege escalation attempt", "severity": "critical"}]
+        critical_activities = [
+            *sample_suspicious_activities_high,
+            {"description": "Privilege escalation attempt", "severity": "critical"},
+        ]
 
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_critical_risk_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = critical_activities
@@ -281,7 +298,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_user_not_found(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test getting risk profile for non-existent user."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = None
@@ -293,7 +312,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_empty_activity(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test getting risk profile with empty activity data."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = {}
@@ -313,7 +334,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_get_user_risk_profile_service_error(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test getting risk profile when detector service raises exception."""
         mock_suspicious_activity_detector.get_user_activity_summary.side_effect = Exception("Service unavailable")
@@ -325,7 +348,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_risk_score_calculation_edge_cases(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test risk score calculation with edge case values."""
         # Test with extreme values that should be capped
@@ -353,7 +378,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_risk_score_calculation_negative_values(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test risk score calculation with negative base values."""
         negative_activity = {
@@ -379,7 +406,9 @@ class TestUsersRouter:
 
     @pytest.mark.asyncio
     async def test_recommendations_logic(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test recommendation generation logic with specific conditions."""
         specific_activity = {
@@ -391,9 +420,7 @@ class TestUsersRouter:
             "known_location_count": 2,
         }
 
-        many_suspicious_activities = [
-            {"description": f"Activity {i}"} for i in range(4)  # > 3 activities
-        ]
+        many_suspicious_activities = [{"description": f"Activity {i}"} for i in range(4)]  # > 3 activities
 
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = specific_activity
         mock_suspicious_activity_detector.get_user_suspicious_activities.return_value = many_suspicious_activities
@@ -422,7 +449,10 @@ class TestUsersIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_user_risk_profile_performance(
-        self, test_client, mock_suspicious_activity_detector, sample_low_risk_activity,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
+        sample_low_risk_activity,
     ):
         """Test user risk profile endpoint performance."""
         mock_suspicious_activity_detector.get_user_activity_summary.return_value = sample_low_risk_activity
@@ -461,17 +491,19 @@ class TestUsersIntegration:
 
     @pytest.mark.asyncio
     async def test_risk_level_boundaries(
-        self, test_client, mock_suspicious_activity_detector,
+        self,
+        test_client,
+        mock_suspicious_activity_detector,
     ):
         """Test risk level classification boundary conditions."""
         boundary_test_cases = [
-            (39, "LOW"),     # Just below MEDIUM threshold
+            (39, "LOW"),  # Just below MEDIUM threshold
             (40, "MEDIUM"),  # Exactly at MEDIUM threshold
             (59, "MEDIUM"),  # Just below HIGH threshold
-            (60, "HIGH"),    # Exactly at HIGH threshold
-            (79, "HIGH"),    # Just below CRITICAL threshold
-            (80, "CRITICAL"), # Exactly at CRITICAL threshold
-            (100, "CRITICAL"), # Maximum score
+            (60, "HIGH"),  # Exactly at HIGH threshold
+            (79, "HIGH"),  # Just below CRITICAL threshold
+            (80, "CRITICAL"),  # Exactly at CRITICAL threshold
+            (100, "CRITICAL"),  # Maximum score
         ]
 
         for risk_score, expected_level in boundary_test_cases:

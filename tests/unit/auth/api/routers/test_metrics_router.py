@@ -178,7 +178,10 @@ class TestMetricsRouter:
 
     @pytest.mark.asyncio
     async def test_get_security_metrics_success(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test successful security metrics retrieval."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -200,7 +203,10 @@ class TestMetricsRouter:
 
     @pytest.mark.asyncio
     async def test_get_security_metrics_with_custom_hours(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test security metrics with custom hours parameter."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -215,7 +221,10 @@ class TestMetricsRouter:
 
     @pytest.mark.asyncio
     async def test_get_security_metrics_health_score_calculation(
-        self, test_client, mock_security_service, sample_degraded_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_degraded_metrics,
     ):
         """Test system health score calculation with degraded services."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_degraded_metrics
@@ -242,7 +251,9 @@ class TestMetricsRouter:
 
     @pytest.mark.asyncio
     async def test_get_security_metrics_zero_events(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test security metrics with zero events."""
         zero_metrics = {
@@ -274,7 +285,9 @@ class TestMetricsRouter:
 
     @pytest.mark.asyncio
     async def test_get_security_metrics_service_error(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test security metrics when service raises exception."""
         mock_security_service.get_comprehensive_metrics.side_effect = Exception("Service unavailable")
@@ -305,7 +318,10 @@ class TestExportSecurityMetrics:
 
     @pytest.mark.asyncio
     async def test_export_metrics_json_format(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test exporting metrics in JSON format."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -320,7 +336,10 @@ class TestExportSecurityMetrics:
 
     @pytest.mark.asyncio
     async def test_export_metrics_csv_format(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test exporting metrics in CSV format."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -344,11 +363,14 @@ class TestExportSecurityMetrics:
 
         data_row = lines[1]
         assert "1250" in data_row  # total_events_today
-        assert "45" in data_row   # total_alerts_today
+        assert "45" in data_row  # total_alerts_today
 
     @pytest.mark.asyncio
     async def test_export_metrics_with_custom_hours(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test exporting metrics with custom hours parameter."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -367,7 +389,9 @@ class TestExportSecurityMetrics:
 
     @pytest.mark.asyncio
     async def test_export_metrics_service_error(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test export when service raises exception."""
         mock_security_service.get_comprehensive_metrics.side_effect = Exception("Export failed")
@@ -384,7 +408,10 @@ class TestMetricsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_metrics_endpoint_performance(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test metrics endpoint performance."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -403,7 +430,10 @@ class TestMetricsIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_export_endpoint_performance(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test export endpoint performance."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -421,7 +451,10 @@ class TestMetricsIntegration:
 
     @pytest.mark.asyncio
     async def test_metrics_consistency_between_endpoints(
-        self, test_client, mock_security_service, sample_comprehensive_metrics,
+        self,
+        test_client,
+        mock_security_service,
+        sample_comprehensive_metrics,
     ):
         """Test that metrics are consistent between main and export endpoints."""
         mock_security_service.get_comprehensive_metrics.return_value = sample_comprehensive_metrics
@@ -442,13 +475,15 @@ class TestMetricsIntegration:
 
     @pytest.mark.asyncio
     async def test_extreme_metric_values(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test handling of extreme metric values."""
         extreme_metrics = {
             "integration": {
                 "total_events_processed": 1000000,  # Very high event count
-                "total_alerts_generated": 50000,    # Very high alert count
+                "total_alerts_generated": 50000,  # Very high alert count
                 "average_processing_time_ms": 500.0,  # Very slow processing
                 "total_suspicious_activities": 10000,
             },
@@ -478,7 +513,9 @@ class TestMetricsIntegration:
 
     @pytest.mark.asyncio
     async def test_metrics_with_edge_case_calculations(
-        self, test_client, mock_security_service,
+        self,
+        test_client,
+        mock_security_service,
     ):
         """Test metrics calculations with edge cases."""
         edge_case_metrics = {
@@ -505,10 +542,10 @@ class TestMetricsIntegration:
 
         assert data["total_events_today"] == 1
         assert data["total_events_week"] == 7
-        assert abs(data["event_rate_per_hour"] - (1/24)) < 0.001  # Approximately 0.042
+        assert abs(data["event_rate_per_hour"] - (1 / 24)) < 0.001  # Approximately 0.042
 
         # Health score should be 100 (all services healthy, processing time under threshold)
         assert data["system_health_score"] == 100.0
 
         assert data["critical_alerts_today"] == 0  # int(1 * 0.2) = 0
-        assert data["alerts_acknowledged"] == 0   # int(1 * 0.7) = 0
+        assert data["alerts_acknowledged"] == 0  # int(1 * 0.7) = 0

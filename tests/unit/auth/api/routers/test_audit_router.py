@@ -146,8 +146,9 @@ class TestGenerateAuditReportEndpoint:
     """Test POST /audit/generate-report endpoint functionality."""
 
     @pytest.mark.asyncio
-    async def test_generate_report_success(self, test_client, mock_security_service,
-                                         sample_audit_report_request, sample_audit_report_response):
+    async def test_generate_report_success(
+        self, test_client, mock_security_service, sample_audit_report_request, sample_audit_report_response,
+    ):
         """Test successful audit report generation."""
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
 
@@ -161,7 +162,9 @@ class TestGenerateAuditReportEndpoint:
         assert data["critical_events"] == 28
 
     @pytest.mark.asyncio
-    async def test_generate_report_different_types(self, test_client, mock_security_service, sample_audit_report_response):
+    async def test_generate_report_different_types(
+        self, test_client, mock_security_service, sample_audit_report_response,
+    ):
         """Test audit report generation with different report types."""
         report_types = ["comprehensive", "security", "compliance", "activity"]
 
@@ -183,7 +186,9 @@ class TestGenerateAuditReportEndpoint:
             assert data["report_type"] == report_type
 
     @pytest.mark.asyncio
-    async def test_generate_report_different_formats(self, test_client, mock_security_service, sample_audit_report_response):
+    async def test_generate_report_different_formats(
+        self, test_client, mock_security_service, sample_audit_report_response,
+    ):
         """Test audit report generation with different output formats."""
         formats = ["json", "csv", "pdf"]
 
@@ -247,8 +252,9 @@ class TestGenerateAuditReportEndpoint:
         assert response.status_code == 500
 
     @pytest.mark.asyncio
-    async def test_generate_report_with_background_tasks(self, test_client, mock_security_service,
-                                                       sample_audit_report_request, sample_audit_report_response):
+    async def test_generate_report_with_background_tasks(
+        self, test_client, mock_security_service, sample_audit_report_request, sample_audit_report_response,
+    ):
         """Test audit report generation triggers background tasks."""
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
 
@@ -519,9 +525,15 @@ class TestAuditRouterIntegration:
     """Integration tests for audit router."""
 
     @pytest.mark.asyncio
-    async def test_full_audit_workflow(self, test_client, mock_security_service,
-                                     sample_audit_report_request, sample_audit_report_response,
-                                     sample_audit_statistics, sample_retention_policies):
+    async def test_full_audit_workflow(
+        self,
+        test_client,
+        mock_security_service,
+        sample_audit_report_request,
+        sample_audit_report_response,
+        sample_audit_statistics,
+        sample_retention_policies,
+    ):
         """Test complete audit workflow: statistics -> generate report -> manage retention."""
         # Step 1: Get audit statistics
         mock_security_service.get_comprehensive_audit_statistics.return_value = {
@@ -537,7 +549,9 @@ class TestAuditRouterIntegration:
         # Step 2: Generate audit report
         mock_security_service.get_audit_event_summary.return_value = {"total_events": 15420, "critical_events": 28}
 
-        report_response = test_client.post("/audit/generate-report", json=sample_audit_report_request.model_dump(mode="json"))
+        report_response = test_client.post(
+            "/audit/generate-report", json=sample_audit_report_request.model_dump(mode="json"),
+        )
         assert report_response.status_code == 200
 
         # Step 3: Get retention policies
@@ -594,6 +608,7 @@ class TestAuditRouterPerformance:
         }
 
         import time
+
         start_time = time.time()
 
         response = test_client.post("/audit/generate-report", json=request_data)
@@ -618,11 +633,13 @@ class TestAuditRouterPerformance:
                 "auto_delete": True,
                 "created_at": now - timedelta(days=30),
                 "updated_at": now - timedelta(days=1),
-            } for i in range(10)
+            }
+            for i in range(10)
         ]
         mock_security_service.count_events_before_date.return_value = 10000
 
         import time
+
         start_time = time.time()
 
         response = test_client.post("/audit/retention/enforce")

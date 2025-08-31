@@ -44,7 +44,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         assert score == 100.0  # Perfect health
@@ -67,7 +68,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Only 2/4 services healthy = 50% service ratio
@@ -89,7 +91,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Processing time penalty: (100-50)/10*5 = 25 points
@@ -108,7 +111,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Memory penalty: (90-80)/10*10 = 10 points
@@ -127,7 +131,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # CPU penalty: (95-90)/10*15 = 7.5 points
@@ -146,7 +151,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Total penalties: 30 + 20 + 15 = 65 points
@@ -160,7 +166,8 @@ class TestSystemHealthScoreCalculation:
         performance_metrics = {"average_processing_time_ms": 25.0}
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # No services means no impact from service health
@@ -183,7 +190,8 @@ class TestSystemHealthScoreCalculation:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Score should never go below 0
@@ -197,7 +205,8 @@ class TestSystemHealthScoreCalculation:
         performance_metrics = {}  # No performance metrics
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Should default to 100% with no penalties
@@ -218,7 +227,8 @@ class TestEventRateMetricsCalculation:
         }
 
         rates = await calculator.calculate_event_rate_metrics(
-            event_counts, time_period_hours=24,
+            event_counts,
+            time_period_hours=24,
         )
 
         total_events = 125
@@ -234,7 +244,8 @@ class TestEventRateMetricsCalculation:
         event_counts = {"login_success": 50}
 
         rates = await calculator.calculate_event_rate_metrics(
-            event_counts, time_period_hours=12,
+            event_counts,
+            time_period_hours=12,
         )
 
         assert rates["events_per_hour"] == 50 / 12
@@ -249,7 +260,8 @@ class TestEventRateMetricsCalculation:
         event_counts = {"login_success": 100}
 
         rates = await calculator.calculate_event_rate_metrics(
-            event_counts, time_period_hours=0,
+            event_counts,
+            time_period_hours=0,
         )
 
         # All rates should be 0 when time period is 0
@@ -265,7 +277,8 @@ class TestEventRateMetricsCalculation:
         event_counts = {}
 
         rates = await calculator.calculate_event_rate_metrics(
-            event_counts, time_period_hours=24,
+            event_counts,
+            time_period_hours=24,
         )
 
         assert rates["events_per_hour"] == 0
@@ -396,7 +409,8 @@ class TestRiskDistributionCalculation:
         risk_data = {"low": 50, "medium": 30}
 
         distribution = await calculator.calculate_risk_distribution(
-            risk_data, total_items=200,
+            risk_data,
+            total_items=200,
         )
 
         # Should use explicit total_items, not sum of risk_data
@@ -509,7 +523,8 @@ class TestTimelineMetricsCalculation:
         ]
 
         metrics = await calculator.calculate_timeline_metrics(
-            timeline_data, granularity="day",
+            timeline_data,
+            granularity="day",
         )
 
         assert metrics["peak_period"] == "2024-01-02"  # Day with highest count
@@ -683,10 +698,12 @@ class TestMetricsCalculatorPerformance:
         }
 
         import time
+
         start_time = time.time()
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         end_time = time.time()
@@ -705,6 +722,7 @@ class TestMetricsCalculatorPerformance:
         event_counts = {f"event_type_{i}": i * 10 for i in range(1000)}
 
         import time
+
         start_time = time.time()
 
         rates = await calculator.calculate_event_rate_metrics(event_counts)
@@ -728,7 +746,8 @@ class TestMetricsCalculatorEdgeCases:
         event_counts = {"test": 100}
 
         rates = await calculator.calculate_event_rate_metrics(
-            event_counts, time_period_hours=-5,
+            event_counts,
+            time_period_hours=-5,
         )
 
         # Should handle gracefully and return 0 rates
@@ -747,7 +766,8 @@ class TestMetricsCalculatorEdgeCases:
         }
 
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Should handle extreme values gracefully
@@ -767,7 +787,8 @@ class TestMetricsCalculatorEdgeCases:
 
         try:
             score = await calculator.calculate_system_health_score(
-                service_health, performance_metrics,
+                service_health,
+                performance_metrics,
             )
             # If it doesn't raise an exception, score should be reasonable
             assert isinstance(score, (int, float))
@@ -798,7 +819,8 @@ class TestMetricsCalculatorRealExecution:
 
         # Actually execute the function
         score = await calculator.calculate_system_health_score(
-            service_health, performance_metrics,
+            service_health,
+            performance_metrics,
         )
 
         # Validate real execution results
@@ -886,6 +908,7 @@ class TestMetricsCalculatorRealExecution:
 
         # Real timeline data with datetime objects
         from datetime import datetime
+
         timeline_data = [
             {"event_count": 10, "timestamp": datetime(2024, 1, 1, 9)},
             {"event_count": 25, "timestamp": datetime(2024, 1, 1, 10)},

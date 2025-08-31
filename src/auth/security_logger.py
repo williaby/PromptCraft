@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import text
+from sqlalchemy import and_, desc, select, text
 
 from src.database.connection import get_database_manager
 from src.database.models import SecurityEventLogger
@@ -352,32 +352,19 @@ class SecurityLogger:
         # Calculate cutoff time
         cutoff = datetime.now(UTC) - timedelta(hours=hours_back)
 
-        # Build query with filters
-        conditions = ["timestamp >= :cutoff"]
-        params = {"cutoff": cutoff}
+        # Build query using SQLAlchemy ORM
+        query = select(SecurityEventLogger).where(SecurityEventLogger.timestamp >= cutoff)
 
         if severity:
-            conditions.append("severity = :severity")
-            params["severity"] = severity.value
+            query = query.where(SecurityEventLogger.severity == severity.value)
 
         if event_type:
-            conditions.append("event_type = :event_type")
-            params["event_type"] = event_type.value
+            query = query.where(SecurityEventLogger.event_type == event_type.value)
 
-        query = text(
-            f"""
-            SELECT id, event_type, severity, user_id, ip_address,
-                   user_agent, session_id, details, risk_score, timestamp
-            FROM security_events
-            WHERE {' AND '.join(conditions)}
-            ORDER BY timestamp DESC
-            LIMIT :limit
-        """,
-        )
-        params["limit"] = limit
+        query = query.order_by(desc(SecurityEventLogger.timestamp)).limit(limit)
 
         async with self._db_manager.get_session() as session:
-            result = await session.execute(query, params)
+            result = await session.execute(query)
             rows = result.fetchall()
 
             return [
@@ -417,33 +404,19 @@ class SecurityLogger:
         if not self._is_initialized:
             await self.initialize()
 
-        # Build query with filters
-        conditions = ["user_id = :user_id"]
-        params = {"user_id": user_id}
+        # Build query using SQLAlchemy ORM
+        query = select(SecurityEventLogger).where(SecurityEventLogger.user_id == user_id)
 
         if event_type:
-            conditions.append("event_type = :event_type")
-            params["event_type"] = event_type.value
+            query = query.where(SecurityEventLogger.event_type == event_type.value)
 
         if severity:
-            conditions.append("severity = :severity")
-            params["severity"] = severity.value
+            query = query.where(SecurityEventLogger.severity == severity.value)
 
-        query = text(
-            f"""
-            SELECT id, event_type, severity, user_id, ip_address,
-                   user_agent, session_id, details, risk_score, timestamp
-            FROM security_events
-            WHERE {' AND '.join(conditions)}
-            ORDER BY timestamp DESC
-            LIMIT :limit OFFSET :offset
-        """,
-        )
-        params["limit"] = limit
-        params["offset"] = offset
+        query = query.order_by(desc(SecurityEventLogger.timestamp)).limit(limit).offset(offset)
 
         async with self._db_manager.get_session() as session:
-            result = await session.execute(query, params)
+            result = await session.execute(query)
             rows = result.fetchall()
 
             return [

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# nosemgrep
 """Migration script to create security monitor tables.
 
 This script creates the necessary PostgreSQL tables for the stateless

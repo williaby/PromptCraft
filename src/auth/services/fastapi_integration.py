@@ -146,6 +146,7 @@ def create_service_dependency(service_type: type[T]) -> T:
         ):
             return await monitor.get_monitoring_stats()
     """
+
     def dependency() -> T:
         try:
             container = get_service_container()
@@ -205,7 +206,7 @@ def add_health_check_routes(app: FastAPI) -> None:
     """
 
     @app.get("/health/container", response_model=ContainerMetricsResponse)
-    async def get_container_metrics():
+    async def get_container_metrics():  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get service container health and performance metrics."""
         try:
             container = get_service_container()
@@ -216,7 +217,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to get container metrics")
 
     @app.get("/health/services")
-    async def get_service_health():
+    async def get_service_health():  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get health status of all registered services."""
         try:
             container = get_service_container()
@@ -234,11 +235,13 @@ def add_health_check_routes(app: FastAPI) -> None:
                     # Get additional details from instance if available
                     if service_type in container._instances:
                         instance = container._instances[service_type]
-                        health_status[service_type.__name__].update({
-                            "error_count": instance.error_count,
-                            "last_error": instance.last_error,
-                            "created_at": instance.created_at.isoformat(),
-                        })
+                        health_status[service_type.__name__].update(
+                            {
+                                "error_count": instance.error_count,
+                                "last_error": instance.last_error,
+                                "created_at": instance.created_at.isoformat(),
+                            },
+                        )
 
                 except Exception as e:
                     health_status[service_type.__name__] = {
@@ -254,7 +257,9 @@ def add_health_check_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to get service health")
 
     @app.get("/health/service/{service_name}")
-    async def get_individual_service_health(service_name: str):
+    async def get_individual_service_health(
+        service_name: str,
+    ):  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get health status of a specific service."""
         try:
             container = get_service_container()
@@ -366,7 +371,9 @@ def create_fastapi_app(
 
     # Add middleware for request context (if needed)
     @app.middleware("http")
-    async def service_context_middleware(request: Request, call_next):
+    async def service_context_middleware(
+        request: Request, call_next,
+    ):  # nosemgrep: python.lang.correctness.useless-inner-function
         """Middleware to provide service context for requests."""
         # Add request ID or other context if needed
         response = await call_next(request)

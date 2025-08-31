@@ -20,6 +20,7 @@ pytestmark = [
 
 # =================== ADDITIONAL LOCAL FIXTURES ===================
 
+
 @pytest.fixture(autouse=True)
 def setup_test_environment():
     """Automatically set up test environment for all API router tests."""
@@ -30,7 +31,6 @@ def setup_test_environment():
     # Ensure test environment is properly configured
     os.environ["TESTING"] = "true"
     os.environ["LOG_LEVEL"] = "DEBUG"
-
 
     # Cleanup after test (if needed)
 

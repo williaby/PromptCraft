@@ -63,7 +63,9 @@ class TestAuthenticationMiddleware:
         jwt_validator = Mock(spec=JWTValidator)
         custom_paths = ["/custom", "/api/public"]
 
-        middleware = AuthenticationMiddleware(app, config=config, jwt_validator=jwt_validator, excluded_paths=custom_paths)
+        middleware = AuthenticationMiddleware(
+            app, config=config, jwt_validator=jwt_validator, excluded_paths=custom_paths,
+        )
 
         assert middleware.excluded_paths == custom_paths
 

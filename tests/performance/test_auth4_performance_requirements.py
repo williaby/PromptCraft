@@ -522,6 +522,7 @@ class TestAUTH4DatabasePerformance:
         """Database optimized for performance testing."""
         # Use MockSecurityDatabase to avoid PostgreSQL table dependency
         from tests.fixtures.security_service_mocks import MockSecurityDatabase
+
         database = MockSecurityDatabase()
         await database.initialize()
 
@@ -801,8 +802,14 @@ class TestAUTH4StressAndRecovery:
                             event_id = events_generated + i
 
                             # Create authentication event based on success rate
-                            event_type = SecurityEventType.LOGIN_SUCCESS if (event_id % 5 != 0) else SecurityEventType.LOGIN_FAILURE
-                            severity = SecurityEventSeverity.INFO if (event_id % 5 != 0) else SecurityEventSeverity.WARNING
+                            event_type = (
+                                SecurityEventType.LOGIN_SUCCESS
+                                if (event_id % 5 != 0)
+                                else SecurityEventType.LOGIN_FAILURE
+                            )
+                            severity = (
+                                SecurityEventSeverity.INFO if (event_id % 5 != 0) else SecurityEventSeverity.WARNING
+                            )
 
                             async def log_stress_event():
                                 event = await security_logger.log_security_event(

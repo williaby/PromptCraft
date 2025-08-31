@@ -106,9 +106,11 @@ class TestAlertEngine:
     @pytest.fixture
     def initialized_alert_engine(self, alert_engine):
         """Create and initialize AlertEngine for testing."""
+
         async def _init():
             await alert_engine.initialize()
             return alert_engine
+
         return _init
 
     def test_alert_engine_initialization(self, alert_engine):

@@ -621,10 +621,10 @@ class MockDataService:
         """
         # Generate realistic risk distribution
         risk_distribution_data = [
-            {"risk_level": "low", "count": 150},      # 0-29 risk score
-            {"risk_level": "medium", "count": 75},    # 30-59 risk score
-            {"risk_level": "high", "count": 25},      # 60-79 risk score
-            {"risk_level": "critical", "count": 5},   # 80-100 risk score
+            {"risk_level": "low", "count": 150},  # 0-29 risk score
+            {"risk_level": "medium", "count": 75},  # 30-59 risk score
+            {"risk_level": "high", "count": 25},  # 60-79 risk score
+            {"risk_level": "critical", "count": 5},  # 80-100 risk score
         ]
 
         total_users = sum(item["count"] for item in risk_distribution_data)

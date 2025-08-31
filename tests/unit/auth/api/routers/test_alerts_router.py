@@ -339,7 +339,9 @@ class TestAlertsRouterIntegration:
         assert ack_response.status_code == 404
 
         # Test acknowledge endpoint with 409 pattern (UUID starting with 'aaaaaaaa')
-        conflict_response = test_client.post("/alerts/aaaaaaaa-1234-5678-9012-123456789012/acknowledge?user_id=test_user")
+        conflict_response = test_client.post(
+            "/alerts/aaaaaaaa-1234-5678-9012-123456789012/acknowledge?user_id=test_user",
+        )
         assert conflict_response.status_code == 409
 
 
@@ -352,6 +354,7 @@ class TestAlertsRouterPerformance:
         """Test alert retrieval performance - endpoint generates data internally."""
 
         import time
+
         start_time = time.time()
 
         response = test_client.get("/alerts/?limit=100")
@@ -369,6 +372,7 @@ class TestAlertsRouterPerformance:
         alert_id = "12345678-1234-5678-9012-123456789012"
 
         import time
+
         start_time = time.time()
 
         response = test_client.post(f"/alerts/{alert_id}/acknowledge?user_id=test_user")

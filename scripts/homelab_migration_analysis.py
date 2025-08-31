@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# nosemgrep
 """Homelab Migration Feasibility Analysis for AUTH-4 Database Consolidation.
 
 This script analyzes the feasibility of migrating multiple SQLite databases

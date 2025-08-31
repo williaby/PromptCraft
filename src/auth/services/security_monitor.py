@@ -541,7 +541,6 @@ class SecurityMonitor:
             "rate_limited_requests": rate_limited_requests,
             "uptime_hours": uptime_hours,
             "total_events_processed": getattr(self, "_total_events_processed", 0),
-
             "config": {
                 "failed_attempts_threshold": self.config.failed_attempts_threshold,
                 "failed_attempts_window_minutes": self.config.failed_attempts_window_minutes,
@@ -817,9 +816,9 @@ class SecurityMonitor:
 
             # Filter for successful logins by this user
             user_logins = [
-                event for event in recent_events
-                if event.event_type == SecurityEventType.LOGIN_SUCCESS
-                and event.user_id == user_id
+                event
+                for event in recent_events
+                if event.event_type == SecurityEventType.LOGIN_SUCCESS and event.user_id == user_id
             ]
 
             # Check for multiple different IP addresses
@@ -917,7 +916,6 @@ class SecurityMonitor:
             # Calculate average and standard deviation
             avg_daily_activity = sum(daily_activity_counts) / len(daily_activity_counts)
 
-
             if avg_daily_activity == 0:
                 # User typically has no activity
                 if current_activity_count > 10:
@@ -926,7 +924,7 @@ class SecurityMonitor:
 
             # Calculate how many standard deviations current activity is from normal
             variance = sum((x - avg_daily_activity) ** 2 for x in daily_activity_counts) / len(daily_activity_counts)
-            std_dev = variance ** 0.5
+            std_dev = variance**0.5
 
             if std_dev == 0:  # No variation in historical activity
                 abs(current_activity_count - avg_daily_activity) / max(avg_daily_activity, 1)

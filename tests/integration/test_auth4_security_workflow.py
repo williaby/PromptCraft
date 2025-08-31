@@ -417,6 +417,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                             )
                     # Also include events from the global test registry (from MockSecurityMonitor)
                     from tests.fixtures.security_service_mocks import _test_event_registry
+
                     for event in _test_event_registry:
                         # Filter by date range if provided
                         if start_date and end_date:
@@ -431,16 +432,18 @@ class TestAUTH4SecurityWorkflowIntegration:
                                     continue
 
                         # Convert to dict format
-                        result.append({
-                            "id": str(event.get("id", "")),
-                            "event_type": event.get("event_type", ""),
-                            "severity": event.get("severity", ""),
-                            "user_id": event.get("user_id"),
-                            "ip_address": event.get("ip_address"),
-                            "timestamp": event.get("timestamp"),
-                            "risk_score": event.get("risk_score", 0),
-                            "details": event.get("details", {}),
-                        })
+                        result.append(
+                            {
+                                "id": str(event.get("id", "")),
+                                "event_type": event.get("event_type", ""),
+                                "severity": event.get("severity", ""),
+                                "user_id": event.get("user_id"),
+                                "ip_address": event.get("ip_address"),
+                                "timestamp": event.get("timestamp"),
+                                "risk_score": event.get("risk_score", 0),
+                                "details": event.get("details", {}),
+                            },
+                        )
 
                     print(f"DEBUG: get_security_events returning {len(result)} total events")
                     return result
@@ -495,7 +498,9 @@ class TestAUTH4SecurityWorkflowIntegration:
                 medium_priority_events = [e for e in events if e.get("severity") == "warning"]
                 security_incidents = len([e for e in events if e.get("severity") in ["critical", "warning"]])
 
-                print(f"DEBUG: critical_events={len(critical_events)}, medium_priority_events={len(medium_priority_events)}")
+                print(
+                    f"DEBUG: critical_events={len(critical_events)}, medium_priority_events={len(medium_priority_events)}",
+                )
 
                 report_id = str(uuid.uuid4())
                 report = {
@@ -978,7 +983,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Check audit service has all events - use more specific time range
         test_end_time = datetime.utcnow() + timedelta(seconds=10)  # Allow small buffer
-        test_start_time = datetime.utcnow() - timedelta(minutes=2)   # Wider window
+        test_start_time = datetime.utcnow() - timedelta(minutes=2)  # Wider window
 
         recent_events = await audit_service.get_security_events(
             start_date=test_start_time,
@@ -1039,14 +1044,15 @@ class TestAUTH4SecurityWorkflowIntegration:
         except Exception:
             # If temp database fails, check global registry
             from tests.fixtures.security_service_mocks import _test_event_registry
+
             recovery_events = [e for e in _test_event_registry if e.get("user_id") == "recovery_user_2"]
             assert len(recovery_events) > 0
 
         # Phase 5: Test system resilience with multiple error types
         error_scenarios = [
             {"user_id": None, "ip_address": "192.168.1.102"},  # Missing user_id
-            {"user_id": "test_user", "ip_address": None},      # Missing IP
-            {"user_id": "", "ip_address": "192.168.1.103"},    # Empty user_id
+            {"user_id": "test_user", "ip_address": None},  # Missing IP
+            {"user_id": "", "ip_address": "192.168.1.103"},  # Empty user_id
         ]
 
         for scenario in error_scenarios:
@@ -1078,6 +1084,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         try:
             # PostgreSQL cleanup - delete all existing events to ensure clean test
             from datetime import datetime
+
             await temp_database.cleanup_old_events(days_to_keep=0)  # Delete everything older than now
             print("DEBUG: Cleaned up existing events in temp_database for test isolation")
         except Exception as e:
@@ -1100,13 +1107,16 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 2: Verify data consistency in database using timestamp-based filtering
         from datetime import datetime, timedelta
+
         test_start_time = datetime.now(UTC) - timedelta(seconds=10)  # Events from last 10 seconds
         test_end_time = datetime.now(UTC) + timedelta(seconds=1)
 
         db_events = await temp_database.get_events_by_date_range(test_start_time, test_end_time, limit=20)
         print(f"DEBUG: Found {len(db_events)} events in temp_database (id={id(temp_database)}) within last 10 seconds")
         for event in db_events:
-            print(f"DEBUG: Event in temp_database: user_id={event.user_id}, type={event.event_type}, severity={event.severity}, timestamp={event.timestamp}")
+            print(
+                f"DEBUG: Event in temp_database: user_id={event.user_id}, type={event.event_type}, severity={event.severity}, timestamp={event.timestamp}",
+            )
 
         consistency_events = [
             event for event in db_events if event.user_id in ["consistency_user_1", "consistency_user_2"]

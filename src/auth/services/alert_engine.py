@@ -698,7 +698,13 @@ class AlertEngine:
 
         # Validate channels if provided
         if channels:
-            valid_channels = {AlertChannel.EMAIL, AlertChannel.SLACK, AlertChannel.SMS, AlertChannel.WEBHOOK, AlertChannel.DASHBOARD}
+            valid_channels = {
+                AlertChannel.EMAIL,
+                AlertChannel.SLACK,
+                AlertChannel.SMS,
+                AlertChannel.WEBHOOK,
+                AlertChannel.DASHBOARD,
+            }
             for channel in channels:
                 if channel not in valid_channels:
                     raise ValueError(f"Invalid notification channel: {channel}")
@@ -712,10 +718,13 @@ class AlertEngine:
         alert = Alert(
             id=alert_id,
             severity=(
-                AlertSeverity.CRITICAL if priority == AlertPriority.CRITICAL
-                else AlertSeverity.HIGH if priority == AlertPriority.HIGH
-                else AlertSeverity.MEDIUM if priority == AlertPriority.MEDIUM
-                else AlertSeverity.LOW
+                AlertSeverity.CRITICAL
+                if priority == AlertPriority.CRITICAL
+                else (
+                    AlertSeverity.HIGH
+                    if priority == AlertPriority.HIGH
+                    else AlertSeverity.MEDIUM if priority == AlertPriority.MEDIUM else AlertSeverity.LOW
+                )
             ),
             priority=priority,  # Use the actual priority passed in
             channel=channels[0] if channels else AlertChannel.DASHBOARD,
@@ -737,9 +746,13 @@ class AlertEngine:
             cutoff = datetime.now(UTC) - timedelta(minutes=self.escalation_window_minutes)
             for existing_alert in self._alert_history:
                 # Check if alert is from the same user and within the escalation window
-                if (hasattr(existing_alert, "event") and existing_alert.event and
-                    getattr(existing_alert.event, "user_id", None) == user_id and
-                    hasattr(existing_alert, "timestamp") and existing_alert.timestamp > cutoff):
+                if (
+                    hasattr(existing_alert, "event")
+                    and existing_alert.event
+                    and getattr(existing_alert.event, "user_id", None) == user_id
+                    and hasattr(existing_alert, "timestamp")
+                    and existing_alert.timestamp > cutoff
+                ):
                     # Also check that it's not a LOW priority alert
                     if existing_alert.priority != AlertPriority.LOW:
                         user_recent_alerts.append(existing_alert)
@@ -811,7 +824,13 @@ class AlertEngine:
             ValueError: If invalid channel type is provided
         """
         # Validate channel type
-        valid_channels = {AlertChannel.EMAIL, AlertChannel.SLACK, AlertChannel.SMS, AlertChannel.WEBHOOK, AlertChannel.DASHBOARD}
+        valid_channels = {
+            AlertChannel.EMAIL,
+            AlertChannel.SLACK,
+            AlertChannel.SMS,
+            AlertChannel.WEBHOOK,
+            AlertChannel.DASHBOARD,
+        }
         if channel not in valid_channels:
             raise ValueError(f"Invalid notification channel: {channel}")
 
@@ -939,7 +958,7 @@ class AlertEngine:
             if await self._send_notification(alert, channel):
                 return True
             if attempt < max_retries:
-                await asyncio.sleep(0.5 * (2 ** attempt))  # Exponential backoff
+                await asyncio.sleep(0.5 * (2**attempt))  # Exponential backoff
         return False
 
     async def _send_notifications(self, alert: Alert) -> None:
@@ -1091,10 +1110,12 @@ class AlertEngine:
         for hour_offset in range(time_window_hours):
             hour_time = start_time + timedelta(hours=hour_offset)
             count = hourly_counts.get(hour_time, 0)
-            hourly_distribution.append({
-                "timestamp": hour_time.isoformat(),
-                "count": count,
-            })
+            hourly_distribution.append(
+                {
+                    "timestamp": hour_time.isoformat(),
+                    "count": count,
+                },
+            )
 
         # Find peak hour
         peak_hour = None
@@ -1146,10 +1167,9 @@ class AlertEngine:
             }
 
         # Calculate delivery success rate
-        successful_deliveries = len([
-            a for a in self._alert_history
-            if a.metadata and a.metadata.get("delivery_successful", False)
-        ])
+        successful_deliveries = len(
+            [a for a in self._alert_history if a.metadata and a.metadata.get("delivery_successful", False)],
+        )
         delivery_success_rate = (successful_deliveries / total_alerts) * 100
 
         # Calculate average delivery time
@@ -1161,10 +1181,9 @@ class AlertEngine:
         average_delivery_time_ms = sum(delivery_times) / len(delivery_times) if delivery_times else 0.0
 
         # Calculate acknowledgment rate
-        acknowledged_alerts = len([
-            a for a in self._alert_history
-            if a.metadata and a.metadata.get("acknowledged", False)
-        ])
+        acknowledged_alerts = len(
+            [a for a in self._alert_history if a.metadata and a.metadata.get("acknowledged", False)],
+        )
         acknowledgment_rate = (acknowledged_alerts / total_alerts) * 100
 
         return {
@@ -1202,7 +1221,6 @@ class AlertEngine:
                 await asyncio.sleep(2**attempt)  # Exponential backoff
 
         return False
-
 
     async def _cleanup_old_alerts(self, max_age_hours: int = 24) -> int:
         """Clean up old alerts from history.

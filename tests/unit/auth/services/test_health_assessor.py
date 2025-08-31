@@ -71,11 +71,17 @@ class TestOverallSystemHealthAssessment:
         }
 
     async def test_assess_overall_system_health_healthy_system(
-        self, assessor, sample_service_data, sample_system_metrics, sample_external_dependencies,
+        self,
+        assessor,
+        sample_service_data,
+        sample_system_metrics,
+        sample_external_dependencies,
     ):
         """Test overall health assessment for healthy system."""
         result = await assessor.assess_overall_system_health(
-            sample_service_data, sample_system_metrics, sample_external_dependencies,
+            sample_service_data,
+            sample_system_metrics,
+            sample_external_dependencies,
         )
 
         assert "overall_status" in result
@@ -105,7 +111,10 @@ class TestOverallSystemHealthAssessment:
         assert result["next_assessment"] > result["assessment_time"]
 
     async def test_assess_overall_system_health_critical_failures(
-        self, assessor, sample_system_metrics, sample_external_dependencies,
+        self,
+        assessor,
+        sample_system_metrics,
+        sample_external_dependencies,
     ):
         """Test health assessment with critical service failures."""
         critical_service_data = {
@@ -114,7 +123,9 @@ class TestOverallSystemHealthAssessment:
         }
 
         result = await assessor.assess_overall_system_health(
-            critical_service_data, sample_system_metrics, sample_external_dependencies,
+            critical_service_data,
+            sample_system_metrics,
+            sample_external_dependencies,
         )
 
         # System should be unhealthy due to critical failures
@@ -165,7 +176,9 @@ class TestServiceReliabilityAssessment:
         assert result["availability_percentage"] == round(expected_availability, 2)
 
         # Check response time metrics
-        response_times = [check["response_time_ms"] for check in sample_historical_data if check["response_time_ms"] is not None]
+        response_times = [
+            check["response_time_ms"] for check in sample_historical_data if check["response_time_ms"] is not None
+        ]
         expected_avg = sum(response_times) / len(response_times)
         assert result["response_time_metrics"]["average_ms"] == round(expected_avg, 1)
 
@@ -456,14 +469,20 @@ class TestMetricAnalysis:
         """Test stability score calculation."""
         # Stable data (no state changes)
         stable_data = [
-            {"healthy": True}, {"healthy": True}, {"healthy": True}, {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
         ]
         score = assessor._calculate_stability_score(stable_data)
         assert score == 1.0
 
         # Unstable data (frequent changes)
         unstable_data = [
-            {"healthy": True}, {"healthy": False}, {"healthy": True}, {"healthy": False},
+            {"healthy": True},
+            {"healthy": False},
+            {"healthy": True},
+            {"healthy": False},
         ]
         score = assessor._calculate_stability_score(unstable_data)
         assert score < 1.0
@@ -493,9 +512,15 @@ class TestMetricAnalysis:
         """Test reliability trend analysis."""
         # Improving trend
         improving_data = [
-            {"healthy": False}, {"healthy": False}, {"healthy": False},
-            {"healthy": True}, {"healthy": True}, {"healthy": True},
-            {"healthy": True}, {"healthy": True}, {"healthy": True},
+            {"healthy": False},
+            {"healthy": False},
+            {"healthy": False},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
+            {"healthy": True},
             {"healthy": True},
         ]
         result = assessor._analyze_reliability_trends(improving_data)

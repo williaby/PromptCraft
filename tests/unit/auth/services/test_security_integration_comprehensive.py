@@ -149,9 +149,15 @@ class TestSecurityIntegrationService:
         )
 
         # Mock all the service calls
-        with patch.object(service.security_logger, "log_event", new_callable=AsyncMock) as mock_log, \
-             patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock) as mock_monitor, \
-             patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector:
+        with (
+            patch.object(service.security_logger, "log_event", new_callable=AsyncMock) as mock_log,
+            patch.object(
+                service.security_monitor, "track_failed_authentication", new_callable=AsyncMock,
+            ) as mock_monitor,
+            patch.object(
+                service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+            ) as mock_detector,
+        ):
 
             mock_detector.return_value = {"is_suspicious": False, "confidence": 0.1}
 
@@ -202,9 +208,13 @@ class TestSecurityIntegrationService:
             details={"action": "login"},
         )
 
-        with patch.object(service.security_logger, "log_event", new_callable=AsyncMock), \
-             patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock), \
-             patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector:
+        with (
+            patch.object(service.security_logger, "log_event", new_callable=AsyncMock),
+            patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock),
+            patch.object(
+                service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+            ) as mock_detector,
+        ):
 
             mock_detector.return_value = {"is_suspicious": False, "confidence": 0.1}
             await service.process_security_event(event)
@@ -246,9 +256,15 @@ class TestSecurityIntegrationService:
         )
 
         # Mock logger to fail, others to succeed
-        with patch.object(service.security_logger, "log_event", new_callable=AsyncMock) as mock_log, \
-             patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock) as mock_monitor, \
-             patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector:
+        with (
+            patch.object(service.security_logger, "log_event", new_callable=AsyncMock) as mock_log,
+            patch.object(
+                service.security_monitor, "track_failed_authentication", new_callable=AsyncMock,
+            ) as mock_monitor,
+            patch.object(
+                service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+            ) as mock_detector,
+        ):
 
             mock_log.side_effect = Exception("Logger failed")
             mock_detector.return_value = {"is_suspicious": False, "confidence": 0.1}
@@ -276,10 +292,14 @@ class TestSecurityIntegrationService:
             details={"action": "failed_login", "attempts": 5},
         )
 
-        with patch.object(service.security_logger, "log_event", new_callable=AsyncMock), \
-             patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock), \
-             patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector, \
-             patch.object(service.alert_engine, "process_event", new_callable=AsyncMock) as mock_alert:
+        with (
+            patch.object(service.security_logger, "log_event", new_callable=AsyncMock),
+            patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock),
+            patch.object(
+                service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+            ) as mock_detector,
+            patch.object(service.alert_engine, "process_event", new_callable=AsyncMock) as mock_alert,
+        ):
 
             # Import and create proper ActivityAnalysisResult
             from src.auth.services.suspicious_activity_detector import ActivityAnalysisResult, RiskScore
@@ -315,9 +335,13 @@ class TestSecurityIntegrationService:
             for i in range(5)
         ]
 
-        with patch.object(service.security_logger, "log_event", new_callable=AsyncMock), \
-             patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock), \
-             patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector:
+        with (
+            patch.object(service.security_logger, "log_event", new_callable=AsyncMock),
+            patch.object(service.security_monitor, "track_failed_authentication", new_callable=AsyncMock),
+            patch.object(
+                service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+            ) as mock_detector,
+        ):
 
             mock_detector.return_value = {"is_suspicious": False, "confidence": 0.1}
 
@@ -359,7 +383,9 @@ class TestSecurityIntegrationService:
             details={"action": "login"},
         )
 
-        with patch.object(service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock) as mock_detector:
+        with patch.object(
+            service.suspicious_activity_detector, "analyze_activity", new_callable=AsyncMock,
+        ) as mock_detector:
             mock_detector.return_value = {"is_suspicious": False, "confidence": 0.1}
 
             result = await service.process_security_event(event)

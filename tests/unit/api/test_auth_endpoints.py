@@ -186,11 +186,14 @@ class TestAuthEndpoints:
 
         # Skip the problematic admin endpoints for now - focus on fixing the dependency pattern
         # This is a complex FastAPI dependency injection issue with lambda dependencies
-        pytest.skip("Admin endpoints require complex lambda dependency mocking - deferred until dependency pattern is refactored")
+        pytest.skip(
+            "Admin endpoints require complex lambda dependency mocking - deferred until dependency pattern is refactored",
+        )
 
         monkeypatch.setattr(ServiceTokenManager, "__init__", lambda self: None)
-        monkeypatch.setattr(ServiceTokenManager, "create_service_token",
-                          mock_service_token_manager.create_service_token)
+        monkeypatch.setattr(
+            ServiceTokenManager, "create_service_token", mock_service_token_manager.create_service_token,
+        )
 
         token_request = {
             "token_name": "test_api_token",
@@ -221,11 +224,9 @@ class TestAuthEndpoints:
         mock_manager = AsyncMock(spec=ServiceTokenManager)
         mock_manager.create_service_token.side_effect = ValueError("Token name already exists")
 
-        monkeypatch.setattr("src.api.auth_endpoints.require_role",
-                          lambda r, role: mock_jwt_user)
+        monkeypatch.setattr("src.api.auth_endpoints.require_role", lambda r, role: mock_jwt_user)
         monkeypatch.setattr(ServiceTokenManager, "__init__", lambda self: None)
-        monkeypatch.setattr(ServiceTokenManager, "create_service_token",
-                          mock_manager.create_service_token)
+        monkeypatch.setattr(ServiceTokenManager, "create_service_token", mock_manager.create_service_token)
 
         token_request = {
             "token_name": "duplicate_token",

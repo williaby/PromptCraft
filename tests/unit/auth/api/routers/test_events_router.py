@@ -183,6 +183,7 @@ class TestEventsRouter:
         }
 
         import time
+
         start_time = time.time()
 
         response = test_client.post("/events/search", json=search_request)

@@ -686,11 +686,13 @@ class TestUtilityMethods:
         await detector.initialize()
 
         # Add some test data
-        detector._detected_patterns.extend([
-            ("brute_force", datetime.now(UTC), {}),
-            ("brute_force", datetime.now(UTC), {}),
-            ("api_abuse", datetime.now(UTC), {}),
-        ])
+        detector._detected_patterns.extend(
+            [
+                ("brute_force", datetime.now(UTC), {}),
+                ("brute_force", datetime.now(UTC), {}),
+                ("api_abuse", datetime.now(UTC), {}),
+            ],
+        )
         detector._suspicious_entities.add("user:bad-actor")
         detector._activity_log["user:test"] = [(datetime.now(UTC), {})]
 
@@ -773,8 +775,7 @@ class TestBackgroundTasks:
         cutoff = now - timedelta(hours=1)
 
         detector._activity_log[entity_key] = [
-            (ts, data) for ts, data in detector._activity_log[entity_key]
-            if ts > cutoff
+            (ts, data) for ts, data in detector._activity_log[entity_key] if ts > cutoff
         ]
 
         # Only recent event should remain
@@ -810,10 +811,7 @@ class TestBackgroundTasks:
         detector._suspicious_entities.add(entity_key)
 
         # Simulate low score removal (background task logic)
-        entities_to_remove = [
-            key for key, score in detector._entity_scores.items()
-            if score < 1.0
-        ]
+        entities_to_remove = [key for key, score in detector._entity_scores.items() if score < 1.0]
 
         for key in entities_to_remove:
             del detector._entity_scores[key]

@@ -5,7 +5,6 @@ This test suite covers all classes and functions in src/auth/services/container.
 with extensive mocking and edge case testing to achieve >90% coverage.
 """
 
-
 import pytest
 
 from src.auth.services.container import (
@@ -60,6 +59,7 @@ class TestServiceContainer:
     @pytest.fixture
     def mock_service_class(self):
         """Create a mock service class."""
+
         class MockService:
             def __init__(self, value="default"):
                 self.value = value
@@ -96,6 +96,7 @@ class TestServiceContainer:
 
     def test_resolve_unregistered_service_error(self, container):
         """Test error when resolving unregistered service."""
+
         class UnregisteredService:
             pass
 
@@ -104,6 +105,7 @@ class TestServiceContainer:
 
     def test_resolve_with_dependencies(self, container, mock_service_class):
         """Test resolving service with dependencies."""
+
         class DependentService:
             def __init__(self, dependency):
                 self.dependency = dependency

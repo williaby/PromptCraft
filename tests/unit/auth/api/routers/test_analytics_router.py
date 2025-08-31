@@ -186,7 +186,9 @@ class TestGetSecurityTrendsEndpoint:
         assert "risk_indicators" in data
 
     @pytest.mark.asyncio
-    async def test_get_trends_with_time_range(self, test_client, mock_security_service, sample_security_trends_response):
+    async def test_get_trends_with_time_range(
+        self, test_client, mock_security_service, sample_security_trends_response,
+    ):
         """Test trends retrieval with custom time range."""
         mock_security_service.get_security_trends.return_value = {"status": "success"}
 
@@ -274,7 +276,9 @@ class TestGetBehaviorPatternsEndpoint:
         assert len(data["patterns"]) == 2
 
     @pytest.mark.asyncio
-    async def test_get_patterns_with_risk_filter(self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns):
+    async def test_get_patterns_with_risk_filter(
+        self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns,
+    ):
         """Test patterns retrieval with risk level filtering."""
         high_risk_patterns = [p for p in sample_behavior_patterns if p.risk_level == "high"]
         PatternAnalysisResponse(
@@ -307,7 +311,9 @@ class TestGetBehaviorPatternsEndpoint:
         assert all(pattern["confidence_score"] >= 90.0 for pattern in data["patterns"])
 
     @pytest.mark.asyncio
-    async def test_get_patterns_with_limit(self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns):
+    async def test_get_patterns_with_limit(
+        self, test_client, mock_suspicious_activity_detector, sample_behavior_patterns,
+    ):
         """Test patterns retrieval with limit parameter."""
         PatternAnalysisResponse(
             analysis_timestamp=datetime.now(UTC),
@@ -469,7 +475,7 @@ class TestIncidentInvestigationEndpoint:
 
         invalid_request = IncidentInvestigationRequest(
             start_time=future_time,  # Start time in future
-            end_time=past_time,      # End time in past
+            end_time=past_time,  # End time in past
             risk_threshold=50,
         )
 
@@ -481,7 +487,9 @@ class TestIncidentInvestigationEndpoint:
         assert "End time must be after start time" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_investigate_incident_service_error(self, test_client, mock_security_service, sample_investigation_request):
+    async def test_investigate_incident_service_error(
+        self, test_client, mock_security_service, sample_investigation_request,
+    ):
         """Test incident investigation when service raises exception."""
         mock_security_service.investigate_security_incident.side_effect = Exception("Investigation failed")
 
@@ -490,7 +498,9 @@ class TestIncidentInvestigationEndpoint:
         assert response.status_code == 500
 
     @pytest.mark.asyncio
-    async def test_investigate_incident_empty_result(self, test_client, mock_security_service, sample_investigation_request):
+    async def test_investigate_incident_empty_result(
+        self, test_client, mock_security_service, sample_investigation_request,
+    ):
         """Test incident investigation with no findings."""
         IncidentInvestigationResponse(
             investigation_id="inv_empty",
@@ -583,8 +593,15 @@ class TestAnalyticsRouterIntegration:
     """Integration tests for analytics router."""
 
     @pytest.mark.asyncio
-    async def test_full_analytics_workflow(self, test_client, mock_security_service, mock_suspicious_activity_detector,
-                                         sample_security_trends_response, sample_behavior_patterns, sample_investigation_request):
+    async def test_full_analytics_workflow(
+        self,
+        test_client,
+        mock_security_service,
+        mock_suspicious_activity_detector,
+        sample_security_trends_response,
+        sample_behavior_patterns,
+        sample_investigation_request,
+    ):
         """Test complete analytics workflow: trends -> patterns -> investigation."""
         # Step 1: Get security trends
         mock_security_service.get_security_trends.return_value = {"status": "success"}
@@ -662,7 +679,9 @@ class TestAnalyticsRouterIntegration:
             },
         }
 
-        investigate_response = test_client.post("/analytics/investigate", json=sample_investigation_request.model_dump(mode="json"))
+        investigate_response = test_client.post(
+            "/analytics/investigate", json=sample_investigation_request.model_dump(mode="json"),
+        )
         assert investigate_response.status_code == 200
 
 
@@ -671,7 +690,9 @@ class TestAnalyticsRouterPerformance:
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_trends_analysis_performance(self, test_client, mock_security_service, sample_security_trends_response):
+    async def test_trends_analysis_performance(
+        self, test_client, mock_security_service, sample_security_trends_response,
+    ):
         """Test trends analysis performance with large dataset."""
         # Simulate large trend dataset
         large_trends = sample_security_trends_response
@@ -680,6 +701,7 @@ class TestAnalyticsRouterPerformance:
         mock_security_service.get_security_trends.return_value = {"status": "success", "trends": large_trends.trends}
 
         import time
+
         start_time = time.time()
 
         response = test_client.get("/analytics/trends?days_back=7")  # 1 week
@@ -692,7 +714,9 @@ class TestAnalyticsRouterPerformance:
 
     @pytest.mark.performance
     @pytest.mark.asyncio
-    async def test_incident_investigation_performance(self, test_client, mock_security_service, sample_investigation_request):
+    async def test_incident_investigation_performance(
+        self, test_client, mock_security_service, sample_investigation_request,
+    ):
         """Test incident investigation performance."""
         IncidentInvestigationResponse(
             investigation_id="perf_test",
@@ -720,6 +744,7 @@ class TestAnalyticsRouterPerformance:
         }
 
         import time
+
         start_time = time.time()
 
         response = test_client.post("/analytics/investigate", json=sample_investigation_request.model_dump(mode="json"))

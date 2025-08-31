@@ -33,7 +33,7 @@ class TestSuspiciousActivityDetectorInitialization:
 
         # Check default thresholds (from SuspiciousActivityConfig defaults)
         assert detector.suspicious_threshold == 0.4  # 40/100
-        assert detector.anomaly_threshold == 0.7   # 70/100
+        assert detector.anomaly_threshold == 0.7  # 70/100
         assert detector.learning_period_days == 30
         assert detector.min_baseline_events == 10  # From SuspiciousActivityConfig default
 
@@ -1780,11 +1780,13 @@ class TestSuspiciousActivityDetectorErrorHandling:
         mock_pattern.total_logins = 100
 
         # Mock analysis methods to return various results
-        with patch.object(detector, "_get_user_pattern", return_value=mock_pattern), \
-             patch.object(detector, "analyze_time_pattern", return_value=True), \
-             patch.object(detector, "analyze_location_pattern", return_value=True), \
-             patch.object(detector, "analyze_device_pattern", return_value=False), \
-             patch.object(detector, "analyze_velocity_pattern", return_value=True):
+        with (
+            patch.object(detector, "_get_user_pattern", return_value=mock_pattern),
+            patch.object(detector, "analyze_time_pattern", return_value=True),
+            patch.object(detector, "analyze_location_pattern", return_value=True),
+            patch.object(detector, "analyze_device_pattern", return_value=False),
+            patch.object(detector, "analyze_velocity_pattern", return_value=True),
+        ):
 
             result = await detector.analyze_activity(event)
 
@@ -2026,11 +2028,13 @@ class TestSuspiciousActivityDetectorAdditionalCoverage:
         mock_pattern.success_rate = 0.95
         mock_pattern.failure_rate = 0.05
 
-        with patch.object(detector, "_get_user_pattern", return_value=mock_pattern), \
-             patch.object(detector, "analyze_time_pattern", return_value=False), \
-             patch.object(detector, "analyze_location_pattern", return_value=False), \
-             patch.object(detector, "analyze_device_pattern", return_value=False), \
-             patch.object(detector, "analyze_velocity_pattern", return_value=False):
+        with (
+            patch.object(detector, "_get_user_pattern", return_value=mock_pattern),
+            patch.object(detector, "analyze_time_pattern", return_value=False),
+            patch.object(detector, "analyze_location_pattern", return_value=False),
+            patch.object(detector, "analyze_device_pattern", return_value=False),
+            patch.object(detector, "analyze_velocity_pattern", return_value=False),
+        ):
 
             result = await detector.analyze_activity(event)
 

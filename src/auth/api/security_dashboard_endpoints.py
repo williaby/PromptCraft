@@ -768,6 +768,7 @@ async def get_user_risk_profile(
 
                 # Handle both coroutines and direct values
                 import asyncio
+
                 if asyncio.iscoroutine(service_result):
                     service_data = await service_result
                 else:
@@ -859,9 +860,11 @@ async def search_security_events(
             raise HTTPException(status_code=400, detail="End date must be after start date")
 
         # Validate risk score range if both min and max are provided
-        if (search_request.risk_score_min is not None and
-            search_request.risk_score_max is not None and
-            search_request.risk_score_min > search_request.risk_score_max):
+        if (
+            search_request.risk_score_min is not None
+            and search_request.risk_score_max is not None
+            and search_request.risk_score_min > search_request.risk_score_max
+        ):
             raise HTTPException(status_code=400, detail="Minimum risk score must be less than or equal to maximum")
 
         # Call the service to search for events
@@ -902,11 +905,14 @@ async def search_security_events(
                             "end_date": search_request.end_date.isoformat(),
                             "filters_applied": {
                                 "event_types": len(search_request.event_types) if search_request.event_types else 0,
-                                "severity_levels": len(search_request.severity_levels) if search_request.severity_levels else 0,
+                                "severity_levels": (
+                                    len(search_request.severity_levels) if search_request.severity_levels else 0
+                                ),
                                 "user_id": search_request.user_id is not None,
                                 "ip_address": search_request.ip_address is not None,
                                 "risk_score_filter": (
-                                    search_request.risk_score_min is not None or search_request.risk_score_max is not None
+                                    search_request.risk_score_min is not None
+                                    or search_request.risk_score_max is not None
                                 ),
                             },
                         },
@@ -1286,7 +1292,7 @@ async def export_metrics_report(
 async def acknowledge_alert(
     alert_id: str,
     service: SecurityIntegrationService,
-    background_tasks = None,
+    background_tasks=None,
     user_id: str | None = None,
 ) -> Any:
     """Standalone acknowledge alert function for direct testing.
@@ -1357,15 +1363,27 @@ async def get_user_risk_profile(
 
                 # Handle both coroutines and direct values
                 import asyncio
+
                 if asyncio.iscoroutine(service_result):
                     service_data = await service_result
                 else:
                     service_data = service_result
 
                 # Check if service_data is a proper dictionary (not MagicMock)
-                if isinstance(service_data, dict) and all(key in service_data for key in
-                    ["user_id", "risk_score", "risk_level", "total_logins", "failed_logins_today",
-                     "last_activity", "known_locations", "suspicious_activities", "recommendations"]):
+                if isinstance(service_data, dict) and all(
+                    key in service_data
+                    for key in [
+                        "user_id",
+                        "risk_score",
+                        "risk_level",
+                        "total_logins",
+                        "failed_logins_today",
+                        "last_activity",
+                        "known_locations",
+                        "suspicious_activities",
+                        "recommendations",
+                    ]
+                ):
                     # Use service data to create the response
                     return UserRiskProfileResponse(
                         user_id=service_data["user_id"],
@@ -1433,6 +1451,7 @@ async def get_user_risk_profile(
 
 
 # Standalone functions for audit and config endpoints (matching test expectations)
+
 
 async def generate_audit_report(
     report_request: AuditReportRequest,
@@ -1541,6 +1560,7 @@ async def update_dashboard_config(
                         def __getitem__(self, key):
                             """Support dictionary-style access for test compatibility."""
                             return self._data[key]
+
                     return MockResponse(response_data)
                 return result
 
@@ -1797,8 +1817,7 @@ async def get_risk_distribution_data(
 
         # Convert to percentage
         risk_percentages = {
-            level: (count / total_users * 100) if total_users > 0 else 0
-            for level, count in risk_distribution.items()
+            level: (count / total_users * 100) if total_users > 0 else 0 for level, count in risk_distribution.items()
         }
 
         return {
@@ -1832,7 +1851,6 @@ async def _log_alert_acknowledgment(alert_id: str, timestamp: datetime) -> None:
 # ==============================================================================
 # These functions match the test signatures exactly and are used for unit testing
 # the API functions directly without FastAPI dependency injection.
-
 
 
 async def get_recent_alerts_for_testing(
@@ -1877,7 +1895,7 @@ async def get_recent_alerts_for_testing(
             active_alerts=service_alerts,
             total_count=len(service_alerts),
             critical_count=0,  # Default value as tests may not provide this
-            warning_count=0,   # Default value as tests may not provide this
+            warning_count=0,  # Default value as tests may not provide this
             timestamp=datetime.now(UTC),
         )
 

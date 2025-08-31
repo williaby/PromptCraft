@@ -113,6 +113,7 @@ class TestSecurityDashboardEndpointsCore:
     @pytest.mark.asyncio
     async def test_get_security_metrics_awaitable_response(self, endpoints):
         """Test get_security_metrics when monitor returns awaitable."""
+
         # Arrange
         async def mock_coroutine():
             return {"total_events": 200, "critical_events": 8}

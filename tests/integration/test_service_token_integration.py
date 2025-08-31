@@ -78,7 +78,12 @@ async def db_session():
             # Mock authentication events query result
             mock_events = []
             # Create mock authentication events based on test expectations
-            event_types = ["service_token_auth", "service_token_rotation", "service_token_revocation", "emergency_revocation_all"]
+            event_types = [
+                "service_token_auth",
+                "service_token_rotation",
+                "service_token_revocation",
+                "emergency_revocation_all",
+            ]
             for i, event_type in enumerate(event_types):
                 mock_event = MagicMock()
                 mock_event.id = i + 1

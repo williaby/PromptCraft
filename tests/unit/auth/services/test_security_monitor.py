@@ -147,7 +147,6 @@ class TestSecurityMonitorBruteForceDetection:
             alert_engine=mock_alert_engine,
         )
 
-
     async def test_record_failed_login_first_attempt(self, monitor):
         """Test recording first failed login attempt."""
         user_id = "test_user"

@@ -104,7 +104,9 @@ class TestServiceContainerSetup:
     @patch("src.auth.services.fastapi_integration.bootstrap_services_async")
     @patch("src.auth.services.fastapi_integration.add_health_check_routes")
     async def test_setup_service_container_auto_initialize(
-        self, mock_add_routes, mock_bootstrap,
+        self,
+        mock_add_routes,
+        mock_bootstrap,
     ):
         """Test setting up service container with auto initialization."""
         # Mock bootstrap to return a container
@@ -129,7 +131,9 @@ class TestServiceContainerSetup:
     @patch("src.auth.services.fastapi_integration.get_container_for_environment")
     @patch("src.auth.services.fastapi_integration.add_health_check_routes")
     async def test_setup_service_container_no_auto_initialize(
-        self, mock_add_routes, mock_get_container,
+        self,
+        mock_add_routes,
+        mock_get_container,
     ):
         """Test setting up service container without auto initialization."""
         mock_container = Mock(spec=ServiceContainer)
@@ -188,6 +192,7 @@ class TestServiceDependencies:
 
     def test_create_service_dependency_success(self):
         """Test successful service dependency creation."""
+
         # Mock service type and instance
         class TestService:
             pass
@@ -207,6 +212,7 @@ class TestServiceDependencies:
 
     def test_create_service_dependency_resolution_error(self):
         """Test service dependency creation with resolution error."""
+
         class TestService:
             pass
 
@@ -222,6 +228,7 @@ class TestServiceDependencies:
 
     def test_create_service_dependency_unexpected_error(self):
         """Test service dependency creation with unexpected error."""
+
         class TestService:
             pass
 
@@ -326,6 +333,7 @@ class TestHealthCheckRoutes:
 
     def test_get_service_health_success(self):
         """Test successful service health endpoint."""
+
         # Mock service types and instances
         class TestService:
             def __init__(self):
@@ -350,6 +358,7 @@ class TestHealthCheckRoutes:
 
     def test_get_individual_service_health_success(self):
         """Test successful individual service health endpoint."""
+
         class TestService:
             def __init__(self):
                 self.last_health_check = datetime.now(UTC)
@@ -616,6 +625,7 @@ class TestIntegrationScenarios:
 
     def test_health_check_integration_with_real_container_structure(self):
         """Test health check endpoints with realistic container structure."""
+
         # Setup realistic container structure
         class MockService1:
             def __init__(self):
@@ -750,6 +760,7 @@ class TestFastAPIIntegrationRealExecution:
 
         # Test TypeVar exists and is correct type
         from typing import TypeVar
+
         assert isinstance(module.T, TypeVar)
         assert module.T.__name__ == "T"
 
@@ -770,6 +781,7 @@ class TestFastAPIIntegrationRealExecution:
 
     def test_dependency_functions_structure_real_execution(self):
         """Test dependency function creation structure with real execution."""
+
         # Test that dependency functions can be created (even if container is None)
         class MockService:
             pass
@@ -826,6 +838,7 @@ class TestFastAPIIntegrationRealExecution:
         """Test create_service_dependency actual execution with error cases."""
         # Ensure global container is None for this test
         import src.auth.services.fastapi_integration as fi
+
         original_container = fi._app_container
         fi._app_container = None
 
@@ -847,6 +860,7 @@ class TestFastAPIIntegrationRealExecution:
         """Test get_service_container raises error when not initialized."""
         # Ensure global container is None
         import src.auth.services.fastapi_integration as fi
+
         original_container = fi._app_container
         fi._app_container = None
 
@@ -861,6 +875,7 @@ class TestFastAPIIntegrationRealExecution:
         """Test predefined dependency functions execute correctly."""
         # Ensure global container is None for this test
         import src.auth.services.fastapi_integration as fi
+
         original_container = fi._app_container
         fi._app_container = None
 
@@ -910,6 +925,7 @@ class TestFastAPIIntegrationRealExecution:
 
         # Verify it's a FastAPI instance
         from fastapi import FastAPI
+
         assert isinstance(app, FastAPI)
 
         # Verify environment is set
@@ -1121,6 +1137,7 @@ class TestFastAPIIntegrationRealExecution:
         # Test error handling in setup (will fail but we're testing the path)
         try:
             import asyncio
+
             asyncio.run(setup_service_container(app, environment="test", auto_initialize=False))
         except Exception:
             pass  # Expected to fail in test environment, but we're testing coverage
@@ -1138,6 +1155,7 @@ class TestFastAPIIntegrationRealExecution:
         # Test typing imports
         from collections.abc import AsyncGenerator
         from typing import Optional, TypeVar
+
         assert Optional is not None
         assert dict is not None
         assert Any is not None

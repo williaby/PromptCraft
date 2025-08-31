@@ -70,8 +70,17 @@ class TestSecurityEventsGeneration:
         # Check event structure
         event = events[0]
         required_keys = [
-            "event_id", "event_type", "timestamp", "user_id", "ip_address",
-            "user_agent", "risk_score", "details", "session_id", "location", "success",
+            "event_id",
+            "event_type",
+            "timestamp",
+            "user_id",
+            "ip_address",
+            "user_agent",
+            "risk_score",
+            "details",
+            "session_id",
+            "location",
+            "success",
         ]
         for key in required_keys:
             assert key in event
@@ -98,7 +107,8 @@ class TestSecurityEventsGeneration:
         """Test security events generation with custom event types."""
         custom_types = ["user_login", "failed_login"]
         events = await service.generate_security_events(
-            count=20, event_types=custom_types,
+            count=20,
+            event_types=custom_types,
         )
 
         # All events should be of custom types only
@@ -178,7 +188,8 @@ class TestUserActivityGeneration:
     async def test_generate_user_activity_data_custom_params(self, service):
         """Test user activity generation with custom parameters."""
         user_activities = await service.generate_user_activity_data(
-            user_count=10, activity_window_days=7,
+            user_count=10,
+            activity_window_days=7,
         )
 
         assert len(user_activities) == 10
@@ -257,9 +268,15 @@ class TestSystemMetricsGeneration:
         # Check metric structure
         metric = metrics[0]
         required_keys = [
-            "timestamp", "cpu_usage_percent", "memory_usage_percent",
-            "disk_usage_percent", "network_io_mbps", "disk_io_iops",
-            "active_connections", "response_time_ms", "error_rate_percent",
+            "timestamp",
+            "cpu_usage_percent",
+            "memory_usage_percent",
+            "disk_usage_percent",
+            "network_io_mbps",
+            "disk_io_iops",
+            "active_connections",
+            "response_time_ms",
+            "error_rate_percent",
             "throughput_rps",
         ]
         for key in required_keys:
@@ -272,7 +289,8 @@ class TestSystemMetricsGeneration:
     async def test_generate_system_metrics_custom_params(self, service):
         """Test system metrics generation with custom parameters."""
         metrics = await service.generate_system_metrics(
-            hours_back=12, granularity_minutes=30,
+            hours_back=12,
+            granularity_minutes=30,
         )
 
         expected_count = (12 * 60) // 30 + 1
@@ -316,7 +334,7 @@ class TestSystemMetricsGeneration:
         # Check time intervals
         time_diffs = []
         for i in range(1, len(metrics)):
-            diff = (metrics[i]["timestamp"] - metrics[i-1]["timestamp"]).total_seconds()
+            diff = (metrics[i]["timestamp"] - metrics[i - 1]["timestamp"]).total_seconds()
             time_diffs.append(diff)
 
         # All intervals should be 60 minutes (3600 seconds)
@@ -340,9 +358,17 @@ class TestBehavioralPatternsGeneration:
         # Check pattern structure
         pattern = patterns[0]
         required_keys = [
-            "pattern_id", "pattern_type", "description", "confidence_score",
-            "risk_score", "affected_users", "first_observed", "last_observed",
-            "frequency", "indicators", "related_events",
+            "pattern_id",
+            "pattern_type",
+            "description",
+            "confidence_score",
+            "risk_score",
+            "affected_users",
+            "first_observed",
+            "last_observed",
+            "frequency",
+            "indicators",
+            "related_events",
         ]
         for key in required_keys:
             assert key in pattern
@@ -350,7 +376,8 @@ class TestBehavioralPatternsGeneration:
     async def test_generate_behavioral_patterns_custom_params(self, service):
         """Test behavioral patterns generation with custom parameters."""
         patterns = await service.generate_behavioral_patterns(
-            pattern_count=5, min_confidence=80.0,
+            pattern_count=5,
+            min_confidence=80.0,
         )
 
         assert len(patterns) == 5
@@ -364,9 +391,15 @@ class TestBehavioralPatternsGeneration:
         patterns = await service.generate_behavioral_patterns(pattern_count=3)
 
         expected_pattern_types = [
-            "unusual_access", "anomalous_login", "data_exfiltration",
-            "privilege_escalation", "lateral_movement", "brute_force",
-            "time_anomaly", "location_anomaly", "device_anomaly",
+            "unusual_access",
+            "anomalous_login",
+            "data_exfiltration",
+            "privilege_escalation",
+            "lateral_movement",
+            "brute_force",
+            "time_anomaly",
+            "location_anomaly",
+            "device_anomaly",
         ]
 
         for pattern in patterns:
@@ -412,9 +445,18 @@ class TestAlertDataGeneration:
         # Check alert structure
         alert = alerts[0]
         required_keys = [
-            "alert_id", "alert_type", "severity", "timestamp", "status",
-            "assigned_to", "source_ip", "affected_user", "description",
-            "evidence_count", "false_positive_likelihood", "remediation_steps",
+            "alert_id",
+            "alert_type",
+            "severity",
+            "timestamp",
+            "status",
+            "assigned_to",
+            "source_ip",
+            "affected_user",
+            "description",
+            "evidence_count",
+            "false_positive_likelihood",
+            "remediation_steps",
         ]
         for key in required_keys:
             assert key in alert
@@ -442,9 +484,15 @@ class TestAlertDataGeneration:
         alerts = await service.generate_alert_data(alert_count=5)
 
         expected_alert_types = [
-            "Failed Login Attempts", "Suspicious File Access", "Privilege Escalation",
-            "Data Exfiltration", "Malware Detection", "Network Anomaly",
-            "Policy Violation", "Unauthorized Access", "Brute Force Attack",
+            "Failed Login Attempts",
+            "Suspicious File Access",
+            "Privilege Escalation",
+            "Data Exfiltration",
+            "Malware Detection",
+            "Network Anomaly",
+            "Policy Violation",
+            "Unauthorized Access",
+            "Brute Force Attack",
         ]
 
         expected_severities = ["low", "medium", "high", "critical"]
@@ -499,8 +547,11 @@ class TestInvestigationDataGeneration:
         # Check entity structure
         entity = investigation_data["entities"][0]
         required_keys = [
-            "entity_type", "entity_id", "risk_score",
-            "anomaly_indicators", "events",
+            "entity_type",
+            "entity_id",
+            "risk_score",
+            "anomaly_indicators",
+            "events",
         ]
         for key in required_keys:
             assert key in entity
@@ -816,7 +867,8 @@ class TestEdgeCasesAndErrorHandling:
     async def test_extreme_metric_granularity(self, service):
         """Test system metrics with very small granularity."""
         metrics = await service.generate_system_metrics(
-            hours_back=1, granularity_minutes=1,
+            hours_back=1,
+            granularity_minutes=1,
         )
 
         # Should generate 60 + 1 data points
@@ -824,13 +876,14 @@ class TestEdgeCasesAndErrorHandling:
 
         # Check time progression
         for i in range(1, len(metrics)):
-            time_diff = (metrics[i]["timestamp"] - metrics[i-1]["timestamp"]).total_seconds()
+            time_diff = (metrics[i]["timestamp"] - metrics[i - 1]["timestamp"]).total_seconds()
             assert abs(time_diff - 60) < 1  # 1 minute intervals
 
     async def test_very_high_min_confidence(self, service):
         """Test behavioral patterns with very high minimum confidence."""
         patterns = await service.generate_behavioral_patterns(
-            pattern_count=5, min_confidence=99.5,
+            pattern_count=5,
+            min_confidence=99.5,
         )
 
         assert len(patterns) == 5
@@ -852,7 +905,7 @@ class TestDataConsistency:
 
         # Events should be chronologically ordered
         for i in range(1, len(events)):
-            assert events[i]["timestamp"] >= events[i-1]["timestamp"]
+            assert events[i]["timestamp"] >= events[i - 1]["timestamp"]
 
     async def test_user_profile_consistency(self, service):
         """Test that user profiles maintain consistent relationships."""
@@ -915,8 +968,17 @@ class TestMockDataServiceRealExecution:
         # Verify event structure
         event = events[0]
         required_keys = [
-            "event_id", "event_type", "timestamp", "user_id", "ip_address",
-            "user_agent", "risk_score", "details", "session_id", "location", "success",
+            "event_id",
+            "event_type",
+            "timestamp",
+            "user_id",
+            "ip_address",
+            "user_agent",
+            "risk_score",
+            "details",
+            "session_id",
+            "location",
+            "success",
         ]
         for key in required_keys:
             assert key in event
@@ -949,9 +1011,16 @@ class TestMockDataServiceRealExecution:
         # Verify metric structure
         metric = metrics[0]
         required_keys = [
-            "timestamp", "cpu_usage_percent", "memory_usage_percent",
-            "disk_usage_percent", "network_io_mbps", "disk_io_iops",
-            "active_connections", "response_time_ms", "error_rate_percent", "throughput_rps",
+            "timestamp",
+            "cpu_usage_percent",
+            "memory_usage_percent",
+            "disk_usage_percent",
+            "network_io_mbps",
+            "disk_io_iops",
+            "active_connections",
+            "response_time_ms",
+            "error_rate_percent",
+            "throughput_rps",
         ]
         for key in required_keys:
             assert key in metric
@@ -968,9 +1037,17 @@ class TestMockDataServiceRealExecution:
         # Verify pattern structure
         pattern = patterns[0]
         required_keys = [
-            "pattern_id", "pattern_type", "description", "confidence_score",
-            "risk_score", "affected_users", "first_observed", "last_observed",
-            "frequency", "indicators", "related_events",
+            "pattern_id",
+            "pattern_type",
+            "description",
+            "confidence_score",
+            "risk_score",
+            "affected_users",
+            "first_observed",
+            "last_observed",
+            "frequency",
+            "indicators",
+            "related_events",
         ]
         for key in required_keys:
             assert key in pattern
@@ -987,9 +1064,17 @@ class TestMockDataServiceRealExecution:
         # Verify alert structure
         alert = alerts[0]
         required_keys = [
-            "alert_id", "alert_type", "severity", "timestamp", "status",
-            "source_ip", "affected_user", "description", "evidence_count",
-            "false_positive_likelihood", "remediation_steps",
+            "alert_id",
+            "alert_type",
+            "severity",
+            "timestamp",
+            "status",
+            "source_ip",
+            "affected_user",
+            "description",
+            "evidence_count",
+            "false_positive_likelihood",
+            "remediation_steps",
         ]
         for key in required_keys:
             assert key in alert
@@ -1002,7 +1087,9 @@ class TestMockDataServiceRealExecution:
         end_time = datetime.now(UTC) - timedelta(hours=1)
 
         investigation_data = await service.generate_investigation_data(
-            start_time=start_time, end_time=end_time, entity_count=2,
+            start_time=start_time,
+            end_time=end_time,
+            entity_count=2,
         )
 
         assert isinstance(investigation_data, dict)

@@ -343,8 +343,7 @@ class TestMCPConfigurationIntegration:
             "PROMPTCRAFT_MCP_MAX_RETRIES": "5",
         }
 
-        with patch.dict(os.environ, env_vars), \
-             patch("src.config.settings._env_file_settings", return_value={}):
+        with patch.dict(os.environ, env_vars), patch("src.config.settings._env_file_settings", return_value={}):
             # Create settings (should pick up environment overrides)
             settings = ApplicationSettings()
 

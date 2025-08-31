@@ -115,7 +115,7 @@ class TestAlertEngineAlertGeneration:
             ip_address="192.168.1.100",
             user_agent="Mozilla/5.0",
             severity="critical",
-                        metadata={"failed_attempts": 5, "lockout_triggered": True},
+            metadata={"failed_attempts": 5, "lockout_triggered": True},
         )
 
     async def test_trigger_alert_high_priority(self, engine, sample_security_event):
@@ -278,7 +278,7 @@ class TestAlertEngineEscalation:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="test_user",
             severity="warning",
-                    )
+        )
 
         # Trigger alerts to reach escalation threshold
         for i in range(engine.escalation_threshold):
@@ -301,7 +301,7 @@ class TestAlertEngineEscalation:
             event_type=SecurityEventType.SUSPICIOUS_ACTIVITY,
             user_id="escalation_user",
             severity="critical",
-                    )
+        )
 
         # Trigger enough alerts to cause escalation
         for i in range(engine.escalation_threshold + 1):
@@ -321,7 +321,7 @@ class TestAlertEngineEscalation:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="window_test_user",
             severity="warning",
-                    )
+        )
 
         # Trigger some alerts
         for i in range(engine.escalation_threshold - 1):
@@ -349,13 +349,13 @@ class TestAlertEngineEscalation:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="user1",
             severity="warning",
-                    )
+        )
 
         event2 = SecurityEvent(
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="user2",
             severity="warning",
-                    )
+        )
 
         # Trigger escalation for user1
         for i in range(engine.escalation_threshold):
@@ -548,7 +548,7 @@ class TestAlertEngineRateLimiting:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="rate_limit_user",
             severity="info",
-                    )
+        )
 
         # Trigger more alerts than the rate limit
         alert_ids = []
@@ -574,7 +574,7 @@ class TestAlertEngineRateLimiting:
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="reset_test_user",
             severity="info",
-                    )
+        )
 
         # Use up rate limit
         for i in range(engine.max_alerts_per_minute):
@@ -607,14 +607,14 @@ class TestAlertEngineRateLimiting:
             event_type=SecurityEventType.SECURITY_ALERT,
             user_id="priority_bypass_user",
             severity="critical",
-                    )
+        )
 
         # Use up rate limit with low priority alerts
         low_priority_event = SecurityEvent(
             event_type=SecurityEventType.LOGIN_FAILURE,
             user_id="low_priority_user",
             severity="info",
-                    )
+        )
 
         for i in range(engine.max_alerts_per_minute):
             await engine.trigger_alert(
@@ -669,7 +669,7 @@ class TestAlertEnginePerformance:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="perf_test_user",
             severity="info",
-                    )
+        )
 
         start_time = time.time()
         await engine.trigger_alert(
@@ -716,7 +716,7 @@ class TestAlertEnginePerformance:
                     event_type=SecurityEventType.LOGIN_FAILURE,
                     user_id=f"{user_prefix}_{i}",
                     severity="info",
-                                    )
+                )
                 await engine.trigger_alert(
                     event=event,
                     priority=AlertPriority.LOW,
@@ -780,7 +780,7 @@ class TestAlertEnginePerformance:
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 user_id=f"memory_test_user_{i % 10}",
                 severity="info",
-                            )
+            )
             await engine.trigger_alert(
                 event=event,
                 priority=AlertPriority.LOW,
@@ -984,7 +984,7 @@ class TestAlertEngineErrorHandling:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="test_user",
             severity="info",
-                    )
+        )
 
         with pytest.raises(ValueError, match="Invalid alert priority"):
             await engine.trigger_alert(
@@ -999,7 +999,7 @@ class TestAlertEngineErrorHandling:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id="test_user",
             severity="info",
-                    )
+        )
 
         # Should not crash with empty channels
         alert_id = await engine.trigger_alert(
@@ -1019,7 +1019,7 @@ class TestAlertEngineErrorHandling:
             event_type=SecurityEventType.SECURITY_ALERT,
             user_id="db_error_user",
             severity="critical",
-                    )
+        )
 
         # Should handle gracefully without crashing
         alert_id = await engine.trigger_alert(event=event, priority=AlertPriority.HIGH, message="Database error test")
@@ -1043,7 +1043,7 @@ class TestAlertEngineErrorHandling:
                     event_type=SecurityEventType.LOGIN_FAILURE,
                     user_id=f"{prefix}_user_{i}",
                     severity="info",
-                                    )
+                )
                 await engine.trigger_alert(
                     event=event,
                     priority=AlertPriority.LOW,

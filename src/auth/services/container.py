@@ -38,9 +38,9 @@ T = TypeVar("T")
 class ServiceLifetime(str, Enum):
     """Service lifetime management options."""
 
-    SINGLETON = "singleton"      # Single instance shared across requests
-    TRANSIENT = "transient"      # New instance created each time
-    SCOPED = "scoped"           # Single instance per request scope
+    SINGLETON = "singleton"  # Single instance shared across requests
+    TRANSIENT = "transient"  # New instance created each time
+    SCOPED = "scoped"  # Single instance per request scope
 
 
 class ServiceStatus(str, Enum):
@@ -287,6 +287,7 @@ class ServiceContainer(IServiceContainer):
             ServiceResolutionError: If service cannot be resolved
         """
         import time
+
         start_time = time.time()
 
         try:
@@ -303,7 +304,9 @@ class ServiceContainer(IServiceContainer):
                     if instance.status == ServiceStatus.READY:
                         return instance.service
                     if instance.status == ServiceStatus.ERROR:
-                        raise ServiceResolutionError(f"Service {service_type.__name__} is in error state: {instance.last_error}")
+                        raise ServiceResolutionError(
+                            f"Service {service_type.__name__} is in error state: {instance.last_error}",
+                        )
 
             # Check for circular dependencies
             if service_type in self._resolution_stack:
@@ -349,7 +352,10 @@ class ServiceContainer(IServiceContainer):
             logger.error(f"Failed to resolve service {service_type.__name__}: {e}")
 
             # Mark singleton as error state if applicable
-            if service_type in self._registrations and self._registrations[service_type].lifetime == ServiceLifetime.SINGLETON:
+            if (
+                service_type in self._registrations
+                and self._registrations[service_type].lifetime == ServiceLifetime.SINGLETON
+            ):
                 error_instance = ServiceInstance(
                     service=None,
                     registration=self._registrations[service_type],
@@ -424,7 +430,9 @@ class ServiceContainer(IServiceContainer):
                 self._start_health_monitoring()
 
             successful_count = sum(results.values())
-            logger.info(f"Service initialization completed: {successful_count}/{len(services_to_initialize)} services ready")
+            logger.info(
+                f"Service initialization completed: {successful_count}/{len(services_to_initialize)} services ready",
+            )
 
             return results
 
@@ -635,8 +643,7 @@ class ServiceContainer(IServiceContainer):
             },
             "performance": {
                 "average_resolution_time_ms": (
-                    sum(self._resolution_times) / len(self._resolution_times)
-                    if self._resolution_times else 0.0
+                    sum(self._resolution_times) / len(self._resolution_times) if self._resolution_times else 0.0
                 ),
                 "total_resolutions": len(self._resolution_times),
                 "initialization_times": {

@@ -27,8 +27,7 @@ class TestEncryptionIntegration:
     def test_secret_str_fields_exist(self):
         """Test that SecretStr fields are properly defined."""
         # Clear environment to test defaults and mock env file loading
-        with patch.dict(os.environ, {}, clear=True), \
-             patch("src.config.settings._env_file_settings", return_value={}):
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             settings = ApplicationSettings()
 
         # Check that secret fields are defined and None by default

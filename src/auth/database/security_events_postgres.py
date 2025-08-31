@@ -15,7 +15,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, desc, func, select, text
+from sqlalchemy import and_, delete, desc, func, select, text
 
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
@@ -292,10 +292,8 @@ class SecurityEventsPostgreSQL:
 
                 if delete_count > 0:
                     # Delete old events
-                    delete_query = SecurityEventModel.__table__.delete().where(
-                        SecurityEventModel.timestamp < cutoff_date,
-                    )
-                    await session.execute(delete_query)
+                    delete_stmt = delete(SecurityEventModel).where(SecurityEventModel.timestamp < cutoff_date)
+                    await session.execute(delete_stmt)
                     await session.commit()
 
                     logger.info(f"Cleaned up {delete_count} security events older than {days_to_keep} days")
@@ -379,8 +377,8 @@ class SecurityEventsPostgreSQL:
 
                 if delete_count > 0:
                     # Delete expired events
-                    delete_query = SecurityEventModel.__table__.delete().where(query_filter)
-                    await session.execute(delete_query)
+                    delete_stmt = delete(SecurityEventModel).where(query_filter)
+                    await session.execute(delete_stmt)
                     await session.commit()
 
                     logger.info(f"Cleaned up {delete_count} expired security events")

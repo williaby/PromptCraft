@@ -100,18 +100,20 @@ class TestAuthenticationIntegration:
         mock_manager.get_session = mock_session_context
 
         # Mock health check with async return
-        mock_manager.health_check = AsyncMock(return_value={
-            "status": "healthy",
-            "timestamp": time.time(),
-            "connection_test": True,
-            "response_time_ms": 5.2,
-            "pool_status": {
-                "size": 10,
-                "checked_in": 8,
-                "checked_out": 2,
-                "overflow": 0,
+        mock_manager.health_check = AsyncMock(
+            return_value={
+                "status": "healthy",
+                "timestamp": time.time(),
+                "connection_test": True,
+                "response_time_ms": 5.2,
+                "pool_status": {
+                    "size": 10,
+                    "checked_in": 8,
+                    "checked_out": 2,
+                    "overflow": 0,
+                },
             },
-        })
+        )
 
         # Mock database initialization
         mock_manager.initialize = AsyncMock()
@@ -399,7 +401,9 @@ class TestAuthenticationIntegration:
 
         # Verify request completed in reasonable time (increased tolerance for integration tests)
         request_time_ms = (end_time - start_time) * 1000
-        assert request_time_ms < 500.0, f"Request took {request_time_ms:.2f}ms, exceeds 500ms limit for integration test"
+        assert (
+            request_time_ms < 500.0
+        ), f"Request took {request_time_ms:.2f}ms, exceeds 500ms limit for integration test"
 
     def test_multiple_concurrent_requests(
         self,

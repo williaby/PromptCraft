@@ -268,8 +268,10 @@ class TestBootstrapServicesAsync:
         """Test successful bootstrap for development environment."""
         mock_container = Mock()
 
-        with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
             mock_get.return_value = mock_container
             mock_init.return_value = {}
 
@@ -284,8 +286,10 @@ class TestBootstrapServicesAsync:
         """Test successful bootstrap for test environment."""
         mock_container = Mock()
 
-        with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
             mock_get.return_value = mock_container
             mock_init.return_value = {}
 
@@ -300,8 +304,10 @@ class TestBootstrapServicesAsync:
         """Test successful bootstrap for production environment."""
         mock_container = Mock()
 
-        with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
             mock_get.return_value = mock_container
             mock_init.return_value = {}
 
@@ -325,8 +331,10 @@ class TestBootstrapServicesAsync:
         """Test bootstrap failure during service initialization."""
         mock_container = Mock()
 
-        with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
             mock_get.return_value = mock_container
             mock_init.side_effect = ServiceBootstrapError("Initialization failed")
 
@@ -388,7 +396,9 @@ class TestContainerValidation:
         mock_container._registrations = {
             SecurityEventsPostgreSQL: Mock(dependencies=[]),
             SecurityLogger: Mock(dependencies=[]),
-            AlertEngine: Mock(dependencies=[SecurityEventsPostgreSQL, SecurityLogger, UnregisteredService]),  # UnregisteredService is unregistered
+            AlertEngine: Mock(
+                dependencies=[SecurityEventsPostgreSQL, SecurityLogger, UnregisteredService],
+            ),  # UnregisteredService is unregistered
         }
 
         issues = validate_container_configuration(mock_container)
@@ -499,8 +509,10 @@ class TestBootstrapIntegration:
     @pytest.mark.asyncio
     async def test_full_bootstrap_cycle_development(self):
         """Test complete bootstrap cycle for development environment."""
-        with patch("src.auth.services.bootstrap.create_development_container") as mock_create, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.create_development_container") as mock_create,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
 
             mock_container = Mock()
             mock_create.return_value = mock_container
@@ -561,8 +573,10 @@ class TestErrorHandling:
         """Test bootstrap behavior when service initialization fails."""
         mock_container = Mock()
 
-        with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get, \
-             patch("src.auth.services.bootstrap.initialize_container_async") as mock_init:
+        with (
+            patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get,
+            patch("src.auth.services.bootstrap.initialize_container_async") as mock_init,
+        ):
             mock_get.return_value = mock_container
             mock_init.side_effect = ServiceBootstrapError("Service initialization failed")
 

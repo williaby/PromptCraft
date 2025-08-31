@@ -113,13 +113,19 @@ class TestHealthStatus:
 
         # Valid status
         health = HealthStatus(
-            status="healthy", timestamp=timestamp, version="1.0.0", uptime_seconds=0.0,
+            status="healthy",
+            timestamp=timestamp,
+            version="1.0.0",
+            uptime_seconds=0.0,
         )
         assert health.status == "healthy"
 
         # Test with negative uptime (should be allowed)
         health = HealthStatus(
-            status="unhealthy", timestamp=timestamp, version="2.0.0", uptime_seconds=-1.0,
+            status="unhealthy",
+            timestamp=timestamp,
+            version="2.0.0",
+            uptime_seconds=-1.0,
         )
         assert health.uptime_seconds == -1.0
 
@@ -185,7 +191,11 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_all_healthy(
-        self, test_client, mock_security_service, sample_service_health, sample_database_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_service_health,
+        sample_database_health,
     ):
         """Test detailed health check with all services healthy."""
         # The health router generates its own mock data, not from service
@@ -212,7 +222,10 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_degraded_services(
-        self, test_client, mock_security_service, sample_database_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_database_health,
     ):
         """Test detailed health check with some services degraded."""
 
@@ -239,7 +252,10 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_detailed_health_check_unhealthy_system(
-        self, test_client, mock_security_service, sample_database_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_database_health,
     ):
         """Test detailed health check with mostly unhealthy services."""
 
@@ -267,7 +283,10 @@ class TestHealthRouter:
 
     @pytest.mark.asyncio
     async def test_get_service_health_success(
-        self, test_client, mock_security_service, sample_service_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_service_health,
     ):
         """Test get service health endpoint."""
         # The health router generates its own mock data, not from service
@@ -317,9 +336,11 @@ class TestSystemMetrics:
     @pytest.mark.asyncio
     async def test_get_system_metrics_success(self):
         """Test successful system metrics retrieval."""
-        with patch("psutil.cpu_percent") as mock_cpu, \
-             patch("psutil.virtual_memory") as mock_mem, \
-             patch("psutil.disk_usage") as mock_disk:
+        with (
+            patch("psutil.cpu_percent") as mock_cpu,
+            patch("psutil.virtual_memory") as mock_mem,
+            patch("psutil.disk_usage") as mock_disk,
+        ):
             mock_cpu.return_value = 45.5
             mock_mem.return_value.percent = 62.3
             mock_disk.return_value.percent = 78.9
@@ -333,9 +354,7 @@ class TestSystemMetrics:
     @pytest.mark.asyncio
     async def test_get_system_metrics_psutil_unavailable(self):
         """Test system metrics when psutil not available."""
-        with patch("psutil.cpu_percent") as mock_cpu, \
-             patch("psutil.virtual_memory"), \
-             patch("psutil.disk_usage"):
+        with patch("psutil.cpu_percent") as mock_cpu, patch("psutil.virtual_memory"), patch("psutil.disk_usage"):
             mock_cpu.side_effect = ImportError("psutil not available")
 
             metrics = await _get_system_metrics()
@@ -348,9 +367,7 @@ class TestSystemMetrics:
     @pytest.mark.asyncio
     async def test_get_system_metrics_exception(self):
         """Test system metrics when exception occurs."""
-        with patch("psutil.cpu_percent") as mock_cpu, \
-             patch("psutil.virtual_memory"), \
-             patch("psutil.disk_usage"):
+        with patch("psutil.cpu_percent") as mock_cpu, patch("psutil.virtual_memory"), patch("psutil.disk_usage"):
             mock_cpu.side_effect = Exception("System error")
 
             metrics = await _get_system_metrics()
@@ -426,7 +443,11 @@ class TestHealthIntegration:
     @pytest.mark.performance
     @pytest.mark.asyncio
     async def test_detailed_health_check_performance(
-        self, test_client, mock_security_service, sample_service_health, sample_database_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_service_health,
+        sample_database_health,
     ):
         """Test detailed health check performance."""
         # The health router generates its own mock data, not from service
@@ -452,7 +473,10 @@ class TestHealthIntegration:
 
     @pytest.mark.asyncio
     async def test_health_status_transitions(
-        self, test_client, mock_security_service, sample_database_health,
+        self,
+        test_client,
+        mock_security_service,
+        sample_database_health,
     ):
         """Test health status transitions between healthy/degraded/unhealthy."""
         # Start with all healthy

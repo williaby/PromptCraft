@@ -81,7 +81,9 @@ class AuditService:
     - Performance optimized for large datasets
     """
 
-    def __init__(self, db: SecurityEventsPostgreSQL | None = None, security_logger: SecurityLogger | None = None) -> None:
+    def __init__(
+        self, db: SecurityEventsPostgreSQL | None = None, security_logger: SecurityLogger | None = None,
+    ) -> None:
         """Initialize audit service.
 
         Args:
@@ -408,7 +410,8 @@ class AuditService:
             if event_types:
                 event_type_values = [et.value for et in event_types]
                 events = [
-                    e for e in events
+                    e
+                    for e in events
                     if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_type_values
                 ]
 

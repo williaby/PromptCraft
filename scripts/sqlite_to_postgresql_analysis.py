@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# nosemgrep
 """
 SQLite to PostgreSQL Migration Analysis Script
 

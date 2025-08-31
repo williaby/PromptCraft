@@ -37,19 +37,13 @@ class TestUserRiskProfileAnalysis:
         base_time = datetime.now(UTC)
         return {
             "login_events": [
-                {"success": True, "location": "New York", "timestamp": base_time - timedelta(hours=i)}
-                for i in range(5)
-            ] + [
-                {"success": False, "location": "Unknown", "timestamp": base_time - timedelta(hours=i)}
-                for i in range(3)
+                {"success": True, "location": "New York", "timestamp": base_time - timedelta(hours=i)} for i in range(5)
+            ]
+            + [
+                {"success": False, "location": "Unknown", "timestamp": base_time - timedelta(hours=i)} for i in range(3)
             ],
-            "access_events": [
-                {"access_type": "read", "sensitivity": "high", "record_count": 10}
-                for _ in range(20)
-            ] + [
-                {"access_type": "bulk_export", "sensitivity": "critical", "record_count": 1000}
-                for _ in range(2)
-            ],
+            "access_events": [{"access_type": "read", "sensitivity": "high", "record_count": 10} for _ in range(20)]
+            + [{"access_type": "bulk_export", "sensitivity": "critical", "record_count": 1000} for _ in range(2)],
             "behavior_metrics": {
                 "avg_session_duration_minutes": 45.0,
                 "actions_per_minute": 2.5,
@@ -102,7 +96,8 @@ class TestUserRiskProfileAnalysis:
             "login_events": [
                 {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(UTC) - timedelta(hours=i)}
                 for i in range(10)  # Many failed logins from different locations
-            ] + [
+            ]
+            + [
                 {"success": True, "location": "Unknown", "timestamp": datetime.now(UTC).replace(hour=3)}
                 for _ in range(60)  # High frequency logins at unusual hours
             ],
@@ -278,7 +273,7 @@ class TestSuspiciousActivityDetection:
         # Results should be sorted by suspicion score
         if len(suspicious) > 1:
             for i in range(1, len(suspicious)):
-                assert suspicious[i-1]["suspicion_score"] >= suspicious[i]["suspicion_score"]
+                assert suspicious[i - 1]["suspicion_score"] >= suspicious[i]["suspicion_score"]
 
     async def test_detect_suspicious_activities_high_sensitivity(self, analyzer):
         """Test suspicious activity detection with high sensitivity."""
@@ -543,7 +538,8 @@ class TestRiskFactorAnalysis:
             "login_events": [
                 {"success": False, "location": f"Location_{i}", "timestamp": datetime.now(UTC).replace(hour=3)}
                 for i in range(10)  # Many failed logins at unusual hours from different locations
-            ] + [
+            ]
+            + [
                 {"success": True, "location": "Unknown", "timestamp": datetime.now(UTC)}
                 for _ in range(60)  # High frequency successful logins
             ],
@@ -562,9 +558,9 @@ class TestRiskFactorAnalysis:
         """Test access pattern analysis with bulk operations."""
         bulk_access_data = {
             "access_events": [
-                {"access_type": "bulk_export", "sensitivity": "critical", "record_count": 5000}
-                for _ in range(10)
-            ] + [
+                {"access_type": "bulk_export", "sensitivity": "critical", "record_count": 5000} for _ in range(10)
+            ]
+            + [
                 {"access_type": "read", "sensitivity": "high", "record_count": 1}
                 for _ in range(150)  # High volume access
             ],
@@ -606,9 +602,9 @@ class TestRiskFactorAnalysis:
         off_hours_data = {
             "temporal_patterns": {
                 "off_hours_percentage": 90.0,  # Mostly off-hours
-                "weekend_percentage": 80.0,   # High weekend activity
-                "clustering_score": 95.0,     # Potential automation
-                "timezone_variance": 6,       # Many timezones
+                "weekend_percentage": 80.0,  # High weekend activity
+                "clustering_score": 95.0,  # Potential automation
+                "timezone_variance": 6,  # Many timezones
             },
         }
 
@@ -619,8 +615,7 @@ class TestRiskFactorAnalysis:
 
         # Should detect off-hours, automation, and timezone variance
         indicators_text = " ".join(result["indicators"])
-        assert any(keyword in indicators_text.lower()
-                  for keyword in ["off-hours", "automated", "timezone"])
+        assert any(keyword in indicators_text.lower() for keyword in ["off-hours", "automated", "timezone"])
 
 
 class TestDetectionPatterns:
@@ -659,10 +654,14 @@ class TestDetectionPatterns:
                 "action_type": "same_action",
                 "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
-            for i in range(50)  # Need more repetitions for threshold (50 > 50 * (0.8/0.6) = 66.7 - so use higher sensitivity)
+            for i in range(
+                50,
+            )  # Need more repetitions for threshold (50 > 50 * (0.8/0.6) = 66.7 - so use higher sensitivity)
         ]
 
-        suspicious = await analyzer._detect_unusual_sequences("repeat_user", repetitive_activities, 0.9)  # Higher sensitivity
+        suspicious = await analyzer._detect_unusual_sequences(
+            "repeat_user", repetitive_activities, 0.9,
+        )  # Higher sensitivity
 
         assert len(suspicious) > 0
 
@@ -678,10 +677,15 @@ class TestDetectionPatterns:
                 "action_type": action_type,
                 "timestamp": datetime.now(UTC) - timedelta(minutes=i),
             }
-            for i, action_type in enumerate([
-                "user_management", "permission_change", "system_config",
-                "security_setting", "role_assignment",
-            ])
+            for i, action_type in enumerate(
+                [
+                    "user_management",
+                    "permission_change",
+                    "system_config",
+                    "security_setting",
+                    "role_assignment",
+                ],
+            )
         ]
 
         suspicious = await analyzer._detect_escalation_attempts("admin_user", admin_activities, 0.7)

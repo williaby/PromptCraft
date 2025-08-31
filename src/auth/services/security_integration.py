@@ -142,7 +142,9 @@ class SecurityIntegrationService:
 
             # Initialize suspicious activity detector
             if self.config.enable_suspicious_activity_detection:
-                self.suspicious_activity_detector = SuspiciousActivityDetector(config=self.config.suspicious_activity_config)
+                self.suspicious_activity_detector = SuspiciousActivityDetector(
+                    config=self.config.suspicious_activity_config,
+                )
             else:
                 self.suspicious_activity_detector = None
 
@@ -269,7 +271,9 @@ class SecurityIntegrationService:
             # Process through suspicious activity detector
             if self.suspicious_activity_detector and self._is_service_healthy("detector"):
                 try:
-                    analysis_result = await self.suspicious_activity_detector.analyze_activity(event, additional_context)
+                    analysis_result = await self.suspicious_activity_detector.analyze_activity(
+                        event, additional_context,
+                    )
 
                     if analysis_result.is_suspicious:
                         results["suspicious_activity"] = {
@@ -554,7 +558,9 @@ class SecurityIntegrationService:
                 "status": "healthy" if self.alert_engine and self.metrics.alert_engine_healthy else "unhealthy",
             },
             "suspicious_activity_detector": {
-                "status": "healthy" if self.suspicious_activity_detector and self.metrics.detector_healthy else "unhealthy",
+                "status": (
+                    "healthy" if self.suspicious_activity_detector and self.metrics.detector_healthy else "unhealthy"
+                ),
             },
         }
 
@@ -651,7 +657,8 @@ class SecurityIntegrationService:
                 if event_types:
                     event_type_values = [et.value for et in event_types]
                     events = [
-                        e for e in events
+                        e
+                        for e in events
                         if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_type_values
                     ]
             else:
@@ -661,7 +668,8 @@ class SecurityIntegrationService:
             # Calculate summary statistics
             total_events = len(events)
             critical_events = sum(
-                1 for event in events
+                1
+                for event in events
                 if hasattr(event, "severity") and event.severity in ["critical", "high", SecurityEventSeverity.CRITICAL]
             )
 
@@ -769,18 +777,15 @@ class SecurityIntegrationService:
 
             # Calculate time-based event counts
             now = datetime.now(UTC)
-            events_24h = len([
-                e for e in all_events
-                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=1)
-            ])
-            events_week = len([
-                e for e in all_events
-                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=7)
-            ])
-            events_month = len([
-                e for e in all_events
-                if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=30)
-            ])
+            events_24h = len(
+                [e for e in all_events if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=1)],
+            )
+            events_week = len(
+                [e for e in all_events if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=7)],
+            )
+            events_month = len(
+                [e for e in all_events if hasattr(e, "timestamp") and e.timestamp >= now - timedelta(days=30)],
+            )
 
             return {
                 "total_events": len(all_events),
@@ -918,7 +923,8 @@ class SecurityIntegrationService:
                 # Apply event type filtering if specified
                 if event_types:
                     events = [
-                        e for e in events
+                        e
+                        for e in events
                         if (e.event_type.value if hasattr(e.event_type, "value") else e.event_type) in event_types
                     ]
 
@@ -1044,14 +1050,18 @@ class SecurityIntegrationService:
 
                     if event_types:
                         filtered_events = [
-                            e for e in filtered_events
-                            if (e.event_type.value if hasattr(e.event_type, "value") else str(e.event_type)) in event_types
+                            e
+                            for e in filtered_events
+                            if (e.event_type.value if hasattr(e.event_type, "value") else str(e.event_type))
+                            in event_types
                         ]
 
                     if severity_levels:
                         filtered_events = [
-                            e for e in filtered_events
-                            if (e.severity.value if hasattr(e.severity, "value") else str(e.severity)) in severity_levels
+                            e
+                            for e in filtered_events
+                            if (e.severity.value if hasattr(e.severity, "value") else str(e.severity))
+                            in severity_levels
                         ]
 
                     if user_id:
@@ -1069,15 +1079,19 @@ class SecurityIntegrationService:
                     total_count = len(filtered_events)
 
                     # Apply pagination
-                    paginated_events = filtered_events[offset:offset + limit]
+                    paginated_events = filtered_events[offset : offset + limit]
 
                     # Convert to dict format
                     events_data = []
                     for event in paginated_events:
                         event_dict = {
                             "id": str(event.id) if hasattr(event, "id") else f"evt_{hash(str(event))}",
-                            "event_type": event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
-                            "severity": event.severity.value if hasattr(event.severity, "value") else str(event.severity),
+                            "event_type": (
+                                event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type)
+                            ),
+                            "severity": (
+                                event.severity.value if hasattr(event.severity, "value") else str(event.severity)
+                            ),
                             "timestamp": event.timestamp,
                             "user_id": event.user_id,
                             "ip_address": str(event.ip_address) if event.ip_address else None,
@@ -1149,16 +1163,23 @@ class SecurityIntegrationService:
             event_id = f"sim_event_{hash(str(filters) + str(i)) % 100000:05d}"
 
             # Generate realistic event data
-            event_types_pool = event_types if event_types else ["login_success", "login_failure", "data_access", "permission_change"]
+            event_types_pool = (
+                event_types if event_types else ["login_success", "login_failure", "data_access", "permission_change"]
+            )
             severity_pool = severity_levels if severity_levels else ["info", "warning", "high", "critical"]
 
             event_data = {
                 "id": event_id,
                 "event_type": event_types_pool[i % len(event_types_pool)],
                 "severity": severity_pool[i % len(severity_pool)],
-                "timestamp": start_date + timedelta(
-                    seconds=(end_date - start_date).total_seconds() * (i / max(1, limit)),
-                ) if start_date and end_date else datetime.now(UTC),
+                "timestamp": (
+                    start_date
+                    + timedelta(
+                        seconds=(end_date - start_date).total_seconds() * (i / max(1, limit)),
+                    )
+                    if start_date and end_date
+                    else datetime.now(UTC)
+                ),
                 "user_id": user_id if user_id else f"user_{hash(event_id) % 100}",
                 "ip_address": f"192.168.{(hash(event_id) % 255)}.{((hash(event_id) // 255) % 255)}",
                 "user_agent": "Mozilla/5.0 (Test Browser)",
@@ -1292,17 +1313,21 @@ class SecurityIntegrationService:
                     }
 
             # Generate summary statistics
-            increasing_trends = sum(1 for trend in trend_data["trends"].values()
-                                 if trend.get("trend_direction") == "increasing")
-            decreasing_trends = sum(1 for trend in trend_data["trends"].values()
-                                  if trend.get("trend_direction") == "decreasing")
+            increasing_trends = sum(
+                1 for trend in trend_data["trends"].values() if trend.get("trend_direction") == "increasing"
+            )
+            decreasing_trends = sum(
+                1 for trend in trend_data["trends"].values() if trend.get("trend_direction") == "decreasing"
+            )
 
             trend_data["summary"] = {
                 "total_categories_analyzed": len(analysis_categories),
                 "increasing_trends": increasing_trends,
                 "decreasing_trends": decreasing_trends,
                 "stable_trends": len(analysis_categories) - increasing_trends - decreasing_trends,
-                "overall_security_posture": "moderate_concern" if increasing_trends > decreasing_trends else "improving",
+                "overall_security_posture": (
+                    "moderate_concern" if increasing_trends > decreasing_trends else "improving"
+                ),
             }
 
             # Log trend analysis
@@ -1389,37 +1414,45 @@ class SecurityIntegrationService:
             # Add user entities
             if user_ids:
                 for user_id in user_ids:
-                    entities_to_analyze.append({
-                        "entity_type": "user",
-                        "entity_id": user_id,
-                        "focus_reason": "explicitly_requested",
-                    })
+                    entities_to_analyze.append(
+                        {
+                            "entity_type": "user",
+                            "entity_id": user_id,
+                            "focus_reason": "explicitly_requested",
+                        },
+                    )
             else:
                 # Generate some example user entities
                 for i in range(min(5, max(1, risk_threshold // 20))):
-                    entities_to_analyze.append({
-                        "entity_type": "user",
-                        "entity_id": f"user_{hash(str(start_time) + str(i)) % 10000:04d}",
-                        "focus_reason": "high_risk_activity_detected",
-                    })
+                    entities_to_analyze.append(
+                        {
+                            "entity_type": "user",
+                            "entity_id": f"user_{hash(str(start_time) + str(i)) % 10000:04d}",
+                            "focus_reason": "high_risk_activity_detected",
+                        },
+                    )
 
             # Add IP entities
             if ip_addresses:
                 for ip in ip_addresses:
-                    entities_to_analyze.append({
-                        "entity_type": "ip_address",
-                        "entity_id": ip,
-                        "focus_reason": "explicitly_requested",
-                    })
+                    entities_to_analyze.append(
+                        {
+                            "entity_type": "ip_address",
+                            "entity_id": ip,
+                            "focus_reason": "explicitly_requested",
+                        },
+                    )
             else:
                 # Generate some example IP entities
                 for i in range(min(3, max(1, risk_threshold // 30))):
                     ip_hash = hash(str(end_time) + str(i)) % 256
-                    entities_to_analyze.append({
-                        "entity_type": "ip_address",
-                        "entity_id": f"192.168.{ip_hash // 16}.{ip_hash % 16}",
-                        "focus_reason": "suspicious_activity_pattern",
-                    })
+                    entities_to_analyze.append(
+                        {
+                            "entity_type": "ip_address",
+                            "entity_id": f"192.168.{ip_hash // 16}.{ip_hash % 16}",
+                            "focus_reason": "suspicious_activity_pattern",
+                        },
+                    )
 
             # Analyze each entity
             high_risk_entities = 0
@@ -1436,15 +1469,19 @@ class SecurityIntegrationService:
                 # Generate anomaly indicators
                 anomaly_indicators = []
                 if base_risk > 70:
-                    anomaly_indicators.extend([
-                        "Multiple failed login attempts",
-                        "Access from unusual locations",
-                    ])
+                    anomaly_indicators.extend(
+                        [
+                            "Multiple failed login attempts",
+                            "Access from unusual locations",
+                        ],
+                    )
                 if base_risk > 80:
-                    anomaly_indicators.extend([
-                        "Off-hours access pattern",
-                        "Unusual request velocity",
-                    ])
+                    anomaly_indicators.extend(
+                        [
+                            "Off-hours access pattern",
+                            "Unusual request velocity",
+                        ],
+                    )
                 if base_risk > 90:
                     anomaly_indicators.append("Privilege escalation attempts")
 
@@ -1472,12 +1509,14 @@ class SecurityIntegrationService:
                     else:
                         event_type = ["successful_request", "data_access"][i % 2]
 
-                    events.append({
-                        "timestamp": event_time.isoformat(),
-                        "event_type": event_type,
-                        "risk_score": min(100, base_risk + (hash(str(event_time)) % 20) - 10),
-                        "description": f"{event_type.replace('_', ' ').title()} for {entity_id}",
-                    })
+                    events.append(
+                        {
+                            "timestamp": event_time.isoformat(),
+                            "event_type": event_type,
+                            "risk_score": min(100, base_risk + (hash(str(event_time)) % 20) - 10),
+                            "description": f"{event_type.replace('_', ' ').title()} for {entity_id}",
+                        },
+                    )
 
                 # Track high risk entities
                 if base_risk >= risk_threshold:
