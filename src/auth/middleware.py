@@ -711,17 +711,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             host = getattr(request.client, "host", None)
             if host and isinstance(host, str):
                 return host
-            # Don't convert MagicMock objects to string - they produce long strings
-            # Return None for test mocks instead
-            if host and not hasattr(host, "_mock_name"):
-                try:
-                    host_str = str(host)
-                    # Validate it looks like an IP address (max 45 chars for IPv6)
-                    if len(host_str) <= 45:
-                        return host_str
-                except Exception:  # nosec B110  # noqa: S110
-                    # Silently ignore IP parsing errors - acceptable for IP extraction
-                    pass
+            try:
+                host_str = str(host)
+                # Validate it looks like an IP address (max 45 chars for IPv6)
+                if len(host_str) <= 45:
+                    return host_str
+            except Exception:  # nosec B110  # noqa: S110
+                # Silently ignore IP parsing errors - acceptable for IP extraction
+                pass
 
         return None
 
