@@ -230,7 +230,7 @@ class SecurityEventBase(BaseModel):
 
     @field_validator("ip_address")
     @classmethod
-    def validate_ip_address(cls, v):
+    def validate_ip_address(cls, v: str | None) -> str | None:
         """Validate IP address format."""
         if v is None:
             return v
@@ -251,7 +251,7 @@ class SecurityEventBase(BaseModel):
 
     @field_validator("user_agent")
     @classmethod
-    def validate_user_agent(cls, v):
+    def validate_user_agent(cls, v: str | None) -> str | None:
         """Sanitize user agent string to prevent injection attacks."""
         if v is None:
             return v
@@ -262,7 +262,7 @@ class SecurityEventBase(BaseModel):
 
     @field_validator("details")
     @classmethod
-    def validate_details(cls, v):
+    def validate_details(cls, v: dict[str, Any] | None) -> dict[str, Any]:
         """Validate and sanitize details JSON."""
         if v is None:
             return {}

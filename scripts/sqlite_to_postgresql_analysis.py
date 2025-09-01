@@ -449,8 +449,9 @@ class SQLiteDatabaseAnalyzer:
                     # Simple datetime pattern check
                     if len(value) > 8 and any(char.isdigit() for char in value):
                         datetime_like += 1
-                except:
-                    pass
+                except (ValueError, TypeError):
+                    # Skip values that can't be processed as datetime
+                    continue
 
         if datetime_like > len(values) * 0.5:
             notes.append("Contains datetime-like strings - verify format")
@@ -682,6 +683,7 @@ def analyze_all_databases(base_path: str = ".") -> dict[str, DatabaseAnalysis]:
             analyses[analysis.name] = analysis
         except Exception as e:
             logger.error(f"Failed to analyze {db_file}: {e}")
+            # Continue processing other databases if one fails
             continue
 
     return analyses

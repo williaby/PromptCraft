@@ -395,7 +395,7 @@ class AuditService:
                 # Write new entries
                 entries_to_write = self._audit_log[-100:]  # Last 100 entries
 
-                with open(filename, "a") as f:
+                with filename.open("a") as f:
                     for entry in entries_to_write:
                         f.write(json.dumps(entry.to_dict()) + "\n")
 
@@ -405,7 +405,7 @@ class AuditService:
                 # Final persist before shutdown
                 try:
                     filename = self.audit_dir / f"audit_{datetime.now(UTC).strftime('%Y%m%d')}.jsonl"
-                    with open(filename, "a") as f:
+                    with filename.open("a") as f:
                         for entry in self._audit_log:
                             f.write(json.dumps(entry.to_dict()) + "\n")
                 except Exception as e:
@@ -449,7 +449,7 @@ class AuditService:
             filename = self.audit_dir / f"audit_{today.strftime('%Y%m%d')}.jsonl"
 
             if filename.exists():
-                with open(filename) as f:
+                with filename.open() as f:
                     for line in f:
                         try:
                             data = json.loads(line)

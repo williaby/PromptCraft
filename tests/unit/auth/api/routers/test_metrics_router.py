@@ -239,7 +239,7 @@ class TestMetricsRouter:
         # - High processing time (85.2 > 50): subtract min(30, (85.2-50)/10*5) = min(30, 17.6) = 17.6
         # - logger_healthy=False: subtract 20
         # - monitor_healthy=False: subtract 15
-        # Total: 100 - 17.6 - 20 - 15 = 47.4
+        # Expected total: 100 - 17.6 - 20 - 15 = 47.4
         expected_health_score = max(0, 100 - 17.6 - 20 - 15)
         assert abs(data["system_health_score"] - expected_health_score) < 1.0  # Allow small rounding differences
 

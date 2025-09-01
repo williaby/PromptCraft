@@ -206,8 +206,9 @@ class HomelabPerformanceTester:
             results.update(
                 {
                     "connection_successful": True,
-                    "connection_latency_ms": base + random.uniform(-10, 20),
-                    "simple_query_latency_ms": base * 0.3 + random.uniform(-5, 10),
+                    "connection_latency_ms": base + random.uniform(-10, 20),  # noqa: S311 - performance simulation
+                    "simple_query_latency_ms": base * 0.3
+                    + random.uniform(-5, 10),  # noqa: S311 - performance simulation
                     "postgres_version": "PostgreSQL 15.3 (Simulated Homelab Instance)",
                     "simulation_mode": True,
                 },
@@ -240,6 +241,7 @@ class HomelabPerformanceTester:
         except Exception as e:
             logger.error(f"Connectivity test failed: {e}")
             results["connection_errors"].append(str(e))
+            raise RuntimeError(f"Database connectivity test failed: {e}") from e
 
         return results
 
@@ -264,11 +266,21 @@ class HomelabPerformanceTester:
 
             results.update(
                 {
-                    "table_creation_ms": round(50 * hw_multiplier + random.uniform(-10, 20), 2),
-                    "single_insert_ms": round(25 * hw_multiplier + random.uniform(-5, 15), 2),
-                    "bulk_insert_ms": round(150 * hw_multiplier + random.uniform(-30, 50), 2),
-                    "query_performance_ms": round(35 * hw_multiplier + random.uniform(-8, 25), 2),
-                    "index_performance_ms": round(80 * hw_multiplier + random.uniform(-15, 30), 2),
+                    "table_creation_ms": round(
+                        50 * hw_multiplier + random.uniform(-10, 20), 2,
+                    ),  # noqa: S311 - performance simulation
+                    "single_insert_ms": round(
+                        25 * hw_multiplier + random.uniform(-5, 15), 2,
+                    ),  # noqa: S311 - performance simulation
+                    "bulk_insert_ms": round(
+                        150 * hw_multiplier + random.uniform(-30, 50), 2,
+                    ),  # noqa: S311 - performance simulation
+                    "query_performance_ms": round(
+                        35 * hw_multiplier + random.uniform(-8, 25), 2,
+                    ),  # noqa: S311 - performance simulation
+                    "index_performance_ms": round(
+                        80 * hw_multiplier + random.uniform(-15, 30), 2,
+                    ),  # noqa: S311 - performance simulation
                     "simulation_mode": True,
                 },
             )
@@ -376,6 +388,7 @@ class HomelabPerformanceTester:
         except Exception as e:
             logger.error(f"Schema performance test failed: {e}")
             results["errors"].append(str(e))
+            raise RuntimeError(f"Schema performance test failed: {e}") from e
 
         return results
 
@@ -404,7 +417,9 @@ class HomelabPerformanceTester:
             failure_rate = 0.05 if self.specs.cpu_cores >= 8 else 0.10 if self.specs.cpu_cores >= 4 else 0.20
 
             successful_ops = int(total_ops * (1 - failure_rate))
-            avg_latency = self.targets.simple_query_latency_max * random.uniform(0.8, 1.2)
+            avg_latency = self.targets.simple_query_latency_max * random.uniform(
+                0.8, 1.2,
+            )  # noqa: S311 - performance simulation
             simulated_time = 5.0  # Assume 5 seconds for the test
             throughput = successful_ops / simulated_time
 
@@ -495,6 +510,7 @@ class HomelabPerformanceTester:
         except Exception as e:
             logger.error(f"Concurrent load test failed: {e}")
             results["errors"].append(str(e))
+            raise RuntimeError(f"Concurrent load test failed: {e}") from e
 
         return results
 
@@ -571,6 +587,7 @@ class HomelabPerformanceTester:
                 "recommendation": "NO-GO",
                 "reason": f"Test execution failed: {e}",
             }
+            raise RuntimeError(f"Comprehensive performance test failed: {e}") from e
 
         finally:
             if self.engine:
@@ -683,6 +700,7 @@ class HomelabPerformanceTester:
                     "reason": f"Assessment failed: {e}",
                 },
             )
+            raise RuntimeError(f"Performance assessment failed: {e}") from e
 
         return assessment
 
@@ -708,6 +726,7 @@ async def main():
         print("Switching to simulation mode for homelab performance analysis...")
         logger.info(f"Switching to simulation mode due to: {e}")
         tester = HomelabPerformanceTester(simulation_mode=True)
+        # Note: Not re-raising here as this is expected fallback behavior
 
     try:
         results = await tester.run_comprehensive_test()
@@ -769,6 +788,7 @@ async def main():
     except Exception as e:
         logger.error(f"Performance validation failed: {e}")
         print(f"\nERROR: Performance validation failed: {e}")
+        # Return None for graceful handling in main execution
         return None
 
 

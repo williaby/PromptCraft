@@ -147,7 +147,7 @@ class RiskScore:
         user_id: str | None = None,
         overall_score: float | None = None,
         risk_factors: dict | None = None,
-        timestamp=None,
+        timestamp: datetime | None = None,
     ) -> None:
         self.score = min(max(score, 0), 100)  # Clamp between 0-100
         self.factors = factors or []
@@ -501,6 +501,8 @@ class SuspiciousActivityDetector:
             return result
 
         except Exception as e:
+            # Log the error for debugging while providing safe fallback
+            logger.error(f"Activity analysis failed: {e}", exc_info=True)
             # Return safe default result with low confidence
             result.risk_score = RiskScore(score=self.config.base_risk_score, confidence_score=0.1)
             result.risk_factors["analysis_error"] = str(e)
@@ -1080,7 +1082,7 @@ class SuspiciousActivityDetector:
             return 0.1  # Low suspicion for few events
 
         # Sort events by timestamp
-        def get_timestamp(e):
+        def get_timestamp(e: Any) -> datetime:
             if hasattr(e, "timestamp") and e.timestamp:
                 ts = e.timestamp
                 # Ensure timezone awareness

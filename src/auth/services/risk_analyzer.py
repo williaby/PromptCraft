@@ -262,7 +262,7 @@ class RiskAnalyzer:
             indicators.append(f"Multiple login locations: {len(locations)}")
 
         # Analyze time patterns
-        login_hours = [e.get("timestamp", datetime.now()).hour for e in login_events]
+        login_hours = [e.get("timestamp", datetime.now(UTC)).hour for e in login_events]
         unusual_hours = [h for h in login_hours if h < 6 or h > 22]
         if len(unusual_hours) > len(login_hours) * 0.3:
             risk_score += 15

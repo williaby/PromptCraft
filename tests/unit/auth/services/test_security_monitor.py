@@ -7,15 +7,15 @@ and real-time threat detection with <10ms performance requirements.
 import asyncio
 import time
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from tests.fixtures.security_service_mocks import MockSecurityLogger
 
 from src.auth.models import SecurityEvent, SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_monitor import FailedAttempt, MonitoringConfig, SecurityMonitor
 from src.utils.time_utils import utc_now
+from tests.fixtures.security_service_mocks import MockSecurityLogger
 
 
 class TestSecurityMonitorInitialization:
@@ -270,7 +270,7 @@ class TestSecurityMonitorBruteForceDetection:
 
         # Add some failed attempts
         monitor._failed_attempts[user_id] = [
-            {"ip_address": "192.168.1.100", "timestamp": datetime.now()} for _ in range(3)
+            {"ip_address": "192.168.1.100", "timestamp": datetime.now(UTC)} for _ in range(3)
         ]
 
         await monitor.clear_failed_attempts(user_id)
@@ -303,23 +303,25 @@ class TestSecurityMonitorRateLimiting:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
-                    mock_alert_engine = AsyncMock()
+        with (
+            patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class,
+            patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+            mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
+            mock_alert_class.return_value = mock_alert_engine
 
-                    monitor = SecurityMonitor(rate_limit_requests=5, rate_limit_window_seconds=10)
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
+            monitor = SecurityMonitor(rate_limit_requests=5, rate_limit_window_seconds=10)
+            monitor._db = mock_db
+            monitor._security_logger = mock_logger
+            monitor._alert_engine = mock_alert_engine
 
-                    yield monitor
+            yield monitor
 
     async def test_check_rate_limit_within_limits(self, monitor):
         """Test rate limiting when requests are within limits."""
@@ -402,23 +404,25 @@ class TestSecurityMonitorSuspiciousActivity:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
-                    mock_alert_engine = AsyncMock()
+        with (
+            patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class,
+            patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+            mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
+            mock_alert_class.return_value = mock_alert_engine
 
-                    monitor = SecurityMonitor()
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
+            monitor = SecurityMonitor()
+            monitor._db = mock_db
+            monitor._security_logger = mock_logger
+            monitor._alert_engine = mock_alert_engine
 
-                    yield monitor
+            yield monitor
 
     async def test_detect_unusual_location_new_country(self, monitor):
         """Test detection of login from unusual location."""
@@ -477,7 +481,7 @@ class TestSecurityMonitorSuspiciousActivity:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now().replace(hour=hour, minute=0, second=0),
+                timestamp=datetime.now(UTC).replace(hour=hour, minute=0, second=0),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -486,7 +490,7 @@ class TestSecurityMonitorSuspiciousActivity:
         monitor._db.get_events_by_user_id.return_value = mock_events
 
         # Test login at 3 AM (unusual time)
-        unusual_time = datetime.now().replace(hour=3, minute=0, second=0)
+        unusual_time = datetime.now(UTC).replace(hour=3, minute=0, second=0)
         is_suspicious = await monitor.detect_unusual_time(user_id, unusual_time)
 
         assert is_suspicious is True
@@ -501,7 +505,7 @@ class TestSecurityMonitorSuspiciousActivity:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now().replace(hour=hour, minute=0, second=0),
+                timestamp=datetime.now(UTC).replace(hour=hour, minute=0, second=0),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -510,7 +514,7 @@ class TestSecurityMonitorSuspiciousActivity:
         monitor._db.get_events_by_user_id.return_value = mock_events
 
         # Test login at 11 AM (typical time)
-        typical_time = datetime.now().replace(hour=11, minute=0, second=0)
+        typical_time = datetime.now(UTC).replace(hour=11, minute=0, second=0)
         is_suspicious = await monitor.detect_unusual_time(user_id, typical_time)
 
         assert is_suspicious is False
@@ -525,7 +529,7 @@ class TestSecurityMonitorSuspiciousActivity:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address=f"192.168.1.{i}",
-                timestamp=datetime.now() - timedelta(minutes=5),
+                timestamp=datetime.now(UTC) - timedelta(minutes=5),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -552,7 +556,7 @@ class TestSecurityMonitorSuspiciousActivity:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -576,23 +580,25 @@ class TestSecurityMonitorRealTimeDetection:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
-                    mock_alert_engine = AsyncMock()
+        with (
+            patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class,
+            patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+            mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
+            mock_alert_class.return_value = mock_alert_engine
 
-                    monitor = SecurityMonitor()
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
+            monitor = SecurityMonitor()
+            monitor._db = mock_db
+            monitor._security_logger = mock_logger
+            monitor._alert_engine = mock_alert_engine
 
-                    yield monitor
+            yield monitor
 
     async def test_process_security_event_brute_force(self, monitor):
         """Test real-time processing of brute force events."""
@@ -632,11 +638,11 @@ class TestSecurityMonitorRealTimeDetection:
         """Test comprehensive security metrics collection."""
         # Setup mock data
         monitor._failed_attempts = {
-            "user1": [{"ip_address": "1.2.3.4", "timestamp": datetime.now()}],
-            "user2": [{"ip_address": "5.6.7.8", "timestamp": datetime.now()}],
+            "user1": [{"ip_address": "1.2.3.4", "timestamp": datetime.now(UTC)}],
+            "user2": [{"ip_address": "5.6.7.8", "timestamp": datetime.now(UTC)}],
         }
-        monitor._locked_accounts = {"locked_user": {"locked_at": datetime.now(), "ip_address": "9.10.11.12"}}
-        monitor._rate_limit_tracker = {("user1", "/api/login"): [datetime.now(), datetime.now()]}
+        monitor._locked_accounts = {"locked_user": {"locked_at": datetime.now(UTC), "ip_address": "9.10.11.12"}}
+        monitor._rate_limit_tracker = {("user1", "/api/login"): [datetime.now(UTC), datetime.now(UTC)]}
 
         metrics = await monitor.get_security_metrics()
 
@@ -649,12 +655,12 @@ class TestSecurityMonitorRealTimeDetection:
     async def test_cleanup_expired_data(self, monitor):
         """Test cleanup of expired tracking data."""
         # Add expired data
-        old_time = datetime.now() - timedelta(hours=2)
+        old_time = datetime.now(UTC) - timedelta(hours=2)
         monitor._failed_attempts = {
             "user1": [{"ip_address": "1.2.3.4", "timestamp": old_time}],
-            "user2": [{"ip_address": "5.6.7.8", "timestamp": datetime.now()}],
+            "user2": [{"ip_address": "5.6.7.8", "timestamp": datetime.now(UTC)}],
         }
-        monitor._rate_limit_tracker = {("user1", "/api/login"): [old_time], ("user2", "/api/data"): [datetime.now()]}
+        monitor._rate_limit_tracker = {("user1", "/api/login"): [old_time], ("user2", "/api/data"): [datetime.now(UTC)]}
 
         await monitor.cleanup_expired_data()
 
@@ -671,23 +677,25 @@ class TestSecurityMonitorPerformance:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
-                    mock_alert_engine = AsyncMock()
+        with (
+            patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class,
+            patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+            mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
+            mock_alert_class.return_value = mock_alert_engine
 
-                    monitor = SecurityMonitor()
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
+            monitor = SecurityMonitor()
+            monitor._db = mock_db
+            monitor._security_logger = mock_logger
+            monitor._alert_engine = mock_alert_engine
 
-                    yield monitor
+            yield monitor
 
     @pytest.mark.performance
     async def test_record_failed_login_performance(self, monitor):
@@ -798,23 +806,25 @@ class TestSecurityMonitorErrorHandling:
     @pytest.fixture
     def monitor(self):
         """Create security monitor with mocked dependencies."""
-        with patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class:
-                with patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class:
-                    mock_db = AsyncMock()
-                    mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
-                    mock_alert_engine = AsyncMock()
+        with (
+            patch("src.auth.services.security_monitor.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.security_monitor.SecurityLogger") as mock_logger_class,
+            patch("src.auth.services.security_monitor.AlertEngine") as mock_alert_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = MockSecurityLogger()  # Use MockSecurityLogger instead of AsyncMock
+            mock_alert_engine = AsyncMock()
 
-                    mock_db_class.return_value = mock_db
-                    mock_logger_class.return_value = mock_logger
-                    mock_alert_class.return_value = mock_alert_engine
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
+            mock_alert_class.return_value = mock_alert_engine
 
-                    monitor = SecurityMonitor()
-                    monitor._db = mock_db
-                    monitor._security_logger = mock_logger
-                    monitor._alert_engine = mock_alert_engine
+            monitor = SecurityMonitor()
+            monitor._db = mock_db
+            monitor._security_logger = mock_logger
+            monitor._alert_engine = mock_alert_engine
 
-                    yield monitor
+            yield monitor
 
     async def test_record_failed_login_none_user_id(self, monitor):
         """Test handling of None user_id in failed login recording."""

@@ -388,7 +388,7 @@ class ServiceContainer(IServiceContainer):
 
             for service_type in initialization_order:
                 try:
-                    start_time = datetime.now()
+                    start_time = datetime.now(UTC)
 
                     # Resolve the service (this will create it)
                     service_instance = self.resolve(service_type)
@@ -408,7 +408,7 @@ class ServiceContainer(IServiceContainer):
                         self._instances[service_type].status = ServiceStatus.READY
 
                     # Record initialization time
-                    init_time = (datetime.now() - start_time).total_seconds()
+                    init_time = (datetime.now(UTC) - start_time).total_seconds()
                     self._initialization_times[service_type] = init_time
 
                     results[service_type] = True
@@ -508,7 +508,7 @@ class ServiceContainer(IServiceContainer):
                     if hasattr(annotation, "__origin__") and annotation.__origin__ is Union:
                         args = annotation.__args__
                         if len(args) == 2 and type(None) in args:
-                            # This is Optional[Type]
+                            # Handle Optional[Type] pattern: Union[Type, None]
                             non_none_type = next(arg for arg in args if arg != type(None))
                             if isinstance(non_none_type, type):
                                 dependencies.append(non_none_type)

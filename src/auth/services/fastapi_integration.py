@@ -17,7 +17,7 @@ Architecture: FastAPI Depends() integration with service container resolution
 """
 
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
@@ -214,7 +214,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             return ContainerMetricsResponse(**metrics)
         except Exception as e:
             logger.error("Failed to get container metrics: %s", repr(str(e)))
-            raise HTTPException(status_code=500, detail="Failed to get container metrics")
+            raise HTTPException(status_code=500, detail="Failed to get container metrics") from e
 
     @app.get("/health/services")
     async def get_service_health():  # nosemgrep: python.lang.correctness.useless-inner-function
@@ -254,7 +254,7 @@ def add_health_check_routes(app: FastAPI) -> None:
 
         except Exception as e:
             logger.error("Failed to get service health: %s", repr(str(e)))
-            raise HTTPException(status_code=500, detail="Failed to get service health")
+            raise HTTPException(status_code=500, detail="Failed to get service health") from e
 
     @app.get("/health/service/{service_name}")
     async def get_individual_service_health(
@@ -293,7 +293,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get service health for %s: %s", repr(service_name), repr(str(e)))
-            raise HTTPException(status_code=500, detail="Failed to get service health")
+            raise HTTPException(status_code=500, detail="Failed to get service health") from e
 
 
 @asynccontextmanager
@@ -373,7 +373,7 @@ def create_fastapi_app(
     @app.middleware("http")
     async def service_context_middleware(
         request: Request,
-        call_next,
+        call_next: Callable[[Request], Any],
     ):  # nosemgrep: python.lang.correctness.useless-inner-function
         """Middleware to provide service context for requests."""
         # Add request ID or other context if needed

@@ -311,22 +311,21 @@ class HealthAssessor:
 
         try:
             timeout = aiohttp.ClientTimeout(total=timeout_seconds)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(service_url) as response:
-                    end_time = datetime.now(UTC)
-                    response_time = (end_time - start_time).total_seconds() * 1000
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(service_url) as response:
+                end_time = datetime.now(UTC)
+                response_time = (end_time - start_time).total_seconds() * 1000
 
-                    is_healthy = response.status in expected_status_codes
+                is_healthy = response.status in expected_status_codes
 
-                    return {
-                        "service_url": service_url,
-                        "status": "healthy" if is_healthy else "unhealthy",
-                        "http_status": response.status,
-                        "response_time_ms": round(response_time, 2),
-                        "checked_at": start_time,
-                        "healthy": is_healthy,
-                        "error_message": None if is_healthy else f"HTTP {response.status}",
-                    }
+                return {
+                    "service_url": service_url,
+                    "status": "healthy" if is_healthy else "unhealthy",
+                    "http_status": response.status,
+                    "response_time_ms": round(response_time, 2),
+                    "checked_at": start_time,
+                    "healthy": is_healthy,
+                    "error_message": None if is_healthy else f"HTTP {response.status}",
+                }
 
         except TimeoutError:
             return {

@@ -18,7 +18,7 @@ Test Coverage:
 
 import asyncio
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -220,7 +220,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
                 "id": "evt_001",
                 "event_type": "brute_force_attempt",
                 "severity": "critical",
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(UTC),
                 "user_id": "user123",
                 "ip_address": "192.168.1.100",
                 "details": {"login_attempts": 5},
@@ -230,7 +230,7 @@ class TestSecurityDashboardEndpointsEventsEndpoint:
                 "id": "evt_002",
                 "event_type": "suspicious_location",
                 "severity": "warning",
-                "timestamp": datetime.utcnow() - timedelta(minutes=15),
+                "timestamp": datetime.now(UTC) - timedelta(minutes=15),
                 "user_id": "user456",
                 "ip_address": "10.0.0.50",
                 "details": {"location": "Unknown City"},
@@ -323,7 +323,7 @@ class TestSecurityDashboardEndpointsAlertsEndpoint:
                     "id": "alert_001",
                     "title": "Brute Force Attack Detected",
                     "severity": "critical",
-                    "created_at": datetime.utcnow(),
+                    "created_at": datetime.now(UTC),
                     "event_count": 15,
                     "affected_users": ["user123"],
                     "status": "active",
@@ -332,7 +332,7 @@ class TestSecurityDashboardEndpointsAlertsEndpoint:
                     "id": "alert_002",
                     "title": "Unusual Login Pattern",
                     "severity": "warning",
-                    "created_at": datetime.utcnow() - timedelta(minutes=30),
+                    "created_at": datetime.now(UTC) - timedelta(minutes=30),
                     "event_count": 3,
                     "affected_users": ["user456", "user789"],
                     "status": "investigating",
@@ -492,8 +492,8 @@ class TestSecurityDashboardEndpointsReportsEndpoint:
         """Sample audit report data."""
         return {
             "report_id": "rpt_20241023_001",
-            "generated_at": datetime.utcnow(),
-            "period": {"start_date": datetime.utcnow() - timedelta(days=7), "end_date": datetime.utcnow()},
+            "generated_at": datetime.now(UTC),
+            "period": {"start_date": datetime.now(UTC) - timedelta(days=7), "end_date": datetime.now(UTC)},
             "summary": {
                 "total_events": 3420,
                 "security_incidents": 15,
@@ -534,8 +534,8 @@ class TestSecurityDashboardEndpointsReportsEndpoint:
         """Test audit report generation with specific parameters."""
         # Setup
         endpoints.audit_service.generate_security_report.return_value = sample_audit_report
-        start_date = datetime.utcnow() - timedelta(days=30)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(UTC) - timedelta(days=30)
+        end_date = datetime.now(UTC)
 
         # Execute
         await endpoints.generate_audit_report(

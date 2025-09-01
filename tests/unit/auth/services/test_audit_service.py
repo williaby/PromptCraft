@@ -8,7 +8,7 @@ import asyncio
 import csv
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -92,23 +92,25 @@ class TestAuditServiceReportGeneration:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     @pytest.fixture
     def sample_events(self):
         """Create sample security events for testing."""
         events = []
-        base_time = datetime.now() - timedelta(days=7)
+        base_time = datetime.now(UTC) - timedelta(days=7)
 
         for i in range(50):
             event = SecurityEvent(
@@ -128,8 +130,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_success(self, service, sample_events):
         """Test successful compliance report generation."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=7),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=7),
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
             include_metadata=True,
         )
@@ -160,8 +162,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_invalid_date_range(self, service):
         """Test report generation with invalid date range."""
         request = AuditReportRequest(
-            start_date=datetime.now(),
-            end_date=datetime.now() - timedelta(days=1),  # End before start
+            start_date=datetime.now(UTC),
+            end_date=datetime.now(UTC) - timedelta(days=1),  # End before start
             format=ExportFormat.JSON,
         )
 
@@ -171,8 +173,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_large_date_range_warning(self, service, sample_events):
         """Test warning for large date range reports."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=400),  # > 1 year
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=400),  # > 1 year
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
         )
 
@@ -189,8 +191,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_with_filters(self, service, sample_events):
         """Test report generation with various filters."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=7),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=7),
+            end_date=datetime.now(UTC),
             user_id="user1",  # Filter by specific user
             event_types=[SecurityEventType.LOGIN_SUCCESS],  # Filter by event type
             severity_levels=["medium"],  # Filter by severity
@@ -212,8 +214,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_performance_tracking(self, service, sample_events):
         """Test that report generation tracks performance metrics."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
         )
 
@@ -230,8 +232,8 @@ class TestAuditServiceReportGeneration:
     async def test_generate_compliance_report_error_handling(self, service):
         """Test error handling during report generation."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.JSON,
         )
 
@@ -253,17 +255,19 @@ class TestAuditServiceExportFunctionality:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     @pytest.fixture
     def sample_report(self):
@@ -276,7 +280,7 @@ class TestAuditServiceExportFunctionality:
                 user_agent="Mozilla/5.0",
                 severity="info",
                 session_id="test_session",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 details={"login_method": "password"},
             ),
             SecurityEvent(
@@ -286,14 +290,14 @@ class TestAuditServiceExportFunctionality:
                 user_agent="Chrome/91.0",
                 severity="warning",
                 session_id="test_session_2",
-                timestamp=datetime.now() - timedelta(hours=1),
+                timestamp=datetime.now(UTC) - timedelta(hours=1),
                 details={"reason": "invalid_password"},
             ),
         ]
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
             include_metadata=True,
         )
@@ -309,7 +313,7 @@ class TestAuditServiceExportFunctionality:
 
         return ComplianceReport(
             report_id="test_report_123",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=events,
@@ -435,13 +439,13 @@ class TestAuditServiceExportFunctionality:
             user_agent="Mozilla/5.0 «Special» Chars",
             severity="info",
             source="auth",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             details={"note": "Special chars: àáâãäå øæå ñ"},
         )
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.JSON,
             include_metadata=True,
         )
@@ -457,7 +461,7 @@ class TestAuditServiceExportFunctionality:
 
         report = ComplianceReport(
             report_id="special_chars_test",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=[special_event],
@@ -481,17 +485,19 @@ class TestAuditServiceRetentionPolicies:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     async def test_enforce_retention_policies_success(self, service):
         """Test successful retention policy enforcement."""
@@ -541,7 +547,7 @@ class TestAuditServiceRetentionPolicies:
         service.db.cleanup_expired_events.return_value = 0
 
         with patch("src.auth.services.audit_service.datetime") as mock_datetime:
-            current_time = datetime(2024, 1, 15, 10, 0, 0)
+            current_time = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
             mock_datetime.now.return_value = current_time
 
             await service.enforce_retention_policies()
@@ -617,23 +623,25 @@ class TestAuditServiceStatistics:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     @pytest.fixture
     def sample_events_for_stats(self):
         """Create sample events for statistics testing."""
         events = []
-        base_time = datetime.now() - timedelta(days=5)
+        base_time = datetime.now(UTC) - timedelta(days=5)
 
         # Create diverse set of events for comprehensive statistics
         event_configs = [
@@ -664,8 +672,8 @@ class TestAuditServiceStatistics:
 
     async def test_get_audit_statistics_comprehensive(self, service, sample_events_for_stats):
         """Test comprehensive audit statistics generation."""
-        start_date = datetime.now() - timedelta(days=7)
-        end_date = datetime.now()
+        start_date = datetime.now(UTC) - timedelta(days=7)
+        end_date = datetime.now(UTC)
 
         service.db.get_events_by_date_range.return_value = sample_events_for_stats
 
@@ -698,7 +706,7 @@ class TestAuditServiceStatistics:
 
     async def test_generate_statistics_empty_events(self, service):
         """Test statistics generation with no events."""
-        request = AuditReportRequest(start_date=datetime.now() - timedelta(days=1), end_date=datetime.now())
+        request = AuditReportRequest(start_date=datetime.now(UTC) - timedelta(days=1), end_date=datetime.now(UTC))
 
         statistics = service._generate_statistics([], request)
 
@@ -717,7 +725,7 @@ class TestAuditServiceStatistics:
                 ip_address=None,  # None IP
                 severity="critical",
                 source="system",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
@@ -725,11 +733,11 @@ class TestAuditServiceStatistics:
                 ip_address="192.168.1.100",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
         ]
 
-        request = AuditReportRequest(start_date=datetime.now() - timedelta(days=1), end_date=datetime.now())
+        request = AuditReportRequest(start_date=datetime.now(UTC) - timedelta(days=1), end_date=datetime.now(UTC))
 
         statistics = service._generate_statistics(events_with_nones, request)
 
@@ -739,8 +747,8 @@ class TestAuditServiceStatistics:
 
     async def test_get_audit_statistics_error_handling(self, service):
         """Test error handling in audit statistics generation."""
-        start_date = datetime.now() - timedelta(days=1)
-        end_date = datetime.now()
+        start_date = datetime.now(UTC) - timedelta(days=1)
+        end_date = datetime.now(UTC)
 
         service.db.get_events_by_date_range.side_effect = Exception("Database query failed")
 
@@ -754,17 +762,19 @@ class TestAuditServicePerformanceMetrics:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     def test_get_performance_metrics_no_reports(self, service):
         """Test performance metrics when no reports have been generated."""
@@ -791,7 +801,7 @@ class TestAuditServicePerformanceMetrics:
 
     async def test_performance_tracking_during_report_generation(self, service):
         """Test that performance is tracked during report generation."""
-        request = AuditReportRequest(start_date=datetime.now() - timedelta(days=1), end_date=datetime.now())
+        request = AuditReportRequest(start_date=datetime.now(UTC) - timedelta(days=1), end_date=datetime.now(UTC))
 
         # Mock minimal database response
         service.db.get_events_by_date_range.return_value = []
@@ -811,24 +821,26 @@ class TestAuditServicePerformanceRequirements:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     @pytest.mark.performance
     async def test_report_generation_performance_small_dataset(self, service):
         """Test report generation performance with small dataset."""
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=7),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=7),
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
         )
 
@@ -838,7 +850,7 @@ class TestAuditServicePerformanceRequirements:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=f"user{i}",
-                timestamp=datetime.now() - timedelta(hours=i),
+                timestamp=datetime.now(UTC) - timedelta(hours=i),
                 severity="info",
                 source="auth",
             )
@@ -863,7 +875,7 @@ class TestAuditServicePerformanceRequirements:
                 event_type=SecurityEventType.LOGIN_SUCCESS if i % 2 == 0 else SecurityEventType.LOGIN_FAILURE,
                 user_id=f"user{i % 50}",
                 ip_address=f"192.168.1.{i % 255}",
-                timestamp=datetime.now() - timedelta(minutes=i),
+                timestamp=datetime.now(UTC) - timedelta(minutes=i),
                 severity="warning",
                 source="auth",
                 details={"session_id": f"session_{i}"},
@@ -871,8 +883,8 @@ class TestAuditServicePerformanceRequirements:
             events.append(event)
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.CSV,
             include_metadata=True,
         )
@@ -888,7 +900,7 @@ class TestAuditServicePerformanceRequirements:
 
         report = ComplianceReport(
             report_id="performance_test",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=events,
@@ -912,7 +924,7 @@ class TestAuditServicePerformanceRequirements:
                 event_type=SecurityEventType.SECURITY_ALERT if i % 10 == 0 else SecurityEventType.LOGIN_SUCCESS,
                 user_id=f"user{i % 30}",
                 ip_address=f"10.0.{i//100}.{i % 100}",
-                timestamp=datetime.now() - timedelta(seconds=i * 10),
+                timestamp=datetime.now(UTC) - timedelta(seconds=i * 10),
                 severity="critical" if i % 10 == 0 else "info",
                 source="security" if i % 10 == 0 else "auth",
                 details={"complex_data": {"level1": {"level2": [f"item_{j}" for j in range(5)]}}},
@@ -920,8 +932,8 @@ class TestAuditServicePerformanceRequirements:
             events.append(event)
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(hours=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(hours=1),
+            end_date=datetime.now(UTC),
             format=ExportFormat.JSON,
             include_metadata=True,
         )
@@ -937,7 +949,7 @@ class TestAuditServicePerformanceRequirements:
 
         report = ComplianceReport(
             report_id="json_performance_test",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=events,
@@ -981,8 +993,8 @@ class TestAuditServicePerformanceRequirements:
         async def generate_test_report(report_id: str):
             """Generate a test report."""
             request = AuditReportRequest(
-                start_date=datetime.now() - timedelta(hours=1),
-                end_date=datetime.now(),
+                start_date=datetime.now(UTC) - timedelta(hours=1),
+                end_date=datetime.now(UTC),
                 format=ExportFormat.CSV,
             )
 
@@ -991,7 +1003,7 @@ class TestAuditServicePerformanceRequirements:
                 SecurityEvent(
                     event_type=SecurityEventType.LOGIN_SUCCESS,
                     user_id=f"user_{report_id}",
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(UTC),
                     severity="info",
                     source="auth",
                 ),
@@ -1026,17 +1038,19 @@ class TestAuditServiceErrorHandling:
     @pytest.fixture
     def service(self):
         """Create audit service with mocked dependencies."""
-        with patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.audit_service.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.audit_service.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                service = AuditService(db=mock_db, security_logger=mock_logger)
+            service = AuditService(db=mock_db, security_logger=mock_logger)
 
-                yield service
+            yield service
 
     async def test_fetch_filtered_events_user_filter(self, service):
         """Test _fetch_filtered_events applies user filter correctly."""
@@ -1046,29 +1060,29 @@ class TestAuditServiceErrorHandling:
                 user_id="user1",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="user2",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id="user1",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
         ]
 
         service.db.get_events_by_date_range.return_value = events
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             user_id="user1",  # Filter by user1
         )
 
@@ -1085,29 +1099,29 @@ class TestAuditServiceErrorHandling:
                 user_id="user1",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 user_id="user1",
                 severity="warning",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGOUT,
                 user_id="user1",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
         ]
 
         service.db.get_events_by_date_range.return_value = events
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             event_types=[SecurityEventType.LOGIN_SUCCESS, SecurityEventType.LOGIN_FAILURE],
         )
 
@@ -1127,29 +1141,29 @@ class TestAuditServiceErrorHandling:
                 user_id="user1",
                 severity="info",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.LOGIN_FAILURE,
                 user_id="user1",
                 severity="warning",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
             SecurityEvent(
                 event_type=SecurityEventType.SECURITY_ALERT,
                 user_id="user1",
                 severity="critical",
                 source="auth",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
         ]
 
         service.db.get_events_by_date_range.return_value = events
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             severity_levels=["warning", "critical"],
         )
 
@@ -1160,7 +1174,7 @@ class TestAuditServiceErrorHandling:
 
     async def test_export_handles_empty_events(self, service):
         """Test export functions handle empty event lists."""
-        request = AuditReportRequest(start_date=datetime.now() - timedelta(days=1), end_date=datetime.now())
+        request = AuditReportRequest(start_date=datetime.now(UTC) - timedelta(days=1), end_date=datetime.now(UTC))
 
         statistics = AuditStatistics(
             total_events=0,
@@ -1173,7 +1187,7 @@ class TestAuditServiceErrorHandling:
 
         empty_report = ComplianceReport(
             report_id="empty_test",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=[],
@@ -1193,7 +1207,7 @@ class TestAuditServiceErrorHandling:
 
     async def test_report_id_generation_uniqueness(self, service):
         """Test that report IDs are generated uniquely."""
-        request = AuditReportRequest(start_date=datetime.now() - timedelta(days=1), end_date=datetime.now())
+        request = AuditReportRequest(start_date=datetime.now(UTC) - timedelta(days=1), end_date=datetime.now(UTC))
 
         service.db.get_events_by_date_range.return_value = []
 
@@ -1222,7 +1236,7 @@ class TestAuditServiceErrorHandling:
         large_event = SecurityEvent(
             event_type=SecurityEventType.SECURITY_ALERT,
             user_id="large_metadata_user",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             severity="critical",
             session_id="large_session",
             details=large_metadata,
@@ -1230,8 +1244,8 @@ class TestAuditServiceErrorHandling:
         )
 
         request = AuditReportRequest(
-            start_date=datetime.now() - timedelta(days=1),
-            end_date=datetime.now(),
+            start_date=datetime.now(UTC) - timedelta(days=1),
+            end_date=datetime.now(UTC),
             include_metadata=True,
         )
 
@@ -1246,7 +1260,7 @@ class TestAuditServiceErrorHandling:
 
         report = ComplianceReport(
             report_id="large_metadata_test",
-            generated_at=datetime.now(),
+            generated_at=datetime.now(UTC),
             report_request=request,
             statistics=statistics,
             events=[large_event],

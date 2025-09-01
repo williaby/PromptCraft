@@ -819,7 +819,7 @@ class TestAuditServicePersistence:
             {"id": "test_2", "action": "create", "resource": "document"},
         ]
 
-        with open(log_file, "w") as f:
+        with log_file.open("w") as f:
             for data in sample_data:
                 f.write(json.dumps(data) + "\n")
 
@@ -838,7 +838,7 @@ class TestAuditServicePersistence:
         service.audit_dir.mkdir(parents=True, exist_ok=True)
 
         # Write invalid JSON
-        with open(log_file, "w") as f:
+        with log_file.open("w") as f:
             f.write("invalid json line\n")
             f.write('{"valid": "json"}\n')
             f.write("another invalid line\n")
@@ -902,21 +902,22 @@ class TestAuditServiceErrorHandling:
             service._audit_log = [AuditEntry(AuditAction.LOGIN, "session")]
 
             # Mock file operation to raise error
-            with patch("builtins.open", side_effect=OSError("Disk full")):
-                with patch("asyncio.sleep") as mock_sleep:
-                    mock_sleep.side_effect = [None, asyncio.CancelledError()]
+            with patch("builtins.open", side_effect=OSError("Disk full")), patch("asyncio.sleep") as mock_sleep:
+                mock_sleep.side_effect = [None, asyncio.CancelledError()]
 
-                    # Should handle error gracefully
-                    await service._persist_logs()
+                # Should handle error gracefully
+                await service._persist_logs()
 
     async def test_cleanup_logs_error_handling(self):
         """Test error handling in cleanup logs task."""
         with TemporaryDirectory() as temp_dir:
             service = AuditService(audit_dir=Path(temp_dir))
 
-            with patch("asyncio.sleep") as mock_sleep:
-                with patch.object(Path, "glob", side_effect=OSError("Permission denied")):
-                    mock_sleep.side_effect = [None, asyncio.CancelledError()]
+            with (
+                patch("asyncio.sleep") as mock_sleep,
+                patch.object(Path, "glob", side_effect=OSError("Permission denied")),
+            ):
+                mock_sleep.side_effect = [None, asyncio.CancelledError()]
 
-                    # Should handle error gracefully
-                    await service._cleanup_old_logs()
+                # Should handle error gracefully
+                await service._cleanup_old_logs()

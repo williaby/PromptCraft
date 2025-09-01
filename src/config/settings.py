@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
+from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_settings.sources import PydanticBaseSettingsSource
 
@@ -696,23 +697,23 @@ class ApplicationSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls,
-        init_settings,
-        env_settings,
-        dotenv_settings,
-        file_secret_settings,
+        settings_cls: type["ApplicationSettings"],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
     ):
         """Customize settings sources to integrate custom .env file loading."""
 
         class CustomEnvSettingsSource(PydanticBaseSettingsSource):
-            def get_field_value(self, field_info, field_name: str):
+            def get_field_value(self, field_info: FieldInfo, field_name: str) -> tuple[Any, str] | tuple[None, None]:
                 # Get values from our custom env loader
                 custom_env_vars = _env_file_settings()
                 if field_name in custom_env_vars:
                     return custom_env_vars[field_name], field_name
                 return None, None
 
-            def prepare_field_value(self, field_name: str, value, value_origin):
+            def prepare_field_value(self, field_name: str, value: Any, value_origin: Any) -> Any:
                 return value
 
             def __call__(self):

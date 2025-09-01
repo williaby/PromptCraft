@@ -487,7 +487,7 @@ class TestRiskDistributionCalculation:
 
         # Should handle unknown risk level with default weight of 50
         assert distribution["distribution"]["unknown"]["count"] == 30
-        # Average: (50*15 + 30*50 + 20*70) / 100 = 36.5
+        # Expected average: (50*15 + 30*50 + 20*70) / 100 = 36.5
         assert distribution["average_risk_score"] == 36.5
 
 
@@ -499,10 +499,10 @@ class TestTimelineMetricsCalculation:
         calculator = MetricsCalculator()
 
         timeline_data = [
-            {"event_count": 10, "timestamp": datetime(2024, 1, 1, 10)},
-            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11)},
-            {"event_count": 5, "timestamp": datetime(2024, 1, 1, 12)},
-            {"event_count": 15, "timestamp": datetime(2024, 1, 1, 13)},
+            {"event_count": 10, "timestamp": datetime(2024, 1, 1, 10, tzinfo=UTC)},
+            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11, tzinfo=UTC)},
+            {"event_count": 5, "timestamp": datetime(2024, 1, 1, 12, tzinfo=UTC)},
+            {"event_count": 15, "timestamp": datetime(2024, 1, 1, 13, tzinfo=UTC)},
         ]
 
         metrics = await calculator.calculate_timeline_metrics(timeline_data)
@@ -518,8 +518,8 @@ class TestTimelineMetricsCalculation:
         calculator = MetricsCalculator()
 
         timeline_data = [
-            {"event_count": 100, "timestamp": datetime(2024, 1, 1)},
-            {"event_count": 150, "timestamp": datetime(2024, 1, 2)},
+            {"event_count": 100, "timestamp": datetime(2024, 1, 1, tzinfo=UTC)},
+            {"event_count": 150, "timestamp": datetime(2024, 1, 2, tzinfo=UTC)},
         ]
 
         metrics = await calculator.calculate_timeline_metrics(
@@ -564,7 +564,7 @@ class TestTimelineMetricsCalculation:
 
         timeline_data = [
             {"event_count": 10},  # No timestamp
-            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11)},
+            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11, tzinfo=UTC)},
         ]
 
         metrics = await calculator.calculate_timeline_metrics(timeline_data)
@@ -590,8 +590,8 @@ class TestTimelineMetricsCalculation:
         calculator = MetricsCalculator()
 
         timeline_data = [
-            {"timestamp": datetime(2024, 1, 1, 10)},  # No event_count
-            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11)},
+            {"timestamp": datetime(2024, 1, 1, 10, tzinfo=UTC)},  # No event_count
+            {"event_count": 20, "timestamp": datetime(2024, 1, 1, 11, tzinfo=UTC)},
         ]
 
         metrics = await calculator.calculate_timeline_metrics(timeline_data)
@@ -907,13 +907,12 @@ class TestMetricsCalculatorRealExecution:
         calculator = MetricsCalculator()
 
         # Real timeline data with datetime objects
-        from datetime import datetime
 
         timeline_data = [
-            {"event_count": 10, "timestamp": datetime(2024, 1, 1, 9)},
-            {"event_count": 25, "timestamp": datetime(2024, 1, 1, 10)},
-            {"event_count": 15, "timestamp": datetime(2024, 1, 1, 11)},
-            {"event_count": 30, "timestamp": datetime(2024, 1, 1, 12)},
+            {"event_count": 10, "timestamp": datetime(2024, 1, 1, 9, tzinfo=UTC)},
+            {"event_count": 25, "timestamp": datetime(2024, 1, 1, 10, tzinfo=UTC)},
+            {"event_count": 15, "timestamp": datetime(2024, 1, 1, 11, tzinfo=UTC)},
+            {"event_count": 30, "timestamp": datetime(2024, 1, 1, 12, tzinfo=UTC)},
         ]
 
         # Actually execute the function

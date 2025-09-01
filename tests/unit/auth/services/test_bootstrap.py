@@ -632,19 +632,21 @@ class TestBootstrapRealExecution:
         import asyncio
 
         async def run_test():
-            with patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get_container:
-                with patch("src.auth.services.bootstrap.initialize_container_async") as mock_initialize:
-                    mock_container = Mock()
-                    mock_get_container.return_value = mock_container
-                    mock_initialize.return_value = None
+            with (
+                patch("src.auth.services.bootstrap.get_container_for_environment") as mock_get_container,
+                patch("src.auth.services.bootstrap.initialize_container_async") as mock_initialize,
+            ):
+                mock_container = Mock()
+                mock_get_container.return_value = mock_container
+                mock_initialize.return_value = None
 
-                    # Actually call the async function
-                    result = await bootstrap_services_async("test")
+                # Actually call the async function
+                result = await bootstrap_services_async("test")
 
-                    # Verify the real function calls were made
-                    mock_get_container.assert_called_once_with("test")
-                    mock_initialize.assert_called_once_with(mock_container)
-                    assert result is mock_container
+                # Verify the real function calls were made
+                mock_get_container.assert_called_once_with("test")
+                mock_initialize.assert_called_once_with(mock_container)
+                assert result is mock_container
 
         asyncio.run(run_test())
 

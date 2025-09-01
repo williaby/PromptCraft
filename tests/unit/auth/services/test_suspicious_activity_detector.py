@@ -75,26 +75,28 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     async def test_build_behavior_profile_sufficient_data(self, detector):
         """Test building behavior profile with sufficient historical data."""
         user_id = "profile_user"
 
         # Mock historical events for profile building
-        base_date = datetime.now() - timedelta(days=20)
+        base_date = datetime.now(UTC) - timedelta(days=20)
         base_date = base_date.replace(hour=0, minute=0, second=0, microsecond=0)  # Start at midnight
         mock_events = []
 
@@ -159,7 +161,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
 
         # Build baseline profile (business hours user)
         baseline_events = []
-        base_date = datetime.now() - timedelta(days=30)
+        base_date = datetime.now(UTC) - timedelta(days=30)
         base_date = base_date.replace(hour=0, minute=0, second=0, microsecond=0)  # Start at midnight
 
         for day in range(30):
@@ -178,7 +180,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
         await detector.build_behavior_profile(user_id)
 
         # Test suspicious activity (login at 3 AM)
-        suspicious_time = datetime.now().replace(hour=3, minute=0, second=0)
+        suspicious_time = datetime.now(UTC).replace(hour=3, minute=0, second=0)
         suspicion_score = await detector.analyze_time_pattern(user_id, suspicious_time)
 
         assert suspicion_score > detector.suspicious_threshold
@@ -190,7 +192,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
 
         # Build baseline profile (business hours user)
         baseline_events = []
-        base_date = datetime.now() - timedelta(days=30)
+        base_date = datetime.now(UTC) - timedelta(days=30)
         base_date = base_date.replace(hour=0, minute=0, second=0, microsecond=0)  # Start at midnight
 
         for day in range(30):
@@ -209,7 +211,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
         await detector.build_behavior_profile(user_id)
 
         # Test normal activity (login at 10 AM)
-        normal_time = datetime.now().replace(hour=10, minute=0, second=0)
+        normal_time = datetime.now(UTC).replace(hour=10, minute=0, second=0)
         suspicion_score = await detector.analyze_time_pattern(user_id, normal_time)
 
         assert suspicion_score < detector.suspicious_threshold
@@ -280,7 +282,7 @@ class TestSuspiciousActivityDetectorBehaviorAnalysis:
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=user_id,
                 ip_address="192.168.1.1",
-                timestamp=datetime.now() - timedelta(minutes=30),
+                timestamp=datetime.now(UTC) - timedelta(minutes=30),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
                 metadata={"location": {"country": "US", "city": "New York", "lat": 40.7128, "lon": -74.0060}},
@@ -308,19 +310,21 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     async def test_detect_volume_anomaly_spike(self, detector):
         """Test detection of unusual activity volume spikes."""
@@ -328,7 +332,7 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
 
         # Mock normal baseline (5-10 events per hour)
         baseline_events = []
-        base_time = datetime.now() - timedelta(days=7)
+        base_time = datetime.now(UTC) - timedelta(days=7)
 
         for hour in range(7 * 24):  # 7 days of data
             event_count = 7  # Normal volume
@@ -346,7 +350,7 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
         await detector.build_behavior_profile(user_id)
 
         # Test current spike (50 events in last hour)
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
         spike_events = []
         for i in range(50):
             event = SecurityEvent(
@@ -368,7 +372,7 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
 
         # Normal pattern: events spread throughout the day
         baseline_events = []
-        base_time = datetime.now() - timedelta(days=14)
+        base_time = datetime.now(UTC) - timedelta(days=14)
 
         for day in range(14):
             # Normal: 10 events spread over 8 hours
@@ -386,7 +390,7 @@ class TestSuspiciousActivityDetectorAnomalyDetection:
         await detector.build_behavior_profile(user_id)
 
         # Test burst pattern: 20 events in 5 minutes
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
         burst_events = []
         for i in range(20):
             event = SecurityEvent(
@@ -504,19 +508,21 @@ class TestSuspiciousActivityDetectorRiskScoring:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     async def test_calculate_comprehensive_risk_score(self, detector):
         """Test comprehensive risk score calculation."""
@@ -580,7 +586,7 @@ class TestSuspiciousActivityDetectorRiskScoring:
         test_cases = [(0.2, "LOW"), (0.5, "MEDIUM"), (0.75, "HIGH"), (0.9, "CRITICAL")]
 
         for score, expected_level in test_cases:
-            RiskScore(user_id="test_user", overall_score=score, risk_factors={}, timestamp=datetime.now())
+            RiskScore(user_id="test_user", overall_score=score, risk_factors={}, timestamp=datetime.now(UTC))
 
             classified_level = await detector.classify_risk_level(score)
             assert classified_level == expected_level
@@ -591,7 +597,7 @@ class TestSuspiciousActivityDetectorRiskScoring:
 
         # Create historical risk scores showing escalating pattern
         historical_scores = []
-        base_time = datetime.now() - timedelta(days=7)
+        base_time = datetime.now(UTC) - timedelta(days=7)
 
         for day in range(7):
             score = 0.3 + (day * 0.1)  # Gradually increasing risk
@@ -661,19 +667,21 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     async def test_process_activity_event_real_time(self, detector):
         """Test real-time processing of activity events."""
@@ -699,7 +707,7 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
             event_type=SecurityEventType.LOGIN_SUCCESS,
             user_id=user_id,
             ip_address="1.2.3.4",  # Different IP
-            timestamp=datetime.now().replace(hour=3),  # Unusual time
+            timestamp=datetime.now(UTC).replace(hour=3),  # Unusual time
             user_agent="Unknown Browser",  # Unusual device
             severity=SecurityEventSeverity.WARNING,
             source="auth",
@@ -723,7 +731,7 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
                 event_type=SecurityEventType.LOGIN_SUCCESS if i % 2 == 0 else SecurityEventType.LOGOUT,
                 user_id=user_id,
                 ip_address=f"192.168.1.{100 + i}",
-                timestamp=datetime.now() - timedelta(minutes=i * 5),
+                timestamp=datetime.now(UTC) - timedelta(minutes=i * 5),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -747,7 +755,7 @@ class TestSuspiciousActivityDetectorRealTimeProcessing:
 
         # Simulate streaming events
         streaming_events = []
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
 
         for i in range(20):
             event = SecurityEvent(
@@ -812,19 +820,21 @@ class TestSuspiciousActivityDetectorPerformance:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     @pytest.mark.performance
     async def test_process_activity_event_performance(self, detector):
@@ -916,7 +926,7 @@ class TestSuspiciousActivityDetectorPerformance:
                 event = SecurityEvent(
                     event_type=SecurityEventType.LOGIN_SUCCESS,
                     user_id=f"{user_prefix}_user_{i}",
-                    timestamp=datetime.now() - timedelta(minutes=i),
+                    timestamp=datetime.now(UTC) - timedelta(minutes=i),
                     severity=SecurityEventSeverity.INFO,
                     source="auth",
                 )
@@ -952,7 +962,7 @@ class TestSuspiciousActivityDetectorPerformance:
             event = SecurityEvent(
                 event_type=SecurityEventType.LOGIN_SUCCESS,
                 user_id=f"memory_test_user_{i % 20}",  # 20 different users
-                timestamp=datetime.now() - timedelta(minutes=i),
+                timestamp=datetime.now(UTC) - timedelta(minutes=i),
                 severity=SecurityEventSeverity.INFO,
                 source="auth",
             )
@@ -977,19 +987,21 @@ class TestSuspiciousActivityDetectorErrorHandling:
     @pytest.fixture
     def detector(self):
         """Create detector with mocked dependencies."""
-        with patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.suspicious_activity_detector.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.suspicious_activity_detector.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                detector = SuspiciousActivityDetector()
-                detector._db = mock_db
-                detector._security_logger = mock_logger
+            detector = SuspiciousActivityDetector()
+            detector._db = mock_db
+            detector._security_logger = mock_logger
 
-                yield detector
+            yield detector
 
     async def test_process_activity_event_missing_user_id(self, detector):
         """Test handling of events with missing user_id."""

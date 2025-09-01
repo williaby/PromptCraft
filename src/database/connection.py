@@ -21,7 +21,7 @@ from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from src.config.settings import get_settings
+from src.config.settings import ApplicationSettings, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class DatabaseManager:
 
     def __init__(
         self,
-        settings=None,
+        settings: ApplicationSettings | None = None,
         engine: AsyncEngine | None = None,
         session_factory: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:

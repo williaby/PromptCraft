@@ -14,7 +14,7 @@ import logging
 from datetime import UTC, datetime
 
 try:
-    import psutil  # type: ignore
+    import psutil  # type: ignore[import-untyped]
 
     _psutil_available = True
 except ImportError:

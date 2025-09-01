@@ -538,7 +538,7 @@ class TestAUTH4DatabasePerformance:
         """Populate database with realistic test data."""
 
         # Generate 10,000 events across 1000 users over 30 days
-        base_time = datetime.utcnow() - timedelta(days=30)
+        base_time = datetime.now(UTC) - timedelta(days=30)
 
         event_types = [
             SecurityEventType.LOGIN_SUCCESS,
@@ -709,7 +709,7 @@ class TestAUTH4DatabasePerformance:
                     severity=SecurityEventSeverity.INFO.value,
                     user_id=f"concurrent_user_{writer_id}_{i}",
                     ip_address=f"192.168.250.{writer_id}",
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                     details=json.dumps({"writer_id": writer_id, "iteration": i}),
                 )
 
@@ -811,13 +811,15 @@ class TestAUTH4StressAndRecovery:
                                 SecurityEventSeverity.INFO if (event_id % 5 != 0) else SecurityEventSeverity.WARNING
                             )
 
-                            async def log_stress_event():
+                            async def log_stress_event(
+                                captured_event_type=event_type, captured_severity=severity, captured_event_id=event_id,
+                            ):
                                 event = await security_logger.log_security_event(
-                                    event_type=event_type,
-                                    severity=severity,
-                                    user_id=f"stress_user_{event_id % 500}",
-                                    ip_address=f"10.{event_id // 65536}.{(event_id // 256) % 256}.{event_id % 256}",
-                                    details={"stress_test": True, "event_id": event_id},
+                                    event_type=captured_event_type,
+                                    severity=captured_severity,
+                                    user_id=f"stress_user_{captured_event_id % 500}",
+                                    ip_address=f"10.{captured_event_id // 65536}.{(captured_event_id // 256) % 256}.{captured_event_id % 256}",
+                                    details={"stress_test": True, "event_id": captured_event_id},
                                 )
                                 await security_monitor.track_event(event)
 

@@ -89,9 +89,9 @@ class SecurityMonitor:
         rate_limit_window_seconds: int = 60,
         account_lockout_enabled: bool = True,
         account_lockout_duration_minutes: int = 30,
-        db=None,
-        security_logger=None,
-        alert_engine=None,
+        db: SecurityEventsPostgreSQL | None = None,
+        security_logger: SecurityLogger | None = None,
+        alert_engine: AlertEngine | None = None,
         config: MonitoringConfig | None = None,
     ) -> None:
         """Initialize security monitor.
@@ -963,8 +963,8 @@ class SecurityMonitor:
 
     async def cleanup_expired_data(self) -> None:
         """Clean up expired monitoring data."""
-        # For test compatibility, use local time since tests use datetime.now()
-        current_time = datetime.now()
+        # Use UTC time consistently for all operations
+        current_time = datetime.now(UTC)
         # Use a reasonable cleanup threshold that matches test expectations
         # The test uses 2 hours ago for old data, so use 1.5 hours as threshold
         cleanup_threshold = current_time - timedelta(hours=1, minutes=30)

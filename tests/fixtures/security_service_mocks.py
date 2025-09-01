@@ -19,7 +19,7 @@ _test_event_registry = []
 def clear_test_event_registry():
     """Clear the global test event registry."""
     global _test_event_registry
-    _test_event_registry.clear()
+    _test_event_registry = []
 
 
 class MockSecurityLogger:
@@ -1023,7 +1023,6 @@ class MockAuditService:
     ) -> dict[str, Any]:
         """Generate audit report with appropriate event counts for tests."""
         # Start with events from test execution (from SecurityLogger)
-        global _test_event_registry
         mock_events = []
 
         # Include events from the global registry (from SecurityLogger calls)
@@ -1170,7 +1169,6 @@ class MockAuditService:
         events = self._logged_events.copy()
 
         # Also include events from global registry (from MockSecurityLogger)
-        global _test_event_registry
         events.extend(_test_event_registry)
 
         # Check if we have test events from the concurrent test
@@ -1386,7 +1384,6 @@ class MockAuditService:
         events = await self.get_security_events(limit=1000, start_date=start_date, end_date=end_date)
 
         # Include events from global registry to ensure we have test events
-        global _test_event_registry
         print(f"DEBUG: generate_security_report - Registry has {len(_test_event_registry)} events")
         print(f"DEBUG: Registry events: {[(e.get('event_type'), e.get('severity')) for e in _test_event_registry]}")
         for event in _test_event_registry:
@@ -1590,7 +1587,6 @@ async def temp_security_database():
             from src.auth.models import SecurityEventResponse
 
             # Also capture events from the global test registry (from MockSecurityLogger)
-            global _test_event_registry
             for event in _test_event_registry:
                 # Convert registry events to database format and add if not already present
                 existing_ids = {e.get("id") for e in self._events if e.get("id")}

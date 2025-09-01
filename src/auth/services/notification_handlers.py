@@ -13,6 +13,7 @@ Architecture: Async notification pipeline with configurable handlers
 """
 
 import asyncio
+import logging
 import smtplib
 import ssl
 from dataclasses import dataclass, field
@@ -113,8 +114,13 @@ class WebhookHandler:
                     if response.status == 200:
                         return True
 
-            except Exception:
-                pass
+            except Exception as e:
+                logging.warning(
+                    "Failed to send webhook notification (attempt %d/%d): %s",
+                    attempt + 1,
+                    self.config.retry_attempts,
+                    str(e),
+                )
 
             # Wait before retry (except on last attempt)
             if attempt < self.config.retry_attempts - 1:
@@ -163,7 +169,7 @@ class WebhookHandler:
             "{risk_score}": str(alert.risk_score),
         }
 
-        def substitute_recursive(obj):
+        def substitute_recursive(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {k: substitute_recursive(v) for k, v in obj.items()}
             if isinstance(obj, list):

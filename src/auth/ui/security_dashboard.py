@@ -17,7 +17,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import gradio as gr
-import plotly.graph_objects as go  # type: ignore
+import plotly.graph_objects as go  # type: ignore[import-untyped]
 
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
@@ -147,7 +147,6 @@ class SecurityDashboard:
                         label="🔧 System Status",
                         value="Loading...",
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -155,7 +154,6 @@ class SecurityDashboard:
                         label="⚡ Performance Grade",
                         value="Loading...",
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -167,7 +165,6 @@ class SecurityDashboard:
                         value=0,
                         precision=1,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
             with gr.Row():
@@ -177,7 +174,6 @@ class SecurityDashboard:
                         label="📊 Events Processed",
                         value=0,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -185,7 +181,6 @@ class SecurityDashboard:
                         label="🚨 Alerts Generated",
                         value=0,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -193,7 +188,6 @@ class SecurityDashboard:
                         label="👁️ Suspicious Activities",
                         value=0,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -202,7 +196,6 @@ class SecurityDashboard:
                         value=0,
                         precision=2,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
             # Service health status
@@ -212,7 +205,6 @@ class SecurityDashboard:
                 datatype=["str", "str", "number"],
                 value=[],
                 interactive=False,
-                # container=True,  # Removed for MyPy compatibility
             )
 
             # Real-time event timeline chart
@@ -294,7 +286,7 @@ class SecurityDashboard:
                 ],
             )
 
-            return overview_tab  # type: ignore
+            return overview_tab  # type: ignore[return-value]
 
     def create_alerts_tab(self) -> gr.Column:
         """Create the alerts management tab."""
@@ -308,7 +300,6 @@ class SecurityDashboard:
                         choices=["All", "Low", "Medium", "High", "Critical"],
                         value="All",
                         label="Filter by Severity",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -316,7 +307,6 @@ class SecurityDashboard:
                         choices=["All", "Acknowledged", "Unacknowledged"],
                         value="All",
                         label="Filter by Status",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -324,7 +314,6 @@ class SecurityDashboard:
                         choices=["Last Hour", "Last 6 Hours", "Last 24 Hours", "Last Week"],
                         value="Last 24 Hours",
                         label="Time Range",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -336,7 +325,6 @@ class SecurityDashboard:
                 datatype=["str", "str", "str", "str", "str", "str", "str", "str"],
                 value=[],
                 interactive=False,
-                # container=True,  # Removed for MyPy compatibility
                 wrap=True,
             )
 
@@ -351,7 +339,6 @@ class SecurityDashboard:
                         label="Action Status",
                         value="",
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
             # Alert statistics
@@ -395,7 +382,7 @@ class SecurityDashboard:
                 outputs=[alerts_table, alert_stats_chart, alert_trends_chart],
             )
 
-            return alerts_tab  # type: ignore
+            return alerts_tab  # type: ignore[return-value]
 
     def create_users_tab(self) -> gr.Column:
         """Create the user risk analysis tab."""
@@ -406,7 +393,6 @@ class SecurityDashboard:
                 user_search = gr.Textbox(
                     label="User ID Search",
                     placeholder="Enter user ID to analyze...",
-                    # container=True,  # Removed for MyPy compatibility
                 )
                 search_btn = gr.Button("🔍 Analyze User", variant="primary")
 
@@ -420,7 +406,6 @@ class SecurityDashboard:
                         label="⚠️ Risk Level",
                         value="Unknown",
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -428,7 +413,6 @@ class SecurityDashboard:
                         label="📊 Total Logins",
                         value=0,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -436,7 +420,6 @@ class SecurityDashboard:
                         label="❌ Failed Logins Today",
                         value=0,
                         interactive=False,
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
             # User activity details
@@ -490,7 +473,7 @@ class SecurityDashboard:
                 ],
             )
 
-            return users_tab  # type: ignore
+            return users_tab  # type: ignore[return-value]
 
     def create_events_tab(self) -> gr.Column:
         """Create the security events search tab."""
@@ -503,7 +486,6 @@ class SecurityDashboard:
                     start_date = gr.DateTime(
                         label="Start Date",
                         value=datetime.now(UTC) - timedelta(days=1),
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -514,7 +496,6 @@ class SecurityDashboard:
                         choices=["All"] + [e.value for e in SecurityEventType],
                         value="All",
                         label="Event Type",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -525,14 +506,12 @@ class SecurityDashboard:
                     user_id_filter = gr.Textbox(
                         label="User ID Filter",
                         placeholder="Optional user ID...",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
                     ip_filter = gr.Textbox(
                         label="IP Address Filter",
                         placeholder="Optional IP address...",
-                        # container=True,  # Removed for MyPy compatibility
                     )
 
                 with gr.Column(scale=1):
@@ -547,7 +526,6 @@ class SecurityDashboard:
                 datatype=["str", "str", "str", "str", "str", "str", "number"],
                 value=[],
                 interactive=False,
-                # container=True,  # Removed for MyPy compatibility
                 wrap=True,
             )
 
@@ -560,7 +538,6 @@ class SecurityDashboard:
                     choices=["JSON", "CSV"],
                     value="JSON",
                     label="Export Format",
-                    # container=True,  # Removed for MyPy compatibility
                 )
                 gr.Button("📤 Export Results", variant="secondary")
                 gr.Textbox(label="Export Status", value="", interactive=False, container=True)
@@ -599,7 +576,7 @@ class SecurityDashboard:
                 outputs=[events_table],
             )
 
-            return events_tab  # type: ignore
+            return events_tab  # type: ignore[return-value]
 
     def _create_timeline_chart(self) -> go.Figure:
         """Create timeline chart for dashboard."""
@@ -884,7 +861,7 @@ class SecurityDashboard:
 
         # Create tabbed interface
         dashboard = gr.TabbedInterface(
-            interface_list=[overview_tab, alerts_tab, users_tab, events_tab],  # type: ignore
+            interface_list=[overview_tab, alerts_tab, users_tab, events_tab],  # type: ignore[arg-type]
             tab_names=["📊 Overview", "🚨 Alerts", "👤 Users", "📋 Events"],
             title="🛡️ PromptCraft Security Dashboard",
             theme=gr.themes.Soft(),

@@ -15,7 +15,7 @@ Target: >90% test coverage
 
 import asyncio
 import smtplib
-from datetime import datetime
+from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -175,7 +175,7 @@ class TestWebhookHandler:
             severity=AlertSeverity.HIGH,
             title="Suspicious Login Detected",
             description="Multiple failed login attempts detected",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             affected_user="testuser",
             affected_ip="192.168.1.100",
             risk_score=75,
@@ -310,7 +310,7 @@ class TestEmailHandler:
             severity=AlertSeverity.CRITICAL,
             title="Account Locked",
             description="Account locked due to suspicious activity",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             affected_user="testuser",
             affected_ip="192.168.1.100",
             risk_score=90,
@@ -472,7 +472,7 @@ class TestSlackHandler:
             severity=AlertSeverity.HIGH,
             title="Brute Force Attack",
             description="Multiple failed login attempts from same IP",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             affected_user="victim",
             affected_ip="10.0.0.1",
             risk_score=85,
@@ -652,7 +652,7 @@ class TestEdgeCases:
             severity=AlertSeverity.LOW,
             title="Test Alert",
             description="Test description",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             affected_user=None,  # None value
             affected_ip=None,
             risk_score=10,
@@ -679,7 +679,7 @@ class TestEdgeCases:
                 severity=AlertSeverity.MEDIUM,
                 title="Test",
                 description="Test",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             ),
         )
 
@@ -700,7 +700,7 @@ class TestEdgeCases:
                 severity=AlertSeverity.LOW,
                 title=f"Alert {i}",
                 description=f"Description {i}",
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
             )
             for i in range(5)
         ]

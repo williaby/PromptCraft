@@ -668,7 +668,7 @@ class TestAUTH4SecurityWorkflowIntegration:
             "user_id": "user123",
             "ip_address": "192.168.1.100",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(UTC),
             "success": False,
             "failure_reason": "invalid_password",
         }
@@ -724,8 +724,8 @@ class TestAUTH4SecurityWorkflowIntegration:
         # Phase 4: Verify audit trail creation
         audit_events = await audit_service.get_security_events(
             event_type="brute_force_attempt",
-            start_date=datetime.utcnow() - timedelta(minutes=5),
-            end_date=datetime.utcnow() + timedelta(minutes=1),
+            start_date=datetime.now(UTC) - timedelta(minutes=5),
+            end_date=datetime.now(UTC) + timedelta(minutes=1),
         )
 
         assert len(audit_events) > 0
@@ -744,7 +744,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         normal_ip = "192.168.1.50"  # Home IP
 
         # Log normal login pattern for a week
-        base_time = datetime.utcnow() - timedelta(days=7)
+        base_time = datetime.now(UTC) - timedelta(days=7)
         for day in range(7):
             for hour in [8, 12, 17]:  # Work hours
                 login_time = base_time + timedelta(days=day, hours=hour)
@@ -872,8 +872,8 @@ class TestAUTH4SecurityWorkflowIntegration:
             )
 
         # Phase 2: Generate audit report
-        report_start = datetime.utcnow() - timedelta(minutes=5)
-        report_end = datetime.utcnow() + timedelta(minutes=1)
+        report_start = datetime.now(UTC) - timedelta(minutes=5)
+        report_end = datetime.now(UTC) + timedelta(minutes=1)
 
         audit_report = await audit_service.generate_security_report(
             start_date=report_start,
@@ -982,8 +982,8 @@ class TestAUTH4SecurityWorkflowIntegration:
         await asyncio.sleep(1.0)
 
         # Check audit service has all events - use more specific time range
-        test_end_time = datetime.utcnow() + timedelta(seconds=10)  # Allow small buffer
-        test_start_time = datetime.utcnow() - timedelta(minutes=2)  # Wider window
+        test_end_time = datetime.now(UTC) + timedelta(seconds=10)  # Allow small buffer
+        test_start_time = datetime.now(UTC) - timedelta(minutes=2)  # Wider window
 
         recent_events = await audit_service.get_security_events(
             start_date=test_start_time,
@@ -1083,7 +1083,6 @@ class TestAUTH4SecurityWorkflowIntegration:
         # Clean up existing data in temp_database for test isolation
         try:
             # PostgreSQL cleanup - delete all existing events to ensure clean test
-            from datetime import datetime
 
             await temp_database.cleanup_old_events(days_to_keep=0)  # Delete everything older than now
             print("DEBUG: Cleaned up existing events in temp_database for test isolation")
@@ -1106,7 +1105,6 @@ class TestAUTH4SecurityWorkflowIntegration:
         await asyncio.sleep(0.2)  # Allow processing
 
         # Phase 2: Verify data consistency in database using timestamp-based filtering
-        from datetime import datetime, timedelta
 
         test_start_time = datetime.now(UTC) - timedelta(seconds=10)  # Events from last 10 seconds
         test_end_time = datetime.now(UTC) + timedelta(seconds=1)
@@ -1126,8 +1124,8 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 3: Verify data consistency in audit service
         audit_events = await audit_service.get_security_events(
-            start_date=datetime.utcnow() - timedelta(minutes=1),
-            end_date=datetime.utcnow() + timedelta(minutes=1),
+            start_date=datetime.now(UTC) - timedelta(minutes=1),
+            end_date=datetime.now(UTC) + timedelta(minutes=1),
         )
 
         audit_consistency_events = [
@@ -1213,7 +1211,7 @@ class TestAUTH4DatabaseIntegration:
                 "severity": "low",
                 "user_id": f"load_user_{i % 100}",  # 100 different users
                 "ip_address": f"192.168.{i // 256}.{i % 256}",
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(UTC),
                 "details": json.dumps({"test_event": i}),
             }
 

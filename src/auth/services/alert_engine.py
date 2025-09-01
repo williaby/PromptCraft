@@ -15,6 +15,7 @@ Architecture: Event-driven processing with async notification pipeline
 """
 
 import asyncio
+import logging
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
@@ -200,8 +201,8 @@ class AlertEngine:
         escalation_threshold: int = 5,
         escalation_window_minutes: int = 15,
         alert_retention_hours: int = 24,
-        db=None,
-        security_logger=None,
+        db: SecurityEventsPostgreSQL | None = None,
+        security_logger: SecurityLogger | None = None,
     ) -> None:
         """Initialize alert engine with configuration and notification handlers.
 
@@ -627,8 +628,8 @@ class AlertEngine:
 
             except TimeoutError:
                 continue  # No alerts to process
-            except Exception:
-                pass
+            except Exception as e:
+                logging.error("Error processing alert: %s", str(e))
 
     async def _send_notifications(self, alert: SecurityAlert) -> None:
         """Send alert notifications through configured channels."""

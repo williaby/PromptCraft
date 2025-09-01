@@ -83,28 +83,30 @@ class TestAlertEngineAlertGeneration:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                # Mock notification channels
-                mock_email = AsyncMock()
-                mock_slack = AsyncMock()
-                mock_sms = AsyncMock()
+            # Mock notification channels
+            mock_email = AsyncMock()
+            mock_slack = AsyncMock()
+            mock_sms = AsyncMock()
 
-                engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
-                engine.register_notification_channel(AlertChannel.SLACK, mock_slack)
-                engine.register_notification_channel(AlertChannel.SMS, mock_sms)
+            engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
+            engine.register_notification_channel(AlertChannel.SLACK, mock_slack)
+            engine.register_notification_channel(AlertChannel.SMS, mock_sms)
 
-                yield engine
+            yield engine
 
     @pytest.fixture
     def sample_security_event(self):
@@ -251,26 +253,28 @@ class TestAlertEngineEscalation:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine(escalation_threshold=3, escalation_window_minutes=5)
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine(escalation_threshold=3, escalation_window_minutes=5)
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                # Mock notification channels
-                mock_email = AsyncMock()
-                mock_sms = AsyncMock()
+            # Mock notification channels
+            mock_email = AsyncMock()
+            mock_sms = AsyncMock()
 
-                engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
-                engine.register_notification_channel(AlertChannel.SMS, mock_sms)
+            engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
+            engine.register_notification_channel(AlertChannel.SMS, mock_sms)
 
-                yield engine
+            yield engine
 
     async def test_escalation_trigger_threshold_reached(self, engine):
         """Test alert escalation when threshold is reached."""
@@ -334,7 +338,7 @@ class TestAlertEngineEscalation:
 
         # Mock time passing beyond escalation window
         with patch("src.auth.services.alert_engine.datetime") as mock_datetime:
-            future_time = datetime.now() + timedelta(minutes=engine.escalation_window_minutes + 1)
+            future_time = datetime.now(UTC) + timedelta(minutes=engine.escalation_window_minutes + 1)
             mock_datetime.now.return_value = future_time
 
             # Clean up expired escalations
@@ -388,19 +392,21 @@ class TestAlertEngineNotificationChannels:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                yield engine
+            yield engine
 
     async def test_send_notification_success(self, engine):
         """Test successful notification sending."""
@@ -412,7 +418,7 @@ class TestAlertEngineNotificationChannels:
             severity=AlertSeverity.HIGH,
             title="Test Alert",
             message="Test alert",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             channel=AlertChannel.EMAIL,
             channels=[AlertChannel.EMAIL],
         )
@@ -433,7 +439,7 @@ class TestAlertEngineNotificationChannels:
             severity=AlertSeverity.HIGH,
             title="Test Alert",
             message="Test alert",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             channel=AlertChannel.EMAIL,
             channels=[AlertChannel.EMAIL],
         )
@@ -451,7 +457,7 @@ class TestAlertEngineNotificationChannels:
             severity=AlertSeverity.HIGH,
             title="Test Alert",
             message="Test alert",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             channel=AlertChannel.WEBHOOK,  # Not registered
             channels=[AlertChannel.WEBHOOK],
         )
@@ -474,7 +480,7 @@ class TestAlertEngineNotificationChannels:
             id="retry_test",
             severity=AlertSeverity.CRITICAL,
             title="Retry Test Alert",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             priority=AlertPriority.CRITICAL,
             message="Retry test alert",
             channels=[AlertChannel.SLACK],
@@ -501,7 +507,7 @@ class TestAlertEngineNotificationChannels:
             id="bulk_test",
             severity=AlertSeverity.HIGH,
             title="Bulk Notification Test",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             priority=AlertPriority.HIGH,
             message="Bulk notification test",
             channels=[AlertChannel.EMAIL, AlertChannel.SLACK, AlertChannel.SMS],
@@ -523,24 +529,26 @@ class TestAlertEngineRateLimiting:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                # Set low rate limit for testing
-                engine = AlertEngine(max_alerts_per_minute=5)
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            # Set low rate limit for testing
+            engine = AlertEngine(max_alerts_per_minute=5)
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                # Mock notification channel
-                mock_email = AsyncMock()
-                engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
+            # Mock notification channel
+            mock_email = AsyncMock()
+            engine.register_notification_channel(AlertChannel.EMAIL, mock_email)
 
-                yield engine
+            yield engine
 
     async def test_rate_limiting_enforcement(self, engine):
         """Test that rate limiting is enforced."""
@@ -587,7 +595,7 @@ class TestAlertEngineRateLimiting:
 
         # Mock time advancing by more than a minute
         with patch("src.auth.services.alert_engine.datetime") as mock_datetime:
-            future_time = datetime.now() + timedelta(minutes=2)
+            future_time = datetime.now(UTC) + timedelta(minutes=2)
             mock_datetime.now.return_value = future_time
 
             # Should be able to send more alerts
@@ -644,23 +652,25 @@ class TestAlertEnginePerformance:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                # Mock fast notification channel
-                mock_channel = AsyncMock()
-                engine.register_notification_channel(AlertChannel.EMAIL, mock_channel)
+            # Mock fast notification channel
+            mock_channel = AsyncMock()
+            engine.register_notification_channel(AlertChannel.EMAIL, mock_channel)
 
-                yield engine
+            yield engine
 
     @pytest.mark.performance
     async def test_trigger_alert_performance(self, engine):
@@ -690,7 +700,7 @@ class TestAlertEnginePerformance:
             id="perf_test_alert",
             severity=AlertSeverity.MEDIUM,
             title="Performance Test Alert",
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
             priority=AlertPriority.MEDIUM,
             message="Performance test notification",
             channels=[AlertChannel.EMAIL],
@@ -807,19 +817,21 @@ class TestAlertEngineAnalytics:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                yield engine
+            yield engine
 
     async def test_get_alert_statistics_comprehensive(self, engine):
         """Test comprehensive alert statistics collection."""
@@ -964,19 +976,21 @@ class TestAlertEngineErrorHandling:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                yield engine
+            yield engine
 
     async def test_trigger_alert_invalid_priority(self, engine):
         """Test handling of invalid alert priorities."""
@@ -1089,19 +1103,21 @@ class TestAlertEngineAdditionalCoverage:
     @pytest.fixture
     def engine(self):
         """Create alert engine with mocked dependencies."""
-        with patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class:
-            with patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class:
-                mock_db = AsyncMock()
-                mock_logger = AsyncMock()
+        with (
+            patch("src.auth.services.alert_engine.SecurityEventsPostgreSQL") as mock_db_class,
+            patch("src.auth.services.alert_engine.SecurityLogger") as mock_logger_class,
+        ):
+            mock_db = AsyncMock()
+            mock_logger = AsyncMock()
 
-                mock_db_class.return_value = mock_db
-                mock_logger_class.return_value = mock_logger
+            mock_db_class.return_value = mock_db
+            mock_logger_class.return_value = mock_logger
 
-                engine = AlertEngine()
-                engine._db = mock_db
-                engine._security_logger = mock_logger
+            engine = AlertEngine()
+            engine._db = mock_db
+            engine._security_logger = mock_logger
 
-                yield engine
+            yield engine
 
     async def test_get_metrics_comprehensive(self, engine):
         """Test get_metrics method returns comprehensive metrics."""

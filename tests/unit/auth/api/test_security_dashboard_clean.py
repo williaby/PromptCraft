@@ -396,8 +396,8 @@ class TestErrorHandlingEdgeCases:
     async def test_generate_audit_report_with_parameters(self, endpoints):
         """Test generate_audit_report with specific parameters."""
         # Arrange
-        start_date = datetime.now() - timedelta(days=7)
-        end_date = datetime.now()
+        start_date = datetime.now(UTC) - timedelta(days=7)
+        end_date = datetime.now(UTC)
         endpoints.audit_service.generate_security_report.return_value = {
             "report_id": "rpt_002",
             "status": "generated",

@@ -5,6 +5,7 @@ import contextlib
 import logging
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
+from types import TracebackType
 from typing import Any
 
 from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
@@ -434,7 +435,12 @@ class SuspiciousActivityDetector:
         await self.initialize()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
         """Async context manager exit."""
         await self.close()
         return False

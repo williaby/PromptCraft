@@ -264,9 +264,9 @@ class SecurityDashboardEndpoints:
 
             return response.__dict__
         except ConnectionError as e:
-            raise HTTPException(status_code=503, detail=f"Failed to get security metrics: {e!s}")
+            raise HTTPException(status_code=503, detail=f"Failed to get security metrics: {e!s}") from e
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to get security metrics: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to get security metrics: {e!s}") from e
 
     async def get_security_events(
         self,
@@ -333,7 +333,7 @@ class SecurityDashboardEndpoints:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve security events: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve security events: {e!s}") from e
 
     async def get_security_alerts(self, status: str | None = None) -> AlertSummaryResponse:
         """Get security alerts from the alert engine."""
@@ -388,11 +388,11 @@ class SecurityDashboardEndpoints:
 
             return response
         except TimeoutError as e:
-            raise HTTPException(status_code=504, detail=f"Failed to retrieve security alerts: {e!s}")
+            raise HTTPException(status_code=504, detail=f"Failed to retrieve security alerts: {e!s}") from e
         except ConnectionError as e:
-            raise HTTPException(status_code=503, detail=f"Failed to retrieve security alerts: {e!s}")
+            raise HTTPException(status_code=503, detail=f"Failed to retrieve security alerts: {e!s}") from e
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve security alerts: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve security alerts: {e!s}") from e
 
     async def acknowledge_alert(self, alert_id: str, user_id: str = "system") -> dict[str, Any]:
         """Acknowledge a security alert."""
@@ -404,7 +404,7 @@ class SecurityDashboardEndpoints:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {e!s}") from e
 
     async def get_security_statistics(self, period: str = "daily") -> SecurityStatsResponse:
         """Get security statistics from the monitor."""
@@ -421,7 +421,7 @@ class SecurityDashboardEndpoints:
             )
             return response
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve security statistics: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve security statistics: {e!s}") from e
 
     async def generate_audit_report(
         self,
@@ -442,7 +442,7 @@ class SecurityDashboardEndpoints:
 
             return report
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}") from e
 
 
 # Dependency to get security integration service (in production, this would be injected)
@@ -538,4 +538,4 @@ async def get_security_metrics(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve security metrics: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve security metrics: {e!s}") from e

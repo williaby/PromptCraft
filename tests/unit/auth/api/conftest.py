@@ -7,6 +7,7 @@ Automatically imports all API router fixtures and provides test configuration.
 # Import all fixtures from the central fixtures file
 # This makes them available to all test files in this directory
 import pytest
+
 from tests.fixtures.api_router_fixtures import *  # noqa: F403
 
 # =================== TEST CONFIGURATION ===================
