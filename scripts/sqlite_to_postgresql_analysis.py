@@ -22,15 +22,44 @@ Usage:
 
 import json
 import logging
+import re
 import sqlite3
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, ClassVar
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def validate_sql_identifier(identifier: str) -> str:
+    """
+    Validate and sanitize SQL identifier to prevent injection attacks.
+
+    Args:
+        identifier: The identifier to validate (table name, column name, etc.)
+
+    Returns:
+        The validated identifier
+
+    Raises:
+        ValueError: If identifier contains invalid characters
+    """
+    if not identifier:
+        raise ValueError("Identifier cannot be empty")
+
+    # Only allow alphanumeric characters, underscores, and hyphens
+    if not re.match(r"^[a-zA-Z0-9_-]+$", identifier):
+        raise ValueError(f"Invalid identifier: {identifier}. Only alphanumeric, underscore, and hyphen allowed.")
+
+    # Ensure it doesn't start with a number (SQL standard)
+    if identifier[0].isdigit():
+        raise ValueError(f"Identifier cannot start with a number: {identifier}")
+
+    return identifier
 
 
 @dataclass
@@ -268,8 +297,9 @@ class SQLiteDatabaseAnalyzer:
         cursor.execute(f"PRAGMA table_info([{table_name}])")
         pragma_info = cursor.fetchall()
 
-        # Get row count
-        cursor.execute(f"SELECT COUNT(*) FROM [{table_name}]")
+        # Get row count - SECURITY: Validate table name to prevent SQL injection
+        safe_table_name = validate_sql_identifier(table_name)
+        cursor.execute(f"SELECT COUNT(*) FROM [{safe_table_name}]")  # nosec
         row_count = cursor.fetchone()[0]
 
         # Get estimated size (rough calculation)
@@ -416,7 +446,9 @@ class SQLiteDatabaseAnalyzer:
     def _get_data_samples(self, cursor: sqlite3.Cursor, table_name: str, limit: int = 5) -> list[dict[str, Any]]:
         """Get sample data from table."""
         try:
-            cursor.execute(f"SELECT * FROM [{table_name}] LIMIT {limit}")
+            # SECURITY: Validate table name to prevent SQL injection
+            safe_table_name = validate_sql_identifier(table_name)
+            cursor.execute(f"SELECT * FROM [{safe_table_name}] LIMIT {limit}")  # nosec
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         except sqlite3.Error:

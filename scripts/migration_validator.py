@@ -8,8 +8,36 @@ between SQLite and PostgreSQL databases.
 """
 
 import json
+import re
 import sqlite3
 from pathlib import Path
+
+
+def validate_sql_identifier(identifier: str) -> str:
+    """
+    Validate SQL identifier to prevent injection attacks.
+
+    Args:
+        identifier: The SQL identifier (table or column name) to validate
+
+    Returns:
+        The validated identifier
+
+    Raises:
+        ValueError: If identifier is invalid or potentially unsafe
+    """
+    if not identifier:
+        raise ValueError("Identifier cannot be empty")
+
+    # Allow alphanumeric, underscore, hyphen - standard SQL identifier pattern
+    if not re.match(r"^[a-zA-Z0-9_-]+$", identifier):
+        raise ValueError(f"Invalid identifier: {identifier}. Only alphanumeric, underscore, and hyphen allowed.")
+
+    # Identifier cannot start with a number
+    if identifier[0].isdigit():
+        raise ValueError(f"Identifier cannot start with a number: {identifier}")
+
+    return identifier
 
 
 class MigrationValidator:
@@ -44,8 +72,11 @@ class MigrationValidator:
                 print(f"  Checking table {table} columns: {', '.join(json_columns)}")
 
                 for json_col in json_columns:
+                    # Validate identifiers to prevent SQL injection
+                    safe_table = validate_sql_identifier(table)
+                    safe_json_col = validate_sql_identifier(json_col)
                     cursor.execute(
-                        f"SELECT rowid, [{json_col}] FROM [{table}] WHERE [{json_col}] IS NOT NULL LIMIT 100",
+                        f"SELECT rowid, [{safe_json_col}] FROM [{safe_table}] WHERE [{safe_json_col}] IS NOT NULL LIMIT 100",  # nosec B608
                     )
                     rows = cursor.fetchall()
 
@@ -89,7 +120,9 @@ class MigrationValidator:
 
             row_counts = {}
             for table in tables:
-                cursor.execute(f"SELECT COUNT(*) FROM [{table}]")
+                # Validate identifier to prevent SQL injection
+                safe_table = validate_sql_identifier(table)
+                cursor.execute(f"SELECT COUNT(*) FROM [{safe_table}]")  # nosec B608
                 count = cursor.fetchone()[0]
                 row_counts[table] = count
                 print(f"  {table}: {count:,} rows")
@@ -109,7 +142,9 @@ class MigrationValidator:
 
             sample_data = {}
             for table in tables:
-                cursor.execute(f"SELECT * FROM [{table}] LIMIT {sample_size}")
+                # Validate identifier to prevent SQL injection
+                safe_table = validate_sql_identifier(table)
+                cursor.execute(f"SELECT * FROM [{safe_table}] LIMIT {sample_size}")  # nosec B608
                 rows = cursor.fetchall()
                 sample_data[table] = [dict(row) for row in rows]
 
@@ -139,7 +174,12 @@ class MigrationValidator:
                 print(f"  Checking table {table} REAL columns: {', '.join(real_columns)}")
 
                 for real_col in real_columns:
-                    cursor.execute(f"SELECT [{real_col}] FROM [{table}] WHERE [{real_col}] IS NOT NULL")
+                    # Validate identifiers to prevent SQL injection
+                    safe_table = validate_sql_identifier(table)
+                    safe_real_col = validate_sql_identifier(real_col)
+                    cursor.execute(
+                        f"SELECT [{safe_real_col}] FROM [{safe_table}] WHERE [{safe_real_col}] IS NOT NULL",
+                    )  # nosec B608
                     values = [row[0] for row in cursor.fetchall()]
 
                     if not values:

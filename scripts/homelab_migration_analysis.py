@@ -8,6 +8,7 @@ processing power, storage constraints, and migration complexity.
 """
 
 import logging
+import re
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,33 @@ import psutil
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def validate_sql_identifier(identifier: str) -> str:
+    """
+    Validate and sanitize SQL identifier to prevent injection attacks.
+
+    Args:
+        identifier: The identifier to validate (table name, column name, etc.)
+
+    Returns:
+        The validated identifier
+
+    Raises:
+        ValueError: If identifier contains invalid characters
+    """
+    if not identifier:
+        raise ValueError("Identifier cannot be empty")
+
+    # Only allow alphanumeric characters, underscores, and hyphens
+    if not re.match(r"^[a-zA-Z0-9_-]+$", identifier):
+        raise ValueError(f"Invalid identifier: {identifier}. Only alphanumeric, underscore, and hyphen allowed.")
+
+    # Ensure it doesn't start with a number (SQL standard)
+    if identifier[0].isdigit():
+        raise ValueError(f"Identifier cannot start with a number: {identifier}")
+
+    return identifier
 
 
 @dataclass
@@ -115,10 +143,12 @@ class HomelabMigrationAnalyzer:
             estimated_rows = 0
             for (table_name,) in tables:
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM [{table_name}]")
+                    # SECURITY: Validate table name to prevent SQL injection
+                    safe_table_name = validate_sql_identifier(table_name)
+                    cursor.execute(f"SELECT COUNT(*) FROM [{safe_table_name}]")  # nosec
                     row_count = cursor.fetchone()[0]
                     estimated_rows += row_count
-                except sqlite3.Error:
+                except (sqlite3.Error, ValueError):
                     # Table might not be accessible, estimate based on size
                     estimated_rows += int(size_mb * 1000)  # Rough estimate
 
