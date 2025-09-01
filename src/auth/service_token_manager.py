@@ -263,7 +263,7 @@ class ServiceTokenManager:
             # Sanitize emergency_reason for logging to prevent log injection
             safe_reason = emergency_reason.replace("\n", "").replace("\r", "")[:100]
             logger.critical(
-                "EMERGENCY REVOCATION: Revoked %d service credentials (reason: %s)",
+                "EMERGENCY REVOCATION: Revoked %d active sessions (reason: %s)",
                 active_count,
                 safe_reason,
             )

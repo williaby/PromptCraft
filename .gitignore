@@ -155,6 +155,11 @@ backup_*/
 *_OLD
 *conflicted*
 
+# Demo/Spike Files (may contain test credentials)
+*_spike.py
+*_performance_spike.py
+*_demo.py
+
 # Local Development
 *.env.zen-vm.template
 .secrets.baseline
