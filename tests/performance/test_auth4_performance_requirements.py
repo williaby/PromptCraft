@@ -34,7 +34,10 @@ import time
 import tracemalloc
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta, timezone
-from typing import Dict, List, Tuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
@@ -812,7 +815,9 @@ class TestAUTH4StressAndRecovery:
                             )
 
                             async def log_stress_event(
-                                captured_event_type=event_type, captured_severity=severity, captured_event_id=event_id,
+                                captured_event_type=event_type,
+                                captured_severity=severity,
+                                captured_event_id=event_id,
                             ):
                                 event = await security_logger.log_security_event(
                                     event_type=captured_event_type,

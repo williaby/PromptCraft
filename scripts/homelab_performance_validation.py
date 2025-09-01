@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: S311
 """Homelab Performance Validation for AUTH-4 Database Consolidation.
 
 This script performs realistic performance testing for homelab environments,
@@ -267,20 +268,25 @@ class HomelabPerformanceTester:
             results.update(
                 {
                     "table_creation_ms": round(
-                        50 * hw_multiplier + random.uniform(-10, 20), 2,
-                    ),  # noqa: S311 - performance simulation
+                        50 * hw_multiplier + random.uniform(-10, 20),
+                        2,
+                    ),
                     "single_insert_ms": round(
-                        25 * hw_multiplier + random.uniform(-5, 15), 2,
-                    ),  # noqa: S311 - performance simulation
+                        25 * hw_multiplier + random.uniform(-5, 15),
+                        2,
+                    ),
                     "bulk_insert_ms": round(
-                        150 * hw_multiplier + random.uniform(-30, 50), 2,
-                    ),  # noqa: S311 - performance simulation
+                        150 * hw_multiplier + random.uniform(-30, 50),
+                        2,
+                    ),
                     "query_performance_ms": round(
-                        35 * hw_multiplier + random.uniform(-8, 25), 2,
-                    ),  # noqa: S311 - performance simulation
+                        35 * hw_multiplier + random.uniform(-8, 25),
+                        2,
+                    ),
                     "index_performance_ms": round(
-                        80 * hw_multiplier + random.uniform(-15, 30), 2,
-                    ),  # noqa: S311 - performance simulation
+                        80 * hw_multiplier + random.uniform(-15, 30),
+                        2,
+                    ),
                     "simulation_mode": True,
                 },
             )
@@ -418,8 +424,9 @@ class HomelabPerformanceTester:
 
             successful_ops = int(total_ops * (1 - failure_rate))
             avg_latency = self.targets.simple_query_latency_max * random.uniform(
-                0.8, 1.2,
-            )  # noqa: S311 - performance simulation
+                0.8,
+                1.2,
+            )
             simulated_time = 5.0  # Assume 5 seconds for the test
             throughput = successful_ops / simulated_time
 
