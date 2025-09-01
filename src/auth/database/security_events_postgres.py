@@ -39,11 +39,9 @@ def _safe_enum_parse(enum_class: type, value: str, fallback: str) -> Any:
     try:
         return enum_class(value)
     except ValueError:
-        # Sanitize values to prevent log injection
-        sanitized_value = str(value).replace("\r", "").replace("\n", "")[:100]
-        sanitized_fallback = str(fallback).replace("\r", "").replace("\n", "")[:100]
+        # Prevent clear-text logging of potentially sensitive information
         logger.warning(
-            f"Invalid {enum_class.__name__} value '{sanitized_value}', using fallback '{sanitized_fallback}'",
+            f"Invalid value for {enum_class.__name__} encountered, using fallback.",
         )
         return enum_class(fallback)
 
