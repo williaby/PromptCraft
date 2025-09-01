@@ -12,7 +12,7 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, delete, desc, func, select, text
@@ -23,6 +23,24 @@ from src.database.models import SecurityEventLogger as SecurityEventModel
 from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_enum_parse(enum_class: type, value: str, fallback: str) -> Any:
+    """Safely parse enum value with fallback handling.
+
+    Args:
+        enum_class: Enum class to parse into
+        value: String value to parse
+        fallback: Fallback value if parsing fails
+
+    Returns:
+        Enum instance or fallback enum instance
+    """
+    try:
+        return enum_class(value)
+    except ValueError:
+        logger.warning(f"Invalid {enum_class.__name__} value '{value}', using fallback '{fallback}'")
+        return enum_class(fallback)
 
 
 class SecurityEventsPostgreSQL:
@@ -116,11 +134,19 @@ class SecurityEventsPostgreSQL:
 
                 self._update_query_stats()
 
-                # Return response model
+                # Return response model with safe enum parsing
                 return SecurityEventResponse(
                     id=db_event.id,
-                    event_type=SecurityEventType(db_event.event_type),
-                    severity=SecurityEventSeverity(db_event.severity),
+                    event_type=_safe_enum_parse(
+                        SecurityEventType,
+                        db_event.event_type,
+                        SecurityEventType.SYSTEM_ERROR.value,
+                    ),
+                    severity=_safe_enum_parse(
+                        SecurityEventSeverity,
+                        db_event.severity,
+                        SecurityEventSeverity.INFO.value,
+                    ),
                     user_id=db_event.user_id,
                     ip_address=str(db_event.ip_address) if db_event.ip_address else None,
                     user_agent=db_event.user_agent,
@@ -421,10 +447,18 @@ class SecurityEventsPostgreSQL:
             Created security event response
         """
         try:
-            # Convert dict to SecurityEventCreate model
+            # Convert dict to SecurityEventCreate model with safe enum parsing
             event_create = SecurityEventCreate(
-                event_type=SecurityEventType(event_data.get("event_type", "SYSTEM_ERROR")),
-                severity=SecurityEventSeverity(event_data.get("severity", "INFO")),
+                event_type=_safe_enum_parse(
+                    SecurityEventType,
+                    event_data.get("event_type", "SYSTEM_ERROR"),
+                    SecurityEventType.SYSTEM_ERROR.value,
+                ),
+                severity=_safe_enum_parse(
+                    SecurityEventSeverity,
+                    event_data.get("severity", "INFO"),
+                    SecurityEventSeverity.INFO.value,
+                ),
                 user_id=event_data.get("user_id"),
                 ip_address=event_data.get("ip_address"),
                 user_agent=event_data.get("user_agent"),
@@ -579,8 +613,8 @@ class SecurityEventsPostgreSQL:
         """
         return SecurityEventResponse(
             id=event.id,
-            event_type=SecurityEventType(event.event_type),
-            severity=SecurityEventSeverity(event.severity),
+            event_type=_safe_enum_parse(SecurityEventType, event.event_type, SecurityEventType.SYSTEM_ERROR.value),
+            severity=_safe_enum_parse(SecurityEventSeverity, event.severity, SecurityEventSeverity.INFO.value),
             user_id=event.user_id,
             ip_address=str(event.ip_address) if event.ip_address else None,
             user_agent=event.user_agent,
