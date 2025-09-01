@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 if TYPE_CHECKING:
     from .audit_service import AuditService

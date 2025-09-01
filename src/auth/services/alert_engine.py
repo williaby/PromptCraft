@@ -30,7 +30,7 @@ from pydantic import BaseModel, Field
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.auth.security_logger import SecurityLogger
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class AlertSeverity(str, Enum):

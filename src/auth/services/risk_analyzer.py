@@ -5,10 +5,10 @@ Handles user risk assessment, behavioral analysis, and anomaly detection.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class RiskAnalyzer:

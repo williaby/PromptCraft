@@ -719,7 +719,9 @@ class GlobalContainerProvider:
                 # Try to shutdown gracefully if there's a running event loop
                 loop = asyncio.get_running_loop()
                 if loop.is_running():
-                    _ = loop.create_task(cls._global_container.shutdown())
+                    task = loop.create_task(cls._global_container.shutdown())
+                    # Store reference to prevent task from being garbage collected
+                    task.add_done_callback(lambda _: None)
             except RuntimeError:
                 # No running event loop, just reset without shutdown
                 pass

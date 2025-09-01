@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, ServiceToken
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 

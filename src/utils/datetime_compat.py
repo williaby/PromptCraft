@@ -10,7 +10,7 @@ Phase 2: Full compatibility layer (expanded incrementally)
 
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
 # Version detection
@@ -24,9 +24,7 @@ if PY_311_PLUS:
         from datetime import UTC
     except ImportError:
         # Python < 3.11 compatibility
-        from datetime import timezone
-
-        UTC = UTC
+        UTC = timezone.utc
 else:
     UTC = timezone.utc  # noqa: UP017  # Python 3.10 compatibility - datetime.UTC not available
 
@@ -39,6 +37,7 @@ __all__ = [
     "is_naive",
     "naive_to_aware",
     "safe_compare",
+    "timedelta",
     "utc_from_timestamp",
     "utc_now",
 ]

@@ -15,7 +15,7 @@ from src.auth.alert_engine import AlertEngine
 from src.auth.security_logger import SecurityLogger
 from src.database.connection import get_database_manager
 from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, ThreatScore
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 

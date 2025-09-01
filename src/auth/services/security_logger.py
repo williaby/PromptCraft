@@ -27,7 +27,7 @@ from sqlalchemy import delete
 from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
 from src.database.models import SecurityEvent as SecurityEventModel
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 
 @dataclass

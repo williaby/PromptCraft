@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventType
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 from .security_logger import SecurityLogger
 

@@ -4,11 +4,11 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from types import TracebackType
 from typing import Any
 
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 

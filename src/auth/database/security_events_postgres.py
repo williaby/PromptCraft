@@ -12,7 +12,7 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import and_, delete, desc, func, select, text
@@ -20,7 +20,7 @@ from sqlalchemy import and_, delete, desc, func, select, text
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
 from src.database.models import SecurityEventLogger as SecurityEventModel
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,12 @@ def _safe_enum_parse(enum_class: type, value: str, fallback: str) -> Any:
     try:
         return enum_class(value)
     except ValueError:
-        logger.warning(f"Invalid {enum_class.__name__} value '{value}', using fallback '{fallback}'")
+        # Sanitize values to prevent log injection
+        sanitized_value = str(value).replace("\r", "").replace("\n", "")[:100]
+        sanitized_fallback = str(fallback).replace("\r", "").replace("\n", "")[:100]
+        logger.warning(
+            f"Invalid {enum_class.__name__} value '{sanitized_value}', using fallback '{sanitized_fallback}'",
+        )
         return enum_class(fallback)
 
 

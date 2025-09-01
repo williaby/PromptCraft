@@ -20,14 +20,14 @@ import math
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEventCreate, SecurityEventType
 from src.auth.security_logger import SecurityLogger
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -1344,23 +1344,32 @@ class SuspiciousActivityDetector:
 
         # Time-based adjustments
         contextual_multiplier, contextual_factors = self._apply_time_adjustments(
-            context, contextual_multiplier, contextual_factors
+            context,
+            contextual_multiplier,
+            contextual_factors,
         )
 
         # Security level adjustments
         contextual_multiplier, contextual_factors = self._apply_security_adjustments(
-            context, contextual_multiplier, contextual_factors
+            context,
+            contextual_multiplier,
+            contextual_factors,
         )
 
         # Role and access adjustments
         contextual_multiplier, contextual_factors = self._apply_access_adjustments(
-            context, contextual_multiplier, contextual_factors
+            context,
+            contextual_multiplier,
+            contextual_factors,
         )
 
         return contextual_multiplier, contextual_factors
 
     def _apply_time_adjustments(
-        self, context: dict[str, Any], multiplier: float, factors: list[str]
+        self,
+        context: dict[str, Any],
+        multiplier: float,
+        factors: list[str],
     ) -> tuple[float, list[str]]:
         """Apply time-based contextual adjustments."""
         if "time_of_day" in context:
@@ -1390,7 +1399,10 @@ class SuspiciousActivityDetector:
         return multiplier, factors
 
     def _apply_security_adjustments(
-        self, context: dict[str, Any], multiplier: float, factors: list[str]
+        self,
+        context: dict[str, Any],
+        multiplier: float,
+        factors: list[str],
     ) -> tuple[float, list[str]]:
         """Apply security level contextual adjustments."""
         if "environment_security" in context:
@@ -1420,7 +1432,10 @@ class SuspiciousActivityDetector:
         return multiplier, factors
 
     def _apply_access_adjustments(
-        self, context: dict[str, Any], multiplier: float, factors: list[str]
+        self,
+        context: dict[str, Any],
+        multiplier: float,
+        factors: list[str],
     ) -> tuple[float, list[str]]:
         """Apply role and access contextual adjustments."""
         if context.get("privileged_access"):

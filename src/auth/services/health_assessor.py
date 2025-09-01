@@ -11,7 +11,7 @@ from typing import Any
 
 import aiohttp
 
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class HealthStatus(Enum):

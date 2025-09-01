@@ -32,13 +32,13 @@ class AuditReportRequest(BaseModel):
     report_type: str = Field(
         default="comprehensive",
         description="Type of audit report",
-        regex="^(comprehensive|security|compliance|activity)$",
+        pattern="^(comprehensive|security|compliance|activity)$",
     )
     include_details: bool = Field(default=True, description="Include detailed event information")
     format: str = Field(
         default="json",
         description="Report output format",
-        regex="^(json|csv|pdf)$",
+        pattern="^(json|csv|pdf)$",
     )
 
 
