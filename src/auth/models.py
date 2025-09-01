@@ -10,8 +10,6 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, field_validator
 
 # Create aliases for backward compatibility
-EventSeverity = None  # Will be set after class definition
-EventType = None  # Will be set after class definition
 
 
 class UserRole(str, Enum):
