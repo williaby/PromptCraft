@@ -15,7 +15,8 @@ Features:
 
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from enum import Enum
 from typing import Any
 
@@ -68,7 +69,7 @@ class Alert:
     metric_type: MetricType
     current_value: float
     threshold_value: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     acknowledged: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -124,7 +125,7 @@ class DashboardMetrics:
     confidence_level: str  # low, medium, high
 
     # Metadata
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""

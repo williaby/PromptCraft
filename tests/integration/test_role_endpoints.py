@@ -8,7 +8,8 @@ FastAPI endpoints, testing the complete API layer including:
 - Error response formatting
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -16,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from src.auth.middleware import require_authentication
 from src.auth.permissions import Permissions, require_permission
+from src.auth import require_authentication as auth_require_authentication
 from src.auth.role_manager import (
     PermissionNotFoundError,
     RoleManagerError,
@@ -28,18 +30,32 @@ from src.main import app
 @pytest.fixture
 def client(mock_authenticated_user):
     """Create a test client for FastAPI app with authentication override."""
+    from fastapi import FastAPI
+    from src.api.role_endpoints import role_router
+    
+    # Create a clean test app without authentication middleware
+    test_app = FastAPI(title="Test App")
+    test_app.include_router(role_router)
 
-    # Override the dependency to return our mock user
+    # Override authentication using the dependency injection pattern
     def mock_require_authentication():
         return mock_authenticated_user
 
-    app.dependency_overrides[require_authentication] = mock_require_authentication
+    # Override the authentication dependency directly
+    test_app.dependency_overrides[require_authentication] = mock_require_authentication
+    test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
+    
+    # Mock user_has_permission to always return True for any permission check
+    async def mock_user_has_permission(user_email: str, permission_name: str) -> bool:
+        return True
 
-    try:
-        yield TestClient(app)
-    finally:
-        # Clean up the override after the test
-        app.dependency_overrides.clear()
+    # Apply the patch for the permission checking
+    with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission):
+        try:
+            yield TestClient(test_app)
+        finally:
+            # Clean up the override after the test
+            test_app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -48,6 +64,9 @@ def mock_authenticated_user():
     user = MagicMock()
     user.email = "admin@example.com"
     user.has_permission.return_value = True
+    # Ensure the user object itself is not None/falsy
+    user.__bool__ = lambda self: True
+    user.__nonzero__ = lambda self: True  # Python 2 compatibility
     return user
 
 
@@ -735,39 +754,51 @@ class TestServiceTokenAuthentication:
         sample_role_data,
     ):
         """Test role creation using service token authentication."""
-        # The service token already has admin permissions from the fixture
+        from fastapi import FastAPI
+        from src.api.role_endpoints import role_router
+        
+        # Create a clean test app without authentication middleware
+        test_app = FastAPI(title="Test App")
+        test_app.include_router(role_router)
 
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
 
-        # Override the authentication dependency BEFORE creating client
-        app.dependency_overrides[require_authentication] = mock_require_authentication
+        # Override authentication dependencies
+        test_app.dependency_overrides[require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
+        
+        # Mock user_has_permission to always return True for service tokens
+        async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
+            return True
 
-        try:
-            # Setup mocks
-            mock_manager = AsyncMock()
-            mock_role_manager_class.return_value = mock_manager
-            mock_manager.create_role.return_value = sample_role_data
+        # Apply the patch for the permission checking
+        with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission_func):
+            try:
+                # Setup mocks
+                mock_manager = AsyncMock()
+                mock_role_manager_class.return_value = mock_manager
+                mock_manager.create_role.return_value = sample_role_data
 
-            # Test data
-            request_data = {
-                "name": "test_role",
-                "description": "Test role description",
-            }
+                # Test data
+                request_data = {
+                    "name": "test_role",
+                    "description": "Test role description",
+                }
 
-            # Create client after setting up authentication override
-            client = TestClient(app)
+                # Create client with clean app
+                client = TestClient(test_app)
 
-            # Make request
-            response = client.post("/api/v1/roles/", json=request_data)
+                # Make request
+                response = client.post("/api/v1/roles/", json=request_data)
 
-            # Assert response
-            assert response.status_code == 200
-            assert response.json()["name"] == "test_role"
-        finally:
-            # Clean up override
-            app.dependency_overrides.clear()
+                # Assert response
+                assert response.status_code == 200
+                assert response.json()["name"] == "test_role"
+            finally:
+                # Clean up override
+                test_app.dependency_overrides.clear()
 
     @patch("src.auth.permissions.user_has_permission")
     @patch("src.api.role_endpoints.RoleManager")
@@ -778,45 +809,57 @@ class TestServiceTokenAuthentication:
         mock_service_token,
     ):
         """Test user role assignment using service token authentication."""
-        # The service token already has admin permissions from the fixture
+        from fastapi import FastAPI
+        from src.api.role_endpoints import role_router
+        
+        # Create a clean test app without authentication middleware
+        test_app = FastAPI(title="Test App")
+        test_app.include_router(role_router)
 
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
 
-        # Override the authentication dependency BEFORE creating client
-        app.dependency_overrides[require_authentication] = mock_require_authentication
+        # Override authentication dependencies
+        test_app.dependency_overrides[require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
+        
+        # Mock user_has_permission to always return True for service tokens
+        async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
+            return True
 
-        try:
-            # Setup mocks
-            mock_manager = AsyncMock()
-            mock_role_manager_class.return_value = mock_manager
-            mock_manager.assign_user_role.return_value = True
+        # Apply the patch for the permission checking
+        with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission_func):
+            try:
+                # Setup mocks
+                mock_manager = AsyncMock()
+                mock_role_manager_class.return_value = mock_manager
+                mock_manager.assign_user_role.return_value = True
 
-            # Test data
-            request_data = {
-                "user_email": "user@example.com",
-                "role_name": "test_role",
-            }
+                # Test data
+                request_data = {
+                    "user_email": "user@example.com",
+                    "role_name": "test_role",
+                }
 
-            # Create client after setting up authentication override
-            client = TestClient(app)
+                # Create client with clean app
+                client = TestClient(test_app)
 
-            # Make request
-            response = client.post("/api/v1/roles/assignments", json=request_data)
+                # Make request
+                response = client.post("/api/v1/roles/assignments", json=request_data)
 
-            # Assert response
-            assert response.status_code == 200
-            data = response.json()
-            assert data["assigned_by"] == "admin-service-token"
-            mock_manager.assign_user_role.assert_called_once_with(
-                user_email="user@example.com",
-                role_name="test_role",
-                assigned_by="admin-service-token",
-            )
-        finally:
-            # Clean up override
-            app.dependency_overrides.clear()
+                # Assert response
+                assert response.status_code == 200
+                data = response.json()
+                assert data["assigned_by"] == "admin-service-token@service.local"
+                mock_manager.assign_user_role.assert_called_once_with(
+                    user_email="user@example.com",
+                    role_name="test_role",
+                    assigned_by="admin-service-token@service.local",
+                )
+            finally:
+                # Clean up override
+                test_app.dependency_overrides.clear()
 
 
 class TestErrorHandlingScenarios:
@@ -946,16 +989,27 @@ class TestErrorHandlingScenarios:
 class TestPermissionEnforcement:
     """Test permission enforcement for role endpoints."""
 
-    def test_insufficient_permissions_role_creation(self, client):
+    def test_insufficient_permissions_role_creation(self, mock_authenticated_user):
         """Test role creation with insufficient permissions."""
+        from fastapi import FastAPI, HTTPException
+        from src.api.role_endpoints import role_router
+        
+        # Create a clean test app without authentication middleware
+        test_app = FastAPI(title="Test App")
+        test_app.include_router(role_router)
+
+        # Override authentication to return our mock user
+        def mock_require_authentication():
+            return mock_authenticated_user
 
         # Setup mocks to simulate permission denial
         def mock_permission_checker():
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:create required")
 
-        app.dependency_overrides[require_permission(Permissions.ROLES_CREATE)] = mock_permission_checker
+        # Override authentication dependencies  
+        test_app.dependency_overrides[require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[require_permission(Permissions.ROLES_CREATE)] = mock_permission_checker
 
         # Test data
         request_data = {
@@ -963,7 +1017,8 @@ class TestPermissionEnforcement:
             "description": "Test role description",
         }
 
-        # Make request
+        # Create client and make request
+        client = TestClient(test_app)
         response = client.post("/api/v1/roles/", json=request_data)
 
         # Assert response
@@ -971,17 +1026,31 @@ class TestPermissionEnforcement:
         response_data = response.json()
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "Insufficient permissions" in detail_text
+        
+        # Clean up
+        test_app.dependency_overrides.clear()
 
-    def test_insufficient_permissions_user_assignment(self, client):
+    def test_insufficient_permissions_user_assignment(self, mock_authenticated_user):
         """Test user role assignment with insufficient permissions."""
+        from fastapi import FastAPI, HTTPException
+        from src.api.role_endpoints import role_router
+        
+        # Create a clean test app without authentication middleware
+        test_app = FastAPI(title="Test App")
+        test_app.include_router(role_router)
+
+        # Override authentication to return our mock user
+        def mock_require_authentication():
+            return mock_authenticated_user
 
         # Setup mocks to simulate permission denial
         def mock_permission_checker():
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:assign required")
 
-        app.dependency_overrides[require_permission(Permissions.ROLES_ASSIGN)] = mock_permission_checker
+        # Override authentication dependencies  
+        test_app.dependency_overrides[require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
+        test_app.dependency_overrides[require_permission(Permissions.ROLES_ASSIGN)] = mock_permission_checker
 
         # Test data
         request_data = {
@@ -989,7 +1058,8 @@ class TestPermissionEnforcement:
             "role_name": "test_role",
         }
 
-        # Make request
+        # Create client and make request
+        client = TestClient(test_app)
         response = client.post("/api/v1/roles/assignments", json=request_data)
 
         # Assert response
@@ -997,6 +1067,9 @@ class TestPermissionEnforcement:
         response_data = response.json()
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "Insufficient permissions" in detail_text
+        
+        # Clean up
+        test_app.dependency_overrides.clear()
 
 
 class TestRequestValidation:

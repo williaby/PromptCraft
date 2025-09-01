@@ -1,7 +1,8 @@
 """Comprehensive test suite for A/B Testing Dashboard."""
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -116,7 +117,7 @@ class TestAlert:
             "metric_type": "conversion",
             "current_value": 2.5,
             "threshold_value": 3.0,
-            "timestamp": "2024-01-01T12:00:00",
+            "timestamp": "2024-01-01T12:00:00+00:00",
             "acknowledged": True,
         }
 
@@ -217,7 +218,7 @@ class TestDashboardMetrics:
         assert result["recommendations"] == ["Continue experiment", "Monitor error rate"]
         assert result["risk_level"] == "low"
         assert result["confidence_level"] == "high"
-        assert result["last_updated"] == "2024-01-01T12:00:00"
+        assert result["last_updated"] == "2024-01-01T12:00:00+00:00"
 
     def test_dashboard_metrics_default_timestamp(self):
         """Test DashboardMetrics with default timestamp."""
@@ -1108,26 +1109,26 @@ class TestDashboardVisualizer:
         """Test DashboardVisualizer creation."""
         assert visualizer.logger is not None
 
-    def test_create_performance_chart_success(self, visualizer, sample_timeline_data):
+    async def test_create_performance_chart_success(self, visualizer, sample_timeline_data):
         """Test successful performance chart creation."""
-        result = visualizer.create_performance_chart(sample_timeline_data)
+        result = await visualizer.create_performance_chart(sample_timeline_data)
 
         assert isinstance(result, str)
         assert "html" in result.lower()
         assert "plotly" in result.lower()
 
-    def test_create_performance_chart_empty_data(self, visualizer):
+    async def test_create_performance_chart_empty_data(self, visualizer):
         """Test performance chart creation with empty data."""
-        result = visualizer.create_performance_chart([])
+        result = await visualizer.create_performance_chart([])
 
         assert isinstance(result, str)
         assert "No performance data available" in result
 
-    def test_create_performance_chart_exception(self, visualizer):
+    async def test_create_performance_chart_exception(self, visualizer):
         """Test performance chart creation with exception."""
         # Pass invalid data to cause exception
         with patch("pandas.DataFrame", side_effect=Exception("Test error")):
-            result = visualizer.create_performance_chart([{"invalid": "data"}])
+            result = await visualizer.create_performance_chart([{"invalid": "data"}])
 
         assert isinstance(result, str)
         assert "Error creating performance chart" in result
@@ -2148,7 +2149,7 @@ class TestDashboardVisualizerAdvanced:
         """DashboardVisualizer instance."""
         return DashboardVisualizer()
 
-    def test_create_performance_chart_with_missing_fields(self, visualizer):
+    async def test_create_performance_chart_with_missing_fields(self, visualizer):
         """Test performance chart creation with missing data fields."""
         timeline_data = [
             {
@@ -2166,7 +2167,7 @@ class TestDashboardVisualizerAdvanced:
             },
         ]
 
-        result = visualizer.create_performance_chart(timeline_data)
+        result = await visualizer.create_performance_chart(timeline_data)
 
         assert isinstance(result, str)
         assert "html" in result.lower()
@@ -2266,7 +2267,7 @@ class TestDashboardVisualizerAdvanced:
             assert "html" in result.lower()
             assert "plotly" in result.lower()
 
-    def test_visualization_error_handling_comprehensive(self, visualizer):
+    async def test_visualization_error_handling_comprehensive(self, visualizer):
         """Test comprehensive error handling in all visualization methods."""
         # Test with invalid data types
         invalid_data_sets = [None, "invalid_string", 123, {"invalid": "dict"}, [{"missing_required_field": "value"}]]
@@ -2278,7 +2279,7 @@ class TestDashboardVisualizerAdvanced:
                 "src.monitoring.ab_testing_dashboard.pd.DataFrame",
                 side_effect=Exception("Data processing error"),
             ):
-                result = visualizer.create_performance_chart(invalid_data)
+                result = await visualizer.create_performance_chart(invalid_data)
                 assert "Error creating performance chart" in result
 
         # Test variant comparison error handling

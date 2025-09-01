@@ -14,7 +14,8 @@ import sqlite3
 import statistics
 from collections import deque
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from enum import Enum
 from pathlib import Path
 from typing import Any

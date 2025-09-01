@@ -1,4 +1,4 @@
-"""Shared fixtures for authentication tests."""
+"""Shared fixtures for authentication tests - compatible with simplified auth system."""
 
 import base64
 import json
@@ -8,32 +8,44 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.auth.jwks_client import JWKSClient
-from src.auth.jwt_validator import JWTValidator
-from src.utils.time_utils import utc_now
+from src.utils.datetime_compat import utc_now
+from src.auth import ServiceTokenManager
+from src.auth.models import AuthenticatedUser, UserRole
 
 
 @pytest.fixture
-def mock_jwks_client():
-    """Create mock JWKS client with valid key data."""
-    client = Mock(spec=JWKSClient)
-    client.get_key_by_kid.return_value = {
-        "kty": "RSA",
-        "use": "sig",
-        "kid": "test-key-id",
-        "n": "test-modulus",
-        "e": "AQAB",
+def mock_service_token_manager():
+    """Create mock service token manager."""
+    manager = Mock(spec=ServiceTokenManager)
+    manager.create_token.return_value = {
+        "token_id": "test-token-123",
+        "token_secret": "secret-key",
+        "token_name": "test-service",
+        "metadata": {"permissions": ["read", "write"]}
     }
-    return client
+    manager.validate_token.return_value = True
+    return manager
 
 
 @pytest.fixture
-def jwt_validator(mock_jwks_client):
-    """Create JWT validator instance with mock client."""
-    return JWTValidator(
-        jwks_client=mock_jwks_client,
-        audience="https://test-app.com",
-        issuer="https://test.cloudflareaccess.com",
+def authenticated_user():
+    """Create authenticated user for testing."""
+    return AuthenticatedUser(
+        email="test@example.com",
+        role=UserRole.USER,
+        user_id="test-user-123",
+        token_id="session-token-123"
+    )
+
+
+@pytest.fixture
+def admin_user():
+    """Create admin user for testing."""
+    return AuthenticatedUser(
+        email="admin@example.com",
+        role=UserRole.ADMIN,
+        user_id="admin-user-123",
+        token_id="admin-session-123"
     )
 
 
@@ -120,3 +132,42 @@ def jwt_token_none_email(valid_jwt_payload, create_test_jwt):
     payload = valid_jwt_payload.copy()
     payload["email"] = None
     return create_test_jwt(payload)
+
+
+# Cloudflare Access fixtures for auth_simple compatibility
+@pytest.fixture
+def cloudflare_headers():
+    """Mock Cloudflare headers for authenticated user."""
+    return {
+        "cf-access-authenticated-user-email": "test@example.com",
+        "cf-access-username": "test@example.com",
+        "cf-access-user": "test-user-id",
+        "cf-access-organization": "test-org",
+        "cf-ray": "test-ray-id",
+        "x-forwarded-for": "192.168.1.100"
+    }
+
+
+@pytest.fixture
+def admin_cloudflare_headers():
+    """Mock Cloudflare headers for admin user."""
+    return {
+        "cf-access-authenticated-user-email": "admin@example.com",
+        "cf-access-username": "admin@example.com",
+        "cf-access-user": "admin-user-id",
+        "cf-access-organization": "test-org",
+        "cf-ray": "admin-ray-id",
+        "x-forwarded-for": "192.168.1.101"
+    }
+
+
+@pytest.fixture
+def mock_request():
+    """Mock FastAPI request object."""
+    from unittest.mock import MagicMock
+    request = MagicMock()
+    request.state = MagicMock()
+    request.url.path = "/test"
+    request.method = "GET"
+    request.client.host = "192.168.1.100"
+    return request

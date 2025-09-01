@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from typing import Any
 
 import pytest

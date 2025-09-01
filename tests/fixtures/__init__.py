@@ -1,36 +1,6 @@
 """Test fixtures package for PromptCraft testing infrastructure with dependency injection support."""
 
-from .api_router_fixtures import (
-    assert_pagination_response,
-    assert_performance_response_time,
-    assert_security_response_format,
-    create_mock_dependency_overrides,
-    create_test_timeline_data,
-    create_test_user_activity,
-    csv_export_content,
-    error_simulation_service,
-    json_export_content,
-    mock_alert_engine,
-    mock_audit_service,
-    mock_external_service_checks,
-    mock_security_service,
-    mock_suspicious_activity_detector,
-    performance_test_data,
-    sample_alert_data,
-    sample_audit_logs,
-    sample_database_health,
-    sample_multiple_alerts,
-    sample_risk_distribution,
-    sample_security_events,
-    sample_security_trends,
-    sample_service_health,
-    sample_suspicious_activities,
-    sample_system_metrics,
-    sample_timeline_data,
-    sample_user_activity,
-    test_app,
-    test_client,
-)
+# API router fixtures removed as part of auth simplification
 from .database_fixtures import (
     database_integration_test_manager,
     database_manager_factory,
@@ -53,95 +23,106 @@ from .security_service_mocks import (
     mock_security_logger,
     mock_security_monitor,
 )
-from .service_container_fixtures import (
-    ContainerTestHelper,
-    MockServiceFactory,
-    clean_container,
-    container_config,
-    container_lifecycle_context,
-    container_metrics_validator,
-    container_test_helper,
-    custom_container_with_mocks,
-    empty_container,
-    error_simulating_container_factory,
-    initialized_mock_container,
-    initialized_test_container,
-    integration_test_container,
-    invalid_container_configs,
-    mock_service_container,
-    mock_service_factory,
-    performance_container,
-    request_scoped_container,
-    service_dependency_chain,
-    test_environment_container,
+# Note: service_container_fixtures temporarily disabled due to missing auth.database module
+# from .service_container_fixtures import (
+#     ContainerTestHelper,
+#     MockServiceFactory,
+#     clean_container,
+#     container_config,
+#     container_lifecycle_context,
+#     container_metrics_validator,
+#     container_test_helper,
+#     custom_container_with_mocks,
+#     empty_container,
+#     error_simulating_container_factory,
+#     initialized_mock_container,
+#     initialized_test_container,
+#     integration_test_container,
+#     invalid_container_configs,
+#     mock_service_container,
+#     mock_service_factory,
+#     performance_container,
+#     request_scoped_container,
+#     service_dependency_chain,
+#     test_environment_container,
+# )
+
+# Integration testing fixtures (new)
+from .auth_fixtures import (
+    admin_user,
+    auth_middleware_admin,
+    auth_middleware_user,
+    authenticated_request,
+    multiple_service_tokens,
+    real_service_token_manager,
+    regular_user,
+    service_token_request,
+    test_authenticated_user,
+    test_service_token,
+    test_service_user,
+)
+from .database import (
+    sync_test_engine,
+    sync_test_session,
+    test_db_session,
+    test_db_with_override,
+    test_engine,
 )
 
 __all__ = [
-    "ContainerTestHelper",
+    # "ContainerTestHelper",  # Disabled due to missing auth.database module
     "MockAlertEngine",
     "MockAuditService",
     "MockSecurityLogger",
     "MockSecurityMonitor",
-    "MockServiceFactory",
+    # "MockServiceFactory",  # Disabled due to missing auth.database module
     "MockSuspiciousActivityDetector",
     "all_security_services",
-    "assert_pagination_response",
-    "assert_performance_response_time",
-    "assert_security_response_format",
-    "clean_container",
+    # "clean_container",  # Disabled due to missing auth.database module
     "clear_test_event_registry",
-    "container_config",
-    "container_lifecycle_context",
-    "container_metrics_validator",
-    "container_test_helper",
-    "create_mock_dependency_overrides",
-    "create_test_timeline_data",
-    "create_test_user_activity",
-    "csv_export_content",
-    "custom_container_with_mocks",
+    # "container_config",  # Disabled due to missing auth.database module
+    # "container_lifecycle_context",  # Disabled due to missing auth.database module
+    # "container_metrics_validator",  # Disabled due to missing auth.database module
+    # "container_test_helper",  # Disabled due to missing auth.database module
+    # "custom_container_with_mocks",  # Disabled due to missing auth.database module
     "database_integration_test_manager",
     "database_manager_factory",
-    "empty_container",
-    "error_simulating_container_factory",
-    "error_simulation_service",
-    "initialized_mock_container",
-    "initialized_test_container",
-    "integration_test_container",
-    "invalid_container_configs",
+    # "empty_container",  # Disabled due to missing auth.database module
+    # "error_simulating_container_factory",  # Disabled due to missing auth.database module
+    # "initialized_mock_container",  # Disabled due to missing auth.database module
+    # "initialized_test_container",  # Disabled due to missing auth.database module
+    # "integration_test_container",  # Disabled due to missing auth.database module
+    # "invalid_container_configs",  # Disabled due to missing auth.database module
     "isolated_database_config",
-    "json_export_content",
-    "mock_alert_engine",
-    "mock_audit_service",
     "mock_database_dependency_injection",
     "mock_database_engine",
     "mock_database_manager",
     "mock_database_session",
     "mock_database_session_factory",
     "mock_database_settings",
-    "mock_external_service_checks",
     "mock_security_logger",
     "mock_security_monitor",
-    "mock_security_service",
-    "mock_service_container",
-    "mock_service_factory",
-    "mock_suspicious_activity_detector",
-    "performance_container",
-    "performance_test_data",
-    "request_scoped_container",
-    "sample_alert_data",
-    "sample_audit_logs",
-    "sample_database_health",
-    "sample_multiple_alerts",
-    "sample_risk_distribution",
-    "sample_security_events",
-    "sample_security_trends",
-    "sample_service_health",
-    "sample_suspicious_activities",
-    "sample_system_metrics",
-    "sample_timeline_data",
-    "sample_user_activity",
-    "service_dependency_chain",
-    "test_app",
-    "test_client",
-    "test_environment_container",
+    # "mock_service_container",  # Disabled due to missing auth.database module
+    # "mock_service_factory",  # Disabled due to missing auth.database module
+    # "performance_container",  # Disabled due to missing auth.database module
+    # "request_scoped_container",  # Disabled due to missing auth.database module
+    # "service_dependency_chain",  # Disabled due to missing auth.database module
+    # "test_environment_container",  # Disabled due to missing auth.database module
+    # Integration testing fixtures
+    "test_engine",
+    "test_db_session", 
+    "test_db_with_override",
+    "sync_test_engine",
+    "sync_test_session",
+    "real_service_token_manager",
+    "test_service_token",
+    "test_authenticated_user",
+    "test_service_user",
+    "admin_user",
+    "regular_user",
+    "authenticated_request",
+    "service_token_request",
+    "auth_middleware_admin",
+    "auth_middleware_user",
+    "multiple_service_tokens",
 ]

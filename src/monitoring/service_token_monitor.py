@@ -10,7 +10,8 @@ This module provides monitoring capabilities for service tokens including:
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from typing import Any
 
 from sqlalchemy import text

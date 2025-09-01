@@ -22,6 +22,9 @@ from src.auth.middleware import AuthenticatedUser, ServiceTokenUser, require_aut
 from src.auth.models import UserRole
 from src.auth.service_token_manager import ServiceTokenManager
 
+# Import auth test helper fixtures  
+from tests.fixtures.auth_simple_fixtures import AuthTestHelper
+
 
 class TestAuthEndpoints:
     """Test cases for authentication endpoints."""
@@ -39,6 +42,11 @@ class TestAuthEndpoints:
     def client(self, app):
         """Create test client."""
         return TestClient(app)
+        
+    @pytest.fixture
+    def auth_test_helper(self):
+        """Provide authentication test helper."""
+        return AuthTestHelper
 
     @pytest.fixture
     def mock_service_token_manager(self):
@@ -95,16 +103,24 @@ class TestAuthEndpoints:
         user.role = UserRole.ADMIN
         return user
 
-    def test_get_current_user_info_service_token(self, app, client, mock_service_token_user):
+    def test_get_current_user_info_service_token(self, app, client, auth_test_helper):
         """Test /auth/me endpoint with service token authentication."""
+        
+        # Create properly structured mock user
+        mock_user = auth_test_helper.create_mock_service_token_user(
+            token_name="test_service_token", 
+            permissions=["read", "write"]
+        )
+        mock_user.usage_count = 42
+        mock_user.token_id = "service_token_123"
 
-        # Override the dependency
-        app.dependency_overrides[require_authentication] = lambda: mock_service_token_user
+        # Override the dependency using helper
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/auth/me")
 
         # Clean up
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
@@ -117,16 +133,22 @@ class TestAuthEndpoints:
         assert data["email"] is None
         assert data["role"] is None
 
-    def test_get_current_user_info_jwt_user(self, app, client, mock_jwt_user):
+    def test_get_current_user_info_jwt_user(self, app, client, auth_test_helper):
         """Test /auth/me endpoint with JWT authentication."""
+        
+        # Create properly structured mock user
+        mock_user = auth_test_helper.create_mock_authenticated_user(
+            email="admin@example.com", 
+            is_admin=True
+        )
 
-        # Override the dependency
-        app.dependency_overrides[require_authentication] = lambda: mock_jwt_user
+        # Override the dependency using helper
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/auth/me")
 
         # Clean up
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
@@ -463,6 +485,11 @@ class TestSystemEndpoints:
         test_app.include_router(system_router)
         test_app.include_router(audit_router)
         return test_app
+        
+    @pytest.fixture
+    def auth_test_helper(self):
+        """Provide authentication test helper."""
+        return AuthTestHelper
 
     @pytest.fixture
     def client(self, app):
@@ -484,13 +511,16 @@ class TestSystemEndpoints:
         user.email = "system@example.com"
         return user
 
-    def test_system_status_service_token(self, app, client, mock_service_token_user, monkeypatch):
+    def test_system_status_service_token(self, app, client, auth_test_helper, monkeypatch):
         """Test GET /system/status endpoint with service token."""
-
-        app.dependency_overrides[require_authentication] = lambda: mock_service_token_user
+        
+        # Create properly structured mock service token user  
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="system_token")
+        
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/system/status")
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
@@ -500,13 +530,16 @@ class TestSystemEndpoints:
         assert data["authenticated_as"] == "system_token"
         assert "timestamp" in data
 
-    def test_system_status_jwt_user(self, app, client, mock_jwt_user, monkeypatch):
+    def test_system_status_jwt_user(self, app, client, auth_test_helper, monkeypatch):
         """Test GET /system/status endpoint with JWT user."""
-
-        app.dependency_overrides[require_authentication] = lambda: mock_jwt_user
+        
+        # Create properly structured mock JWT user
+        mock_user = auth_test_helper.create_mock_authenticated_user(email="system@example.com")
+        
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/system/status")
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
@@ -514,16 +547,17 @@ class TestSystemEndpoints:
         assert data["status"] == "operational"
         assert data["authenticated_as"] == "system@example.com"
 
-    def test_system_status_insufficient_permissions(self, app, client, monkeypatch):
+    def test_system_status_insufficient_permissions(self, app, client, auth_test_helper, monkeypatch):
         """Test GET /system/status endpoint with insufficient permissions."""
 
-        mock_user = Mock(spec=ServiceTokenUser)
+        # Create mock user with insufficient permissions
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_token")
         mock_user.has_permission = Mock(return_value=False)
 
-        app.dependency_overrides[require_authentication] = lambda: mock_user
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/system/status")
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 403
         assert "system_status" in response.json()["detail"]
@@ -556,6 +590,11 @@ class TestAuditEndpoints:
     def client(self, app):
         """Create test client."""
         return TestClient(app)
+        
+    @pytest.fixture
+    def auth_test_helper(self):
+        """Provide authentication test helper."""
+        return AuthTestHelper
 
     @pytest.fixture
     def mock_service_token_user(self):
@@ -572,10 +611,13 @@ class TestAuditEndpoints:
         user.email = "auditor@example.com"
         return user
 
-    def test_log_cicd_event_service_token(self, app, client, mock_service_token_user, monkeypatch):
+    def test_log_cicd_event_service_token(self, app, client, auth_test_helper, monkeypatch):
         """Test POST /audit/cicd-event endpoint with service token."""
+        
+        # Create properly structured mock service token user
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="audit_token")
 
-        app.dependency_overrides[require_authentication] = lambda: mock_service_token_user
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         event_data = {
             "event_type": "deployment",
@@ -584,7 +626,7 @@ class TestAuditEndpoints:
         }
 
         response = client.post("/api/v1/audit/cicd-event", json=event_data)
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
@@ -594,33 +636,37 @@ class TestAuditEndpoints:
         assert data["logged_by"] == "audit_token"
         assert "timestamp" in data
 
-    def test_log_cicd_event_jwt_user(self, app, client, mock_jwt_user, monkeypatch):
+    def test_log_cicd_event_jwt_user(self, app, client, auth_test_helper, monkeypatch):
         """Test POST /audit/cicd-event endpoint with JWT user."""
+        
+        # Create properly structured mock JWT user
+        mock_user = auth_test_helper.create_mock_authenticated_user(email="auditor@example.com")
 
-        app.dependency_overrides[require_authentication] = lambda: mock_jwt_user
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         event_data = {"event_type": "build", "build_id": "build_456"}
 
         response = client.post("/api/v1/audit/cicd-event", json=event_data)
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 200
         data = response.json()
 
         assert data["logged_by"] == "auditor@example.com"
 
-    def test_log_cicd_event_insufficient_permissions(self, app, client, monkeypatch):
+    def test_log_cicd_event_insufficient_permissions(self, app, client, auth_test_helper, monkeypatch):
         """Test POST /audit/cicd-event endpoint with insufficient permissions."""
 
-        mock_user = Mock(spec=ServiceTokenUser)
+        # Create mock user with insufficient permissions
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_audit_token")
         mock_user.has_permission = Mock(return_value=False)
 
-        app.dependency_overrides[require_authentication] = lambda: mock_user
+        auth_test_helper.override_auth_dependency(app, mock_user)
 
         event_data = {"event_type": "test"}
 
         response = client.post("/api/v1/audit/cicd-event", json=event_data)
-        app.dependency_overrides.clear()
+        auth_test_helper.clear_overrides(app)
 
         assert response.status_code == 403
         assert "audit_log" in response.json()["detail"]

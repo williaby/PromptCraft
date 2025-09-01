@@ -9,7 +9,8 @@ and other monitoring infrastructure.
 import json
 import logging
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from pathlib import Path
 from typing import Any
 

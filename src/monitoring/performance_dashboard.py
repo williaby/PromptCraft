@@ -11,7 +11,8 @@ import contextlib
 import json
 import logging
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect

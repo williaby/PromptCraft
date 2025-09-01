@@ -27,12 +27,133 @@ from src.database import DatabaseError, get_database_manager_async
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
-from .config import AuthenticationConfig
-from .jwks_client import JWKSClient
-from .jwt_validator import JWTValidator
 from .models import AuthenticatedUser, AuthenticationError, JWTValidationError, SecurityEventSeverity, SecurityEventType
-from .services.security_logger import SecurityLogger
-from .services.security_monitor import SecurityMonitor
+
+# Import auth_simple compatibility types
+try:
+    from ..auth_simple import AuthConfig as AuthenticationConfig
+    from typing import Any as JWTValidator  # Placeholder type for compatibility
+except ImportError:
+    # Fallback types for compatibility
+    class AuthenticationConfig:
+        """Compatibility placeholder for AuthenticationConfig."""
+        pass
+    
+    class JWTValidator:
+        """Compatibility placeholder for JWTValidator."""
+        pass
+
+# Security logging compatibility
+class SecurityLogger:
+    """Compatibility security logger that uses standard logging."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger("security")
+    
+    def log_security_event(self, event_type, message, severity="INFO", **kwargs):
+        """Log a security event."""
+        log_message = f"[{event_type}] {message}"
+        if kwargs:
+            log_message += f" | Data: {kwargs}"
+        
+        if severity == "CRITICAL":
+            self.logger.critical(log_message)
+        elif severity == "HIGH":
+            self.logger.error(log_message)
+        elif severity == "MEDIUM":
+            self.logger.warning(log_message)
+        else:
+            self.logger.info(log_message)
+    
+    async def log_event(self, event_type, severity=None, user_id=None, ip_address=None, 
+                       user_agent=None, session_id=None, details=None):
+        """Log an event with structured data - compatibility method for middleware.
+        
+        Args:
+            event_type: Type of event (SecurityEventType enum value)
+            severity: Event severity (SecurityEventSeverity enum value)
+            user_id: User identifier (email for regular users, None for service tokens)
+            ip_address: Client IP address
+            user_agent: User agent string
+            session_id: Session identifier
+            details: Additional event details as dictionary
+        """
+        # Convert enums to strings for logging
+        event_type_str = str(event_type.value) if hasattr(event_type, 'value') else str(event_type)
+        severity_str = str(severity.value) if hasattr(severity, 'value') else str(severity or "INFO")
+        
+        # Build log message
+        log_data = {
+            "event_type": event_type_str,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "session_id": session_id,
+        }
+        
+        # Add details if provided
+        if details:
+            log_data.update(details)
+        
+        # Create formatted log message
+        log_message = f"[{event_type_str}] Security event"
+        if user_id:
+            log_message += f" for user {user_id}"
+        if ip_address:
+            log_message += f" from {ip_address}"
+        
+        # Add details to log message
+        filtered_data = {k: v for k, v in log_data.items() if v is not None}
+        if filtered_data:
+            log_message += f" | Data: {filtered_data}"
+        
+        # Log at appropriate level based on severity
+        if severity_str.upper() in ["CRITICAL"]:
+            self.logger.critical(log_message)
+        elif severity_str.upper() in ["HIGH", "ERROR"]:
+            self.logger.error(log_message)
+        elif severity_str.upper() in ["MEDIUM", "WARNING"]:
+            self.logger.warning(log_message)
+        else:
+            self.logger.info(log_message)
+
+# Security monitoring compatibility
+class SecurityMonitor:
+    """Compatibility security monitor for failed authentication tracking."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger("security.monitor")
+        self.failed_attempts = {}
+    
+    def record_failed_attempt(self, identifier, request_info=None):
+        """Record a failed authentication attempt."""
+        self.failed_attempts[identifier] = self.failed_attempts.get(identifier, 0) + 1
+        self.logger.warning(f"Failed authentication attempt for {identifier} (count: {self.failed_attempts[identifier]})")
+    
+    def is_blocked(self, identifier):
+        """Check if an identifier is blocked due to too many failed attempts."""
+        return self.failed_attempts.get(identifier, 0) > 10
+    
+    def reset_failed_attempts(self, identifier):
+        """Reset failed attempts for an identifier."""
+        if identifier in self.failed_attempts:
+            del self.failed_attempts[identifier]
+    
+    async def track_failed_authentication(self, user_id=None, ip_address=None, user_agent=None, 
+                                        session_id=None, details=None, endpoint=None, error_type=None):
+        """Track failed authentication attempt and return alerts if any."""
+        identifier = user_id or ip_address or "unknown"
+        self.record_failed_attempt(identifier, {
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "session_id": session_id,
+            "details": details,
+            "endpoint": endpoint,
+            "error_type": error_type
+        })
+        
+        # Return empty list for alerts - simplified security monitoring
+        return []
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +197,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: FastAPI,
-        config: AuthenticationConfig | None = None,
-        jwt_validator: JWTValidator | None = None,
+        config: "AuthenticationConfig | None" = None,
+        jwt_validator: "JWTValidator | None" = None,
         excluded_paths: list[str] | None = None,
         database_enabled: bool = True,
     ) -> None:

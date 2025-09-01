@@ -18,7 +18,8 @@ import gc
 import statistics
 import time
 from collections.abc import AsyncGenerator
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
+from src.utils.datetime_compat import UTC
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 

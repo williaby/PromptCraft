@@ -13,7 +13,8 @@ Tests cover:
 
 import asyncio
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -154,7 +155,9 @@ class TestServiceTokenIntegration:
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value = async_context_manager
             try:
                 # Create a token
                 token_value, token_id = await token_manager.create_service_token(
@@ -198,9 +201,11 @@ class TestServiceTokenIntegration:
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
 
         with (
-            patch("src.auth.service_token_manager.get_db", return_value=async_context_manager),
+            patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.auth.middleware.get_db", return_value=async_context_manager),
         ):
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value = async_context_manager
             try:
                 # Create a token
                 token_value, token_id = await token_manager.create_service_token(
@@ -248,9 +253,10 @@ class TestServiceTokenIntegration:
     @pytest.mark.asyncio
     async def test_cicd_authentication_scenario(self, token_manager, db_session):
         """Test CI/CD authentication scenario."""
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             # Create CI/CD token
             cicd_token_value, cicd_token_id = await token_manager.create_service_token(
@@ -299,14 +305,15 @@ class TestServiceTokenIntegration:
     async def test_monitoring_integration(self, service_monitor, token_manager, db_session):
         """Test monitoring system integration."""
         with (
-            patch("src.auth.service_token_manager.get_db") as mock_get_db,
+            patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.monitoring.service_token_monitor.get_db") as mock_monitor_get_db,
             patch("src.monitoring.service_token_monitor.database_health_check") as mock_health_check,
         ):
 
             # Use same session for both
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
             mock_monitor_get_db.return_value.__aenter__.return_value = db_session
             mock_monitor_get_db.return_value.__aexit__.return_value = None
 
@@ -352,13 +359,14 @@ class TestServiceTokenIntegration:
     async def test_token_rotation_integration(self, rotation_scheduler, token_manager, db_session):
         """Test token rotation scheduler integration."""
         with (
-            patch("src.auth.service_token_manager.get_db") as mock_get_db,
+            patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.automation.token_rotation_scheduler.get_db") as mock_scheduler_get_db,
         ):
 
             # Use same session for both
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
             mock_scheduler_get_db.return_value.__aenter__.return_value = db_session
             mock_scheduler_get_db.return_value.__aexit__.return_value = None
 
@@ -400,13 +408,14 @@ class TestServiceTokenIntegration:
     async def test_emergency_revocation_integration(self, token_manager, service_monitor, db_session):
         """Test emergency revocation integration with monitoring."""
         with (
-            patch("src.auth.service_token_manager.get_db") as mock_get_db,
+            patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.monitoring.service_token_monitor.get_db") as mock_monitor_get_db,
         ):
 
             # Use same session for both
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
             mock_monitor_get_db.return_value.__aenter__.return_value = db_session
             mock_monitor_get_db.return_value.__aexit__.return_value = None
 
@@ -454,7 +463,9 @@ class TestServiceTokenIntegration:
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value = async_context_manager
             # Create tokens concurrently
             async def create_token(i):
                 try:
@@ -484,9 +495,10 @@ class TestServiceTokenIntegration:
     @pytest.mark.asyncio
     async def test_cleanup_integration(self, token_manager, db_session):
         """Test token cleanup integration."""
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             # Create expired token
             expired_token_value, expired_token_id = await token_manager.create_service_token(
@@ -527,7 +539,9 @@ class TestServiceTokenIntegration:
         async_context_manager.__aenter__ = AsyncMock(return_value=db_session)
         async_context_manager.__aexit__ = AsyncMock(return_value=None)
 
-        with patch("src.auth.service_token_manager.get_db", return_value=async_context_manager):
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value = async_context_manager
             try:
                 # Test duplicate token name handling
                 token_name = "duplicate-test-token"
@@ -580,9 +594,10 @@ class TestServiceTokenIntegration:
     @pytest.mark.asyncio
     async def test_audit_trail_integration(self, token_manager, db_session):
         """Test complete audit trail integration."""
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = db_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             # Create token
             token_value, token_id = await token_manager.create_service_token(

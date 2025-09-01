@@ -8,7 +8,8 @@ Uses proper pytest markers for codecov integration per codecov.yml config compon
 """
 
 import os
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 

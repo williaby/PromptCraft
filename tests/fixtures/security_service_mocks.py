@@ -5,7 +5,8 @@ to enable comprehensive testing without external dependencies.
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from typing import Any
 from uuid import uuid4
 

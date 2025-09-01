@@ -65,6 +65,14 @@ class Role(Base):
         comment="Role description",
     )
 
+    # Role hierarchy
+    parent_role_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("roles.id"),
+        nullable=True,
+        comment="Parent role ID for hierarchical inheritance",
+    )
+
     # Status
     is_active: Mapped[bool] = mapped_column(
         Boolean,
@@ -94,6 +102,18 @@ class Role(Base):
         "Permission",
         secondary=role_permissions_table,
         back_populates="roles",
+    )
+    
+    # Role hierarchy relationships
+    parent_role: Mapped["Role | None"] = relationship(
+        "Role",
+        remote_side=[id],
+        back_populates="child_roles",
+    )
+    
+    child_roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        back_populates="parent_role",
     )
 
     def __repr__(self) -> str:

@@ -12,7 +12,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from src.auth.middleware import ServiceTokenUser, require_authentication, require_role
+from src.auth import require_role
+from src.auth.middleware import ServiceTokenUser, require_authentication
 from src.auth.models import AuthenticatedUser
 from src.auth.service_token_manager import ServiceTokenManager
 from src.utils.datetime_compat import UTC, timedelta
@@ -105,7 +106,11 @@ async def get_current_user_info(
             permissions=current_user.metadata.get("permissions", []),
             usage_count=current_user.usage_count,
         )
+    
     # JWT user authentication
+    if current_user is None or not isinstance(current_user, AuthenticatedUser):
+        raise HTTPException(status_code=401, detail="User authentication failed")
+    
     return CurrentUserResponse(
         user_type="jwt_user",
         email=current_user.email,

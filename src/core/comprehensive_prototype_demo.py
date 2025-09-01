@@ -24,7 +24,8 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from enum import Enum
 from pathlib import Path
 from typing import Any

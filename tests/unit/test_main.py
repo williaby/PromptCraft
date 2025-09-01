@@ -1,6 +1,6 @@
 """Tests for the main FastAPI application module."""
 
-from datetime import UTC
+from src.utils.datetime_compat import UTC
 from unittest.mock import MagicMock, patch
 
 import pytest

@@ -6,7 +6,8 @@ external service failures with configurable thresholds and recovery.
 
 import asyncio
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from unittest.mock import Mock, patch
 
 import pytest
