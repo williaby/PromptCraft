@@ -87,9 +87,7 @@ class Alert(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     severity: AlertSeverity
-    priority: Any = AlertSeverity.LOW  # Accept any priority type for test compatibility
-    channel: AlertChannel = AlertChannel.DASHBOARD
-    channels: list[Any] = Field(default_factory=list)  # List of channels for test compatibility
+    channels: list[AlertChannel] = Field(default_factory=list)  # List of channels for alert delivery
     title: str
     message: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
