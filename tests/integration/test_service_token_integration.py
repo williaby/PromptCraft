@@ -540,16 +540,13 @@ class TestServiceTokenIntegration:
                 )
 
                 # Try to create duplicate - should handle gracefully or raise expected error
-                try:
+                with pytest.raises((ValueError, Exception)) as excinfo:
                     await token_manager.create_service_token(
                         token_name=token_name,
                         metadata={"permissions": ["api_read"]},
                         is_active=True,
                     )
-                    # If no error, system handled duplicates gracefully
-                except (ValueError, Exception) as e:
-                    # Expected behavior - duplicate handling
-                    assert "already exists" in str(e) or isinstance(e, ValueError)
+                assert "already exists" in str(excinfo.value)
 
                 # Test error recovery scenarios
                 error_recovery_tests = [

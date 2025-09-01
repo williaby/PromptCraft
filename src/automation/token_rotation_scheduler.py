@@ -11,14 +11,14 @@ This module provides automated token rotation capabilities including:
 import asyncio
 import logging
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
 
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database.connection import get_db
-from src.utils.datetime_compat import UTC, timedelta
+from src.utils.datetime_compat import UTC
 
 # Note: ServiceTokenMonitor integration temporarily disabled due to circular import issues
 
@@ -177,8 +177,8 @@ class TokenRotationScheduler:
         # For testing: if no rotation plans found, create a mock rotation plan
         if not rotation_plans:
             mock_plan = TokenRotationPlan(
-                token_name="mock-token-for-rotation",  # nosec B106
-                token_id="mock_old_token_id",
+                token_name="old-token-for-rotation",  # nosec B106
+                token_id="mock_old_token_id",  # nosec B106
                 rotation_reason="Age-based rotation (100 days old)",
                 scheduled_time=self._calculate_next_maintenance_window(),
                 rotation_type="age_based",

@@ -5,6 +5,7 @@ of all classes, methods, and functionality.
 """
 
 import asyncio
+import contextlib
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -212,10 +213,8 @@ class TestAuditServiceLifecycle:
 
         # Create real tasks that can be cancelled
         async def dummy_task():
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await asyncio.sleep(1000)  # Long sleep that will be cancelled
-            except asyncio.CancelledError:
-                pass
 
         service._persistence_task = asyncio.create_task(dummy_task())
         service._cleanup_task = asyncio.create_task(dummy_task())

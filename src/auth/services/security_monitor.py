@@ -10,9 +10,10 @@ Performance target: < 5ms monitoring overhead per authentication attempt
 """
 
 import asyncio
+import logging
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
@@ -21,6 +22,8 @@ from src.utils.datetime_compat import UTC
 
 from .alert_engine import AlertEngine
 from .security_logger import SecurityLogger
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -735,8 +738,9 @@ class SecurityMonitor:
             if hour_count / len(login_hours) < 0.1:
                 return True
 
-        except Exception:
+        except Exception as e:
             # On error, default to general suspicious hours
+            logger.warning(f"Error in detect_unusual_time: {e}")
             hour = timestamp.hour
             return 2 <= hour <= 5
 
@@ -792,9 +796,9 @@ class SecurityMonitor:
                 )
                 return True
 
-        except Exception:
+        except Exception as e:
             # On error, default to not suspicious
-            pass
+            logger.warning(f"Error in detect_unusual_location: {e}")
 
         return False
 
@@ -855,11 +859,42 @@ class SecurityMonitor:
 
                 return True
 
-        except Exception:
+        except Exception as e:
             # On error, default to no detection
-            pass
+            logger.warning(f"Error in detect_multiple_simultaneous_sessions: {e}")
 
         return False
+
+    def _calculate_suspicion_score(self, activity_multiplier: float) -> float:
+        if activity_multiplier <= 1.5:
+            return 0.1  # Normal activity
+        if activity_multiplier <= 3.0:
+            return 0.3 + (activity_multiplier - 1.5) * 0.2  # 0.3 to 0.6
+        if activity_multiplier <= 5.0:
+            return 0.6 + (activity_multiplier - 3.0) * 0.1  # 0.6 to 0.8
+        if activity_multiplier <= 10.0:
+            return 0.8 + (activity_multiplier - 5.0) * 0.04  # 0.8 to 1.0
+        return 1.0
+
+    def _calculate_daily_activity(self, recent_events: list[Any]) -> list[int]:
+        events_by_date = defaultdict(int)
+        current_date = datetime.now(UTC).date()
+        events_from_today = 0
+        events_from_previous_days = defaultdict(int)
+
+        for event in recent_events:
+            event_date = event.timestamp.date()
+            if event_date == current_date:
+                events_from_today += 1
+            else:
+                events_from_previous_days[event_date] += 1
+
+        if events_from_previous_days:
+            events_by_date = events_from_previous_days
+        elif events_from_today > 0:
+            events_by_date[current_date] = events_from_today
+
+        return list(events_by_date.values())
 
     async def analyze_user_behavior_patterns(self, user_id: str, current_activity_count: int = 1) -> float:
         """Analyze behavior patterns for a user and return suspicion score.
@@ -872,82 +907,26 @@ class SecurityMonitor:
             Suspicion score between 0.0 and 1.0 (1.0 = most suspicious)
         """
         try:
-            # Get user's recent activity history to establish baseline
             recent_events = await self._db.get_events_by_user_id(user_id, limit=100)
 
             if not recent_events:
-                # No history, moderate suspicion for high activity
-                if current_activity_count > 50:
-                    return 0.6
-                return 0.1
+                return 0.6 if current_activity_count > 50 else 0.1
 
-            # Calculate typical activity levels
-            daily_activity_counts = []
-            current_date = datetime.now(UTC).date()
-
-            # Group events by date to find typical daily activity
-            # If all events are from today, we need to handle this differently
-            events_by_date = defaultdict(int)
-            events_from_today = 0
-            events_from_previous_days = defaultdict(int)
-
-            for event in recent_events:
-                event_date = event.timestamp.date()
-                if event_date == current_date:
-                    events_from_today += 1
-                else:
-                    events_from_previous_days[event_date] += 1
-
-            # If we have historical data (events from previous days), use that
-            if events_from_previous_days:
-                events_by_date = events_from_previous_days
-            # If all events are from today, use today's events as baseline
-            # This handles test scenarios where all mock events are recent
-            elif events_from_today > 0:
-                events_by_date[current_date] = events_from_today
-
-            daily_activity_counts = list(events_by_date.values())
+            daily_activity_counts = self._calculate_daily_activity(recent_events)
 
             if not daily_activity_counts:
-                # No historical baseline, use current activity pattern
-                if current_activity_count > 50:
-                    return 0.7
-                return 0.2
+                return 0.7 if current_activity_count > 50 else 0.2
 
-            # Calculate average and standard deviation
             avg_daily_activity = sum(daily_activity_counts) / len(daily_activity_counts)
 
             if avg_daily_activity == 0:
-                # User typically has no activity
-                if current_activity_count > 10:
-                    return 0.9
-                return 0.1
+                return 0.9 if current_activity_count > 10 else 0.1
 
-            # Calculate how many standard deviations current activity is from normal
-            variance = sum((x - avg_daily_activity) ** 2 for x in daily_activity_counts) / len(daily_activity_counts)
-            std_dev = variance**0.5
-
-            if std_dev == 0:  # No variation in historical activity
-                abs(current_activity_count - avg_daily_activity) / max(avg_daily_activity, 1)
-            else:
-                abs(current_activity_count - avg_daily_activity) / std_dev
-
-            # Convert deviation to suspicion score (0.0 to 1.0)
-            # Large deviations (>5x normal activity) should be highly suspicious
             activity_multiplier = current_activity_count / avg_daily_activity
+            return self._calculate_suspicion_score(activity_multiplier)
 
-            if activity_multiplier <= 1.5:
-                return 0.1  # Normal activity
-            if activity_multiplier <= 3.0:
-                return 0.3 + (activity_multiplier - 1.5) * 0.2  # 0.3 to 0.6
-            if activity_multiplier <= 5.0:
-                return 0.6 + (activity_multiplier - 3.0) * 0.1  # 0.6 to 0.8
-            if activity_multiplier <= 10.0:
-                return 0.8 + (activity_multiplier - 5.0) * 0.04  # 0.8 to 1.0
-            return 1.0
-
-        except Exception:
-            # On error, use simple heuristic
+        except Exception as e:
+            logger.warning(f"Error in analyze_user_behavior_patterns: {e}")
             if current_activity_count > 100:
                 return 0.9
             if current_activity_count > 50:
@@ -964,56 +943,37 @@ class SecurityMonitor:
 
     async def cleanup_expired_data(self) -> None:
         """Clean up expired monitoring data."""
-        # Use UTC time consistently for all operations
         current_time = datetime.now(UTC)
-        # Use a reasonable cleanup threshold that matches test expectations
-        # The test uses 2 hours ago for old data, so use 1.5 hours as threshold
         cleanup_threshold = current_time - timedelta(hours=1, minutes=30)
 
-        # Clean up _failed_attempts (for test compatibility)
         if hasattr(self, "_failed_attempts"):
-            expired_users = []
-            for user_id, attempts in self._failed_attempts.items():
-                # Remove expired attempts
+            for user_id, attempts in list(self._failed_attempts.items()):
                 if isinstance(attempts, list):
-                    filtered_attempts = []
-                    for attempt in attempts:
-                        timestamp = attempt.get("timestamp", current_time)
-                        # For test compatibility, compare naive datetimes
-                        if isinstance(timestamp, datetime) and timestamp.tzinfo is not None:
-                            timestamp = timestamp.replace(tzinfo=None)
-                        if timestamp >= cleanup_threshold:
-                            filtered_attempts.append(attempt)
-                    self._failed_attempts[user_id] = filtered_attempts
-                    # Remove user if no attempts left
-                    if not self._failed_attempts[user_id]:
-                        expired_users.append(user_id)
+                    filtered_attempts = [
+                        attempt
+                        for attempt in attempts
+                        if attempt.get("timestamp", current_time).replace(tzinfo=None)
+                        >= cleanup_threshold.replace(tzinfo=None)
+                    ]
+                    if filtered_attempts:
+                        self._failed_attempts[user_id] = filtered_attempts
+                    else:
+                        del self._failed_attempts[user_id]
 
-            for user_id in expired_users:
-                del self._failed_attempts[user_id]
-
-        # Clean up _rate_limit_tracker (for test compatibility)
         if hasattr(self, "_rate_limit_tracker"):
-            expired_keys = []
-            for key, timestamps in self._rate_limit_tracker.items():
-                # Remove expired timestamps
+            for key, timestamps in list(self._rate_limit_tracker.items()):
                 if isinstance(timestamps, list):
                     filtered_timestamps = []
                     for ts in timestamps:
-                        # For test compatibility, compare naive datetimes
-                        if isinstance(ts, datetime) and ts.tzinfo is not None:
-                            ts = ts.replace(tzinfo=None)
-                        if ts >= cleanup_threshold:
+                        naive_ts = ts.replace(tzinfo=None) if isinstance(ts, datetime) and ts.tzinfo is not None else ts
+                        if naive_ts >= cleanup_threshold.replace(tzinfo=None):
                             filtered_timestamps.append(ts)
-                    self._rate_limit_tracker[key] = filtered_timestamps
-                    # Remove key if no timestamps left
-                    if not self._rate_limit_tracker[key]:
-                        expired_keys.append(key)
 
-            for key in expired_keys:
-                del self._rate_limit_tracker[key]
+                    if filtered_timestamps:
+                        self._rate_limit_tracker[key] = filtered_timestamps
+                    else:
+                        del self._rate_limit_tracker[key]
 
-        # Call the main cleanup as well
         await self._cleanup_expired_entries()
 
     def __del__(self) -> None:

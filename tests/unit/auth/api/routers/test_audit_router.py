@@ -11,6 +11,7 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from src.auth.api.routers.audit_router import (
     AuditReportRequest,
@@ -508,7 +509,7 @@ class TestAuditModels:
 
     def test_audit_report_request_validation_errors(self):
         """Test AuditReportRequest model validation with invalid data."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             AuditReportRequest(
                 start_date=datetime.now(UTC),
                 end_date=datetime.now(UTC),

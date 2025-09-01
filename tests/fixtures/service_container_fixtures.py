@@ -295,10 +295,8 @@ async def container_lifecycle_context():
 
     # Cleanup all created containers
     for container in containers:
-        try:
+        with contextlib.suppress(Exception):
             await container.shutdown()
-        except Exception:
-            pass  # Ignore errors during test cleanup
 
 
 # Performance testing fixtures

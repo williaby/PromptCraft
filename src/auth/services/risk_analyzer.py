@@ -5,7 +5,7 @@ Handles user risk assessment, behavioral analysis, and anomaly detection.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from src.utils.datetime_compat import UTC
@@ -118,7 +118,7 @@ class RiskAnalyzer:
         except Exception as e:
             return {
                 "user_id": user_id,
-                "analysis_timestamp": current_time,
+                "analysis_timestamp": datetime.now(UTC),
                 "error": f"Risk analysis failed: {e!s}",
                 "overall_risk_score": 50.0,  # Default moderate risk on error
                 "risk_level": "MEDIUM",
@@ -467,7 +467,7 @@ class RiskAnalyzer:
         suspicious = []
 
         # Sort by timestamp
-        sorted_activities = sorted(activities, key=lambda x: x.get("timestamp", datetime.min))
+        sorted_activities = sorted(activities, key=lambda x: x.get("timestamp", datetime.min.replace(tzinfo=UTC)))
 
         rapid_threshold = timedelta(seconds=1 / sensitivity)  # Adjust based on sensitivity
 
@@ -475,7 +475,10 @@ class RiskAnalyzer:
             current = sorted_activities[i]
             previous = sorted_activities[i - 1]
 
-            time_diff = current.get("timestamp", datetime.max) - previous.get("timestamp", datetime.min)
+            time_diff = current.get("timestamp", datetime.max.replace(tzinfo=UTC)) - previous.get(
+                "timestamp",
+                datetime.min.replace(tzinfo=UTC),
+            )
 
             if time_diff < rapid_threshold:
                 suspicious.append(

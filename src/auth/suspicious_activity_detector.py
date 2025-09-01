@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from types import TracebackType
 from typing import Any
 
@@ -432,7 +432,7 @@ class SuspiciousActivityDetector:
 
         self._is_initialized = False
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SuspiciousActivityDetector":
         """Async context manager entry."""
         await self.initialize()
         return self

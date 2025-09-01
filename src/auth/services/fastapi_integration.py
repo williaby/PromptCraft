@@ -21,7 +21,7 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
@@ -40,8 +40,25 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-# Global container instance for FastAPI integration
-_app_container: ServiceContainer | None = None
+
+class AppContainerProvider:
+    _app_container: ServiceContainer | None = None
+
+    @classmethod
+    def get_container(cls) -> ServiceContainer:
+        if cls._app_container is None:
+            raise ServiceIntegrationError(
+                "Service container not initialized. Call setup_service_container() first.",
+            )
+        return cls._app_container
+
+    @classmethod
+    def set_container(cls, container: ServiceContainer) -> None:
+        cls._app_container = container
+
+    @classmethod
+    def reset_container(cls) -> None:
+        cls._app_container = None
 
 
 class ServiceHealthResponse(BaseModel):
@@ -85,8 +102,6 @@ async def setup_service_container(
     Raises:
         ServiceIntegrationError: If setup fails
     """
-    global _app_container
-
     try:
         logger.info("Setting up service container for FastAPI app in %s environment", environment)
 
@@ -98,7 +113,7 @@ async def setup_service_container(
             container = get_container_for_environment(environment)
 
         # Store container globally for dependency resolution
-        _app_container = container
+        AppContainerProvider.set_container(container)
 
         # Store container in app state for access in endpoints
         app.state.service_container = container
@@ -123,14 +138,10 @@ def get_service_container() -> ServiceContainer:
     Raises:
         ServiceIntegrationError: If container is not initialized
     """
-    if _app_container is None:
-        raise ServiceIntegrationError(
-            "Service container not initialized. Call setup_service_container() first.",
-        )
-    return _app_container
+    return AppContainerProvider.get_container()
 
 
-def create_service_dependency(service_type: type[T]) -> T:
+def create_service_dependency(service_type: type[T]) -> Callable[[], T]:
     """Create a FastAPI dependency function for resolving services.
 
     Args:
@@ -206,7 +217,9 @@ def add_health_check_routes(app: FastAPI) -> None:
     """
 
     @app.get("/health/container", response_model=ContainerMetricsResponse)
-    async def get_container_metrics():  # nosemgrep: python.lang.correctness.useless-inner-function
+    async def get_container_metrics() -> (
+        ContainerMetricsResponse
+    ):  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get service container health and performance metrics."""
         try:
             container = get_service_container()
@@ -217,7 +230,7 @@ def add_health_check_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to get container metrics") from e
 
     @app.get("/health/services")
-    async def get_service_health():  # nosemgrep: python.lang.correctness.useless-inner-function
+    async def get_service_health() -> dict[str, Any]:  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get health status of all registered services."""
         try:
             container = get_service_container()
@@ -259,7 +272,7 @@ def add_health_check_routes(app: FastAPI) -> None:
     @app.get("/health/service/{service_name}")
     async def get_individual_service_health(
         service_name: str,
-    ):  # nosemgrep: python.lang.correctness.useless-inner-function
+    ) -> ServiceHealthResponse:  # nosemgrep: python.lang.correctness.useless-inner-function
         """Get health status of a specific service."""
         try:
             container = get_service_container()
@@ -336,8 +349,7 @@ async def service_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await container.shutdown()
 
         # Reset global container
-        global _app_container
-        _app_container = None
+        AppContainerProvider.reset_container()
 
         logger.info("AUTH-4 services shut down successfully")
 
@@ -374,7 +386,7 @@ def create_fastapi_app(
     async def service_context_middleware(
         request: Request,
         call_next: Callable[[Request], Any],
-    ):  # nosemgrep: python.lang.correctness.useless-inner-function
+    ) -> Response:  # nosemgrep: python.lang.correctness.useless-inner-function
         """Middleware to provide service context for requests."""
         # Add request ID or other context if needed
         response = await call_next(request)
@@ -417,7 +429,6 @@ async def with_services(
 
 async def with_logging(
     security_logger: SecurityLogger = Depends(get_security_logger),
-    request: Request = None,
 ) -> SecurityLogger:
     """Dependency function that provides SecurityLogger with request context.
 

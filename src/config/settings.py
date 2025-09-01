@@ -1,4 +1,5 @@
-"""Core application settings using Pydantic BaseSettings.
+"""
+Core application settings using Pydantic BaseSettings.
 
 This module defines the core configuration schema for the PromptCraft-Hybrid application.
 It provides type-safe configuration with validation and environment-specific loading.
@@ -702,7 +703,7 @@ class ApplicationSettings(BaseSettings):
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ):
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Customize settings sources to integrate custom .env file loading."""
 
         class CustomEnvSettingsSource(PydanticBaseSettingsSource):
@@ -716,7 +717,7 @@ class ApplicationSettings(BaseSettings):
             def prepare_field_value(self, field_name: str, value: Any, value_origin: Any) -> Any:
                 return value
 
-            def __call__(self):
+            def __call__(self) -> dict[str, Any]:
                 data = {}
                 custom_env_vars = _env_file_settings()
                 # Only include fields that exist in the settings class
@@ -866,7 +867,7 @@ class ApplicationSettings(BaseSettings):
             )
 
         # Check for reasonable characters (allow spaces, hyphens, underscores)
-        if not re.match(r"^[a-zA-Z0-9._\s-]+$", v):
+        if not re.match(r"^[a-zA-Z0-9._\s-]+", v):
             raise ValueError(
                 f"Invalid application name: '{v}'. "
                 "Name should contain only letters, numbers, spaces, hyphens, "

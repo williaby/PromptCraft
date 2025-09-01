@@ -7,7 +7,7 @@ and dashboard reporting. Tests the full end-to-end functionality of the
 AUTH-4 system with real component interactions.
 
 Test Coverage:
-- Complete security event lifecycle (detection → logging → alerting → audit)
+- Complete security event lifecycle (detection \u2192 logging \u2192 alerting \u2192 audit)
 - Multi-component integration (SecurityMonitor + AlertEngine + AuditService + Dashboard)
 - Real-time event processing and correlation
 - Performance requirements validation (<10ms detection, <50ms dashboard)
@@ -18,6 +18,7 @@ Test Coverage:
 """
 
 import asyncio
+import contextlib
 import json
 import time
 from datetime import UTC, datetime, timedelta
@@ -233,10 +234,6 @@ class TestAUTH4SecurityWorkflowIntegration:
                 """Mock add method for SQLAlchemy session compatibility."""
                 # Just store the object for mock compatibility - not actually persisting
 
-            async def commit(self):
-                """Mock commit method for async session compatibility."""
-                # Mock commit - just return success
-
         mock_db_manager = MockDatabaseManager(temp_database)
 
         # Also patch the SecurityEventsPostgreSQL methods directly to return mock data
@@ -416,9 +413,9 @@ class TestAUTH4SecurityWorkflowIntegration:
                                 },
                             )
                     # Also include events from the global test registry (from MockSecurityMonitor)
-                    from tests.fixtures.security_service_mocks import _test_event_registry
+                    from tests.fixtures.security_service_mocks import TestEventRegistry
 
-                    for event in _test_event_registry:
+                    for event in TestEventRegistry.get_registry():
                         # Filter by date range if provided
                         if start_date and end_date:
                             event_time = event.get("timestamp")
@@ -611,7 +608,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 
             async def export_security_data(
                 self,
-                format: str = "csv",
+                export_format: str = "csv",
                 start_date: datetime | None = None,
                 end_date: datetime | None = None,
                 **kwargs,
@@ -620,7 +617,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                 # Get events for the time period
                 events = await self.get_security_events(start_date=start_date, end_date=end_date, **kwargs)
 
-                if format.lower() == "csv":
+                if export_format.lower() == "csv":
                     # Create CSV headers
                     csv_lines = [
                         "id,event_type,severity,user_id,ip_address,user_agent,session_id,risk_score,timestamp,details",
@@ -628,17 +625,17 @@ class TestAUTH4SecurityWorkflowIntegration:
 
                     # Add event data
                     for event in events:
-                        details_json = json.dumps(event.get("details", {})).replace(",", ";")  # Escape commas
+                        details_json = json.dumps(event.get("details", {}))  # Escape commas
                         csv_line = f'{event.get("id", "")},{event.get("event_type", "")},{event.get("severity", "")},{event.get("user_id", "")},{event.get("ip_address", "")},{event.get("user_agent", "")},{event.get("session_id", "")},{event.get("risk_score", 0)},{event.get("timestamp", "")},"{details_json}"'
                         csv_lines.append(csv_line)
 
                     return "\n".join(csv_lines)
 
-                if format.lower() == "json":
+                if export_format.lower() == "json":
                     # Return JSON export
                     export_data = {
                         "export_metadata": {
-                            "format": format,
+                            "format": export_format,
                             "start_date": start_date.isoformat() if start_date else None,
                             "end_date": end_date.isoformat() if end_date else None,
                             "exported_at": datetime.now(UTC).isoformat(),
@@ -648,7 +645,7 @@ class TestAUTH4SecurityWorkflowIntegration:
                     }
                     return json.dumps(export_data, indent=2, default=str)
 
-                raise ValueError(f"Unsupported export format: {format}")
+                raise ValueError(f"Unsupported export format: {export_format}")
 
         return DatabaseConnectedAuditService(security_logger)
 
@@ -682,7 +679,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         audit_service,
         sample_login_attempt,
     ):
-        """Test complete workflow: brute force detection → alert → audit trail."""
+        """Test complete workflow: brute force detection \u2192 alert \u2192 audit trail."""
 
         # Phase 1: Generate multiple failed login attempts (simulate brute force)
         user_id = sample_login_attempt["user_id"]
@@ -737,7 +734,7 @@ class TestAUTH4SecurityWorkflowIntegration:
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_suspicious_location_workflow(self, security_monitor, suspicious_activity_detector, alert_engine):
-        """Test workflow: suspicious location detection → analysis → alert."""
+        """Test workflow: suspicious location detection \u2192 analysis \u2192 alert."""
 
         # Phase 1: Establish user's normal location pattern
         user_id = "user456"
@@ -900,7 +897,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 
         # Phase 5: Test export functionality
         csv_export = await audit_service.export_security_data(
-            format="csv",
+            export_format="csv",
             start_date=report_start,
             end_date=report_end,
         )
@@ -976,7 +973,7 @@ class TestAUTH4SecurityWorkflowIntegration:
         processing_time = (time.time() - start_time) * 1000
 
         # Phase 3: Verify all events were processed correctly
-        total_events_expected = 10 * 8  # 10 users × 8 events each
+        total_events_expected = 10 * 8  # 10 users * 8 events each
 
         # Wait for processing to complete (extend timeout for concurrent operations)
         await asyncio.sleep(1.0)
@@ -1043,9 +1040,9 @@ class TestAUTH4SecurityWorkflowIntegration:
             assert len(events) >= 0  # Events may be in global registry instead
         except Exception:
             # If temp database fails, check global registry
-            from tests.fixtures.security_service_mocks import _test_event_registry
+            from tests.fixtures.security_service_mocks import TestEventRegistry
 
-            recovery_events = [e for e in _test_event_registry if e.get("user_id") == "recovery_user_2"]
+            recovery_events = [e for e in TestEventRegistry.get_registry() if e.get("user_id") == "recovery_user_2"]
             assert len(recovery_events) > 0
 
         # Phase 5: Test system resilience with multiple error types
@@ -1056,16 +1053,12 @@ class TestAUTH4SecurityWorkflowIntegration:
         ]
 
         for scenario in error_scenarios:
-            try:
+            with contextlib.suppress(Exception):
                 await security_monitor.log_login_attempt(
                     user_id=scenario.get("user_id", "default_user"),
                     ip_address=scenario.get("ip_address", "127.0.0.1"),
                     success=False,
                 )
-                # System should handle these gracefully
-            except Exception:
-                # Errors are acceptable, system should not crash
-                pass
 
         assert recovery_successful
 
@@ -1119,7 +1112,6 @@ class TestAUTH4SecurityWorkflowIntegration:
         consistency_events = [
             event for event in db_events if event.user_id in ["consistency_user_1", "consistency_user_2"]
         ]
-        print(f"DEBUG: Found {len(consistency_events)} consistency events in recent timeframe")
         assert len(consistency_events) >= 2
 
         # Phase 3: Verify data consistency in audit service
@@ -1179,7 +1171,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 class TestAUTH4DatabaseIntegration:
     """Test database integration aspects of AUTH-4 system."""
 
-    @pytest.fixture
+    @pytest.pytest.fixture
     async def persistent_database(self, temp_security_database):
         """Create persistent database for cross-test scenarios."""
         return temp_security_database

@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
@@ -169,7 +170,7 @@ class TestSecurityEventsPostgreSQLWithDirectPatching:
         # Test invalid event data - should raise exception during SecurityEventCreate validation
         invalid_data = {"invalid_field": "value"}
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             await db.create_event(invalid_data)
 
     @pytest.mark.asyncio
@@ -215,10 +216,10 @@ class TestSecurityEventsPostgreSQLWithDirectPatching:
         assert db._total_query_time == 0.0
 
         # Test manual modifications for tracking functionality
-        db._query_count = 3
-        db._total_query_time = 0.3
-        assert db._query_count == 3
-        assert db._total_query_time == 0.3
+        db._query_count = 10
+        db._total_query_time = 1.5
+        assert db._query_count == 10
+        assert db._total_query_time == 1.5
 
         db._query_count += 2
         db._total_query_time += 0.2

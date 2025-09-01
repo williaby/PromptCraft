@@ -80,7 +80,7 @@ class TestTimeUtils:
         assert isinstance(timestamp, float)
 
         # Should be treated as UTC
-        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        dt_utc = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         expected_timestamp = dt_utc.timestamp()
         assert timestamp == expected_timestamp
 

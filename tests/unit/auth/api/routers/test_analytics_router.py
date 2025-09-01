@@ -11,6 +11,7 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from src.auth.api.routers.analytics_router import (
     BehaviorPattern,
@@ -596,7 +597,7 @@ class TestAnalyticsModels:
         assert request.risk_threshold == 80
 
         # Test invalid risk threshold
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             IncidentInvestigationRequest(
                 start_time=datetime.now(UTC) - timedelta(hours=1),
                 end_time=datetime.now(UTC),

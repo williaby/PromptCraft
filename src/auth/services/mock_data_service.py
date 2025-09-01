@@ -7,7 +7,7 @@ Extracted from router business logic for reusability and centralized management.
 
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -81,7 +81,7 @@ class MockDataService:
 
         for _i in range(count):
             # Generate timestamp within the range
-            time_offset = random.random() * (end_time - start_time).total_seconds()  # noqa: S311
+            time_offset = random.random() * (end_time - start_time).total_seconds()  # nosec B311
             event_time = start_time + timedelta(seconds=time_offset)
 
             # Select event type with realistic distribution
@@ -92,9 +92,9 @@ class MockDataService:
                 "event_id": str(uuid.uuid4()),
                 "event_type": event_type,
                 "timestamp": event_time,
-                "user_id": f"user_{random.randint(1000, 9999)}",  # noqa: S311
+                "user_id": f"user_{random.randint(1000, 9999)}",  # nosec B311
                 "ip_address": self._generate_ip_address(),
-                "user_agent": random.choice(self._user_agents),  # noqa: S311
+                "user_agent": random.choice(self._user_agents),  # nosec B311
                 "risk_score": self._generate_risk_score(event_type),
                 "details": self._generate_event_details(event_type),
                 "session_id": str(uuid.uuid4())[:16],
@@ -130,37 +130,37 @@ class MockDataService:
             # Generate user profile
             user_profile = {
                 "user_id": user_id,
-                "role": random.choice(["admin", "user", "viewer", "analyst"]),  # noqa: S311
-                "department": random.choice(["IT", "Finance", "HR", "Marketing", "Operations"]),  # noqa: S311
-                "risk_level": random.choice(self._risk_levels),  # noqa: S311
-                "last_login": datetime.now(UTC) - timedelta(days=random.randint(0, 7)),  # noqa: S311
+                "role": random.choice(["admin", "user", "viewer", "analyst"]),  # nosec B311
+                "department": random.choice(["IT", "Finance", "HR", "Marketing", "Operations"]),  # nosec B311
+                "risk_level": random.choice(self._risk_levels),  # nosec B311
+                "last_login": datetime.now(UTC) - timedelta(days=random.randint(0, 7)),  # nosec B311
             }
 
             # Generate activities for this user
             activity_count = (
-                random.randint(10, 100)
+                random.randint(10, 100)  # nosec B311
                 if self.mode == DataGenerationMode.REALISTIC
-                else random.randint(5, 20)  # noqa: S311
+                else random.randint(5, 20)  # nosec B311
             )
             activities = []
 
             for _j in range(activity_count):
                 activity_time = datetime.now(UTC) - timedelta(
-                    days=random.randint(0, activity_window_days),  # noqa: S311
-                    hours=random.randint(0, 23),  # noqa: S311
-                    minutes=random.randint(0, 59),  # noqa: S311
+                    days=random.randint(0, activity_window_days),  # nosec B311
+                    hours=random.randint(0, 23),  # nosec B311
+                    minutes=random.randint(0, 59),  # nosec B311
                 )
 
                 activity = {
                     "timestamp": activity_time,
-                    "action": random.choice(
+                    "action": random.choice(  # nosec B311
                         ["login", "logout", "file_access", "api_call", "data_export"],
                     ),
-                    "resource": f"resource_{random.randint(1, 100)}",  # noqa: S311
+                    "resource": f"resource_{random.randint(1, 100)}",  # nosec B311
                     "ip_address": self._generate_ip_address(),
-                    "success": random.random() > 0.1,  # noqa: S311  # 90% success rate
-                    "duration_seconds": random.randint(1, 3600),  # noqa: S311
-                    "bytes_transferred": random.randint(1024, 1048576),  # noqa: S311
+                    "success": random.random() > 0.1,  # nosec B311
+                    "duration_seconds": random.randint(1, 3600),  # nosec B311
+                    "bytes_transferred": random.randint(1024, 1048576),  # nosec B311
                 }
                 activities.append(activity)
 
@@ -197,13 +197,13 @@ class MockDataService:
                 "timestamp": current_time,
                 "cpu_usage_percent": max(0, min(100, cpu_base)),
                 "memory_usage_percent": max(0, min(100, memory_base)),
-                "disk_usage_percent": random.uniform(20, 80),  # noqa: S311
-                "network_io_mbps": random.uniform(10, 1000),  # noqa: S311
-                "disk_io_iops": random.randint(100, 5000),  # noqa: S311
-                "active_connections": random.randint(50, 500),  # noqa: S311
-                "response_time_ms": random.uniform(50, 500),  # noqa: S311
-                "error_rate_percent": random.uniform(0, 5),  # noqa: S311
-                "throughput_rps": random.randint(100, 1000),  # noqa: S311
+                "disk_usage_percent": random.uniform(20, 80),  # nosec B311
+                "network_io_mbps": random.uniform(10, 1000),  # nosec B311
+                "disk_io_iops": random.randint(100, 5000),  # nosec B311
+                "active_connections": random.randint(50, 500),  # nosec B311
+                "response_time_ms": random.uniform(50, 500),  # nosec B311
+                "error_rate_percent": random.uniform(0, 5),  # nosec B311
+                "throughput_rps": random.randint(100, 1000),  # nosec B311
             }
 
             metrics.append(metric)
@@ -239,11 +239,11 @@ class MockDataService:
         ]
 
         for _i in range(pattern_count):
-            pattern_type = random.choice(pattern_types)  # noqa: S311
-            confidence = random.uniform(min_confidence, 100.0)  # noqa: S311
+            pattern_type = random.choice(pattern_types)  # nosec B311
+            confidence = random.uniform(min_confidence, 100.0)  # nosec B311
 
             # Generate pattern based on type
-            affected_users = random.randint(1, 20)  # noqa: S311
+            affected_users = random.randint(1, 20)  # nosec B311
             risk_score = self._calculate_pattern_risk_score(pattern_type, confidence)
 
             pattern = {
@@ -253,11 +253,11 @@ class MockDataService:
                 "confidence_score": round(confidence, 1),
                 "risk_score": risk_score,
                 "affected_users": affected_users,
-                "first_observed": datetime.now(UTC) - timedelta(days=random.randint(1, 30)),  # noqa: S311
-                "last_observed": datetime.now(UTC) - timedelta(hours=random.randint(1, 24)),  # noqa: S311
-                "frequency": random.choice(["rare", "occasional", "frequent", "persistent"]),  # noqa: S311
+                "first_observed": datetime.now(UTC) - timedelta(days=random.randint(1, 30)),  # nosec B311
+                "last_observed": datetime.now(UTC) - timedelta(hours=random.randint(1, 24)),  # nosec B311
+                "frequency": random.choice(["rare", "occasional", "frequent", "persistent"]),  # nosec B311
                 "indicators": self._generate_pattern_indicators(pattern_type),
-                "related_events": random.randint(5, 100),  # noqa: S311
+                "related_events": random.randint(5, 100),  # nosec B311
             }
 
             patterns.append(pattern)
@@ -289,25 +289,25 @@ class MockDataService:
 
         for _i in range(alert_count):
             alert_time = datetime.now(UTC) - timedelta(
-                days=random.randint(0, days_back),  # noqa: S311
-                hours=random.randint(0, 23),  # noqa: S311
+                days=random.randint(0, days_back),  # nosec B311
+                hours=random.randint(0, 23),  # nosec B311
             )
 
-            alert_type = random.choice(alert_types)  # noqa: S311
-            severity = random.choices(["low", "medium", "high", "critical"], weights=[40, 35, 20, 5])[0]  # noqa: S311
+            alert_type = random.choice(alert_types)  # nosec B311
+            severity = random.choices(["low", "medium", "high", "critical"], weights=[40, 35, 20, 5])[0]  # nosec B311
 
             alert = {
                 "alert_id": str(uuid.uuid4()),
                 "alert_type": alert_type,
                 "severity": severity,
                 "timestamp": alert_time,
-                "status": random.choice(["open", "investigating", "resolved", "closed"]),  # noqa: S311
-                "assigned_to": f"analyst_{random.randint(1, 5)}" if random.random() > 0.3 else None,  # noqa: S311
+                "status": random.choice(["open", "investigating", "resolved", "closed"]),  # nosec B311
+                "assigned_to": f"analyst_{random.randint(1, 5)}" if random.random() > 0.3 else None,  # nosec B311
                 "source_ip": self._generate_ip_address(),
-                "affected_user": f"user_{random.randint(1000, 9999)}",  # noqa: S311
+                "affected_user": f"user_{random.randint(1000, 9999)}",  # nosec B311
                 "description": f"{alert_type} detected for user",
-                "evidence_count": random.randint(1, 10),  # noqa: S311
-                "false_positive_likelihood": random.uniform(0, 30),  # noqa: S311
+                "evidence_count": random.randint(1, 10),  # nosec B311
+                "false_positive_likelihood": random.uniform(0, 30),  # nosec B311
                 "remediation_steps": [
                     f"Step 1: Investigate {alert_type.lower()}",
                     "Step 2: Contact affected user",
@@ -338,41 +338,41 @@ class MockDataService:
         investigation_data = {"entities": []}
 
         for _i in range(entity_count):
-            entity_type = random.choice(["user", "ip_address", "device"])  # noqa: S311
+            entity_type = random.choice(["user", "ip_address", "device"])  # nosec B311
 
             if entity_type == "user":
-                entity_id = f"user_{random.randint(1000, 9999)}"  # noqa: S311
+                entity_id = f"user_{random.randint(1000, 9999)}"  # nosec B311
             elif entity_type == "ip_address":
                 entity_id = self._generate_ip_address()
             else:  # device
                 entity_id = f"device_{uuid.uuid4().hex[:8]}"
 
             # Generate events for this entity
-            event_count = random.randint(3, 25)  # noqa: S311
+            event_count = random.randint(3, 25)  # nosec B311
             events = []
 
             for j in range(event_count):
                 event_time = start_time + timedelta(
-                    seconds=random.uniform(0, (end_time - start_time).total_seconds()),
+                    seconds=random.uniform(0, (end_time - start_time).total_seconds()),  # nosec B311
                 )
 
                 event = {
                     "timestamp": event_time,
-                    "event_type": random.choice(self._event_types),  # noqa: S311
-                    "risk_score": random.randint(1, 100),  # noqa: S311
+                    "event_type": random.choice(self._event_types),  # nosec B311
+                    "risk_score": random.randint(1, 100),  # nosec B311
                     "description": f"Security event {j+1} for {entity_id}",
                 }
                 events.append(event)
 
             # Generate anomaly indicators
             anomaly_indicators = []
-            if random.random() > 0.5:  # noqa: S311
+            if random.random() > 0.5:  # nosec B311
                 anomaly_indicators.extend(["Unusual access time", "Multiple failed attempts", "Geographic anomaly"])
 
             entity_data = {
                 "entity_type": entity_type,
                 "entity_id": entity_id,
-                "risk_score": random.randint(20, 95),  # noqa: S311
+                "risk_score": random.randint(20, 95),  # nosec B311
                 "anomaly_indicators": anomaly_indicators,
                 "events": sorted(events, key=lambda x: x["timestamp"]),
             }
@@ -393,41 +393,41 @@ class MockDataService:
             else:
                 weights.append(2)  # Regular events
 
-        return random.choices(event_types, weights=weights)[0]  # noqa: S311
+        return random.choices(event_types, weights=weights)[0]  # nosec B311
 
     def _generate_ip_address(self) -> str:
         """Generate a realistic IP address."""
-        ip_range = random.choice(self._ip_ranges)  # noqa: S311
-        last_octet = random.randint(1, 254)  # noqa: S311
+        ip_range = random.choice(self._ip_ranges)  # nosec B311
+        last_octet = random.randint(1, 254)  # nosec B311
         return f"{ip_range}{last_octet}"
 
     def _generate_risk_score(self, event_type: str) -> int:
         """Generate risk score based on event type."""
         if event_type in ["failed_login", "suspicious_activity", "security_alert"]:
-            return random.randint(60, 95)  # noqa: S311
+            return random.randint(60, 95)  # nosec B311
         if event_type in ["permission_change", "system_change"]:
-            return random.randint(40, 80)  # noqa: S311
-        return random.randint(10, 50)  # noqa: S311
+            return random.randint(40, 80)  # nosec B311
+        return random.randint(10, 50)  # nosec B311
 
     def _generate_event_details(self, event_type: str) -> dict[str, Any]:
         """Generate event-specific details."""
         details = {
-            "source": random.choice(["web", "api", "mobile", "desktop"]),  # noqa: S311
-            "protocol": random.choice(["https", "http", "ssh", "ftp"]),  # noqa: S311
+            "source": random.choice(["web", "api", "mobile", "desktop"]),  # nosec B311
+            "protocol": random.choice(["https", "http", "ssh", "ftp"]),  # nosec B311
         }
 
         if event_type == "file_upload":
             details.update(
                 {
-                    "file_size": random.randint(1024, 10485760),  # noqa: S311
-                    "file_type": random.choice(["pdf", "doc", "xls", "img", "txt"]),  # noqa: S311
+                    "file_size": random.randint(1024, 10485760),  # nosec B311
+                    "file_type": random.choice(["pdf", "doc", "xls", "img", "txt"]),  # nosec B311
                 },
             )
         elif event_type == "data_access":
             details.update(
                 {
-                    "database": random.choice(["users", "transactions", "logs"]),  # noqa: S311
-                    "query_type": random.choice(["select", "insert", "update", "delete"]),  # noqa: S311
+                    "database": random.choice(["users", "transactions", "logs"]),  # nosec B311
+                    "query_type": random.choice(["select", "insert", "update", "delete"]),  # nosec B311
                 },
             )
 
@@ -442,15 +442,15 @@ class MockDataService:
             {"country": "DE", "state": "Bavaria", "city": "Munich"},
             {"country": "JP", "state": "Tokyo", "city": "Tokyo"},
         ]
-        return random.choice(locations)  # noqa: S311
+        return random.choice(locations)  # nosec B311
 
     def _generate_success_status(self, event_type: str) -> bool:
         """Generate success status based on event type."""
         if event_type == "failed_login":
             return False
         if event_type in ["suspicious_activity", "security_alert"]:
-            return random.random() > 0.7  # noqa: S311  # 30% success for suspicious events
-        return random.random() > 0.05  # noqa: S311  # 95% success for normal events
+            return random.random() > 0.7  # nosec B311
+        return random.random() > 0.05  # nosec B311
 
     def _calculate_pattern_risk_score(self, pattern_type: str, confidence: float) -> int:
         """Calculate risk score for behavioral pattern."""
@@ -511,7 +511,7 @@ class MockDataService:
         }
 
         indicators = all_indicators.get(pattern_type, ["Generic suspicious activity"])
-        return random.sample(indicators, min(len(indicators), random.randint(1, 3)))  # noqa: S311
+        return random.sample(indicators, min(len(indicators), random.randint(1, 3)))  # nosec B311
 
     async def get_cached_data(self, cache_key: str) -> Any | None:
         """Get cached mock data if available."""
@@ -569,10 +569,10 @@ class MockDataService:
             "user_id": user_id,
             "risk_score": risk_score,
             "risk_level": risk_level,
-            "total_logins": hash(user_id + "logins") % 500 + 10,  # 10-510 logins
-            "failed_logins_today": hash(user_id + "failed") % 10,  # 0-9 failed logins
+            "total_logins": hash(user_id + "logins") % 500 + 10,
+            "failed_logins_today": hash(user_id + "failed") % 10,
             "last_activity": datetime.now(UTC) - timedelta(hours=hash(user_id) % 48),
-            "known_locations": hash(user_id + "locations") % 10 + 1,  # 1-10 locations
+            "known_locations": hash(user_id + "locations") % 10 + 1,
             "suspicious_activities": suspicious_activities,
             "recommendations": recommendations,
         }
@@ -629,10 +629,10 @@ class MockDataService:
         """
         # Generate realistic risk distribution
         risk_distribution_data = [
-            {"risk_level": "low", "count": 150},  # 0-29 risk score
-            {"risk_level": "medium", "count": 75},  # 30-59 risk score
-            {"risk_level": "high", "count": 25},  # 60-79 risk score
-            {"risk_level": "critical", "count": 5},  # 80-100 risk score
+            {"risk_level": "low", "count": 150},
+            {"risk_level": "medium", "count": 75},
+            {"risk_level": "high", "count": 25},
+            {"risk_level": "critical", "count": 5},
         ]
 
         total_users = sum(item["count"] for item in risk_distribution_data)

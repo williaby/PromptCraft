@@ -11,6 +11,7 @@ from uuid import uuid4
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from src.auth.api.routers.alerts_router import (
     AlertSummaryResponse,
@@ -293,7 +294,7 @@ class TestAlertSummaryResponseModel:
 
     def test_alert_summary_response_model_validation_error(self):
         """Test AlertSummaryResponse model validation with invalid data."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             AlertSummaryResponse(
                 id="invalid-uuid",  # Invalid UUID
                 alert_type="test",

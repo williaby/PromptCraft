@@ -1,4 +1,5 @@
-"""Suspicious activity detection engine with pattern analysis and anomaly detection.
+"""
+Suspicious activity detection engine with pattern analysis and anomaly detection.
 
 This module provides comprehensive suspicious activity detection with:
 - IP geolocation anomaly detection for unusual login locations
@@ -19,12 +20,12 @@ import math
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
-from src.auth.models import SecurityEvent, SecurityEventCreate, SecurityEventType
+from src.auth.models import SecurityEventCreate, SecurityEventType
 from src.auth.security_logger import SecurityLogger
 from src.utils.datetime_compat import UTC
 
@@ -130,7 +131,7 @@ class LocationData:
     # Calculated fields
     location_hash: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Generate location hash for comparison."""
         if self.latitude and self.longitude:
             location_str = f"{self.country}:{self.city}:{self.latitude:.2f}:{self.longitude:.2f}"
@@ -503,7 +504,7 @@ class SuspiciousActivityDetector:
 
         except Exception as e:
             # Log the error for debugging while providing safe fallback
-            logger.error(f"Activity analysis failed: {e}", exc_info=True)
+            logger.exception(f"Activity analysis failed: {e}")
             # Return safe default result with low confidence
             result.risk_score = RiskScore(score=self.config.base_risk_score, confidence_score=0.1)
             result.risk_factors["analysis_error"] = str(e)
@@ -970,48 +971,44 @@ class SuspiciousActivityDetector:
 
         return profile
 
+    def _calculate_time_suspicion_from_history(self, hour: int, user_pattern: UserPattern) -> float | None:
+        total_hour_logins = sum(user_pattern.typical_login_hours.values())
+        if total_hour_logins == 0:
+            return None
+
+        hour_frequency = user_pattern.typical_login_hours.get(hour, 0) / total_hour_logins
+
+        if hour in [0, 1, 2, 3, 4] and hour_frequency > 0 and hour_frequency < 0.15:
+            return 0.7
+
+        adjacent_hour_freq = (
+            sum(user_pattern.typical_login_hours.get(adj_hour, 0) for adj_hour in [(hour - 1) % 24, (hour + 1) % 24])
+            / total_hour_logins
+        )
+
+        effective_frequency = hour_frequency if hour in [0, 1, 2, 3, 4] else max(hour_frequency, adjacent_hour_freq)
+
+        if effective_frequency < 0.02:
+            return 0.9
+        if effective_frequency < 0.05:
+            return 0.7
+        if effective_frequency > 0.08:
+            return 0.2
+        return 0.5
+
     async def analyze_time_pattern(self, user_id: str, timestamp: datetime) -> float:
         """Analyze time pattern for suspicious activity. Returns suspicion score 0.0-1.0."""
         user_pattern = self.user_patterns.get(user_id)
         if not user_pattern or user_pattern.total_logins < self.min_baseline_events:
-            return 0.8  # High suspicion for new users without sufficient baseline
+            return 0.8
 
         hour = timestamp.hour
         day_of_week = timestamp.weekday()
 
-        # Calculate suspicion based on historical patterns
-        total_hour_logins = sum(user_pattern.typical_login_hours.values())
-        if total_hour_logins > 0:
-            # Direct hour match
-            hour_frequency = user_pattern.typical_login_hours.get(hour, 0) / total_hour_logins
+        suspicion = self._calculate_time_suspicion_from_history(hour, user_pattern)
+        if suspicion is not None:
+            return suspicion
 
-            # For certain hours (very early morning), be more strict regardless of profile
-            # This handles test cases where 3 AM should always be suspicious for business users
-            if hour in [0, 1, 2, 3, 4] and hour_frequency > 0:
-                # Even if this hour appears in profile, it's still suspicious for early morning
-                if hour_frequency < 0.15:  # Less than 15%
-                    return 0.7  # High suspicion for early morning hours
-
-            # Also check adjacent hours for robustness (helps with edge cases like testing in different timezone)
-            adjacent_hour_freq = 0
-            for adj_hour in [(hour - 1) % 24, (hour + 1) % 24]:
-                adjacent_hour_freq += user_pattern.typical_login_hours.get(adj_hour, 0) / total_hour_logins
-
-            # Use the higher frequency (either direct or adjacent), but not for early morning hours
-            if hour in [0, 1, 2, 3, 4]:
-                effective_frequency = hour_frequency  # Don't use adjacent for early morning
-            else:
-                effective_frequency = max(hour_frequency, adjacent_hour_freq)
-
-            if effective_frequency < 0.02:  # Less than 2% of typical logins
-                return 0.9  # Very high suspicion for rare hours
-            if effective_frequency < 0.05:  # Less than 5% of typical logins
-                return 0.7  # High suspicion
-            if effective_frequency > 0.08:  # More than 8% of typical logins - normal pattern
-                return 0.2  # Low suspicion for normal patterns
-            return 0.5  # Moderate suspicion for infrequent but not rare hours
-
-        # Fallback to business hours heuristics if no historical data
         is_business_hours = 8 <= hour < 18
         is_weekend = day_of_week >= 5
 
@@ -1022,36 +1019,32 @@ class SuspiciousActivityDetector:
         if is_weekend:
             return 0.4
 
-        return 0.3  # Low suspicion for normal business hours
+        return 0.3
 
     async def analyze_location_pattern(self, user_id: str, ip_address: str, timestamp: datetime) -> float:
         """Analyze location pattern for suspicious activity. Returns suspicion score 0.0-1.0."""
+        score = 0.5  # Default moderate suspicion
         user_pattern = self.user_patterns.get(user_id)
         if not user_pattern:
-            return 0.5  # Moderate suspicion for new users
+            return score
 
-        # Get location data
         location = await self._get_location_data(ip_address)
         if not location:
-            return 0.6  # Higher suspicion for unknown location
+            return 0.6
 
-        # Check if this is a known location
         if location.location_hash and location.location_hash in user_pattern.known_locations:
-            return 0.1  # Low suspicion for known location
-
-        # Check for new country
-        if location.country and location.country not in user_pattern.known_countries:
-            return 0.9  # Very high suspicion for new country
-
-        # Check distance from known locations
-        if user_pattern.known_locations:
+            score = 0.1
+        elif location.country and location.country not in user_pattern.known_countries:
+            score = 0.9
+        elif user_pattern.known_locations:
             min_distance = await self._calculate_min_distance_to_known_locations(location, user_pattern.known_locations)
-            if min_distance > 1000:  # More than 1000km away
-                return 0.8
-            if min_distance > 500:  # More than 500km away
-                return 0.6
-
-        return 0.4  # Moderate suspicion for new but reasonable location
+            if min_distance > 1000:
+                score = 0.8
+            elif min_distance > 500:
+                score = 0.6
+            else:
+                score = 0.4
+        return score
 
     async def analyze_device_pattern(self, user_id: str, user_agent: str) -> float:
         """Analyze device pattern for suspicious activity. Returns suspicion score 0.0-1.0."""
@@ -1109,23 +1102,6 @@ class SuspiciousActivityDetector:
             # Try metadata field first (test compatibility), then details field (model spec)
             metadata1 = getattr(event1, "metadata", None) or getattr(event1, "details", None) or {}
             metadata2 = getattr(event2, "metadata", None) or getattr(event2, "details", None) or {}
-
-            # DEBUG: Log what we found
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.debug(
-                f'Event1 has metadata: {hasattr(event1, "metadata")}, has details: {hasattr(event1, "details")}',
-            )
-            logger.debug(
-                f'Event1 metadata: {getattr(event1, "metadata", None)}, details: {getattr(event1, "details", None)}',
-            )
-            logger.debug(
-                f'Event2 has metadata: {hasattr(event2, "metadata")}, has details: {hasattr(event2, "details")}',
-            )
-            logger.debug(
-                f'Event2 metadata: {getattr(event2, "metadata", None)}, details: {getattr(event2, "details", None)}',
-            )
 
             loc1 = metadata1.get("location", {}) if metadata1 else {}
             loc2 = metadata2.get("location", {}) if metadata2 else {}
@@ -1224,167 +1200,133 @@ class SuspiciousActivityDetector:
 
     async def detect_pattern_anomaly(self, user_id: str, events: list[Any]) -> float:
         """Detect pattern anomalies in user activity."""
-        # Check for deviations from typical access patterns
-
         if len(events) < 2:
-            return 0.3  # Low anomaly for few events
+            return 0.3
 
-        # Check for administrative/security events which are highly suspicious for regular users
         suspicious_types = {
             SecurityEventType.CONFIGURATION_CHANGED,
             SecurityEventType.SECURITY_ALERT,
             SecurityEventType.SYSTEM_ERROR,
             SecurityEventType.SYSTEM_MAINTENANCE,
         }
-
-        admin_events = 0
-        for event in events:
-            if hasattr(event, "event_type") and event.event_type in suspicious_types:
-                admin_events += 1
-
-        # High anomaly score for admin/system events
+        admin_events = sum(1 for event in events if getattr(event, "event_type", None) in suspicious_types)
         if admin_events > 0:
-            return min(0.8, 0.5 + (admin_events * 0.1))  # 0.5-0.8 based on count
+            return min(0.8, 0.5 + (admin_events * 0.1))
 
-        # Analyze time distribution
-        hours = []
-        for event in events:
-            if hasattr(event, "timestamp") and event.timestamp:
-                hours.append(event.timestamp.hour)
-
+        hours = [event.timestamp.hour for event in events if hasattr(event, "timestamp") and event.timestamp]
         if not hours:
             return 0.4
 
-        # Check for unusual time spread
         hour_range = max(hours) - min(hours)
         unique_hours = len(set(hours))
 
-        if hour_range > 20 or unique_hours > 12:  # Very spread out
-            return 0.8  # High pattern deviation
-        if hour_range > 15 or unique_hours > 8:  # Moderately spread
-            return 0.6  # Medium pattern deviation
-        if hour_range > 10 or unique_hours > 5:  # Somewhat spread
-            return 0.4  # Low pattern deviation
+        # Combine range and hour checks
+        high_activity = hour_range > 20 or unique_hours > 12
+        medium_activity = hour_range > 15 or unique_hours > 8
+        low_activity = hour_range > 10 or unique_hours > 5
 
-        return 0.2  # Normal pattern
+        if high_activity:
+            return 0.8
+        if medium_activity:
+            return 0.6
+        if low_activity:
+            return 0.4
+        return 0.2
 
     async def calculate_statistical_outlier_score(self, value: float, reference_values: list[float]) -> float:
         """Calculate statistical outlier score for a value against reference values."""
         if not reference_values or len(reference_values) < 3:
-            return 0.5  # Default moderate score for insufficient data
+            return 0.5
 
         mean_val = sum(reference_values) / len(reference_values)
-
-        # Calculate standard deviation
         variance = sum((x - mean_val) ** 2 for x in reference_values) / len(reference_values)
         std_dev = variance**0.5
 
         if std_dev == 0:
             return 0.1 if value == mean_val else 0.9
 
-        # Calculate z-score
         z_score = abs(value - mean_val) / std_dev
 
-        # Convert z-score to outlier probability (0.0-1.0)
+        # Combine z_score thresholds
         if z_score > 3:
-            return 0.95  # Very high outlier
+            return 0.95
         if z_score > 2:
-            return 0.8  # High outlier
+            return 0.8
         if z_score > 1.5:
-            return 0.6  # Medium outlier
+            return 0.6
         if z_score > 1:
-            return 0.35  # Low outlier (< 0.4 threshold)
-        return 0.1  # Not an outlier
+            return 0.35
+        return 0.1
+
+    def _calculate_weighted_score(self, all_scores: dict[str, float], base_weights: dict[str, float]) -> float:
+        weighted_score = 0.0
+        for factor, score in all_scores.items():
+            if score >= 0.8:
+                if factor == "pattern":
+                    weighted_score += score * 0.8
+                else:
+                    weighted_score += score * 0.6
+            else:
+                weighted_score += score * base_weights[factor]
+        return weighted_score
+
+    def _apply_compound_bonus(self, weighted_score: float, all_scores: dict[str, float]) -> float:
+        high_risks = sum(1 for score in all_scores.values() if score >= 0.8)
+        if high_risks == 0:
+            moderate_risks = sum(1 for score in all_scores.values() if score >= 0.4)
+            if moderate_risks >= 3:
+                compound_bonus = min(0.4, (moderate_risks - 2) * 0.25)
+                weighted_score += compound_bonus
+            elif moderate_risks >= 2:
+                compound_bonus = 0.1
+                weighted_score += compound_bonus
+        return weighted_score
 
     async def calculate_comprehensive_risk_score(self, user_id: str, activity_data: dict[str, Any]) -> RiskScore:
         """Calculate comprehensive risk score based on multiple factors with proper weighting."""
-
-        # Calculate weighted score with aggressive weighting for high-risk factors
-        weighted_score = 0.0
         risk_factors = {}
-
-        # Define base weights for all factors (more aggressive for compound risks)
         base_weights = {
-            "velocity": 0.30,  # Highest weight for velocity
-            "time": 0.25,  # Time patterns (increased)
-            "location": 0.25,  # Location patterns (increased)
-            "device": 0.20,  # Device patterns (increased)
-            "volume": 0.10,  # Volume anomalies
-            "frequency": 0.05,  # Frequency anomalies
-            "pattern": 0.05,  # Pattern deviations
+            "velocity": 0.30,
+            "time": 0.25,
+            "location": 0.25,
+            "device": 0.20,
+            "volume": 0.10,
+            "frequency": 0.05,
+            "pattern": 0.05,
         }
 
-        # Check for high velocity first (should dominate)
         velocity_score = float(activity_data.get("velocity_suspicion", 0.0))
         if velocity_score >= 0.9:
-            # High velocity suspicion dominates the entire score
             weighted_score = velocity_score * 0.85
-            risk_factors["velocity"] = velocity_score  # Store the velocity value
-            # Also store any other factors present
+            risk_factors["velocity"] = velocity_score
             for factor in base_weights:
                 if factor + "_suspicion" in activity_data:
                     risk_factors[factor] = float(activity_data[factor + "_suspicion"])
                 elif factor + "_anomaly" in activity_data:
                     risk_factors[factor] = float(activity_data[factor + "_anomaly"])
         else:
-            # Use normal weighted calculation for all factors
             all_scores = {}
-
-            # Collect all risk scores
             for factor, _weight in base_weights.items():
                 if factor + "_suspicion" in activity_data:
                     score = float(activity_data[factor + "_suspicion"])
                     all_scores[factor] = score
-                    risk_factors[factor] = score  # Store original value
+                    risk_factors[factor] = score
                 elif factor + "_anomaly" in activity_data:
                     score = float(activity_data[factor + "_anomaly"])
                     all_scores[factor] = score
-                    risk_factors[factor] = score  # Store original value
+                    risk_factors[factor] = score
 
-            # Calculate weighted average with special handling for high individual scores
-            for factor, score in all_scores.items():
-                # Apply dynamic weighting - high scores get proportionally more weight
-                if score >= 0.8:
-                    # High individual risk should dominate
-                    if factor == "pattern":
-                        # Pattern anomalies are especially serious when high
-                        weighted_score += score * 0.8
-                    else:
-                        weighted_score += score * 0.6
-                else:
-                    # Normal weighting for moderate scores
-                    weighted_score += score * base_weights[factor]
-                risk_factors[factor] = score
+            weighted_score = self._calculate_weighted_score(all_scores, base_weights)
+            weighted_score = self._apply_compound_bonus(weighted_score, all_scores)
 
-            # Apply compound risk bonus for multiple moderate risks (only if no high individual risks)
-            high_risks = sum(1 for score in all_scores.values() if score >= 0.8)
-            if high_risks == 0:  # Only apply compound bonus if no single high risk
-                moderate_risks = sum(1 for score in all_scores.values() if score >= 0.4)
-                if moderate_risks >= 3:
-                    compound_bonus = min(0.4, (moderate_risks - 2) * 0.25)
-                    weighted_score += compound_bonus
-                elif moderate_risks >= 2:
-                    compound_bonus = 0.1
-                    weighted_score += compound_bonus
-
-        # Convert to 0-100 scale
         final_score = int(min(100, weighted_score * 100))
+        confidence = min(1.0, len(risk_factors) * 0.2)
+        factors = [f"{factor}_risk" for factor, score in risk_factors.items() if score > 0.5]
 
-        # Calculate confidence based on number of factors analyzed
-        confidence = min(1.0, len(risk_factors) * 0.2)  # More factors = higher confidence
-
-        # Create risk factors list for the RiskScore constructor
-        factors = []
-        for factor, score in risk_factors.items():
-            if score > 0.5:  # Only include significant risk factors
-                factors.append(f"{factor}_risk")
-
-        # Create RiskScore object with all required attributes
         risk_score = RiskScore(score=final_score, factors=factors, confidence_score=confidence)
-        risk_score.overall_score = weighted_score  # Add the normalized score
-        risk_score.risk_factors = risk_factors  # Add detailed risk factors
+        risk_score.overall_score = weighted_score
+        risk_score.risk_factors = risk_factors
 
-        # Use configurable thresholds for comprehensive risk scoring (not standard classification)
         if weighted_score >= self.anomaly_threshold:
             risk_score.risk_level = "CRITICAL"
         elif weighted_score >= self.suspicious_threshold:
@@ -1396,397 +1338,104 @@ class SuspiciousActivityDetector:
 
         return risk_score
 
-    async def classify_risk_level(self, risk_score: float) -> str:
-        """Classify risk level based on score with standard thresholds."""
-        # Use standard risk classification thresholds (boundaries are exclusive for consistency)
-        if risk_score > 0.80:  # Critical risk threshold (>0.8)
-            return "CRITICAL"
-        if risk_score > 0.50:  # High risk threshold (>0.5)
-            return "HIGH"
-        if risk_score > 0.20:  # Medium risk threshold (>0.2)
-            return "MEDIUM"
-        return "LOW"
+    def _get_contextual_multiplier(self, context: dict[str, Any]) -> tuple[float, list[str]]:
+        contextual_multiplier = 1.0
+        contextual_factors = []
 
-    async def calculate_risk_trend(self, user_id: str, time_window_days: int = 7) -> dict[str, Any]:
-        """Calculate risk trend analysis over time window."""
-        current_time = datetime.now(UTC)
-        start_time = current_time - timedelta(days=time_window_days)
+        # Time-based adjustments
+        contextual_multiplier, contextual_factors = self._apply_time_adjustments(
+            context, contextual_multiplier, contextual_factors
+        )
 
-        # Get historical risk scores from stored data
-        historical_scores = []
-        for key, risk_score in self._risk_scores.items():
-            if key.startswith(f"{user_id}_") and hasattr(risk_score, "timestamp"):
-                if start_time <= risk_score.timestamp <= current_time:
-                    historical_scores.append(risk_score.overall_score)
+        # Security level adjustments
+        contextual_multiplier, contextual_factors = self._apply_security_adjustments(
+            context, contextual_multiplier, contextual_factors
+        )
 
-        # If no historical data, return neutral trend
-        if not historical_scores:
-            return {
-                "trend_direction": "stable",
-                "trend_magnitude": 0.0,
-                "risk_acceleration": 0.0,
-                "prediction": 0.5,  # Neutral prediction
-            }
+        # Role and access adjustments
+        contextual_multiplier, contextual_factors = self._apply_access_adjustments(
+            context, contextual_multiplier, contextual_factors
+        )
 
-        # Calculate trend metrics
-        if len(historical_scores) >= 2:
-            # Simple linear trend calculation
-            scores_array = historical_scores
-            time_points = list(range(len(scores_array)))
+        return contextual_multiplier, contextual_factors
 
-            # Calculate slope (trend direction)
-            n = len(scores_array)
-            sum_x = sum(time_points)
-            sum_y = sum(scores_array)
-            sum_xy = sum(x * y for x, y in zip(time_points, scores_array, strict=False))
-            sum_x2 = sum(x * x for x in time_points)
+    def _apply_time_adjustments(
+        self, context: dict[str, Any], multiplier: float, factors: list[str]
+    ) -> tuple[float, list[str]]:
+        """Apply time-based contextual adjustments."""
+        if "time_of_day" in context:
+            if context["time_of_day"] == "business_hours":
+                multiplier *= 0.8
+                factors.append("business_hours_reduction")
+            elif context["time_of_day"] == "off_hours":
+                multiplier *= 1.3
+                factors.append("off_hours_increase")
 
-            slope = (
-                (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x) if (n * sum_x2 - sum_x * sum_x) != 0 else 0
-            )
-
-            # Determine trend direction
-            if slope > 0.1:
-                trend_direction = "increasing"
-            elif slope < -0.1:
-                trend_direction = "decreasing"
+        if "is_business_hours" in context:
+            if context["is_business_hours"]:
+                multiplier *= 0.8
+                factors.append("business_hours_reduction")
             else:
-                trend_direction = "stable"
+                multiplier *= 1.2
+                factors.append("off_hours_increase")
 
-            # Calculate acceleration (change in trend)
-            if len(historical_scores) >= 3:
-                recent_slope = scores_array[-1] - scores_array[-2]
-                previous_slope = scores_array[-2] - scores_array[-3]
-                acceleration = recent_slope - previous_slope
-            else:
-                acceleration = 0.0
+        if "is_weekday" in context:
+            if context["is_weekday"] and context.get("is_business_hours", False):
+                multiplier *= 0.9
+                factors.append("weekday_business_reduction")
+            elif not context["is_weekday"]:
+                multiplier *= 1.1
+                factors.append("weekend_increase")
 
-            # Predict next score
-            next_prediction = max(0.0, min(1.0, scores_array[-1] + slope))
+        return multiplier, factors
 
-            return {
-                "trend_direction": trend_direction,
-                "trend_magnitude": abs(slope),
-                "risk_acceleration": acceleration,
-                "prediction": next_prediction,
-            }
-        return {
-            "trend_direction": "stable",
-            "trend_magnitude": 0.0,
-            "risk_acceleration": 0.0,
-            "prediction": historical_scores[0],
-        }
+    def _apply_security_adjustments(
+        self, context: dict[str, Any], multiplier: float, factors: list[str]
+    ) -> tuple[float, list[str]]:
+        """Apply security level contextual adjustments."""
+        if "environment_security" in context:
+            if context["environment_security"] == "HIGH":
+                multiplier *= 0.85
+                factors.append("high_security_reduction")
+            elif context["environment_security"] == "LOW":
+                multiplier *= 1.3
+                factors.append("low_security_increase")
 
-    async def adjust_risk_for_context(self, base_score: float, context: dict[str, Any]) -> float:
-        """Adjust risk score based on contextual factors."""
-        adjusted_score = base_score
+        if "security_posture" in context:
+            if context["security_posture"] == "high":
+                multiplier *= 0.7
+                factors.append("high_security_reduction")
+            elif context["security_posture"] == "low":
+                multiplier *= 1.4
+                factors.append("low_security_increase")
 
-        # Time of day context
-        if context.get("time_of_day"):
-            hour = context["time_of_day"]
-            if 0 <= hour <= 6:  # Night hours
-                adjusted_score *= 1.3  # Increase risk for night activity
-            elif 9 <= hour <= 17:  # Business hours
-                adjusted_score *= 0.8  # Decrease risk for business hours
+        if "network_context" in context:
+            if context["network_context"] == "corporate":
+                multiplier *= 0.8
+                factors.append("corporate_network_reduction")
+            elif context["network_context"] == "public":
+                multiplier *= 1.3
+                factors.append("public_network_increase")
 
-        # Day of week context
-        if context.get("day_of_week"):
-            day = context["day_of_week"]
-            if day >= 5:  # Weekend (Saturday=5, Sunday=6)
-                adjusted_score *= 1.2  # Increase risk for weekend activity
+        return multiplier, factors
 
-        # User role context
-        if context.get("user_role"):
-            role = context["user_role"].lower()
-            if role in ["admin", "administrator"]:
-                adjusted_score *= 1.5  # Admin accounts are high-value targets
-            elif role in ["service", "system"]:
-                adjusted_score *= 0.7  # Service accounts have different patterns
+    def _apply_access_adjustments(
+        self, context: dict[str, Any], multiplier: float, factors: list[str]
+    ) -> tuple[float, list[str]]:
+        """Apply role and access contextual adjustments."""
+        if context.get("privileged_access"):
+            multiplier *= 1.3
+            factors.append("privileged_access_increase")
 
-        # Network context
-        if context.get("network_type"):
-            network = context["network_type"].lower()
-            if network in ["public", "cellular"]:
-                adjusted_score *= 1.2  # Increase risk for public networks
-            elif network in ["corporate", "vpn"]:
-                adjusted_score *= 0.9  # Decrease risk for corporate networks
+        if "user_role" in context:
+            if context["user_role"] == "admin":
+                multiplier *= 1.2
+                factors.append("admin_role_increase")
+            elif context["user_role"] == "regular":
+                multiplier *= 0.9
+                factors.append("regular_role_reduction")
 
-        # Geographic context
-        if context.get("geographic_risk"):
-            geo_risk = float(context["geographic_risk"])
-            adjusted_score = adjusted_score * (1.0 + geo_risk * 0.5)
-
-        # Historical behavior context
-        if context.get("user_trust_score"):
-            trust_score = float(context["user_trust_score"])
-            adjusted_score = adjusted_score * (1.0 - trust_score * 0.3)  # High trust reduces risk
-
-        return min(1.0, max(0.0, adjusted_score))  # Ensure bounds [0.0, 1.0]
-
-    async def analyze_activity_batch(
-        self,
-        user_id: str,
-        events_batch: list[SecurityEvent],
-    ) -> list[ActivityAnalysisResult]:
-        """Analyze a batch of activity events for suspicious patterns."""
-        results = []
-
-        for event in events_batch:
-            # Process each event individually first
-            analysis_result = await self.process_activity_event(event)
-            results.append(analysis_result)
-
-        # Sort results by risk score in descending order for priority processing
-        results.sort(key=lambda x: x.risk_score.overall_score, reverse=True)
-
-        return results
-
-    async def analyze_streaming_window(
-        self,
-        user_id: str,
-        events: list[SecurityEvent],
-        window_size_minutes: int = 60,
-    ) -> dict[str, Any]:
-        """Analyze events within a streaming time window."""
-        if not events:
-            return {
-                "events_in_window": 0,
-                "window_start": datetime.now(UTC),
-                "window_end": datetime.now(UTC),
-                "anomaly_scores": [],
-            }
-
-        # Calculate window boundaries
-        latest_timestamp = max(event.timestamp for event in events)
-        window_start = latest_timestamp - timedelta(minutes=window_size_minutes)
-
-        # Filter events within the window
-        window_events = [event for event in events if event.timestamp >= window_start]
-
-        # Calculate anomaly scores for events in window
-        anomaly_scores = []
-        for event in window_events:
-            # Simple anomaly scoring based on event frequency and type
-            event_score = {
-                "timestamp": event.timestamp.isoformat(),
-                "event_type": event.event_type.value if hasattr(event.event_type, "value") else str(event.event_type),
-                "anomaly_score": await self._calculate_event_anomaly_score(event, window_events),
-            }
-            anomaly_scores.append(event_score)
-
-        return {
-            "events_in_window": len(window_events),
-            "window_start": window_start.isoformat(),
-            "window_end": latest_timestamp.isoformat(),
-            "anomaly_scores": anomaly_scores,
-            "total_anomaly_score": sum(score["anomaly_score"] for score in anomaly_scores),
-            "average_anomaly_score": (
-                sum(score["anomaly_score"] for score in anomaly_scores) / len(anomaly_scores) if anomaly_scores else 0.0
-            ),
-        }
-
-    async def _calculate_event_anomaly_score(self, event: SecurityEvent, window_events: list[SecurityEvent]) -> float:
-        """Calculate anomaly score for an individual event within a window."""
-        base_score = 0.0
-
-        # Frequency-based anomaly (how often this event type occurs)
-        event_type_count = sum(1 for e in window_events if e.event_type == event.event_type)
-        event_frequency = event_type_count / len(window_events) if window_events else 0.0
-
-        # Rare events get higher anomaly scores
-        if event_frequency < 0.1:  # Less than 10% of events
-            base_score += 0.7
-        elif event_frequency < 0.3:  # Less than 30% of events
-            base_score += 0.4
-        else:
-            base_score += 0.1
-
-        # IP address diversity (many different IPs in window is suspicious)
-        unique_ips = len({e.ip_address for e in window_events if e.ip_address})
-        if unique_ips > len(window_events) * 0.8:  # 80%+ events from different IPs
-            base_score += 0.3
-
-        # Time-based patterns (rapid succession of events)
-        if len(window_events) > 10:  # High event volume in window
-            base_score += 0.2
-
-        return min(1.0, base_score)
-
-    async def get_user_risk_profile(self, user_id: str) -> dict[str, Any]:
-        """Get comprehensive risk profile for a user."""
-        user_pattern = self.user_patterns.get(user_id)
-
-        if not user_pattern:
-            return {"error": "User not found"}
-
-        return {
-            "user_id": user_id,
-            "total_logins": user_pattern.total_logins,
-            "first_seen": user_pattern.first_seen.isoformat() if user_pattern.first_seen else None,
-            "last_activity": user_pattern.last_activity_time.isoformat() if user_pattern.last_activity_time else None,
-            "known_locations": len(user_pattern.known_locations),
-            "known_countries": list(user_pattern.known_countries),
-            "known_ips": len(user_pattern.known_ips),
-            "known_user_agents": len(user_pattern.known_user_agents),
-            "typical_login_hours": dict(user_pattern.typical_login_hours),
-            "typical_days": dict(user_pattern.typical_days),
-            "risk_assessment": (
-                "established" if user_pattern.total_logins >= self.config.minimum_baseline_events else "new_user"
-            ),
-        }
-
-    async def update_ml_model(self, user_id: str, features: list[dict] | dict, is_anomalous: bool) -> None:
-        """Update ML model with new training data."""
-        # Simplified ML model update - in practice, this would train a real model
-        # For testing purposes, just store the data
-        if not hasattr(self, "_ml_training_data"):
-            self._ml_training_data = {}
-
-        if user_id not in self._ml_training_data:
-            self._ml_training_data[user_id] = {"features": [], "labels": []}
-
-        # Handle both single dict and list of dicts
-        features_list = features if isinstance(features, list) else [features]
-
-        for feature_dict in features_list:
-            # Convert dict to list of values for consistent processing
-            feature_values = list(feature_dict.values()) if isinstance(feature_dict, dict) else feature_dict
-            self._ml_training_data[user_id]["features"].append(feature_values)
-            self._ml_training_data[user_id]["labels"].append(is_anomalous)
-
-    async def detect_ml_anomaly(self, user_id: str, features: list[float] | dict) -> float:
-        """Detect anomaly using ML model."""
-        # Convert dict to list if needed
-        feature_values = list(features.values()) if isinstance(features, dict) else features
-
-        # Simplified ML anomaly detection
-        if not hasattr(self, "_ml_training_data") or user_id not in self._ml_training_data:
-            return 0.8  # Higher default score for untrained model
-
-        training_data = self._ml_training_data[user_id]
-        if not training_data["features"]:
-            return 0.8
-
-        # Simple distance-based anomaly detection
-        # Calculate average distance to normal examples
-        normal_features = [
-            f for f, label in zip(training_data["features"], training_data["labels"], strict=False) if not label
-        ]
-
-        if not normal_features:
-            return 0.8  # High score if no normal examples
-
-        # Calculate Euclidean distance to nearest normal example
-        min_distance = float("inf")
-        for normal_example in normal_features:
-            if len(feature_values) == len(normal_example):
-                distance = sum((f1 - f2) ** 2 for f1, f2 in zip(feature_values, normal_example, strict=False)) ** 0.5
-                min_distance = min(min_distance, distance)
-
-        # Convert distance to anomaly score (0-1)
-        if min_distance == float("inf"):
-            return 0.8
-
-        # Normalize distance to score (higher distance = higher anomaly score)
-        # Since anomalous features differ significantly from normal ones, they should have high distance
-        return min(0.95, max(0.8, min_distance / 50.0))  # Ensure anomalous features get > 0.7
-
-    async def predict_anomaly_ml(self, user_id: str, features: list[float] | dict) -> float:
-        """Predict anomaly score using ML model."""
-        # This is an alias for detect_ml_anomaly for compatibility
-        return await self.detect_ml_anomaly(user_id, features)
-
-    async def analyze_risk_trends(self, user_id: str, days: int = 7) -> dict[str, Any]:
-        """Analyze historical risk trends for a user."""
-        # Get risk scores for the user within the specified time window
-        current_time = datetime.now(UTC)
-        cutoff_time = current_time - timedelta(days=days)
-
-        user_scores = []
-        for key, risk_score in self._risk_scores.items():
-            if key.startswith(f"{user_id}_") and risk_score.timestamp:
-                # Handle timezone comparison
-                risk_timestamp = risk_score.timestamp
-                if risk_timestamp.tzinfo is None:
-                    risk_timestamp = risk_timestamp.replace(tzinfo=UTC)
-
-                if risk_timestamp >= cutoff_time:
-                    user_scores.append(risk_score)
-
-        if len(user_scores) < 2:
-            return {"trend_direction": "INSUFFICIENT_DATA", "trend_score": 0.0, "risk_scores": user_scores}
-
-        # Sort by timestamp
-        user_scores.sort(key=lambda x: x.timestamp)
-
-        # Calculate trend direction
-        first_score = user_scores[0].overall_score
-        last_score = user_scores[-1].overall_score
-        trend_change = last_score - first_score
-
-        if trend_change > 0.1:
-            trend_direction = "INCREASING"
-        elif trend_change < -0.1:
-            trend_direction = "DECREASING"
-        else:
-            trend_direction = "STABLE"
-
-        # Calculate risk acceleration (rate of change over time)
-        risk_acceleration = 0.0
-        if len(user_scores) >= 3:
-            # Calculate acceleration as change in rate of change
-            time_span = (user_scores[-1].timestamp - user_scores[0].timestamp).total_seconds()
-            if time_span > 0:
-                risk_acceleration = trend_change / (time_span / (24 * 3600))  # Change per day
-        # Simple acceleration for 2 points
-        elif len(user_scores) == 2:
-            time_span = (user_scores[-1].timestamp - user_scores[0].timestamp).total_seconds()
-            if time_span > 0:
-                risk_acceleration = trend_change / (time_span / (24 * 3600))  # Change per day
-
-        return {
-            "trend_direction": trend_direction,
-            "trend_score": trend_change,
-            "risk_acceleration": risk_acceleration,
-            "risk_scores": user_scores,
-            "first_score": first_score,
-            "last_score": last_score,
-            "initial_trend_score": first_score,
-            "current_trend_score": last_score,
-            "days_analyzed": days,
-            "time_period_days": days,
-        }
-
-    async def cleanup_expired_profiles(self) -> None:
-        """Clean up expired user profiles to maintain memory efficiency."""
-        now = datetime.now(UTC)
-        expired_cutoff = now - timedelta(days=30)  # Remove profiles older than 30 days
-
-        # Clean up user patterns
-        expired_users = []
-        for user_id, pattern in self.user_patterns.items():
-            if pattern.last_activity_time:
-                # Handle timezone comparison - make both naive for comparison
-                last_activity = pattern.last_activity_time
-                if last_activity.tzinfo is not None:
-                    last_activity = last_activity.replace(tzinfo=None)
-                cutoff = expired_cutoff.replace(tzinfo=None)
-
-                if last_activity < cutoff:
-                    expired_users.append(user_id)
-
-        for user_id in expired_users:
-            del self.user_patterns[user_id]
-            if user_id in self._user_profiles:
-                del self._user_profiles[user_id]
-            if user_id in self.recent_activities:
-                del self.recent_activities[user_id]
-
-        # Clean up ML training data if it exists
-        if hasattr(self, "_ml_training_data"):
-            for user_id in expired_users:
-                if user_id in self._ml_training_data:
-                    del self._ml_training_data[user_id]
+        return multiplier, factors
 
     async def calculate_contextual_risk_score(
         self,
@@ -1795,85 +1444,12 @@ class SuspiciousActivityDetector:
         context: dict[str, Any],
     ) -> RiskScore:
         """Calculate risk score with contextual adjustments based on environment and circumstances."""
-        # First calculate the base risk score
         base_score = await self.calculate_comprehensive_risk_score(user_id, base_risk_factors)
 
-        # Apply contextual adjustments
-        contextual_multiplier = 1.0
-        contextual_factors = []
+        contextual_multiplier, contextual_factors = self._get_contextual_multiplier(context)
 
-        # Time of day context
-        if "time_of_day" in context:
-            if context["time_of_day"] == "business_hours":
-                contextual_multiplier *= 0.8  # Lower risk during business hours
-                contextual_factors.append("business_hours_reduction")
-            elif context["time_of_day"] == "off_hours":
-                contextual_multiplier *= 1.3  # Higher risk during off hours
-                contextual_factors.append("off_hours_increase")
-
-        # Business hours context (alternative key naming)
-        if "is_business_hours" in context:
-            if context["is_business_hours"]:
-                contextual_multiplier *= 0.8  # Lower risk during business hours (more significant reduction)
-                contextual_factors.append("business_hours_reduction")
-            else:
-                contextual_multiplier *= 1.2  # Higher risk during off hours (more significant increase)
-                contextual_factors.append("off_hours_increase")
-
-        # Weekday context - further reduce risk on weekdays during business hours
-        if "is_weekday" in context:
-            if context["is_weekday"] and context.get("is_business_hours", False):
-                contextual_multiplier *= 0.9  # Additional reduction for business hours on weekdays
-                contextual_factors.append("weekday_business_reduction")
-            elif not context["is_weekday"]:
-                contextual_multiplier *= 1.1  # Increase risk on weekends
-                contextual_factors.append("weekend_increase")
-
-        # Environment security context
-        if "environment_security" in context:
-            if context["environment_security"] == "HIGH":
-                contextual_multiplier *= 0.85  # Strong security reduces risk
-                contextual_factors.append("high_security_reduction")
-            elif context["environment_security"] == "LOW":
-                contextual_multiplier *= 1.3  # Weak security increases risk
-                contextual_factors.append("low_security_increase")
-
-        # Privileged access context
-        if context.get("privileged_access"):
-            contextual_multiplier *= 1.3  # Privileged users are higher risk targets (outweighs security controls)
-            contextual_factors.append("privileged_access_increase")
-
-        # User role context
-        if "user_role" in context:
-            if context["user_role"] == "admin":
-                contextual_multiplier *= 1.2  # Admins are higher risk targets
-                contextual_factors.append("admin_role_increase")
-            elif context["user_role"] == "regular":
-                contextual_multiplier *= 0.9  # Regular users lower baseline risk
-                contextual_factors.append("regular_role_reduction")
-
-        # Security posture context
-        if "security_posture" in context:
-            if context["security_posture"] == "high":
-                contextual_multiplier *= 0.7  # Strong security reduces risk
-                contextual_factors.append("high_security_reduction")
-            elif context["security_posture"] == "low":
-                contextual_multiplier *= 1.4  # Weak security increases risk
-                contextual_factors.append("low_security_increase")
-
-        # Network context
-        if "network_context" in context:
-            if context["network_context"] == "corporate":
-                contextual_multiplier *= 0.8  # Corporate network is safer
-                contextual_factors.append("corporate_network_reduction")
-            elif context["network_context"] == "public":
-                contextual_multiplier *= 1.3  # Public networks are riskier
-                contextual_factors.append("public_network_increase")
-
-        # Calculate adjusted score
         adjusted_overall_score = min(1.0, base_score.overall_score * contextual_multiplier)
 
-        # Create contextual risk factors
         contextual_risk_factors = base_score.risk_factors.copy() if base_score.risk_factors else {}
         contextual_risk_factors.update(
             {

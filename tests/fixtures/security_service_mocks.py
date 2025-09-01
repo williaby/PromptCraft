@@ -4,6 +4,7 @@ This module provides mock implementations and fixtures for all security services
 to enable comprehensive testing without external dependencies.
 """
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
@@ -12,14 +13,28 @@ import pytest
 
 from src.auth.models import SecurityEventCreate
 
-# Global event registry for tests to share events between services
-_test_event_registry = []
+logger = logging.getLogger(__name__)
+
+
+class TestEventRegistry:
+    _registry: list = []
+
+    @classmethod
+    def get_registry(cls) -> list:
+        return cls._registry
+
+    @classmethod
+    def clear_registry(cls):
+        cls._registry = []
+
+    @classmethod
+    def append(cls, event: Any):
+        cls._registry.append(event)
 
 
 def clear_test_event_registry():
     """Clear the global test event registry."""
-    global _test_event_registry
-    _test_event_registry = []
+    TestEventRegistry.clear_registry()
 
 
 class MockSecurityLogger:
@@ -92,8 +107,6 @@ class MockSecurityLogger:
         }
         self._call_history["log_security_event"].append(call_args)
 
-        global _test_event_registry
-
         # Optimized: direct event handling without duplicate processing
         if event:
             # Use provided event directly
@@ -119,7 +132,7 @@ class MockSecurityLogger:
             }
 
         # Single registry append for better performance
-        _test_event_registry.append(event_data)
+        TestEventRegistry.append(event_data)
         self._events.append(event)
         self._metrics["total_events_logged"] += 1
         return True
@@ -356,9 +369,6 @@ class MockSecurityMonitor:
             )
 
         # Also add to global registry for integration test audit service with same UUID
-        from uuid import uuid4
-
-        global _test_event_registry
         event_data = {
             "id": stored_event_id or str(uuid4()),  # Use database UUID if available, otherwise generate new
             "event_type": event_type,
@@ -375,7 +385,7 @@ class MockSecurityMonitor:
             },
             "risk_score": 10 if not success else 0,
         }
-        _test_event_registry.append(event_data)
+        TestEventRegistry.append(event_data)
 
         print(f"DEBUG: MockSecurityMonitor logged login attempt: {event_type}, user_id={user_id}")
 
@@ -537,10 +547,6 @@ class MockSecurityMonitor:
             )
 
         # Also add to global registry for integration test audit service
-        from uuid import uuid4
-
-        global _test_event_registry
-
         # Convert enum severity values to strings for compatibility with DatabaseConnectedAuditService
         severity_str = severity.value if hasattr(severity, "value") else str(severity).lower()
 
@@ -556,7 +562,7 @@ class MockSecurityMonitor:
             "details": details or {},
             "risk_score": risk_score,
         }
-        _test_event_registry.append(event_data)
+        TestEventRegistry.append(event_data)
 
         # Also store in temp_database if available (for data consistency tests)
         if hasattr(self, "_temp_database") and self._temp_database:
@@ -580,7 +586,7 @@ class MockSecurityMonitor:
                 print(f"DEBUG: Skipping temp_database storage due to enum error: {e}")
 
         print(f"DEBUG: MockSecurityMonitor logged event: {event_type}, severity_str={severity_str}, user_id={user_id}")
-        print(f"DEBUG: Total events in registry: {len(_test_event_registry)}")
+        print(f"DEBUG: Total events in registry: {len(TestEventRegistry.get_registry())}")
 
     async def get_threat_statistics(self, period: str = "daily") -> dict[str, Any]:
         """Get threat statistics for dashboard display."""
@@ -600,7 +606,7 @@ class MockSecurityMonitor:
         # Mock event tracking without database dependency
         user_id = getattr(event, "user_id", "unknown")
         event_type = str(getattr(event, "event_type", "unknown"))
-        ip_address = getattr(event, "ip_address", "0.0.0.0")
+        ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
 
         # Increment threat scores based on event type
         if event_type in ["login_failure", "brute_force_attempt"]:
@@ -654,7 +660,7 @@ class MockSecurityMonitor:
             # Process each event using the same logic as track_event
             user_id = getattr(event, "user_id", "unknown")
             event_type = str(getattr(event, "event_type", "unknown"))
-            ip_address = getattr(event, "ip_address", "0.0.0.0")
+            ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
 
             # Increment threat scores based on event type
             if event_type in ["login_failure", "brute_force_attempt"]:
@@ -1026,7 +1032,7 @@ class MockAuditService:
         mock_events = []
 
         # Include events from the global registry (from SecurityLogger calls)
-        for event in _test_event_registry:
+        for event in TestEventRegistry.get_registry():
             if event.get("timestamp"):
                 event_time = event["timestamp"]
                 # Filter by date range
@@ -1128,15 +1134,6 @@ class MockAuditService:
         self._reports.append(report)
         return report
 
-    async def generate_security_report(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        include_details: bool = True,
-    ) -> dict[str, Any]:
-        """Generate security report (alias for generate_audit_report)."""
-        return await self.generate_audit_report(start_date, end_date, include_details)
-
     async def get_retention_statistics(self) -> dict[str, Any]:
         """Get retention policy statistics."""
         return {
@@ -1147,13 +1144,89 @@ class MockAuditService:
             "retention_period_days": 90,
         }
 
-    async def export_security_data(self, format: str, start_date: datetime, end_date: datetime, **kwargs) -> str:
+    async def export_security_data(self, export_format: str, start_date: datetime, end_date: datetime, **kwargs) -> str:
         """Export security data in specified format."""
-        if format.lower() == "csv":
+        if export_format.lower() == "csv":
             return "event_type,severity,user_id,timestamp\nlogin_failure,HIGH,user123,2024-01-01T10:00:00Z\n"
-        if format.lower() == "json":
+        if export_format.lower() == "json":
             return '{"events": [{"event_type": "login_failure", "severity": "HIGH"}]}'
-        raise ValueError(f"Unsupported format: {format}")
+        raise ValueError(f"Unsupported format: {export_format}")
+
+    def _create_mock_events(self, has_concurrent_users: bool, limit: int) -> list[dict[str, Any]]:
+        events = []
+        if has_concurrent_users:
+            for i in range(80):
+                user_num = i % 10
+                event_type = "login_success" if i % 4 != 0 else "login_failure"
+                severity = "info" if event_type == "login_success" else "warning"
+                events.append(
+                    {
+                        "id": f"mock_event_{i}",
+                        "event_type": event_type,
+                        "severity": severity,
+                        "user_id": f"concurrent_user_{user_num}",
+                        "ip_address": f"192.168.1.{200 + user_num}",
+                        "timestamp": datetime.now(UTC) - timedelta(seconds=60 - i),
+                        "details": {"generated_for_test": True, "batch_index": i},
+                        "source": "mock_audit_service",
+                    },
+                )
+        else:
+            for i in range(20):
+                event_type = "login_success" if i % 3 != 0 else "login_failure"
+                severity = "info" if event_type == "login_success" else "warning"
+                events.append(
+                    {
+                        "id": f"mock_event_{i}",
+                        "event_type": event_type,
+                        "severity": severity,
+                        "user_id": f"test_user_{i % 5}",
+                        "ip_address": f"192.168.1.{150 + i % 50}",
+                        "timestamp": datetime.now(UTC) - timedelta(seconds=60 - i),
+                        "details": {"generated_for_test": True},
+                        "source": "mock_audit_service",
+                    },
+                )
+        return events
+
+    def _filter_events(
+        self,
+        events: list[dict[str, Any]],
+        start_date: datetime | None,
+        end_date: datetime | None,
+        event_type: str | None,
+    ) -> list[dict[str, Any]]:
+        if start_date or end_date:
+            filtered_events = []
+            for event in events:
+                event_time = event.get("timestamp")
+                if not event_time:
+                    continue
+
+                if isinstance(event_time, str):
+                    try:
+                        event_time = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
+                    except Exception as e:
+                        logger.warning(f"Could not parse timestamp {event_time}: {e}")
+                        continue
+
+                if event_time.tzinfo is None:
+                    event_time = event_time.replace(tzinfo=UTC)
+                if start_date and start_date.tzinfo is None:
+                    start_date = start_date.replace(tzinfo=UTC)
+                if end_date and end_date.tzinfo is None:
+                    end_date = end_date.replace(tzinfo=UTC)
+
+                if (start_date and event_time < start_date) or (end_date and event_time > end_date):
+                    continue
+
+                filtered_events.append(event)
+            events = filtered_events
+
+        if event_type:
+            events = [e for e in events if e.get("event_type") == event_type]
+
+        return events
 
     async def get_security_events(
         self,
@@ -1165,99 +1238,22 @@ class MockAuditService:
         **kwargs,
     ) -> list[dict[str, Any]]:
         """Get security events for auditing."""
-        # Start with logged events (from actual test execution)
         events = self._logged_events.copy()
+        events.extend(TestEventRegistry.get_registry())
 
-        # Also include events from global registry (from MockSecurityLogger)
-        events.extend(_test_event_registry)
-
-        # Check if we have test events from the concurrent test
         has_concurrent_users = any(e.get("user_id", "").startswith("concurrent_user_") for e in events)
 
-        # If we don't have enough events, generate some realistic test data
-        # This handles cases where the test expects specific event volumes
         if len(events) < 10:
-            if has_concurrent_users:
-                # Generate events matching concurrent test pattern
-                for i in range(80):  # Generate 80 events to satisfy concurrent test expectations
-                    user_num = i % 10
-                    event_type = "login_success" if i % 4 != 0 else "login_failure"
-                    severity = "info" if event_type == "login_success" else "warning"
+            events.extend(self._create_mock_events(has_concurrent_users, limit))
 
-                    events.append(
-                        {
-                            "id": f"mock_event_{i}",
-                            "event_type": event_type,
-                            "severity": severity,
-                            "user_id": f"concurrent_user_{user_num}",
-                            "ip_address": f"192.168.1.{200 + user_num}",
-                            "timestamp": datetime.now(UTC) - timedelta(seconds=60 - i),
-                            "details": {"generated_for_test": True, "batch_index": i},
-                            "source": "mock_audit_service",
-                        },
-                    )
-            else:
-                # Generate general diverse events for other tests
-                for i in range(20):
-                    event_type = "login_success" if i % 3 != 0 else "login_failure"
-                    severity = "info" if event_type == "login_success" else "warning"
+        events = self._filter_events(events, start_date, end_date, event_type)
 
-                    events.append(
-                        {
-                            "id": f"mock_event_{i}",
-                            "event_type": event_type,
-                            "severity": severity,
-                            "user_id": f"test_user_{i % 5}",
-                            "ip_address": f"192.168.1.{150 + i % 50}",
-                            "timestamp": datetime.now(UTC) - timedelta(seconds=60 - i),
-                            "details": {"generated_for_test": True},
-                            "source": "mock_audit_service",
-                        },
-                    )
-
-        # Filter by date range if specified
-        if start_date or end_date:
-            filtered_events = []
-            for event in events:
-                event_time = event.get("timestamp")
-                if not event_time:
-                    continue
-
-                # Convert to datetime if it's a string
-                if isinstance(event_time, str):
-                    try:
-                        event_time = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
-                    except:
-                        continue
-
-                # Ensure all datetimes are timezone-aware for comparison
-                if event_time.tzinfo is None:
-                    event_time = event_time.replace(tzinfo=UTC)
-                if start_date and start_date.tzinfo is None:
-                    start_date = start_date.replace(tzinfo=UTC)
-                if end_date and end_date.tzinfo is None:
-                    end_date = end_date.replace(tzinfo=UTC)
-
-                if start_date and event_time < start_date:
-                    continue
-                if end_date and event_time > end_date:
-                    continue
-
-                filtered_events.append(event)
-            events = filtered_events
-
-        # Filter by event type if specified
-        if event_type:
-            events = [e for e in events if e.get("event_type") == event_type]
-
-        # If still no events or need more for specific event types, add mock events
         if not events or (
             event_type == "brute_force_attempt"
             and not any(e.get("event_type") == "brute_force_attempt" for e in events)
         ):
-            events = []  # Clear to replace with appropriate mock events
+            events = []
 
-        # If filtering by brute_force_attempt, return specific brute force events
         if event_type == "brute_force_attempt":
             for i in range(min(limit, 5)):
                 events.append(
@@ -1265,8 +1261,8 @@ class MockAuditService:
                         "id": f"brute_force_event_{i + offset}",
                         "event_type": "brute_force_attempt",
                         "severity": "critical" if i < 3 else "high",
-                        "user_id": kwargs.get("target_user_id", "user123"),  # Use specific user if provided
-                        "ip_address": f"203.0.113.{100 + i}",  # Suspicious IPs
+                        "user_id": kwargs.get("target_user_id", "user123"),
+                        "ip_address": f"203.0.113.{100 + i}",
                         "timestamp": datetime.now(UTC) - timedelta(minutes=i * 2),
                         "details": {
                             "attempt_count": 10 + i,
@@ -1275,8 +1271,7 @@ class MockAuditService:
                         },
                     },
                 )
-        elif not events:  # Only add generic events if no logged events exist
-            # Return generic events for other types
+        elif not events:
             for i in range(min(limit, 20)):
                 events.append(
                     {
@@ -1290,65 +1285,16 @@ class MockAuditService:
                     },
                 )
 
-        # Apply date filters if provided
-        if start_date or end_date:
-            filtered_events = []
-            for event in events:
-                event_time = event["timestamp"]
-
-                # Handle timezone comparison safely
-                if start_date:
-                    if start_date.tzinfo is None and event_time.tzinfo is not None:
-                        # Convert event_time to naive for comparison
-                        event_time_naive = event_time.replace(tzinfo=None)
-                        if event_time_naive < start_date:
-                            continue
-                    elif start_date.tzinfo is not None and event_time.tzinfo is None:
-                        # Convert start_date to naive for comparison
-                        start_date_naive = start_date.replace(tzinfo=None)
-                        if event_time < start_date_naive:
-                            continue
-                    # Both have same timezone handling
-                    elif event_time < start_date:
-                        continue
-
-                if end_date:
-                    if end_date.tzinfo is None and event_time.tzinfo is not None:
-                        # Convert event_time to naive for comparison
-                        event_time_naive = event_time.replace(tzinfo=None)
-                        if event_time_naive > end_date:
-                            continue
-                    elif end_date.tzinfo is not None and event_time.tzinfo is None:
-                        # Convert end_date to naive for comparison
-                        end_date_naive = end_date.replace(tzinfo=None)
-                        if event_time > end_date_naive:
-                            continue
-                    # Both have same timezone handling
-                    elif event_time > end_date:
-                        continue
-
-                filtered_events.append(event)
-            events = filtered_events
-
-        # Convert dictionaries to SecurityEventResponse objects for compatibility
-        from uuid import UUID, uuid4
-
         from src.auth.models import SecurityEventResponse
 
         response_events = []
-        for event in events:
-            # Handle event ID - convert to UUID if it's a string
+        for event in events[offset : offset + limit]:
             event_id = event.get("id")
             if isinstance(event_id, str):
-                if event_id.startswith(("event_", "brute_force_event_")):
-                    # Generate deterministic UUID from string
-
-                    event_id = str(uuid4())
-                else:
-                    try:
-                        event_id = UUID(event_id)
-                    except (ValueError, TypeError):
-                        event_id = uuid4()
+                try:
+                    event_id = uuid4()  # Changed to uuid4() to avoid deterministic UUIDs
+                except (ValueError, TypeError):
+                    event_id = uuid4()
             else:
                 event_id = event_id or uuid4()
 
@@ -1384,16 +1330,11 @@ class MockAuditService:
         events = await self.get_security_events(limit=1000, start_date=start_date, end_date=end_date)
 
         # Include events from global registry to ensure we have test events
-        print(f"DEBUG: generate_security_report - Registry has {len(_test_event_registry)} events")
-        print(f"DEBUG: Registry events: {[(e.get('event_type'), e.get('severity')) for e in _test_event_registry]}")
-        for event in _test_event_registry:
+        for event in TestEventRegistry.get_registry():
             if event.get("timestamp"):
                 event_time = event["timestamp"]
                 if start_date <= event_time <= end_date:
                     events.append(event)
-
-        print(f"DEBUG: Total events after registry inclusion: {len(events)}")
-        print(f"DEBUG: Event severities: {[e.get('severity') for e in events]}")
 
         # If we still don't have enough events, create some with proper severity distribution
         if len(events) < 5:
@@ -1490,7 +1431,7 @@ def mock_security_logger():
     return MockSecurityLogger()
 
 
-@pytest.fixture
+@pytest.pytest.fixture
 def mock_security_monitor(mock_security_logger, mock_alert_engine, mock_audit_service):
     """Provide a mock SecurityMonitor."""
     return MockSecurityMonitor(
@@ -1587,7 +1528,7 @@ async def temp_security_database():
             from src.auth.models import SecurityEventResponse
 
             # Also capture events from the global test registry (from MockSecurityLogger)
-            for event in _test_event_registry:
+            for event in TestEventRegistry.get_registry():
                 # Convert registry events to database format and add if not already present
                 existing_ids = {e.get("id") for e in self._events if e.get("id")}
                 event_id = event.get("id", str(uuid4()))
@@ -1607,7 +1548,11 @@ async def temp_security_database():
                     self._events.append(db_event)
 
             # Sort events by timestamp and get most recent
-            sorted_events = sorted(self._events, key=lambda x: x.get("timestamp", datetime.min), reverse=True)
+            sorted_events = sorted(
+                self._events,
+                key=lambda x: x.get("timestamp", datetime.min.replace(tzinfo=UTC)),
+                reverse=True,
+            )
             recent_events = sorted_events[:limit]
 
             # Convert to SecurityEventResponse objects
@@ -1780,10 +1725,9 @@ class MockSecurityDatabase:
     async def get_events_by_date_range(self, start_date, end_date, limit=100):
         """Get events within a date range."""
         try:
-            from datetime import UTC
+            from datetime import UTC as utc
         except ImportError:
-
-            UTC = UTC
+            pass
 
         filtered_events = []
         for event in self._events:

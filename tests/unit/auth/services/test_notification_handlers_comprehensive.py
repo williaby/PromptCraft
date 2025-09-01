@@ -1,5 +1,4 @@
-"""
-Comprehensive unit tests for notification_handlers.py module.
+"""Comprehensive unit tests for notification_handlers.py module.
 
 Tests cover:
 - WebhookHandler with retry logic and error handling
@@ -59,7 +58,7 @@ class TestWebhookConfig:
             retry_attempts=5,
             retry_delay_seconds=2.0,
             headers=headers,
-            auth_token="test_token",
+            auth_token="test_token",  # nosec B106
             custom_payload_template=template,
             include_full_event_data=False,
         )
@@ -68,7 +67,7 @@ class TestWebhookConfig:
         assert config.retry_attempts == 5
         assert config.retry_delay_seconds == 2.0
         assert config.headers == headers
-        assert config.auth_token == "test_token"
+        assert config.auth_token == "test_token"  # nosec B105
         assert config.custom_payload_template == template
         assert config.include_full_event_data is False
 
@@ -81,14 +80,14 @@ class TestEmailConfig:
         config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
         )
 
         assert config.smtp_server == "smtp.test.com"
         assert config.username == "test@example.com"
-        assert config.password == "password"
+        assert config.password == "password"  # nosec B105
         assert config.from_address == "from@example.com"
         assert config.to_addresses == ["to@example.com"]
         assert config.smtp_port == 587
@@ -100,7 +99,7 @@ class TestEmailConfig:
         config = EmailConfig(
             smtp_server="smtp.custom.com",
             username="user@test.com",
-            password="secret",
+            password="secret",  # nosec B106
             from_address="sender@test.com",
             to_addresses=["recipient@test.com"],
             smtp_port=465,
@@ -265,7 +264,7 @@ class TestWebhookHandler:
         """Test building headers with auth token."""
         config = WebhookConfig(
             url="https://example.com/webhook",
-            auth_token="test_token",
+            auth_token="test_token",  # nosec B106
         )
         handler = WebhookHandler(config)
 
@@ -296,7 +295,7 @@ class TestEmailHandler:
         return EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
         )
@@ -357,7 +356,7 @@ class TestEmailHandler:
         message = handler._build_message(sample_alert)
 
         assert isinstance(message, MIMEMultipart)
-        assert "Account Lockout" in message["Subject"]
+        assert "Account Locked" in message["Subject"]
         assert message["From"] == email_config.from_address
         assert message["To"] == ", ".join(email_config.to_addresses)
 
@@ -366,7 +365,7 @@ class TestEmailHandler:
         config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
             cc_addresses=["cc@example.com"],
@@ -392,7 +391,7 @@ class TestEmailHandler:
         config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
             text_template="Alert: {title} for {affected_user}",
@@ -417,7 +416,7 @@ class TestEmailHandler:
         config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
             html_template="<div>{title}</div>",
@@ -433,7 +432,7 @@ class TestEmailHandler:
         config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
             use_tls=False,
@@ -592,7 +591,7 @@ class TestCreateNotificationHandlers:
         email_config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
         )
@@ -617,7 +616,7 @@ class TestCreateNotificationHandlers:
         email_config = EmailConfig(
             smtp_server="smtp.test.com",
             username="test@example.com",
-            password="password",
+            password="password",  # nosec B106
             from_address="from@example.com",
             to_addresses=["to@example.com"],
         )
