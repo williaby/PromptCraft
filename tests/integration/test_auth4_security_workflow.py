@@ -1171,7 +1171,7 @@ class TestAUTH4SecurityWorkflowIntegration:
 class TestAUTH4DatabaseIntegration:
     """Test database integration aspects of AUTH-4 system."""
 
-    @pytest.pytest.fixture
+    @pytest.fixture
     async def persistent_database(self, temp_security_database):
         """Create persistent database for cross-test scenarios."""
         return temp_security_database

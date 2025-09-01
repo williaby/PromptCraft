@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestEventRegistry:
-    _registry: list = []
+    _registry: list = []  # noqa: RUF012
 
     @classmethod
     def get_registry(cls) -> list:
@@ -606,7 +606,7 @@ class MockSecurityMonitor:
         # Mock event tracking without database dependency
         user_id = getattr(event, "user_id", "unknown")
         event_type = str(getattr(event, "event_type", "unknown"))
-        ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
+        ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104  # noqa: S104
 
         # Increment threat scores based on event type
         if event_type in ["login_failure", "brute_force_attempt"]:
@@ -660,7 +660,7 @@ class MockSecurityMonitor:
             # Process each event using the same logic as track_event
             user_id = getattr(event, "user_id", "unknown")
             event_type = str(getattr(event, "event_type", "unknown"))
-            ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
+            ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104  # noqa: S104
 
             # Increment threat scores based on event type
             if event_type in ["login_failure", "brute_force_attempt"]:
@@ -1207,7 +1207,7 @@ class MockAuditService:
                     try:
                         event_time = datetime.fromisoformat(event_time.replace("Z", "+00:00"))
                     except Exception as e:
-                        logger.warning(f"Could not parse timestamp {event_time}: {e}")
+                        logger.warning("Could not parse timestamp %s: %s", event_time, e)
                         continue
 
                 if event_time.tzinfo is None:
@@ -1431,7 +1431,7 @@ def mock_security_logger():
     return MockSecurityLogger()
 
 
-@pytest.pytest.fixture
+@pytest.fixture
 def mock_security_monitor(mock_security_logger, mock_alert_engine, mock_audit_service):
     """Provide a mock SecurityMonitor."""
     return MockSecurityMonitor(
@@ -1724,11 +1724,6 @@ class MockSecurityDatabase:
 
     async def get_events_by_date_range(self, start_date, end_date, limit=100):
         """Get events within a date range."""
-        try:
-            from datetime import UTC as utc
-        except ImportError:
-            pass
-
         filtered_events = []
         for event in self._events:
             event_time = event.timestamp

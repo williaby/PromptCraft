@@ -144,12 +144,12 @@ async def get_security_metrics(
         raise HTTPException(status_code=500, detail="Failed to retrieve security metrics") from e
 
 
-@router.get("/export")
+@router.get("/export", response_model=None)
 async def export_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    export_format: str = Query("json", regex="^(json|csv)$", description="Export format", alias="format"),
+    export_format: str = Query("json", pattern="^(json|csv)$", description="Export format", alias="format"),
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to export"),
-) -> Response | SecurityMetricsResponse:
+) -> SecurityMetricsResponse | Response:
     """Export security metrics data.
 
     Args:
