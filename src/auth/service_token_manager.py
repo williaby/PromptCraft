@@ -275,8 +275,7 @@ class ServiceTokenManager:
 
         except Exception as e:
             logger.error("Error during emergency revocation: %s", str(e))
-            # Return mock result for testing scenarios
-            return 3
+            return None
 
     async def rotate_service_token(
         self,
