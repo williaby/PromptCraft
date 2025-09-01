@@ -236,10 +236,14 @@ class SecurityLogger:
             await self._check_rate_limit(rate_key)
         except RateLimitExceededError as e:
             logger.warning("Security event rate limit exceeded: %s", e)
+            # Rate limit exceeded - skip logging this event
+            return SecurityEventResponse(
+                id=uuid4(),
+                timestamp=datetime.now(UTC),
+                event_type=event.event_type,
                 severity=EventSeverity.WARNING,
                 user_id=event.user_id,
                 ip_address=event.ip_address,
-                timestamp=timestamp,
                 risk_score=10,
                 details={
                     "original_event_type": str(event.event_type),

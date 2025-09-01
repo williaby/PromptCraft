@@ -215,8 +215,8 @@ class SecurityDashboard:
             refresh_button = gr.Button("🔄 Refresh Dashboard", variant="primary")
             last_updated = gr.Textbox(label="Last Updated", value="Never", interactive=False, container=True)
 
-            # Store references for updates
-            overview_components = {
+            # Store references for updates (used by refresh function)
+            self.overview_components = {
                 "system_status": system_status,
                 "performance_grade": performance_grade,
                 "security_score": security_score,
@@ -286,7 +286,7 @@ class SecurityDashboard:
                 ],
             )
 
-            return overview_tab  # type: ignore[return-value]
+            return overview_tab  # type: ignore[no-any-return]
 
     def create_alerts_tab(self) -> gr.Column:
         """Create the alerts management tab."""
@@ -382,7 +382,7 @@ class SecurityDashboard:
                 outputs=[alerts_table, alert_stats_chart, alert_trends_chart],
             )
 
-            return alerts_tab  # type: ignore[return-value]
+            return alerts_tab  # type: ignore[no-any-return]
 
     def create_users_tab(self) -> gr.Column:
         """Create the user risk analysis tab."""
@@ -473,7 +473,7 @@ class SecurityDashboard:
                 ],
             )
 
-            return users_tab  # type: ignore[return-value]
+            return users_tab  # type: ignore[no-any-return]
 
     def create_events_tab(self) -> gr.Column:
         """Create the security events search tab."""
@@ -576,7 +576,7 @@ class SecurityDashboard:
                 outputs=[events_table],
             )
 
-            return events_tab  # type: ignore[return-value]
+            return events_tab  # type: ignore[no-any-return]
 
     def _create_timeline_chart(self) -> go.Figure:
         """Create timeline chart for dashboard."""
@@ -861,7 +861,7 @@ class SecurityDashboard:
 
         # Create tabbed interface
         dashboard = gr.TabbedInterface(
-            interface_list=[overview_tab, alerts_tab, users_tab, events_tab],  # type: ignore[arg-type]
+            interface_list=[overview_tab, alerts_tab, users_tab, events_tab],  # type: ignore[list-item]
             tab_names=["📊 Overview", "🚨 Alerts", "👤 Users", "📋 Events"],
             title="🛡️ PromptCraft Security Dashboard",
             theme=gr.themes.Soft(),
@@ -890,7 +890,7 @@ if __name__ == "__main__":
     # For standalone testing
     dashboard = create_security_dashboard()
     dashboard.launch(
-        server_name="0.0.0.0",
+        server_name="127.0.0.1",  # nosec B104 - dev environment only
         server_port=7861,
         share=False,
         debug=True,  # Different port to avoid conflicts
