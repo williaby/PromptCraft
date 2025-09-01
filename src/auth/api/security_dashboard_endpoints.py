@@ -14,15 +14,16 @@ Architecture: FastAPI async endpoints with caching and pagination support
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 from types import SimpleNamespace
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC
 
 # Aliases for backward compatibility
 EventSeverity = SecurityEventSeverity
@@ -445,28 +446,29 @@ class SecurityDashboardEndpoints:
             raise HTTPException(status_code=500, detail=f"Failed to generate audit report: {e!s}") from e
 
 
-# Dependency to get security integration service (in production, this would be injected)
-_security_integration_service: SecurityIntegrationService | None = None
+class ServiceProvider:
+    _security_integration_service: SecurityIntegrationService | None = None
+
+    @classmethod
+    def get_security_service(cls) -> SecurityIntegrationService:
+        if cls._security_integration_service is None:
+            cls._security_integration_service = SecurityIntegrationService()
+        return cls._security_integration_service
 
 
 async def get_security_service() -> SecurityIntegrationService:
     """Get security integration service instance."""
-    global _security_integration_service
-    if not _security_integration_service:
-        _security_integration_service = SecurityIntegrationService()
-    return _security_integration_service
+    return ServiceProvider.get_security_service()
 
 
 @router.get("/metrics", response_model=SecurityMetricsResponse)
 async def get_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    hours_back: int = Query(24, ge=1, le=168, description="Hours of data to analyze"),
 ) -> SecurityMetricsResponse:
     """Get comprehensive security metrics for the dashboard.
 
     Args:
         service: Security integration service
-        hours_back: Number of hours to analyze
 
     Returns:
         Security metrics data for dashboard display

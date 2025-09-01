@@ -19,7 +19,7 @@ input validation, and comprehensive error handling.
 
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -31,6 +31,7 @@ from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import DynamicLoadingIntegration, IntegrationMode, get_integration_instance
 from src.security.audit_logging import audit_logger_instance
 from src.security.rate_limiting import RateLimits, rate_limit
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ All state is now stored in PostgreSQL database using DatabaseConnection.
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import and_, delete, func, select, update
@@ -15,6 +15,7 @@ from src.auth.alert_engine import AlertEngine
 from src.auth.security_logger import SecurityLogger
 from src.database.connection import get_database_manager
 from src.database.models import BlockedEntity, MonitoringThreshold, SecurityEvent, ThreatScore
+from src.utils.datetime_compat import UTC
 
 from .models import SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 

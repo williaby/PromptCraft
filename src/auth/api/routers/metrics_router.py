@@ -10,13 +10,14 @@ Endpoints:
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +147,7 @@ async def get_security_metrics(
 @router.get("/export")
 async def export_security_metrics(
     service: SecurityIntegrationService = Depends(get_security_service),
-    export_format: str = Query("json", pattern="^(json|csv)$", description="Export format", alias="format"),
+    export_format: str = Query("json", regex="^(json|csv)$", description="Export format", alias="format"),
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to export"),
 ) -> Response | SecurityMetricsResponse:
     """Export security metrics data.

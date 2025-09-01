@@ -4,9 +4,11 @@ import asyncio
 import json
 import logging
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
+
+from src.utils.datetime_compat import UTC
 
 if TYPE_CHECKING:
     from .audit_service import AuditService

@@ -2,12 +2,14 @@
 
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
+
+from src.utils.datetime_compat import UTC
 
 # Create aliases for backward compatibility
 
@@ -183,13 +185,13 @@ class SecurityEventType(str, Enum):
     SESSION_EXPIRED = "session_expired"
 
     # Service token events
-    SERVICE_TOKEN_AUTH = "service_token_auth"
-    SERVICE_TOKEN_CREATED = "service_token_created"
-    SERVICE_TOKEN_REVOKED = "service_token_revoked"
-    SERVICE_TOKEN_EXPIRED = "service_token_expired"
+    SERVICE_TOKEN_AUTH = "service_token_auth"  # nosec
+    SERVICE_TOKEN_CREATED = "service_token_created"  # nosec
+    SERVICE_TOKEN_REVOKED = "service_token_revoked"  # nosec
+    SERVICE_TOKEN_EXPIRED = "service_token_expired"  # nosec
 
     # Account security events
-    PASSWORD_CHANGED = "password_changed"
+    PASSWORD_CHANGED = "password_changed"  # nosec
     ACCOUNT_LOCKOUT = "account_lockout"
     ACCOUNT_UNLOCK = "account_unlock"
 

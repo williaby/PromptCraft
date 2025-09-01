@@ -7,7 +7,7 @@ This module provides FastAPI endpoints for service token management including:
 - Usage analytics and audit logging
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from src.auth.middleware import ServiceTokenUser, require_authentication, require_role
 from src.auth.models import AuthenticatedUser
 from src.auth.service_token_manager import ServiceTokenManager
+from src.utils.datetime_compat import UTC, timedelta
 
 
 def require_admin_role(request: Request) -> AuthenticatedUser:

@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.services.alert_engine import AlertEngine
 from src.auth.services.security_integration import SecurityIntegrationService
-from src.utils.datetime_compat import UTC
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def get_alert_engine() -> AlertEngine:
 @router.get("/", response_model=list[AlertSummaryResponse])
 async def get_security_alerts(
     service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
-    severity: str | None = Query(None, pattern="^(low|medium|high|critical)$", description="Filter by severity"),
+    severity: str | None = Query(None, regex="^(low|medium|high|critical)$", description="Filter by severity"),
     acknowledged: bool | None = Query(None, description="Filter by acknowledgment status"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum alerts to return"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),

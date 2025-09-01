@@ -12,13 +12,14 @@ Endpoints:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,13 @@ class AuditReportRequest(BaseModel):
     report_type: str = Field(
         default="comprehensive",
         description="Type of audit report",
-        pattern="^(comprehensive|security|compliance|activity)$",
+        regex="^(comprehensive|security|compliance|activity)$",
     )
     include_details: bool = Field(default=True, description="Include detailed event information")
     format: str = Field(
         default="json",
         description="Report output format",
-        pattern="^(json|csv|pdf)$",
+        regex="^(json|csv|pdf)$",
     )
 
 

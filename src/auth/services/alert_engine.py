@@ -20,7 +20,7 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID, uuid4
@@ -30,6 +30,7 @@ from pydantic import BaseModel, Field
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.auth.security_logger import SecurityLogger
+from src.utils.datetime_compat import UTC
 
 
 class AlertSeverity(str, Enum):
@@ -39,15 +40,6 @@ class AlertSeverity(str, Enum):
     MEDIUM = "medium"  # Potential security concerns requiring attention
     HIGH = "high"  # Active threats requiring immediate attention
     CRITICAL = "critical"  # Critical security incidents requiring emergency response
-
-
-class AlertPriority(str, Enum):
-    """Alert priority levels (alias for AlertSeverity for test compatibility)."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
 
 
 class AlertChannel(str, Enum):

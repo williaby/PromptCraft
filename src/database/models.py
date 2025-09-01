@@ -7,16 +7,167 @@ This module defines database models for:
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, String, Text, func
+from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from src.utils.datetime_compat import UTC
 
 
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models."""
+
+
+# Association tables for many-to-many relationships
+
+user_roles_table = Table(
+    "user_roles",
+    Base.metadata,
+    Column("user_id", UUID(as_uuid=True), ForeignKey("user_sessions.id"), primary_key=True),
+    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id"), primary_key=True),
+)
+
+role_permissions_table = Table(
+    "role_permissions",
+    Base.metadata,
+    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id"), primary_key=True),
+    Column("permission_id", UUID(as_uuid=True), ForeignKey("permissions.id"), primary_key=True),
+)
+
+
+class Role(Base):
+    """Role model for role-based access control (RBAC)."""
+
+    __tablename__ = "roles"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique role identifier",
+    )
+
+    # Role identification
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        comment="Role name (e.g., 'admin', 'user', 'viewer')",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Role description",
+    )
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="Whether the role is active",
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Role creation timestamp",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="Role last updated timestamp",
+    )
+
+    # Relationships
+    permissions: Mapped[list["Permission"]] = relationship(
+        "Permission",
+        secondary=role_permissions_table,
+        back_populates="roles",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the role."""
+        status = "active" if self.is_active else "inactive"
+        return f"<Role(name='{self.name}', {status})>"
+
+
+class Permission(Base):
+    """Permission model for role-based access control (RBAC)."""
+
+    __tablename__ = "permissions"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique permission identifier",
+    )
+
+    # Permission identification
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        comment="Permission name (e.g., 'read_users', 'write_data')",
+    )
+
+    resource: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="Resource the permission applies to",
+    )
+
+    action: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="Action allowed (e.g., 'read', 'write', 'delete')",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Permission description",
+    )
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="Whether the permission is active",
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Permission creation timestamp",
+    )
+
+    # Relationships
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary=role_permissions_table,
+        back_populates="permissions",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the permission."""
+        status = "active" if self.is_active else "inactive"
+        return f"<Permission(name='{self.name}', resource='{self.resource}', action='{self.action}', {status})>"
 
 
 class ServiceToken(Base):
@@ -728,9 +879,13 @@ __all__ = [
     "Base",
     "BlockedEntity",
     "MonitoringThreshold",
+    "Permission",
+    "Role",
     "SecurityEvent",
     "SecurityEventLogger",
     "ServiceToken",
     "ThreatScore",
     "UserSession",
+    "role_permissions_table",
+    "user_roles_table",
 ]

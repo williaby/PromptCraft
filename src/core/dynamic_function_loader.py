@@ -26,12 +26,13 @@ import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from statistics import mean, median
 from typing import Any
 from uuid import uuid4
 
+from src.utils.datetime_compat import UTC, timedelta
 from src.utils.performance_monitor import MetricData, MetricType, PerformanceMonitor
 
 from .task_detection import DetectionResult, TaskDetectionSystem

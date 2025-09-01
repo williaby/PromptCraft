@@ -4,10 +4,12 @@ import asyncio
 import contextlib
 import json
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+from src.utils.datetime_compat import UTC
 
 from .models import SecurityEventResponse
 

@@ -7,9 +7,11 @@ Extracted from router business logic for reusability and centralized management.
 
 import random
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
+
+from src.utils.datetime_compat import UTC
 
 
 class DataGenerationMode(Enum):

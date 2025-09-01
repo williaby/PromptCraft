@@ -4,12 +4,13 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsDatabase
 from src.auth.security_logger import SecurityLogger
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

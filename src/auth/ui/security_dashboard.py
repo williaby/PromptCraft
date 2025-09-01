@@ -13,7 +13,7 @@ Performance target: < 2s page load time with real-time updates
 Architecture: Gradio interface with async backend integration
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 import gradio as gr
@@ -21,6 +21,7 @@ import plotly.graph_objects as go  # type: ignore[import-untyped]
 
 from src.auth.models import SecurityEventSeverity, SecurityEventType
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class SecurityDashboard:

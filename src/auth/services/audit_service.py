@@ -7,7 +7,7 @@ reporting, event archival, and automated retention policy enforcement.
 import csv
 import json
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from io import StringIO
 from typing import Any
@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventType
+from src.utils.datetime_compat import UTC
 
 from .security_logger import SecurityLogger
 

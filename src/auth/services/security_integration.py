@@ -16,10 +16,11 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
+from src.utils.datetime_compat import UTC
 
 from .alert_engine import AlertEngine, AlertEngineConfig
 from .security_logger import LoggingConfig, SecurityLogger

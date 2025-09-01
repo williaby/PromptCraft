@@ -11,7 +11,9 @@ Endpoints:
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime
+
+from src.utils.datetime_compat import UTC
 
 try:
     import psutil  # type: ignore[import-untyped]

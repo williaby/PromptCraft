@@ -10,12 +10,13 @@ Endpoints:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ def get_security_service() -> SecurityIntegrationService:
 async def get_event_timeline_chart(
     service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
     hours_back: int = Query(24, ge=1, le=168, description="Hours of data to chart"),
-    granularity: str = Query("hour", pattern="^(hour|day)$", description="Data granularity"),
+    granularity: str = Query("hour", regex="^(hour|day)$", description="Data granularity"),
 ) -> EventTimelineResponse:
     """Get event timeline chart data for dashboard visualization.
 
@@ -161,7 +162,7 @@ async def get_event_timeline_chart(
 @router.get("/risk-distribution", response_model=RiskDistributionResponse)
 async def get_risk_distribution_chart(
     service: SecurityIntegrationService = Depends(get_security_service),  # noqa: ARG001
-    analysis_type: str = Query("users", pattern="^(users|events|alerts)$", description="Type of items to analyze"),
+    analysis_type: str = Query("users", regex="^(users|events|alerts)$", description="Type of items to analyze"),
 ) -> RiskDistributionResponse:
     """Get risk distribution chart data for dashboard visualization.
 

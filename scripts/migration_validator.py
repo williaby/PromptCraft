@@ -34,7 +34,7 @@ class MigrationValidator:
             json_validation_results = {}
 
             for table in tables:
-                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute(f"PRAGMA table_info([{table}])")
                 columns = cursor.fetchall()
 
                 json_columns = [col["name"] for col in columns if col["type"].upper() == "JSON"]
@@ -44,7 +44,9 @@ class MigrationValidator:
                 print(f"  Checking table {table} columns: {', '.join(json_columns)}")
 
                 for json_col in json_columns:
-                    cursor.execute(f"SELECT rowid, {json_col} FROM {table} WHERE {json_col} IS NOT NULL LIMIT 100")
+                    cursor.execute(
+                        f"SELECT rowid, [{json_col}] FROM [{table}] WHERE [{json_col}] IS NOT NULL LIMIT 100",
+                    )
                     rows = cursor.fetchall()
 
                     validation_issues = []
@@ -87,7 +89,7 @@ class MigrationValidator:
 
             row_counts = {}
             for table in tables:
-                cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                cursor.execute(f"SELECT COUNT(*) FROM [{table}]")
                 count = cursor.fetchone()[0]
                 row_counts[table] = count
                 print(f"  {table}: {count:,} rows")
@@ -107,7 +109,7 @@ class MigrationValidator:
 
             sample_data = {}
             for table in tables:
-                cursor.execute(f"SELECT * FROM {table} LIMIT {sample_size}")
+                cursor.execute(f"SELECT * FROM [{table}] LIMIT {sample_size}")
                 rows = cursor.fetchall()
                 sample_data[table] = [dict(row) for row in rows]
 
@@ -127,7 +129,7 @@ class MigrationValidator:
             precision_analysis = {}
 
             for table in tables:
-                cursor.execute(f"PRAGMA table_info({table})")
+                cursor.execute(f"PRAGMA table_info([{table}])")
                 columns = cursor.fetchall()
 
                 real_columns = [col["name"] for col in columns if col["type"].upper() == "REAL"]
@@ -137,7 +139,7 @@ class MigrationValidator:
                 print(f"  Checking table {table} REAL columns: {', '.join(real_columns)}")
 
                 for real_col in real_columns:
-                    cursor.execute(f"SELECT {real_col} FROM {table} WHERE {real_col} IS NOT NULL")
+                    cursor.execute(f"SELECT [{real_col}] FROM [{table}] WHERE [{real_col}] IS NOT NULL")
                     values = [row[0] for row in cursor.fetchall()]
 
                     if not values:
@@ -294,7 +296,7 @@ def save_validation_results(results: dict[str, dict]):
             validation_queries.append(
                 f"       CASE WHEN COUNT(*) = {expected_count} THEN 'PASS' ELSE 'FAIL' END as validation_status",
             )
-            validation_queries.append(f"FROM {table};")
+            validation_queries.append(f"FROM [{table}];")
             validation_queries.append("")
 
     with open("postgresql_validation_queries.sql", "w") as f:

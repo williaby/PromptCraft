@@ -11,7 +11,7 @@ Endpoints:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from src.auth.services.security_integration import SecurityIntegrationService
 from src.auth.services.suspicious_activity_detector import SuspiciousActivityDetector
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 

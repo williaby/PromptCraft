@@ -5,11 +5,13 @@ Handles system health assessment, service monitoring, and availability checks.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 import aiohttp
+
+from src.utils.datetime_compat import UTC
 
 
 class HealthStatus(Enum):

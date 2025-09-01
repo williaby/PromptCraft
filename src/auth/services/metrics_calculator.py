@@ -5,8 +5,10 @@ Handles calculation and aggregation of security metrics.
 Extracted from router business logic for reusability and testability.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
+
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class MetricsCalculator:

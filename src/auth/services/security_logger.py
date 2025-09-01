@@ -19,7 +19,7 @@ import time
 import uuid
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import delete
@@ -27,6 +27,7 @@ from sqlalchemy import delete
 from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
 from src.database.models import SecurityEvent as SecurityEventModel
+from src.utils.datetime_compat import UTC
 
 
 @dataclass

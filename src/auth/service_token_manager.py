@@ -10,7 +10,7 @@ This module provides comprehensive service token management including:
 import hashlib
 import logging
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, ServiceToken
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

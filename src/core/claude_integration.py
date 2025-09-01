@@ -10,8 +10,10 @@ import contextlib
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, cast
+
+from src.utils.datetime_compat import UTC
 
 from .analytics_engine import AnalyticsEngine
 from .help_system import InteractiveHelpSystem

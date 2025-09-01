@@ -19,13 +19,14 @@ import math
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEvent, SecurityEventCreate, SecurityEventType
 from src.auth.security_logger import SecurityLogger
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

@@ -115,7 +115,7 @@ class HomelabMigrationAnalyzer:
             estimated_rows = 0
             for (table_name,) in tables:
                 try:
-                    cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                    cursor.execute(f"SELECT COUNT(*) FROM [{table_name}]")
                     row_count = cursor.fetchone()[0]
                     estimated_rows += row_count
                 except sqlite3.Error:

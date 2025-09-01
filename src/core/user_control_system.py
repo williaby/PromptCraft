@@ -11,9 +11,11 @@ import logging
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from src.utils.datetime_compat import UTC
 
 from .task_detection import TaskDetectionSystem
 from .task_detection_config import ConfigManager

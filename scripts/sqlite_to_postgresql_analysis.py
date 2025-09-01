@@ -26,8 +26,7 @@ import sqlite3
 import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -106,7 +105,7 @@ class DatabaseAnalysis:
 class SQLiteTypeMapper:
     """Maps SQLite types to PostgreSQL equivalents."""
 
-    TYPE_MAPPING = {
+    TYPE_MAPPING: ClassVar[dict[str, str]] = {
         # Integer types
         "INTEGER": "INTEGER",
         "INT": "INTEGER",
@@ -266,11 +265,11 @@ class SQLiteDatabaseAnalyzer:
         logger.info(f"  Analyzing table: {table_name}")
 
         # Get table info
-        cursor.execute(f"PRAGMA table_info({table_name})")
+        cursor.execute(f"PRAGMA table_info([{table_name}])")
         pragma_info = cursor.fetchall()
 
         # Get row count
-        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        cursor.execute(f"SELECT COUNT(*) FROM [{table_name}]")
         row_count = cursor.fetchone()[0]
 
         # Get estimated size (rough calculation)
@@ -351,7 +350,7 @@ class SQLiteDatabaseAnalyzer:
         indexes = []
 
         # Get index list
-        cursor.execute(f"PRAGMA index_list({table_name})")
+        cursor.execute(f"PRAGMA index_list([{table_name}])")
         index_list = cursor.fetchall()
 
         for idx_info in index_list:
@@ -360,7 +359,7 @@ class SQLiteDatabaseAnalyzer:
             partial = bool(idx_info["partial"])
 
             # Get index columns
-            cursor.execute(f"PRAGMA index_info({idx_name})")
+            cursor.execute(f"PRAGMA index_info([{idx_name}])")
             index_columns = cursor.fetchall()
 
             columns = [col["name"] for col in index_columns]
@@ -368,15 +367,17 @@ class SQLiteDatabaseAnalyzer:
             # Generate PostgreSQL equivalent
             if unique:
                 if len(columns) == 1:
-                    pg_equivalent = f"CREATE UNIQUE INDEX idx_{table_name}_{columns[0]} ON {table_name} ({columns[0]})"
-                else:
-                    col_list = ", ".join(columns)
                     pg_equivalent = (
-                        f"CREATE UNIQUE INDEX idx_{table_name}_{'_'.join(columns)} ON {table_name} ({col_list})"
+                        f'CREATE UNIQUE INDEX "idx_{table_name}_{columns[0]}" ON "{table_name}" ("{columns[0]}")'
                     )
+                else:
+                    col_list = ", ".join([f'"{c}"' for c in columns])
+                    index_name = f"idx_{table_name}_{'_'.join(columns)}"
+                    pg_equivalent = f'CREATE UNIQUE INDEX "{index_name}" ON "{table_name}" ({col_list})'
             else:
-                col_list = ", ".join(columns)
-                pg_equivalent = f"CREATE INDEX idx_{table_name}_{'_'.join(columns)} ON {table_name} ({col_list})"
+                col_list = ", ".join([f'"{c}"' for c in columns])
+                index_name = f"idx_{table_name}_{'_'.join(columns)}"
+                pg_equivalent = f'CREATE INDEX "{index_name}" ON "{table_name}" ({col_list})'
 
             indexes.append(
                 IndexInfo(
@@ -395,7 +396,7 @@ class SQLiteDatabaseAnalyzer:
         """Analyze foreign key constraints."""
         foreign_keys = []
 
-        cursor.execute(f"PRAGMA foreign_key_list({table_name})")
+        cursor.execute(f"PRAGMA foreign_key_list([{table_name}])")
         fk_list = cursor.fetchall()
 
         for fk_info in fk_list:
@@ -415,7 +416,7 @@ class SQLiteDatabaseAnalyzer:
     def _get_data_samples(self, cursor: sqlite3.Cursor, table_name: str, limit: int = 5) -> list[dict[str, Any]]:
         """Get sample data from table."""
         try:
-            cursor.execute(f"SELECT * FROM {table_name} LIMIT {limit}")
+            cursor.execute(f"SELECT * FROM [{table_name}] LIMIT {limit}")
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         except sqlite3.Error:
@@ -435,7 +436,7 @@ class SQLiteDatabaseAnalyzer:
         # Check for JSON strings
         json_like = 0
         for value in values:
-            if isinstance(value, str) and value.strip().startswith(("{", "[")):
+            if isinstance(value, str) and value.strip().startswith(("{ ", "[ ")):
                 json_like += 1
 
         if json_like > len(values) * 0.5:
@@ -593,11 +594,11 @@ class SQLiteDatabaseAnalyzer:
         # Create tables
         for table in tables:
             schema_parts.append(f"-- Table: {table.name}")
-            schema_parts.append(f"CREATE TABLE {table.name} (")
+            schema_parts.append(f'CREATE TABLE "{table.name}" (')
 
             column_defs = []
             for col in table.columns:
-                col_def = f"    {col.name} {col.postgresql_type}"
+                col_def = f'    "{col.name}" {col.postgresql_type}'
 
                 if not col.nullable:
                     col_def += " NOT NULL"
@@ -614,7 +615,8 @@ class SQLiteDatabaseAnalyzer:
             # Add primary key constraint
             pk_columns = [col.name for col in table.columns if col.primary_key]
             if pk_columns:
-                column_defs.append(f"    PRIMARY KEY ({', '.join(pk_columns)})")
+                pk_cols_str = ", ".join([f'"{c}"' for c in pk_columns])
+                column_defs.append(f"    PRIMARY KEY ({pk_cols_str})")
 
             schema_parts.append(",\n".join(column_defs))
             schema_parts.append(");")
@@ -633,8 +635,8 @@ class SQLiteDatabaseAnalyzer:
         for table in tables:
             for fk in table.foreign_keys:
                 fk_name = f"fk_{table.name}_{fk.column}"
-                fk_stmt = f"ALTER TABLE {fk.table} ADD CONSTRAINT {fk_name} "
-                fk_stmt += f"FOREIGN KEY ({fk.column}) REFERENCES {fk.referenced_table}({fk.referenced_column})"
+                fk_stmt = f'ALTER TABLE "{fk.table}" ADD CONSTRAINT "{fk_name}" '
+                fk_stmt += f'FOREIGN KEY ("{fk.column}") REFERENCES "{fk.referenced_table}"("{fk.referenced_column}")'
 
                 if fk.on_delete:
                     fk_stmt += f" ON DELETE {fk.on_delete}"
@@ -664,6 +666,158 @@ class SQLiteDatabaseAnalyzer:
         )
 
 
+class MigrationReportGenerator:
+    """Generates a migration report from database analyses."""
+
+    def __init__(self, analyses: dict[str, DatabaseAnalysis]):
+        self.analyses = analyses
+        self.report: list[str] = []
+
+    def generate_report(self) -> str:
+        """Generate the full migration report."""
+        if not self.analyses:
+            return "No databases analyzed"
+
+        self._generate_header()
+        self._generate_executive_summary()
+        self._generate_detailed_analysis()
+        self._generate_schema_details()
+        self._generate_complexity_assessment()
+        self._generate_recommendations()
+
+        return "\n".join(self.report)
+
+    def _generate_header(self):
+        self.report.append("# SQLite to PostgreSQL Migration Analysis Report")
+        self.report.append(f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.report.append("")
+
+    def _generate_executive_summary(self):
+        self.report.append("## Executive Summary")
+        self.report.append("")
+        total_size = sum(db.file_size_mb for db in self.analyses.values())
+        total_rows = sum(db.total_rows for db in self.analyses.values())
+        total_tables = sum(len(db.tables) for db in self.analyses.values())
+        avg_complexity = sum(db.overall_complexity for db in self.analyses.values()) / len(self.analyses)
+
+        self.report.append(f"- **Databases**: {len(self.analyses)}")
+        self.report.append(f"- **Total Size**: {total_size:.1f} MB")
+        self.report.append(f"- **Total Tables**: {total_tables}")
+        self.report.append(f"- **Total Rows**: {total_rows:,}")
+        self.report.append(f"- **Average Complexity**: {avg_complexity:.1f}/10")
+        self.report.append("")
+
+        high_priority = [name for name, db in self.analyses.items() if db.migration_priority == "HIGH"]
+        medium_priority = [name for name, db in self.analyses.items() if db.migration_priority == "MEDIUM"]
+        low_priority = [name for name, db in self.analyses.items() if db.migration_priority == "LOW"]
+
+        self.report.append("### Migration Priority")
+        if high_priority:
+            self.report.append(f"- **HIGH**: {', '.join(high_priority)}")
+        if medium_priority:
+            self.report.append(f"- **MEDIUM**: {', '.join(medium_priority)}")
+        if low_priority:
+            self.report.append(f"- **LOW**: {', '.join(low_priority)}")
+        self.report.append("")
+
+    def _generate_detailed_analysis(self):
+        self.report.append("## Detailed Database Analysis")
+        self.report.append("")
+
+        for db_name, analysis in sorted(
+            self.analyses.items(),
+            key=lambda x: x[1].migration_priority == "HIGH",
+            reverse=True,
+        ):
+            self.report.append(f"### {db_name} Database")
+            self.report.append("")
+            self.report.append(f"- **File Size**: {analysis.file_size_mb:.2f} MB")
+            self.report.append(f"- **Tables**: {len(analysis.tables)}")
+            self.report.append(f"- **Total Rows**: {analysis.total_rows:,}")
+            self.report.append(f"- **Complexity**: {analysis.overall_complexity}/10")
+            self.report.append(f"- **Priority**: {analysis.migration_priority}")
+            self.report.append("")
+
+            if analysis.tables:
+                self.report.append("#### Tables")
+                for table in analysis.tables:
+                    self.report.append(
+                        f"- **{table.name}**: {table.row_count:,} rows, "
+                        f"{len(table.columns)} columns, complexity {table.complexity_score}/10",
+                    )
+                    complex_cols = [col for col in table.columns if len(col.migration_notes) > 1]
+                    if complex_cols:
+                        self.report.append(f"  - Complex columns: {', '.join(col.name for col in complex_cols)}")
+                self.report.append("")
+
+            if analysis.migration_strategy:
+                self.report.append("#### Migration Strategy")
+                for strategy in analysis.migration_strategy:
+                    self.report.append(f"- {strategy}")
+                self.report.append("")
+
+    def _generate_schema_details(self):
+        self.report.append("## PostgreSQL Schema Generation")
+        self.report.append("")
+        for db_name, analysis in self.analyses.items():
+            if analysis.tables:
+                self.report.append(f"### {db_name} Schema")
+                self.report.append("")
+                self.report.append("```sql")
+                self.report.append(analysis.postgresql_schema)
+                self.report.append("```")
+                self.report.append("")
+
+    def _generate_complexity_assessment(self):
+        self.report.append("## Migration Complexity Assessment")
+        self.report.append("")
+        type_issues = {}
+        for analysis in self.analyses.values():
+            for table in analysis.tables:
+                for col in table.columns:
+                    for note in col.migration_notes:
+                        if "precision" in note.lower() or "conversion" in note.lower():
+                            if analysis.name not in type_issues:
+                                type_issues[analysis.name] = []
+                            type_issues[analysis.name].append(f"{table.name}.{col.name}: {note}")
+        if type_issues:
+            self.report.append("### Type Conversion Issues")
+            for db_name, issues in type_issues.items():
+                self.report.append(f"#### {db_name}")
+                for issue in issues:
+                    self.report.append(f"- {issue}")
+            self.report.append("")
+
+    def _generate_recommendations(self):
+        self.report.append("## Recommendations")
+        self.report.append("")
+        total_size = sum(db.file_size_mb for db in self.analyses.values())
+        if total_size > 10:
+            self.report.append("- **Large Dataset**: Consider staging migration in development environment first")
+
+        high_priority = [name for name, db in self.analyses.items() if db.migration_priority == "HIGH"]
+        if high_priority:
+            self.report.append(f"- **High Priority Databases**: Focus on {', '.join(high_priority)} first")
+
+        if any(len(db.tables) > 5 for db in self.analyses.values()):
+            self.report.append("- **Complex Schemas**: Plan foreign key dependency migration order")
+
+        if any(
+            "json" in note.lower()
+            for db in self.analyses.values()
+            for table in db.tables
+            for col in table.columns
+            for note in col.migration_notes
+        ):
+            self.report.append("- **JSON Data**: Validate JSON format and consider JSONB for better performance")
+
+        self.report.append(
+            "- **Testing**: Validate data integrity after migration using row counts and sample data verification",
+        )
+        self.report.append("- **Backup**: Create full SQLite backups before starting migration")
+        self.report.append("")
+
+
 def analyze_all_databases(base_path: str = ".") -> dict[str, DatabaseAnalysis]:
     """Analyze all SQLite databases in the specified path."""
     base_path = Path(base_path)
@@ -678,7 +832,7 @@ def analyze_all_databases(base_path: str = ".") -> dict[str, DatabaseAnalysis]:
     analyses = {}
     for db_file in sorted(db_files):
         try:
-            analyzer = SQLiteDatabaseAnalyzer(db_file)
+            analyzer = SQLiteDatabaseAnalyzer(str(db_file))
             analysis = analyzer.analyze_database()
             analyses[analysis.name] = analysis
         except Exception as e:
@@ -691,142 +845,8 @@ def analyze_all_databases(base_path: str = ".") -> dict[str, DatabaseAnalysis]:
 
 def generate_migration_report(analyses: dict[str, DatabaseAnalysis]) -> str:
     """Generate comprehensive migration report."""
-    if not analyses:
-        return "No databases analyzed"
-
-    report = []
-    report.append("# SQLite to PostgreSQL Migration Analysis Report")
-    report.append(f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    report.append("")
-
-    # Executive Summary
-    report.append("## Executive Summary")
-    report.append("")
-    total_size = sum(db.file_size_mb for db in analyses.values())
-    total_rows = sum(db.total_rows for db in analyses.values())
-    total_tables = sum(len(db.tables) for db in analyses.values())
-    avg_complexity = sum(db.overall_complexity for db in analyses.values()) / len(analyses)
-
-    report.append(f"- **Databases**: {len(analyses)}")
-    report.append(f"- **Total Size**: {total_size:.1f} MB")
-    report.append(f"- **Total Tables**: {total_tables}")
-    report.append(f"- **Total Rows**: {total_rows:,}")
-    report.append(f"- **Average Complexity**: {avg_complexity:.1f}/10")
-    report.append("")
-
-    # Priority ranking
-    high_priority = [name for name, db in analyses.items() if db.migration_priority == "HIGH"]
-    medium_priority = [name for name, db in analyses.items() if db.migration_priority == "MEDIUM"]
-    low_priority = [name for name, db in analyses.items() if db.migration_priority == "LOW"]
-
-    report.append("### Migration Priority")
-    if high_priority:
-        report.append(f"- **HIGH**: {', '.join(high_priority)}")
-    if medium_priority:
-        report.append(f"- **MEDIUM**: {', '.join(medium_priority)}")
-    if low_priority:
-        report.append(f"- **LOW**: {', '.join(low_priority)}")
-    report.append("")
-
-    # Detailed Analysis
-    report.append("## Detailed Database Analysis")
-    report.append("")
-
-    for db_name, analysis in sorted(analyses.items(), key=lambda x: x[1].migration_priority == "HIGH", reverse=True):
-        report.append(f"### {db_name} Database")
-        report.append("")
-        report.append(f"- **File Size**: {analysis.file_size_mb:.2f} MB")
-        report.append(f"- **Tables**: {len(analysis.tables)}")
-        report.append(f"- **Total Rows**: {analysis.total_rows:,}")
-        report.append(f"- **Complexity**: {analysis.overall_complexity}/10")
-        report.append(f"- **Priority**: {analysis.migration_priority}")
-        report.append("")
-
-        if analysis.tables:
-            report.append("#### Tables")
-            for table in analysis.tables:
-                report.append(
-                    f"- **{table.name}**: {table.row_count:,} rows, "
-                    f"{len(table.columns)} columns, complexity {table.complexity_score}/10",
-                )
-
-                # Show complex columns
-                complex_cols = [col for col in table.columns if len(col.migration_notes) > 1]
-                if complex_cols:
-                    report.append(f"  - Complex columns: {', '.join(col.name for col in complex_cols)}")
-            report.append("")
-
-        if analysis.migration_strategy:
-            report.append("#### Migration Strategy")
-            for strategy in analysis.migration_strategy:
-                report.append(f"- {strategy}")
-            report.append("")
-
-    # Schema Details
-    report.append("## PostgreSQL Schema Generation")
-    report.append("")
-
-    for db_name, analysis in analyses.items():
-        if analysis.tables:
-            report.append(f"### {db_name} Schema")
-            report.append("")
-            report.append("```sql")
-            report.append(analysis.postgresql_schema)
-            report.append("```")
-            report.append("")
-
-    # Migration Complexity Assessment
-    report.append("## Migration Complexity Assessment")
-    report.append("")
-
-    # Type mapping issues
-    type_issues = {}
-    for analysis in analyses.values():
-        for table in analysis.tables:
-            for col in table.columns:
-                for note in col.migration_notes:
-                    if "precision" in note.lower() or "conversion" in note.lower():
-                        if analysis.name not in type_issues:
-                            type_issues[analysis.name] = []
-                        type_issues[analysis.name].append(f"{table.name}.{col.name}: {note}")
-
-    if type_issues:
-        report.append("### Type Conversion Issues")
-        for db_name, issues in type_issues.items():
-            report.append(f"#### {db_name}")
-            for issue in issues:
-                report.append(f"- {issue}")
-        report.append("")
-
-    # Recommendations
-    report.append("## Recommendations")
-    report.append("")
-
-    if total_size > 10:
-        report.append("- **Large Dataset**: Consider staging migration in development environment first")
-
-    if high_priority:
-        report.append(f"- **High Priority Databases**: Focus on {', '.join(high_priority)} first")
-
-    if any(len(db.tables) > 5 for db in analyses.values()):
-        report.append("- **Complex Schemas**: Plan foreign key dependency migration order")
-
-    if any(
-        "json" in note.lower()
-        for db in analyses.values()
-        for table in db.tables
-        for col in table.columns
-        for note in col.migration_notes
-    ):
-        report.append("- **JSON Data**: Validate JSON format and consider JSONB for better performance")
-
-    report.append(
-        "- **Testing**: Validate data integrity after migration using row counts and sample data verification",
-    )
-    report.append("- **Backup**: Create full SQLite backups before starting migration")
-    report.append("")
-
-    return "\n".join(report)
+    generator = MigrationReportGenerator(analyses)
+    return generator.generate_report()
 
 
 def save_results(analyses: dict[str, DatabaseAnalysis], output_dir: str = ".") -> None:

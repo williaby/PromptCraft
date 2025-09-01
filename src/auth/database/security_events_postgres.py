@@ -12,7 +12,7 @@ Key improvements over SQLite implementation:
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import and_, delete, desc, func, select, text
@@ -20,6 +20,7 @@ from sqlalchemy import and_, delete, desc, func, select, text
 from src.auth.models import SecurityEventCreate, SecurityEventResponse, SecurityEventSeverity, SecurityEventType
 from src.database.connection import get_database_manager_async
 from src.database.models import SecurityEventLogger as SecurityEventModel
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

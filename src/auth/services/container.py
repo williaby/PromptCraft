@@ -19,16 +19,19 @@ import asyncio
 import contextlib
 import inspect
 import logging
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any, TypeVar, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
+
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 
@@ -286,8 +289,6 @@ class ServiceContainer(IServiceContainer):
         Raises:
             ServiceResolutionError: If service cannot be resolved
         """
-        import time
-
         start_time = time.time()
 
         try:
@@ -509,7 +510,7 @@ class ServiceContainer(IServiceContainer):
                         args = annotation.__args__
                         if len(args) == 2 and type(None) in args:
                             # Handle Optional[Type] pattern: Union[Type, None]
-                            non_none_type = next(arg for arg in args if arg != type(None))
+                            non_none_type = next(arg for arg in args if arg is not type(None))
                             if isinstance(non_none_type, type):
                                 dependencies.append(non_none_type)
                     elif isinstance(annotation, type):
@@ -697,34 +698,44 @@ class ServiceContainer(IServiceContainer):
         logger.info("Service container shutdown completed")
 
 
-# Global container instance for easy access
-_global_container: ServiceContainer | None = None
+class GlobalContainerProvider:
+    _global_container: ServiceContainer | None = None
+
+    @classmethod
+    def get_container(cls) -> ServiceContainer:
+        if cls._global_container is None:
+            cls._global_container = ServiceContainer()
+        return cls._global_container
+
+    @classmethod
+    def configure_container(cls, config: ServiceContainerConfiguration) -> ServiceContainer:
+        cls._global_container = ServiceContainer(config)
+        return cls._global_container
+
+    @classmethod
+    def reset_container(cls) -> None:
+        if cls._global_container:
+            try:
+                # Try to shutdown gracefully if there's a running event loop
+                loop = asyncio.get_running_loop()
+                if loop.is_running():
+                    _ = loop.create_task(cls._global_container.shutdown())
+            except RuntimeError:
+                # No running event loop, just reset without shutdown
+                pass
+        cls._global_container = None
 
 
 def get_container() -> ServiceContainer:
     """Get the global service container instance."""
-    global _global_container
-    if _global_container is None:
-        _global_container = ServiceContainer()
-    return _global_container
+    return GlobalContainerProvider.get_container()
 
 
 def configure_container(config: ServiceContainerConfiguration) -> ServiceContainer:
     """Configure the global service container."""
-    global _global_container
-    _global_container = ServiceContainer(config)
-    return _global_container
+    return GlobalContainerProvider.configure_container(config)
 
 
 def reset_container() -> None:
     """Reset the global container (useful for testing)."""
-    global _global_container
-    if _global_container:
-        try:
-            # Try to shutdown gracefully if there's a running event loop
-            asyncio.get_running_loop()
-            asyncio.create_task(_global_container.shutdown())
-        except RuntimeError:
-            # No running event loop, just reset without shutdown
-            pass
-    _global_container = None
+    GlobalContainerProvider.reset_container()
