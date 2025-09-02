@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 
 from src.auth.models import (
     ServiceTokenCreate,
@@ -17,7 +16,15 @@ from src.auth.models import (
     TokenValidationRequest,
     TokenValidationResponse,
 )
-from src.database.models import AuthenticationEvent, Base, ServiceToken, UserSession
+from src.database.models import (
+    AuthenticationEvent,
+    Base,
+    ServiceToken,
+    UniversalINET,
+    UniversalJSON,
+    UniversalUUID,
+    UserSession,
+)
 from src.utils.datetime_compat import UTC
 
 
@@ -510,7 +517,7 @@ class TestUserSession:
         id_column = table.columns["id"]
 
         assert id_column.primary_key is True
-        assert isinstance(id_column.type, UUID)
+        assert isinstance(id_column.type, UniversalUUID)
         assert id_column.nullable is False
 
     def test_user_session_email_column(self):
@@ -559,8 +566,8 @@ class TestUserSession:
         preferences_column = table.columns["preferences"]
         metadata_column = table.columns["user_metadata"]
 
-        assert isinstance(preferences_column.type, JSONB)
-        assert isinstance(metadata_column.type, JSONB)
+        assert isinstance(preferences_column.type, UniversalJSON)
+        assert isinstance(metadata_column.type, UniversalJSON)
         assert preferences_column.nullable is False
         assert metadata_column.nullable is False
 
@@ -683,7 +690,7 @@ class TestAuthenticationEvent:
         id_column = table.columns["id"]
 
         assert id_column.primary_key is True
-        assert isinstance(id_column.type, UUID)
+        assert isinstance(id_column.type, UniversalUUID)
         assert id_column.nullable is False
 
     def test_authentication_event_user_email_column(self):
@@ -710,7 +717,7 @@ class TestAuthenticationEvent:
         ip_column = table.columns["ip_address"]
 
         assert ip_column.nullable is True
-        assert isinstance(ip_column.type, INET)
+        assert isinstance(ip_column.type, UniversalINET)
 
     def test_authentication_event_success_column(self):
         """Test AuthenticationEvent success column properties."""
@@ -728,8 +735,8 @@ class TestAuthenticationEvent:
         error_column = table.columns["error_details"]
         metrics_column = table.columns["performance_metrics"]
 
-        assert isinstance(error_column.type, JSONB)
-        assert isinstance(metrics_column.type, JSONB)
+        assert isinstance(error_column.type, UniversalJSON)
+        assert isinstance(metrics_column.type, UniversalJSON)
         assert error_column.nullable is True
         assert metrics_column.nullable is True
 

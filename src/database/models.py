@@ -40,6 +40,26 @@ class UniversalUUID(TypeDecorator):
             return dialect.type_descriptor(UUID(as_uuid=True))
         return dialect.type_descriptor(String(36))
 
+    def process_bind_param(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return value
+        if dialect.name == "postgresql":
+            return value  # PostgreSQL handles UUID objects natively
+        # For SQLite and other databases, convert UUID to string
+        if hasattr(value, "hex"):  # UUID object
+            return str(value)
+        return value
+
+    def process_result_value(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return value
+        if dialect.name == "postgresql":
+            return value  # PostgreSQL returns UUID objects
+        # For SQLite and other databases, convert string back to UUID
+        if isinstance(value, str):
+            return uuid.UUID(value)
+        return value
+
 
 class UniversalINET(TypeDecorator):
     """Database-agnostic IP address type that uses INET for PostgreSQL and String for others."""
