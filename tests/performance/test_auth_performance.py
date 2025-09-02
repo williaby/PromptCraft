@@ -37,6 +37,91 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
 
 
+class PerformanceInstrumenter:
+    """Comprehensive performance instrumentation for CI environments."""
+
+    def __init__(self):
+        self.start_time = None
+        self.start_cpu = None
+        self.start_memory = None
+        self.start_load = None
+
+    def start_measurement(self):
+        """Begin performance measurement with comprehensive metrics."""
+        self.start_time = time.perf_counter()
+        self.start_cpu = psutil.cpu_percent(interval=None)
+        self.start_memory = psutil.virtual_memory()
+        self.start_load = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
+
+    def end_measurement(self) -> dict[str, Any]:
+        """End measurement and return comprehensive metrics."""
+        end_time = time.perf_counter()
+        end_cpu = psutil.cpu_percent(interval=0.1)
+        end_memory = psutil.virtual_memory()
+        end_load = psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0, 0, 0)
+
+        return {
+            "duration_ms": (end_time - self.start_time) * 1000,
+            "cpu_usage_percent": {"start": self.start_cpu, "end": end_cpu, "avg": (self.start_cpu + end_cpu) / 2},
+            "memory_usage_mb": {
+                "start": self.start_memory.used / 1024 / 1024,
+                "end": end_memory.used / 1024 / 1024,
+                "available_mb": end_memory.available / 1024 / 1024,
+                "percent_used": end_memory.percent,
+            },
+            "load_average": {
+                "start": self.start_load,
+                "end": end_load,
+                "1min": end_load[0],
+                "5min": end_load[1],
+                "15min": end_load[2],
+            },
+        }
+
+    @staticmethod
+    def log_environment_info():
+        """Log comprehensive environment information for debugging."""
+        import os
+        import platform
+        import sys
+
+        info = {
+            "platform": {
+                "system": platform.system(),
+                "release": platform.release(),
+                "version": platform.version(),
+                "machine": platform.machine(),
+                "processor": platform.processor(),
+                "architecture": platform.architecture(),
+                "python_version": sys.version,
+            },
+            "hardware": {
+                "cpu_count_logical": psutil.cpu_count(logical=True),
+                "cpu_count_physical": psutil.cpu_count(logical=False),
+                "cpu_freq": psutil.cpu_freq()._asdict() if psutil.cpu_freq() else None,
+                "memory_total_gb": psutil.virtual_memory().total / 1024 / 1024 / 1024,
+                "swap_total_gb": psutil.swap_memory().total / 1024 / 1024 / 1024,
+            },
+            "environment": {
+                "ci_environment": os.getenv("CI_ENVIRONMENT", "false"),
+                "github_actions": os.getenv("GITHUB_ACTIONS", "false"),
+                "runner_os": os.getenv("RUNNER_OS", "unknown"),
+                "runner_arch": os.getenv("RUNNER_ARCH", "unknown"),
+            },
+        }
+
+        print("\n" + "=" * 80)
+        print("PERFORMANCE TEST ENVIRONMENT INFORMATION")
+        print("=" * 80)
+        for category, details in info.items():
+            print(f"\n{category.upper()}:")
+            for key, value in details.items():
+                print(f"  {key}: {value}")
+        print("=" * 80 + "\n")
+
+        return info
+
+
 @pytest.mark.performance
 class TestAuthenticationPerformance:
     """Performance tests for authentication middleware."""
@@ -159,12 +244,23 @@ class TestAuthenticationPerformance:
         performance_app: FastAPI,
         mock_database_session: AsyncMock,
     ):
-        """Test single request authentication performance (<75ms target)."""
+        """Test single request authentication performance with comprehensive instrumentation."""
+        import os
+
         from httpx import AsyncClient
 
+        # Log environment information for debugging
+        PerformanceInstrumenter.log_environment_info()
+
+        # Initialize performance instrumentation
+        instrumenter = PerformanceInstrumenter()
+
         async with AsyncClient(app=performance_app, base_url="http://test") as client:
-            # Measure single request performance
-            start_time = time.time()
+            # Start comprehensive measurement
+            instrumenter.start_measurement()
+
+            # Measure the actual request
+            start_time = time.perf_counter()
 
             response = await client.get(
                 "/api/fast-endpoint",
@@ -174,8 +270,11 @@ class TestAuthenticationPerformance:
                 },
             )
 
-            end_time = time.time()
+            end_time = time.perf_counter()
             request_time_ms = (end_time - start_time) * 1000
+
+            # End comprehensive measurement
+            metrics = instrumenter.end_measurement()
 
             # Verify response
             assert response.status_code == 200
@@ -183,11 +282,36 @@ class TestAuthenticationPerformance:
             assert data["status"] == "success"
             assert data["user_email"] == "perf-test@example.com"
 
-            # Verify performance requirement (CI-aware threshold)
-            import os
+            # Log comprehensive performance metrics
+            print(f"\n{'='*60}")
+            print("SINGLE REQUEST PERFORMANCE METRICS")
+            print(f"{'='*60}")
+            print(f"Request Time: {request_time_ms:.2f}ms")
+            print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
+            print(
+                f"CPU Usage: Start={metrics['cpu_usage_percent']['start']:.1f}%, End={metrics['cpu_usage_percent']['end']:.1f}%, Avg={metrics['cpu_usage_percent']['avg']:.1f}%",
+            )
+            print(
+                f"Memory: Used={metrics['memory_usage_mb']['end']:.1f}MB, Available={metrics['memory_usage_mb']['available_mb']:.1f}MB, Usage={metrics['memory_usage_mb']['percent_used']:.1f}%",
+            )
+            print(
+                f"Load Average: 1min={metrics['load_average']['1min']:.2f}, 5min={metrics['load_average']['5min']:.2f}, 15min={metrics['load_average']['15min']:.2f}",
+            )
+            print(f"{'='*60}\n")
 
+            # Verify performance requirement (CI-aware threshold)
             is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
             threshold_ms = 2000.0 if is_ci else 1000.0  # Higher threshold for CI
+
+            # Enhanced failure message with system metrics
+            if request_time_ms >= threshold_ms:
+                failure_msg = (
+                    f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement.\n"
+                    f"System metrics - CPU: {metrics['cpu_usage_percent']['avg']:.1f}%, "
+                    f"Memory: {metrics['memory_usage_mb']['percent_used']:.1f}%, "
+                    f"Load: {metrics['load_average']['1min']:.2f}"
+                )
+                pytest.fail(failure_msg)
 
             assert (
                 request_time_ms < threshold_ms
@@ -202,12 +326,20 @@ class TestAuthenticationPerformance:
         performance_app: FastAPI,
         mock_database_session: AsyncMock,
     ):
-        """Test concurrent request handling performance."""
+        """Test concurrent request handling performance with comprehensive instrumentation."""
+        import os
+
         from httpx import AsyncClient
 
+        # Log environment information for debugging
+        PerformanceInstrumenter.log_environment_info()
+
+        # Initialize performance instrumentation
+        instrumenter = PerformanceInstrumenter()
+
         async def make_concurrent_request(client: AsyncClient, request_id: int):
-            """Make a single concurrent request."""
-            start_time = time.time()
+            """Make a single concurrent request with timing."""
+            start_time = time.perf_counter()
 
             response = await client.get(
                 "/api/fast-endpoint",
@@ -217,7 +349,7 @@ class TestAuthenticationPerformance:
                 },
             )
 
-            end_time = time.time()
+            end_time = time.perf_counter()
             return {
                 "request_id": request_id,
                 "response_time_ms": (end_time - start_time) * 1000,
@@ -226,16 +358,22 @@ class TestAuthenticationPerformance:
             }
 
         async with AsyncClient(app=performance_app, base_url="http://test") as client:
+            # Start comprehensive measurement
+            instrumenter.start_measurement()
+
             # Create 50 concurrent requests
             num_requests = 50
-            start_time = time.time()
+            start_time = time.perf_counter()
 
             tasks = [make_concurrent_request(client, i) for i in range(num_requests)]
 
             results = await asyncio.gather(*tasks)
 
-            end_time = time.time()
+            end_time = time.perf_counter()
             total_time_ms = (end_time - start_time) * 1000
+
+            # End comprehensive measurement
+            metrics = instrumenter.end_measurement()
 
             # Analyze results
             response_times = [r["response_time_ms"] for r in results]
@@ -259,19 +397,59 @@ class TestAuthenticationPerformance:
                 p95_response_time = sorted_response_times[index]
             max_response_time = max(response_times)
 
-            print(f"\nConcurrent Performance Results ({num_requests} requests):")
-            print(f"Total time: {total_time_ms:.2f}ms")
-            print(f"Average response time: {avg_response_time:.2f}ms")
-            print(f"Median response time: {median_response_time:.2f}ms")
-            print(f"95th percentile: {p95_response_time:.2f}ms")
-            print(f"Max response time: {max_response_time:.2f}ms")
+            # Log comprehensive performance metrics
+            print(f"\n{'='*80}")
+            print("CONCURRENT REQUEST PERFORMANCE METRICS")
+            print(f"{'='*80}")
+            print(f"Concurrent Requests: {num_requests}")
+            print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
+            print(f"Request Processing Time: {total_time_ms:.2f}ms")
+            print(f"Average Response Time: {avg_response_time:.2f}ms")
+            print(f"Median Response Time: {median_response_time:.2f}ms")
+            print(f"95th Percentile: {p95_response_time:.2f}ms")
+            print(f"Max Response Time: {max_response_time:.2f}ms")
+            print("")
+            print("SYSTEM METRICS:")
+            print(
+                f"CPU Usage: Start={metrics['cpu_usage_percent']['start']:.1f}%, End={metrics['cpu_usage_percent']['end']:.1f}%, Avg={metrics['cpu_usage_percent']['avg']:.1f}%",
+            )
+            print(
+                f"Memory: Used={metrics['memory_usage_mb']['end']:.1f}MB, Available={metrics['memory_usage_mb']['available_mb']:.1f}MB, Usage={metrics['memory_usage_mb']['percent_used']:.1f}%",
+            )
+            print(
+                f"Load Average: 1min={metrics['load_average']['1min']:.2f}, 5min={metrics['load_average']['5min']:.2f}, 15min={metrics['load_average']['15min']:.2f}",
+            )
+            print("")
+            print("PERFORMANCE DISTRIBUTION:")
+            print(f"Min: {min(response_times):.2f}ms, Max: {max(response_times):.2f}ms")
+            print(f"Std Dev: {statistics.stdev(response_times):.2f}ms")
+            print(f"{'='*80}\n")
 
             # Performance requirements (CI-aware thresholds)
-            import os
-
             is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
             avg_threshold = 5000.0 if is_ci else 3000.0  # Higher threshold for CI
             p95_threshold = 7000.0 if is_ci else 3500.0  # Higher threshold for CI
+
+            # Enhanced failure messages with system metrics
+            if avg_response_time >= avg_threshold:
+                failure_msg = (
+                    f"Average response time {avg_response_time:.2f}ms exceeds requirement ({avg_threshold}ms).\n"
+                    f"System metrics - CPU: {metrics['cpu_usage_percent']['avg']:.1f}%, "
+                    f"Memory: {metrics['memory_usage_mb']['percent_used']:.1f}%, "
+                    f"Load: {metrics['load_average']['1min']:.2f}, "
+                    f"Concurrent requests: {num_requests}"
+                )
+                pytest.fail(failure_msg)
+
+            if p95_response_time >= p95_threshold:
+                failure_msg = (
+                    f"95th percentile {p95_response_time:.2f}ms exceeds tolerance ({p95_threshold}ms).\n"
+                    f"System metrics - CPU: {metrics['cpu_usage_percent']['avg']:.1f}%, "
+                    f"Memory: {metrics['memory_usage_mb']['percent_used']:.1f}%, "
+                    f"Load: {metrics['load_average']['1min']:.2f}, "
+                    f"Response distribution: min={min(response_times):.2f}ms, max={max(response_times):.2f}ms, std={statistics.stdev(response_times):.2f}ms"
+                )
+                pytest.fail(failure_msg)
 
             assert (
                 avg_response_time < avg_threshold
