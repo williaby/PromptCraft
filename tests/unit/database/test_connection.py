@@ -1,6 +1,5 @@
 """Unit tests for database connection management."""
 
-import os
 import time
 from unittest.mock import AsyncMock, patch
 
