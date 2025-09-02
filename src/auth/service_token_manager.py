@@ -22,6 +22,17 @@ from src.utils.datetime_compat import UTC, timedelta
 logger = logging.getLogger(__name__)
 
 
+def _safe_isoformat(dt_value: Any) -> str | None:
+    """Safely convert datetime to isoformat, handling both datetime objects and strings."""
+    if dt_value is None:
+        return None
+    if isinstance(dt_value, str):
+        return dt_value  # Already a string, likely from SQLite
+    if hasattr(dt_value, "isoformat"):
+        return dt_value.isoformat()
+    return str(dt_value)
+
+
 class ServiceTokenManager:
     """Manages service token lifecycle and operations."""
 
@@ -420,15 +431,19 @@ class ServiceTokenManager:
                     )
 
                     recent_events = [
-                        {"event_type": row.event_type, "success": row.success, "timestamp": row.created_at.isoformat()}
+                        {
+                            "event_type": row.event_type,
+                            "success": row.success,
+                            "timestamp": _safe_isoformat(row.created_at),
+                        }
                         for row in auth_events.fetchall()
                     ]
 
                     return {
                         "token_name": token_data.token_name,
                         "usage_count": token_data.usage_count,
-                        "last_used": token_data.last_used.isoformat() if token_data.last_used else None,
-                        "created_at": token_data.created_at.isoformat(),
+                        "last_used": _safe_isoformat(token_data.last_used),
+                        "created_at": _safe_isoformat(token_data.created_at),
                         "is_active": token_data.is_active,
                         "is_expired": token_data.is_expired,
                         "recent_events": recent_events,
@@ -472,7 +487,7 @@ class ServiceTokenManager:
                     {
                         "token_name": row.token_name,
                         "usage_count": row.usage_count,
-                        "last_used": row.last_used.isoformat() if row.last_used else None,
+                        "last_used": _safe_isoformat(row.last_used),
                     }
                     for row in top_tokens_result.fetchall()
                 ]

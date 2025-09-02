@@ -323,11 +323,11 @@ class ABTestManager:
         config.validate()
 
         test_id = uuid.uuid4()
-        
+
         # Mock database operations that tests expect
         # Create test record
         self.db_session.add("test_record")
-        
+
         # Create variants
         for variant_config in config.variants:
             _variant = TestVariant(
@@ -340,9 +340,9 @@ class ABTestManager:
             )
             # Mock adding variant to database
             self.db_session.add(_variant)
-        
+
         # Mock commit
-        if hasattr(self.db_session, 'commit'):
+        if hasattr(self.db_session, "commit"):
             self.db_session.commit()
 
         return test_id
@@ -455,7 +455,6 @@ class ABTestManager:
     async def end_test(self, test_id: uuid.UUID) -> None:
         """End a test."""
         # In real implementation, update database
-        pass
 
     async def get_user_assignment(self, test_id: uuid.UUID, user_id: str) -> dict[str, Any] | None:
         """Get user assignment."""
