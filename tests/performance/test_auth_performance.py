@@ -37,6 +37,54 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
 
 
+# Comprehensive Database Mocking for CI Performance Tests
+def setup_comprehensive_database_mocks():
+    """Setup comprehensive database mocking to prevent any database connections."""
+
+    # Mock database session context manager
+    async def mock_get_db():
+        mock_session = AsyncMock()
+        mock_result = AsyncMock()
+        mock_result.fetchone.return_value = None
+        mock_session.execute.return_value = mock_result
+        mock_session.commit.return_value = None
+        mock_session.close.return_value = None
+        mock_session.rollback.return_value = None
+        yield mock_session
+
+    # Mock database manager
+    mock_db_manager = AsyncMock()
+    mock_db_manager.initialize.return_value = None
+    mock_db_manager.get_session = AsyncMock()
+    mock_db_manager.get_session.return_value.__aenter__ = AsyncMock(return_value=AsyncMock())
+    mock_db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    async def mock_get_database_manager_async():
+        return mock_db_manager
+
+    # Apply all patches to prevent any database initialization
+    patch_targets = [
+        "src.auth.middleware.get_db",
+        "src.auth.middleware.get_database_manager_async",
+        "src.database.connection.get_database_manager_async",
+        "src.database.connection.get_db",
+        "src.database.connection.get_db_session",
+        "src.database.connection.initialize_database",
+        "src.database.get_database_manager_async",
+        "src.database.get_db",
+        "src.database.get_db_session",
+    ]
+
+    patches = []
+    for target in patch_targets:
+        if target.endswith("get_database_manager_async"):
+            patches.append(patch(target, side_effect=mock_get_database_manager_async))
+        else:
+            patches.append(patch(target, side_effect=mock_get_db))
+
+    return patches
+
+
 class PerformanceInstrumenter:
     """Comprehensive performance instrumentation for CI environments."""
 
@@ -252,9 +300,14 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Comprehensive database mocking to prevent any connection attempts
-        with patch("src.auth.middleware.get_database_manager_async", return_value=mock_database_session):
+        # Apply comprehensive database mocking to prevent ANY database connections
+        db_patches = setup_comprehensive_database_mocks()
 
+        # Start all patches
+        for db_patch in db_patches:
+            db_patch.start()
+
+        try:
             # Initialize performance instrumentation
             instrumenter = PerformanceInstrumenter()
 
@@ -323,6 +376,11 @@ class TestAuthenticationPerformance:
                 # Note: Database operations may not be called in all test scenarios
                 # This is acceptable for performance testing focused on response times
 
+        finally:
+            # Stop all database patches
+            for db_patch in db_patches:
+                db_patch.stop()
+
     @pytest.mark.asyncio
     async def test_concurrent_requests_performance(
         self,
@@ -337,9 +395,14 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Comprehensive database mocking to prevent any connection attempts
-        with patch("src.auth.middleware.get_database_manager_async", return_value=mock_database_session):
+        # Apply comprehensive database mocking to prevent ANY database connections
+        db_patches = setup_comprehensive_database_mocks()
 
+        # Start all patches
+        for db_patch in db_patches:
+            db_patch.start()
+
+        try:
             # Initialize performance instrumentation
             instrumenter = PerformanceInstrumenter()
 
@@ -466,6 +529,11 @@ class TestAuthenticationPerformance:
 
             # Note: Database operations count varies based on middleware behavior
             # This is acceptable for performance testing focused on throughput
+
+        finally:
+            # Stop all database patches
+            for db_patch in db_patches:
+                db_patch.stop()
 
     @pytest.mark.asyncio
     async def test_database_performance_impact(
