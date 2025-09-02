@@ -657,8 +657,8 @@ class TestConfigurationHealthChecks:
             )
 
         count = _count_configured_secrets(settings)
-        # Expect 4 secrets: secret_key, database_password, api_key, and auto-generated database_url
-        assert count == 4
+        # Expect 3 secrets: secret_key, database_password, api_key (database_url is not auto-generated)
+        assert count == 3
 
         # Test with empty secrets (isolate from environment and file loading)
         with (
@@ -735,8 +735,8 @@ class TestConfigurationHealthChecks:
                 assert status.config_loaded is True
                 assert status.encryption_enabled is True
                 assert status.validation_status == "passed"
-                # Expect 3 secrets: secret_key, api_key, and auto-generated database_url
-                assert status.secrets_configured == 3
+                # Expect 2 secrets: secret_key, api_key (database_url is not auto-generated)
+                assert status.secrets_configured == 2
                 assert status.config_healthy is True
 
     def test_get_configuration_status_with_errors(self):

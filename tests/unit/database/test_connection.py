@@ -1,5 +1,6 @@
 """Unit tests for database connection management."""
 
+import os
 import time
 from unittest.mock import AsyncMock, patch
 
@@ -395,16 +396,16 @@ class TestGlobalDatabaseManager:
 
     async def test_get_db_session_initialization_failure(self, mock_settings):
         """Test get_db_session with initialization failure."""
+        # Clear any existing global instance before patching
+        import src.database.connection
+
+        src.database.connection._db_manager = None
+
         with (
             patch("src.database.connection.get_settings", return_value=mock_settings),
             patch("src.database.connection.create_async_engine", side_effect=Exception("Init failed")),
+            patch.dict("os.environ", {"CI_ENVIRONMENT": "false"}, clear=False),  # Ensure no CI patches interfere
         ):
-
-            # Clear any existing global instance
-            import src.database.connection
-
-            src.database.connection._db_manager = None
-
             async_gen = get_db_session()
-            with pytest.raises(DatabaseConnectionError):
+            with pytest.raises(DatabaseConnectionError, match="Database initialization failed"):
                 await async_gen.__anext__()

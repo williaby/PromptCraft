@@ -671,7 +671,7 @@ class TestCircuitBreakerIntegration:
 
         # Multiple failures should open the circuit
         for _i in range(3):
-            with pytest.raises(Exception, match="Service error"):
+            with pytest.raises(Exception, match="Service unavailable"):
                 await circuit_breaker.call_async(simulated_service_call)
 
         assert circuit_breaker.state == CircuitBreakerState.OPEN
