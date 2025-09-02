@@ -385,7 +385,7 @@ class ServiceTokenManager:
                                 is_active,
                                 CASE
                                     WHEN expires_at IS NULL THEN FALSE
-                                    WHEN expires_at > NOW() THEN FALSE
+                                    WHEN expires_at > datetime('now') THEN FALSE
                                     ELSE TRUE
                                 END as is_expired
                             FROM service_tokens
@@ -443,7 +443,7 @@ class ServiceTokenManager:
                                 COUNT(*) as total_tokens,
                                 COUNT(*) FILTER (WHERE is_active = TRUE) as active_tokens,
                                 COUNT(*) FILTER (WHERE is_active = FALSE) as inactive_tokens,
-                                COUNT(*) FILTER (WHERE expires_at IS NOT NULL AND expires_at < NOW()) as expired_tokens,
+                                COUNT(*) FILTER (WHERE expires_at IS NOT NULL AND expires_at < datetime('now')) as expired_tokens,
                                 SUM(usage_count) as total_usage,
                                 AVG(usage_count) as avg_usage_per_token
                             FROM service_tokens
@@ -545,7 +545,7 @@ class ServiceTokenManager:
                         SELECT id, token_name
                         FROM service_tokens
                         WHERE expires_at IS NOT NULL
-                          AND expires_at < NOW()
+                          AND expires_at < datetime('now')
                           AND is_active = TRUE
                     """,
                     ),
@@ -570,7 +570,7 @@ class ServiceTokenManager:
                             UPDATE service_tokens
                             SET is_active = FALSE
                             WHERE expires_at IS NOT NULL
-                              AND expires_at < NOW()
+                              AND expires_at < datetime('now')
                               AND is_active = TRUE
                         """,
                         ),
@@ -583,7 +583,7 @@ class ServiceTokenManager:
                             """
                             DELETE FROM service_tokens
                             WHERE expires_at IS NOT NULL
-                              AND expires_at < NOW()
+                              AND expires_at < datetime('now')
                         """,
                         ),
                     )
