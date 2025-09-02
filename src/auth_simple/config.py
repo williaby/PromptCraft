@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -92,24 +92,24 @@ class AuthConfig(BaseModel):
     dev_mode: bool = False
     mock_cf_headers: dict[str, str] = Field(default_factory=dict)
 
+    @field_validator("email_whitelist", mode="before")
     @classmethod
-    @validator("email_whitelist", pre=True)
     def parse_email_whitelist(cls, v: Any) -> list[str]:
         """Parse email whitelist from string or list."""
         if isinstance(v, str):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
+    @field_validator("admin_emails", mode="before")
     @classmethod
-    @validator("admin_emails", pre=True)
     def parse_admin_emails(cls, v: Any) -> list[str]:
         """Parse admin emails from string or list."""
         if isinstance(v, str):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
+    @field_validator("public_paths", mode="before")
     @classmethod
-    @validator("public_paths", pre=True)
     def parse_public_paths(cls, v: Any) -> set[str]:
         """Parse public paths from string, list, or set."""
         if isinstance(v, str):
@@ -118,8 +118,8 @@ class AuthConfig(BaseModel):
             return set(v)
         return v or set()
 
+    @field_validator("session_timeout")
     @classmethod
-    @validator("session_timeout")
     def validate_session_timeout(cls, v: int) -> int:
         """Ensure session timeout is reasonable."""
         if v < 60:  # Minimum 1 minute
