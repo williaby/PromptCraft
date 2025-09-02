@@ -21,7 +21,10 @@ from src.utils.datetime_compat import UTC, timedelta
 
 def require_admin_role(request: Request) -> AuthenticatedUser:
     """Dependency to require admin role for endpoints."""
-    return require_role(request, "admin")
+    user = require_role(request, "admin")
+    if not isinstance(user, AuthenticatedUser):
+        raise HTTPException(status_code=403, detail="Admin role required")
+    return user
 
 
 def get_service_token_manager() -> ServiceTokenManager:

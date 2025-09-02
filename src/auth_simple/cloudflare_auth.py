@@ -24,7 +24,7 @@ class CloudflareUser(BaseModel):
     headers: dict[str, str] = {}
 
     @validator("email")
-    def validate_email(cls, v):
+    def validate_email(cls, v: str) -> str:
         """Ensure email is valid format."""
         if not v or "@" not in v:
             raise ValueError("Invalid email format")
@@ -127,7 +127,7 @@ class CloudflareAuthHandler:
 
         return headers
 
-    def _log_authentication_event(self, user: CloudflareUser, request: Request):
+    def _log_authentication_event(self, user: CloudflareUser, request: Request) -> None:
         """Log authentication event for audit purposes."""
         log_data = {
             "event": "cloudflare_auth_success",

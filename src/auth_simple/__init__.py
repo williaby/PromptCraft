@@ -37,6 +37,11 @@ Environment Variables:
     PROMPTCRAFT_DEV_MODE: Enable development mode (default: False)
 """
 
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
 from .cloudflare_auth import (
     CloudflareAuthError,
     CloudflareAuthHandler,
@@ -112,7 +117,7 @@ __all__ = [
 ]
 
 
-def setup_auth_middleware(app, config_manager: ConfigManager = None):
+def setup_auth_middleware(app: Any, config_manager: ConfigManager | None = None) -> Any:
     """Convenience function to setup authentication middleware.
 
     Args:
@@ -120,10 +125,15 @@ def setup_auth_middleware(app, config_manager: ConfigManager = None):
         config_manager: Optional configuration manager (creates from env if None)
 
     Returns:
-        The configured middleware instance
+        The configured middleware instance or None if auth is disabled
     """
     if config_manager is None:
         config_manager = get_config_manager()
+
+    # Check if authentication is disabled
+    if config_manager.config.auth_mode == AuthMode.DISABLED or not config_manager.config.enabled:
+        logger.info("Authentication is disabled, skipping middleware setup")
+        return None
 
     # Get the middleware instance (already configured)
     middleware = config_manager.create_middleware()
@@ -141,7 +151,7 @@ def setup_auth_middleware(app, config_manager: ConfigManager = None):
     return middleware
 
 
-def get_current_user(request) -> dict:
+def get_current_user(request: Any) -> dict[str, Any] | None:
     """Get current user from request state.
 
     Args:
@@ -153,7 +163,7 @@ def get_current_user(request) -> dict:
     return getattr(request.state, "user", None)
 
 
-def is_admin_user(request) -> bool:
+def is_admin_user(request: Any) -> bool:
     """Check if current user is an admin.
 
     Args:
@@ -185,7 +195,7 @@ def get_version_info() -> dict:
 
 
 # Development and testing utilities
-def create_test_config(**overrides) -> AuthConfig:
+def create_test_config(**overrides: Any) -> AuthConfig:
     """Create test configuration with overrides.
 
     Args:
@@ -194,6 +204,7 @@ def create_test_config(**overrides) -> AuthConfig:
     Returns:
         AuthConfig for testing
     """
+    # Use type: ignore for the constructor call as we're dealing with dynamic overrides
     defaults = {
         "dev_mode": True,
         "email_whitelist": ["test@example.com", "@testdomain.com"],
@@ -204,10 +215,10 @@ def create_test_config(**overrides) -> AuthConfig:
     }
 
     defaults.update(overrides)
-    return AuthConfig(**defaults)
+    return AuthConfig(**defaults)  # type: ignore[arg-type]
 
 
-def create_test_middleware(**config_overrides):
+def create_test_middleware(**config_overrides: Any) -> Any:
     """Create test middleware with custom configuration.
 
     Args:

@@ -34,7 +34,7 @@ class SimpleSessionManager:
         self.session_timeout = session_timeout
         logger.info(f"Initialized session manager with {session_timeout}s timeout")
 
-    def create_session(self, email: str, is_admin: bool, cf_context: dict = None) -> str:
+    def create_session(self, email: str, is_admin: bool, cf_context: dict[str, Any] | None = None) -> str:
         """Create a new session for the user.
 
         Args:
@@ -103,9 +103,9 @@ class SimpleSessionManager:
         from datetime import timedelta
 
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
-        return datetime.utcnow() > expiry
+        return bool(datetime.utcnow() > expiry)
 
-    def cleanup_expired_sessions(self):
+    def cleanup_expired_sessions(self) -> None:
         """Remove expired sessions from memory."""
         expired_sessions = [
             session_id for session_id, session in self.sessions.items() if self._is_session_expired(session)
@@ -131,11 +131,11 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: Any,
         whitelist_validator: EmailWhitelistValidator,
-        session_manager: SimpleSessionManager = None,
-        public_paths: set[str] = None,
-        health_check_paths: set[str] = None,
+        session_manager: SimpleSessionManager | None = None,
+        public_paths: set[str] | None = None,
+        health_check_paths: set[str] | None = None,
         enable_session_cookies: bool = True,
     ):
         """Initialize the middleware.
@@ -198,7 +198,8 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         try:
             # Skip authentication for public paths
             if self._is_public_path(request.url.path):
-                return await call_next(request)
+                response = await call_next(request)
+                return response  # type: ignore[no-any-return]
 
             # Handle authentication
             await self._authenticate_request(request)
@@ -210,7 +211,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
             if self.enable_session_cookies and hasattr(request.state, "new_session_id"):
                 self._set_session_cookie(response, request.state.new_session_id)
 
-            return response
+            return response  # type: ignore[no-any-return]
 
         except HTTPException:
             # Re-raise HTTP exceptions (like 401, 403)
@@ -223,7 +224,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         """Check if path is public (no authentication required)."""
         return path in self.all_public_paths or path.startswith("/static/")
 
-    async def _authenticate_request(self, request: Request):
+    async def _authenticate_request(self, request: Request) -> None:
         """Authenticate the request and set user context.
 
         Args:
@@ -251,7 +252,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         # Check if existing session matches current user
         if existing_session and existing_session["email"] == cloudflare_user.email:
             # Use existing session
-            session_data = existing_session
+            session_data: dict[str, Any] = existing_session
         else:
             # Create new session
             is_admin = self.validator.is_admin(cloudflare_user.email)
@@ -259,7 +260,10 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 
             new_session_id = self.session_manager.create_session(cloudflare_user.email, is_admin, cf_context)
 
-            session_data = self.session_manager.get_session(new_session_id)
+            retrieved_session_data = self.session_manager.get_session(new_session_id)
+            if retrieved_session_data is None:
+                raise HTTPException(status_code=500, detail="Session creation failed")
+            session_data = retrieved_session_data
             if self.enable_session_cookies:
                 request.state.new_session_id = new_session_id
 
@@ -275,7 +279,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 
         logger.debug(f"Authenticated user {cloudflare_user.email} with role {request.state.user['role']}")
 
-    def _set_session_cookie(self, response: Response, session_id: str):
+    def _set_session_cookie(self, response: Response, session_id: str) -> None:
         """Set session cookie in response.
 
         Args:
@@ -323,7 +327,7 @@ class AuthenticationDependency:
         if self.require_admin and not user.get("is_admin", False):
             raise HTTPException(status_code=403, detail="Admin privileges required")
 
-        return user
+        return user  # type: ignore[no-any-return]  # request.state.user is dynamically set
 
 
 # Convenience dependency instances
@@ -335,7 +339,7 @@ def create_auth_middleware(
     whitelist_str: str,
     admin_emails_str: str = "",
     session_timeout: int = 3600,
-    public_paths: set[str] = None,
+    public_paths: set[str] | None = None,
 ) -> CloudflareAccessMiddleware:
     """Factory function to create authentication middleware from configuration.
 

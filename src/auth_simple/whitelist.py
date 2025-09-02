@@ -31,7 +31,7 @@ class EmailWhitelistConfig(BaseModel):
     case_sensitive: bool = False
 
     @validator("whitelist", "admin_emails", pre=True)
-    def normalize_emails(cls, v):
+    def normalize_emails(cls, v: str | list[str]) -> list[str]:
         """Normalize email addresses to lowercase unless case_sensitive."""
         if isinstance(v, str):
             v = [email.strip() for email in v.split(",") if email.strip()]
@@ -47,7 +47,7 @@ class EmailWhitelistValidator:
     - Admin privilege detection for specific admin emails
     """
 
-    def __init__(self, whitelist: list[str], admin_emails: list[str] = None, case_sensitive: bool = False):
+    def __init__(self, whitelist: list[str], admin_emails: list[str] | None = None, case_sensitive: bool = False):
         """Initialize the email whitelist validator.
 
         Args:
@@ -221,7 +221,7 @@ class WhitelistManager:
                 self.validator.individual_emails.add(normalized_email)
 
             if is_admin:
-                self.validator.admin_emails.add(normalized_email)
+                self.validator.admin_emails.append(normalized_email)
 
             logger.info(f"Added email {email} to whitelist (admin: {is_admin})")
             return True

@@ -93,21 +93,21 @@ class AuthConfig(BaseModel):
     mock_cf_headers: dict[str, str] = Field(default_factory=dict)
 
     @validator("email_whitelist", pre=True)
-    def parse_email_whitelist(cls, v):
+    def parse_email_whitelist(cls, v: Any) -> list[str]:
         """Parse email whitelist from string or list."""
         if isinstance(v, str):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
     @validator("admin_emails", pre=True)
-    def parse_admin_emails(cls, v):
+    def parse_admin_emails(cls, v: Any) -> list[str]:
         """Parse admin emails from string or list."""
         if isinstance(v, str):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
     @validator("public_paths", pre=True)
-    def parse_public_paths(cls, v):
+    def parse_public_paths(cls, v: Any) -> set[str]:
         """Parse public paths from string, list, or set."""
         if isinstance(v, str):
             return {path.strip() for path in v.split(",") if path.strip()}
@@ -116,7 +116,7 @@ class AuthConfig(BaseModel):
         return v or set()
 
     @validator("session_timeout")
-    def validate_session_timeout(cls, v):
+    def validate_session_timeout(cls, v: int) -> int:
         """Ensure session timeout is reasonable."""
         if v < 60:  # Minimum 1 minute
             raise ValueError("Session timeout must be at least 60 seconds")
@@ -164,7 +164,7 @@ class ConfigLoader:
     ENV_PREFIX = "PROMPTCRAFT_"
 
     @classmethod
-    def load_from_env(cls, prefix: str = None) -> AuthConfig:
+    def load_from_env(cls, prefix: str | None = None) -> AuthConfig:
         """Load configuration from environment variables.
 
         Args:
@@ -175,7 +175,7 @@ class ConfigLoader:
         """
         prefix = prefix or cls.ENV_PREFIX
 
-        config_data = {}
+        config_data: dict[str, Any] = {}
 
         # Core authentication settings
         config_data["auth_mode"] = os.getenv(f"{prefix}AUTH_MODE", "cloudflare_simple")
@@ -203,12 +203,15 @@ class ConfigLoader:
         config_data["dev_mode"] = cls._get_bool_env(f"{prefix}DEV_MODE", False)
 
         # Cloudflare settings
-        cloudflare_config = {
-            "validate_headers": cls._get_bool_env(f"{prefix}CF_VALIDATE_HEADERS", True),
-            "log_events": cls._get_bool_env(f"{prefix}CF_LOG_EVENTS", True),
-            "trust_cf_headers": cls._get_bool_env(f"{prefix}CF_TRUST_HEADERS", True),
-        }
-        config_data["cloudflare"] = CloudflareConfig(**cloudflare_config)
+        cf_required_headers_str = os.getenv(f"{prefix}CF_REQUIRED_HEADERS", "cf-ray")
+        cf_required_headers = [h.strip() for h in cf_required_headers_str.split(",") if h.strip()]
+        
+        config_data["cloudflare"] = CloudflareConfig(
+            validate_headers=cls._get_bool_env(f"{prefix}CF_VALIDATE_HEADERS", True),
+            required_headers=cf_required_headers,
+            log_events=cls._get_bool_env(f"{prefix}CF_LOG_EVENTS", True),
+            trust_cf_headers=cls._get_bool_env(f"{prefix}CF_TRUST_HEADERS", True),
+        )
 
         # Mock headers for development
         if config_data["dev_mode"]:
@@ -248,7 +251,7 @@ class ConfigLoader:
 class ConfigManager:
     """Manages authentication configuration and provides utilities."""
 
-    def __init__(self, config: AuthConfig = None):
+    def __init__(self, config: AuthConfig | None = None):
         """Initialize configuration manager.
 
         Args:
@@ -258,11 +261,11 @@ class ConfigManager:
         self._setup_logging()
         self._validate_config()
 
-    def _setup_logging(self):
+    def _setup_logging(self) -> None:
         """Setup logging based on configuration."""
         logging.getLogger("src.auth_simple").setLevel(self.config.log_level.value)
 
-    def _validate_config(self):
+    def _validate_config(self) -> None:
         """Validate configuration and log warnings."""
         warnings = self.config.validate_configuration()
         for warning in warnings:
@@ -276,7 +279,7 @@ class ConfigManager:
         """Get mock Cloudflare headers for development."""
         return self.config.mock_cf_headers if self.config.dev_mode else {}
 
-    def create_whitelist_validator(self):
+    def create_whitelist_validator(self) -> Any:
         """Create email whitelist validator from config."""
         from .whitelist import EmailWhitelistValidator
 
@@ -286,7 +289,7 @@ class ConfigManager:
             case_sensitive=self.config.case_sensitive_emails,
         )
 
-    def create_middleware(self):
+    def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
         from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
 
@@ -336,7 +339,7 @@ def get_auth_config() -> AuthConfig:
     return get_config_manager().config
 
 
-def reset_config():
+def reset_config() -> None:
     """Reset global configuration (for testing)."""
     global _config_manager
     _config_manager = None

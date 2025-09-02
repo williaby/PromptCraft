@@ -45,8 +45,11 @@ class ServiceTokenUser:
     @property
     def permissions(self) -> list[str]:
         """Get list of permissions for this token."""
-        return self.metadata.get("permissions", [])
+        perms = self.metadata.get("permissions", [])
+        return perms if isinstance(perms, list) else []
 
+
+from typing import Any
 
 from .models import (
     AuthenticatedUser,
@@ -65,7 +68,7 @@ from .models import (
 # but preserve the complex auth functionality for API endpoints that need it
 
 
-def require_authentication(request=None):
+def require_authentication(request: Any = None) -> Any:
     """Compatibility wrapper for authentication requirement.
 
     This preserves the API signature while the actual implementation
@@ -81,7 +84,7 @@ def require_authentication(request=None):
     return None
 
 
-def require_role(request, role):
+def require_role(request: Any, role: Any) -> Any:
     """Compatibility wrapper for role requirement."""
     # Simplified role checking
     user = require_authentication(request)
@@ -90,12 +93,12 @@ def require_role(request, role):
     return None
 
 
-def get_current_user(request):
+def get_current_user(request: Any) -> Any:
     """Compatibility wrapper for getting current user."""
     return require_authentication(request)
 
 
-def setup_authentication(app):
+def setup_authentication(app: Any) -> None:
     """Compatibility wrapper for authentication setup."""
     # This would be replaced by auth_simple setup in main.py
 

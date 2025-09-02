@@ -6,6 +6,7 @@ with a simple Cloudflare Access + email whitelist approach.
 """
 
 import logging
+from typing import Any
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -69,20 +70,20 @@ except Exception as e:
 
 # Public endpoints (no authentication required)
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """Public health check endpoint."""
     return {"status": "healthy", "auth_system": "auth_simple"}
 
 
 @app.get("/api/health")
-async def api_health_check():
+async def api_health_check() -> dict[str, Any]:
     """API health check endpoint."""
     return {"status": "healthy", "version": "1.0.0", "auth_mode": config_manager.config.auth_mode.value}
 
 
 # Protected endpoints requiring authentication
 @app.get("/api/user/profile")
-async def get_user_profile(user=Depends(require_auth)):
+async def get_user_profile(user: Any = Depends(require_auth)) -> dict[str, Any]:
     """Get current user profile (requires authentication)."""
     return {
         "profile": {
@@ -95,7 +96,7 @@ async def get_user_profile(user=Depends(require_auth)):
 
 
 @app.get("/api/user/dashboard")
-async def user_dashboard(request: Request, user=Depends(require_auth)):
+async def user_dashboard(request: Request, user: Any = Depends(require_auth)) -> dict[str, Any]:
     """User dashboard (requires authentication)."""
     cf_context = user.get("cf_context", {})
 
@@ -115,7 +116,7 @@ async def user_dashboard(request: Request, user=Depends(require_auth)):
 
 # Admin-only endpoints
 @app.get("/api/admin/users")
-async def list_users(user=Depends(require_admin)):
+async def list_users(user: Any = Depends(require_admin)) -> dict[str, Any]:
     """List all users (admin only)."""
     return {
         "admin_action": "list_users",
@@ -125,14 +126,14 @@ async def list_users(user=Depends(require_admin)):
 
 
 @app.get("/api/admin/config")
-async def get_config(user=Depends(require_admin)):
+async def get_config(user: Any = Depends(require_admin)) -> dict[str, Any]:
     """Get system configuration (admin only)."""
     return {"config": config_manager.get_config_summary(), "requested_by": user["email"]}
 
 
 # Alternative authentication checking without dependencies
 @app.get("/api/check-auth")
-async def check_auth_status(request: Request):
+async def check_auth_status(request: Request) -> dict[str, Any]:
     """Check authentication status without requiring auth."""
     user = get_current_user(request)
 
@@ -147,7 +148,7 @@ async def check_auth_status(request: Request):
 
 # Error handlers
 @app.exception_handler(401)
-async def unauthorized_handler(request: Request, exc):
+async def unauthorized_handler(request: Request, exc: Any) -> JSONResponse:
     """Handle unauthorized access."""
     return JSONResponse(
         status_code=401,
@@ -160,7 +161,7 @@ async def unauthorized_handler(request: Request, exc):
 
 
 @app.exception_handler(403)
-async def forbidden_handler(request: Request, exc):
+async def forbidden_handler(request: Request, exc: Any) -> JSONResponse:
     """Handle forbidden access."""
     user = get_current_user(request)
     user_email = user["email"] if user else "unknown"
@@ -179,7 +180,7 @@ async def forbidden_handler(request: Request, exc):
 if config_manager.config.dev_mode:
 
     @app.get("/dev/simulate-cloudflare-user")
-    async def simulate_cloudflare_user(email: str = "dev@example.com"):
+    async def simulate_cloudflare_user(email: str = "dev@example.com") -> dict[str, Any]:
         """Development endpoint to simulate Cloudflare user headers."""
         mock_headers = config_manager.get_mock_headers()
         mock_headers["cf-access-authenticated-user-email"] = email
@@ -193,7 +194,7 @@ if config_manager.config.dev_mode:
 
 # Application startup
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Application startup event."""
     logger.info("PromptCraft starting with simplified authentication")
     logger.info(f"Configuration: {config_manager.get_config_summary()}")
@@ -205,7 +206,7 @@ async def startup_event():
 
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     """Application shutdown event."""
     logger.info("PromptCraft shutting down")
 
