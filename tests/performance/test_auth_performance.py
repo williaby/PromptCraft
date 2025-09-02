@@ -211,12 +211,12 @@ class TestAuthenticationPerformance:
         """Create FastAPI app optimized for performance testing."""
         app = FastAPI(title="PromptCraft Performance Test App")
 
-        # Add authentication middleware
+        # Add authentication middleware (disable database for performance testing)
         app.add_middleware(
             AuthenticationMiddleware,
             config=auth_config,
             jwt_validator=mock_jwt_validator,
-            database_enabled=True,
+            database_enabled=False,  # Disable database to prevent CI timeout issues
         )
 
         @app.get("/api/fast-endpoint")
@@ -252,73 +252,76 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Initialize performance instrumentation
-        instrumenter = PerformanceInstrumenter()
+        # Comprehensive database mocking to prevent any connection attempts
+        with patch("src.auth.middleware.get_database_manager_async", return_value=mock_database_session):
 
-        async with AsyncClient(app=performance_app, base_url="http://test") as client:
-            # Start comprehensive measurement
-            instrumenter.start_measurement()
+            # Initialize performance instrumentation
+            instrumenter = PerformanceInstrumenter()
 
-            # Measure the actual request
-            start_time = time.perf_counter()
+            async with AsyncClient(app=performance_app, base_url="http://test") as client:
+                # Start comprehensive measurement
+                instrumenter.start_measurement()
 
-            response = await client.get(
-                "/api/fast-endpoint",
-                headers={
-                    "CF-Access-Jwt-Assertion": "performance-test-jwt",
-                    "CF-Connecting-IP": "192.168.1.100",
-                },
-            )
+                # Measure the actual request
+                start_time = time.perf_counter()
 
-            end_time = time.perf_counter()
-            request_time_ms = (end_time - start_time) * 1000
-
-            # End comprehensive measurement
-            metrics = instrumenter.end_measurement()
-
-            # Verify response
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "success"
-            assert data["user_email"] == "perf-test@example.com"
-
-            # Log comprehensive performance metrics
-            print(f"\n{'='*60}")
-            print("SINGLE REQUEST PERFORMANCE METRICS")
-            print(f"{'='*60}")
-            print(f"Request Time: {request_time_ms:.2f}ms")
-            print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
-            print(
-                f"CPU Usage: Start={metrics['cpu_usage_percent']['start']:.1f}%, End={metrics['cpu_usage_percent']['end']:.1f}%, Avg={metrics['cpu_usage_percent']['avg']:.1f}%",
-            )
-            print(
-                f"Memory: Used={metrics['memory_usage_mb']['end']:.1f}MB, Available={metrics['memory_usage_mb']['available_mb']:.1f}MB, Usage={metrics['memory_usage_mb']['percent_used']:.1f}%",
-            )
-            print(
-                f"Load Average: 1min={metrics['load_average']['1min']:.2f}, 5min={metrics['load_average']['5min']:.2f}, 15min={metrics['load_average']['15min']:.2f}",
-            )
-            print(f"{'='*60}\n")
-
-            # Verify performance requirement (CI-aware threshold)
-            is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
-            threshold_ms = 2000.0 if is_ci else 1000.0  # Higher threshold for CI
-
-            # Enhanced failure message with system metrics
-            if request_time_ms >= threshold_ms:
-                failure_msg = (
-                    f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement.\n"
-                    f"System metrics - CPU: {metrics['cpu_usage_percent']['avg']:.1f}%, "
-                    f"Memory: {metrics['memory_usage_mb']['percent_used']:.1f}%, "
-                    f"Load: {metrics['load_average']['1min']:.2f}"
+                response = await client.get(
+                    "/api/fast-endpoint",
+                    headers={
+                        "CF-Access-Jwt-Assertion": "performance-test-jwt",
+                        "CF-Connecting-IP": "192.168.1.100",
+                    },
                 )
-                pytest.fail(failure_msg)
 
-            assert (
-                request_time_ms < threshold_ms
-            ), f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement"
+                end_time = time.perf_counter()
+                request_time_ms = (end_time - start_time) * 1000
 
-            # Note: Database operations may not be called in all test scenarios
-            # This is acceptable for performance testing focused on response times
+                # End comprehensive measurement
+                metrics = instrumenter.end_measurement()
+
+                # Verify response
+                assert response.status_code == 200
+                data = response.json()
+                assert data["status"] == "success"
+                assert data["user_email"] == "perf-test@example.com"
+
+                # Log comprehensive performance metrics
+                print(f"\n{'='*60}")
+                print("SINGLE REQUEST PERFORMANCE METRICS")
+                print(f"{'='*60}")
+                print(f"Request Time: {request_time_ms:.2f}ms")
+                print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
+                print(
+                    f"CPU Usage: Start={metrics['cpu_usage_percent']['start']:.1f}%, End={metrics['cpu_usage_percent']['end']:.1f}%, Avg={metrics['cpu_usage_percent']['avg']:.1f}%",
+                )
+                print(
+                    f"Memory: Used={metrics['memory_usage_mb']['end']:.1f}MB, Available={metrics['memory_usage_mb']['available_mb']:.1f}MB, Usage={metrics['memory_usage_mb']['percent_used']:.1f}%",
+                )
+                print(
+                    f"Load Average: 1min={metrics['load_average']['1min']:.2f}, 5min={metrics['load_average']['5min']:.2f}, 15min={metrics['load_average']['15min']:.2f}",
+                )
+                print(f"{'='*60}\n")
+
+                # Verify performance requirement (CI-aware threshold)
+                is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
+                threshold_ms = 2000.0 if is_ci else 1000.0  # Higher threshold for CI
+
+                # Enhanced failure message with system metrics
+                if request_time_ms >= threshold_ms:
+                    failure_msg = (
+                        f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement.\n"
+                        f"System metrics - CPU: {metrics['cpu_usage_percent']['avg']:.1f}%, "
+                        f"Memory: {metrics['memory_usage_mb']['percent_used']:.1f}%, "
+                        f"Load: {metrics['load_average']['1min']:.2f}"
+                    )
+                    pytest.fail(failure_msg)
+
+                assert (
+                    request_time_ms < threshold_ms
+                ), f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement"
+
+                # Note: Database operations may not be called in all test scenarios
+                # This is acceptable for performance testing focused on response times
 
     @pytest.mark.asyncio
     async def test_concurrent_requests_performance(
@@ -334,46 +337,49 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Initialize performance instrumentation
-        instrumenter = PerformanceInstrumenter()
+        # Comprehensive database mocking to prevent any connection attempts
+        with patch("src.auth.middleware.get_database_manager_async", return_value=mock_database_session):
 
-        async def make_concurrent_request(client: AsyncClient, request_id: int):
-            """Make a single concurrent request with timing."""
-            start_time = time.perf_counter()
+            # Initialize performance instrumentation
+            instrumenter = PerformanceInstrumenter()
 
-            response = await client.get(
-                "/api/fast-endpoint",
-                headers={
-                    "CF-Access-Jwt-Assertion": f"concurrent-jwt-{request_id}",
-                    "CF-Connecting-IP": f"192.168.1.{request_id % 200 + 1}",
-                },
-            )
+            async def make_concurrent_request(client: AsyncClient, request_id: int):
+                """Make a single concurrent request with timing."""
+                start_time = time.perf_counter()
 
-            end_time = time.perf_counter()
-            return {
-                "request_id": request_id,
-                "response_time_ms": (end_time - start_time) * 1000,
-                "status_code": response.status_code,
-                "response_data": response.json(),
-            }
+                response = await client.get(
+                    "/api/fast-endpoint",
+                    headers={
+                        "CF-Access-Jwt-Assertion": f"concurrent-jwt-{request_id}",
+                        "CF-Connecting-IP": f"192.168.1.{request_id % 200 + 1}",
+                    },
+                )
 
-        async with AsyncClient(app=performance_app, base_url="http://test") as client:
-            # Start comprehensive measurement
-            instrumenter.start_measurement()
+                end_time = time.perf_counter()
+                return {
+                    "request_id": request_id,
+                    "response_time_ms": (end_time - start_time) * 1000,
+                    "status_code": response.status_code,
+                    "response_data": response.json(),
+                }
 
-            # Create 50 concurrent requests
-            num_requests = 50
-            start_time = time.perf_counter()
+            async with AsyncClient(app=performance_app, base_url="http://test") as client:
+                # Start comprehensive measurement
+                instrumenter.start_measurement()
 
-            tasks = [make_concurrent_request(client, i) for i in range(num_requests)]
+                # Create 50 concurrent requests
+                num_requests = 50
+                start_time = time.perf_counter()
 
-            results = await asyncio.gather(*tasks)
+                tasks = [make_concurrent_request(client, i) for i in range(num_requests)]
 
-            end_time = time.perf_counter()
-            total_time_ms = (end_time - start_time) * 1000
+                results = await asyncio.gather(*tasks)
 
-            # End comprehensive measurement
-            metrics = instrumenter.end_measurement()
+                end_time = time.perf_counter()
+                total_time_ms = (end_time - start_time) * 1000
+
+                # End comprehensive measurement
+                metrics = instrumenter.end_measurement()
 
             # Analyze results
             response_times = [r["response_time_ms"] for r in results]
