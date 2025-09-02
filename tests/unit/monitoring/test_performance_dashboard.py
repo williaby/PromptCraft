@@ -2,7 +2,6 @@
 
 import json
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -16,6 +15,7 @@ from src.monitoring.performance_dashboard import (
     create_dashboard_app,
     get_dashboard_app,
 )
+from src.utils.datetime_compat import UTC
 
 
 class MockSystemHealthReport:

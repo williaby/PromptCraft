@@ -608,7 +608,7 @@ class RoleManager(DatabaseService):
                     user_result = await session.execute(
                         select(UserSession.email)
                         .join(user_roles_table, UserSession.id == user_roles_table.c.user_id)
-                        .where(user_roles_table.c.role_id == role.id)
+                        .where(user_roles_table.c.role_id == role.id),
                     )
                     assigned_users = user_result.scalars().all()
                     if assigned_users:

@@ -6,7 +6,6 @@ execution, analytics tracking, and health monitoring functionality.
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,6 +18,7 @@ from src.core.claude_integration import (
     IntegrationStatus,
 )
 from src.core.user_control_system import CommandResult
+from src.utils.datetime_compat import UTC
 
 
 class TestCommandMetadata:

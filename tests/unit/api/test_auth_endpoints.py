@@ -22,7 +22,7 @@ from src.auth.middleware import AuthenticatedUser, ServiceTokenUser, require_aut
 from src.auth.models import UserRole
 from src.auth.service_token_manager import ServiceTokenManager
 
-# Import auth test helper fixtures  
+# Import auth test helper fixtures
 from tests.fixtures.auth_simple_fixtures import AuthTestHelper
 
 
@@ -42,7 +42,7 @@ class TestAuthEndpoints:
     def client(self, app):
         """Create test client."""
         return TestClient(app)
-        
+
     @pytest.fixture
     def auth_test_helper(self):
         """Provide authentication test helper."""
@@ -105,11 +105,11 @@ class TestAuthEndpoints:
 
     def test_get_current_user_info_service_token(self, app, client, auth_test_helper):
         """Test /auth/me endpoint with service token authentication."""
-        
+
         # Create properly structured mock user
         mock_user = auth_test_helper.create_mock_service_token_user(
-            token_name="test_service_token", 
-            permissions=["read", "write"]
+            token_name="test_service_token",
+            permissions=["read", "write"],
         )
         mock_user.usage_count = 42
         mock_user.token_id = "service_token_123"
@@ -135,12 +135,9 @@ class TestAuthEndpoints:
 
     def test_get_current_user_info_jwt_user(self, app, client, auth_test_helper):
         """Test /auth/me endpoint with JWT authentication."""
-        
+
         # Create properly structured mock user
-        mock_user = auth_test_helper.create_mock_authenticated_user(
-            email="admin@example.com", 
-            is_admin=True
-        )
+        mock_user = auth_test_helper.create_mock_authenticated_user(email="admin@example.com", is_admin=True)
 
         # Override the dependency using helper
         auth_test_helper.override_auth_dependency(app, mock_user)
@@ -485,7 +482,7 @@ class TestSystemEndpoints:
         test_app.include_router(system_router)
         test_app.include_router(audit_router)
         return test_app
-        
+
     @pytest.fixture
     def auth_test_helper(self):
         """Provide authentication test helper."""
@@ -513,10 +510,10 @@ class TestSystemEndpoints:
 
     def test_system_status_service_token(self, app, client, auth_test_helper, monkeypatch):
         """Test GET /system/status endpoint with service token."""
-        
-        # Create properly structured mock service token user  
+
+        # Create properly structured mock service token user
         mock_user = auth_test_helper.create_mock_service_token_user(token_name="system_token")
-        
+
         auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/system/status")
@@ -532,10 +529,10 @@ class TestSystemEndpoints:
 
     def test_system_status_jwt_user(self, app, client, auth_test_helper, monkeypatch):
         """Test GET /system/status endpoint with JWT user."""
-        
+
         # Create properly structured mock JWT user
         mock_user = auth_test_helper.create_mock_authenticated_user(email="system@example.com")
-        
+
         auth_test_helper.override_auth_dependency(app, mock_user)
 
         response = client.get("/api/v1/system/status")
@@ -590,7 +587,7 @@ class TestAuditEndpoints:
     def client(self, app):
         """Create test client."""
         return TestClient(app)
-        
+
     @pytest.fixture
     def auth_test_helper(self):
         """Provide authentication test helper."""
@@ -613,7 +610,7 @@ class TestAuditEndpoints:
 
     def test_log_cicd_event_service_token(self, app, client, auth_test_helper, monkeypatch):
         """Test POST /audit/cicd-event endpoint with service token."""
-        
+
         # Create properly structured mock service token user
         mock_user = auth_test_helper.create_mock_service_token_user(token_name="audit_token")
 
@@ -638,7 +635,7 @@ class TestAuditEndpoints:
 
     def test_log_cicd_event_jwt_user(self, app, client, auth_test_helper, monkeypatch):
         """Test POST /audit/cicd-event endpoint with JWT user."""
-        
+
         # Create properly structured mock JWT user
         mock_user = auth_test_helper.create_mock_authenticated_user(email="auditor@example.com")
 

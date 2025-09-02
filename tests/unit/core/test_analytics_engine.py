@@ -8,7 +8,6 @@ and InsightGenerator in isolation.
 import json
 import sqlite3
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,6 +22,7 @@ from src.core.analytics_engine import (
     UsageTracker,
     UserBehaviorPattern,
 )
+from src.utils.datetime_compat import UTC
 
 
 @pytest.fixture

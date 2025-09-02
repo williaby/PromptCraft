@@ -153,7 +153,9 @@ class TestFunctionRegistry:
         assert updated_metadata.success_rate >= initial_success_rate  # Should maintain or improve
 
 
-@pytest.mark.skip(reason="DynamicFunctionLoader tests disabled due to YAML configuration parsing errors in task detection config")
+@pytest.mark.skip(
+    reason="DynamicFunctionLoader tests disabled due to YAML configuration parsing errors in task detection config",
+)
 class TestDynamicFunctionLoader:
     """Test suite for main DynamicFunctionLoader component."""
 
@@ -431,7 +433,9 @@ class TestDynamicFunctionLoader:
         assert session_summary["token_reduction_percentage"] > 0  # Should have some reduction
 
 
-@pytest.mark.skip(reason="TokenOptimizationValidation tests disabled due to YAML configuration parsing errors in task detection config")
+@pytest.mark.skip(
+    reason="TokenOptimizationValidation tests disabled due to YAML configuration parsing errors in task detection config",
+)
 class TestTokenOptimizationValidation:
     """Test suite for token optimization validation."""
 
@@ -630,7 +634,9 @@ class TestTokenOptimizationValidation:
         await loader.end_loading_session(session_id)
 
 
-@pytest.mark.skip(reason="IntegrationScenarios tests disabled due to YAML configuration parsing errors in task detection config")
+@pytest.mark.skip(
+    reason="IntegrationScenarios tests disabled due to YAML configuration parsing errors in task detection config",
+)
 class TestIntegrationScenarios:
     """Integration tests for complete workflow scenarios."""
 
@@ -733,7 +739,9 @@ class TestIntegrationScenarios:
 
 
 # Performance and benchmark tests
-@pytest.mark.skip(reason="PerformanceBenchmarks tests disabled due to YAML configuration parsing errors in task detection config")
+@pytest.mark.skip(
+    reason="PerformanceBenchmarks tests disabled due to YAML configuration parsing errors in task detection config",
+)
 class TestPerformanceBenchmarks:
     """Performance benchmark tests."""
 

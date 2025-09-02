@@ -16,7 +16,6 @@ Features:
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from enum import Enum
 from typing import Any
 
@@ -33,6 +32,7 @@ from src.core.ab_testing_framework import (
     UserAssignmentModel,
     get_experiment_manager,
 )
+from src.utils.datetime_compat import UTC
 from src.utils.observability import ObservabilityMixin
 
 logger = logging.getLogger(__name__)

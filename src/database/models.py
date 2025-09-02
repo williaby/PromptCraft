@@ -103,14 +103,14 @@ class Role(Base):
         secondary=role_permissions_table,
         back_populates="roles",
     )
-    
+
     # Role hierarchy relationships
     parent_role: Mapped["Role | None"] = relationship(
         "Role",
         remote_side=[id],
         back_populates="child_roles",
     )
-    
+
     child_roles: Mapped[list["Role"]] = relationship(
         "Role",
         back_populates="parent_role",

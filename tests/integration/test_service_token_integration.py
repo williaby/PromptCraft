@@ -14,7 +14,6 @@ Tests cover:
 import asyncio
 import hashlib
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,6 +23,7 @@ from src.auth.service_token_manager import ServiceTokenManager
 from src.automation.token_rotation_scheduler import TokenRotationScheduler
 from src.database.models import AuthenticationEvent
 from src.monitoring.service_token_monitor import ServiceTokenMonitor
+from src.utils.datetime_compat import UTC
 
 
 @pytest.fixture
@@ -466,6 +466,7 @@ class TestServiceTokenIntegration:
         with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
             mock_db_manager = mock_get_db_manager.return_value
             mock_db_manager.get_session.return_value = async_context_manager
+
             # Create tokens concurrently
             async def create_token(i):
                 try:

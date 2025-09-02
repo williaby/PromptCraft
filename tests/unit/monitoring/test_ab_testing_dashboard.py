@@ -2,7 +2,6 @@
 
 import asyncio
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -17,6 +16,7 @@ from src.monitoring.ab_testing_dashboard import (
     MetricType,
     get_dashboard_instance,
 )
+from src.utils.datetime_compat import UTC
 
 
 class TestEnums:

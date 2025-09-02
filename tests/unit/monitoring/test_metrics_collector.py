@@ -1,6 +1,5 @@
 import asyncio
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 
 import pytest
 
@@ -17,6 +16,7 @@ from src.monitoring.metrics_collector import (
     TrendAnalyzer,
     ValidationResult,
 )
+from src.utils.datetime_compat import UTC
 
 
 @pytest.mark.asyncio

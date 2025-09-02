@@ -6,8 +6,9 @@ and basic classes are properly defined.
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import Mock, patch
+
+from src.utils.datetime_compat import UTC
 
 
 class TestClaudeIntegrationImports:

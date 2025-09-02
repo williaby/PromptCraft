@@ -22,7 +22,9 @@ and missing Base import. See https://github.com/your-repo/issues/XXX for trackin
 import pytest
 
 # Skip all tests in this module due to incomplete database setup
-pytestmark = pytest.mark.skip(reason="A/B testing integration tests disabled due to incomplete database model setup and missing Base import. The A/B testing framework exists but integration tests need database fixtures to be completed.")
+pytestmark = pytest.mark.skip(
+    reason="A/B testing integration tests disabled due to incomplete database model setup and missing Base import. The A/B testing framework exists but integration tests need database fixtures to be completed.",
+)
 
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch

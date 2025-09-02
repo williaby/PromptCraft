@@ -25,12 +25,12 @@ import time
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from src.mcp_integration.mcp_client import WorkflowStep
+from src.utils.datetime_compat import UTC
 from src.utils.performance_monitor import PerformanceMonitor
 
 from .dynamic_function_loader import LoadingStrategy

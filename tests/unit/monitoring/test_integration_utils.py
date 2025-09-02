@@ -1,5 +1,4 @@
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from typing import Any
 
 import pytest
@@ -12,6 +11,7 @@ from src.monitoring.integration_utils import (
     PrometheusIntegration,
     SlackIntegration,
 )
+from src.utils.datetime_compat import UTC
 
 
 class DummyResponse:

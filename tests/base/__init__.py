@@ -15,12 +15,12 @@ from .integration_test_base import (
 )
 
 __all__ = [
-    "IntegrationTestBase",
-    "AuthenticatedIntegrationTestBase", 
-    "ServiceTokenIntegrationTestBase",
+    "AuthenticatedIntegrationTestBase",
     "DatabaseIntegrationTestBase",
     "FullIntegrationTestBase",
+    "IntegrationTestBase",
+    "ServiceTokenIntegrationTestBase",
+    "assert_error_response",
     "assert_successful_response",
-    "assert_error_response", 
     "wait_for_database_operation",
 ]

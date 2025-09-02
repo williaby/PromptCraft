@@ -25,7 +25,9 @@ initialization problems that need to be resolved.
 import pytest
 
 # Skip all tests in this module due to configuration issues
-pytestmark = pytest.mark.skip(reason="Dynamic loading integration tests disabled due to YAML configuration parsing errors and task detection config initialization failures. The dynamic loading system exists but needs configuration fixes.")
+pytestmark = pytest.mark.skip(
+    reason="Dynamic loading integration tests disabled due to YAML configuration parsing errors and task detection config initialization failures. The dynamic loading system exists but needs configuration fixes.",
+)
 
 import time
 

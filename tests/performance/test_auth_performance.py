@@ -19,7 +19,6 @@ import statistics
 import time
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
-from src.utils.datetime_compat import UTC
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -35,6 +34,7 @@ from src.auth.models import AuthenticatedUser, UserRole
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database import DatabaseManager, get_database_manager
 from src.monitoring.service_token_monitor import ServiceTokenMonitor
+from src.utils.datetime_compat import UTC
 
 
 @pytest.mark.performance

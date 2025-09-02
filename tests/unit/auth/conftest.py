@@ -8,9 +8,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.utils.datetime_compat import utc_now
 from src.auth import ServiceTokenManager
 from src.auth.models import AuthenticatedUser, UserRole
+from src.utils.datetime_compat import utc_now
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mock_service_token_manager():
         "token_id": "test-token-123",
         "token_secret": "secret-key",
         "token_name": "test-service",
-        "metadata": {"permissions": ["read", "write"]}
+        "metadata": {"permissions": ["read", "write"]},
     }
     manager.validate_token.return_value = True
     return manager
@@ -34,7 +34,7 @@ def authenticated_user():
         email="test@example.com",
         role=UserRole.USER,
         user_id="test-user-123",
-        token_id="session-token-123"
+        token_id="session-token-123",
     )
 
 
@@ -45,7 +45,7 @@ def admin_user():
         email="admin@example.com",
         role=UserRole.ADMIN,
         user_id="admin-user-123",
-        token_id="admin-session-123"
+        token_id="admin-session-123",
     )
 
 
@@ -144,7 +144,7 @@ def cloudflare_headers():
         "cf-access-user": "test-user-id",
         "cf-access-organization": "test-org",
         "cf-ray": "test-ray-id",
-        "x-forwarded-for": "192.168.1.100"
+        "x-forwarded-for": "192.168.1.100",
     }
 
 
@@ -157,7 +157,7 @@ def admin_cloudflare_headers():
         "cf-access-user": "admin-user-id",
         "cf-access-organization": "test-org",
         "cf-ray": "admin-ray-id",
-        "x-forwarded-for": "192.168.1.101"
+        "x-forwarded-for": "192.168.1.101",
     }
 
 
@@ -165,6 +165,7 @@ def admin_cloudflare_headers():
 def mock_request():
     """Mock FastAPI request object."""
     from unittest.mock import MagicMock
+
     request = MagicMock()
     request.state = MagicMock()
     request.url.path = "/test"

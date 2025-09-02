@@ -7,7 +7,6 @@ external service failures with configurable thresholds and recovery.
 import asyncio
 import threading
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import Mock, patch
 
 import pytest
@@ -27,6 +26,7 @@ from src.utils.circuit_breaker import (
     start_all_health_monitoring,
     stop_all_health_monitoring,
 )
+from src.utils.datetime_compat import UTC
 
 
 class TestCircuitBreakerConfig:

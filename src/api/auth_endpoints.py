@@ -106,11 +106,11 @@ async def get_current_user_info(
             permissions=current_user.metadata.get("permissions", []),
             usage_count=current_user.usage_count,
         )
-    
+
     # JWT user authentication
     if current_user is None or not isinstance(current_user, AuthenticatedUser):
         raise HTTPException(status_code=401, detail="User authentication failed")
-    
+
     return CurrentUserResponse(
         user_type="jwt_user",
         email=current_user.email,

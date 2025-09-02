@@ -5,6 +5,7 @@ A streamlined Cloudflare Access authentication system for PromptCraft that repla
 ## Overview
 
 This package provides:
+
 - **Cloudflare Access header extraction** (`Cf-Access-Authenticated-User-Email`)
 - **Email whitelist validation** with domain support (`@company.com`)
 - **Simple FastAPI middleware integration**
@@ -26,28 +27,33 @@ This package provides:
 The system consists of 5 core modules:
 
 ### 1. `cloudflare_auth.py` - Header Extraction
+
 - Extracts user email from `Cf-Access-Authenticated-User-Email` header
 - Validates Cloudflare-specific headers for authenticity
 - Provides user context with Cloudflare metadata
 
 ### 2. `whitelist.py` - Email Authorization
+
 - Email whitelist validation with domain support
 - Admin privilege detection
 - Configuration validation and warnings
 
 ### 3. `middleware.py` - FastAPI Integration
+
 - Streamlined authentication middleware
 - Session management (in-memory)
 - Request context injection
 - Public path handling
 
 ### 4. `config.py` - Configuration Management
+
 - Environment variable loading
 - Configuration validation
 - Development mode support
 - Feature flag management
 
 ### 5. `__init__.py` - Package Interface
+
 - Convenience functions
 - Easy imports
 - Usage examples
@@ -120,16 +126,19 @@ ingress:
 The system supports two whitelist formats:
 
 ### Individual Emails
+
 ```
 PROMPTCRAFT_EMAIL_WHITELIST=user1@example.com,user2@example.com,admin@example.com
 ```
 
 ### Domain Patterns
+
 ```
 PROMPTCRAFT_EMAIL_WHITELIST=@yourcompany.com,@example.com
 ```
 
 ### Mixed Format
+
 ```
 PROMPTCRAFT_EMAIL_WHITELIST=admin@example.com,@yourcompany.com,special@external.com
 ```
@@ -148,6 +157,7 @@ PROMPTCRAFT_SESSION_COOKIE_SECURE=false
 ## API Usage Examples
 
 ### Basic Authentication Check
+
 ```python
 from fastapi import Request
 from auth_simple import get_current_user, is_admin_user
@@ -155,10 +165,10 @@ from auth_simple import get_current_user, is_admin_user
 @app.get("/api/status")
 async def status(request: Request):
     user = get_current_user(request)
-    
+
     if not user:
         return {"authenticated": False}
-    
+
     return {
         "authenticated": True,
         "user": user["email"],
@@ -167,6 +177,7 @@ async def status(request: Request):
 ```
 
 ### Custom Authentication Logic
+
 ```python
 from auth_simple import EmailWhitelistValidator, CloudflareAuthHandler
 
@@ -187,6 +198,7 @@ if validator.is_admin("admin@example.com"):
 ## Migration from Complex Auth System
 
 ### Before (Complex System)
+
 - 47 files, 22,000+ lines
 - JWT validation, database sessions, service tokens
 - Complex role-based permissions
@@ -194,7 +206,8 @@ if validator.is_admin("admin@example.com"):
 - Database migrations and management
 
 ### After (Simplified System)
-- 5 files, ~1,400 lines  
+
+- 5 files, ~1,400 lines
 - Cloudflare Access header extraction
 - Email whitelist validation
 - Simple admin/user roles
@@ -204,6 +217,7 @@ if validator.is_admin("admin@example.com"):
 ### Migration Steps
 
 1. **Update Environment Variables**:
+
    ```bash
    # Replace complex JWT config with simple whitelist
    PROMPTCRAFT_AUTH_MODE=cloudflare_simple
@@ -212,10 +226,11 @@ if validator.is_admin("admin@example.com"):
    ```
 
 2. **Update FastAPI Integration**:
+
    ```python
    # Replace complex auth dependencies
    from auth_simple import require_auth, require_admin
-   
+
    @app.get("/protected")
    async def protected(user = Depends(require_auth)):  # Simple!
        return {"user": user}
@@ -223,12 +238,13 @@ if validator.is_admin("admin@example.com"):
 
 3. **Configure Cloudflare Access**:
    - Setup Cloudflare tunnel
-   - Configure authentication policy  
+   - Configure authentication policy
    - Test header forwarding
 
 ## Security Considerations
 
 ### What Cloudflare Handles
+
 - ✅ Authentication (OAuth, SAML, etc.)
 - ✅ JWT validation and verification
 - ✅ DDoS protection and rate limiting
@@ -236,6 +252,7 @@ if validator.is_admin("admin@example.com"):
 - ✅ Geographic access controls
 
 ### What This System Handles
+
 - ✅ Email whitelist authorization
 - ✅ Admin privilege detection
 - ✅ Session management
@@ -243,6 +260,7 @@ if validator.is_admin("admin@example.com"):
 - ✅ Audit logging
 
 ### Security Benefits
+
 - **Reduced Attack Surface**: Fewer lines of code = fewer bugs
 - **Cloudflare Security**: Leverages enterprise-grade security
 - **Simple Audit**: Easy to review and understand
@@ -251,6 +269,7 @@ if validator.is_admin("admin@example.com"):
 ## Testing
 
 ### Unit Tests
+
 ```python
 from auth_simple import EmailWhitelistValidator, create_test_config
 
@@ -259,7 +278,7 @@ def test_email_whitelist():
         whitelist=["user@example.com", "@company.com"],
         admin_emails=["admin@example.com"]
     )
-    
+
     assert validator.is_authorized("user@example.com")
     assert validator.is_authorized("anyone@company.com")
     assert not validator.is_authorized("hacker@evil.com")
@@ -267,6 +286,7 @@ def test_email_whitelist():
 ```
 
 ### Integration Tests
+
 ```python
 from fastapi.testclient import TestClient
 from auth_simple import create_test_middleware
@@ -289,12 +309,14 @@ assert response.status_code == 200
 ## Performance
 
 ### Benchmarks
+
 - **Authentication Check**: ~1ms per request
 - **Session Lookup**: ~0.1ms (in-memory)
 - **Memory Usage**: ~10MB for 1000 sessions
 - **CPU Overhead**: <1% for typical workloads
 
 ### Compared to Complex System
+
 - **99% fewer database queries** (in-memory sessions)
 - **95% faster startup time** (no complex initialization)
 - **90% less memory usage** (simplified dependencies)
@@ -320,6 +342,7 @@ assert response.status_code == 200
    - Check Cloudflare proxy status
 
 ### Debug Mode
+
 ```bash
 PROMPTCRAFT_LOG_LEVEL=DEBUG
 PROMPTCRAFT_LOG_AUTH_EVENTS=true

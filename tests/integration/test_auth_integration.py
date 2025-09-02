@@ -18,7 +18,6 @@ import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -31,6 +30,7 @@ from src.auth.middleware import AuthenticationMiddleware
 from src.auth.models import AuthenticatedUser, ServiceTokenCreate, ServiceTokenResponse, UserRole
 from src.database import DatabaseManager
 from src.database.models import ServiceToken, UserSession
+from src.utils.datetime_compat import UTC
 
 
 @pytest.mark.integration

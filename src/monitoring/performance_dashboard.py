@@ -12,7 +12,6 @@ import json
 import logging
 import time
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -22,6 +21,7 @@ from src.core.token_optimization_monitor import (
     TokenOptimizationMonitor,
     get_token_optimization_monitor,
 )
+from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
 from src.utils.performance_monitor import get_performance_monitor
 

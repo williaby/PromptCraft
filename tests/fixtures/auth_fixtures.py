@@ -3,35 +3,30 @@
 Provides real authentication services and tokens for testing without mocking.
 """
 
-import asyncio
 import secrets
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
-from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
 from fastapi import Request
-from fastapi.security import HTTPBearer
 
 from src.auth.middleware import AuthenticatedUser, ServiceTokenUser
 from src.auth.models import UserRole
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database.models import ServiceToken
 from src.utils.datetime_compat import UTC, timedelta
-from tests.fixtures.database import test_db_session
 
 
 @pytest_asyncio.fixture
 async def real_service_token_manager(test_db_with_override):
     """Provide real ServiceTokenManager with test database connection."""
     manager = ServiceTokenManager()
-    
+
     # Override the _get_session method to use test database
     async def mock_get_session():
         return test_db_with_override
-    
+
     manager._get_session = mock_get_session
     return manager
 
@@ -43,7 +38,7 @@ async def test_service_token(test_db_with_override):
     token_id = uuid.uuid4()
     token_value = f"sk_{secrets.token_urlsafe(32)}"
     token_hash = ServiceTokenManager().hash_token(token_value)
-    
+
     service_token = ServiceToken(
         id=token_id,
         token_name="test_service_token",
@@ -54,10 +49,10 @@ async def test_service_token(test_db_with_override):
         created_at=datetime.now(UTC),
         last_used=None,
     )
-    
+
     test_db_with_override.add(service_token)
     await test_db_with_override.commit()
-    
+
     return {
         "token_value": token_value,
         "token_id": str(token_id),  # Convert UUID to string
@@ -76,7 +71,7 @@ def test_authenticated_user() -> AuthenticatedUser:
         "iat": 1640995200,  # Issued at timestamp
         "exp": 1641081600,  # Expiration timestamp
         "iss": "test-issuer",
-        "aud": "promptcraft"
+        "aud": "promptcraft",
     }
     user = AuthenticatedUser(
         email="test@example.com",
@@ -121,14 +116,15 @@ def regular_user() -> AuthenticatedUser:
 @pytest.fixture
 def mock_request():
     """Create a mock Request object for dependency injection."""
+
     class MockRequest:
         def __init__(self):
             self.headers = {}
-            self.state = type('State', (), {})()
-            
-        def header(self, key: str) -> Optional[str]:
+            self.state = type("State", (), {})()
+
+        def header(self, key: str) -> str | None:
             return self.headers.get(key.lower())
-    
+
     return MockRequest()
 
 
@@ -139,7 +135,7 @@ async def authenticated_request(mock_request, test_authenticated_user):
     return mock_request
 
 
-@pytest_asyncio.fixture  
+@pytest_asyncio.fixture
 async def service_token_request(mock_request, test_service_user):
     """Create a request with service token user attached."""
     mock_request.state.user = test_service_user
@@ -148,17 +144,17 @@ async def service_token_request(mock_request, test_service_user):
 
 class TestAuthMiddleware:
     """Test authentication middleware that uses real auth logic but with test users."""
-    
-    def __init__(self, test_user: Optional[AuthenticatedUser] = None):
+
+    def __init__(self, test_user: AuthenticatedUser | None = None):
         self.test_user = test_user
-    
+
     async def __call__(self, request: Request) -> AuthenticatedUser:
-        if hasattr(request.state, 'user') and request.state.user:
+        if hasattr(request.state, "user") and request.state.user:
             return request.state.user
-        
+
         if self.test_user:
             return self.test_user
-            
+
         # Default to admin user if none provided
         return AuthenticatedUser(
             email="default@example.com",
@@ -183,12 +179,12 @@ def auth_middleware_user(regular_user):
 async def multiple_service_tokens(test_db_with_override):
     """Create multiple service tokens for testing list operations."""
     tokens = []
-    
+
     for i in range(3):
         token_id = secrets.token_urlsafe(16)
         token_value = f"sk_{secrets.token_urlsafe(32)}"
         token_hash = ServiceTokenManager().hash_token(token_value)
-        
+
         service_token = ServiceToken(
             id=token_id,
             name=f"test_token_{i+1}",
@@ -199,14 +195,16 @@ async def multiple_service_tokens(test_db_with_override):
             created_at=datetime.now(UTC) - timedelta(days=i),
             last_used_at=datetime.now(UTC) - timedelta(hours=i),
         )
-        
+
         test_db_with_override.add(service_token)
-        tokens.append({
-            "token_value": token_value,
-            "token_id": token_id,
-            "name": f"test_token_{i+1}",
-            "usage_count": i * 10,
-        })
-    
+        tokens.append(
+            {
+                "token_value": token_value,
+                "token_id": token_id,
+                "name": f"test_token_{i+1}",
+                "usage_count": i * 10,
+            },
+        )
+
     await test_db_with_override.commit()
     return tokens

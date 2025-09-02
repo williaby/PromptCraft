@@ -9,7 +9,6 @@ Uses proper pytest markers for codecov integration per codecov.yml config compon
 
 import os
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -26,6 +25,7 @@ from src.config.health import (
     get_mcp_configuration_health,
 )
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
+from src.utils.datetime_compat import UTC
 
 
 @pytest.mark.unit

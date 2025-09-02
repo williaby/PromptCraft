@@ -4,8 +4,7 @@ Provides FastAPI test client with real services and database connections.
 """
 
 import asyncio
-from typing import AsyncGenerator, Dict, Any
-from unittest.mock import patch
+from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -13,15 +12,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
-from src.api.auth_endpoints import auth_router, system_router, audit_router
+from src.api.auth_endpoints import audit_router, auth_router, system_router
 from src.auth.middleware import require_authentication, require_role
-from tests.fixtures.auth_fixtures import TestAuthMiddleware
-from tests.fixtures.database import test_db_with_override
 
 
 class IntegrationTestBase:
     """Base class for integration tests with real FastAPI app and services."""
-    
+
     @pytest.fixture
     def test_app(self) -> FastAPI:
         """Create FastAPI app with real routers for testing."""
@@ -29,50 +26,48 @@ class IntegrationTestBase:
             title="Test PromptCraft API",
             version="0.1.0-test",
         )
-        
+
         # Add real routers
         app.include_router(auth_router, prefix="/api/v1")
-        app.include_router(system_router, prefix="/api/v1") 
+        app.include_router(system_router, prefix="/api/v1")
         app.include_router(audit_router, prefix="/api/v1")
-        
+
         return app
-    
+
     @pytest.fixture
     def test_client(self, test_app) -> TestClient:
         """Create test client with real FastAPI app."""
         return TestClient(test_app)
-    
+
     @pytest_asyncio.fixture
     async def async_test_client(self, test_app) -> AsyncGenerator[AsyncClient, None]:
         """Create async test client for testing async endpoints."""
-        async with AsyncClient(
-            app=test_app,
-            base_url="http://testserver"
-        ) as client:
+        async with AsyncClient(app=test_app, base_url="http://testserver") as client:
             yield client
 
 
 class AuthenticatedIntegrationTestBase(IntegrationTestBase):
     """Integration test base with authentication setup."""
-    
+
     @pytest.fixture
     def authenticated_app(self, test_app, admin_user):
         """FastAPI app with authentication that returns admin user."""
+
         # Override authentication to return test user
         def mock_auth():
             return admin_user
-            
+
         def mock_admin_role(request):
             return admin_user
-        
+
         test_app.dependency_overrides[require_authentication] = mock_auth
         test_app.dependency_overrides[require_role] = lambda request, role: admin_user
-        
+
         yield test_app
-        
+
         # Clean up overrides
         test_app.dependency_overrides.clear()
-    
+
     @pytest.fixture
     def authenticated_client(self, authenticated_app):
         """Test client with admin authentication."""
@@ -81,19 +76,20 @@ class AuthenticatedIntegrationTestBase(IntegrationTestBase):
 
 class ServiceTokenIntegrationTestBase(IntegrationTestBase):
     """Integration test base with service token authentication."""
-    
+
     @pytest.fixture
     def service_token_app(self, test_app, test_service_user):
         """FastAPI app with service token authentication."""
+
         def mock_auth():
             return test_service_user
-        
+
         test_app.dependency_overrides[require_authentication] = mock_auth
-        
+
         yield test_app
-        
+
         test_app.dependency_overrides.clear()
-    
+
     @pytest.fixture
     def service_token_client(self, service_token_app):
         """Test client with service token authentication."""
@@ -102,13 +98,13 @@ class ServiceTokenIntegrationTestBase(IntegrationTestBase):
 
 class DatabaseIntegrationTestBase(IntegrationTestBase):
     """Integration test base with database operations."""
-    
+
     @pytest_asyncio.fixture
     async def db_test_app(self, test_app, test_db_with_override):
         """FastAPI app with real database connection."""
         # The test_db_with_override fixture already patches get_db globally
         yield test_app
-    
+
     @pytest.fixture
     def db_test_client(self, db_test_app):
         """Test client with real database connection."""
@@ -117,23 +113,24 @@ class DatabaseIntegrationTestBase(IntegrationTestBase):
 
 class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrationTestBase):
     """Complete integration test base with database and authentication."""
-    
+
     @pytest.fixture
     def full_integration_app(self, test_app, test_db_with_override, admin_user):
         """FastAPI app with database and authentication."""
+
         def mock_auth():
             return admin_user
-            
+
         def mock_admin_role(request):
             return admin_user
-        
+
         test_app.dependency_overrides[require_authentication] = mock_auth
         test_app.dependency_overrides[require_role] = lambda request, role: admin_user
-        
+
         yield test_app
-        
+
         test_app.dependency_overrides.clear()
-    
+
     @pytest.fixture
     def full_integration_client(self, full_integration_app):
         """Test client with database and authentication."""
@@ -143,7 +140,9 @@ class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrat
 # Utility functions for common test patterns
 def assert_successful_response(response, expected_status: int = 200):
     """Assert response is successful and return JSON data."""
-    assert response.status_code == expected_status, f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    assert (
+        response.status_code == expected_status
+    ), f"Expected {expected_status}, got {response.status_code}: {response.text}"
     return response.json()
 
 
@@ -158,13 +157,13 @@ def assert_error_response(response, expected_status: int, expected_message: str 
 async def wait_for_database_operation(db_session, query, timeout: float = 5.0):
     """Wait for database operation to complete with timeout."""
     start_time = asyncio.get_event_loop().time()
-    
+
     while True:
         result = await db_session.execute(query)
         if result.scalar_one_or_none() is not None:
             return result
-            
+
         if asyncio.get_event_loop().time() - start_time > timeout:
             raise TimeoutError(f"Database operation timed out after {timeout}s")
-            
+
         await asyncio.sleep(0.1)

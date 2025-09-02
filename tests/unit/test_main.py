@@ -1,6 +1,5 @@
 """Tests for the main FastAPI application module."""
 
-from src.utils.datetime_compat import UTC
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
 from src.main import app, create_app, lifespan
+from src.utils.datetime_compat import UTC
 
 
 class TestAppCreation:

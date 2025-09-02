@@ -10,7 +10,6 @@ This module provides extensive test coverage for the RoleManager class including
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -23,6 +22,7 @@ from src.auth.role_manager import (
     RoleNotFoundError,
     UserNotFoundError,
 )
+from src.utils.datetime_compat import UTC
 
 # =============================================================================
 # FIXTURES

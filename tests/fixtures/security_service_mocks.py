@@ -6,13 +6,13 @@ to enable comprehensive testing without external dependencies.
 
 import logging
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from typing import Any
 from uuid import uuid4
 
 import pytest
 
 from src.auth.models import SecurityEventCreate
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 

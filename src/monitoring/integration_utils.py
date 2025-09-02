@@ -10,12 +10,12 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from pathlib import Path
 from typing import Any
 
 import aiohttp
 
+from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
 
 logger = logging.getLogger(__name__)

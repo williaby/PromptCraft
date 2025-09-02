@@ -9,30 +9,30 @@ FastAPI endpoints, testing the complete API layer including:
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from src.auth import require_authentication as auth_require_authentication
 from src.auth.middleware import require_authentication
 from src.auth.permissions import Permissions, require_permission
-from src.auth import require_authentication as auth_require_authentication
 from src.auth.role_manager import (
     PermissionNotFoundError,
     RoleManagerError,
     RoleNotFoundError,
     UserNotFoundError,
 )
-from src.main import app
+from src.utils.datetime_compat import UTC
 
 
 @pytest.fixture
 def client(mock_authenticated_user):
     """Create a test client for FastAPI app with authentication override."""
     from fastapi import FastAPI
+
     from src.api.role_endpoints import role_router
-    
+
     # Create a clean test app without authentication middleware
     test_app = FastAPI(title="Test App")
     test_app.include_router(role_router)
@@ -44,7 +44,7 @@ def client(mock_authenticated_user):
     # Override the authentication dependency directly
     test_app.dependency_overrides[require_authentication] = mock_require_authentication
     test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
-    
+
     # Mock user_has_permission to always return True for any permission check
     async def mock_user_has_permission(user_email: str, permission_name: str) -> bool:
         return True
@@ -755,8 +755,9 @@ class TestServiceTokenAuthentication:
     ):
         """Test role creation using service token authentication."""
         from fastapi import FastAPI
+
         from src.api.role_endpoints import role_router
-        
+
         # Create a clean test app without authentication middleware
         test_app = FastAPI(title="Test App")
         test_app.include_router(role_router)
@@ -768,7 +769,7 @@ class TestServiceTokenAuthentication:
         # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
-        
+
         # Mock user_has_permission to always return True for service tokens
         async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
             return True
@@ -810,8 +811,9 @@ class TestServiceTokenAuthentication:
     ):
         """Test user role assignment using service token authentication."""
         from fastapi import FastAPI
+
         from src.api.role_endpoints import role_router
-        
+
         # Create a clean test app without authentication middleware
         test_app = FastAPI(title="Test App")
         test_app.include_router(role_router)
@@ -823,7 +825,7 @@ class TestServiceTokenAuthentication:
         # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
-        
+
         # Mock user_has_permission to always return True for service tokens
         async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
             return True
@@ -992,8 +994,9 @@ class TestPermissionEnforcement:
     def test_insufficient_permissions_role_creation(self, mock_authenticated_user):
         """Test role creation with insufficient permissions."""
         from fastapi import FastAPI, HTTPException
+
         from src.api.role_endpoints import role_router
-        
+
         # Create a clean test app without authentication middleware
         test_app = FastAPI(title="Test App")
         test_app.include_router(role_router)
@@ -1006,7 +1009,7 @@ class TestPermissionEnforcement:
         def mock_permission_checker():
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:create required")
 
-        # Override authentication dependencies  
+        # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
         test_app.dependency_overrides[require_permission(Permissions.ROLES_CREATE)] = mock_permission_checker
@@ -1026,15 +1029,16 @@ class TestPermissionEnforcement:
         response_data = response.json()
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "Insufficient permissions" in detail_text
-        
+
         # Clean up
         test_app.dependency_overrides.clear()
 
     def test_insufficient_permissions_user_assignment(self, mock_authenticated_user):
         """Test user role assignment with insufficient permissions."""
         from fastapi import FastAPI, HTTPException
+
         from src.api.role_endpoints import role_router
-        
+
         # Create a clean test app without authentication middleware
         test_app = FastAPI(title="Test App")
         test_app.include_router(role_router)
@@ -1047,7 +1051,7 @@ class TestPermissionEnforcement:
         def mock_permission_checker():
             raise HTTPException(status_code=403, detail="Insufficient permissions: roles:assign required")
 
-        # Override authentication dependencies  
+        # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
         test_app.dependency_overrides[require_permission(Permissions.ROLES_ASSIGN)] = mock_permission_checker
@@ -1067,7 +1071,7 @@ class TestPermissionEnforcement:
         response_data = response.json()
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "Insufficient permissions" in detail_text
-        
+
         # Clean up
         test_app.dependency_overrides.clear()
 

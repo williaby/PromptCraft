@@ -14,7 +14,6 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.connection import get_database_manager
 from src.database.models import AuthenticationEvent, ServiceToken

@@ -19,7 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # Simplified authentication system
 from src.auth.exceptions import AuthExceptionHandler
 from src.auth_simple import setup_auth_middleware
-
 from src.config.constants import (
     CORS_ORIGINS_BY_ENVIRONMENT,
     HEALTH_CHECK_ERROR_LIMIT,
@@ -204,23 +203,23 @@ def create_app() -> FastAPI:
     )
 
     # AUTH-4 routers removed - complex authentication system cleaned up
-    
+
     # Include preserved authentication and role management API endpoints for backward compatibility
     try:
-        from src.api.auth_endpoints import auth_router, system_router, audit_router
+        from src.api.auth_endpoints import audit_router, auth_router, system_router
         from src.api.role_endpoints import role_router
         from src.api.routers.create_core import router as create_router
-        
+
         app.include_router(auth_router)
         app.include_router(system_router)
         app.include_router(audit_router)
         app.include_router(role_router)
         app.include_router(create_router)
-        
+
         logger.info("API routers configured: auth, system, audit, roles, create")
     except ImportError as e:
         logger.warning("Some API routers could not be imported (continuing without them): %s", e)
-    
+
     logger.info("Authentication system simplified - complex AUTH-4 components removed")
     logger.info("Security hardening configuration completed")
     return app
@@ -264,10 +263,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
         logger.warning("Health check failed - configuration unhealthy")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
         health_detail = f"Health check failed: configuration unhealthy - {health_summary}"
-        raise AuthExceptionHandler.handle_service_unavailable(
-            service_name="promptcraft-hybrid",
-            detail=health_detail
-        )
+        raise AuthExceptionHandler.handle_service_unavailable(service_name="promptcraft-hybrid", detail=health_detail)
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
@@ -278,7 +274,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
             operation_name="Health check endpoint",
             error=e,
             detail="Health check endpoint failed",
-            expose_error=True
+            expose_error=True,
         )
 
 
@@ -364,16 +360,13 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
         logger.warning("MCP health check failed - integration unhealthy")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
         error_detail = f"MCP integration unhealthy - {mcp_health}"
-        raise AuthExceptionHandler.handle_service_unavailable(
-            service_name="mcp-integration",
-            detail=error_detail
-        )
-    except ImportError as e:
+        raise AuthExceptionHandler.handle_service_unavailable(service_name="mcp-integration", detail=error_detail)
+    except ImportError:
         logger.warning("MCP integration not available")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
         raise AuthExceptionHandler.handle_service_unavailable(
-            service_name="mcp-integration", 
-            detail="MCP integration not available"
+            service_name="mcp-integration",
+            detail="MCP integration not available",
         )
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
@@ -385,7 +378,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
             operation_name="MCP health check endpoint",
             error=e,
             detail="MCP health check endpoint failed",
-            expose_error=True
+            expose_error=True,
         )
 
 
@@ -439,10 +432,7 @@ async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # n
         logger.error("Circuit breaker health check failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error for consistent error handling
         error_message = f"Circuit breaker health check failed: {e}"
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=error_message
-        ) from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_message) from e
 
 
 @app.get("/")

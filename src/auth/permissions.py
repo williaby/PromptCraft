@@ -19,8 +19,8 @@ from typing import Any
 from fastapi import Depends
 from sqlalchemy import text
 
-from src.auth.exceptions import AuthExceptionHandler
 from src.auth import ServiceTokenUser, require_authentication
+from src.auth.exceptions import AuthExceptionHandler
 from src.auth.types import AuthenticatedUserType
 from src.database.connection import get_db
 

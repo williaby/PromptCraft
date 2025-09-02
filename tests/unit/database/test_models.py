@@ -3,7 +3,6 @@
 import time
 import uuid
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import MagicMock
 
 import pytest
@@ -19,6 +18,7 @@ from src.auth.models import (
     TokenValidationResponse,
 )
 from src.database.models import AuthenticationEvent, Base, ServiceToken, UserSession
+from src.utils.datetime_compat import UTC
 
 
 # AUTH-2 Service Token Model Tests
