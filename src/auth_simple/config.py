@@ -13,6 +13,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
+from .whitelist import EmailWhitelistValidator
+
 logger = logging.getLogger(__name__)
 
 
@@ -141,7 +144,6 @@ class AuthConfig(BaseModel):
             warnings.append("Email whitelist is empty in production mode")
 
         # Check admin emails are in whitelist
-        from .whitelist import EmailWhitelistValidator
 
         validator = EmailWhitelistValidator(self.email_whitelist, self.admin_emails, self.case_sensitive_emails)
 
@@ -227,10 +229,10 @@ class ConfigLoader:
 
         try:
             config = AuthConfig(**config_data)
-            logger.info(f"Loaded authentication configuration with mode: {config.auth_mode}")
+            logger.info("Loaded authentication configuration with mode: %s", config.auth_mode)
             return config
         except Exception as e:
-            logger.error(f"Failed to load authentication configuration: {e}")
+            logger.error("Failed to load authentication configuration: %s", e)
             raise
 
     @staticmethod
@@ -273,7 +275,7 @@ class ConfigManager:
         """Validate configuration and log warnings."""
         warnings = self.config.validate_configuration()
         for warning in warnings:
-            logger.warning(f"Configuration warning: {warning}")
+            logger.warning("Configuration warning: %s", warning)
 
     def is_dev_mode(self) -> bool:
         """Check if running in development mode."""
@@ -285,7 +287,6 @@ class ConfigManager:
 
     def create_whitelist_validator(self) -> Any:
         """Create email whitelist validator from config."""
-        from .whitelist import EmailWhitelistValidator
 
         return EmailWhitelistValidator(
             whitelist=self.config.email_whitelist,
@@ -295,7 +296,6 @@ class ConfigManager:
 
     def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
-        from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
 
         validator = self.create_whitelist_validator()
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)
@@ -332,7 +332,7 @@ _config_manager: ConfigManager | None = None
 
 def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
-    global _config_manager
+    global _config_manager  # noqa: PLW0603
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager
@@ -345,5 +345,5 @@ def get_auth_config() -> AuthConfig:
 
 def reset_config() -> None:
     """Reset global configuration (for testing)."""
-    global _config_manager
+    global _config_manager  # noqa: PLW0603
     _config_manager = None

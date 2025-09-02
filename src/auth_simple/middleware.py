@@ -15,6 +15,8 @@ from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
+from src.utils.datetime_compat import UTC
+
 from .cloudflare_auth import CloudflareAuthError, CloudflareAuthHandler
 from .whitelist import EmailWhitelistValidator
 
@@ -32,7 +34,7 @@ class SimpleSessionManager:
         """
         self.sessions: dict[str, dict] = {}
         self.session_timeout = session_timeout
-        logger.info(f"Initialized session manager with {session_timeout}s timeout")
+        logger.info("Initialized session manager with %ss timeout", session_timeout)
 
     def create_session(self, email: str, is_admin: bool, cf_context: dict[str, Any] | None = None) -> str:
         """Create a new session for the user.
@@ -49,12 +51,12 @@ class SimpleSessionManager:
         self.sessions[session_id] = {
             "email": email,
             "is_admin": is_admin,
-            "created_at": datetime.utcnow(),
-            "last_accessed": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
+            "last_accessed": datetime.now(UTC),
             "cf_context": cf_context or {},
         }
 
-        logger.debug(f"Created session {session_id} for {email} (admin: {is_admin})")
+        logger.debug("Created session %s for %s (admin: %s)", session_id, email, is_admin)
         return session_id
 
     def get_session(self, session_id: str) -> dict | None:
@@ -75,12 +77,12 @@ class SimpleSessionManager:
 
         # Check if session is expired
         if self._is_session_expired(session):
-            logger.debug(f"Session {session_id} expired, removing")
+            logger.debug("Session %s expired, removing", session_id)
             del self.sessions[session_id]
             return None
 
         # Update last accessed time
-        session["last_accessed"] = datetime.utcnow()
+        session["last_accessed"] = datetime.now(UTC)
         return session
 
     def invalidate_session(self, session_id: str) -> bool:
@@ -94,7 +96,7 @@ class SimpleSessionManager:
         """
         if session_id in self.sessions:
             del self.sessions[session_id]
-            logger.debug(f"Invalidated session {session_id}")
+            logger.debug("Invalidated session %s", session_id)
             return True
         return False
 
@@ -103,7 +105,7 @@ class SimpleSessionManager:
         from datetime import timedelta
 
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
-        return bool(datetime.utcnow() > expiry)
+        return bool(datetime.now(UTC) > expiry)
 
     def cleanup_expired_sessions(self) -> None:
         """Remove expired sessions from memory."""
@@ -115,7 +117,7 @@ class SimpleSessionManager:
             del self.sessions[session_id]
 
         if expired_sessions:
-            logger.debug(f"Cleaned up {len(expired_sessions)} expired sessions")
+            logger.debug("Cleaned up %s expired sessions", len(expired_sessions))
 
 
 class CloudflareAccessMiddleware(BaseHTTPMiddleware):
@@ -183,7 +185,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         # Combine all public paths
         self.all_public_paths = self.public_paths | self.health_check_paths
 
-        logger.info(f"Initialized Cloudflare Access middleware with {len(self.all_public_paths)} public paths")
+        logger.info("Initialized Cloudflare Access middleware with %s public paths", len(self.all_public_paths))
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request through authentication middleware.
@@ -198,8 +200,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         try:
             # Skip authentication for public paths
             if self._is_public_path(request.url.path):
-                response = await call_next(request)
-                return response  # type: ignore[no-any-return]
+                return await call_next(request)  # type: ignore[no-any-return]
 
             # Handle authentication
             await self._authenticate_request(request)
@@ -217,7 +218,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
             # Re-raise HTTP exceptions (like 401, 403)
             raise
         except Exception as e:
-            logger.error(f"Middleware error: {e}")
+            logger.error("Middleware error: %s", e)
             return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
 
     def _is_public_path(self, path: str) -> bool:
@@ -241,12 +242,12 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         try:
             cloudflare_user = self.cloudflare_auth.extract_user_from_request(request)
         except CloudflareAuthError as e:
-            logger.warning(f"Cloudflare authentication failed: {e}")
-            raise HTTPException(status_code=401, detail="No authenticated user found")
+            logger.warning("Cloudflare authentication failed: %s", e)
+            raise HTTPException(status_code=401, detail="No authenticated user found") from e
 
         # Validate against whitelist
         if not self.validator.is_authorized(cloudflare_user.email):
-            logger.warning(f"Unauthorized email attempted access: {cloudflare_user.email}")
+            logger.warning("Unauthorized email attempted access: %s", cloudflare_user.email)
             raise HTTPException(status_code=403, detail=f"Email {cloudflare_user.email} not authorized")
 
         # Check if existing session matches current user
@@ -277,7 +278,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
             "cf_context": session_data["cf_context"],
         }
 
-        logger.debug(f"Authenticated user {cloudflare_user.email} with role {request.state.user['role']}")
+        logger.debug("Authenticated user %s with role %s", cloudflare_user.email, request.state.user["role"])
 
     def _set_session_cookie(self, response: Response, session_id: str) -> None:
         """Set session cookie in response.

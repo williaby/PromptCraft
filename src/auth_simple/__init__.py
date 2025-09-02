@@ -40,8 +40,6 @@ Environment Variables:
 import logging
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
 from .cloudflare_auth import (
     CloudflareAuthError,
     CloudflareAuthHandler,
@@ -75,6 +73,8 @@ from .whitelist import (
     create_validator_from_env,
 )
 
+logger = logging.getLogger(__name__)
+
 # Package metadata
 __version__ = "1.0.0"
 __author__ = "PromptCraft Development Team"
@@ -82,38 +82,33 @@ __description__ = "Simplified Cloudflare Access authentication for PromptCraft"
 
 # Main exports for easy importing
 __all__ = [
-    # Core authentication
-    "CloudflareAuthHandler",
-    "CloudflareUser",
-    "CloudflareAuthError",
-    "extract_user_from_cloudflare_headers",
-    "validate_cloudflare_request",
-    # Email whitelist management
-    "EmailWhitelistValidator",
-    "EmailWhitelistConfig",
-    "WhitelistManager",
-    "WhitelistEntry",
-    "create_validator_from_env",
-    # Middleware and dependencies
-    "CloudflareAccessMiddleware",
-    "SimpleSessionManager",
-    "AuthenticationDependency",
-    "require_auth",
-    "require_admin",
-    "create_auth_middleware",
-    # Configuration management
     "AuthConfig",
     "AuthMode",
+    "AuthenticationDependency",
+    "CloudflareAccessMiddleware",
+    "CloudflareAuthError",
+    "CloudflareAuthHandler",
     "CloudflareConfig",
+    "CloudflareUser",
     "ConfigLoader",
     "ConfigManager",
-    "get_config_manager",
+    "EmailWhitelistConfig",
+    "EmailWhitelistValidator",
+    "SimpleSessionManager",
+    "WhitelistEntry",
+    "WhitelistManager",
+    "create_auth_middleware",
+    "create_validator_from_env",
+    "extract_user_from_cloudflare_headers",
     "get_auth_config",
-    "reset_config",
-    # Convenience functions
-    "setup_auth_middleware",
+    "get_config_manager",
     "get_current_user",
     "is_admin_user",
+    "require_admin",
+    "require_auth",
+    "reset_config",
+    "setup_auth_middleware",
+    "validate_cloudflare_request",
 ]
 
 
@@ -232,15 +227,12 @@ def create_test_middleware(**config_overrides: Any) -> Any:
     return config_manager.create_middleware()
 
 
-# Logging setup
-import logging
-
-logger = logging.getLogger(__name__)
-logger.info(f"Initialized auth_simple package v{__version__}")
+# Package initialization logging
+logger.info("Initialized auth_simple package v%s", __version__)
 
 # Log configuration summary on import
 try:
     config_info = get_version_info()
-    logger.info(f"Authentication configuration: {config_info['config_summary']}")
+    logger.info("Authentication configuration: %s", config_info["config_summary"])
 except Exception as e:
-    logger.warning(f"Could not load configuration summary: {e}")
+    logger.warning("Could not load configuration summary: %s", e)

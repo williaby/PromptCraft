@@ -53,9 +53,9 @@ PROMPTCRAFT_DEV_USER_EMAIL=dev@example.com
 try:
     config_manager = get_config_manager()
     setup_auth_middleware(app, config_manager)
-    logger.info(f"Authentication configured: {config_manager.get_config_summary()}")
+    logger.info("Authentication configured: %s", config_manager.get_config_summary())
 except Exception as e:
-    logger.error(f"Failed to setup authentication: {e}")
+    logger.error("Failed to setup authentication: %s", e)
     # Fallback to test configuration for development
     test_config = create_test_config(
         email_whitelist=["dev@example.com", "@example.com"],
@@ -197,12 +197,12 @@ if config_manager.config.dev_mode:
 async def startup_event() -> None:
     """Application startup event."""
     logger.info("PromptCraft starting with simplified authentication")
-    logger.info(f"Configuration: {config_manager.get_config_summary()}")
+    logger.info("Configuration: %s", config_manager.get_config_summary())
 
     # Validate configuration
     warnings = config_manager.config.validate_configuration()
     for warning in warnings:
-        logger.warning(f"Config warning: {warning}")
+        logger.warning("Config warning: %s", warning)
 
 
 @app.on_event("shutdown")

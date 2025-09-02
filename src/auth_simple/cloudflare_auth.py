@@ -12,6 +12,8 @@ from typing import Any
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, validator
 
+from src.utils.datetime_compat import UTC
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class CloudflareUser(BaseModel):
     """User information extracted from Cloudflare Access headers."""
 
     email: str
-    authenticated_at: datetime = datetime.utcnow()
+    authenticated_at: datetime = datetime.now(UTC)
     source: str = "cloudflare_access"
     headers: dict[str, str] = {}
 
@@ -76,7 +78,7 @@ class CloudflareAuthHandler:
             headers = self._extract_cloudflare_headers(request)
 
             # Create user object
-            user = CloudflareUser(email=user_email, headers=headers, authenticated_at=datetime.utcnow())
+            user = CloudflareUser(email=user_email, headers=headers, authenticated_at=datetime.now(UTC))
 
             if self.log_events:
                 self._log_authentication_event(user, request)
@@ -85,8 +87,8 @@ class CloudflareAuthHandler:
 
         except Exception as e:
             if self.log_events:
-                logger.error(f"Cloudflare authentication failed: {e!s}")
-            raise CloudflareAuthError(f"Authentication failed: {e!s}")
+                logger.error("Cloudflare authentication failed: %s", e)
+            raise CloudflareAuthError(f"Authentication failed: {e!s}") from e
 
     def _extract_user_email(self, request: Request) -> str | None:
         """Extract user email from Cloudflare Access headers.
@@ -140,7 +142,7 @@ class CloudflareAuthHandler:
             "connecting_ip": user.headers.get("cf-connecting-ip", "unknown"),
         }
 
-        logger.info(f"Cloudflare authentication successful: {log_data}")
+        logger.info("Cloudflare authentication successful: %s", log_data)
 
     def validate_request_headers(self, request: Request) -> bool:
         """Validate that request contains expected Cloudflare headers.
@@ -156,7 +158,7 @@ class CloudflareAuthHandler:
         for header in required_headers:
             if not request.headers.get(header):
                 if self.log_events:
-                    logger.warning(f"Missing required Cloudflare header: {header}")
+                    logger.warning("Missing required Cloudflare header: %s", header)
                 return False
 
         return True
@@ -197,7 +199,7 @@ def extract_user_from_cloudflare_headers(request: Request) -> CloudflareUser:
         handler = CloudflareAuthHandler()
         return handler.extract_user_from_request(request)
     except CloudflareAuthError as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=401, detail=str(e)) from e
 
 
 def validate_cloudflare_request(request: Request) -> bool:
@@ -213,5 +215,5 @@ def validate_cloudflare_request(request: Request) -> bool:
         handler = CloudflareAuthHandler()
         return handler.validate_request_headers(request)
     except Exception as e:
-        logger.error(f"Cloudflare request validation failed: {e}")
+        logger.error("Cloudflare request validation failed: %s", e)
         return False

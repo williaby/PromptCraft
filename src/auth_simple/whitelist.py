@@ -69,8 +69,10 @@ class EmailWhitelistValidator:
                 self.individual_emails.add(entry)
 
         logger.info(
-            f"Initialized email whitelist: {len(self.individual_emails)} individual emails, "
-            f"{len(self.domain_patterns)} domain patterns, {len(self.admin_emails)} admin emails",
+            "Initialized email whitelist: %s individual emails, %s domain patterns, %s admin emails",
+            len(self.individual_emails),
+            len(self.domain_patterns),
+            len(self.admin_emails),
         )
 
     def _normalize_emails(self, emails: list[str]) -> list[str]:
@@ -106,17 +108,17 @@ class EmailWhitelistValidator:
 
         # Check individual email whitelist
         if normalized_email in self.individual_emails:
-            logger.debug(f"Email {email} authorized via individual whitelist")
+            logger.debug("Email %s authorized via individual whitelist", email)
             return True
 
         # Check domain patterns
         if "@" in normalized_email:
             domain = "@" + normalized_email.split("@")[1]
             if domain in self.domain_patterns:
-                logger.debug(f"Email {email} authorized via domain pattern {domain}")
+                logger.debug("Email %s authorized via domain pattern %s", email, domain)
                 return True
 
-        logger.debug(f"Email {email} not authorized")
+        logger.debug("Email %s not authorized", email)
         return False
 
     def is_admin(self, email: str) -> bool:
@@ -135,7 +137,7 @@ class EmailWhitelistValidator:
         is_admin_user = normalized_email in self.admin_emails
 
         if is_admin_user:
-            logger.debug(f"Email {email} has admin privileges")
+            logger.debug("Email %s has admin privileges", email)
 
         return is_admin_user
 
@@ -223,11 +225,11 @@ class WhitelistManager:
             if is_admin:
                 self.validator.admin_emails.append(normalized_email)
 
-            logger.info(f"Added email {email} to whitelist (admin: {is_admin})")
+            logger.info("Added email %s to whitelist (admin: %s)", email, is_admin)
             return True
 
         except Exception as e:
-            logger.error(f"Failed to add email {email} to whitelist: {e}")
+            logger.error("Failed to add email %s to whitelist: %s", email, e)
             return False
 
     def remove_email(self, email: str) -> bool:
@@ -257,14 +259,14 @@ class WhitelistManager:
                 self.validator.admin_emails.remove(normalized_email)
 
             if removed:
-                logger.info(f"Removed email {email} from whitelist")
+                logger.info("Removed email %s from whitelist", email)
             else:
-                logger.warning(f"Email {email} not found in whitelist")
+                logger.warning("Email %s not found in whitelist", email)
 
             return removed
 
         except Exception as e:
-            logger.error(f"Failed to remove email {email} from whitelist: {e}")
+            logger.error("Failed to remove email %s from whitelist: %s", email, e)
             return False
 
     def check_email(self, email: str) -> dict:

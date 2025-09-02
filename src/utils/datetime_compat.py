@@ -23,8 +23,8 @@ if PY_311_PLUS:
     try:
         from datetime import UTC
     except ImportError:
-        # Python < 3.11 compatibility
-        UTC = UTC
+        # Python < 3.11 compatibility - fallback to timezone.utc
+        UTC = timezone.utc
 else:
     UTC = timezone.utc  # noqa: UP017  # Python 3.10 compatibility - datetime.UTC not available
 
