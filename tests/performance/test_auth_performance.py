@@ -13,6 +13,56 @@ Tests verify:
 
 # ruff: noqa: S105
 
+# CRITICAL: Apply database mocking BEFORE any other imports to prevent CI timing issues
+import os
+import time
+
+if os.getenv("CI_ENVIRONMENT", "false").lower() == "true":
+    print(f"[EARLY_PATCH] Applying database patches at {time.time():.6f}")
+    from unittest.mock import AsyncMock, patch
+
+    # Mock database session context manager
+    async def mock_get_db():
+        mock_session = AsyncMock()
+        mock_result = AsyncMock()
+        mock_result.fetchone.return_value = None
+        mock_session.execute.return_value = mock_result
+        mock_session.commit.return_value = None
+        mock_session.close.return_value = None
+        mock_session.rollback.return_value = None
+        yield mock_session
+
+    # Mock database manager
+    mock_db_manager = AsyncMock()
+    mock_db_manager.initialize.return_value = None
+    mock_db_manager.get_session = AsyncMock()
+    mock_db_manager.get_session.return_value.__aenter__ = AsyncMock(return_value=AsyncMock())
+    mock_db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    async def mock_get_database_manager_async():
+        return mock_db_manager
+
+    # Apply all patches immediately to prevent database initialization
+    _global_patches = []
+    for target in [
+        "src.auth.middleware.get_db",
+        "src.auth.middleware.get_database_manager_async",
+        "src.database.connection.get_database_manager_async",
+        "src.database.connection.get_db",
+        "src.database.connection.get_db_session",
+        "src.database.connection.initialize_database",
+        "src.database.get_database_manager_async",
+        "src.database.get_db",
+        "src.database.get_db_session",
+    ]:
+        if target.endswith("get_database_manager_async"):
+            patch_obj = patch(target, side_effect=mock_get_database_manager_async)
+        else:
+            patch_obj = patch(target, side_effect=mock_get_db)
+        patch_obj.start()
+        _global_patches.append(patch_obj)
+    print(f"[EARLY_PATCH] Applied {len(_global_patches)} patches successfully")
+
 import asyncio
 import gc
 import statistics
@@ -300,13 +350,7 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Apply comprehensive database mocking to prevent ANY database connections
-        db_patches = setup_comprehensive_database_mocks()
-
-        # Start all patches
-        for db_patch in db_patches:
-            db_patch.start()
-
+        # Database mocking applied at import time for CI environment
         try:
             # Initialize performance instrumentation
             instrumenter = PerformanceInstrumenter()
@@ -377,9 +421,8 @@ class TestAuthenticationPerformance:
                 # This is acceptable for performance testing focused on response times
 
         finally:
-            # Stop all database patches
-            for db_patch in db_patches:
-                db_patch.stop()
+            # Database patches are applied globally at import time for CI environment
+            pass
 
     @pytest.mark.asyncio
     async def test_concurrent_requests_performance(
@@ -395,13 +438,7 @@ class TestAuthenticationPerformance:
         # Log environment information for debugging
         PerformanceInstrumenter.log_environment_info()
 
-        # Apply comprehensive database mocking to prevent ANY database connections
-        db_patches = setup_comprehensive_database_mocks()
-
-        # Start all patches
-        for db_patch in db_patches:
-            db_patch.start()
-
+        # Database mocking applied at import time for CI environment
         try:
             # Initialize performance instrumentation
             instrumenter = PerformanceInstrumenter()
@@ -531,9 +568,8 @@ class TestAuthenticationPerformance:
             # This is acceptable for performance testing focused on throughput
 
         finally:
-            # Stop all database patches
-            for db_patch in db_patches:
-                db_patch.stop()
+            # Database patches are applied globally at import time for CI environment
+            pass
 
     @pytest.mark.asyncio
     async def test_database_performance_impact(
