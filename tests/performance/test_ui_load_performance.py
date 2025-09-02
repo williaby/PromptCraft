@@ -40,7 +40,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Performance test constants - adjusted for CI environments
-IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+IS_CI = (
+    os.getenv("CI", "").lower() in ("true", "1", "yes")
+    or os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+    or os.getenv("CI_ENVIRONMENT", "").lower() == "true"
+)
 
 # Load test parameters
 MIN_CONCURRENT_USERS = 3 if IS_CI else 5

@@ -21,14 +21,19 @@ from src.utils.datetime_compat import UTC, timedelta
 @pytest_asyncio.fixture
 async def real_service_token_manager(test_db_with_override):
     """Provide real ServiceTokenManager with test database connection."""
-    manager = ServiceTokenManager()
+    from unittest.mock import AsyncMock, MagicMock, patch
 
-    # Override the _get_session method to use test database
-    async def mock_get_session():
-        return test_db_with_override
+    # Create mock database manager that returns test database session
+    mock_db_manager = MagicMock()
+    mock_context_manager = AsyncMock()
+    mock_context_manager.__aenter__ = AsyncMock(return_value=test_db_with_override)
+    mock_context_manager.__aexit__ = AsyncMock(return_value=None)
+    mock_db_manager.get_session.return_value = mock_context_manager
 
-    manager._get_session = mock_get_session
-    return manager
+    # Patch get_database_manager to return our mock
+    with patch("src.auth.service_token_manager.get_database_manager", return_value=mock_db_manager):
+        manager = ServiceTokenManager()
+        yield manager
 
 
 @pytest_asyncio.fixture
@@ -39,9 +44,10 @@ async def test_service_token(test_db_with_override):
     token_value = f"sk_{secrets.token_urlsafe(32)}"
     token_hash = ServiceTokenManager().hash_token(token_value)
 
+    # nosec: B106 - test token name is not a password
     service_token = ServiceToken(
         id=token_id,
-        token_name="test_service_token",
+        token_name="test_service_token",  # noqa: S106
         token_hash=token_hash,
         is_active=True,
         usage_count=0,
