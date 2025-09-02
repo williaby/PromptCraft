@@ -92,6 +92,7 @@ class AuthConfig(BaseModel):
     dev_mode: bool = False
     mock_cf_headers: dict[str, str] = Field(default_factory=dict)
 
+    @classmethod
     @validator("email_whitelist", pre=True)
     def parse_email_whitelist(cls, v: Any) -> list[str]:
         """Parse email whitelist from string or list."""
@@ -99,6 +100,7 @@ class AuthConfig(BaseModel):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
+    @classmethod
     @validator("admin_emails", pre=True)
     def parse_admin_emails(cls, v: Any) -> list[str]:
         """Parse admin emails from string or list."""
@@ -106,6 +108,7 @@ class AuthConfig(BaseModel):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
+    @classmethod
     @validator("public_paths", pre=True)
     def parse_public_paths(cls, v: Any) -> set[str]:
         """Parse public paths from string, list, or set."""
@@ -115,6 +118,7 @@ class AuthConfig(BaseModel):
             return set(v)
         return v or set()
 
+    @classmethod
     @validator("session_timeout")
     def validate_session_timeout(cls, v: int) -> int:
         """Ensure session timeout is reasonable."""
@@ -205,7 +209,7 @@ class ConfigLoader:
         # Cloudflare settings
         cf_required_headers_str = os.getenv(f"{prefix}CF_REQUIRED_HEADERS", "cf-ray")
         cf_required_headers = [h.strip() for h in cf_required_headers_str.split(",") if h.strip()]
-        
+
         config_data["cloudflare"] = CloudflareConfig(
             validate_headers=cls._get_bool_env(f"{prefix}CF_VALIDATE_HEADERS", True),
             required_headers=cf_required_headers,
@@ -251,7 +255,7 @@ class ConfigLoader:
 class ConfigManager:
     """Manages authentication configuration and provides utilities."""
 
-    def __init__(self, config: AuthConfig | None = None):
+    def __init__(self, config: AuthConfig | None = None) -> None:
         """Initialize configuration manager.
 
         Args:

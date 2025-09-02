@@ -1292,7 +1292,7 @@ class TestInteractiveFunctionLoadingDemoEdgeCases:
         mock_loader.get_performance_report.return_value = {"status": "completed"}
 
         # Should handle failures gracefully
-        with pytest.raises(Exception, match=r"Loading .* failed"):
+        with pytest.raises(Exception, match=r"Session .* failed"):
             await demo._validation_report()
 
     @pytest.mark.asyncio

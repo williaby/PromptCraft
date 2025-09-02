@@ -161,7 +161,7 @@ async def auth_health_check(
     )
 
 
-@auth_router.post("/tokens", response_model=TokenCreationResponse)
+@auth_router.post("/tokens", response_model=TokenCreationResponse, status_code=201)
 async def create_service_token(
     request: Request,  # noqa: ARG001
     token_request: TokenCreationRequest,

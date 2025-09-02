@@ -99,7 +99,11 @@ def admin_user() -> AuthenticatedUser:
     return AuthenticatedUser(
         email="admin@example.com",
         role=UserRole.ADMIN,
-        user_id="admin_user_456",
+        jwt_claims={
+            "sub": "admin_user_456",
+            "email": "admin@example.com", 
+            "role": "admin"
+        },
     )
 
 
@@ -109,7 +113,11 @@ def regular_user() -> AuthenticatedUser:
     return AuthenticatedUser(
         email="user@example.com",
         role=UserRole.USER,
-        user_id="regular_user_789",
+        jwt_claims={
+            "sub": "regular_user_789",
+            "email": "user@example.com", 
+            "role": "user"
+        },
     )
 
 
@@ -159,7 +167,11 @@ class TestAuthMiddleware:
         return AuthenticatedUser(
             email="default@example.com",
             role=UserRole.ADMIN,
-            user_id="default_user",
+            jwt_claims={
+                "sub": "default_user",
+                "email": "default@example.com", 
+                "role": "admin"
+            },
         )
 
 
@@ -187,13 +199,13 @@ async def multiple_service_tokens(test_db_with_override):
 
         service_token = ServiceToken(
             id=token_id,
-            name=f"test_token_{i+1}",
+            token_name=f"test_token_{i+1}",
             token_hash=token_hash,
             is_active=True,
             usage_count=i * 10,
             metadata={"permissions": ["read"], "test": True},
             created_at=datetime.now(UTC) - timedelta(days=i),
-            last_used_at=datetime.now(UTC) - timedelta(hours=i),
+            last_used=datetime.now(UTC) - timedelta(hours=i),
         )
 
         test_db_with_override.add(service_token)

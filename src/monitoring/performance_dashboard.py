@@ -38,7 +38,7 @@ class MetricsExporter:
 
     def _get_health_value(self, health_report: Any, key: str, default: Any = 0) -> Any:
         """Get value from health report, handling both dict and object types."""
-        if hasattr(health_report, 'get'):
+        if hasattr(health_report, "get"):
             return health_report.get(key, default)
         return getattr(health_report, key, default)
 
@@ -248,26 +248,36 @@ class RealTimeDashboard:
             "overall_validated": self.monitor.optimization_validated,
             "confidence_percentage": round(self.monitor.validation_confidence * 100, 1),
             "target_reduction_percentage": self.monitor.token_reduction_target * 100,
-            "current_average_reduction": round(self._get_health_value(health_report, 'average_token_reduction_percentage'), 1),
+            "current_average_reduction": round(
+                self._get_health_value(health_report, "average_token_reduction_percentage"), 1
+            ),
             "criteria_status": {
-                "token_reduction_target": self._get_health_value(health_report, 'average_token_reduction_percentage') >= 70.0,
-                "sample_size_adequate": self._get_health_value(health_report, 'total_sessions') >= 10,
-                "task_accuracy_acceptable": self._get_health_value(health_report, 'task_detection_accuracy_rate') >= 0.80,
-                "success_rate_acceptable": self._get_health_value(health_report, 'overall_success_rate') >= 0.95,
-                "latency_acceptable": self._get_health_value(health_report, 'p95_loading_latency_ms') <= 200.0,
+                "token_reduction_target": self._get_health_value(health_report, "average_token_reduction_percentage")
+                >= 70.0,
+                "sample_size_adequate": self._get_health_value(health_report, "total_sessions") >= 10,
+                "task_accuracy_acceptable": self._get_health_value(health_report, "task_detection_accuracy_rate")
+                >= 0.80,
+                "success_rate_acceptable": self._get_health_value(health_report, "overall_success_rate") >= 0.95,
+                "latency_acceptable": self._get_health_value(health_report, "p95_loading_latency_ms") <= 200.0,
             },
         }
 
         return {
             "timestamp": datetime.now(UTC).isoformat(),
             "system_health": {
-                "total_sessions": self._get_health_value(health_report, 'total_sessions'),
-                "concurrent_sessions": self._get_health_value(health_report, 'concurrent_sessions_handled'),
-                "average_token_reduction": round(self._get_health_value(health_report, 'average_token_reduction_percentage'), 1),
-                "overall_success_rate": round(self._get_health_value(health_report, 'overall_success_rate') * 100, 1),
-                "task_detection_accuracy": round(self._get_health_value(health_report, 'task_detection_accuracy_rate') * 100, 1),
-                "average_loading_latency": round(self._get_health_value(health_report, 'average_loading_latency_ms'), 1),
-                "p95_loading_latency": round(self._get_health_value(health_report, 'p95_loading_latency_ms'), 1),
+                "total_sessions": self._get_health_value(health_report, "total_sessions"),
+                "concurrent_sessions": self._get_health_value(health_report, "concurrent_sessions_handled"),
+                "average_token_reduction": round(
+                    self._get_health_value(health_report, "average_token_reduction_percentage"), 1
+                ),
+                "overall_success_rate": round(self._get_health_value(health_report, "overall_success_rate") * 100, 1),
+                "task_detection_accuracy": round(
+                    self._get_health_value(health_report, "task_detection_accuracy_rate") * 100, 1
+                ),
+                "average_loading_latency": round(
+                    self._get_health_value(health_report, "average_loading_latency_ms"), 1
+                ),
+                "p95_loading_latency": round(self._get_health_value(health_report, "p95_loading_latency_ms"), 1),
             },
             "token_reduction_history": token_reduction_history,
             "loading_latency_history": loading_latency_history,
@@ -279,7 +289,7 @@ class RealTimeDashboard:
 
     def _get_health_value(self, health_report: Any, key: str, default: Any = 0) -> Any:
         """Get value from health report, handling both dict and object types."""
-        if hasattr(health_report, 'get'):
+        if hasattr(health_report, "get"):
             return health_report.get(key, default)
         return getattr(health_report, key, default)
 
@@ -289,7 +299,10 @@ class RealTimeDashboard:
         alerts = []
 
         # Token reduction alerts
-        if self._get_health_value(health_report, 'average_token_reduction_percentage') < self.monitor.min_acceptable_reduction * 100:
+        if (
+            self._get_health_value(health_report, "average_token_reduction_percentage")
+            < self.monitor.min_acceptable_reduction * 100
+        ):
             alerts.append(
                 {
                     "level": "warning",
@@ -300,7 +313,7 @@ class RealTimeDashboard:
             )
 
         # Performance alerts
-        if self._get_health_value(health_report, 'p95_loading_latency_ms') > self.monitor.max_acceptable_latency_ms:
+        if self._get_health_value(health_report, "p95_loading_latency_ms") > self.monitor.max_acceptable_latency_ms:
             alerts.append(
                 {
                     "level": "error",
@@ -311,7 +324,7 @@ class RealTimeDashboard:
             )
 
         # Success rate alerts
-        if self._get_health_value(health_report, 'overall_success_rate') < 0.95:
+        if self._get_health_value(health_report, "overall_success_rate") < 0.95:
             alerts.append(
                 {
                     "level": "warning",
@@ -322,7 +335,7 @@ class RealTimeDashboard:
             )
 
         # Task detection alerts
-        if self._get_health_value(health_report, 'task_detection_accuracy_rate') < 0.80:
+        if self._get_health_value(health_report, "task_detection_accuracy_rate") < 0.80:
             alerts.append(
                 {
                     "level": "warning",
@@ -333,7 +346,7 @@ class RealTimeDashboard:
             )
 
         # Fallback activation alerts
-        if self._get_health_value(health_report, 'fallback_activation_rate') > 0.10:  # More than 10% fallback rate
+        if self._get_health_value(health_report, "fallback_activation_rate") > 0.10:  # More than 10% fallback rate
             alerts.append(
                 {
                     "level": "warning",
@@ -805,7 +818,7 @@ class AlertManager:
 
     def _get_health_value(self, health_report: Any, key: str, default: Any = 0) -> Any:
         """Get value from health report, handling both dict and object types."""
-        if hasattr(health_report, 'get'):
+        if hasattr(health_report, "get"):
             return health_report.get(key, default)
         return getattr(health_report, key, default)
 
@@ -816,77 +829,83 @@ class AlertManager:
         current_alerts = []
 
         # Token reduction alerts
-        if self._get_health_value(health_report, 'average_token_reduction_percentage') < self.thresholds["token_reduction_min"]:
+        if (
+            self._get_health_value(health_report, "average_token_reduction_percentage")
+            < self.thresholds["token_reduction_min"]
+        ):
             alert = {
                 "id": "low_token_reduction",
                 "level": "critical",
                 "title": "Token Reduction Below Minimum Threshold",
                 "message": f"Average token reduction ({self._get_health_value(health_report, 'average_token_reduction_percentage'):.1f}%) is below minimum threshold ({self.thresholds['token_reduction_min']}%)",
-                "metric_value": self._get_health_value(health_report, 'average_token_reduction_percentage'),
+                "metric_value": self._get_health_value(health_report, "average_token_reduction_percentage"),
                 "threshold_value": self.thresholds["token_reduction_min"],
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
-        elif self._get_health_value(health_report, 'average_token_reduction_percentage') < self.thresholds["token_reduction_target"]:
+        elif (
+            self._get_health_value(health_report, "average_token_reduction_percentage")
+            < self.thresholds["token_reduction_target"]
+        ):
             alert = {
                 "id": "token_reduction_below_target",
                 "level": "warning",
                 "title": "Token Reduction Below Target",
                 "message": f"Average token reduction ({self._get_health_value(health_report, 'average_token_reduction_percentage'):.1f}%) is below target ({self.thresholds['token_reduction_target']}%)",
-                "metric_value": self._get_health_value(health_report, 'average_token_reduction_percentage'),
+                "metric_value": self._get_health_value(health_report, "average_token_reduction_percentage"),
                 "threshold_value": self.thresholds["token_reduction_target"],
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
         # Latency alerts
-        if self._get_health_value(health_report, 'p95_loading_latency_ms') > self.thresholds["latency_max_ms"]:
+        if self._get_health_value(health_report, "p95_loading_latency_ms") > self.thresholds["latency_max_ms"]:
             alert = {
                 "id": "high_loading_latency",
                 "level": "error",
                 "title": "High Function Loading Latency",
                 "message": f"P95 loading latency ({self._get_health_value(health_report, 'p95_loading_latency_ms'):.1f}ms) exceeds threshold ({self.thresholds['latency_max_ms']}ms)",
-                "metric_value": self._get_health_value(health_report, 'p95_loading_latency_ms'),
+                "metric_value": self._get_health_value(health_report, "p95_loading_latency_ms"),
                 "threshold_value": self.thresholds["latency_max_ms"],
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
         # Success rate alerts
-        if self._get_health_value(health_report, 'overall_success_rate') < self.thresholds["success_rate_min"]:
+        if self._get_health_value(health_report, "overall_success_rate") < self.thresholds["success_rate_min"]:
             alert = {
                 "id": "low_success_rate",
                 "level": "warning",
                 "title": "Low Overall Success Rate",
                 "message": f"Overall success rate ({self._get_health_value(health_report, 'overall_success_rate') * 100:.1f}%) is below threshold ({self.thresholds['success_rate_min'] * 100}%)",
-                "metric_value": self._get_health_value(health_report, 'overall_success_rate') * 100,
+                "metric_value": self._get_health_value(health_report, "overall_success_rate") * 100,
                 "threshold_value": self.thresholds["success_rate_min"] * 100,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
         # Task detection accuracy alerts
-        if self._get_health_value(health_report, 'task_detection_accuracy_rate') < self.thresholds["task_accuracy_min"]:
+        if self._get_health_value(health_report, "task_detection_accuracy_rate") < self.thresholds["task_accuracy_min"]:
             alert = {
                 "id": "low_task_accuracy",
                 "level": "warning",
                 "title": "Low Task Detection Accuracy",
                 "message": f"Task detection accuracy ({self._get_health_value(health_report, 'task_detection_accuracy_rate') * 100:.1f}%) is below threshold ({self.thresholds['task_accuracy_min'] * 100}%)",
-                "metric_value": self._get_health_value(health_report, 'task_detection_accuracy_rate') * 100,
+                "metric_value": self._get_health_value(health_report, "task_detection_accuracy_rate") * 100,
                 "threshold_value": self.thresholds["task_accuracy_min"] * 100,
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             current_alerts.append(alert)
 
         # Fallback rate alerts
-        if self._get_health_value(health_report, 'fallback_activation_rate') > self.thresholds["fallback_rate_max"]:
+        if self._get_health_value(health_report, "fallback_activation_rate") > self.thresholds["fallback_rate_max"]:
             alert = {
                 "id": "high_fallback_rate",
                 "level": "warning",
                 "title": "High Fallback Activation Rate",
                 "message": f"Fallback activation rate ({self._get_health_value(health_report, 'fallback_activation_rate') * 100:.1f}%) exceeds threshold ({self.thresholds['fallback_rate_max'] * 100}%)",
-                "metric_value": self._get_health_value(health_report, 'fallback_activation_rate') * 100,
+                "metric_value": self._get_health_value(health_report, "fallback_activation_rate") * 100,
                 "threshold_value": self.thresholds["fallback_rate_max"] * 100,
                 "timestamp": datetime.now(UTC).isoformat(),
             }

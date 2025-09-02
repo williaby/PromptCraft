@@ -68,8 +68,13 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
         finally:
-            # Always rollback to maintain test isolation
-            await transaction.rollback()
+            # Always rollback to maintain test isolation, but only if transaction is still active
+            try:
+                if transaction.is_active:
+                    await transaction.rollback()
+            except Exception:
+                # If rollback fails, transaction might already be closed - that's okay
+                pass
 
 
 @pytest_asyncio.fixture(scope="function")

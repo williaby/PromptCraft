@@ -224,8 +224,8 @@ async def optimize_query(
                 "target_achieved": result.target_achieved,
                 "detection_result": {
                     "categories": result.detection_result.categories,
-                    "confidence_scores": result.detection_result.confidence_scores,
-                    "fallback_applied": result.detection_result.fallback_applied,
+                    "confidence_scores": getattr(result.detection_result, 'confidence_scores', {}),
+                    "fallback_applied": getattr(result.detection_result, 'fallback_applied', None),
                 },
                 "performance_metrics": {
                     "detection_time_ms": result.detection_time_ms,
