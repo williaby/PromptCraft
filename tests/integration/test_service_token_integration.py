@@ -455,7 +455,7 @@ class TestServiceTokenIntegration:
 
             # Verify all tokens are now inactive
             analytics_after = await token_manager.get_token_usage_analytics()
-            # Handle case where analytics returns None due to mock issues  
+            # Handle case where analytics returns None due to mock issues
             if analytics_after is not None:
                 active_after = analytics_after["summary"]["active_tokens"]
                 assert active_after == 0

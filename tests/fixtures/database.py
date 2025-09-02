@@ -13,7 +13,6 @@ from sqlalchemy import JSON, String, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.database.connection import get_db
 from src.database.models import Base
 
 
@@ -80,7 +79,6 @@ async def test_db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture(scope="function")
 async def test_db_with_override(test_db_session):
     """Database session that overrides the global get_db dependency."""
-    original_get_db = get_db
 
     async def mock_get_db():
         yield test_db_session

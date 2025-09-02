@@ -249,7 +249,7 @@ class RealTimeDashboard:
             "confidence_percentage": round(self.monitor.validation_confidence * 100, 1),
             "target_reduction_percentage": self.monitor.token_reduction_target * 100,
             "current_average_reduction": round(
-                self._get_health_value(health_report, "average_token_reduction_percentage"), 1
+                self._get_health_value(health_report, "average_token_reduction_percentage"), 1,
             ),
             "criteria_status": {
                 "token_reduction_target": self._get_health_value(health_report, "average_token_reduction_percentage")
@@ -268,14 +268,14 @@ class RealTimeDashboard:
                 "total_sessions": self._get_health_value(health_report, "total_sessions"),
                 "concurrent_sessions": self._get_health_value(health_report, "concurrent_sessions_handled"),
                 "average_token_reduction": round(
-                    self._get_health_value(health_report, "average_token_reduction_percentage"), 1
+                    self._get_health_value(health_report, "average_token_reduction_percentage"), 1,
                 ),
                 "overall_success_rate": round(self._get_health_value(health_report, "overall_success_rate") * 100, 1),
                 "task_detection_accuracy": round(
-                    self._get_health_value(health_report, "task_detection_accuracy_rate") * 100, 1
+                    self._get_health_value(health_report, "task_detection_accuracy_rate") * 100, 1,
                 ),
                 "average_loading_latency": round(
-                    self._get_health_value(health_report, "average_loading_latency_ms"), 1
+                    self._get_health_value(health_report, "average_loading_latency_ms"), 1,
                 ),
                 "p95_loading_latency": round(self._get_health_value(health_report, "p95_loading_latency_ms"), 1),
             },

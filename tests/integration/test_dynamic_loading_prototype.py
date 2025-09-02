@@ -35,7 +35,6 @@ from src.core.comprehensive_prototype_demo import (
 )
 from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import IntegrationMode, dynamic_loading_context
-from src.main import create_app
 
 
 class TestDynamicLoadingIntegration:
@@ -429,15 +428,16 @@ class TestAPIEndpoints:
     def app(self):
         """Create test FastAPI app with disabled authentication for testing."""
         from fastapi import FastAPI
+
         from src.auth_simple import setup_auth_middleware
         from src.auth_simple.config import AuthConfig, AuthMode, ConfigManager
-        
+
         # Create a test app with disabled authentication
         app = FastAPI(
             title="Test Dynamic Loading API",
             version="0.1.0-test",
         )
-        
+
         # Setup authentication middleware with DISABLED mode for testing
         test_config = AuthConfig(
             auth_mode=AuthMode.DISABLED,
@@ -448,7 +448,7 @@ class TestAPIEndpoints:
         )
         config_manager = ConfigManager(test_config)
         setup_auth_middleware(app, config_manager)
-        
+
         # Add the dynamic loading router for testing
         app.include_router(router)
         return app

@@ -73,24 +73,22 @@ def test_authenticated_user() -> AuthenticatedUser:
         "iss": "test-issuer",
         "aud": "promptcraft",
     }
-    user = AuthenticatedUser(
+    return AuthenticatedUser(
         email="test@example.com",
         role=UserRole.ADMIN,
         jwt_claims=jwt_claims,
     )
-    return user
 
 
 @pytest_asyncio.fixture
 async def test_service_user(test_service_token) -> ServiceTokenUser:
     """Create a test service token user."""
-    user = ServiceTokenUser(
+    return ServiceTokenUser(
         token_name=test_service_token["token_name"],
         token_id=test_service_token["token_id"],
         usage_count=0,
         metadata=test_service_token["metadata"],
     )
-    return user
 
 
 @pytest.fixture
@@ -99,11 +97,7 @@ def admin_user() -> AuthenticatedUser:
     return AuthenticatedUser(
         email="admin@example.com",
         role=UserRole.ADMIN,
-        jwt_claims={
-            "sub": "admin_user_456",
-            "email": "admin@example.com", 
-            "role": "admin"
-        },
+        jwt_claims={"sub": "admin_user_456", "email": "admin@example.com", "role": "admin"},
     )
 
 
@@ -113,11 +107,7 @@ def regular_user() -> AuthenticatedUser:
     return AuthenticatedUser(
         email="user@example.com",
         role=UserRole.USER,
-        jwt_claims={
-            "sub": "regular_user_789",
-            "email": "user@example.com", 
-            "role": "user"
-        },
+        jwt_claims={"sub": "regular_user_789", "email": "user@example.com", "role": "user"},
     )
 
 
@@ -167,11 +157,7 @@ class TestAuthMiddleware:
         return AuthenticatedUser(
             email="default@example.com",
             role=UserRole.ADMIN,
-            jwt_claims={
-                "sub": "default_user",
-                "email": "default@example.com", 
-                "role": "admin"
-            },
+            jwt_claims={"sub": "default_user", "email": "default@example.com", "role": "admin"},
         )
 
 

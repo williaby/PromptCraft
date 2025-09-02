@@ -1302,7 +1302,14 @@ class TestABTestingDashboard:
         assert isinstance(result, str)
         assert "Test Experiment" in result
         # Check that the dashboard contains basic elements - charts may not all be present
-        dashboard_elements = ["Performance Chart", "Variant Chart", "Conversion Funnel", "Significance Gauge", "Dashboard", "A/B Testing"]
+        dashboard_elements = [
+            "Performance Chart",
+            "Variant Chart",
+            "Conversion Funnel",
+            "Significance Gauge",
+            "Dashboard",
+            "A/B Testing",
+        ]
         found_elements = sum(1 for element in dashboard_elements if element in result)
         assert found_elements >= 2, f"Dashboard should contain at least 2 expected elements, found {found_elements}"
 
@@ -2502,9 +2509,18 @@ class TestABTestingDashboardAdvanced:
         assert "medium" in result  # Risk level
         assert len([line for line in result.split("\n") if "alert" in line.lower()]) > 0  # Contains alerts
         # Check for chart elements - may not all be present in the HTML output
-        chart_elements = ["Performance Chart HTML", "Variant Comparison HTML", "Conversion Funnel HTML", "Significance Gauge HTML", "chart", "dashboard"]
+        chart_elements = [
+            "Performance Chart HTML",
+            "Variant Comparison HTML",
+            "Conversion Funnel HTML",
+            "Significance Gauge HTML",
+            "chart",
+            "dashboard",
+        ]
         found_chart_elements = sum(1 for element in chart_elements if element in result)
-        assert found_chart_elements >= 2, f"Dashboard should contain at least 2 chart-related elements, found {found_chart_elements}"
+        assert (
+            found_chart_elements >= 2
+        ), f"Dashboard should contain at least 2 chart-related elements, found {found_chart_elements}"
 
     async def test_dashboard_error_scenarios_comprehensive(self, dashboard):
         """Test comprehensive error scenarios in dashboard operations."""
