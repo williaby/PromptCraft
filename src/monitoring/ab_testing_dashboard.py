@@ -263,7 +263,7 @@ class MetricsCollector(ObservabilityMixin):
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
                     timeline[hour_key] = {
-                        "timestamp": hour_key.isoformat(),
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
                         "response_times": [],
                         "token_reductions": [],
                         "success_count": 0,
@@ -336,7 +336,11 @@ class MetricsCollector(ObservabilityMixin):
             for event in events:
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
-                    timeline[hour_key] = {"timestamp": hour_key.isoformat(), "conversions": 0, "total_attempts": 0}
+                    timeline[hour_key] = {
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "conversions": 0,
+                        "total_attempts": 0,
+                    }
 
                 timeline[hour_key]["total_attempts"] += 1
 
@@ -384,7 +388,11 @@ class MetricsCollector(ObservabilityMixin):
             for event in events:
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
-                    timeline[hour_key] = {"timestamp": hour_key.isoformat(), "errors": 0, "total_events": 0}
+                    timeline[hour_key] = {
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "errors": 0,
+                        "total_events": 0,
+                    }
 
                 timeline[hour_key]["total_events"] += 1
 

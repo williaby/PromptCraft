@@ -19,13 +19,7 @@ NOTE: These tests are currently skipped due to incomplete database model setup
 and missing Base import. See https://github.com/your-repo/issues/XXX for tracking.
 """
 
-import pytest
-
-# Skip all tests in this module due to incomplete database setup
-pytestmark = pytest.mark.skip(
-    reason="A/B testing integration tests disabled due to incomplete database model setup and missing Base import. The A/B testing framework exists but integration tests need database fixtures to be completed.",
-)
-
+# Database setup is now complete with Base import added
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -48,6 +42,7 @@ from src.core.ab_testing_framework import (
     create_dynamic_loading_experiment,
 )
 from src.core.dynamic_loading_integration import OptimizationReport, ProcessingResult
+from src.database import Base
 from src.monitoring.ab_testing_dashboard import ABTestingDashboard
 from src.utils.datetime_compat import utc_now
 
@@ -55,8 +50,11 @@ from src.utils.datetime_compat import utc_now
 @pytest.fixture
 def test_db_engine():
     """Create test database engine."""
+    from src.core.ab_testing_framework import BaseModel as ABBaseModel
+
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
+    ABBaseModel.metadata.create_all(engine)  # Create A/B testing tables
     return engine
 
 

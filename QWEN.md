@@ -94,7 +94,7 @@ The project follows a Python-based architecture with a modular structure:
 * `make test`: Run full pytest with coverage (HTML in `htmlcov/`).
 * `make test-fast`: Quick unit/auth subset for local loops.
 * `make lint` / `make format`: Check/auto-fix with Black, Ruff; run mypy, markdownlint, yamllint.
-* `make dev`: Start Dockerized dev stack (FastAPI, Gradio, MCP, Qdrant). 
+* `make dev`: Start Dockerized dev stack (FastAPI, Gradio, MCP, Qdrant).
 * Run API locally: `poetry run uvicorn src.main:app --reload`.
 
 ### Nox Test Sessions

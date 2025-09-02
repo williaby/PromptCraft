@@ -10,11 +10,47 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, func
+from sqlalchemy import JSON, TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, TypeDecorator, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from src.utils.datetime_compat import UTC
+
+
+class UniversalJSON(TypeDecorator):
+    """Database-agnostic JSON type that uses JSONB for PostgreSQL and JSON for others."""
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        return dialect.type_descriptor(JSON())
+
+
+class UniversalUUID(TypeDecorator):
+    """Database-agnostic UUID type that uses UUID for PostgreSQL and String for others."""
+
+    impl = String
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(UUID(as_uuid=True))
+        return dialect.type_descriptor(String(36))
+
+
+class UniversalINET(TypeDecorator):
+    """Database-agnostic IP address type that uses INET for PostgreSQL and String for others."""
+
+    impl = String
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(INET())
+        return dialect.type_descriptor(String(45))  # Supports both IPv4 and IPv6
 
 
 class Base(DeclarativeBase):
@@ -26,15 +62,15 @@ class Base(DeclarativeBase):
 user_roles_table = Table(
     "user_roles",
     Base.metadata,
-    Column("user_id", UUID(as_uuid=True), ForeignKey("user_sessions.id"), primary_key=True),
-    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id"), primary_key=True),
+    Column("user_id", UniversalUUID, ForeignKey("user_sessions.id"), primary_key=True),
+    Column("role_id", UniversalUUID, ForeignKey("roles.id"), primary_key=True),
 )
 
 role_permissions_table = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id"), primary_key=True),
-    Column("permission_id", UUID(as_uuid=True), ForeignKey("permissions.id"), primary_key=True),
+    Column("role_id", UniversalUUID, ForeignKey("roles.id"), primary_key=True),
+    Column("permission_id", UniversalUUID, ForeignKey("permissions.id"), primary_key=True),
 )
 
 
@@ -45,7 +81,7 @@ class Role(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique role identifier",
@@ -67,7 +103,7 @@ class Role(Base):
 
     # Role hierarchy
     parent_role_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         ForeignKey("roles.id"),
         nullable=True,
         comment="Parent role ID for hierarchical inheritance",
@@ -129,7 +165,7 @@ class Permission(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique permission identifier",
@@ -197,7 +233,7 @@ class ServiceToken(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique service token identifier",
@@ -256,7 +292,7 @@ class ServiceToken(Base):
 
     # Metadata
     token_metadata: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Additional metadata about the token (permissions, environment, etc.)",
     )
@@ -296,7 +332,7 @@ class UserSession(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique session identifier",
@@ -342,14 +378,14 @@ class UserSession(Base):
 
     # User data
     preferences: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="User preferences and settings",
     )
 
     user_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional user metadata and context",
@@ -371,7 +407,7 @@ class AuthenticationEvent(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique event identifier",
@@ -394,7 +430,7 @@ class AuthenticationEvent(Base):
 
     # Request context
     ip_address: Mapped[str | None] = mapped_column(
-        INET,
+        UniversalINET,
         nullable=True,
         comment="Client IP address",
     )
@@ -423,13 +459,13 @@ class AuthenticationEvent(Base):
 
     # Event details
     error_details: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Error details for failed authentication attempts",
     )
 
     performance_metrics: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Performance metrics (timing, etc.) for the authentication",
     )
@@ -460,7 +496,7 @@ class SecurityEventLogger(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique security event identifier",
@@ -490,7 +526,7 @@ class SecurityEventLogger(Base):
     )
 
     ip_address: Mapped[str | None] = mapped_column(
-        INET,
+        UniversalINET,
         nullable=True,
         index=True,
         comment="IP address if applicable",
@@ -511,7 +547,7 @@ class SecurityEventLogger(Base):
 
     # Event details
     details: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional event details and metadata",
@@ -556,7 +592,7 @@ class SecurityEvent(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique security event identifier",
@@ -593,7 +629,7 @@ class SecurityEvent(Base):
     )
 
     ip_address: Mapped[str | None] = mapped_column(
-        INET,
+        UniversalINET,
         nullable=True,
         index=True,
         comment="IP address if applicable",
@@ -608,7 +644,7 @@ class SecurityEvent(Base):
 
     # Event details
     event_details: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional event details and metadata",
@@ -645,7 +681,7 @@ class BlockedEntity(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique blocked entity identifier",
@@ -752,7 +788,7 @@ class ThreatScore(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique threat score identifier",
@@ -799,7 +835,7 @@ class ThreatScore(Base):
 
     # Metadata
     score_details: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional score calculation details",
@@ -828,7 +864,7 @@ class MonitoringThreshold(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique threshold identifier",
@@ -857,7 +893,7 @@ class MonitoringThreshold(Base):
 
     # Metadata
     threshold_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional threshold metadata and configuration",

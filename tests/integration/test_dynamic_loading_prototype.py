@@ -22,13 +22,7 @@ and missing task detection config setup. The dynamic loading system exists but h
 initialization problems that need to be resolved.
 """
 
-import pytest
-
-# Skip all tests in this module due to configuration issues
-pytestmark = pytest.mark.skip(
-    reason="Dynamic loading integration tests disabled due to YAML configuration parsing errors and task detection config initialization failures. The dynamic loading system exists but needs configuration fixes.",
-)
-
+# Configuration issues resolved - tests now enabled
 import time
 
 import pytest

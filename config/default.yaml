@@ -70,11 +70,7 @@ learning:
   pattern_history_limit: 1000
   user_pattern_limit: 1000
   weight_adaptation_rate: 0.1
-mode:
-  __objclass__: !!python/name:hub.task_detection_config.DetectionMode ''
-  _name_: CONSERVATIVE
-  _sort_order_: 0
-  _value_: conservative
+mode: conservative
 performance:
   cache_size: 1000
   cache_ttl_hours: 1
@@ -101,18 +97,18 @@ thresholds:
   tier3_base_threshold: 0.55
 tier_definitions:
   tier1_categories:
-  - core
-  - git
+    - core
+    - git
   tier1_token_cost: 12300
   tier2_categories:
-  - analysis
-  - quality
-  - debug
-  - test
-  - security
+    - analysis
+    - quality
+    - debug
+    - test
+    - security
   tier2_token_cost: 19540
   tier3_categories:
-  - external
-  - infrastructure
+    - external
+    - infrastructure
   tier3_token_cost: 5800
 version: 1.0.0

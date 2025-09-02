@@ -334,6 +334,46 @@ init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
+[tool.coverage.run]
+source = ["src"]
+branch = true
+parallel = true
+context = "${COVERAGE_CONTEXT}"
+data_file = ".coverage"
+omit = [
+    "tests/*",
+    "scripts/*",
+    "*/migrations/*",
+    "*/vendor/*",
+    "*/__pycache__/*",
+    "*/node_modules/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = false
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra --strict-markers --strict-config --asyncio-mode=auto -m 'not slow' --tb=short"
@@ -382,40 +422,6 @@ markers = [
 # Note: Test execution profiles are implemented via Makefile and noxfile.py
 # See CLAUDE.md for available test commands and execution strategies
 
-[tool.coverage.run]
-source = ["src"]
-branch = true
-parallel = true
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "*/__init__.py",
-    "scripts/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug",
-    "if __name__ == .__main__.:",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if TYPE_CHECKING:",
-    "@abstractmethod",
-]
-precision = 2
-show_missing = true
-skip_covered = false
-# Coverage threshold: 80% for full test runs, but configurable via environment
-# Set COVERAGE_FAIL_UNDER=0 to disable threshold for focused testing
-fail_under = 80
-
-[tool.coverage.html]
-directory = "htmlcov"
-
-[tool.coverage.xml]
-output = "coverage.xml"
 
 [tool.bandit]
 targets = ["src"]

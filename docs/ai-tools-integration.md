@@ -207,7 +207,7 @@ Each tool is configured with PromptCraft-specific context:
 The validator returns specific exit codes:
 
 - `0`: All tools installed and configured
-- `1`: Some tools installed but not fully configured  
+- `1`: Some tools installed but not fully configured
 - `2`: No tools installed
 
 ## File Structure

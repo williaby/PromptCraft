@@ -15,9 +15,14 @@ from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
 
+# Import auth fixtures
+from tests.fixtures.auth_fixtures import *  # noqa: F403
+
 # Import database fixtures
+from tests.fixtures.database import *  # noqa: F403
 
 # Import security service mocks
+from tests.fixtures.security_service_mocks import *  # noqa: F403
 
 
 def pytest_runtest_setup(item):

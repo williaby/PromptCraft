@@ -10,9 +10,9 @@ import json
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from tests.base import FullIntegrationTestBase
 
 from src.api.dynamic_loading_endpoints import router as dynamic_loading_router
+from tests.base import FullIntegrationTestBase
 
 
 class TestDynamicLoadingEndpointsIntegration(FullIntegrationTestBase):
@@ -206,7 +206,7 @@ class TestDynamicLoadingEndpointsIntegration(FullIntegrationTestBase):
         """Test that rate limiting is applied to endpoints."""
         # Make multiple rapid requests to test rate limiting
         rapid_requests = []
-        for i in range(10):
+        for _i in range(10):
             response = client.get("/api/v1/dynamic-loading/health")
             rapid_requests.append(response.status_code)
 
@@ -254,14 +254,7 @@ class TestDynamicLoadingEndpointsIntegration(FullIntegrationTestBase):
         response = client.get("/api/v1/dynamic-loading/health")
 
         # Check for common security headers (if implemented)
-        security_headers = [
-            "x-content-type-options",
-            "x-frame-options",
-            "x-xss-protection",
-            "strict-transport-security",
-        ]
-
-        # Not all headers may be implemented, but response should be valid
+        # Note: Not all headers may be implemented, but response should be valid
         assert response.status_code in [200, 404, 500, 503]
 
     @pytest.mark.asyncio
@@ -317,10 +310,7 @@ class TestDynamicLoadingEndpointsIntegration(FullIntegrationTestBase):
         ]
 
         for endpoint, method in endpoints_and_methods:
-            if method == "GET":
-                response = client.get(endpoint)
-            else:
-                response = client.post(endpoint, json={})
+            response = client.get(endpoint) if method == "GET" else client.post(endpoint, json={})
 
             # Should return valid response with proper content type
             if response.status_code == 200:

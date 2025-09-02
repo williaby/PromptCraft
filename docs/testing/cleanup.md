@@ -31,7 +31,7 @@
 4. **Generate enhanced reports**: File/function/class views by test type
 
 ### Key Design Principles
-- ✅ **Single test execution**: Only VS Code "Run Tests with Coverage" 
+- ✅ **Single test execution**: Only VS Code "Run Tests with Coverage"
 - ✅ **Fast local development**: No performance penalties
 - ✅ **Path-based classification**: Determine test types from file paths
 - ✅ **Native VS Code integration**: Leverage existing infrastructure
@@ -48,16 +48,16 @@
 "python.testing.coverageArgs": [
     "--cov=src",
     "--cov-report=html",
-    "--cov-report=xml:coverage.xml", 
+    "--cov-report=xml:coverage.xml",
     "--junitxml=reports/junit.xml",
     "--cov-report=term"
 ]
 ```
 
 #### 2. Coverage.py Configuration (✅ Keep - Minor Alignment)
-**File**: `pyproject.toml` 
+**File**: `pyproject.toml`
 **Current Status**: ✅ Good foundation
-**Alignment Needed**: 
+**Alignment Needed**:
 - Remove `dynamic_context = "test_function"` (performance overhead)
 - Keep `branch = true` and `parallel = true`
 - Ensure output paths match VS Code
@@ -88,7 +88,7 @@ test_types = {
 
 #### Coverage Scripts (Delete 26 of 29)
 - `scripts/simplified_coverage_automation.py` ❌
-- `scripts/vscode_coverage_integration_v2.py` ❌  
+- `scripts/vscode_coverage_integration_v2.py` ❌
 - `scripts/coverage_file_watcher.py` ❌
 - `scripts/generate_test_coverage_fast.py` ❌
 - `scripts/auto_coverage_report.py` ❌

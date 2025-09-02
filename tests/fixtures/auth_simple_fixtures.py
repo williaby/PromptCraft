@@ -383,7 +383,7 @@ class AuthTestHelper:
     @staticmethod
     def override_auth_dependency(app, user_mock):
         """Override authentication dependency with a mock user."""
-        from src.auth import require_authentication
+        from src.auth.middleware import require_authentication
 
         app.dependency_overrides[require_authentication] = lambda: user_mock
         return app
@@ -406,7 +406,8 @@ class AuthTestHelper:
         """Create a properly structured mock authenticated user."""
         from unittest.mock import Mock
 
-        from src.auth.models import AuthenticatedUser, UserRole
+        from src.auth.middleware import AuthenticatedUser
+        from src.auth.models import UserRole
 
         user = Mock(spec=AuthenticatedUser)
         user.email = email
@@ -423,7 +424,7 @@ class AuthTestHelper:
         """Create a properly structured mock service token user."""
         from unittest.mock import Mock
 
-        from src.auth import ServiceTokenUser
+        from src.auth.middleware import ServiceTokenUser
 
         user = Mock(spec=ServiceTokenUser)
         user.token_name = token_name
