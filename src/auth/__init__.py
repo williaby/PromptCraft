@@ -9,7 +9,21 @@ It includes:
 - Secure caching of JWKS with TTL support
 """
 
+from typing import Any
+
 from .exceptions import AuthExceptionHandler
+from .models import (
+    AuthenticatedUser,
+    AuthenticationError,
+    JWKSError,
+    JWTValidationError,
+    SecurityEvent,
+    SecurityEventCreate,
+    SecurityEventResponse,
+    SecurityEventSeverity,
+    SecurityEventType,
+    UserRole,
+)
 from .service_token_manager import ServiceTokenManager  # Preserved component
 
 
@@ -49,21 +63,6 @@ class ServiceTokenUser:
         return perms if isinstance(perms, list) else []
 
 
-from typing import Any
-
-from .models import (
-    AuthenticatedUser,
-    AuthenticationError,
-    JWKSError,
-    JWTValidationError,
-    SecurityEvent,
-    SecurityEventCreate,
-    SecurityEventResponse,
-    SecurityEventSeverity,
-    SecurityEventType,
-    UserRole,
-)
-
 # Compatibility functions that redirect to auth_simple for simple auth scenarios
 # but preserve the complex auth functionality for API endpoints that need it
 
@@ -76,7 +75,6 @@ def require_authentication(request: Any = None) -> Any:
     """
     # For API endpoints that use service tokens, we keep the complex logic
     # For simple web auth, this would redirect to auth_simple
-    from .middleware import ServiceTokenUser
 
     # This is a simplified version - the actual middleware handles the complex logic
     if hasattr(request, "user"):

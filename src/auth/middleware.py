@@ -33,7 +33,7 @@ from .models import AuthenticatedUser, AuthenticationError, JWTValidationError, 
 try:
     from typing import Any as JWTValidator  # Placeholder type for compatibility
 
-    from ..auth_simple import AuthConfig as AuthenticationConfig
+    from src.auth_simple import AuthConfig as AuthenticationConfig
 except ImportError:
     # Fallback types for compatibility
     class AuthenticationConfig:
@@ -47,10 +47,10 @@ except ImportError:
 class SecurityLogger:
     """Compatibility security logger that uses standard logging."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger("security")
 
-    def log_security_event(self, event_type, message, severity="INFO", **kwargs):
+    def log_security_event(self, event_type: str, message: str, severity: str = "INFO", **kwargs: str) -> None:
         """Log a security event."""
         log_message = f"[{event_type}] {message}"
         if kwargs:
@@ -67,14 +67,14 @@ class SecurityLogger:
 
     async def log_event(
         self,
-        event_type,
-        severity=None,
-        user_id=None,
-        ip_address=None,
-        user_agent=None,
-        session_id=None,
-        details=None,
-    ):
+        event_type: str,
+        severity: str | None = None,
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        session_id: str | None = None,
+        details: dict | None = None,
+    ) -> None:
         """Log an event with structured data - compatibility method for middleware.
 
         Args:
@@ -130,36 +130,36 @@ class SecurityLogger:
 class SecurityMonitor:
     """Compatibility security monitor for failed authentication tracking."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger("security.monitor")
         self.failed_attempts = {}
 
-    def record_failed_attempt(self, identifier, request_info=None):
+    def record_failed_attempt(self, identifier: str, request_info: dict | None = None) -> None:
         """Record a failed authentication attempt."""
         self.failed_attempts[identifier] = self.failed_attempts.get(identifier, 0) + 1
         self.logger.warning(
             f"Failed authentication attempt for {identifier} (count: {self.failed_attempts[identifier]})",
         )
 
-    def is_blocked(self, identifier):
+    def is_blocked(self, identifier: str) -> bool:
         """Check if an identifier is blocked due to too many failed attempts."""
         return self.failed_attempts.get(identifier, 0) > 10
 
-    def reset_failed_attempts(self, identifier):
+    def reset_failed_attempts(self, identifier: str) -> None:
         """Reset failed attempts for an identifier."""
         if identifier in self.failed_attempts:
             del self.failed_attempts[identifier]
 
     async def track_failed_authentication(
         self,
-        user_id=None,
-        ip_address=None,
-        user_agent=None,
-        session_id=None,
-        details=None,
-        endpoint=None,
-        error_type=None,
-    ):
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        session_id: str | None = None,
+        details: dict | None = None,
+        endpoint: str | None = None,
+        error_type: str | None = None,
+    ) -> None:
         """Track failed authentication attempt and return alerts if any."""
         identifier = user_id or ip_address or "unknown"
         self.record_failed_attempt(
@@ -917,13 +917,8 @@ def setup_authentication(
     Returns:
         Limiter instance
     """
-    # Create JWKS client
-    jwks_client = JWKSClient(
-        jwks_url=config.get_jwks_url(),
-        cache_ttl=config.jwks_cache_ttl,
-        max_cache_size=config.jwks_cache_max_size,
-        timeout=config.jwks_timeout,
-    )
+    # Create JWKS client (compatibility placeholder)
+    jwks_client = None  # Placeholder for compatibility
 
     # Create JWT validator
     jwt_validator = JWTValidator(

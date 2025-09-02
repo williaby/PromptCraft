@@ -49,7 +49,7 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         data = response.json()
 
         assert data["user_type"] == "service_token"
-        assert data["token_name"] == "test_service_token"
+        assert data["token_name"] == "test_service_token"  # nosec
         assert data["token_id"] == test_service_token["token_id"]
         assert data["permissions"] == ["read", "write", "system_status", "audit_log"]
         assert data["usage_count"] == 0
@@ -108,6 +108,7 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
 
         client = TestClient(app)
         import uuid
+
         unique_name = f"integration_test_token_{uuid.uuid4().hex[:8]}"
         response = client.post(
             "/api/v1/auth/tokens",

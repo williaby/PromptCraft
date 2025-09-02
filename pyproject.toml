@@ -238,6 +238,7 @@ ignore = [
 "test_consensus_model_connectivity.py" = ["PLC0415", "T201"]  # Script allows local imports and print
 "tests/conftest.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "tests/unit/scripts/test_coverage_automation.py" = ["E402"]  # Dynamic imports after sys.path modification
+"tests/unit/api/test_auth_endpoints_integration.py" = ["S105"]  # Allow test token names
 "src/mcp_integration/*" = ["G004"]  # Allow f-strings in logging for structured logging
 "src/auth/*" = ["G004", "PLR2004", "SIM110", "RET504"]  # Allow f-strings, magic numbers, and specific patterns
 "src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912"]  # Allow complex UI interface methods

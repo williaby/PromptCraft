@@ -8,9 +8,9 @@ that currently have 0% coverage, significantly improving diff coverage reporting
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from tests.base import FullIntegrationTestBase
 
 from src.api.ab_testing_endpoints import router as ab_testing_router
+from tests.base import FullIntegrationTestBase
 
 
 class TestABTestingEndpointsIntegration(FullIntegrationTestBase):
@@ -317,7 +317,7 @@ class TestABTestingEndpointsIntegration(FullIntegrationTestBase):
         """Test rate limiting on A/B testing endpoints."""
         # Make multiple rapid requests
         rapid_requests = []
-        for i in range(8):
+        for _i in range(8):
             response = client.get("/api/v1/ab-testing/experiments")
             rapid_requests.append(response.status_code)
 
