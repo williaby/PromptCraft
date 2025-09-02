@@ -247,9 +247,16 @@ class TestAuthenticationPerformance:
             # Performance analysis
             avg_response_time = statistics.mean(response_times)
             median_response_time = statistics.median(response_times)
-            # Fix: Sort array before calculating 95th percentile
-            sorted_response_times = sorted(response_times)
-            p95_response_time = sorted_response_times[int(0.95 * len(sorted_response_times))]
+            # Fix: Use proper percentile calculation (statistics.quantiles for accuracy)
+            try:
+                # Use statistics.quantiles for accurate percentile calculation (Python 3.8+)
+                quantiles = statistics.quantiles(response_times, n=20)  # 5% intervals
+                p95_response_time = quantiles[18]  # 95th percentile (19th of 20 quantiles)
+            except (AttributeError, statistics.StatisticsError):
+                # Fallback for older Python or insufficient data
+                sorted_response_times = sorted(response_times)
+                index = max(0, int(len(sorted_response_times) * 0.95) - 1)
+                p95_response_time = sorted_response_times[index]
             max_response_time = max(response_times)
 
             print(f"\nConcurrent Performance Results ({num_requests} requests):")
@@ -887,9 +894,16 @@ class TestRoleBasedPermissionPerformance:
         # Performance analysis
         avg_check_time = statistics.mean(check_times)
         median_check_time = statistics.median(check_times)
-        # Fix: Sort array before calculating 95th percentile
-        sorted_check_times = sorted(check_times)
-        p95_check_time = sorted_check_times[int(0.95 * len(sorted_check_times))]
+        # Fix: Use proper percentile calculation (statistics.quantiles for accuracy)
+        try:
+            # Use statistics.quantiles for accurate percentile calculation (Python 3.8+)
+            quantiles = statistics.quantiles(check_times, n=20)  # 5% intervals
+            p95_check_time = quantiles[18]  # 95th percentile (19th of 20 quantiles)
+        except (AttributeError, statistics.StatisticsError):
+            # Fallback for older Python or insufficient data
+            sorted_check_times = sorted(check_times)
+            index = max(0, int(len(sorted_check_times) * 0.95) - 1)
+            p95_check_time = sorted_check_times[index]
         max_check_time = max(check_times)
 
         print(f"\nConcurrent Permission Check Results ({total_checks} checks):")
