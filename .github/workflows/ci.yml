@@ -154,11 +154,11 @@ jobs:
           sudo systemctl start redis-server || echo "Using mocked services"
         continue-on-error: true
 
-      # Run ALL tests sequentially with coverage (EXCLUDING performance tests to prevent timeout)
+      # Run ALL tests sequentially with coverage (including performance tests now that timeout issue is resolved)
       - name: Run all tests with coverage
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🧪 Running all tests sequentially with comprehensive coverage (excluding performance tests)"
+          echo "🧪 Running all tests sequentially with comprehensive coverage"
           poetry run pytest -v \
             --cov=src \
             --cov-report=xml:coverage.xml \
@@ -168,7 +168,6 @@ jobs:
             -o junit_family=xunit2 \
             --tb=short \
             --maxfail=10 \
-            -m "not performance and not perf" \
             tests/
         env:
           CI_ENVIRONMENT: true
@@ -331,76 +330,6 @@ jobs:
           poetry run safety check || echo "Safety check completed with findings"
           poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
 
-  # Dedicated performance test job (isolated to prevent timeouts)
-  performance-tests:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15  # Shorter timeout for focused performance tests
-    needs: setup-optimized
-    continue-on-error: true  # Don't fail entire pipeline if performance tests fail
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # Always install Poetry fresh (fast and reliable)
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry config virtualenvs.in-project true
-          poetry --version
-
-      # Restore dependency cache (optional - helps with speed)
-      - name: Restore dependency cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            .venv
-          key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry install --sync --no-interaction
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y redis-server libmagic-dev
-          sudo systemctl start redis-server || echo "Using mocked services"
-        continue-on-error: true
-
-      # Run ONLY performance tests with detailed output
-      - name: Run performance tests with comprehensive diagnostics
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          echo "🚀 Running isolated performance tests with comprehensive diagnostics"
-          poetry run pytest -v -s \
-            --tb=long \
-            --maxfail=3 \
-            -m "performance or perf" \
-            tests/performance/
-        env:
-          CI_ENVIRONMENT: true
-          PROMPTCRAFT_REDIS_HOST: localhost
-          PROMPTCRAFT_QDRANT_HOST: localhost
-          PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
-
-      # Upload performance test results (even if tests fail)
-      - name: Upload performance test artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-test-results
-          path: |
-            .benchmarks/
-            performance_results.json
 
   # Success check
   ci-success:
@@ -425,11 +354,11 @@ jobs:
             exit 1
           fi
 
-  # Required status check for branch protection (performance tests are optional)
+  # Required status check for branch protection
   ci-test:
     name: CI / Test
     runs-on: ubuntu-latest
-    needs: [setup-optimized, test, quality-checks, security-scan, performance-tests]
+    needs: [setup-optimized, test, quality-checks, security-scan]
     if: always()
     steps:
       - name: Validate all test jobs
@@ -439,14 +368,13 @@ jobs:
                 "${{ needs.quality-checks.result }}" == "success" && \
                 "${{ needs.security-scan.result }}" == "success" ]]; then
             echo "✅ All CI test jobs passed successfully"
-            echo "📊 Performance tests isolated to prevent timeout issues"
-            echo "🚀 Performance results: ${{ needs.performance-tests.result }}"
+            echo "📊 Performance tests now included in main test suite"
+            echo "🎯 Database timeout issue resolved - unified testing process restored"
           else
             echo "❌ One or more CI test jobs failed"
             echo "setup-optimized: ${{ needs.setup-optimized.result }}"
             echo "test: ${{ needs.test.result }}"
             echo "quality-checks: ${{ needs.quality-checks.result }}"
             echo "security-scan: ${{ needs.security-scan.result }}"
-            echo "performance-tests: ${{ needs.performance-tests.result }} (optional)"
             exit 1
           fi

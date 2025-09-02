@@ -396,10 +396,22 @@ class TestGlobalDatabaseManager:
 
     async def test_get_db_session_initialization_failure(self, mock_settings):
         """Test get_db_session with initialization failure."""
-        # Clear any existing global instance before patching
+        # Clear any existing global instance and global patches from performance tests
         import src.database.connection
 
         src.database.connection._db_manager = None
+
+        # Stop any existing global patches that may interfere with this test
+        try:
+            # Try to access global patches from performance test module if loaded
+            import tests.performance.test_auth_performance
+
+            if hasattr(tests.performance.test_auth_performance, "_global_patches"):
+                for patch_obj in tests.performance.test_auth_performance._global_patches:
+                    patch_obj.stop()
+                tests.performance.test_auth_performance._global_patches.clear()
+        except (ImportError, AttributeError):
+            pass  # No global patches to clear
 
         with (
             patch("src.database.connection.get_settings", return_value=mock_settings),
