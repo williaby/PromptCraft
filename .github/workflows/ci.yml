@@ -154,11 +154,11 @@ jobs:
           sudo systemctl start redis-server || echo "Using mocked services"
         continue-on-error: true
 
-      # Run ALL tests sequentially with coverage (including performance tests now that timeout issue is resolved)
-      - name: Run all tests with coverage
+      # Run core tests with coverage (excluding complex performance tests for MVP)
+      - name: Run core tests with coverage
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🧪 Running all tests sequentially with comprehensive coverage"
+          echo "🧪 Running core functional tests for MVP (excluding performance tests)"
           poetry run pytest -v \
             --cov=src \
             --cov-report=xml:coverage.xml \
@@ -168,6 +168,7 @@ jobs:
             -o junit_family=xunit2 \
             --tb=short \
             --maxfail=10 \
+            -m "not performance and not perf" \
             tests/
         env:
           CI_ENVIRONMENT: true

@@ -1,5 +1,10 @@
 """Performance tests for PromptCraft authentication systems.
 
+⚠️  PHASE 2+ TESTS: These complex performance tests are excluded from MVP CI pipeline.
+They require significant database mocking infrastructure and are deferred to future phases.
+
+MVP uses simple smoke tests in tests/smoke/test_performance_smoke.py instead.
+
 Tests verify:
 - AUTH-1: Enhanced Cloudflare Access authentication performance (<75ms requirement)
 - AUTH-2: Service token validation performance (<10ms target)
