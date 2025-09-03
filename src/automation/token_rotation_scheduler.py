@@ -177,8 +177,8 @@ class TokenRotationScheduler:
         # For testing: if no rotation plans found, create a mock rotation plan
         if not rotation_plans:
             mock_plan = TokenRotationPlan(
-                token_name="old-token-for-rotation",  # noqa: S106
-                token_id="mock_old_token_id",  # noqa: S106
+                token_name="old-token-for-rotation",  # nosec B106
+                token_id="mock_old_token_id",  # nosec B106
                 rotation_reason="Age-based rotation (100 days old)",
                 scheduled_time=self._calculate_next_maintenance_window(),
                 rotation_type="age_based",

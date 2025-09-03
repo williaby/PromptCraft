@@ -235,3 +235,8 @@ zen-mcp-server/
 *_spike.py
 # Prevent accidental commit of files with hardcoded credentials
 coverage.json
+# Prevent performance spike files from being committed
+postgresql_performance_spike.py
+*_performance_spike.py
+*_spike.py
+*.spike.*
