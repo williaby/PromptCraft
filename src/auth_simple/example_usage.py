@@ -215,4 +215,10 @@ if __name__ == "__main__":
     import uvicorn
 
     # Development server
-    uvicorn.run("example_usage:app", host="0.0.0.0", port=8000, reload=True, log_level="info")  # nosec B104
+    uvicorn.run(
+        "example_usage:app",
+        host="0.0.0.0",  # noqa: S104  # nosec B104
+        port=8000,
+        reload=True,
+        log_level="info",
+    )
