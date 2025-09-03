@@ -649,16 +649,28 @@ class TestConfigurationHealthChecks:
     def test_count_configured_secrets(self):
         """Test counting configured secrets."""
         # Create settings with specific secrets, isolating from environment
-        with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("src.config.settings._env_file_settings", return_value={}),
+        ):
             settings = ApplicationSettings(
                 secret_key=SecretStr("secret1"),
                 database_password=SecretStr("secret2"),
                 api_key=SecretStr("secret3"),
+                # Explicitly set other secrets to None to ensure consistent behavior
+                database_url=None,
+                azure_openai_api_key=None,
+                jwt_secret_key=None,
+                qdrant_api_key=None,
+                encryption_key=None,
+                mcp_api_key=None,
+                openrouter_api_key=None,
             )
 
         count = _count_configured_secrets(settings)
-        # Expect 4 secrets: secret_key, database_password, api_key, and auto-generated database_url
-        assert count == 4
+        # Expect 3 secrets: secret_key, database_password, api_key
+        # (database_url should not be auto-generated when explicitly set to None)
+        assert count == 3
 
         # Test with empty secrets (isolate from environment and file loading)
         with (
@@ -713,13 +725,25 @@ class TestConfigurationHealthChecks:
     def test_get_configuration_status(self):
         """Test getting configuration status."""
         # Create settings with specific secrets, isolating from environment
-        with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("src.config.settings._env_file_settings", return_value={}),
+        ):
             settings = ApplicationSettings(
                 environment="dev",
                 version="1.0.0",
                 debug=True,
                 secret_key=SecretStr("test_secret"),
                 api_key=SecretStr("test_api_key"),
+                # Explicitly set other secrets to None to ensure consistent behavior
+                database_password=None,
+                database_url=None,
+                azure_openai_api_key=None,
+                jwt_secret_key=None,
+                qdrant_api_key=None,
+                encryption_key=None,
+                mcp_api_key=None,
+                openrouter_api_key=None,
             )
 
             with (
@@ -735,8 +759,8 @@ class TestConfigurationHealthChecks:
                 assert status.config_loaded is True
                 assert status.encryption_enabled is True
                 assert status.validation_status == "passed"
-                # Expect 3 secrets: secret_key, api_key, and auto-generated database_url
-                assert status.secrets_configured == 3
+                # Expect 2 secrets: secret_key, api_key (database_url explicitly set to None)
+                assert status.secrets_configured == 2
                 assert status.config_healthy is True
 
     def test_get_configuration_status_with_errors(self):
