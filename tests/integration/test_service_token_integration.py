@@ -581,8 +581,11 @@ class TestServiceTokenIntegration:
                     # If it succeeds, that's also acceptable (service allows duplicates)
                     assert token_value2 is not None
                 except (ValueError, Exception) as e:
-                    # If it raises exception, verify it's about duplication
-                    assert "already exists" in str(e) or "duplicate" in str(e).lower()
+                    # If it raises exception, verify it's about duplication (non-assertion check)
+                    error_msg = str(e).lower()
+                    is_duplicate_error = "already exists" in error_msg or "duplicate" in error_msg
+                    if not is_duplicate_error:
+                        raise  # Re-raise if it's not a duplicate error
 
                 # Test error recovery scenarios
                 error_recovery_tests = [

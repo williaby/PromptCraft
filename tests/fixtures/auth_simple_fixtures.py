@@ -195,8 +195,8 @@ def mock_service_token_user():
     from src.auth import ServiceTokenUser
 
     return ServiceTokenUser(
-        token_id="test-token-123",
-        token_name="Test Service Token",
+        token_id="test-token-123",  # noqa: S106
+        token_name="Test Service Token",  # noqa: S106
         metadata={"permissions": ["read", "write"], "service_name": "test-service"},
         usage_count=5,
     )
@@ -211,7 +211,7 @@ def mock_authenticated_user():
         email="test@example.com",
         role=UserRole.USER,
         user_id="test-user-123",
-        token_id="session-token-123",
+        token_id="session-token-123",  # noqa: S106
     )
 
 
@@ -224,7 +224,7 @@ def mock_admin_user():
         email="admin@example.com",
         role=UserRole.ADMIN,
         user_id="admin-user-123",
-        token_id="admin-session-123",
+        token_id="admin-session-123",  # noqa: S106
     )
 
 
@@ -420,7 +420,7 @@ class AuthTestHelper:
         return user
 
     @staticmethod
-    def create_mock_service_token_user(token_name="test-token", permissions=None):
+    def create_mock_service_token_user(token_name="test-token", permissions=None):  # noqa: S107
         """Create a properly structured mock service token user."""
         from unittest.mock import Mock
 

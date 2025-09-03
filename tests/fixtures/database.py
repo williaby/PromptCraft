@@ -104,8 +104,8 @@ def sync_test_engine():
 @pytest.fixture
 def sync_test_session(sync_test_engine):
     """Synchronous database session for legacy tests."""
-    Session = sessionmaker(bind=sync_test_engine)
-    session = Session()
+    session_maker = sessionmaker(bind=sync_test_engine)
+    session = session_maker()
 
     try:
         yield session

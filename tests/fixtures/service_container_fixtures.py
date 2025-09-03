@@ -5,6 +5,7 @@ injection system, including mock service implementations and container setup.
 """
 
 import asyncio
+import contextlib
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 

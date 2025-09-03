@@ -1215,14 +1215,14 @@ class TestEdgeCasesAndErrorHandling:
     @pytest.mark.parametrize("invalid_allocation", [-0.1, 1.1, float("inf")])
     def test_invalid_traffic_allocations(self, invalid_allocation):
         """Test various invalid traffic allocation values."""
+        config = TestConfiguration(
+            test_name="invalid_allocation_test",
+            variants=[{"name": "variant", "traffic_allocation": invalid_allocation}],
+            assignment_strategy=AssignmentStrategy.HASH_BASED,
+            primary_metric="clicks",
+            minimum_detectable_effect=0.02,
+        )
         with pytest.raises((TestConfigurationError, ValueError, OverflowError)):
-            config = TestConfiguration(
-                test_name="invalid_allocation_test",
-                variants=[{"name": "variant", "traffic_allocation": invalid_allocation}],
-                assignment_strategy=AssignmentStrategy.HASH_BASED,
-                primary_metric="clicks",
-                minimum_detectable_effect=0.02,
-            )
             config.validate()
 
 

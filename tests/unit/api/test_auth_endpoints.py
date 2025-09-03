@@ -88,8 +88,8 @@ class TestAuthEndpoints:
     def mock_service_token_user(self):
         """Mock ServiceTokenUser for testing."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test_service_token"  # nosec
-        user.token_id = "service_token_123"  # nosec
+        user.token_name = "test_service_token"  # noqa: S105
+        user.token_id = "service_token_123"  # noqa: S105
         user.usage_count = 42
         user.metadata = {"permissions": ["read", "write"]}
         user.has_permission = Mock(return_value=True)
@@ -108,11 +108,11 @@ class TestAuthEndpoints:
 
         # Create properly structured mock user
         mock_user = auth_test_helper.create_mock_service_token_user(
-            token_name="test_service_token",
+            token_name="test_service_token",  # noqa: S106
             permissions=["read", "write"],
         )
         mock_user.usage_count = 42
-        mock_user.token_id = "service_token_123"
+        mock_user.token_id = "service_token_123"  # noqa: S105
 
         # Override the dependency using helper
         auth_test_helper.override_auth_dependency(app, mock_user)
@@ -126,8 +126,8 @@ class TestAuthEndpoints:
         data = response.json()
 
         assert data["user_type"] == "service_token"
-        assert data["token_name"] == "test_service_token"  # nosec
-        assert data["token_id"] == "service_token_123"  # nosec
+        assert data["token_name"] == "test_service_token"  # noqa: S105
+        assert data["token_id"] == "service_token_123"  # noqa: S105
         assert data["permissions"] == ["read", "write"]
         assert data["usage_count"] == 42
         assert data["email"] is None
@@ -229,9 +229,9 @@ class TestAuthEndpoints:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["token_id"] == "token_id_456"  # nosec
-        assert data["token_name"] == "test_api_token"  # nosec
-        assert data["token_value"] == "sk_test_new_token_123"  # nosec
+        assert data["token_id"] == "token_id_456"  # noqa: S105
+        assert data["token_name"] == "test_api_token"  # noqa: S105
+        assert data["token_value"] == "sk_test_new_token_123"  # noqa: S105
         assert data["metadata"]["permissions"] == ["read", "write"]
         assert data["metadata"]["created_by"] == "admin@example.com"
         assert data["metadata"]["purpose"] == "API testing"
@@ -332,9 +332,9 @@ class TestAuthEndpoints:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["token_id"] == "new_token_id_012"  # nosec
-        assert data["token_value"] == "sk_rotated_token_789"  # nosec
-        assert data["token_name"] == "test_token"  # nosec
+        assert data["token_id"] == "new_token_id_012"  # noqa: S105
+        assert data["token_value"] == "sk_rotated_token_789"  # noqa: S105
+        assert data["token_name"] == "test_token"  # noqa: S105
         assert data["metadata"]["rotated_by"] == "admin@example.com"
         assert data["metadata"]["rotation_reason"] == "Scheduled rotation"
 
@@ -375,7 +375,7 @@ class TestAuthEndpoints:
         assert len(data) == 2  # Based on mock top_tokens
 
         token = data[0]
-        assert token["token_name"] == "test_token"  # nosec
+        assert token["token_name"] == "test_token"  # noqa: S105
         assert token["usage_count"] == 15
         assert token["is_active"] is True
         assert token["permissions"] == []
@@ -413,7 +413,7 @@ class TestAuthEndpoints:
         assert response.status_code == 200
         data = response.json()
 
-        assert data["token_name"] == "test_token"  # nosec
+        assert data["token_name"] == "test_token"  # noqa: S105
         assert data["usage_count"] == 15
         assert data["is_active"] is True
 
@@ -497,7 +497,7 @@ class TestSystemEndpoints:
     def mock_service_token_user(self):
         """Mock ServiceTokenUser with system_status permission."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "system_token"  # nosec
+        user.token_name = "system_token"  # noqa: S105
         user.has_permission = Mock(return_value=True)
         return user
 
@@ -512,7 +512,7 @@ class TestSystemEndpoints:
         """Test GET /system/status endpoint with service token."""
 
         # Create properly structured mock service token user
-        mock_user = auth_test_helper.create_mock_service_token_user(token_name="system_token")
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="system_token")  # noqa: S106
 
         auth_test_helper.override_auth_dependency(app, mock_user)
 
@@ -548,7 +548,7 @@ class TestSystemEndpoints:
         """Test GET /system/status endpoint with insufficient permissions."""
 
         # Create mock user with insufficient permissions
-        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_token")
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_token")  # noqa: S106
         mock_user.has_permission = Mock(return_value=False)
 
         auth_test_helper.override_auth_dependency(app, mock_user)
@@ -597,7 +597,7 @@ class TestAuditEndpoints:
     def mock_service_token_user(self):
         """Mock ServiceTokenUser with audit_log permission."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "audit_token"  # nosec
+        user.token_name = "audit_token"  # noqa: S105
         user.has_permission = Mock(return_value=True)
         return user
 
@@ -612,7 +612,7 @@ class TestAuditEndpoints:
         """Test POST /audit/cicd-event endpoint with service token."""
 
         # Create properly structured mock service token user
-        mock_user = auth_test_helper.create_mock_service_token_user(token_name="audit_token")
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="audit_token")  # noqa: S106
 
         auth_test_helper.override_auth_dependency(app, mock_user)
 
@@ -655,7 +655,7 @@ class TestAuditEndpoints:
         """Test POST /audit/cicd-event endpoint with insufficient permissions."""
 
         # Create mock user with insufficient permissions
-        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_audit_token")
+        mock_user = auth_test_helper.create_mock_service_token_user(token_name="limited_audit_token")  # noqa: S106
         mock_user.has_permission = Mock(return_value=False)
 
         auth_test_helper.override_auth_dependency(app, mock_user)

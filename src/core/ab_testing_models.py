@@ -245,7 +245,7 @@ class ABTestStatistics:
 
         return (mean - margin, mean + margin)
 
-    def calculate_p_value(
+    def calculate_p_value(  # noqa: PLR0911
         self,
         metric_type: MetricType,
         control_successes: int | None = None,
