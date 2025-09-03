@@ -306,6 +306,7 @@ class TestAuthenticationPerformance:
         self,
         performance_app: FastAPI,
         mock_database_session: AsyncMock,
+        mocked_auth_db,
     ):
         """Test single request authentication performance with comprehensive instrumentation."""
         import os
@@ -394,6 +395,7 @@ class TestAuthenticationPerformance:
         self,
         performance_app: FastAPI,
         mock_database_session: AsyncMock,
+        mocked_auth_db,
     ):
         """Test concurrent request handling performance with comprehensive instrumentation."""
         import os
