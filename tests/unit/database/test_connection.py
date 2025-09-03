@@ -394,29 +394,22 @@ class TestGlobalDatabaseManager:
             assert session is not None
 
     async def test_get_db_session_initialization_failure(self, mock_settings):
-        """Test get_db_session with initialization failure."""
-        # Clear any existing global instance and global patches from performance tests
+        """Test get_db_session with initialization failure.
+
+        Tests that DatabaseConnectionError is raised when database initialization fails.
+        Uses targeted mocking to simulate connection failure without global patches.
+        """
+        # Clear any existing global instance
         import src.database.connection
 
         src.database.connection._db_manager = None
 
-        # Stop any existing global patches that may interfere with this test
-        try:
-            # Try to access global patches from performance test module if loaded
-            import tests.performance.test_auth_performance
-
-            if hasattr(tests.performance.test_auth_performance, "_global_patches"):
-                for patch_obj in tests.performance.test_auth_performance._global_patches:
-                    patch_obj.stop()
-                tests.performance.test_auth_performance._global_patches.clear()
-        except (ImportError, AttributeError):
-            pass  # No global patches to clear
-
+        # Use targeted mocking to simulate database initialization failure
         with (
             patch("src.database.connection.get_settings", return_value=mock_settings),
-            patch("src.database.connection.create_async_engine", side_effect=Exception("Init failed")),
-            patch.dict("os.environ", {"CI_ENVIRONMENT": "false"}, clear=False),  # Ensure no CI patches interfere
+            patch("src.database.connection.create_async_engine", side_effect=Exception("Simulated connection failure")),
         ):
+            # Test that our custom DatabaseConnectionError is raised during initialization failure
             async_gen = get_db_session()
             with pytest.raises(DatabaseConnectionError, match="Database initialization failed"):
                 await async_gen.__anext__()
