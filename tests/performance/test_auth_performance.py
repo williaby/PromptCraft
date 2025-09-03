@@ -543,6 +543,7 @@ class TestAuthenticationPerformance:
         self,
         auth_config: AuthenticationConfig,
         mock_jwt_validator: MagicMock,
+        mocked_auth_db,
     ):
         """Test performance impact of database operations."""
         from httpx import AsyncClient
@@ -620,6 +621,7 @@ class TestAuthenticationPerformance:
     async def test_memory_usage_under_load(
         self,
         performance_app: FastAPI,
+        mocked_auth_db,
     ):
         """Test memory usage during high load."""
         from httpx import AsyncClient
@@ -667,6 +669,7 @@ class TestAuthenticationPerformance:
         self,
         auth_config: AuthenticationConfig,
         mock_jwt_validator: MagicMock,
+        mocked_auth_db,
     ):
         """Test performance during database failures (graceful degradation)."""
         from httpx import AsyncClient
@@ -755,6 +758,7 @@ class TestServiceTokenPerformance:
         self,
         mock_service_token_manager: MagicMock,
         mock_service_token_monitor: MagicMock,
+        mocked_auth_db,
     ):
         """Test service token validation performance (<10ms target)."""
 
@@ -780,6 +784,7 @@ class TestServiceTokenPerformance:
         self,
         mock_service_token_manager: MagicMock,
         mock_service_token_monitor: MagicMock,
+        mocked_auth_db,
     ):
         """Test concurrent service token validation performance."""
 
@@ -837,6 +842,7 @@ class TestServiceTokenPerformance:
         self,
         mock_service_token_manager: MagicMock,
         mock_service_token_monitor: MagicMock,
+        mocked_auth_db,
     ):
         """Test performance impact of token monitoring."""
 
@@ -993,6 +999,7 @@ class TestRoleBasedPermissionPerformance:
     async def test_permission_check_performance(
         self,
         mock_permission_validator: MagicMock,
+        mocked_auth_db,
     ):
         """Test single permission check performance (<15ms target)."""
 
