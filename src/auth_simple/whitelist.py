@@ -47,7 +47,9 @@ class EmailWhitelistValidator:
     - Admin privilege detection for specific admin emails
     """
 
-    def __init__(self, whitelist: list[str], admin_emails: list[str] | None = None, case_sensitive: bool = False) -> None:
+    def __init__(
+        self, whitelist: list[str], admin_emails: list[str] | None = None, case_sensitive: bool = False,
+    ) -> None:
         """Initialize the email whitelist validator.
 
         Args:

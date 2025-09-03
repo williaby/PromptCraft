@@ -23,7 +23,6 @@
 #     request_scoped_container,
 #     service_dependency_chain,
 #     test_environment_container,
-# )
 # Integration testing fixtures (new)
 from .auth_fixtures import (
     admin_user,
