@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class SimpleSessionManager:
     """In-memory session management for streamlined authentication."""
 
-    def __init__(self, session_timeout: int = 3600):
+    def __init__(self, session_timeout: int = 3600) -> None:
         """Initialize session manager.
 
         Args:
@@ -102,7 +102,7 @@ class SimpleSessionManager:
 
     def _is_session_expired(self, session: dict) -> bool:
         """Check if session has expired."""
-        from datetime import timedelta
+        from datetime import timedelta  # noqa: PLC0415
 
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
         return bool(datetime.now(UTC) > expiry)
@@ -139,7 +139,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         public_paths: set[str] | None = None,
         health_check_paths: set[str] | None = None,
         enable_session_cookies: bool = True,
-    ):
+    ) -> None:
         """Initialize the middleware.
 
         Args:
@@ -300,7 +300,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 class AuthenticationDependency:
     """FastAPI dependency for authentication in route handlers."""
 
-    def __init__(self, require_admin: bool = False):
+    def __init__(self, require_admin: bool = False) -> None:
         """Initialize authentication dependency.
 
         Args:
@@ -353,7 +353,7 @@ def create_auth_middleware(
     Returns:
         Configured CloudflareAccessMiddleware
     """
-    from .whitelist import create_validator_from_env
+    from .whitelist import create_validator_from_env  # noqa: PLC0415
 
     # Create whitelist validator
     validator = create_validator_from_env(whitelist_str, admin_emails_str)

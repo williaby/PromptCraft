@@ -206,9 +206,9 @@ def create_app() -> FastAPI:
 
     # Include preserved authentication and role management API endpoints for backward compatibility
     try:
-        from src.api.auth_endpoints import audit_router, auth_router, system_router
-        from src.api.role_endpoints import role_router
-        from src.api.routers.create_core import router as create_router
+        from src.api.auth_endpoints import audit_router, auth_router, system_router  # noqa: PLC0415
+        from src.api.role_endpoints import role_router  # noqa: PLC0415
+        from src.api.routers.create_core import router as create_router  # noqa: PLC0415
 
         app.include_router(auth_router)
         app.include_router(system_router)
@@ -270,7 +270,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error with expose_error=True for detailed error
-        raise AuthExceptionHandler.handle_internal_error(
+        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
             operation_name="Health check endpoint",
             error=e,
             detail="Health check endpoint failed",
@@ -364,7 +364,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except ImportError:
         logger.warning("MCP integration not available")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
-        raise AuthExceptionHandler.handle_service_unavailable(
+        raise AuthExceptionHandler.handle_service_unavailable(  # noqa: B904
             service_name="mcp-integration",
             detail="MCP integration not available",
         )
@@ -374,7 +374,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except Exception as e:
         logger.error("MCP health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error for consistent error handling
-        raise AuthExceptionHandler.handle_internal_error(
+        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
             operation_name="MCP health check endpoint",
             error=e,
             detail="MCP health check endpoint failed",

@@ -798,13 +798,12 @@ class TestABTestManager:
         mock_result.all.return_value = mock_stats
         mock_session.execute.return_value = mock_result
 
-        with patch.object(manager.statistics, "calculate_p_value", return_value=0.03):
-            with patch.object(
-                manager.statistics,
-                "calculate_confidence_interval",
-                side_effect=[(0.08, 0.12), (0.10, 0.14)],
-            ):
-                stats = await manager.calculate_test_statistics(test_id, metric_name)
+        with patch.object(manager.statistics, "calculate_p_value", return_value=0.03), patch.object(
+            manager.statistics,
+            "calculate_confidence_interval",
+            side_effect=[(0.08, 0.12), (0.10, 0.14)],
+        ):
+            stats = await manager.calculate_test_statistics(test_id, metric_name)
 
         assert len(stats) == 2
         assert stats[0]["variant_name"] == "control"

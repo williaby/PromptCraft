@@ -146,7 +146,7 @@ def assert_successful_response(response, expected_status: int = 200):
     return response.json()
 
 
-def assert_error_response(response, expected_status: int, expected_message: str = None):
+def assert_error_response(response, expected_status: int, expected_message: str | None = None):
     """Assert response is an error with optional message check."""
     assert response.status_code == expected_status
     if expected_message:

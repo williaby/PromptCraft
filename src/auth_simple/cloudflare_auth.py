@@ -26,7 +26,7 @@ class CloudflareUser(BaseModel):
     headers: dict[str, str] = {}
 
     @validator("email")
-    def validate_email(cls, v: str) -> str:
+    def validate_email(cls, v: str) -> str:  # noqa: N805
         """Ensure email is valid format."""
         if not v or "@" not in v:
             raise ValueError("Invalid email format")

@@ -10,8 +10,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.utils.datetime_compat import UTC
-
 from src.core.user_control_system import (
     CategoryManager,
     CommandResult,
@@ -20,6 +18,7 @@ from src.core.user_control_system import (
     TierController,
     UserSession,
 )
+from src.utils.datetime_compat import UTC
 
 # =============================================================================
 # FIXTURES

@@ -76,7 +76,11 @@ __all__ = [
     "MockSecurityMonitor",
     # "MockServiceFactory",  # Disabled due to missing auth.database module
     "MockSuspiciousActivityDetector",
+    "admin_user",
     "all_security_services",
+    "auth_middleware_admin",
+    "auth_middleware_user",
+    "authenticated_request",
     # "clean_container",  # Disabled due to missing auth.database module
     "clear_test_event_registry",
     # "container_config",  # Disabled due to missing auth.database module
@@ -101,6 +105,15 @@ __all__ = [
     "mock_database_settings",
     "mock_security_logger",
     "mock_security_monitor",
+    "multiple_service_tokens",
+    "real_service_token_manager",
+    "regular_user",
+    "service_token_request",
+    "sync_test_engine",
+    "sync_test_session",
+    "test_authenticated_user",
+    "test_db_session",
+    "test_db_with_override",
     # "mock_service_container",  # Disabled due to missing auth.database module
     # "mock_service_factory",  # Disabled due to missing auth.database module
     # "performance_container",  # Disabled due to missing auth.database module
@@ -109,19 +122,6 @@ __all__ = [
     # "test_environment_container",  # Disabled due to missing auth.database module
     # Integration testing fixtures
     "test_engine",
-    "test_db_session",
-    "test_db_with_override",
-    "sync_test_engine",
-    "sync_test_session",
-    "real_service_token_manager",
     "test_service_token",
-    "test_authenticated_user",
     "test_service_user",
-    "admin_user",
-    "regular_user",
-    "authenticated_request",
-    "service_token_request",
-    "auth_middleware_admin",
-    "auth_middleware_user",
-    "multiple_service_tokens",
 ]
