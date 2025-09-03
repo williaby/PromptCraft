@@ -185,13 +185,13 @@ class SecurityEventType(str, Enum):
     SESSION_EXPIRED = "session_expired"
 
     # Service token events
-    SERVICE_TOKEN_AUTH = "service_token_auth"  # nosec B105
-    SERVICE_TOKEN_CREATED = "service_token_created"  # nosec B105
-    SERVICE_TOKEN_REVOKED = "service_token_revoked"  # nosec B105
-    SERVICE_TOKEN_EXPIRED = "service_token_expired"  # nosec B105
+    SERVICE_TOKEN_AUTH = "service_token_auth"  # noqa: S105
+    SERVICE_TOKEN_CREATED = "service_token_created"  # noqa: S105
+    SERVICE_TOKEN_REVOKED = "service_token_revoked"  # noqa: S105
+    SERVICE_TOKEN_EXPIRED = "service_token_expired"  # noqa: S105
 
     # Account security events
-    PASSWORD_CHANGED = "password_changed"  # nosec B105
+    PASSWORD_CHANGED = "password_changed"  # noqa: S105
     ACCOUNT_LOCKOUT = "account_lockout"
     ACCOUNT_UNLOCK = "account_unlock"
 

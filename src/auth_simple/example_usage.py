@@ -96,7 +96,7 @@ async def get_user_profile(user: Any = Depends(require_auth)) -> dict[str, Any]:
 
 
 @app.get("/api/user/dashboard")
-async def user_dashboard(request: Request, user: Any = Depends(require_auth)) -> dict[str, Any]:
+async def user_dashboard(_request: Request, user: Any = Depends(require_auth)) -> dict[str, Any]:
     """User dashboard (requires authentication)."""
     cf_context = user.get("cf_context", {})
 
@@ -148,7 +148,7 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
 
 # Error handlers
 @app.exception_handler(401)
-async def unauthorized_handler(request: Request, exc: Any) -> JSONResponse:
+async def unauthorized_handler(_request: Request, _exc: Any) -> JSONResponse:
     """Handle unauthorized access."""
     return JSONResponse(
         status_code=401,
@@ -161,7 +161,7 @@ async def unauthorized_handler(request: Request, exc: Any) -> JSONResponse:
 
 
 @app.exception_handler(403)
-async def forbidden_handler(request: Request, exc: Any) -> JSONResponse:
+async def forbidden_handler(request: Request, _exc: Any) -> JSONResponse:
     """Handle forbidden access."""
     user = get_current_user(request)
     user_email = user["email"] if user else "unknown"

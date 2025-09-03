@@ -45,7 +45,7 @@ class CloudflareAuthHandler:
     forwards after successful authentication.
     """
 
-    def __init__(self, validate_headers: bool = True, log_events: bool = True):
+    def __init__(self, validate_headers: bool = True, log_events: bool = True) -> None:
         """Initialize the Cloudflare auth handler.
 
         Args:
