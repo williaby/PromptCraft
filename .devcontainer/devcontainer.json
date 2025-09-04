@@ -1,35 +1,106 @@
 {
-  "name": "PromptCraft Dev Container",
+  "name": "PromptCraft Development Environment",
   "build": {
     "context": "..",
-    "dockerfile": "Dockerfile"
+    "dockerfile": ".devcontainer/Dockerfile"
   },
-  "remoteUser": "vscode",
-  "workspaceFolder": "/workspace",
-  "forwardPorts": [7071, 10000, 10001, 10002],
-  "postCreateCommand": "npm install && pre-commit install",
   "features": {
-    "ghcr.io/devcontainers/features/azure-cli:1": {
-      "version": "2.74.0",
-      "installBicep": true
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "promptcraft"
     },
-    "ghcr.io/devcontainers/features/azurite:1": {}
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11",
+      "installTools": true
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    }
   },
   "customizations": {
     "vscode": {
-      "extensions": [
-        "ms-azuretools.vscode-azurecli",
-        "ms-azuretools.bicep",
-        "ms-python.python",
-        "davidanson.vscode-markdownlint",
-        "esbenp.prettier-vscode",
-        "dbaeumer.vscode-eslint"
-      ],
       "settings": {
+        "python.defaultInterpreterPath": "/opt/venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.mypyEnabled": true,
+        "python.formatting.provider": "black",
+        "python.analysis.typeCheckingMode": "basic",
         "editor.formatOnSave": true,
-        "eslint.run": "onSave",
-        "markdownlint.config": ".markdownlint.json"
-      }
+        "editor.rulers": [120],
+        "editor.tabSize": 4,
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/*.pyc": true,
+          ".mypy_cache": true,
+          ".pytest_cache": true,
+          ".ruff_cache": true,
+          ".coverage": true,
+          "htmlcov": true
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "ms-python.black-formatter",
+        "ms-vscode.makefile-tools",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "redhat.vscode-yaml",
+        "ms-python.debugpy",
+        "davidanson.vscode-markdownlint",
+        "eamodio.gitlens",
+        "ms-vscode.vscode-json"
+      ]
     }
+  },
+  "forwardPorts": [7860, 8000, 3000, 8080],
+  "portsAttributes": {
+    "7860": {
+      "label": "Gradio UI",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "FastAPI Backend",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Zen MCP Server",
+      "onAutoForward": "silent"
+    },
+    "8080": {
+      "label": "Code-Server IDE",
+      "onAutoForward": "silent"
+    }
+  },
+  "runArgs": [
+    "--name=promptcraft-dev",
+    "--hostname=promptcraft-dev"
+  ],
+  "postCreateCommand": "make setup",
+  "postStartCommand": "echo '✅ PromptCraft development environment ready!'",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "promptcraft",
+  "containerEnv": {
+    "CI_ENVIRONMENT": "false",
+    "PROMPTCRAFT_REDIS_HOST": "localhost",
+    "PROMPTCRAFT_QDRANT_HOST": "localhost",
+    "PROMPTCRAFT_ENABLE_SERVICE_MOCKING": "true",
+    "PYTHONPATH": "/workspace/src",
+    "_QDRANT_HOST_NOTE": "192.168.1.16 is intentional - external Qdrant vector database on Unraid server (hybrid architecture)"
   }
 }
