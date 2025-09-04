@@ -158,3 +158,77 @@ class TestAuthConstants:
             assert constant
             assert isinstance(constant, str)
             assert len(constant.strip()) > 0
+
+    def test_admin_prefix_detection_pattern(self):
+        """Test that admin prefix constants can detect admin emails."""
+        admin_emails = [
+            "admin@example.com",
+            "administrator@company.com",
+            "root@system.com",
+            "superuser@org.com",
+            "owner@business.com",
+        ]
+
+        non_admin_emails = ["user@example.com", "john.doe@company.com", "support@helpdesk.com"]
+
+        def is_admin_email(email: str) -> bool:
+            """Helper function to test admin detection pattern."""
+            username = email.split("@")[0].lower()
+            return any(username.startswith(prefix) for prefix in constants.ADMIN_ROLE_PREFIXES)
+
+        for email in admin_emails:
+            assert is_admin_email(email), f"Should detect {email} as admin"
+
+        for email in non_admin_emails:
+            assert not is_admin_email(email), f"Should not detect {email} as admin"
+
+    def test_service_token_prefix_detection(self):
+        """Test that service token prefix can identify service tokens."""
+        valid_service_tokens = ["sk_123456789", "sk_abcdef123", "sk_test_token"]
+
+        invalid_tokens = [
+            "pk_123456789",  # Different prefix
+            "123456789",  # No prefix
+            "token_sk_123",  # Prefix in wrong position
+            "",  # Empty string
+        ]
+
+        for token in valid_service_tokens:
+            assert token.startswith(
+                constants.SERVICE_TOKEN_PREFIX,
+            ), f"Token {token} should be identified as service token"
+
+        for token in invalid_tokens:
+            assert not token.startswith(
+                constants.SERVICE_TOKEN_PREFIX,
+            ), f"Token {token} should not be identified as service token"
+
+    def test_jwt_claims_can_be_used_as_dict_keys(self):
+        """Test that JWT claim constants work as dictionary keys."""
+        jwt_payload = {
+            constants.JWT_CLAIM_EMAIL: "user@example.com",
+            constants.JWT_CLAIM_SUB: "123456",
+            constants.JWT_CLAIM_GROUPS: ["users", "admins"],
+            constants.JWT_CLAIM_EXP: 1234567890,
+            constants.JWT_CLAIM_IAT: 1234567800,
+        }
+
+        assert jwt_payload[constants.JWT_CLAIM_EMAIL] == "user@example.com"
+        assert jwt_payload[constants.JWT_CLAIM_SUB] == "123456"
+        assert jwt_payload[constants.JWT_CLAIM_GROUPS] == ["users", "admins"]
+        assert jwt_payload[constants.JWT_CLAIM_EXP] == 1234567890
+        assert jwt_payload[constants.JWT_CLAIM_IAT] == 1234567800
+
+    def test_error_codes_for_exception_handling(self):
+        """Test that error code constants can be used in exception handling."""
+        error_mapping = {
+            constants.ERROR_CODE_TOKEN_NOT_FOUND: "Token was not found in the system",
+            constants.ERROR_CODE_TOKEN_INACTIVE: "Token is inactive and cannot be used",
+            constants.ERROR_CODE_TOKEN_EXPIRED: "Token has expired and must be refreshed",
+            constants.ERROR_CODE_VALIDATION_EXCEPTION: "Validation failed for the request",
+        }
+
+        # Test that all error codes have meaningful messages
+        for error_code in error_mapping:
+            assert len(error_mapping[error_code]) > 10, f"Error code {error_code} should have meaningful message"
+            assert isinstance(error_code, str), f"Error code {error_code} should be string"
