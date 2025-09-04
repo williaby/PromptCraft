@@ -30,6 +30,8 @@ rules:
 
   # Suppress code-after-return for defensive programming patterns
   - id: python.lang.maintainability.return.code-after-unconditional-return
+    metadata:
+      category: maintainability
     paths:
       exclude:
         - "src/auth/service_token_manager.py"
