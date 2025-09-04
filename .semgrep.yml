@@ -5,6 +5,14 @@ rules:
   # Suppress return-not-in-function false positives
   # These are legitimate return statements within try-except blocks
   - id: python.lang.maintainability.return.return-not-in-function
+    metadata:
+      category: maintainability
+    paths:
+      exclude:
+        - "src/auth_simple/config.py"
+        - "src/monitoring/ab_testing_dashboard.py"
+        - "src/auth/models.py"
+    message: "Suppressed: Legitimate return statements in try-except blocks"
     paths:
       exclude:
         - "src/auth_simple/config.py"
