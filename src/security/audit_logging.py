@@ -41,7 +41,7 @@ Called by:
 Complexity: O(1) for event creation and logging, O(n) for header processing where n is header count
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any, cast
 
@@ -49,6 +49,7 @@ import structlog
 from fastapi import Request, status
 
 from src.config.settings import get_settings
+from src.utils.datetime_compat import UTC
 
 # Configure structured logging for comprehensive audit trails
 # This configuration creates JSON-formatted logs with ISO timestamps,

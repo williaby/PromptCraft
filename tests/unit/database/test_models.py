@@ -2,12 +2,11 @@
 
 import time
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
-from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 
 from src.auth.models import (
     ServiceTokenCreate,
@@ -17,7 +16,16 @@ from src.auth.models import (
     TokenValidationRequest,
     TokenValidationResponse,
 )
-from src.database.models import AuthenticationEvent, Base, ServiceToken, UserSession
+from src.database.models import (
+    AuthenticationEvent,
+    Base,
+    ServiceToken,
+    UniversalINET,
+    UniversalJSON,
+    UniversalUUID,
+    UserSession,
+)
+from src.utils.datetime_compat import UTC
 
 
 # AUTH-2 Service Token Model Tests
@@ -144,15 +152,15 @@ class TestServiceTokenModel:
         token.expires_at = datetime.now(UTC) + timedelta(hours=1)
         assert token.is_expired is False
 
-        # Test with timezone-naive datetime (legacy support - assumes UTC)
+        # Test with timezone-naive datetime (legacy support - assumes timezone.utc)
         # This tests the model's defensive handling of naive datetimes
-        # We create naive datetimes by starting with UTC time and removing timezone info
+        # We create naive datetimes by starting with timezone.utc time and removing timezone info
         utc_now = datetime.now(UTC)
         naive_expired = utc_now.replace(tzinfo=None) - timedelta(seconds=1)
         token.expires_at = naive_expired
         assert token.is_expired is True
 
-        # Test with timezone-naive datetime in future (legacy support - assumes UTC)
+        # Test with timezone-naive datetime in future (legacy support - assumes timezone.utc)
         naive_future = utc_now.replace(tzinfo=None) + timedelta(hours=1)
         token.expires_at = naive_future
         assert token.is_expired is False
@@ -162,7 +170,7 @@ class TestServiceTokenModel:
         token = ServiceToken()
         current_time = datetime.now(UTC)
 
-        # Set times with explicit UTC timezone (recommended practice)
+        # Set times with explicit timezone.utc timezone (recommended practice)
         token.created_at = current_time - timedelta(hours=2)
         token.expires_at = current_time + timedelta(hours=1)
         token.last_used = current_time - timedelta(minutes=30)
@@ -172,7 +180,7 @@ class TestServiceTokenModel:
         assert token.expires_at.tzinfo is not None
         assert token.last_used.tzinfo is not None
 
-        # Verify all datetime fields use UTC timezone specifically
+        # Verify all datetime fields use timezone.utc timezone specifically
         assert token.created_at.tzinfo == UTC
         assert token.expires_at.tzinfo == UTC
         assert token.last_used.tzinfo == UTC
@@ -182,26 +190,26 @@ class TestServiceTokenModel:
         assert token.is_valid is True
 
     def test_utc_standardization_recommendation(self):
-        """Test demonstrating the recommended UTC standardization approach."""
+        """Test demonstrating the recommended timezone.utc standardization approach."""
         token = ServiceToken()
 
-        # Best practice: Always use UTC timezone for consistency
+        # Best practice: Always use timezone.utc timezone for consistency
         base_time = datetime.now(UTC)
 
-        # All datetime assignments should use UTC
+        # All datetime assignments should use timezone.utc
         token.created_at = base_time - timedelta(days=30)
         token.expires_at = base_time + timedelta(days=90)
         token.last_used = base_time - timedelta(hours=1)
 
-        # Verify consistent UTC usage prevents timezone-related bugs
+        # Verify consistent timezone.utc usage prevents timezone-related bugs
         assert token.created_at < token.last_used < base_time < token.expires_at
 
-        # Verify expiration logic works correctly with UTC standardization
+        # Verify expiration logic works correctly with timezone.utc standardization
         token.is_active = True
         assert token.is_expired is False
         assert token.is_valid is True
 
-        # Test expiration boundary with UTC
+        # Test expiration boundary with timezone.utc
         token.expires_at = base_time - timedelta(microseconds=1)
         assert token.is_expired is True
         assert token.is_valid is False
@@ -509,7 +517,7 @@ class TestUserSession:
         id_column = table.columns["id"]
 
         assert id_column.primary_key is True
-        assert isinstance(id_column.type, UUID)
+        assert isinstance(id_column.type, UniversalUUID)
         assert id_column.nullable is False
 
     def test_user_session_email_column(self):
@@ -539,7 +547,7 @@ class TestUserSession:
 
         assert first_seen.nullable is False
         assert last_seen.nullable is False
-        # Both should have server default values
+        # Both should have server_default values
         assert first_seen.server_default is not None
         assert last_seen.server_default is not None
 
@@ -558,8 +566,8 @@ class TestUserSession:
         preferences_column = table.columns["preferences"]
         metadata_column = table.columns["user_metadata"]
 
-        assert isinstance(preferences_column.type, JSONB)
-        assert isinstance(metadata_column.type, JSONB)
+        assert isinstance(preferences_column.type, UniversalJSON)
+        assert isinstance(metadata_column.type, UniversalJSON)
         assert preferences_column.nullable is False
         assert metadata_column.nullable is False
 
@@ -580,15 +588,17 @@ class TestUserSession:
         assert session.user_metadata == {"last_login": "2025-01-01T00:00:00Z"}
 
     def test_user_session_creation_with_defaults(self):
-        """Test UserSession creation uses default values."""
+        """Test UserSession creation with explicit default values."""
         session = UserSession(
             email="test@example.com",
             cloudflare_sub="cf-sub-123",
+            preferences={},
+            user_metadata={},
         )
 
         assert session.email == "test@example.com"
         assert session.cloudflare_sub == "cf-sub-123"
-        # Should use defaults
+        # Should use provided default values
         assert session.preferences == {}
         assert session.user_metadata == {}
 
@@ -680,7 +690,7 @@ class TestAuthenticationEvent:
         id_column = table.columns["id"]
 
         assert id_column.primary_key is True
-        assert isinstance(id_column.type, UUID)
+        assert isinstance(id_column.type, UniversalUUID)
         assert id_column.nullable is False
 
     def test_authentication_event_user_email_column(self):
@@ -688,7 +698,7 @@ class TestAuthenticationEvent:
         table = AuthenticationEvent.__table__
         email_column = table.columns["user_email"]
 
-        assert email_column.nullable is True  # Can be None for service token auth
+        assert email_column.nullable is False
         assert email_column.type.length == 255
         assert hasattr(email_column, "index")
 
@@ -707,7 +717,7 @@ class TestAuthenticationEvent:
         ip_column = table.columns["ip_address"]
 
         assert ip_column.nullable is True
-        assert isinstance(ip_column.type, INET)
+        assert isinstance(ip_column.type, UniversalINET)
 
     def test_authentication_event_success_column(self):
         """Test AuthenticationEvent success column properties."""
@@ -725,8 +735,8 @@ class TestAuthenticationEvent:
         error_column = table.columns["error_details"]
         metrics_column = table.columns["performance_metrics"]
 
-        assert isinstance(error_column.type, JSONB)
-        assert isinstance(metrics_column.type, JSONB)
+        assert isinstance(error_column.type, UniversalJSON)
+        assert isinstance(metrics_column.type, UniversalJSON)
         assert error_column.nullable is True
         assert metrics_column.nullable is True
 
@@ -762,15 +772,16 @@ class TestAuthenticationEvent:
         assert event.performance_metrics == {"jwt_time_ms": 5.2, "total_time_ms": 45.1}
 
     def test_authentication_event_creation_with_defaults(self):
-        """Test AuthenticationEvent creation uses default values."""
+        """Test AuthenticationEvent creation with explicit default values."""
         event = AuthenticationEvent(
             user_email="test@example.com",
             event_type="login",
+            success=True,
         )
 
         assert event.user_email == "test@example.com"
         assert event.event_type == "login"
-        # Should use defaults
+        # Should use provided default value
         assert event.success is True
 
     def test_authentication_event_failure_case(self):
@@ -949,7 +960,7 @@ class TestModelConstraints:
             col.name for col in table.columns if not col.nullable and col.name != "id"  # id has default
         ]
 
-        expected_required = ["event_type", "success", "created_at"]  # user_email is nullable for service token auth
+        expected_required = ["user_email", "event_type", "success", "created_at"]
         for column in expected_required:
             assert column in non_nullable_columns
 

@@ -73,7 +73,9 @@ class TestSettingsAdditionalCoverage:
 
     def test_settings_creation_with_minimal_data(self) -> None:
         """Test settings creation with minimal data."""
-        settings = ApplicationSettings()
+        # Mock the custom env file loading to isolate from .env files
+        with patch("src.config.settings._env_file_settings", return_value={}):
+            settings = ApplicationSettings()
 
         # Should have default values
         assert settings.app_name == "PromptCraft-Hybrid"
@@ -119,7 +121,8 @@ class TestSettingsEnvironmentVariables:
     """Test settings with environment variables."""
 
     @patch.dict("os.environ", {"PROMPTCRAFT_APP_NAME": "EnvApp"})
-    def test_settings_from_environment_app_name(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_app_name(self, mock_env_files) -> None:
         """Test settings loading from environment variables."""
         settings = ApplicationSettings()
 
@@ -127,7 +130,8 @@ class TestSettingsEnvironmentVariables:
         assert settings.app_name == "EnvApp"
 
     @patch.dict("os.environ", {"PROMPTCRAFT_VERSION": "2.0.0"})
-    def test_settings_from_environment_version(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_version(self, mock_env_files) -> None:
         """Test settings loading version from environment."""
         settings = ApplicationSettings()
 
@@ -135,7 +139,8 @@ class TestSettingsEnvironmentVariables:
         assert settings.version == "2.0.0"
 
     @patch.dict("os.environ", {"PROMPTCRAFT_ENVIRONMENT": "prod"})
-    def test_settings_from_environment_environment(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_environment(self, mock_env_files) -> None:
         """Test settings loading environment from environment variable."""
         settings = ApplicationSettings()
 
@@ -143,7 +148,8 @@ class TestSettingsEnvironmentVariables:
         assert settings.environment == "prod"
 
     @patch.dict("os.environ", {"PROMPTCRAFT_DEBUG": "true"})
-    def test_settings_from_environment_debug(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_debug(self, mock_env_files) -> None:
         """Test settings loading debug from environment variable."""
         settings = ApplicationSettings()
 
@@ -151,7 +157,8 @@ class TestSettingsEnvironmentVariables:
         assert settings.debug is True
 
     @patch.dict("os.environ", {"PROMPTCRAFT_API_HOST": "example.com"})
-    def test_settings_from_environment_api_host(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_api_host(self, mock_env_files) -> None:
         """Test settings loading API host from environment variable."""
         settings = ApplicationSettings()
 
@@ -159,7 +166,8 @@ class TestSettingsEnvironmentVariables:
         assert settings.api_host == "example.com"
 
     @patch.dict("os.environ", {"PROMPTCRAFT_API_PORT": "9000"})
-    def test_settings_from_environment_api_port(self) -> None:
+    @patch("src.config.settings._env_file_settings", return_value={})
+    def test_settings_from_environment_api_port(self, mock_env_files) -> None:
         """Test settings loading API port from environment variable."""
         settings = ApplicationSettings()
 

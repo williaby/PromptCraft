@@ -1,0 +1,27 @@
+name: Dependency Review
+
+# Run dependency review on all pull requests
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail the job if any vulnerable dependencies are found
+          fail-on-severity: moderate
+          # Optional: Add license detection
+          license-check: true
+          # Optional: Customize vulnerable dependency reporting
+          comment-summary-in-pr: always

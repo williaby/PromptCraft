@@ -11,12 +11,13 @@ Tests cover:
 
 # ruff: noqa: S105, S106
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.auth.service_token_manager import ServiceTokenManager
+from src.utils.time_utils import utc_now
 
 
 class TestServiceTokenManager:
@@ -33,7 +34,7 @@ class TestServiceTokenManager:
         return {
             "token_name": "test-token",
             "metadata": {"permissions": ["api_read", "system_status"], "environment": "test"},
-            "expires_at": datetime.now(UTC) + timedelta(days=30),
+            "expires_at": utc_now() + timedelta(days=30),
             "is_active": True,
         }
 
@@ -85,9 +86,10 @@ class TestServiceTokenManager:
 
         mock_session.refresh = AsyncMock(side_effect=mock_refresh)
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             token_value, token_id = await token_manager.create_service_token(**sample_token_data)
 
@@ -110,9 +112,10 @@ class TestServiceTokenManager:
         mock_result.scalar.return_value = 1  # Token name already exists
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             with pytest.raises(ValueError, match="already exists"):
                 await token_manager.create_service_token(**sample_token_data)
@@ -131,9 +134,10 @@ class TestServiceTokenManager:
         mock_result.fetchone.return_value = mock_token_record
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             success = await token_manager.revoke_service_token("test-token", "test_revocation")
 
@@ -152,9 +156,10 @@ class TestServiceTokenManager:
         mock_result.fetchone.return_value = None  # Token not found
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             success = await token_manager.revoke_service_token("nonexistent-token")
 
@@ -175,9 +180,10 @@ class TestServiceTokenManager:
             MagicMock(),  # Update query
         ]
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             revoked_count = await token_manager.emergency_revoke_all_tokens("security_incident")
 
@@ -196,9 +202,10 @@ class TestServiceTokenManager:
         mock_result.scalar.return_value = 0  # No active tokens
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             revoked_count = await token_manager.emergency_revoke_all_tokens("test_reason")
 
@@ -225,9 +232,10 @@ class TestServiceTokenManager:
         mock_session.execute.return_value = mock_find_result
         mock_session.refresh = AsyncMock(side_effect=mock_refresh)
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             result = await token_manager.rotate_service_token("test-token", "scheduled_rotation")
 
@@ -253,9 +261,10 @@ class TestServiceTokenManager:
         mock_result.fetchone.return_value = None  # Token not found
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             result = await token_manager.rotate_service_token("nonexistent-token")
 
@@ -271,8 +280,8 @@ class TestServiceTokenManager:
         mock_token_data = MagicMock()
         mock_token_data.token_name = "test-token"
         mock_token_data.usage_count = 100
-        mock_token_data.last_used = datetime.now(UTC)
-        mock_token_data.created_at = datetime.now(UTC) - timedelta(days=30)
+        mock_token_data.last_used = utc_now()
+        mock_token_data.created_at = utc_now() - timedelta(days=30)
         mock_token_data.is_active = True
         mock_token_data.is_expired = False
         mock_token_result.fetchone.return_value = mock_token_data
@@ -282,15 +291,16 @@ class TestServiceTokenManager:
         mock_event = MagicMock()
         mock_event.event_type = "service_token_auth"
         mock_event.success = True
-        mock_event.created_at = datetime.now(UTC)
+        mock_event.created_at = utc_now()
         mock_events_result.fetchall.return_value = [mock_event]
 
         # Configure mock session to return different results for different queries
         mock_session.execute.side_effect = [mock_token_result, mock_events_result]
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             analytics = await token_manager.get_token_usage_analytics("test-token", days=30)
 
@@ -322,15 +332,16 @@ class TestServiceTokenManager:
         mock_top_token = MagicMock()
         mock_top_token.token_name = "popular-token"
         mock_top_token.usage_count = 200
-        mock_top_token.last_used = datetime.now(UTC)
+        mock_top_token.last_used = utc_now()
         mock_top_tokens_result.fetchall.return_value = [mock_top_token]
 
         # Configure mock session
         mock_session.execute.side_effect = [mock_summary_result, mock_top_tokens_result]
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             analytics = await token_manager.get_token_usage_analytics(days=30)
 
@@ -360,9 +371,10 @@ class TestServiceTokenManager:
             MagicMock(),  # Update tokens
         ]
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             result = await token_manager.cleanup_expired_tokens(deactivate_only=True)
 
@@ -387,9 +399,10 @@ class TestServiceTokenManager:
             MagicMock(),  # Delete tokens
         ]
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             result = await token_manager.cleanup_expired_tokens(deactivate_only=False)
 
@@ -405,9 +418,10 @@ class TestServiceTokenManager:
         mock_result.fetchall.return_value = []  # No expired tokens
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             result = await token_manager.cleanup_expired_tokens()
 
@@ -418,11 +432,12 @@ class TestServiceTokenManager:
     async def test_token_lifecycle_integration(self, token_manager):
         """Test complete token lifecycle: create -> use -> rotate -> revoke."""
         mock_session = AsyncMock()
-        mock_get_db_patcher = patch("src.auth.service_token_manager.get_db")
+        mock_get_db_patcher = patch("src.auth.service_token_manager.get_database_manager")
 
-        with mock_get_db_patcher as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with mock_get_db_patcher as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             # 1. Create token
             mock_result = MagicMock()
@@ -508,9 +523,9 @@ class TestServiceTokenManager:
     @pytest.mark.asyncio
     async def test_error_handling_database_failure(self, token_manager):
         """Test error handling when database operations fail."""
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
             # Simulate database connection failure
-            mock_get_db.side_effect = Exception("Database connection failed")
+            mock_get_db_manager.side_effect = Exception("Database connection failed")
 
             with pytest.raises(Exception, match="Database connection failed"):
                 await token_manager.create_service_token("test-token")
@@ -529,9 +544,10 @@ class TestServiceTokenManager:
         mock_result.fetchone.return_value = None  # Token not found
         mock_session.execute.return_value = mock_result
 
-        with patch("src.auth.service_token_manager.get_db") as mock_get_db:
-            mock_get_db.return_value.__aenter__.return_value = mock_session
-            mock_get_db.return_value.__aexit__.return_value = None
+        with patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager:
+            mock_db_manager = mock_get_db_manager.return_value
+            mock_db_manager.get_session.return_value.__aenter__.return_value = mock_session
+            mock_db_manager.get_session.return_value.__aexit__.return_value = None
 
             analytics = await token_manager.get_token_usage_analytics("nonexistent-token")
 

@@ -11,9 +11,11 @@ import logging
 import time
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from functools import lru_cache
 from typing import Any
+
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 

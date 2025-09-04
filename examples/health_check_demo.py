@@ -262,12 +262,13 @@ def demonstrate_security_features() -> None:
     console.print(Panel("[bold blue]Security Features Demo[/bold blue]"))
 
     try:
-        # Create settings with sensitive data
+        # Create settings with example sensitive data (for demo purposes only)
+        # In real applications, these would come from environment variables
         settings = ApplicationSettings(
-            database_password=SecretStr("super_secret_db_password"),
-            api_key=SecretStr("sk-1234567890abcdef"),
-            secret_key=SecretStr("super_secret_app_key"),
-            jwt_secret_key=SecretStr("jwt_signing_secret"),
+            database_password=SecretStr("example_db_password"),
+            api_key=SecretStr("demo_api_key_12345"),
+            secret_key=SecretStr("example_app_key"),
+            jwt_secret_key=SecretStr("demo_jwt_secret"),
         )
 
         console.print("✅ [bold]Created settings with sensitive data:[/bold]")
@@ -289,10 +290,10 @@ def demonstrate_security_features() -> None:
 
         # Check for secret values
         secret_values = [
-            "super_secret_db_password",
-            "sk-1234567890abcdef",
-            "super_secret_app_key",
-            "jwt_signing_secret",
+            "example_db_password",
+            "demo_api_key_12345",
+            "example_app_key",
+            "demo_jwt_secret",
         ]
 
         leaked_secrets = []

@@ -15,7 +15,7 @@ Features:
 
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -32,6 +32,7 @@ from src.core.ab_testing_framework import (
     UserAssignmentModel,
     get_experiment_manager,
 )
+from src.utils.datetime_compat import UTC
 from src.utils.observability import ObservabilityMixin
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ class Alert:
     metric_type: MetricType
     current_value: float
     threshold_value: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     acknowledged: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -124,7 +125,7 @@ class DashboardMetrics:
     confidence_level: str  # low, medium, high
 
     # Metadata
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -262,7 +263,7 @@ class MetricsCollector(ObservabilityMixin):
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
                     timeline[hour_key] = {
-                        "timestamp": hour_key.isoformat(),
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
                         "response_times": [],
                         "token_reductions": [],
                         "success_count": 0,
@@ -335,7 +336,11 @@ class MetricsCollector(ObservabilityMixin):
             for event in events:
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
-                    timeline[hour_key] = {"timestamp": hour_key.isoformat(), "conversions": 0, "total_attempts": 0}
+                    timeline[hour_key] = {
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "conversions": 0,
+                        "total_attempts": 0,
+                    }
 
                 timeline[hour_key]["total_attempts"] += 1
 
@@ -383,7 +388,11 @@ class MetricsCollector(ObservabilityMixin):
             for event in events:
                 hour_key = event.timestamp.replace(minute=0, second=0, microsecond=0)
                 if hour_key not in timeline:
-                    timeline[hour_key] = {"timestamp": hour_key.isoformat(), "errors": 0, "total_events": 0}
+                    timeline[hour_key] = {
+                        "timestamp": hour_key.strftime("%Y-%m-%dT%H:%M:%S"),
+                        "errors": 0,
+                        "total_events": 0,
+                    }
 
                 timeline[hour_key]["total_events"] += 1
 

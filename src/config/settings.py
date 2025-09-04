@@ -1,4 +1,5 @@
-"""Core application settings using Pydantic BaseSettings.
+"""
+Core application settings using Pydantic BaseSettings.
 
 This module defines the core configuration schema for the PromptCraft-Hybrid application.
 It provides type-safe configuration with validation and environment-specific loading.
@@ -11,7 +12,9 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
+from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings.sources import PydanticBaseSettingsSource
 
 from src.utils.encryption import (
     EncryptionError,
@@ -326,7 +329,7 @@ class ApplicationSettings(BaseSettings):
     )
 
     db_user: str = Field(
-        default="promptcraft_user",
+        default="promptcraft_rw",
         description="PostgreSQL database user",
     )
 
@@ -692,6 +695,54 @@ class ApplicationSettings(BaseSettings):
         env_prefix="PROMPTCRAFT_",
     )
 
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type["ApplicationSettings"],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Customize settings sources to integrate custom .env file loading."""
+
+        class CustomEnvSettingsSource(PydanticBaseSettingsSource):
+            def get_field_value(self, field_info: FieldInfo, field_name: str) -> tuple[Any, str] | tuple[None, None]:
+                # Get values from our custom env loader
+                custom_env_vars = _env_file_settings()
+                if field_name in custom_env_vars:
+                    return custom_env_vars[field_name], field_name
+                return None, None
+
+            def prepare_field_value(self, field_name: str, value: Any, value_origin: Any) -> Any:
+                return value
+
+            def __call__(self) -> dict[str, Any]:
+                data = {}
+                custom_env_vars = _env_file_settings()
+                # Only include fields that exist in the settings class
+                for field_name in custom_env_vars:
+                    if field_name in settings_cls.model_fields:
+                        value = custom_env_vars[field_name]
+                        # Handle empty strings for optional SecretStr fields
+                        if value == "":
+                            # For empty strings, check if this is an optional field
+                            field_info = settings_cls.model_fields[field_name]
+                            field_type = str(field_info.annotation)
+                            if "SecretStr" in field_type and ("None" in field_type or "Optional" in field_type):
+                                # This is an optional SecretStr field, set to None instead of empty string
+                                value = None
+                        data[field_name] = value
+                return data
+
+        return (
+            init_settings,
+            CustomEnvSettingsSource(settings_cls),
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
+
     @field_validator("api_host")
     @classmethod
     def validate_api_host(cls, v: str) -> str:
@@ -816,7 +867,7 @@ class ApplicationSettings(BaseSettings):
             )
 
         # Check for reasonable characters (allow spaces, hyphens, underscores)
-        if not re.match(r"^[a-zA-Z0-9._\s-]+$", v):
+        if not re.match(r"^[a-zA-Z0-9._\s-]+", v):
             raise ValueError(
                 f"Invalid application name: '{v}'. "
                 "Name should contain only letters, numbers, spaces, hyphens, "

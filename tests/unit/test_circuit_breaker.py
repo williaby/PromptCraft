@@ -6,7 +6,7 @@ external service failures with configurable thresholds and recovery.
 
 import asyncio
 import threading
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -26,6 +26,7 @@ from src.utils.circuit_breaker import (
     start_all_health_monitoring,
     stop_all_health_monitoring,
 )
+from src.utils.datetime_compat import UTC
 
 
 class TestCircuitBreakerConfig:
@@ -668,10 +669,13 @@ class TestCircuitBreakerIntegration:
         # Phase 2: Service goes down
         service_healthy = False
 
-        # Multiple failures should open the circuit
-        for _i in range(3):
-            with pytest.raises(Exception, match="Service error"):
-                await circuit_breaker.call_async(simulated_service_call)
+        # With max_retries=2, each call will retry internally
+        # First call will exhaust retries and circuit opens on failure threshold
+
+        # First failed request (with retries) should open the circuit due to failure_threshold=3
+        # This single request will trigger 3 failures internally (original + 2 retries)
+        with pytest.raises(Exception, match="Service unavailable"):
+            await circuit_breaker.call_async(simulated_service_call)
 
         assert circuit_breaker.state == CircuitBreakerState.OPEN
 
@@ -679,8 +683,8 @@ class TestCircuitBreakerIntegration:
         with pytest.raises(CircuitBreakerOpenError):
             await circuit_breaker.call_async(simulated_service_call)
 
-        # Phase 4: Wait for recovery timeout
-        await asyncio.sleep(1.5)
+        # Phase 4: Wait for recovery timeout (recovery_timeout=1s, add buffer)
+        await asyncio.sleep(2.0)
 
         # Phase 5: Service comes back online
         service_healthy = True

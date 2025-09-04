@@ -384,11 +384,11 @@ class TestDemonstrateSecurityFeatures:
         mock_settings = Mock()
         mock_settings_class.return_value = mock_settings
 
-        # Mock status with leaked secrets in JSON
+        # Mock status with leaked secrets in JSON - must match secrets that function checks for
         mock_status = Mock()
         mock_status.secrets_configured = 4
         mock_status.model_dump_json.return_value = (
-            '{"password": "super_secret_db_password", "api_key": "sk-1234567890abcdef"}'
+            '{"password": "example_db_password", "api_key": "demo_api_key_12345"}'
         )
         mock_get_status.return_value = mock_status
 
@@ -441,12 +441,12 @@ class TestDemonstrateSecurityFeatures:
         mock_status = Mock()
         mock_status.secrets_configured = 4
 
-        # Test each secret value individually
+        # Test each secret value individually - must match secrets that function checks for
         secret_values = [
-            "super_secret_db_password",
-            "sk-1234567890abcdef",
-            "super_secret_app_key",
-            "jwt_signing_secret",
+            "example_db_password",
+            "demo_api_key_12345",
+            "example_app_key",
+            "demo_jwt_secret",
         ]
 
         # Test at least one secret value detection

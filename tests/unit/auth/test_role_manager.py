@@ -9,7 +9,7 @@ This module provides extensive test coverage for the RoleManager class including
 - Database integration testing
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -22,6 +22,7 @@ from src.auth.role_manager import (
     RoleNotFoundError,
     UserNotFoundError,
 )
+from src.utils.datetime_compat import UTC
 
 # =============================================================================
 # FIXTURES
@@ -344,7 +345,7 @@ class TestPermissionManagement:
         # Mock session.execute for three calls: role lookup, permission lookup, insert statement
         mock_session.execute.side_effect = [mock_role_result, mock_perm_result, mock_insert_result]
 
-        with patch("src.auth.role_manager.insert") as mock_insert_func:
+        with patch("src.auth.role_manager.pg_insert") as mock_insert_func:
             mock_insert_func.return_value = mock_insert
             result = await role_manager.assign_permission_to_role("test_role", "test:permission")
 
@@ -879,7 +880,7 @@ class TestIntegrationScenarios:
         ]
 
         # Mock the insert function to return our mock with on_conflict_do_nothing
-        with patch("src.auth.role_manager.insert", return_value=mock_insert):
+        with patch("src.auth.role_manager.pg_insert", return_value=mock_insert):
             # Create role
             role_result = await role_manager.create_role("workflow_role", "Test workflow role")
 

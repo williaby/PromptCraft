@@ -39,7 +39,7 @@ This implementation provides a complete user control system for the dynamic func
 
 ### ✅ Category Management Commands
 - `/load-category <category>` - Load specific function category
-- `/unload-category <category>` - Unload specific function category  
+- `/unload-category <category>` - Unload specific function category
 - `/list-categories [tier:N] [loaded-only]` - Show available categories
 - `/category-info <category>` - Detailed category information
 

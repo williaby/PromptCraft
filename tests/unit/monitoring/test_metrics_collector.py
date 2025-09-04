@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -16,6 +16,7 @@ from src.monitoring.metrics_collector import (
     TrendAnalyzer,
     ValidationResult,
 )
+from src.utils.datetime_compat import UTC
 
 
 @pytest.mark.asyncio
@@ -316,14 +317,14 @@ async def test_metrics_collector_collect_and_report(tmp_path, monkeypatch):
     assert "anomaly_detection" in report
 
     # Export wrapper
-    export = await mc.export_for_external_analysis(format="json")
+    export = await mc.export_for_external_analysis(format_type="json")
     assert export["export_format"] == "json"
     assert "data" in export
 
     # Exercise other export format branches
-    exp_p = await mc.export_for_external_analysis(format="prometheus")
+    exp_p = await mc.export_for_external_analysis(format_type="prometheus")
     assert exp_p["export_format"] == "prometheus"
-    exp_g = await mc.export_for_external_analysis(format="grafana")
+    exp_g = await mc.export_for_external_analysis(format_type="grafana")
     assert exp_g["export_format"] == "grafana"
 
 

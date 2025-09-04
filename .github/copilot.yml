@@ -4,7 +4,7 @@
 # Enable Copilot suggestions
 suggestions:
   enabled: true
-  
+
   # Language-specific settings
   languages:
     python: true
@@ -31,14 +31,14 @@ exclude:
   - "*.log"
   - "*.tmp"
   - "*.cache"
-  
+
   # Environment and secrets
   - "*.env*"
   - ".env*"
   - "**/.env*"
   - "**/secrets/**"
   - "**/.secrets/**"
-  
+
   # Dependencies and virtual environments
   - "**/node_modules/**"
   - "**/.venv/**"
@@ -46,7 +46,7 @@ exclude:
   - "**/__pycache__/**"
   - "**/.pytest_cache/**"
   - "**/poetry.lock"
-  
+
   # Generated files
   - "**/dist/**"
   - "**/build/**"
@@ -60,12 +60,12 @@ project:
   # Knowledge base patterns - be careful with suggestions in knowledge files
   knowledge_patterns:
     - "knowledge/**/*.md"
-    
+
   # Agent-specific code patterns
   agent_patterns:
     - "src/agents/**/*.py"
-    
-  # MCP integration patterns  
+
+  # MCP integration patterns
   mcp_patterns:
     - "src/mcp_integration/**/*.py"
 
@@ -76,16 +76,16 @@ patterns:
     template: |
       class {AgentName}Agent(BaseAgent):
           """Agent for {domain} operations."""
-          
+
           def __init__(self, config: AgentConfig):
               super().__init__(config)
               self.agent_id = "{agent_id}"
-              
+
           async def process_request(self, request: AgentRequest) -> AgentResponse:
               """Process agent request and return response."""
               pass
-  
-  # Knowledge file suggestions  
+
+  # Knowledge file suggestions
   knowledge_file:
     frontmatter: |
       ---

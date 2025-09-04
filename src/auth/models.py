@@ -1,21 +1,25 @@
 """Authentication models for PromptCraft."""
 
+import re
 import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
-from .constants import ROLE_ADMIN, ROLE_USER
+from src.utils.datetime_compat import UTC
+
+# Create aliases for backward compatibility
 
 
 class UserRole(str, Enum):
     """User roles for role-based access control."""
 
-    ADMIN = ROLE_ADMIN
-    USER = ROLE_USER
-    VIEWER = "viewer"  # Not centralized yet, keeping as is
+    ADMIN = "admin"
+    USER = "user"
+    VIEWER = "viewer"
 
 
 class AuthenticatedUser(BaseModel):
@@ -75,8 +79,9 @@ class ServiceTokenCreate(BaseModel):
     expires_at: datetime | None = Field(default=None, description="Token expiration datetime")
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
-    @validator("token_name")
-    def validate_token_name(cls, v: str) -> str:  # noqa: N805
+    @field_validator("token_name")
+    @classmethod
+    def validate_token_name(cls, v: str) -> str:
         """Validate and clean token name."""
         return v.strip()
 
@@ -94,8 +99,9 @@ class ServiceTokenUpdate(BaseModel):
     expires_at: datetime | None = Field(default=None, description="Token expiration datetime")
     metadata: dict[str, Any] | None = Field(default=None, description="Additional token metadata")
 
-    @validator("token_name")
-    def validate_token_name(cls, v: str | None) -> str | None:  # noqa: N805
+    @field_validator("token_name")
+    @classmethod
+    def validate_token_name(cls, v: str | None) -> str | None:
         """Validate and clean token name."""
         if v is not None:
             return v.strip()
@@ -148,8 +154,9 @@ class TokenValidationRequest(BaseModel):
 
     token: str = Field(..., min_length=1, description="Token to validate")
 
-    @validator("token")
-    def validate_token(cls, v: str) -> str:  # noqa: N805
+    @field_validator("token")
+    @classmethod
+    def validate_token(cls, v: str) -> str:
         """Validate and clean token."""
         return v.strip()
 
@@ -163,3 +170,160 @@ class TokenValidationResponse(BaseModel):
     expires_at: datetime | None = Field(default=None, description="Token expiration if valid")
     metadata: dict[str, Any] | None = Field(default=None, description="Token metadata if valid")
     error: str | None = Field(default=None, description="Error message if invalid")
+
+
+# Security Event Models
+
+
+class SecurityEventType(str, Enum):
+    """Security event types for comprehensive monitoring coverage."""
+
+    # Authentication events
+    LOGIN_SUCCESS = "login_success"
+    LOGIN_FAILURE = "login_failure"
+    LOGOUT = "logout"
+    SESSION_EXPIRED = "session_expired"
+
+    # Service token events
+    SERVICE_TOKEN_AUTH = "service_token_auth"  # noqa: S105
+    SERVICE_TOKEN_CREATED = "service_token_created"  # noqa: S105
+    SERVICE_TOKEN_REVOKED = "service_token_revoked"  # noqa: S105
+    SERVICE_TOKEN_EXPIRED = "service_token_expired"  # noqa: S105
+
+    # Account security events
+    PASSWORD_CHANGED = "password_changed"  # noqa: S105
+    ACCOUNT_LOCKOUT = "account_lockout"
+    ACCOUNT_UNLOCK = "account_unlock"
+
+    # Suspicious activity events
+    SUSPICIOUS_ACTIVITY = "suspicious_activity"
+    BRUTE_FORCE_ATTEMPT = "brute_force_attempt"
+    RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
+
+    # System events
+    SYSTEM_ERROR = "system_error"
+    SECURITY_ALERT = "security_alert"
+    CONFIGURATION_CHANGED = "configuration_changed"
+    AUDIT_LOG_GENERATED = "audit_log_generated"
+    SYSTEM_MAINTENANCE = "system_maintenance"
+
+
+class SecurityEventSeverity(str, Enum):
+    """Security event severity levels for proper alerting and response."""
+
+    INFO = "info"  # Normal operations, informational logging
+    WARNING = "warning"  # Potential security concerns, failed attempts
+    CRITICAL = "critical"  # Active threats, system errors, brute force
+
+
+class SecurityEventBase(BaseModel):
+    """Base security event model with common fields."""
+
+    event_type: SecurityEventType = Field(..., description="Type of security event")
+    severity: SecurityEventSeverity = Field(..., description="Event severity level")
+    user_id: str | None = Field(None, max_length=255, description="User identifier (email or token name)")
+    ip_address: str | None = Field(None, max_length=45, description="Client IP address (IPv4 or IPv6)")
+    user_agent: str | None = Field(None, max_length=500, description="User agent string")
+    session_id: str | None = Field(None, max_length=255, description="Session identifier")
+    details: dict[str, Any] | None = Field(default_factory=dict, description="Additional event details (JSON)")
+    risk_score: int = Field(0, ge=0, le=100, description="Risk score from 0-100")
+
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip_address(cls, v: str | None) -> str | None:
+        """Validate IP address format."""
+        if v is None:
+            return v
+
+        # Basic IPv4 pattern validation
+        ipv4_pattern = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        # Basic IPv6 pattern validation (simplified)
+        ipv6_pattern = r"^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::1$|^::$"
+
+        if re.match(ipv4_pattern, v) or re.match(ipv6_pattern, v):
+            return v
+
+        # Allow localhost and private networks for development
+        if v in ["localhost", "127.0.0.1", "::1"] or v.startswith(("192.168.", "10.")):
+            return v
+
+        return v  # Return as-is for complex IPv6 addresses or unknown formats
+
+    @field_validator("user_agent")
+    @classmethod
+    def validate_user_agent(cls, v: str | None) -> str | None:
+        """Sanitize user agent string to prevent injection attacks."""
+        if v is None:
+            return v
+
+        # Remove potentially dangerous characters but keep useful info
+        sanitized = re.sub(r'[<>"\"]', "", v)
+        return sanitized[:500]  # Enforce max length
+
+    @field_validator("details")
+    @classmethod
+    def validate_details(cls, v: dict[str, Any] | None) -> dict[str, Any]:
+        """Validate and sanitize details JSON."""
+        if v is None:
+            return {}
+
+        # Ensure all keys are strings and values are JSON-serializable
+        sanitized = {}
+        for key, value in v.items():
+            if isinstance(key, str) and len(key) <= 100:  # Reasonable key length limit
+                if isinstance(value, (str, int, float, bool, type(None))):
+                    sanitized[key] = value
+                else:
+                    # Convert complex types to string representation
+                    sanitized[key] = str(value)[:1000]  # Limit value length
+
+        return sanitized
+
+
+class SecurityEventCreate(SecurityEventBase):
+    """Model for creating new security events."""
+
+    timestamp: datetime | None = Field(
+        default_factory=lambda: datetime.now(UTC),
+        description="Event timestamp",
+    )
+
+
+class SecurityEvent(SecurityEventBase):
+    """Complete security event model with database fields."""
+
+    id: UUID | None = Field(default_factory=uuid4, description="Unique event identifier")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="Event timestamp")
+
+    class Config:
+        """Pydantic configuration."""
+
+        orm_mode = True  # Enable ORM integration
+        validate_assignment = True  # Validate on assignment
+        use_enum_values = True  # Use enum values in serialization
+
+
+class SecurityEventResponse(BaseModel):
+    """Response model for security events (API responses)."""
+
+    id: UUID = Field(..., description="Event identifier")
+    event_type: str = Field(..., description="Event type")
+    severity: str = Field(..., description="Event severity")
+    user_id: str | None = Field(None, description="User identifier")
+    ip_address: str | None = Field(None, description="IP address")
+    user_agent: str | None = Field(None, description="User agent string")
+    session_id: str | None = Field(None, description="Session identifier")
+    timestamp: datetime = Field(..., description="Event timestamp")
+    risk_score: int = Field(..., description="Risk score 0-100")
+    details: dict[str, Any] = Field(default_factory=dict, description="Event details")
+    source: str | None = Field(None, description="Event source system")
+
+    class Config:
+        """Pydantic configuration."""
+
+        orm_mode = True
+
+
+# Create aliases for backward compatibility
+EventSeverity = SecurityEventSeverity
+EventType = SecurityEventType

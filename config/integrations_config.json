@@ -51,7 +51,7 @@
     "service_key": null,
     "severity_mapping": {
       "critical": "critical",
-      "error": "error", 
+      "error": "error",
       "warning": "warning",
       "info": "info"
     }

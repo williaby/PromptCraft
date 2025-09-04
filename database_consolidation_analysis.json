@@ -1,0 +1,1183 @@
+{
+  "analysis_duration_seconds": 0.0641733929514885,
+  "database_analyses": [
+    {
+      "database_path": "security_events.db",
+      "table_count": 1,
+      "total_records": 0,
+      "file_size_bytes": 53248,
+      "schema_complexity": {
+        "security_events": {
+          "column_count": 11,
+          "columns": [
+            {
+              "name": "id",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "timestamp",
+              "type": "DATETIME",
+              "nullable": false
+            },
+            {
+              "name": "event_type",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "severity",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "ip_address",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "user_agent",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "session_id",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "details",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "risk_score",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "nullable": true
+            }
+          ]
+        }
+      },
+      "data_patterns": {
+        "security_events": {
+          "record_count": 0
+        }
+      },
+      "migration_risks": [],
+      "performance_projections": {
+        "estimated_insert_latency_ms": 3.0,
+        "estimated_query_latency_ms": 1.5,
+        "recommended_connection_pool_size": 10,
+        "estimated_migration_time_hours": 2.0,
+        "storage_overhead_factor": 1.3,
+        "index_recommendations": [
+          "CREATE INDEX CONCURRENTLY ON auth_events(created_at DESC) - for time-based queries",
+          "CREATE INDEX CONCURRENTLY ON auth_events(user_email) WHERE success = false - for security analysis"
+        ],
+        "meets_executive_mandate": true,
+        "performance_margin_ms": 7.0
+      }
+    },
+    {
+      "database_path": "analytics.db",
+      "table_count": 2,
+      "total_records": 12808,
+      "file_size_bytes": 4165632,
+      "schema_complexity": {
+        "usage_events": {
+          "column_count": 7,
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "timestamp",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "event_type",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "event_data",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "session_id",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "context",
+              "type": "TEXT",
+              "nullable": true
+            }
+          ]
+        },
+        "session_metrics": {
+          "column_count": 12,
+          "columns": [
+            {
+              "name": "session_id",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "user_id",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "start_time",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "end_time",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "commands_executed",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "functions_used",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "categories_loaded",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "performance_mode",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "total_tokens_used",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "errors_encountered",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "help_requests",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "optimization_applied",
+              "type": "BOOLEAN",
+              "nullable": true
+            }
+          ]
+        }
+      },
+      "data_patterns": {
+        "usage_events": {
+          "record_count": 12808,
+          "id": {
+            "null_count": 0,
+            "unique_values": 12808,
+            "sample_values": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ]
+          },
+          "timestamp": {
+            "null_count": 0,
+            "unique_values": 12808,
+            "sample_values": [
+              "2025-08-15T07:14:01.968361",
+              "2025-08-15T07:14:01.973696",
+              "2025-08-15T07:14:01.981494",
+              "2025-08-15T07:14:01.986401",
+              "2025-08-15T07:14:01.994992"
+            ]
+          },
+          "event_type": {
+            "null_count": 0,
+            "unique_values": 4,
+            "sample_values": [
+              "session_started",
+              "session_completed",
+              "session_started",
+              "fallback_activated",
+              "session_completed"
+            ]
+          },
+          "event_data": {
+            "null_count": 0,
+            "unique_values": 5425,
+            "sample_values": [
+              "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+              "{\"session_duration_seconds\": 0.005358, \"token_reduction_percentage\": 100.0, \"function_usage_efficiency\": 0.0, \"commands_successful\": 0, \"commands_failed\": 0, \"fallback_activations\": 0, \"user_overrides\": 0}",
+              "{\"task_type\": null, \"optimization_level\": \"balanced\", \"baseline_tokens\": 20000}",
+              "{\"reason\": \"'dict' object has no attribute 'timestamp'\", \"missing_functions\": [], \"fallback_count\": 1}",
+              "{\"session_duration_seconds\": 0.013485, \"token_reduction_percentage\": -75.64999999999999, \"function_usage_efficiency\": 0.0, \"commands_successful\": 0, \"commands_failed\": 0, \"fallback_activations\": 1, \"user_overrides\": 0}"
+            ]
+          },
+          "user_id": {
+            "null_count": 0,
+            "unique_values": 36,
+            "sample_values": [
+              "test_user",
+              "test_user",
+              "test_user",
+              "test_user",
+              "test_user"
+            ]
+          },
+          "session_id": {
+            "null_count": 0,
+            "unique_values": 6176,
+            "sample_values": [
+              "7e560231-bc10-4353-987d-3dff4d587e4d",
+              "7e560231-bc10-4353-987d-3dff4d587e4d",
+              "82c8508e-56df-40dc-9b62-b1e4918d1616",
+              "82c8508e-56df-40dc-9b62-b1e4918d1616",
+              "82c8508e-56df-40dc-9b62-b1e4918d1616"
+            ]
+          },
+          "context": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              "{}",
+              "{}",
+              "{}",
+              "{}",
+              "{}"
+            ]
+          },
+          "timestamp_range": {
+            "min": "2025-08-15T07:14:01.968361",
+            "max": "2025-08-20T10:10:32.497322"
+          }
+        },
+        "session_metrics": {
+          "record_count": 0
+        }
+      },
+      "migration_risks": [
+        "Table usage_events.event_data: Text column appears to contain JSON, consider JSONB conversion",
+        "Table usage_events.context: Text column appears to contain JSON, consider JSONB conversion"
+      ],
+      "performance_projections": {
+        "estimated_insert_latency_ms": 4.5,
+        "estimated_query_latency_ms": 2.330610989183432,
+        "recommended_connection_pool_size": 10,
+        "estimated_migration_time_hours": 2.25616,
+        "storage_overhead_factor": 1.3,
+        "index_recommendations": [
+          "CREATE INDEX CONCURRENTLY ON auth_events(created_at DESC) - for time-based queries",
+          "CREATE INDEX CONCURRENTLY ON auth_events(user_email) WHERE success = false - for security analysis"
+        ],
+        "meets_executive_mandate": true,
+        "performance_margin_ms": 5.5
+      }
+    },
+    {
+      "database_path": "ab_testing.db",
+      "table_count": 3,
+      "total_records": 92,
+      "file_size_bytes": 212992,
+      "schema_complexity": {
+        "ab_experiments": {
+          "column_count": 21,
+          "columns": [
+            {
+              "name": "id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "description",
+              "type": "VARCHAR",
+              "nullable": true
+            },
+            {
+              "name": "experiment_type",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "config",
+              "type": "JSON",
+              "nullable": false
+            },
+            {
+              "name": "variants",
+              "type": "JSON",
+              "nullable": false
+            },
+            {
+              "name": "success_criteria",
+              "type": "JSON",
+              "nullable": false
+            },
+            {
+              "name": "failure_thresholds",
+              "type": "JSON",
+              "nullable": false
+            },
+            {
+              "name": "target_percentage",
+              "type": "FLOAT",
+              "nullable": false
+            },
+            {
+              "name": "current_percentage",
+              "type": "FLOAT",
+              "nullable": false
+            },
+            {
+              "name": "segment_filters",
+              "type": "JSON",
+              "nullable": true
+            },
+            {
+              "name": "start_time",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "end_time",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "planned_duration_hours",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "total_users",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "conversion_events",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "statistical_significance",
+              "type": "FLOAT",
+              "nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "created_by",
+              "type": "VARCHAR",
+              "nullable": true
+            }
+          ]
+        },
+        "ab_user_assignments": {
+          "column_count": 11,
+          "columns": [
+            {
+              "name": "id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "experiment_id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "variant",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "segment",
+              "type": "VARCHAR",
+              "nullable": true
+            },
+            {
+              "name": "user_characteristics",
+              "type": "JSON",
+              "nullable": true
+            },
+            {
+              "name": "assignment_time",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "assignment_method",
+              "type": "VARCHAR",
+              "nullable": true
+            },
+            {
+              "name": "opt_out",
+              "type": "BOOLEAN",
+              "nullable": true
+            },
+            {
+              "name": "last_interaction",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "total_interactions",
+              "type": "INTEGER",
+              "nullable": true
+            }
+          ]
+        },
+        "ab_metric_events": {
+          "column_count": 15,
+          "columns": [
+            {
+              "name": "id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "experiment_id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "variant",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "event_type",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "event_name",
+              "type": "VARCHAR",
+              "nullable": false
+            },
+            {
+              "name": "event_value",
+              "type": "FLOAT",
+              "nullable": true
+            },
+            {
+              "name": "event_data",
+              "type": "JSON",
+              "nullable": true
+            },
+            {
+              "name": "session_id",
+              "type": "VARCHAR",
+              "nullable": true
+            },
+            {
+              "name": "request_id",
+              "type": "VARCHAR",
+              "nullable": true
+            },
+            {
+              "name": "timestamp",
+              "type": "DATETIME",
+              "nullable": true
+            },
+            {
+              "name": "response_time_ms",
+              "type": "FLOAT",
+              "nullable": true
+            },
+            {
+              "name": "token_reduction_percentage",
+              "type": "FLOAT",
+              "nullable": true
+            },
+            {
+              "name": "success",
+              "type": "BOOLEAN",
+              "nullable": true
+            },
+            {
+              "name": "error_message",
+              "type": "VARCHAR",
+              "nullable": true
+            }
+          ]
+        }
+      },
+      "data_patterns": {
+        "ab_experiments": {
+          "record_count": 90,
+          "id": {
+            "null_count": 0,
+            "unique_values": 90,
+            "sample_values": [
+              "exp_1755317008014_dynamic_loading",
+              "exp_1755317008187_dynamic_loading",
+              "exp_1755318965493_dynamic_loading",
+              "exp_1755318965829_dynamic_loading",
+              "exp_1755319003102_dynamic_loading"
+            ]
+          },
+          "name": {
+            "null_count": 0,
+            "unique_values": 3,
+            "sample_values": [
+              "Test Experiment",
+              "Dynamic Function Loading Rollout",
+              "Test Experiment",
+              "Dynamic Function Loading Rollout",
+              "Test Experiment"
+            ]
+          },
+          "description": {
+            "null_count": 0,
+            "unique_values": 3,
+            "sample_values": [
+              "Test Description",
+              "A/B test for gradual rollout of dynamic function loading optimization",
+              "Test Description",
+              "A/B test for gradual rollout of dynamic function loading optimization",
+              "Test Description"
+            ]
+          },
+          "experiment_type": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              "dynamic_loading",
+              "dynamic_loading",
+              "dynamic_loading",
+              "dynamic_loading",
+              "dynamic_loading"
+            ]
+          },
+          "status": {
+            "null_count": 0,
+            "unique_values": 3,
+            "sample_values": [
+              "draft",
+              "completed",
+              "draft",
+              "completed",
+              "draft"
+            ]
+          },
+          "config": {
+            "null_count": 0,
+            "unique_values": 4,
+            "sample_values": [
+              "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+              "{\"name\": \"Dynamic Function Loading Rollout\", \"description\": \"A/B test for gradual rollout of dynamic function loading optimization\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 1, \"feature_flags\": {\"dynamic_loading_enabled\": true}, \"variant_configs\": {\"control\": {\"feature_flags\": {\"dynamic_loading_enabled\": false}, \"loading_strategy\": \"baseline\"}, \"treatment\": {\"feature_flags\": {\"dynamic_loading_enabled\": true}, \"loading_strategy\": \"balanced\"}}, \"initial_percentage\": 1.0, \"target_percentage\": 10.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0, 100.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}, \"failure_thresholds\": {\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+              "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+              "{\"name\": \"Dynamic Function Loading Rollout\", \"description\": \"A/B test for gradual rollout of dynamic function loading optimization\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 1, \"feature_flags\": {\"dynamic_loading_enabled\": true}, \"variant_configs\": {\"control\": {\"feature_flags\": {\"dynamic_loading_enabled\": false}, \"loading_strategy\": \"baseline\"}, \"treatment\": {\"feature_flags\": {\"dynamic_loading_enabled\": true}, \"loading_strategy\": \"balanced\"}}, \"initial_percentage\": 1.0, \"target_percentage\": 10.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0, 100.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}, \"failure_thresholds\": {\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}",
+              "{\"name\": \"Test Experiment\", \"description\": \"Test Description\", \"experiment_type\": \"dynamic_loading\", \"planned_duration_hours\": 168, \"feature_flags\": {}, \"variant_configs\": {}, \"initial_percentage\": 1.0, \"target_percentage\": 50.0, \"rollout_steps\": [1.0, 5.0, 25.0, 50.0], \"step_duration_hours\": 24, \"segment_filters\": [\"random\"], \"exclude_segments\": [], \"opt_in_only\": false, \"success_criteria\": {}, \"failure_thresholds\": {}, \"min_sample_size\": 1000, \"max_acceptable_error_rate\": 5.0, \"required_improvement\": 10.0, \"auto_rollback_enabled\": true, \"circuit_breaker_threshold\": 10.0, \"max_performance_degradation\": 20.0}"
+            ]
+          },
+          "variants": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              "[\"control\", \"treatment\"]",
+              "[\"control\", \"treatment\"]",
+              "[\"control\", \"treatment\"]",
+              "[\"control\", \"treatment\"]",
+              "[\"control\", \"treatment\"]"
+            ]
+          },
+          "success_criteria": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "{}",
+              "{\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}",
+              "{}",
+              "{\"min_token_reduction\": 70.0, \"max_response_time_ms\": 200.0, \"min_success_rate\": 95.0, \"min_statistical_significance\": 95.0}",
+              "{}"
+            ]
+          },
+          "failure_thresholds": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "{}",
+              "{\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}",
+              "{}",
+              "{\"max_error_rate\": 5.0, \"min_token_reduction\": 50.0, \"max_response_time_degradation\": 50.0}",
+              "{}"
+            ]
+          },
+          "target_percentage": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              50.0,
+              10.0,
+              50.0,
+              10.0,
+              50.0
+            ]
+          },
+          "current_percentage": {
+            "null_count": 0,
+            "unique_values": 3,
+            "sample_values": [
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.0
+            ]
+          },
+          "segment_filters": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "[\"random\"]",
+              "[\"random\"]",
+              "[\"random\"]",
+              "[\"random\"]",
+              "[\"random\"]"
+            ]
+          },
+          "start_time": {
+            "null_count": 24,
+            "unique_values": 66,
+            "sample_values": [
+              "2025-08-16 04:03:28.194248",
+              "2025-08-16 04:36:05.840276"
+            ]
+          },
+          "end_time": {
+            "null_count": 60,
+            "unique_values": 30,
+            "sample_values": [
+              "2025-08-16 11:55:30.400198",
+              "2025-08-16 11:55:30.406949"
+            ]
+          },
+          "planned_duration_hours": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              168,
+              1,
+              168,
+              1,
+              168
+            ]
+          },
+          "total_users": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "conversion_events": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "statistical_significance": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "created_at": {
+            "null_count": 0,
+            "unique_values": 90,
+            "sample_values": [
+              "2025-08-16 04:03:28.015627",
+              "2025-08-16 04:03:28.188206",
+              "2025-08-16 04:36:05.495333",
+              "2025-08-16 04:36:05.829991",
+              "2025-08-16 04:36:43.103755"
+            ]
+          },
+          "updated_at": {
+            "null_count": 0,
+            "unique_values": 90,
+            "sample_values": [
+              "2025-08-16 04:03:28.015629",
+              "2025-08-16 11:55:30.400573",
+              "2025-08-16 04:36:05.495337",
+              "2025-08-16 11:55:30.407114",
+              "2025-08-16 04:36:43.103759"
+            ]
+          },
+          "created_by": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "api",
+              "system",
+              "api",
+              "system",
+              "api"
+            ]
+          },
+          "start_time_range": {
+            "min": "2025-08-16 04:03:28.194248",
+            "max": "2025-08-20 17:10:26.182419"
+          },
+          "end_time_range": {
+            "min": "2025-08-16 11:55:30.400198",
+            "max": "2025-08-17 15:11:25.136904"
+          },
+          "updated_at_range": {
+            "min": "2025-08-16 04:03:28.015629",
+            "max": "2025-08-20 17:10:26.182716"
+          }
+        },
+        "ab_user_assignments": {
+          "record_count": 2,
+          "id": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "test_experiment_test_user",
+              "exp_1755348888993_dynamic_loading_test_user_fixed3"
+            ]
+          },
+          "user_id": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "test_user",
+              "test_user_fixed3"
+            ]
+          },
+          "experiment_id": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "test_experiment",
+              "exp_1755348888993_dynamic_loading"
+            ]
+          },
+          "variant": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "treatment",
+              "control"
+            ]
+          },
+          "segment": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              "early_adopter",
+              "early_adopter"
+            ]
+          },
+          "user_characteristics": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "{}",
+              "{\"user_id\": \"test_user_fixed3\", \"registration_date\": null, \"usage_frequency\": \"high\", \"feature_usage_pattern\": \"unknown\", \"error_rate\": 0.0, \"avg_session_duration\": 0.0, \"preferred_features\": [], \"geographic_region\": null, \"device_type\": null, \"is_early_adopter\": true, \"opt_in_beta\": false}"
+            ]
+          },
+          "assignment_time": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "2025-08-16 12:51:34.094358",
+              "2025-08-16 12:54:49.014947"
+            ]
+          },
+          "assignment_method": {
+            "null_count": 0,
+            "unique_values": 2,
+            "sample_values": [
+              "test",
+              "consistent_hash"
+            ]
+          },
+          "opt_out": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              0,
+              0
+            ]
+          },
+          "last_interaction": {
+            "null_count": 2,
+            "unique_values": 0,
+            "sample_values": []
+          },
+          "total_interactions": {
+            "null_count": 0,
+            "unique_values": 1,
+            "sample_values": [
+              0,
+              0
+            ]
+          },
+          "assignment_time_range": {
+            "min": "2025-08-16 12:51:34.094358",
+            "max": "2025-08-16 12:54:49.014947"
+          }
+        },
+        "ab_metric_events": {
+          "record_count": 0
+        }
+      },
+      "migration_risks": [],
+      "performance_projections": {
+        "estimated_insert_latency_ms": 3.0,
+        "estimated_query_latency_ms": 1.5,
+        "recommended_connection_pool_size": 10,
+        "estimated_migration_time_hours": 2.00184,
+        "storage_overhead_factor": 1.3,
+        "index_recommendations": [
+          "CREATE INDEX CONCURRENTLY ON auth_events(created_at DESC) - for time-based queries",
+          "CREATE INDEX CONCURRENTLY ON auth_events(user_email) WHERE success = false - for security analysis"
+        ],
+        "meets_executive_mandate": true,
+        "performance_margin_ms": 7.0
+      }
+    },
+    {
+      "database_path": "metrics.db",
+      "table_count": 3,
+      "total_records": 0,
+      "file_size_bytes": 36864,
+      "schema_complexity": {
+        "metric_points": {
+          "column_count": 7,
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "timestamp",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "metric_name",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "value",
+              "type": "REAL",
+              "nullable": false
+            },
+            {
+              "name": "labels",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "metadata",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "TEXT",
+              "nullable": true
+            }
+          ]
+        },
+        "aggregated_metrics": {
+          "column_count": 10,
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "metric_name",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "time_window",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "window_start",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "window_end",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "aggregation_type",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "value",
+              "type": "REAL",
+              "nullable": false
+            },
+            {
+              "name": "sample_count",
+              "type": "INTEGER",
+              "nullable": false
+            },
+            {
+              "name": "labels",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "TEXT",
+              "nullable": true
+            }
+          ]
+        },
+        "validation_results": {
+          "column_count": 11,
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "claim",
+              "type": "TEXT",
+              "nullable": false
+            },
+            {
+              "name": "validated",
+              "type": "BOOLEAN",
+              "nullable": false
+            },
+            {
+              "name": "confidence_level",
+              "type": "REAL",
+              "nullable": false
+            },
+            {
+              "name": "p_value",
+              "type": "REAL",
+              "nullable": true
+            },
+            {
+              "name": "effect_size",
+              "type": "REAL",
+              "nullable": true
+            },
+            {
+              "name": "sample_size",
+              "type": "INTEGER",
+              "nullable": true
+            },
+            {
+              "name": "statistical_power",
+              "type": "REAL",
+              "nullable": true
+            },
+            {
+              "name": "evidence_strength",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "details",
+              "type": "TEXT",
+              "nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "TEXT",
+              "nullable": true
+            }
+          ]
+        }
+      },
+      "data_patterns": {
+        "metric_points": {
+          "record_count": 0
+        },
+        "aggregated_metrics": {
+          "record_count": 0
+        },
+        "validation_results": {
+          "record_count": 0
+        }
+      },
+      "migration_risks": [
+        "Table metric_points.value: REAL type may need conversion for PostgreSQL",
+        "Table aggregated_metrics.value: REAL type may need conversion for PostgreSQL",
+        "Table validation_results.confidence_level: REAL type may need conversion for PostgreSQL",
+        "Table validation_results.p_value: REAL type may need conversion for PostgreSQL",
+        "Table validation_results.effect_size: REAL type may need conversion for PostgreSQL",
+        "Table validation_results.statistical_power: REAL type may need conversion for PostgreSQL"
+      ],
+      "performance_projections": {
+        "estimated_insert_latency_ms": 3.0,
+        "estimated_query_latency_ms": 1.5,
+        "recommended_connection_pool_size": 10,
+        "estimated_migration_time_hours": 2.0,
+        "storage_overhead_factor": 1.3,
+        "index_recommendations": [
+          "CREATE INDEX CONCURRENTLY ON auth_events(created_at DESC) - for time-based queries",
+          "CREATE INDEX CONCURRENTLY ON auth_events(user_email) WHERE success = false - for security analysis"
+        ],
+        "meets_executive_mandate": true,
+        "performance_margin_ms": 7.0
+      }
+    }
+  ],
+  "connection_architecture": {
+    "current_sqlite_approach": {
+      "connections": "File-based, single-writer",
+      "concurrency": "Limited by SQLite WAL mode",
+      "scalability": "Bounded by filesystem performance"
+    },
+    "recommended_postgresql_architecture": {
+      "connection_pool_size": 20,
+      "max_overflow": 40,
+      "pool_timeout_seconds": 5.0,
+      "pool_recycle_seconds": 1800,
+      "connection_lifetime_seconds": 3600
+    },
+    "performance_optimizations": [
+      "Enable JIT compilation for complex queries",
+      "Configure shared_buffers to 25% of available RAM",
+      "Set work_mem to 16MB for query operations",
+      "Enable pg_stat_statements for performance monitoring",
+      "Configure connection pooling with PgBouncer for production"
+    ],
+    "monitoring_requirements": [
+      "Track connection pool utilization",
+      "Monitor query performance with pg_stat_statements",
+      "Set up alerts for connection exhaustion",
+      "Track disk I/O and memory usage patterns"
+    ]
+  },
+  "executive_recommendation": {
+    "go_no_go_decision": "NO-GO",
+    "confidence_level": "HIGH",
+    "migration_time_estimate_hours": 2.25616,
+    "resource_requirements": {
+      "migration_time_hours": 2.25616,
+      "testing_time_hours": 1.12808,
+      "rollback_time_hours": 4,
+      "total_effort_hours": 4.061088,
+      "infrastructure_requirements": [
+        "PostgreSQL server with 25% additional storage capacity",
+        "Connection pooling infrastructure (PgBouncer/pgpool)",
+        "Monitoring setup (pg_stat_statements, connection metrics)",
+        "Backup and rollback procedures"
+      ]
+    },
+    "risk_assessment": [
+      "Table usage_events.event_data: Text column appears to contain JSON, consider JSONB conversion",
+      "Table usage_events.context: Text column appears to contain JSON, consider JSONB conversion",
+      "Table metric_points.value: REAL type may need conversion for PostgreSQL",
+      "Table aggregated_metrics.value: REAL type may need conversion for PostgreSQL",
+      "Table validation_results.confidence_level: REAL type may need conversion for PostgreSQL",
+      "Table validation_results.p_value: REAL type may need conversion for PostgreSQL",
+      "Table validation_results.effect_size: REAL type may need conversion for PostgreSQL",
+      "Table validation_results.statistical_power: REAL type may need conversion for PostgreSQL"
+    ],
+    "success_probability": 0.4182,
+    "rollback_strategy": "30-day parallel operation with automated failback triggers",
+    "key_findings": [
+      "Total data volume: 12,900 records across 9 tables (4.3 MB)",
+      "Projected PostgreSQL performance: MEETS <10ms requirement",
+      "Migration complexity: 8 identified risks (0 critical)",
+      "Success probability: 42% based on technical analysis"
+    ]
+  },
+  "validation_timestamp": "2025-08-24T13:25:05.599970+00:00",
+  "analysis_scope": {
+    "databases_analyzed": 4,
+    "target_performance_ms": 10.0,
+    "consolidation_approach": "SQLite \u2192 PostgreSQL with 30-day parallel operation"
+  }
+}

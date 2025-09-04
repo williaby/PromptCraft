@@ -5,8 +5,10 @@ This module contains fundamental tests to ensure the claude integration module c
 and basic classes are properly defined.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from unittest.mock import Mock, patch
+
+from src.utils.datetime_compat import UTC
 
 
 class TestClaudeIntegrationImports:

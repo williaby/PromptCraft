@@ -1,13 +1,43 @@
-# PromptCraft-Hybrid Development Guide
+# CLAUDE.md
 
-> This project extends the global CLAUDE.md standards. Only project-specific configurations and deviations are
-> documented below.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Claude Code Supervisor Role (CRITICAL)
+
+**Claude Code acts as the SUPERVISOR for all development tasks and MUST:**
+
+1. **Always Use TodoWrite Tool**: Create and maintain TODO lists for ALL tasks to track progress
+2. **Assign Tasks to Agents**: Each TODO item should be assigned to a specialized agent via Zen MCP Server
+3. **Review Agent Work**: Validate all agent outputs before proceeding to next steps
+4. **Use Temporary Reference Files**: Create `.tmp-` prefixed files in `tmp_cleanup/` folder to store detailed context that might be lost during compaction
+5. **Maintain Continuity**: Use reference files to preserve TODO details across conversation compactions
+
+### Agent Assignment Patterns
+
+```bash
+# Always assign TODO items to appropriate agents:
+- Security tasks → Security Agent (via mcp__zen__secaudit)
+- Code reviews → Code Review Agent (via mcp__zen__codereview)
+- Testing → Test Engineer Agent (via mcp__zen__testgen)
+- Documentation → Documentation Agent (via mcp__zen__docgen)
+- Debugging → Debug Agent (via mcp__zen__debug)
+- Analysis → Analysis Agent (via mcp__zen__analyze)
+- Refactoring → Refactor Agent (via mcp__zen__refactor)
+```
+
+### Temporary Reference Files (Anti-Compaction Strategy)
+
+**ALWAYS create temporary reference files when:**
+- TODO list contains >5 items
+- Complex implementation details need preservation
+- Multi-step workflows span multiple conversation turns
+- Agent assignments and progress need tracking
+
+**Naming Convention**: `tmp_cleanup/.tmp-{task-type}-{timestamp}.md` (e.g., `tmp_cleanup/.tmp-auth4-implementation-20250125.md`)
 
 ## Project Overview
 
-PromptCraft-Hybrid is a Zen-powered AI workbench that transforms queries into accurate, context-aware outputs
-through intelligent orchestration and multi-agent collaboration. It implements a hybrid architecture with on-premise
-compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
+PromptCraft-Hybrid is a Zen-powered AI workbench that transforms queries into accurate, context-aware outputs through intelligent orchestration and multi-agent collaboration. It implements a hybrid architecture with on-premise compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 
 **Key Architecture Concepts:**
 
@@ -15,8 +45,7 @@ compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 - **Four Progressive Journeys**: From simple prompt enhancement to full multi-agent automation
 - **HyDE Query Enhancement**: Three-tier query analysis system for improved retrieval accuracy
 - **Agent-First Design**: Specialized AI agents with dedicated knowledge bases
-- **C.R.E.A.T.E. Framework**: Core prompt engineering methodology (Context, Request, Examples, Augmentations,
-  Tone & Format, Evaluation)
+- **C.R.E.A.T.E. Framework**: Core prompt engineering methodology (Context, Request, Examples, Augmentations, Tone & Format, Evaluation)
 
 **Tech Stack:**
 
@@ -28,20 +57,16 @@ compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
 - Zen MCP Server for agent orchestration
 - Prefect for background orchestration
 
-## Project-Specific Development Commands
+## Essential Development Commands
 
-> This project inherits all universal development commands from the global CLAUDE.md. Commands below are
-> PromptCraft-specific or override global behavior.
-
-### Setup and Installation
-
+### Quick Setup
 ```bash
-# Complete PromptCraft setup
+# Complete development setup
 make setup
 
-# REQUIRED: Setup Assured-OSS authentication (first time only)
-# Place your service account JSON at .gcp/service-account.json first
-./scripts/setup-assured-oss-local.sh
+# Install dependencies and validate keys
+poetry install --sync
+poetry run pre-commit install
 
 # REQUIRED: Validate GPG and SSH keys are present
 gpg --list-secret-keys  # Must show GPG key for .env encryption
@@ -49,10 +74,7 @@ ssh-add -l              # Must show SSH key for signed commits
 git config --get user.signingkey  # Must be configured for signed commits
 ```
 
-### Testing Performance Tiers
-
-The project uses a tiered testing approach to optimize development speed while maintaining comprehensive coverage.
-
+### Testing (Tiered Approach)
 ```bash
 # Fast Development Loop (< 1 minute)
 make test-fast
@@ -65,121 +87,60 @@ make test-pr
 
 # Full Test Suite
 make test
-
-# Performance Tests Only
-make test-performance
-
-# Run specific tests without coverage threshold (for focused testing)
-poetry run pytest path/to/test.py --cov-fail-under=0
-# or without coverage at all
-poetry run pytest path/to/test.py
 ```
 
-### Docker Development
-
+### Code Quality
 ```bash
-# Development environment with all services on Ubuntu VM
-make dev
-# or directly with docker-compose
-docker-compose -f docker-compose.zen-vm.yaml up -d
+# Format code
+make format
 
-# This starts:
-# - Gradio UI: http://127.0.0.1:7860 (Journey 1, 2, 4)
-# - FastAPI Backend: http://127.0.0.1:8000 (API endpoints)
-# - Code-Server IDE: http://127.0.0.1:8080 (Journey 3)
-# - External Qdrant Dashboard: http://192.168.1.16:6333/dashboard (external dependency)
+# Run linting checks
+make lint
+
+# Run all pre-commit hooks manually
+make pre-commit
 ```
 
-### Context7 MCP Server Integration
-
+### Security & Environment
 ```bash
-# Check if package is ready for Context7 use
-python scripts/claude-context7-integration.py validate-package fastapi
+# Run security scans
+make security
 
-# Generate properly formatted Context7 call
-python scripts/claude-context7-integration.py get-context7-call fastapi "getting started" 3000
+# Validate environment and encryption keys
+poetry run python src/utils/encryption.py
 ```
 
-## Project-Specific Standards
+> **Detailed Commands**: See `docs/standards/development-commands.md` for comprehensive command reference
 
-> All development follows universal quality and security standards. PromptCraft-specific requirements below.
+## Core Development Standards
 
-### Performance Requirements
+> **Complete Standards**: See `/docs/standards/` directory for detailed specifications
 
-- **API Response Time**: p95 < 2s for Claude.md generation
-- **Memory Usage**: < 2GB per container
-- **Test Coverage**: Minimum 80% for all Python code
+### File-Specific Linting (MANDATORY COMPLIANCE)
 
-### Security Implementation
+- **Python**: `pyproject.toml` (Black 120 chars, Ruff, MyPy, Bandit B101/B601 excluded)
+- **Markdown**: `.markdownlint.json` (120 char line length, consistent list style)
+- **YAML**: `.yamllint.yml` (aligned with pyproject.toml excludes, 120 chars)
+- **MUST RUN** file-specific linters before committing changes
 
-- **Secrets Management**: Use local encrypted .env files (following ledgerbase encryption.py pattern)
-- **Assured-OSS Service Account**: Place service account JSON at `.gcp/service-account.json`
-- **Key Validation**: Environment MUST validate both GPG and SSH keys are available
+### Naming Conventions (MANDATORY COMPLIANCE)
 
-### Architecture Requirements
-
-- **Zen MCP Integration**: Use Zen MCP Server for ALL orchestration
-- **Heimdall Integration**: Use Heimdall MCP Server for analysis
-- **External Dependencies**: External Qdrant vector database at 192.168.1.16:6333
-
-## Project Architecture
-
-### Directory Structure
-
-```text
-src/
-├── agents/          # Multi-agent system framework
-├── core/            # Core business logic (query_counselor, hyde_processor, vector_store)
-├── ui/              # Gradio interface components
-├── ingestion/       # Knowledge processing pipeline
-├── mcp_integration/ # MCP server integration
-├── config/          # Configuration management
-└── utils/           # Shared utilities
-
-knowledge/           # Knowledge base with C.R.E.A.T.E. framework
-├── create/          # Structured knowledge files
-└── domain_specific/ # Specialized domain knowledge
-```
-
-## Progressive User Journeys
-
-The system implements four levels of AI assistance:
-
-1. **Journey 1: Quick Enhancement** - Basic prompt improvement
-2. **Journey 2: Power Templates** - Template-based prompt generation
-3. **Journey 3: Light IDE Integration** - Local development integration
-4. **Journey 4: Full Automation** - Complete execution automation
-
-## Naming Conventions (MANDATORY COMPLIANCE)
-
-### Core Components
-
+**Core Components:**
 - **Agent ID**: snake_case (e.g., `security_agent`, `create_agent`)
 - **Agent Classes**: PascalCase + "Agent" suffix (e.g., `SecurityAgent`)
-- **Knowledge Folders**: snake_case matching agent_id (e.g., `/knowledge/security_agent/`)
 - **Knowledge Files**: kebab-case.md (e.g., `auth-best-practices.md`)
 
-### Code & Files
-
-- **Python Files**: snake_case.py (e.g., `src/agents/security_agent.py`)
-- **Python Classes**: PascalCase (e.g., `class BaseAgent:`)
-- **Python Functions**: snake_case() (e.g., `def get_relevant_knowledge():`)
-
-### Git & Development
-
+**Code & Files:**
+- **Python Files**: snake_case.py
+- **Python Classes**: PascalCase
+- **Python Functions**: snake_case()
 - **Git Branches**: kebab-case with prefixes (e.g., `feature/add-claude-md-generator`)
-- **PR Titles**: Conventional Commits (e.g., `feat(security): add SQL injection detection`)
 
-## Knowledge Base Standards (MANDATORY)
+### Knowledge Base Standards (MANDATORY)
 
-### File Structure Requirements
+**File Structure**: `/knowledge/{agent_id}/{kebab-case-filename}.md`
 
-```text
-/knowledge/{agent_id}/{kebab-case-filename}.md
-```
-
-### YAML Front Matter (MANDATORY)
-
+**YAML Front Matter**:
 ```yaml
 ---
 title: [Human-readable title]
@@ -191,14 +152,12 @@ purpose: [Single sentence ending with period]
 ---
 ```
 
-### Content Rules
-
-- **H1 (#)**: Document title only (MUST match title in front matter)
-- **H2 (##)**: Major sections
-- **H3 (###)**: Atomic knowledge chunks (self-contained units)
-- **H4 and below**: STRICTLY PROHIBITED (breaks RAG chunking)
+**Content Rules:**
 - Each H3 section MUST be completely self-contained
+- No H4 or deeper headings (breaks RAG chunking)
 - Only `status: published` files are ingested by RAG pipeline
+
+> **Complete Knowledge Standards**: See `docs/standards/knowledge-base-standards.md`
 
 ## Development Philosophy (MANDATORY)
 
@@ -206,58 +165,106 @@ purpose: [Single sentence ending with period]
 2. **Configure, Don't Build**: Use Zen MCP Server, Heimdall MCP Server, and AssuredOSS packages
 3. **Focus on Unique Value**: Build only what's truly unique to PromptCraft
 
+### Security Requirements (MANDATORY)
+
+- **GPG Key**: MUST be present for .env encryption/decryption
+- **SSH Key**: MUST be present for signed commits to GitHub
+- **Key Validation**: Environment MUST validate both keys are available
+- **AssuredOSS**: Service account at `.gcp/service-account.json`
+
+> **Complete Security Standards**: See `docs/standards/security-requirements.md`
+
+## Supervisor Workflow Patterns (MANDATORY)
+
+### Task Decomposition and Agent Assignment
+
+**Every development task MUST follow this pattern:**
+
+1. **Create TODO List**: Use TodoWrite tool to break down the task into specific, actionable items
+2. **Agent Assignment**: Assign each TODO item to the most appropriate specialized agent
+3. **Progress Tracking**: Mark items as in_progress when assigned, completed when validated
+4. **Reference File Creation**: For complex tasks, create `.tmp-` reference files in `tmp_cleanup/` folder immediately
+5. **Agent Output Validation**: Review all agent work before marking items complete
+
+### Multi-Agent Coordination
+
+**For complex tasks requiring multiple agents:**
+
+1. **Sequential Dependencies**: Use TodoWrite to show dependencies between tasks
+2. **Parallel Execution**: Assign independent tasks to multiple agents simultaneously
+3. **Integration Points**: Create specific TODO items for integrating agent outputs
+4. **Quality Gates**: Assign review tasks to appropriate agents after implementation
+
+> **Complete Workflow Patterns**: See `docs/standards/supervisor-workflows.md`
+
 ## Claude Code Slash Commands
 
 **Project-specific slash commands for complete development workflow automation:**
 
 ### Core Workflow Commands
-
 ```bash
+# Complete implementation and validation cycle with multi-agent review
 /project:workflow-review-cycle phase X issue Y        # Full review with O3/Gemini
-/project:workflow-plan-validation                     # Validate project plans
-/project:workflow-implementation                      # Guided implementation workflow
+/project:workflow-review-cycle consensus phase X issue Y  # Multi-model consensus
+
+# Comprehensive planning and scope analysis
+/project:workflow-plan-validation        # Validate project plans
+/project:workflow-implementation        # Guided implementation workflow
 ```
 
 ### Validation & Quality Commands
-
 ```bash
-/project:validation-precommit                         # Full pre-commit validation
-/project:validation-frontmatter knowledge/agent/file.md  # YAML validation
-/project:validation-naming-conventions               # Naming standards compliance
+# Pre-commit validation with comprehensive quality gates
+/project:validation-precommit                              # Full pre-commit validation
+/project:validation-naming-conventions                     # Naming standards compliance
+/project:validation-knowledge-chunk                        # Knowledge file validation
 ```
 
-### Creation & Migration Commands
-
+### Creation Commands
 ```bash
-/project:creation-knowledge-file security authentication  # Knowledge files
-/project:creation-planning-doc                           # Planning documents
-/project:migration-legacy-knowledge                     # Migrate old knowledge files
+# Generate properly structured files following project standards
+/project:creation-knowledge-file security authentication best practices  # Knowledge files
+/project:creation-agent-skeleton                                        # Agent scaffolding
 ```
 
-## Environment Validation (MANDATORY)
+> **Complete Command Reference**: See `docs/standards/slash-commands.md`
 
-Before starting development, ensure:
+## Important Development Notes
 
-```bash
-# Validate encryption keys are present
-poetry run python src/utils/encryption.py
+### Mandatory Practices
 
-# Manual validation commands
-gpg --list-secret-keys                # Must show GPG keys
-ssh-add -l                           # Must show SSH keys
-git config --get user.signingkey     # Must show signing key
-```
+- **ALWAYS** use TodoWrite tool for task tracking and agent coordination
+- **ASSIGN** each TODO item to appropriate specialized agents via Zen MCP Server
+- **CREATE** temporary reference files in `tmp_cleanup/` folder for complex multi-step tasks
+- **VALIDATE** all agent outputs before marking TODO items as completed
+- **ALWAYS** run file-specific linters before committing changes
+- **FOLLOW** all naming conventions exactly as specified
+- **USE** Poetry for dependency management - avoid pip directly
 
-## Branch Strategy
+### Code Review Checklist
 
-- Main branch: `main`
-- Create feature branches from `main`
-- Follow universal Git workflow with PromptCraft-specific naming: `<type>/<ticket-id>/<short-description>`
+- [ ] **TODO Management**: Was TodoWrite used for task tracking?
+- [ ] **Agent Assignment**: Were tasks assigned to appropriate specialized agents?
+- [ ] **Reference Files**: Were temporary reference files created for complex tasks?
+- [ ] **Agent Validation**: Was all agent work reviewed and validated?
+- [ ] **Reuse Check**: Could this use existing code from ledgerbase/FISProject?
+- [ ] **Security**: Are secrets in encrypted .env? GPG/SSH keys validated?
+- [ ] **Naming**: Do all components follow naming conventions?
+- [ ] **Knowledge Files**: Do they follow the style guide?
 
-## Current Development Status
+### Pre-Commit Linting Checklist
 
-- Project is in early development phase with many core files as placeholders
-- Architecture is well-defined but implementation is pending
-- Focus on configuration over custom development (reuse existing tools)
-- Main application entry point: `src/main:app` (FastAPI/Uvicorn)
-- External Qdrant vector database at 192.168.1.16:6333 (hosted on Unraid)
+Before committing ANY changes, ensure:
+
+- [ ] Environment validation passes (GPG and SSH keys present)
+- [ ] File-specific linter has been run and passes
+- [ ] Pre-commit hooks execute successfully
+- [ ] No linting warnings or errors remain
+- [ ] Code formatting is consistent with project standards
+- [ ] Commits are signed (Git signing key configured)
+- [ ] Test coverage remains at or above 80%
+- [ ] All security scans pass (Safety, Bandit)
+
+---
+
+*This streamlined configuration focuses on essential guidance. Detailed specifications available in `/docs/standards/` directory.*

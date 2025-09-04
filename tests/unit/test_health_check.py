@@ -178,7 +178,7 @@ class TestConfigurationStatusHelpers:
     def test_count_configured_secrets_with_some_secrets(self) -> None:
         """Test counting secrets when only some secret fields are configured."""
         # Clear environment to avoid picking up unexpected values
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             settings = ApplicationSettings(
                 api_key=SecretStr("api_key_value"),
                 secret_key=SecretStr("app_secret_key"),
@@ -192,7 +192,7 @@ class TestConfigurationStatusHelpers:
     def test_count_configured_secrets_with_empty_strings(self) -> None:
         """Test counting secrets ignores empty string values."""
         # Clear environment to avoid picking up unexpected values
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             # Create settings first with valid values
             settings = ApplicationSettings(
                 api_key=SecretStr("valid_key"),
@@ -208,7 +208,7 @@ class TestConfigurationStatusHelpers:
     def test_count_configured_secrets_with_no_secrets(self) -> None:
         """Test counting secrets when no secret fields are configured."""
         # Clear environment to avoid picking up unexpected values
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             settings = ApplicationSettings()
 
             count = _count_configured_secrets(settings)
@@ -292,7 +292,7 @@ class TestConfigurationStatusGeneration:
         mock_validate_startup.return_value = None  # No exception = validation passed
 
         # Clear environment to avoid picking up unexpected values
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             settings = ApplicationSettings(
                 app_name="Test App",
                 version="1.2.3",
