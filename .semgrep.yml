@@ -67,8 +67,9 @@ rules:
 
   # Suppress code-after-return for defensive programming patterns
   - id: python.lang.maintainability.return.code-after-unconditional-return
-    languages: [python]
-    paths:
+    metadata:
+      category: maintainability
+      technology: [python]
       exclude:
         - "src/auth/service_token_manager.py"
     message: "Suppressed: Defensive programming pattern with intentional unreachable code"
