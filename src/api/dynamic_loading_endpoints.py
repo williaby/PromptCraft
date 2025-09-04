@@ -19,7 +19,7 @@ input validation, and comprehensive error handling.
 
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -31,6 +31,7 @@ from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import DynamicLoadingIntegration, IntegrationMode, get_integration_instance
 from src.security.audit_logging import audit_logger_instance
 from src.security.rate_limiting import RateLimits, rate_limit
+from src.utils.datetime_compat import UTC
 
 logger = logging.getLogger(__name__)
 
@@ -223,8 +224,8 @@ async def optimize_query(
                 "target_achieved": result.target_achieved,
                 "detection_result": {
                     "categories": result.detection_result.categories,
-                    "confidence_scores": result.detection_result.confidence_scores,
-                    "fallback_applied": result.detection_result.fallback_applied,
+                    "confidence_scores": getattr(result.detection_result, "confidence_scores", {}),
+                    "fallback_applied": getattr(result.detection_result, "fallback_applied", None),
                 },
                 "performance_metrics": {
                     "detection_time_ms": result.detection_time_ms,

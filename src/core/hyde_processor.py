@@ -499,13 +499,13 @@ class HydeProcessor:
         prompt_templates = [
             f"Write a comprehensive guide that would answer the query '{query}'. "
             f"Include step-by-step instructions, best practices, and practical examples. "
-            f"Format as a well-structured technical document.",
+            "Format as a well-structured technical document.",
             f"Create technical documentation that explains '{query}' with detailed code examples, "
             f"troubleshooting tips, and common implementation patterns. "
-            f"Focus on practical implementation details.",
+            "Focus on practical implementation details.",
             f"Provide expert analysis of '{query}' including common pitfalls, "
             f"recommended solutions, performance considerations, and real-world examples. "
-            f"Write from the perspective of an experienced practitioner.",
+            "Write from the perspective of an experienced practitioner.",
         ]
 
         return prompt_templates[doc_index % len(prompt_templates)]

@@ -14,7 +14,7 @@ import sqlite3
 import statistics
 from collections import deque
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -25,6 +25,7 @@ from scipy import stats  # type: ignore[import-untyped]
 from src.core.token_optimization_monitor import (
     TokenOptimizationMonitor,
 )
+from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
 
 logger = logging.getLogger(__name__)

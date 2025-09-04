@@ -128,7 +128,7 @@
 
 ### Optimized State (Tiered Loading)
 - **Tier 1 (Always Loaded)**: Core + Git = ~9,040 tokens
-- **Tier 2 (Conditional)**: Analysis + Quality = ~14,940 tokens  
+- **Tier 2 (Conditional)**: Analysis + Quality = ~14,940 tokens
 - **Tier 3 (On-Demand)**: External + Infrastructure = ~3,850 tokens
 
 ### Optimization Calculations
@@ -188,21 +188,21 @@ class FunctionLoader:
         self.tier1_functions = load_core_functions()  # Always loaded
         self.tier2_cache = {}  # Conditionally loaded
         self.tier3_cache = {}  # On-demand loaded
-    
+
     def get_functions_for_query(self, query: str, context: dict):
         functions = self.tier1_functions.copy()
-        
+
         # Tier 2: Conditional loading based on query analysis
         if self.requires_analysis_tools(query):
             functions.update(self.load_tier2_analysis())
-        
+
         if self.requires_quality_tools(query):
             functions.update(self.load_tier2_quality())
-        
+
         # Tier 3: On-demand based on specific triggers
         if self.detect_library_references(query):
             functions.update(self.load_context7_tools())
-            
+
         return functions
 ```
 

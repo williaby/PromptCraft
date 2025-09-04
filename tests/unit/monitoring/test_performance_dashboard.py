@@ -1,7 +1,7 @@
 """Comprehensive test suite for Performance Dashboard."""
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -15,6 +15,7 @@ from src.monitoring.performance_dashboard import (
     create_dashboard_app,
     get_dashboard_app,
 )
+from src.utils.datetime_compat import UTC
 
 
 class MockSystemHealthReport:
@@ -98,7 +99,21 @@ class MockTokenOptimizationMonitor:
 
     async def generate_system_health_report(self):
         """Mock system health report generation."""
-        return MockSystemHealthReport()
+        mock_report = MockSystemHealthReport()
+        # Convert to dictionary for Pydantic serialization
+        return {
+            "average_token_reduction_percentage": mock_report.average_token_reduction_percentage,
+            "median_token_reduction_percentage": mock_report.median_token_reduction_percentage,
+            "average_loading_latency_ms": mock_report.average_loading_latency_ms,
+            "p95_loading_latency_ms": mock_report.p95_loading_latency_ms,
+            "p99_loading_latency_ms": mock_report.p99_loading_latency_ms,
+            "overall_success_rate": mock_report.overall_success_rate,
+            "task_detection_accuracy_rate": mock_report.task_detection_accuracy_rate,
+            "concurrent_sessions_handled": mock_report.concurrent_sessions_handled,
+            "total_sessions": mock_report.total_sessions,
+            "fallback_activation_rate": mock_report.fallback_activation_rate,
+            "timestamp": mock_report.timestamp.isoformat(),
+        }
 
     async def export_metrics(self, **kwargs):
         """Mock metrics export."""

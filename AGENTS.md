@@ -15,7 +15,7 @@ For a deeper, process-oriented guide (branching, workflow, dependency policy), s
 - `make test`: Run full pytest with coverage (HTML in `htmlcov/`).
 - `make test-fast`: Quick unit/auth subset for local loops.
 - `make lint` / `make format`: Check/auto-fix with Black, Ruff; run mypy, markdownlint, yamllint.
-- `make dev`: Start Dockerized dev stack (FastAPI, Gradio, MCP, Qdrant). 
+- `make dev`: Start Dockerized dev stack (FastAPI, Gradio, MCP, Qdrant).
 - Run API locally: `poetry run uvicorn src.main:app --reload`.
 
 ## Coding Style & Naming Conventions

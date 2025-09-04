@@ -4,20 +4,246 @@ This module defines database models for:
 - Service token management and tracking (AUTH-2)
 - User session management (AUTH-1)
 - Authentication event logging (AUTH-1)
-- Role-based access control and permissions (AUTH-3)
 """
 
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, func
+from sqlalchemy import JSON, TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, TypeDecorator, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from src.utils.datetime_compat import UTC
+
+
+class UniversalJSON(TypeDecorator):
+    """Database-agnostic JSON type that uses JSONB for PostgreSQL and JSON for others."""
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(JSONB())
+        return dialect.type_descriptor(JSON())
+
+
+class UniversalUUID(TypeDecorator):
+    """Database-agnostic UUID type that uses UUID for PostgreSQL and String for others."""
+
+    impl = String
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(UUID(as_uuid=True))
+        return dialect.type_descriptor(String(36))
+
+    def process_bind_param(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return value
+        if dialect.name == "postgresql":
+            return value  # PostgreSQL handles UUID objects natively
+        # For SQLite and other databases, convert UUID to string
+        if hasattr(value, "hex"):  # UUID object
+            return str(value)
+        return value
+
+    def process_result_value(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return value
+        if dialect.name == "postgresql":
+            return value  # PostgreSQL returns UUID objects
+        # For SQLite and other databases, convert string back to UUID
+        if isinstance(value, str):
+            return uuid.UUID(value)
+        return value
+
+
+class UniversalINET(TypeDecorator):
+    """Database-agnostic IP address type that uses INET for PostgreSQL and String for others."""
+
+    impl = String
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Any) -> Any:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(INET())
+        return dialect.type_descriptor(String(45))  # Supports both IPv4 and IPv6
 
 
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy models."""
+
+
+# Association tables for many-to-many relationships
+
+user_roles_table = Table(
+    "user_roles",
+    Base.metadata,
+    Column("user_id", UniversalUUID, ForeignKey("user_sessions.id"), primary_key=True),
+    Column("role_id", UniversalUUID, ForeignKey("roles.id"), primary_key=True),
+)
+
+role_permissions_table = Table(
+    "role_permissions",
+    Base.metadata,
+    Column("role_id", UniversalUUID, ForeignKey("roles.id"), primary_key=True),
+    Column("permission_id", UniversalUUID, ForeignKey("permissions.id"), primary_key=True),
+)
+
+
+class Role(Base):
+    """Role model for role-based access control (RBAC)."""
+
+    __tablename__ = "roles"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique role identifier",
+    )
+
+    # Role identification
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        comment="Role name (e.g., 'admin', 'user', 'viewer')",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Role description",
+    )
+
+    # Role hierarchy
+    parent_role_id: Mapped[uuid.UUID | None] = mapped_column(
+        UniversalUUID,
+        ForeignKey("roles.id"),
+        nullable=True,
+        comment="Parent role ID for hierarchical inheritance",
+    )
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="Whether the role is active",
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Role creation timestamp",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="Role last updated timestamp",
+    )
+
+    # Relationships
+    permissions: Mapped[list["Permission"]] = relationship(
+        "Permission",
+        secondary=role_permissions_table,
+        back_populates="roles",
+    )
+
+    # Role hierarchy relationships
+    parent_role: Mapped["Role | None"] = relationship(
+        "Role",
+        remote_side=[id],
+        back_populates="child_roles",
+    )
+
+    child_roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        back_populates="parent_role",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the role."""
+        status = "active" if self.is_active else "inactive"
+        return f"<Role(name='{self.name}', {status})>"
+
+
+class Permission(Base):
+    """Permission model for role-based access control (RBAC)."""
+
+    __tablename__ = "permissions"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique permission identifier",
+    )
+
+    # Permission identification
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        comment="Permission name (e.g., 'read_users', 'write_data')",
+    )
+
+    resource: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="Resource the permission applies to",
+    )
+
+    action: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="Action allowed (e.g., 'read', 'write', 'delete')",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Permission description",
+    )
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="Whether the permission is active",
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Permission creation timestamp",
+    )
+
+    # Relationships
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary=role_permissions_table,
+        back_populates="permissions",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the permission."""
+        status = "active" if self.is_active else "inactive"
+        return f"<Permission(name='{self.name}', resource='{self.resource}', action='{self.action}', {status})>"
 
 
 class ServiceToken(Base):
@@ -27,7 +253,7 @@ class ServiceToken(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique service token identifier",
@@ -86,7 +312,7 @@ class ServiceToken(Base):
 
     # Metadata
     token_metadata: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Additional metadata about the token (permissions, environment, etc.)",
     )
@@ -126,7 +352,7 @@ class UserSession(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique session identifier",
@@ -172,30 +398,18 @@ class UserSession(Base):
 
     # User data
     preferences: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="User preferences and settings",
     )
 
     user_metadata: Mapped[dict[str, Any]] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=False,
         server_default="{}",
         comment="Additional user metadata and context",
     )
-
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize UserSession with proper defaults."""
-        # Set defaults for fields that should have them
-        if "session_count" not in kwargs:
-            kwargs["session_count"] = 1
-        if "preferences" not in kwargs:
-            kwargs["preferences"] = {}
-        if "user_metadata" not in kwargs:
-            kwargs["user_metadata"] = {}
-
-        super().__init__(**kwargs)
 
     def __repr__(self) -> str:
         """Return string representation of the user session."""
@@ -213,25 +427,18 @@ class AuthenticationEvent(Base):
 
     # Primary key
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UniversalUUID,
         primary_key=True,
         default=uuid.uuid4,
         comment="Unique event identifier",
     )
 
     # Event identification
-    user_email: Mapped[str | None] = mapped_column(
+    user_email: Mapped[str] = mapped_column(
         String(255),
-        nullable=True,
+        nullable=False,
         index=True,
-        comment="User email (from JWT or None for service token auth)",
-    )
-
-    service_token_name: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True,
-        index=True,
-        comment="Service token name (for service token auth, None for JWT auth)",
+        comment="User email (from JWT or 'unknown' for failures)",
     )
 
     event_type: Mapped[str] = mapped_column(
@@ -243,7 +450,7 @@ class AuthenticationEvent(Base):
 
     # Request context
     ip_address: Mapped[str | None] = mapped_column(
-        INET,
+        UniversalINET,
         nullable=True,
         comment="Client IP address",
     )
@@ -272,13 +479,13 @@ class AuthenticationEvent(Base):
 
     # Event details
     error_details: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Error details for failed authentication attempts",
     )
 
     performance_metrics: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        UniversalJSON,
         nullable=True,
         comment="Performance metrics (timing, etc.) for the authentication",
     )
@@ -292,92 +499,424 @@ class AuthenticationEvent(Base):
         comment="Event timestamp",
     )
 
-    def __init__(self, **kwargs: Any) -> None:
-        """Initialize AuthenticationEvent with proper defaults."""
-        # Set defaults for fields that should have them
-        if "success" not in kwargs:
-            kwargs["success"] = True
-
-        super().__init__(**kwargs)
-
     def __repr__(self) -> str:
         """Return string representation of the authentication event."""
         status = "SUCCESS" if self.success else "FAILED"
-        identifier = self.user_email or self.service_token_name or "unknown"
-        return f"<AuthenticationEvent(id={self.id}, user='{identifier}', type='{self.event_type}', {status})>"
+        return f"<AuthenticationEvent(id={self.id}, user='{self.user_email}', type='{self.event_type}', {status})>"
 
 
-# Junction table for many-to-many relationship between roles and permissions
-role_permissions_table = Table(
-    "role_permissions",
-    Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("permissions.id"), primary_key=True),
-)
+class SecurityEventLogger(Base):
+    """Security event model for general security event logging.
 
-# Junction table for many-to-many relationship between users and roles
-user_roles_table = Table(
-    "user_roles",
-    Base.metadata,
-    Column("user_email", String(255), ForeignKey("user_sessions.email"), primary_key=True),
-    Column("role_id", Integer, ForeignKey("roles.id"), primary_key=True),
-)
-
-
-class Role(Base):
-    """Role model for hierarchical role-based access control (AUTH-3).
-
-    Roles define sets of permissions and can inherit permissions from parent roles.
-    This enables flexible permission management with role hierarchies.
+    Tracks security events for AUTH-4 Enhanced Security Event Logging system.
+    Used by SecurityLogger for general security event logging and audit trail.
     """
 
-    __tablename__ = "roles"
+    __tablename__ = "security_events"
 
     # Primary key
-    id: Mapped[int] = mapped_column(
-        Integer,
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
         primary_key=True,
-        autoincrement=True,
-        comment="Unique role identifier",
+        default=uuid.uuid4,
+        comment="Unique security event identifier",
     )
 
-    # Role identification
-    name: Mapped[str] = mapped_column(
-        String(50),
-        unique=True,
+    # Event identification
+    event_type: Mapped[str] = mapped_column(
+        String(100),
         nullable=False,
         index=True,
-        comment="Unique role name (e.g., 'admin', 'user', 'api_user')",
+        comment="Type of security event",
     )
 
-    description: Mapped[str | None] = mapped_column(
+    severity: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+        comment="Event severity level",
+    )
+
+    # Event context
+    user_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+        comment="User identifier if applicable",
+    )
+
+    ip_address: Mapped[str | None] = mapped_column(
+        UniversalINET,
+        nullable=True,
+        index=True,
+        comment="IP address if applicable",
+    )
+
+    user_agent: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        comment="Human-readable description of the role",
+        comment="User agent string if applicable",
     )
 
-    # Role hierarchy
-    parent_role_id: Mapped[int | None] = mapped_column(
-        Integer,
-        ForeignKey("roles.id"),
+    session_id: Mapped[str | None] = mapped_column(
+        String(255),
         nullable=True,
-        comment="Parent role ID for inheritance (NULL for top-level roles)",
+        index=True,
+        comment="Session identifier if applicable",
+    )
+
+    # Event details
+    details: Mapped[dict[str, Any]] = mapped_column(
+        UniversalJSON,
+        nullable=False,
+        server_default="{}",
+        comment="Additional event details and metadata",
+    )
+
+    risk_score: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+        comment="Event risk score (0-100)",
     )
 
     # Timestamps
+    timestamp: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        index=True,
+        comment="Event timestamp",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
-        comment="Role creation timestamp",
+        comment="Record creation timestamp",
     )
 
-    updated_at: Mapped[datetime] = mapped_column(
+    def __repr__(self) -> str:
+        """Return string representation of the security event."""
+        return f"<SecurityEventLogger(id={self.id}, type='{self.event_type}', severity='{self.severity}')>"
+
+
+class SecurityEvent(Base):
+    """Security event model for monitoring and tracking.
+
+    Tracks security events for monitoring, threat detection, and activity correlation.
+    Used by SecurityMonitor for stateless multi-worker deployment.
+    """
+
+    __tablename__ = "security_events_monitor"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique security event identifier",
+    )
+
+    # Event identification
+    entity_key: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+        comment="Entity key (user:id or ip:address)",
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        index=True,
+        comment="Type of security event",
+    )
+
+    severity: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+        comment="Event severity level",
+    )
+
+    # Event context
+    user_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+        comment="User identifier if applicable",
+    )
+
+    ip_address: Mapped[str | None] = mapped_column(
+        UniversalINET,
+        nullable=True,
+        index=True,
+        comment="IP address if applicable",
+    )
+
+    risk_score: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        comment="Event risk score (0-100)",
+    )
+
+    # Event details
+    event_details: Mapped[dict[str, Any]] = mapped_column(
+        UniversalJSON,
+        nullable=False,
+        server_default="{}",
+        comment="Additional event details and metadata",
+    )
+
+    # Timestamp
+    timestamp: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        index=True,
+        comment="Event timestamp",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Record creation timestamp",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the security event."""
+        return f"<SecurityEvent(id={self.id}, entity='{self.entity_key}', type='{self.event_type}', severity='{self.severity}')>"
+
+
+class BlockedEntity(Base):
+    """Blocked entity model for IP and user blocking.
+
+    Tracks blocked IPs and users for security monitoring.
+    Used by SecurityMonitor for stateless multi-worker deployment.
+    """
+
+    __tablename__ = "blocked_entities"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique blocked entity identifier",
+    )
+
+    # Entity identification
+    entity_key: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        comment="Entity key (user:id or ip:address)",
+    )
+
+    entity_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        index=True,
+        comment="Entity type (ip or user)",
+    )
+
+    entity_value: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+        comment="Entity value (IP address or user ID)",
+    )
+
+    # Block details
+    reason: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Reason for blocking",
+    )
+
+    blocked_by: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="System or user that initiated the block",
+    )
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
+        comment="Whether the block is currently active",
+    )
+
+    # Timestamps
+    blocked_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+        comment="When the entity was blocked",
+    )
+
+    expires_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True,
+        comment="When the block expires (NULL for permanent)",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Record creation timestamp",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the blocked entity."""
+        status = "active" if self.is_active else "inactive"
+        return f"<BlockedEntity(type='{self.entity_type}', value='{self.entity_value}', {status})>"
+
+    @property
+    def is_expired(self) -> bool:
+        """Check if the block has expired."""
+        if self.expires_at is None:
+            return False
+        # Ensure both datetimes are timezone-aware and in UTC
+        now_utc = datetime.now(UTC)
+        expires_at = self.expires_at
+        if expires_at.tzinfo is None:
+            # Assume naive expires_at is UTC
+            expires_at = expires_at.replace(tzinfo=UTC)
+        return now_utc > expires_at
+
+    @property
+    def is_valid_block(self) -> bool:
+        """Check if the block is valid (active and not expired)."""
+        return self.is_active and not self.is_expired
+
+
+class ThreatScore(Base):
+    """Threat score model for tracking entity threat levels.
+
+    Tracks dynamic threat scores for IPs and users.
+    Used by SecurityMonitor for stateless multi-worker deployment.
+    """
+
+    __tablename__ = "threat_scores"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique threat score identifier",
+    )
+
+    # Entity identification
+    entity_key: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        unique=True,
+        comment="Entity key (user:id or ip:address)",
+    )
+
+    entity_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        index=True,
+        comment="Entity type (ip or user)",
+    )
+
+    entity_value: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+        comment="Entity value (IP address or user ID)",
+    )
+
+    # Score details
+    score: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        comment="Current threat score",
+    )
+
+    last_updated: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
-        comment="Role last update timestamp",
+        index=True,
+        comment="When the score was last updated",
+    )
+
+    # Metadata
+    score_details: Mapped[dict[str, Any]] = mapped_column(
+        UniversalJSON,
+        nullable=False,
+        server_default="{}",
+        comment="Additional score calculation details",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        comment="Record creation timestamp",
+    )
+
+    def __repr__(self) -> str:
+        """Return string representation of the threat score."""
+        return f"<ThreatScore(type='{self.entity_type}', value='{self.entity_value}', score={self.score})>"
+
+
+class MonitoringThreshold(Base):
+    """Monitoring threshold model for configuration.
+
+    Stores monitoring thresholds and configuration for the security monitor.
+    Used by SecurityMonitor for stateless multi-worker deployment.
+    """
+
+    __tablename__ = "monitoring_thresholds"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(
+        UniversalUUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        comment="Unique threshold identifier",
+    )
+
+    # Threshold identification
+    threshold_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True,
+        comment="Threshold name (e.g., 'alert_threshold', 'time_window')",
+    )
+
+    # Threshold configuration
+    threshold_value: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        comment="Threshold value",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Description of the threshold",
+    )
+
+    # Metadata
+    threshold_metadata: Mapped[dict[str, Any]] = mapped_column(
+        UniversalJSON,
+        nullable=False,
+        server_default="{}",
+        comment="Additional threshold metadata and configuration",
     )
 
     # Status
@@ -385,111 +924,7 @@ class Role(Base):
         Boolean,
         nullable=False,
         default=True,
-        comment="Whether the role is active and can be assigned",
-    )
-
-    # Relationships
-    permissions: Mapped[list["Permission"]] = relationship(
-        "Permission",
-        secondary=role_permissions_table,
-        back_populates="roles",
-        lazy="selectin",
-    )
-
-    parent_role: Mapped["Role | None"] = relationship(
-        "Role",
-        remote_side=[id],
-        back_populates="child_roles",
-    )
-
-    child_roles: Mapped[list["Role"]] = relationship(
-        "Role",
-        back_populates="parent_role",
-    )
-
-    users: Mapped[list["UserSession"]] = relationship(
-        "UserSession",
-        secondary=user_roles_table,
-        back_populates="roles",
-        lazy="selectin",
-    )
-
-    def __repr__(self) -> str:
-        """Return string representation of the role."""
-        status = "active" if self.is_active else "inactive"
-        parent = f", parent={self.parent_role.name}" if self.parent_role else ""
-        return f"<Role(name='{self.name}', {status}, permissions={len(self.permissions)}{parent})>"
-
-    def get_all_permissions(self) -> set[str]:
-        """Get all permissions for this role including inherited permissions.
-
-        Returns:
-            Set of permission names including inherited permissions
-        """
-        permissions = {perm.name for perm in self.permissions}
-
-        # Add permissions from parent role recursively
-        if self.parent_role:
-            permissions.update(self.parent_role.get_all_permissions())
-
-        return permissions
-
-    def has_permission(self, permission_name: str) -> bool:
-        """Check if role has a specific permission (including inherited).
-
-        Args:
-            permission_name: Permission name to check
-
-        Returns:
-            True if role has permission, False otherwise
-        """
-        return permission_name in self.get_all_permissions()
-
-
-class Permission(Base):
-    """Permission model for fine-grained access control (AUTH-3).
-
-    Permissions define specific actions that can be performed on resources.
-    They follow the pattern: resource:action (e.g., 'tokens:create', 'users:read').
-    """
-
-    __tablename__ = "permissions"
-
-    # Primary key
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True,
-        autoincrement=True,
-        comment="Unique permission identifier",
-    )
-
-    # Permission identification
-    name: Mapped[str] = mapped_column(
-        String(100),
-        unique=True,
-        nullable=False,
-        index=True,
-        comment="Unique permission name (e.g., 'tokens:create', 'users:read')",
-    )
-
-    resource: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True,
-        comment="Resource type this permission applies to (e.g., 'tokens', 'users')",
-    )
-
-    action: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        index=True,
-        comment="Action this permission allows (e.g., 'create', 'read', 'update', 'delete')",
-    )
-
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-        comment="Human-readable description of the permission",
+        comment="Whether the threshold is active",
     )
 
     # Timestamps
@@ -497,48 +932,35 @@ class Permission(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
-        comment="Permission creation timestamp",
+        comment="Record creation timestamp",
     )
 
-    # Status
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
+    last_updated: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
         nullable=False,
-        default=True,
-        comment="Whether the permission is active and can be assigned",
-    )
-
-    # Relationships
-    roles: Mapped[list["Role"]] = relationship(
-        "Role",
-        secondary=role_permissions_table,
-        back_populates="permissions",
-        lazy="selectin",
+        server_default=func.now(),
+        onupdate=func.now(),
+        comment="When the threshold was last updated",
     )
 
     def __repr__(self) -> str:
-        """Return string representation of the permission."""
+        """Return string representation of the monitoring threshold."""
         status = "active" if self.is_active else "inactive"
-        return f"<Permission(name='{self.name}', resource='{self.resource}', action='{self.action}', {status})>"
-
-
-# Update UserSession to include role relationships
-# Add this to the existing UserSession class by updating its relationships section
-UserSession.roles = relationship(
-    "Role",
-    secondary=user_roles_table,
-    back_populates="users",
-    lazy="selectin",
-)
+        return f"<MonitoringThreshold(name='{self.threshold_name}', value={self.threshold_value}, {status})>"
 
 
 # Export all models
 __all__ = [
     "AuthenticationEvent",
     "Base",
+    "BlockedEntity",
+    "MonitoringThreshold",
     "Permission",
     "Role",
+    "SecurityEvent",
+    "SecurityEventLogger",
     "ServiceToken",
+    "ThreatScore",
     "UserSession",
     "role_permissions_table",
     "user_roles_table",

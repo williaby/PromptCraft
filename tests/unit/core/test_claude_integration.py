@@ -5,7 +5,7 @@ Tests the Claude Code integration layer including command registration,
 execution, analytics tracking, and health monitoring functionality.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -18,6 +18,7 @@ from src.core.claude_integration import (
     IntegrationStatus,
 )
 from src.core.user_control_system import CommandResult
+from src.utils.datetime_compat import UTC
 
 
 class TestCommandMetadata:

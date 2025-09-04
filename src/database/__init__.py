@@ -13,6 +13,7 @@ from .connection import (
     DatabaseError,
     DatabaseManager,
     get_database_manager,
+    get_database_manager_async,
     get_db,
     get_db_session,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "ServiceToken",
     "UserSession",
     "get_database_manager",
+    "get_database_manager_async",
     "get_db",
     "get_db_session",
 ]

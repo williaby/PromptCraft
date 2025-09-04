@@ -36,10 +36,19 @@ def mock_async_engine():
     mock_result = MagicMock()
     mock_result.fetchone.return_value = [1]
     mock_conn.execute.return_value = mock_result
+    mock_conn.commit = AsyncMock()
 
-    engine.begin.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-    engine.begin.return_value.__aexit__ = AsyncMock(return_value=None)
-    engine.connect = AsyncMock()
+    # Create proper async context manager for connect()
+    mock_connection_context = AsyncMock()
+    mock_connection_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_connection_context.__aexit__ = AsyncMock(return_value=None)
+    engine.connect.return_value = mock_connection_context
+
+    # Also support begin() for legacy compatibility
+    mock_begin_context = AsyncMock()
+    mock_begin_context.__aenter__ = AsyncMock(return_value=mock_conn)
+    mock_begin_context.__aexit__ = AsyncMock(return_value=None)
+    engine.begin.return_value = mock_begin_context
 
     # Mock pool
     mock_pool = MagicMock()
@@ -68,15 +77,13 @@ def mock_session_factory():
     mock_session.close = AsyncMock()
     mock_session.add = AsyncMock()
 
-    # Create a proper async context manager
-    async def async_context_manager():
-        return mock_session
+    # Create an async context manager mock
+    mock_context_manager = MagicMock()
+    mock_context_manager.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_context_manager.__aexit__ = AsyncMock(return_value=None)
 
-    mock_context = AsyncMock()
-    mock_context.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_context.__aexit__ = AsyncMock(return_value=None)
-
-    factory.return_value = mock_context
+    # Make the factory return the context manager when called
+    factory.return_value = mock_context_manager
 
     return factory
 

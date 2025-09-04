@@ -11,9 +11,11 @@ import logging
 import sqlite3
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from src.utils.datetime_compat import UTC, timedelta
 
 logger = logging.getLogger(__name__)
 

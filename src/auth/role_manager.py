@@ -606,7 +606,9 @@ class RoleManager(DatabaseService):
 
                     # Check for user assignments
                     user_result = await session.execute(
-                        select(user_roles_table.c.user_email).where(user_roles_table.c.role_id == role.id),
+                        select(UserSession.email)
+                        .join(user_roles_table, UserSession.id == user_roles_table.c.user_id)
+                        .where(user_roles_table.c.role_id == role.id),
                     )
                     assigned_users = user_result.scalars().all()
                     if assigned_users:

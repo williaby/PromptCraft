@@ -26,8 +26,8 @@ class TestEncryptionIntegration:
 
     def test_secret_str_fields_exist(self):
         """Test that SecretStr fields are properly defined."""
-        # Clear environment to test defaults
-        with patch.dict(os.environ, {}, clear=True):
+        # Clear environment to test defaults and mock env file loading
+        with patch.dict(os.environ, {}, clear=True), patch("src.config.settings._env_file_settings", return_value={}):
             settings = ApplicationSettings()
 
         # Check that secret fields are defined and None by default
@@ -122,17 +122,20 @@ class TestEncryptionIntegration:
         finally:
             tmp_path.unlink(missing_ok=True)
 
+    @patch("src.config.settings.validate_configuration_on_startup")
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
     def test_get_settings_production_warning(
         self,
         mock_detect_env,
         mock_validate_encryption,
+        mock_validate_startup,
         caplog,
     ):
         """Test that production environment warns when encryption is unavailable."""
         mock_detect_env.return_value = "prod"
         mock_validate_encryption.return_value = False
+        mock_validate_startup.return_value = None  # Don't fail validation
 
         with caplog.at_level(logging.WARNING):
             # Clear global settings to force reinitialization
@@ -162,17 +165,20 @@ class TestEncryptionIntegration:
         info_messages = [record.message for record in caplog.records if record.levelno >= logging.INFO]
         assert any("development environment" in msg.lower() for msg in info_messages)
 
+    @patch("src.config.settings.validate_configuration_on_startup")
     @patch("src.config.settings.validate_encryption_available")
     @patch("src.config.settings._detect_environment")
     def test_get_settings_encryption_available_no_log(
         self,
         mock_detect_env,
         mock_validate_encryption,
+        mock_validate_startup,
         caplog,
     ):
         """Test that no warning is logged when encryption is available."""
         mock_detect_env.return_value = "prod"
         mock_validate_encryption.return_value = True
+        mock_validate_startup.return_value = None  # Don't fail validation
 
         with caplog.at_level(logging.WARNING):
             # Clear global settings to force reinitialization

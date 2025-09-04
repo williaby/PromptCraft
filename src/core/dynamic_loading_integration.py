@@ -28,13 +28,14 @@ import logging
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 from src.config.settings import get_settings
 from src.mcp_integration.hybrid_router import HybridRouter
 from src.mcp_integration.mcp_client import Response, WorkflowStep
+from src.utils.datetime_compat import UTC
 from src.utils.performance_monitor import PerformanceMonitor
 
 from .dynamic_function_loader import DynamicFunctionLoader, LoadingStrategy, initialize_dynamic_loading

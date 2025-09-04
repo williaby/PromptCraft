@@ -35,6 +35,12 @@ services:
     volumes:
       - redis-dev-data:/data
     command: redis-server --appendonly yes
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/run
     networks:
       - promptcraft-dev
     healthcheck:

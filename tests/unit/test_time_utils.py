@@ -1,8 +1,9 @@
 """Tests for time_utils module."""
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from src.utils.time_utils import (
+    UTC,
     __all__,
     format_datetime,
     from_timestamp,

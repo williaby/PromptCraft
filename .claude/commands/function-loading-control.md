@@ -5,7 +5,7 @@ estimated_time: "< 5 minutes"
 dependencies: []
 sub_commands: [
   "load-category",
-  "unload-category", 
+  "unload-category",
   "list-categories",
   "optimize-for",
   "tier-status",

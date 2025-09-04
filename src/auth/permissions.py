@@ -19,8 +19,8 @@ from typing import Any
 from fastapi import Depends
 from sqlalchemy import text
 
+from src.auth import ServiceTokenUser, require_authentication
 from src.auth.exceptions import AuthExceptionHandler
-from src.auth.middleware import ServiceTokenUser, require_authentication
 from src.auth.types import AuthenticatedUserType
 from src.database.connection import get_db
 
@@ -47,7 +47,7 @@ async def user_has_permission(user_email: str, permission_name: str) -> bool:
     try:
         db_gen = get_db()
         try:
-            session = await db_gen.__anext__()  # type: ignore[attr-defined]
+            session = await db_gen.__anext__()
         except AttributeError:
             if hasattr(db_gen, "__aenter__"):
                 session = await db_gen.__aenter__()
