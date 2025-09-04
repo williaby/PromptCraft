@@ -1,0 +1,10 @@
+# Semgrep configuration file for PromptCraft
+# This file configures rule suppressions and exclusions
+
+# Use the .semgrepignore file for path-based exclusions
+# This file is for rule-specific configurations only
+
+rules: []
+
+# Path exclusions are handled by .semgrepignore file
+# Rule-specific suppressions can be added here if needed in the future

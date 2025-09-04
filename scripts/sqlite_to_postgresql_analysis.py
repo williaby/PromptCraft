@@ -293,13 +293,13 @@ class SQLiteDatabaseAnalyzer:
         """Analyze a single table."""
         logger.info(f"  Analyzing table: {table_name}")
 
-        # Get table info
-        cursor.execute(f"PRAGMA table_info([{table_name}])")
+        # Get table info - SECURITY: Validate table name to prevent SQL injection
+        safe_table_name = validate_sql_identifier(table_name)
+        cursor.execute(f"PRAGMA table_info([{safe_table_name}])")  # nosec B608
         pragma_info = cursor.fetchall()
 
-        # Get row count - SECURITY: Validate table name to prevent SQL injection
-        safe_table_name = validate_sql_identifier(table_name)
-        cursor.execute(f"SELECT COUNT(*) FROM [{safe_table_name}]")  # nosec
+        # Get row count - using already validated safe_table_name
+        cursor.execute(f"SELECT COUNT(*) FROM [{safe_table_name}]")  # nosec B608
         row_count = cursor.fetchone()[0]
 
         # Get estimated size (rough calculation)
@@ -379,8 +379,9 @@ class SQLiteDatabaseAnalyzer:
         """Analyze table indexes."""
         indexes = []
 
-        # Get index list
-        cursor.execute(f"PRAGMA index_list([{table_name}])")
+        # Get index list - SECURITY: Validate table name to prevent SQL injection
+        safe_table_name = validate_sql_identifier(table_name)
+        cursor.execute(f"PRAGMA index_list([{safe_table_name}])")  # nosec B608
         index_list = cursor.fetchall()
 
         for idx_info in index_list:
@@ -388,8 +389,9 @@ class SQLiteDatabaseAnalyzer:
             unique = bool(idx_info["unique"])
             partial = bool(idx_info["partial"])
 
-            # Get index columns
-            cursor.execute(f"PRAGMA index_info([{idx_name}])")
+            # Get index columns - SECURITY: Validate index name to prevent SQL injection
+            safe_idx_name = validate_sql_identifier(idx_name)
+            cursor.execute(f"PRAGMA index_info([{safe_idx_name}])")  # nosec B608
             index_columns = cursor.fetchall()
 
             columns = [col["name"] for col in index_columns]
@@ -426,7 +428,9 @@ class SQLiteDatabaseAnalyzer:
         """Analyze foreign key constraints."""
         foreign_keys = []
 
-        cursor.execute(f"PRAGMA foreign_key_list([{table_name}])")
+        # SECURITY: Validate table name to prevent SQL injection
+        safe_table_name = validate_sql_identifier(table_name)
+        cursor.execute(f"PRAGMA foreign_key_list([{safe_table_name}])")  # nosec B608
         fk_list = cursor.fetchall()
 
         for fk_info in fk_list:

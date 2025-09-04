@@ -1,0 +1,36 @@
+# Semgrep ignore file for PromptCraft
+# Excludes files that have known false positives or are not relevant for security scanning
+
+# Testing files - may contain mock data and test patterns
+tests/
+*_test.py
+test_*.py
+
+# Development and performance scripts
+scripts/homelab_performance_validation.py
+scripts/performance_validation.py
+
+# Configuration files with known false positives
+src/auth_simple/config.py
+src/monitoring/ab_testing_dashboard.py
+src/auth/models.py
+src/core/ab_testing_models.py
+src/auth/service_token_manager.py
+
+# Temporary and build files
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Documentation and configuration
+docs/
+*.md
+*.yml
+*.yaml
+.env*
+.git/

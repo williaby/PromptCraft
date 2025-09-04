@@ -3,7 +3,7 @@ name: Dependency Review
 # Run dependency review on all pull requests
 on:
   pull_request:
-    branches: [ "main", "develop" ]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
