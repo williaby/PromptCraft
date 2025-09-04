@@ -23,6 +23,11 @@ rules:
   # Suppress assert statements in configuration validation
   # These are appropriate for A/B testing parameter validation
   - id: gitlab.bandit.B101
+    languages: [python]  # Added languages field as required by Semgrep
+    paths:
+      exclude:
+        - "src/core/ab_testing_models.py"
+    message: "Suppressed: Configuration validation asserts are appropriate"
     paths:
       exclude:
         - "src/core/ab_testing_models.py"
