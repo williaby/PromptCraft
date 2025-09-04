@@ -27,6 +27,12 @@ rules:
       exclude:
         - "scripts/homelab_performance_validation.py"
     message: "Suppressed: Testing script uses random for non-security purposes"
+    metadata:
+      category: security
+    paths:
+      exclude:
+        - "scripts/homelab_performance_validation.py"
+    message: "Suppressed: Testing script uses random for non-security purposes"
 
   # Suppress code-after-return for defensive programming patterns
   - id: python.lang.maintainability.return.code-after-unconditional-return
