@@ -37,6 +37,11 @@ rules:
   # Suppress weak random generation in testing scripts
   # Performance validation scripts use random for test data only
   - id: gitlab.bandit.B311
+    languages: [python]  # Specify the language targeted by this rule
+    paths:
+      exclude:
+        - "scripts/homelab_performance_validation.py"
+    message: "Suppressed: Testing script uses random for non-security purposes"
     paths:
       exclude:
         - "scripts/homelab_performance_validation.py"
