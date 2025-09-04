@@ -62,7 +62,10 @@ class MigrationValidator:
             json_validation_results = {}
 
             for table in tables:
-                cursor.execute(f"PRAGMA table_info([{table}])")
+                # #CRITICAL: security: validate SQL identifier to prevent injection attacks
+                # #VERIFY: using validate_sql_identifier for all database identifiers
+                safe_table = validate_sql_identifier(table)
+                cursor.execute(f"PRAGMA table_info([{safe_table}])")  # nosec B608
                 columns = cursor.fetchall()
 
                 json_columns = [col["name"] for col in columns if col["type"].upper() == "JSON"]
@@ -164,7 +167,10 @@ class MigrationValidator:
             precision_analysis = {}
 
             for table in tables:
-                cursor.execute(f"PRAGMA table_info([{table}])")
+                # #CRITICAL: security: validate SQL identifier to prevent injection attacks
+                # #VERIFY: using validate_sql_identifier for all database identifiers
+                safe_table = validate_sql_identifier(table)
+                cursor.execute(f"PRAGMA table_info([{safe_table}])")  # nosec B608
                 columns = cursor.fetchall()
 
                 real_columns = [col["name"] for col in columns if col["type"].upper() == "REAL"]
