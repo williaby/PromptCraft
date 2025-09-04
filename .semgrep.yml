@@ -60,6 +60,7 @@ rules:
     message: "Suppressed: Testing script uses random for non-security purposes"
     metadata:
       category: security
+      technology: ["python"]  # Added technology field as required by Semgrep
     paths:
       exclude:
         - "scripts/homelab_performance_validation.py"
