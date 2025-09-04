@@ -183,6 +183,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: python-${{ matrix.python-version }}
           name: Coverage Report (Python ${{ matrix.python-version }})
           verbose: true
         continue-on-error: true
