@@ -19,6 +19,12 @@ rules:
       exclude:
         - "src/core/ab_testing_models.py"
     message: "Suppressed: Configuration validation asserts are appropriate"
+    metadata:
+      category: security
+    paths:
+      exclude:
+        - "src/core/ab_testing_models.py"
+    message: "Suppressed: Configuration validation asserts are appropriate"
 
   # Suppress weak random generation in testing scripts
   # Performance validation scripts use random for test data only
