@@ -1,85 +1,10 @@
-# Semgrep Configuration for PromptCraft
-# Suppresses false positives while maintaining security coverage
+# Semgrep configuration file for PromptCraft
+# This file configures rule suppressions and exclusions
 
-rules:
-  # Suppress return-not-in-function false positives
-  # These are legitimate return statements within try-except blocks
-  - id: python.lang.maintainability.return.return-not-in-function
-    languages: [python]  # Specify this rule applies to Python files only
-    paths:
-      exclude:
-        - "src/auth_simple/config.py"
-        - "src/monitoring/ab_testing_dashboard.py"
-        - "src/auth/models.py"
-    message: "Suppressed: Legitimate return statements in try-except blocks"
-    metadata:
-      category: maintainability
-    paths:
-      exclude:
-        - "src/auth_simple/config.py"
-        - "src/monitoring/ab_testing_dashboard.py"
-        - "src/auth/models.py"
-    message: "Suppressed: Legitimate return statements in try-except blocks"
-    paths:
-      exclude:
-        - "src/auth_simple/config.py"
-        - "src/monitoring/ab_testing_dashboard.py"
-        - "src/auth/models.py"
-    message: "Suppressed: Legitimate return statements in try-except blocks"
+# Use the .semgrepignore file for path-based exclusions
+# This file is for rule-specific configurations only
 
-  # Suppress assert statements in configuration validation
-  # These are appropriate for A/B testing parameter validation
-  - id: gitlab.bandit.B101
-    languages: [python]  # Added languages field as required by Semgrep
-    paths:
-      exclude:
-        - "src/core/ab_testing_models.py"
-    message: "Suppressed: Configuration validation asserts are appropriate"
-    paths:
-      exclude:
-        - "src/core/ab_testing_models.py"
-    message: "Suppressed: Configuration validation asserts are appropriate"
-    metadata:
-      category: security
-    paths:
-      exclude:
-        - "src/core/ab_testing_models.py"
-    message: "Suppressed: Configuration validation asserts are appropriate"
+rules: []
 
-  # Suppress weak random generation in testing scripts
-  # Performance validation scripts use random for test data only
-  - id: gitlab.bandit.B311
-    languages: [python]  # Specify the language targeted by this rule
-    paths:
-      exclude:
-        - "scripts/homelab_performance_validation.py"
-    message: "Suppressed: Testing script uses random for non-security purposes"
-    paths:
-      exclude:
-        - "scripts/homelab_performance_validation.py"
-    message: "Suppressed: Testing script uses random for non-security purposes"
-    metadata:
-      category: security
-      technology: ["python"]  # Added technology field as required by Semgrep
-    paths:
-      exclude:
-        - "scripts/homelab_performance_validation.py"
-    message: "Suppressed: Testing script uses random for non-security purposes"
-
-  # Suppress code-after-return for defensive programming patterns
-  - id: python.lang.maintainability.return.code-after-unconditional-return
-    metadata:
-      category: maintainability
-      technology: [python]
-      exclude:
-        - "src/auth/service_token_manager.py"
-    message: "Suppressed: Defensive programming pattern with intentional unreachable code"
-    metadata:
-      category: maintainability
-    paths:
-      exclude:
-        - "src/auth/service_token_manager.py"
-    message: "Suppressed: Defensive programming pattern with intentional unreachable code"
-
-# Keep security rules active for legitimate vulnerabilities
-# SQL injection rules will remain active until fixed in migration scripts
+# Path exclusions are handled by .semgrepignore file
+# Rule-specific suppressions can be added here if needed in the future
