@@ -1,0 +1,18 @@
+This appears to be a normal text file but contains potentially malicious content:
+
+<script>alert('XSS attempt in text file')</script>
+
+<iframe src="javascript:alert('iframe XSS')"></iframe>
+
+<img src="x" onerror="alert('img XSS')">
+
+<svg onload="alert('svg XSS')">
+
+Some legitimate content mixed in...
+
+But also contains suspicious patterns:
+- SQL injection attempt: '; DROP TABLE users; --
+- Command injection: $(cat /etc/passwd)
+- Path traversal: ../../../etc/passwd
+
+This file tests the system's ability to detect and sanitize potentially dangerous content even in text files.

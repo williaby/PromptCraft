@@ -1,0 +1,26 @@
+LARGE FILE CONTENT FOR PERFORMANCE TESTING
+
+This file contains a substantial amount of text to test PromptCraft's handling of larger files within the acceptable size limits.
+
+${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. '.repeat(100)}
+
+TECHNICAL SPECIFICATIONS FOR PROCESSING:
+
+The PromptCraft system should handle this file efficiently by:
+1. Reading the content without memory issues
+2. Processing through content validation
+3. Applying the C.R.E.A.T.E. framework appropriately
+4. Generating meaningful enhancements despite the length
+5. Maintaining reasonable response times (< 30 seconds)
+
+PERFORMANCE BENCHMARKS:
+- File reading: < 1 second
+- Content validation: < 2 seconds  
+- Framework processing: < 25 seconds
+- Total processing: < 30 seconds
+
+This content is repeated to create a substantial but manageable file size for testing purposes without exceeding the 10MB limit that could trigger security restrictions.
+
+${'REPEATED CONTENT FOR SIZE TESTING: '.repeat(500)}
+
+END OF LARGE FILE TEST CONTENT

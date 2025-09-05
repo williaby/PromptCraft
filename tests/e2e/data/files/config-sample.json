@@ -1,0 +1,51 @@
+{
+  "application": {
+    "name": "PromptCraft Test Configuration",
+    "version": "1.0.0",
+    "environment": "test"
+  },
+  "features": {
+    "fileUpload": {
+      "enabled": true,
+      "maxSize": "10MB",
+      "supportedFormats": [".txt", ".md", ".csv", ".json", ".pdf", ".docx"]
+    },
+    "rateLimit": {
+      "requestsPerMinute": 30,
+      "requestsPerHour": 200,
+      "fileUploadsPerHour": 50
+    },
+    "security": {
+      "scanUploads": true,
+      "validateContent": true,
+      "checkMalicious": true
+    }
+  },
+  "models": {
+    "default": "gpt-4o-mini",
+    "available": [
+      "gpt-4o-mini",
+      "gpt-4o",
+      "claude-3-haiku",
+      "claude-3-sonnet"
+    ],
+    "costs": {
+      "gpt-4o-mini": 0.0001,
+      "gpt-4o": 0.01,
+      "claude-3-haiku": 0.0005,
+      "claude-3-sonnet": 0.003
+    }
+  },
+  "testing": {
+    "scenarios": [
+      "basic_prompt_enhancement",
+      "file_upload_processing",
+      "multi_format_support",
+      "rate_limit_validation",
+      "security_scanning",
+      "performance_benchmarks"
+    ],
+    "expectedResponseTime": "< 30 seconds",
+    "minimumCoverage": "80%"
+  }
+}

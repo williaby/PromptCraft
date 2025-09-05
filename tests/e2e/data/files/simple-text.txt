@@ -1,0 +1,19 @@
+This is a simple text file for testing PromptCraft file upload functionality.
+
+The system should be able to:
+- Read this content successfully
+- Process it through the C.R.E.A.T.E. framework
+- Generate enhanced prompts
+- Display proper file attribution
+
+Test cases:
+1. Basic file reading
+2. Content extraction accuracy
+3. Processing time validation
+4. Output quality assessment
+
+Special characters test: àáâãäåæçèéêë ñ ßµ €£¥ 
+
+Emoji test: 🚀 💻 📝 ✅ ⚠️ 🔥
+
+This file is intentionally kept small for quick processing during automated tests.
