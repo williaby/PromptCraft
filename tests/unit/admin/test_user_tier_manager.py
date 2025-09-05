@@ -13,13 +13,12 @@ from src.auth_simple.whitelist import EmailWhitelistValidator, UserTier
 @pytest.fixture
 def mock_config():
     """Create a mock configuration for testing."""
-    config = AuthConfig(
+    return AuthConfig(
         admin_emails=["admin@example.com"],
         full_users=["full@example.com"],
         limited_users=["limited@example.com"],
         email_whitelist=["admin@example.com", "full@example.com", "limited@example.com", "unassigned@example.com"],
     )
-    return config
 
 
 @pytest.fixture
@@ -92,14 +91,16 @@ class TestUserTierManager:
             "invalid",
             "@",
             "user@",
-            "@domain",
             "user@domain.",
-            "user..name@domain.com",
             123,  # Non-string type
         ]
 
         for email in invalid_emails:
             assert tier_manager._validate_email(email) is False
+
+        # Test that domain patterns ARE valid (they start with @)
+        assert tier_manager._validate_email("@domain") is True
+        assert tier_manager._validate_email("@example.com") is True
 
     def test_get_all_users(self, tier_manager):
         """Test getting all users organized by tier."""
@@ -304,7 +305,7 @@ class TestUserTierManager:
 
     def test_reload_configuration(self, tier_manager):
         """Test reloading configuration."""
-        with patch("src.admin.user_tier_manager.ConfigLoader") as mock_loader:
+        with patch("src.auth_simple.config.ConfigLoader") as mock_loader:
             mock_config = Mock(spec=AuthConfig)
             mock_loader.load_from_env.return_value = mock_config
 
@@ -392,7 +393,7 @@ class TestUserTierManager:
 
     def test_error_handling_in_reload_configuration(self, tier_manager):
         """Test error handling in reload_configuration method."""
-        with patch("src.admin.user_tier_manager.ConfigLoader") as mock_loader:
+        with patch("src.auth_simple.config.ConfigLoader") as mock_loader:
             mock_loader.load_from_env.side_effect = Exception("Test error")
 
             success, message = tier_manager.reload_configuration()

@@ -382,42 +382,38 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
 
     def test_handle_enhancement_timeout_scenario(self, interface, mock_session_state):
         """Test handle_enhancement timeout handling."""
-        interface._create_timeout_fallback_result = Mock(return_value=tuple("timeout_result" for _ in range(9)))
 
         with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1:
             mock_journey1_instance = Mock()
             mock_journey1_instance.enhance_prompt.side_effect = TimeoutError("Processing timeout")
             mock_journey1.return_value = mock_journey1_instance
 
-            # Simulate timeout handling
-            try:
-                mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
-            except TimeoutError:
-                result = interface._create_timeout_fallback_result("test", "gpt-4o-mini")
-                assert len(result) == 10
-                assert all(item == "timeout_result" for item in result)
+            # Test the actual timeout fallback method
+            result = interface._create_timeout_fallback_result("test", "gpt-4o-mini")
+            assert len(result) == 10
+            # Check that result contains appropriate timeout-related content
+            assert "Timeout" in result[0] or "timeout" in result[0]  # enhanced_prompt
+            assert "timeout" in result[2].lower()  # context_analysis
 
     def test_handle_enhancement_processing_error(self, interface, mock_session_state):
         """Test handle_enhancement with processing error."""
-        interface._create_error_fallback_result = Mock(return_value=tuple("error_result" for _ in range(9)))
 
         with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1:
             mock_journey1_instance = Mock()
             mock_journey1_instance.enhance_prompt.side_effect = Exception("Processing error")
             mock_journey1.return_value = mock_journey1_instance
 
-            # Simulate error handling
-            try:
-                mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
-            except Exception as e:
-                result = interface._create_error_fallback_result("test", "gpt-4o-mini", str(e))
-                assert len(result) == 10
-                assert all(item == "error_result" for item in result)
+            # Test the actual error fallback method
+            result = interface._create_error_fallback_result("test", "gpt-4o-mini", "Processing error")
+            assert len(result) == 10
+            # Check that result contains appropriate error-related content
+            assert "Error Recovery" in result[0] or "error" in result[0].lower()  # enhanced_prompt
+            assert "error" in result[2].lower()  # context_analysis
 
     def test_handle_enhancement_insufficient_result_fields(self, interface):
         """Test handle_enhancement with insufficient result fields."""
-        interface.MIN_RESULT_FIELDS = 9
-        interface._create_fallback_result = Mock(return_value=tuple("fallback_result" for _ in range(9)))
+        # Set minimum result fields to 10 (the expected number)
+        interface.MIN_RESULT_FIELDS = 10
 
         with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1:
             mock_journey1_instance = Mock()
@@ -425,7 +421,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
             mock_journey1_instance.enhance_prompt.return_value = ("short", "result")
             mock_journey1.return_value = mock_journey1_instance
 
-            # Simulate insufficient result handling
+            # Test the insufficient result handling
             result = mock_journey1_instance.enhance_prompt(
                 "test",
                 [],
@@ -435,10 +431,14 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
                 "tier2",
                 0.7,
             )
+
+            # Check that result is insufficient and test fallback
             if not result or len(result) < interface.MIN_RESULT_FIELDS:
                 fallback_result = interface._create_fallback_result("test", "gpt-4o-mini")
-                assert len(timeout_result) == 10
-                assert all(item == "fallback_result" for item in fallback_result)
+                assert len(fallback_result) == 10
+                # Check that result contains appropriate fallback content
+                assert "Fallback Mode" in fallback_result[0] or "fallback" in fallback_result[0].lower()
+                assert "fallback" in fallback_result[8].lower()  # model_attribution
 
     def test_session_state_initialization(self, interface):
         """Test handle_enhancement session state initialization."""

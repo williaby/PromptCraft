@@ -348,7 +348,8 @@ class TestMultiJourneyInterfaceFunctional:
     def test_model_selector_creation(self, interface):
         """Test model selector creation method."""
 
-        model_selector = interface._create_model_selector()
+        # Test with full tier to get all 4 choices
+        model_selector = interface._create_model_selector(user_tier="full")
 
         # Verify dropdown configuration
         assert "AI Model Selection" in model_selector.label
