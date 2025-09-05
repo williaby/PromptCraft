@@ -36,12 +36,15 @@ class SimpleSessionManager:
         self.session_timeout = session_timeout
         logger.info("Initialized session manager with %ss timeout", session_timeout)
 
-    def create_session(self, email: str, is_admin: bool, cf_context: dict[str, Any] | None = None) -> str:
+    def create_session(
+        self, email: str, is_admin: bool, user_tier: str, cf_context: dict[str, Any] | None = None,
+    ) -> str:
         """Create a new session for the user.
 
         Args:
             email: User email address
             is_admin: Whether user has admin privileges
+            user_tier: User tier (admin, full, limited)
             cf_context: Additional Cloudflare context
 
         Returns:
@@ -51,12 +54,13 @@ class SimpleSessionManager:
         self.sessions[session_id] = {
             "email": email,
             "is_admin": is_admin,
+            "user_tier": user_tier,
             "created_at": datetime.now(UTC),
             "last_accessed": datetime.now(UTC),
             "cf_context": cf_context or {},
         }
 
-        logger.debug("Created session %s for %s (admin: %s)", session_id, email, is_admin)
+        logger.debug("Created session %s for %s (admin: %s, tier: %s)", session_id, email, is_admin, user_tier)
         return session_id
 
     def get_session(self, session_id: str) -> dict | None:
@@ -250,21 +254,32 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
             logger.warning("Unauthorized email attempted access: %s", cloudflare_user.email)
             raise HTTPException(status_code=403, detail=f"Email {cloudflare_user.email} not authorized")
 
+        # Get user tier information
+        user_tier = self.validator.get_user_tier(cloudflare_user.email)
+        is_admin = user_tier.has_admin_privileges
+        can_access_premium = user_tier.can_access_premium_models
+
         # Check if existing session matches current user
         if existing_session and existing_session["email"] == cloudflare_user.email:
-            # Use existing session
+            # Use existing session, but update tier info if needed
             session_data: dict[str, Any] = existing_session
+            # Update session with current tier info in case it changed
+            session_data["user_tier"] = user_tier.value
+            session_data["is_admin"] = is_admin
+            session_data["can_access_premium"] = can_access_premium
         else:
-            # Create new session
-            is_admin = self.validator.is_admin(cloudflare_user.email)
+            # Create new session with tier information
             cf_context = self.cloudflare_auth.create_user_context(cloudflare_user)
 
-            new_session_id = self.session_manager.create_session(cloudflare_user.email, is_admin, cf_context)
+            new_session_id = self.session_manager.create_session(
+                cloudflare_user.email, is_admin, user_tier.value, cf_context,
+            )
 
             retrieved_session_data = self.session_manager.get_session(new_session_id)
             if retrieved_session_data is None:
                 raise HTTPException(status_code=500, detail="Session creation failed")
             session_data = retrieved_session_data
+            session_data["can_access_premium"] = can_access_premium
             if self.enable_session_cookies:
                 request.state.new_session_id = new_session_id
 
@@ -272,13 +287,20 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         request.state.user = {
             "email": cloudflare_user.email,
             "is_admin": session_data["is_admin"],
+            "user_tier": session_data["user_tier"],
             "role": "admin" if session_data["is_admin"] else "user",
+            "can_access_premium": session_data["can_access_premium"],
             "session_id": session_id or getattr(request.state, "new_session_id", None),
             "authenticated_at": session_data["created_at"],
             "cf_context": session_data["cf_context"],
         }
 
-        logger.debug("Authenticated user %s with role %s", cloudflare_user.email, request.state.user["role"])
+        logger.debug(
+            "Authenticated user %s with tier %s (premium access: %s)",
+            cloudflare_user.email,
+            session_data["user_tier"],
+            session_data["can_access_premium"],
+        )
 
     def _set_session_cookie(self, response: Response, session_id: str) -> None:
         """Set session cookie in response.
@@ -339,6 +361,8 @@ require_admin = AuthenticationDependency(require_admin=True)
 def create_auth_middleware(
     whitelist_str: str,
     admin_emails_str: str = "",
+    full_users_str: str = "",
+    limited_users_str: str = "",
     session_timeout: int = 3600,
     public_paths: set[str] | None = None,
 ) -> CloudflareAccessMiddleware:
@@ -347,6 +371,8 @@ def create_auth_middleware(
     Args:
         whitelist_str: Comma-separated whitelist emails/domains
         admin_emails_str: Comma-separated admin emails
+        full_users_str: Comma-separated full tier users
+        limited_users_str: Comma-separated limited tier users
         session_timeout: Session timeout in seconds
         public_paths: Additional public paths (optional)
 
@@ -355,8 +381,8 @@ def create_auth_middleware(
     """
     from .whitelist import create_validator_from_env  # noqa: PLC0415
 
-    # Create whitelist validator
-    validator = create_validator_from_env(whitelist_str, admin_emails_str)
+    # Create whitelist validator with tier support
+    validator = create_validator_from_env(whitelist_str, admin_emails_str, full_users_str, limited_users_str)
 
     # Create session manager
     session_manager = SimpleSessionManager(session_timeout=session_timeout)

@@ -15,13 +15,12 @@ import gzip
 import json
 import logging
 import mimetypes
-import signal
 import tarfile
 import time
 import zipfile
 from collections import defaultdict, deque
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
 import gradio as gr
 
@@ -31,6 +30,7 @@ except ImportError:
     magic = None
 
 from src.config.settings import ApplicationSettings
+from src.ui.admin.tier_management_interface import TierManagementInterface
 from src.ui.components.shared.export_utils import ExportUtils
 from src.ui.journeys.journey1_smart_templates import Journey1SmartTemplates
 from src.utils.logging_mixin import LoggerMixin
@@ -210,7 +210,7 @@ class MultiJourneyInterface(LoggerMixin):
 
     # Constants
     MAX_TEXT_INPUT_SIZE = 50000  # 50KB text limit
-    MIN_RESULT_FIELDS = 9  # Minimum fields in result validation
+    MIN_RESULT_FIELDS = 10  # Minimum fields in result validation (added clean_prompt)
     MAX_PREVIEW_CHARS = 250  # Maximum characters in preview
     MAX_SUMMARY_CHARS = 100  # Maximum characters in summary
     MAX_FALLBACK_CHARS = 500  # Maximum characters in fallback
@@ -237,6 +237,13 @@ class MultiJourneyInterface(LoggerMixin):
         self.session_states = {}
         self.active_sessions = {}
 
+        # Initialize Admin Interface (gracefully handle configuration errors in tests)
+        try:
+            self.admin_interface = TierManagementInterface()
+        except Exception as e:
+            logger.warning(f"Admin interface initialization failed (likely in tests): {e}")
+            self.admin_interface = None
+
     def _load_model_costs(self) -> dict[str, float]:
         """Load model pricing information for cost tracking."""
         return {
@@ -257,10 +264,20 @@ class MultiJourneyInterface(LoggerMixin):
             "o1-preview": 0.015,
         }
 
-    def _create_header(self) -> gr.HTML:
-        """Create the header section with branding and model selection."""
+    def _create_header(self, user_tier: str = "limited", user_email: str = "") -> gr.HTML:
+        """Create the header section with branding, user tier, and model selection."""
+        # Define tier styling
+        tier_colors = {
+            "admin": {"bg": "#dc2626", "text": "white", "icon": "👑"},
+            "full": {"bg": "#2563eb", "text": "white", "icon": "⭐"},
+            "limited": {"bg": "#64748b", "text": "white", "icon": "🔒"},
+        }
+
+        tier_info = tier_colors.get(user_tier, tier_colors["limited"])
+        tier_display = user_tier.title()
+
         return gr.HTML(
-            """
+            f"""
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 24px;">🚀</span>
@@ -268,6 +285,9 @@ class MultiJourneyInterface(LoggerMixin):
                 <span style="font-size: 14px; color: #64748b; margin-left: 10px;">Transform Ideas into Intelligence</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="background: {tier_info['bg']}; color: {tier_info['text']}; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500;">
+                    {tier_info['icon']} {tier_display} User
+                </div>
                 <div id="model-selector" style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 14px; border: 1px solid #cbd5e1;">
                     Model: <span id="current-model">gpt-4o-mini</span>
                 </div>
@@ -279,19 +299,83 @@ class MultiJourneyInterface(LoggerMixin):
         """,
         )
 
-    def _create_model_selector(self) -> gr.Dropdown:
-        """Create the model selection dropdown."""
-        return gr.Dropdown(
-            label="🤖 AI Model Selection",
-            choices=[
+    def _create_model_selector(self, user_tier: str = "limited") -> gr.Dropdown:
+        """Create the tier-aware model selection dropdown."""
+        # Define tier-appropriate choices
+        if user_tier == "limited":
+            choices = [
+                ("🆓 Free Models Only", "free_mode"),
+                ("⚡ Basic Routing (Free Models)", "basic"),
+            ]
+        elif user_tier == "full":
+            choices = [
                 ("🆓 Free Only Mode", "free_mode"),
                 ("⚡ Standard Routing", "standard"),
                 ("🚀 Premium Routing", "premium"),
                 ("🎯 Custom Model Selection", "custom"),
-            ],
-            value="standard",
+            ]
+        else:  # admin
+            choices = [
+                ("🆓 Free Only Mode", "free_mode"),
+                ("⚡ Standard Routing", "standard"),
+                ("🚀 Premium Routing", "premium"),
+                ("🎯 Custom Model Selection", "custom"),
+                ("👑 Admin Override", "admin"),
+            ]
+
+        return gr.Dropdown(
+            label=f"🤖 AI Model Selection ({user_tier.title()} Tier)",
+            choices=choices,
+            value="free_mode" if user_tier == "limited" else "standard",
             elem_id="model-selector-dropdown",
         )
+
+    def _create_tier_info_panel(self, user_tier: str = "limited") -> gr.HTML:
+        """Create informational panel about user tier and access levels."""
+        if user_tier == "limited":
+            content = """
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 20px;">🔒</span>
+                    <h3 style="margin: 0; color: #92400e;">Limited Tier Access</h3>
+                </div>
+                <p style="margin: 8px 0; color: #92400e;">
+                    You currently have access to <strong>free models only</strong>. This includes high-quality models like:
+                    DeepSeek V3, Gemini 2.0 Flash, and Qwen 3 32B.
+                </p>
+                <p style="margin: 8px 0; color: #92400e; font-size: 14px;">
+                    To access premium models like Claude, GPT-4, or specialized models, please contact your administrator.
+                </p>
+            </div>
+            """
+        elif user_tier == "full":
+            content = """
+            <div style="background: #dbeafe; border: 1px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 20px;">⭐</span>
+                    <h3 style="margin: 0; color: #1e40af;">Full User Access</h3>
+                </div>
+                <p style="margin: 8px 0; color: #1e40af;">
+                    You have access to <strong>all models</strong> including both free and premium options.
+                    Make the most of advanced models for complex tasks.
+                </p>
+            </div>
+            """
+        else:  # admin
+            content = """
+            <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 20px;">👑</span>
+                    <h3 style="margin: 0; color: #dc2626;">Administrator Access</h3>
+                </div>
+                <p style="margin: 8px 0; color: #dc2626;">
+                    You have <strong>full administrative access</strong> to all models and system features.
+                    Use responsibly and monitor costs.
+                </p>
+            </div>
+            """
+
+        return gr.HTML(content)
 
     def _create_custom_model_selector(self) -> gr.Dropdown:
         """Create the custom model selection dropdown."""
@@ -346,8 +430,62 @@ class MultiJourneyInterface(LoggerMixin):
         """,
         )
 
-    def create_interface(self) -> gr.Blocks:
-        """Create the main Gradio interface with all journeys."""
+    def _get_user_context(self, request: gr.Request = None) -> dict:
+        """Extract user context from request state.
+
+        Args:
+            request: Gradio request object
+
+        Returns:
+            Dictionary with user tier and email information
+        """
+        if request and hasattr(request, "state") and hasattr(request.state, "user"):
+            user_info = request.state.user
+            return {
+                "tier": user_info.get("user_tier", "limited"),
+                "email": user_info.get("email", ""),
+                "can_access_premium": user_info.get("can_access_premium", False),
+                "is_admin": user_info.get("is_admin", False),
+            }
+
+        # Default to limited access if no user context available
+        return {
+            "tier": "limited",
+            "email": "",
+            "can_access_premium": False,
+            "is_admin": False,
+        }
+
+    def _setup_admin_visibility(self, admin_tab: gr.Tab, user_context: dict) -> None:
+        """Setup admin tab visibility based on user context.
+
+        Args:
+            admin_tab: The admin tab component
+            user_context: User context containing tier information
+        """
+        is_admin = user_context.get("is_admin", False)
+        user_tier = user_context.get("tier", "limited")
+
+        # Show admin tab only for admin users
+        admin_tab.visible = is_admin or user_tier == "admin"
+
+        if admin_tab.visible:
+            logger.info(f"Admin tab enabled for user tier: {user_tier}")
+        else:
+            logger.debug(f"Admin tab hidden for user tier: {user_tier}")
+
+    def create_interface(self, user_context: dict = None) -> gr.Blocks:
+        """Create the main Gradio interface with all journeys.
+
+        Args:
+            user_context: User context with tier information
+        """
+        # Use default user context if none provided
+        if user_context is None:
+            user_context = self._get_user_context()
+
+        user_tier = user_context.get("tier", "limited")
+        user_email = user_context.get("email", "")
 
         # Custom CSS for styling
         custom_css = """
@@ -460,13 +598,16 @@ class MultiJourneyInterface(LoggerMixin):
                 },
             )
 
-            # Header
-            self._create_header()
+            # Header with user tier information
+            self._create_header(user_tier, user_email)
+
+            # User Tier Information Panel (shown for limited users)
+            self._create_tier_info_panel(user_tier)
 
             # Model Selection Panel
             with gr.Row():
                 with gr.Column(scale=3):
-                    model_selector = self._create_model_selector()
+                    model_selector = self._create_model_selector(user_tier)
                 with gr.Column(scale=2):
                     custom_model_selector = self._create_custom_model_selector()
                 with gr.Column(scale=2):
@@ -484,6 +625,13 @@ class MultiJourneyInterface(LoggerMixin):
 
             with gr.Tab("🤖 Journey 4: Autonomous Workflows"):
                 self._create_journey4_interface()
+
+            # Admin Tab (conditionally visible based on user tier and availability)
+            admin_tab = None
+            if self.admin_interface is not None:
+                admin_tab = self.admin_interface.create_admin_interface()
+                # Setup admin tab visibility based on user context
+                self._setup_admin_visibility(admin_tab, user_context)
 
             # Footer
             gr.HTML(
@@ -643,12 +791,25 @@ class MultiJourneyInterface(LoggerMixin):
                 """,
                 )
 
-                # Enhanced prompt display
+                # Enhanced prompt display with toggle
+                with gr.Row():
+                    gr.Markdown("**Enhanced Prompt** (Copy-paste ready)")
+                    show_analysis_toggle = gr.Checkbox(label="Show Framework Analysis", value=False, scale=1)
+
                 enhanced_prompt = gr.Textbox(
-                    label="Enhanced Prompt",
+                    label="",
                     lines=8,
                     max_lines=15,
                     interactive=False,
+                )
+
+                # Framework analysis (hidden by default)
+                framework_analysis = gr.Textbox(
+                    label="🔍 Framework Analysis (Optional)",
+                    lines=8,
+                    max_lines=20,
+                    interactive=False,
+                    visible=False,
                 )
 
                 # C.R.E.A.T.E. breakdown accordion
@@ -863,27 +1024,16 @@ class MultiJourneyInterface(LoggerMixin):
 
                     # 6. PROCESS WITH VALIDATED INPUTS AND COMPREHENSIVE ERROR HANDLING
                     try:
-                        # Add timeout and processing constraints
-                        def timeout_handler(_signum: int, _frame: Any) -> NoReturn:
-                            raise TimeoutError("Processing timeout exceeded")
-
-                        # Set processing timeout (30 seconds)
-                        signal.signal(signal.SIGALRM, timeout_handler)
-                        signal.alarm(self.TIMEOUT_SECONDS)
-
-                        try:
-                            result = journey1_processor.enhance_prompt(
-                                text_input,
-                                files,
-                                model_mode,
-                                custom_model,
-                                reasoning_depth,
-                                search_tier,
-                                temperature,
-                            )
-                        finally:
-                            # Always cancel timeout
-                            signal.alarm(0)
+                        # Process enhancement (Docker-compatible, no signal handling)
+                        result = journey1_processor.enhance_prompt_full(
+                            text_input,
+                            files,
+                            model_mode,
+                            custom_model,
+                            reasoning_depth,
+                            search_tier,
+                            temperature,
+                        )
 
                         # Validate result structure
                         if not result or len(result) < self.MIN_RESULT_FIELDS:
@@ -962,7 +1112,11 @@ class MultiJourneyInterface(LoggerMixin):
                 file_sources = []
                 session_data = {"total_cost": 0.003, "request_count": 1, "avg_response_time": 1.2}
 
-                return export_utils.export_journey1_content(
+                import tempfile
+                from datetime import datetime
+
+                # Get the export content
+                export_content = export_utils.export_journey1_content(
                     enhanced_prompt,
                     create_breakdown,
                     model_info,
@@ -970,6 +1124,17 @@ class MultiJourneyInterface(LoggerMixin):
                     session_data,
                     "markdown",
                 )
+
+                # Create a temporary file with proper filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"promptcraft_export_{timestamp}.md"
+
+                # Write to temporary file
+                temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False)
+                temp_file.write(export_content)
+                temp_file.close()
+
+                return temp_file.name, f"Download ready: {filename}"
 
             def load_example() -> str:
                 """Load example content."""
@@ -993,17 +1158,25 @@ class MultiJourneyInterface(LoggerMixin):
                     session_state,
                 ],
                 outputs=[
-                    enhanced_prompt,
-                    context_analysis,
-                    request_specification,
-                    examples_section,
-                    augmentations_section,
-                    tone_format,
-                    evaluation_criteria,
-                    model_attribution,
-                    file_sources,
-                    session_state,
+                    framework_analysis,  # detailed analysis (position 0) -> framework_analysis field
+                    enhanced_prompt,  # clean prompt (position 1) -> enhanced_prompt field
+                    context_analysis,  # position 2
+                    request_specification,  # position 3
+                    examples_section,  # position 4
+                    augmentations_section,  # position 5
+                    tone_format,  # position 6
+                    evaluation_criteria,  # position 7
+                    model_attribution,  # position 8
+                    file_sources,  # position 9
+                    session_state,  # position 10
                 ],
+            )
+
+            # Toggle framework analysis visibility
+            show_analysis_toggle.change(
+                fn=lambda show: gr.update(visible=show),
+                inputs=[show_analysis_toggle],
+                outputs=[framework_analysis],
             )
 
             copy_code_btn.click(fn=handle_copy_code, inputs=[enhanced_prompt], outputs=gr.Label(label="Copy Status"))
@@ -1603,7 +1776,8 @@ Please provide more context about your specific goals and requirements.
 """
 
         return (
-            fallback_prompt,  # enhanced_prompt
+            fallback_prompt,  # enhanced_prompt_with_analysis
+            fallback_prompt,  # clean_enhanced_prompt (same as detailed in fallback mode)
             "Basic context analysis - please specify your role and goals",  # context_analysis
             f"Request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "Examples will be provided when system is fully available",  # examples_section
@@ -1639,7 +1813,8 @@ Consider refining this to be more specific and actionable.
 """
 
         return (
-            timeout_prompt,  # enhanced_prompt
+            timeout_prompt,  # enhanced_prompt_with_analysis
+            timeout_prompt,  # clean_enhanced_prompt (same as detailed in timeout mode)
             "⏱️ Timeout - please provide more focused context",  # context_analysis
             f"Simplified request needed: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "⏱️ Examples unavailable due to timeout - try simpler request",  # examples_section
@@ -1679,7 +1854,8 @@ If this error persists:
 """
 
         return (
-            error_prompt,  # enhanced_prompt
+            error_prompt,  # enhanced_prompt_with_analysis
+            error_prompt,  # clean_enhanced_prompt (same as detailed in error mode)
             "🔧 Error recovery - basic context structure provided",  # context_analysis
             f"Core request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "🔧 Examples temporarily unavailable - error recovery mode",  # examples_section
@@ -1873,4 +2049,4 @@ def create_app() -> gr.Blocks:
 
 if __name__ == "__main__":
     app = create_app()
-    app.launch(server_name="127.0.0.1", server_port=7860, share=False, debug=True)
+    app.launch(server_name="0.0.0.0", server_port=7860, share=False, debug=True)

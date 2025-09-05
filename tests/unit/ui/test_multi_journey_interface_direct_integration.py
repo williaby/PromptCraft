@@ -214,7 +214,7 @@ class TestMultiJourneyInterfaceDirectIntegration:
             except TimeoutError:
                 # This is expected - test the fallback creation
                 timeout_result = interface._create_timeout_fallback_result("test input", "gpt-4o-mini")
-                assert len(timeout_result) == 9
+                assert len(timeout_result) == 10
                 assert "Timeout Recovery" in timeout_result[0]
 
         # Test processing error scenario
@@ -230,7 +230,7 @@ class TestMultiJourneyInterfaceDirectIntegration:
             except Exception as e:
                 # This is expected - test the fallback creation
                 error_result = interface._create_error_fallback_result("test input", "gpt-4o-mini", str(e))
-                assert len(error_result) == 9
+                assert len(timeout_result) == 10
                 assert "Error Recovery" in error_result[0]
 
     def test_file_processing_scenarios(self, interface, mock_session_state):

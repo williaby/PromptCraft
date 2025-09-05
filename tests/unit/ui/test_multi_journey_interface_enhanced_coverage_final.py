@@ -394,7 +394,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
                 mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
             except TimeoutError:
                 result = interface._create_timeout_fallback_result("test", "gpt-4o-mini")
-                assert len(result) == 9
+                assert len(result) == 10
                 assert all(item == "timeout_result" for item in result)
 
     def test_handle_enhancement_processing_error(self, interface, mock_session_state):
@@ -411,7 +411,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
                 mock_journey1_instance.enhance_prompt("test", [], "standard", "gpt-4o-mini", "detailed", "tier2", 0.7)
             except Exception as e:
                 result = interface._create_error_fallback_result("test", "gpt-4o-mini", str(e))
-                assert len(result) == 9
+                assert len(result) == 10
                 assert all(item == "error_result" for item in result)
 
     def test_handle_enhancement_insufficient_result_fields(self, interface):
@@ -437,7 +437,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
             )
             if not result or len(result) < interface.MIN_RESULT_FIELDS:
                 fallback_result = interface._create_fallback_result("test", "gpt-4o-mini")
-                assert len(fallback_result) == 9
+                assert len(timeout_result) == 10
                 assert all(item == "fallback_result" for item in fallback_result)
 
     def test_session_state_initialization(self, interface):
@@ -543,19 +543,19 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         """Test the fallback result creation methods."""
         # Test _create_fallback_result
         result = interface._create_fallback_result("test input", "gpt-4o-mini")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Enhanced Prompt (Fallback Mode)" in result[0]
         assert "test input" in result[0]
 
         # Test _create_timeout_fallback_result
         timeout_result = interface._create_timeout_fallback_result("test input", "gpt-4o-mini")
-        assert len(timeout_result) == 9
+        assert len(timeout_result) == 10
         assert "Enhanced Prompt (Timeout Recovery)" in timeout_result[0]
         assert "test input" in timeout_result[0]
 
         # Test _create_error_fallback_result
         error_result = interface._create_error_fallback_result("test input", "gpt-4o-mini", "test error")
-        assert len(error_result) == 9
+        assert len(timeout_result) == 10
         assert "Enhanced Prompt (Error Recovery)" in error_result[0]
         assert "test input" in error_result[0]
 
@@ -588,19 +588,19 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
 
         # Test fallback attribution
         fallback_result = interface._create_fallback_result("test", model)
-        attribution_html = fallback_result[7]  # model_attribution
+        attribution_html = fallback_result[8]  # model_attribution
         assert "Fallback Mode" in attribution_html
         assert model in attribution_html
 
         # Test timeout attribution
         timeout_result = interface._create_timeout_fallback_result("test", model)
-        timeout_attribution = timeout_result[7]
+        timeout_attribution = timeout_result[8]
         assert "Timeout Recovery" in timeout_attribution
         assert model in timeout_attribution
 
         # Test error attribution
         error_result = interface._create_error_fallback_result("test", model, "error")
-        error_attribution = error_result[7]
+        error_attribution = error_result[8]
         assert "Error Recovery" in error_attribution
         assert model in error_attribution
 
@@ -608,7 +608,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         """Comprehensive validation of interface constants and methods."""
         # Test all constant values are as expected
         assert interface.MAX_TEXT_INPUT_SIZE == 50000
-        assert interface.MIN_RESULT_FIELDS == 9
+        assert interface.MIN_RESULT_FIELDS == 10
         assert interface.MAX_PREVIEW_CHARS == 250
         assert interface.MAX_SUMMARY_CHARS == 100
         assert interface.MAX_FALLBACK_CHARS == 500

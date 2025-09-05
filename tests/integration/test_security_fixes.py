@@ -283,17 +283,17 @@ class TestFunctionalityFixes:
 
         # Test fallback result creation
         fallback_result = self.interface._create_fallback_result(text_input, model)
-        assert len(fallback_result) == 9  # Expected number of output fields
+        assert len(fallback_result) == 10  # Expected number of output fields
         assert "Fallback Mode" in fallback_result[0]  # enhanced_prompt
 
         # Test timeout fallback
         timeout_result = self.interface._create_timeout_fallback_result(text_input, model)
-        assert len(timeout_result) == 9
+        assert len(timeout_result) == 10
         assert "Timeout Recovery" in timeout_result[0]
 
         # Test error fallback
         error_result = self.interface._create_error_fallback_result(text_input, model, "Test error")
-        assert len(error_result) == 9
+        assert len(error_result) == 10
         assert "Error Recovery" in error_result[0]
 
     def _validate_model_selection(self, model_mode: str, custom_model: str) -> str:

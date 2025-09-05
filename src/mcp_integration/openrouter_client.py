@@ -637,16 +637,54 @@ class OpenRouterClient(MCPClientInterface):
             if not user_query:
                 raise MCPValidationError("No query provided in step input data")
 
-            # Select appropriate model for the task
+            # Select appropriate model for the task with tier restrictions
             task_type = step.input_data.get("task_type", "general")
             allow_premium = step.input_data.get("allow_premium", False)
             max_tokens_needed = step.input_data.get("max_tokens_needed")
+            user_tier = step.input_data.get("user_tier", "limited")  # Default to most restrictive
 
-            model_id = self.model_registry.select_best_model(
-                task_type=task_type,
-                allow_premium=allow_premium,
-                max_tokens_needed=max_tokens_needed,
-            )
+            # Override allow_premium based on user tier
+            if user_tier == "limited":
+                allow_premium = False
+                logger.debug("Overriding allow_premium=False for limited user tier")
+            elif user_tier in ["admin", "full"]:
+                # Keep the original allow_premium setting
+                pass
+            else:
+                logger.warning(f"Unknown user tier: {user_tier}, defaulting to limited access")
+                allow_premium = False
+                user_tier = "limited"
+
+            # Use tier-aware model selection
+            if hasattr(self.model_registry, "select_best_model_for_tier"):
+                model_id = self.model_registry.select_best_model_for_tier(
+                    user_tier=user_tier,
+                    task_type=task_type,
+                    max_tokens_needed=max_tokens_needed,
+                )
+            else:
+                # Fallback to original method if tier-aware method not available
+                model_id = self.model_registry.select_best_model(
+                    task_type=task_type,
+                    allow_premium=allow_premium,
+                    max_tokens_needed=max_tokens_needed,
+                )
+
+                # Additional validation for tier access
+                if hasattr(self.model_registry, "can_user_access_model"):
+                    if not self.model_registry.can_user_access_model(user_tier, model_id):
+                        logger.warning(
+                            f"Selected model {model_id} not accessible to user tier {user_tier}, using fallback",
+                        )
+                        # Get a tier-appropriate fallback
+                        free_models = self.model_registry.list_models(category="free_general")
+                        if free_models:
+                            model_id = free_models[0].model_id
+                        else:
+                            model_id = "deepseek/deepseek-chat-v3-0324:free"  # Ultimate fallback
+
+            # Final validation: ensure the selected model is accessible to the user tier
+            logger.info(f"Selected model {model_id} for user tier {user_tier} and task type {task_type}")
 
             # Prepare OpenRouter API payload
             payload = {

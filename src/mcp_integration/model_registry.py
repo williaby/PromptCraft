@@ -73,6 +73,66 @@ logger = logging.getLogger(__name__)
 MAX_FALLBACK_DEPTH = 10  # Maximum depth for fallback chains to prevent infinite loops
 
 
+class UserTierFilter:
+    """Filter models based on user tier access levels.
+
+    This class provides functionality to filter models based on user tier,
+    ensuring that limited users can only access free models while admin
+    and full users can access all models.
+    """
+
+    # Define which categories are available to each tier
+    TIER_CATEGORY_ACCESS = {
+        "admin": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
+        "full": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
+        "limited": ["free_general"],
+    }
+
+    @classmethod
+    def filter_models_by_tier(cls, models: list[str], user_tier: str, model_registry: "ModelRegistry") -> list[str]:
+        """Filter models based on user tier access.
+
+        Args:
+            models: List of model IDs to filter
+            user_tier: User tier (admin, full, limited)
+            model_registry: Registry instance to look up model capabilities
+
+        Returns:
+            Filtered list of models the user can access
+        """
+        if user_tier not in cls.TIER_CATEGORY_ACCESS:
+            logger.warning(f"Unknown user tier: {user_tier}, defaulting to limited")
+            user_tier = "limited"
+
+        allowed_categories = set(cls.TIER_CATEGORY_ACCESS[user_tier])
+        filtered_models = []
+
+        for model_id in models:
+            capabilities = model_registry.get_model_capabilities(model_id)
+            if capabilities and capabilities.category in allowed_categories:
+                filtered_models.append(model_id)
+            elif capabilities:
+                logger.debug(
+                    f"Model {model_id} with category {capabilities.category} filtered out for user tier {user_tier}",
+                )
+
+        return filtered_models
+
+    @classmethod
+    def can_access_model(cls, model_id: str, user_tier: str, model_registry: "ModelRegistry") -> bool:
+        """Check if user tier can access a specific model.
+
+        Args:
+            model_id: Model ID to check
+            user_tier: User tier (admin, full, limited)
+            model_registry: Registry instance to look up model capabilities
+
+        Returns:
+            True if user can access the model, False otherwise
+        """
+        return len(cls.filter_models_by_tier([model_id], user_tier, model_registry)) > 0
+
+
 @dataclass
 class ModelCapabilities:
     """Model capability specifications for AI tool routing.
@@ -591,6 +651,111 @@ class ModelRegistry:
         self._config = self._load_config()
         self._load_models()
         self.logger.info(f"Reloaded {len(self._models)} models")
+
+    def list_models_for_tier(
+        self, user_tier: str, category: str | None = None, provider: str | None = None,
+    ) -> list[ModelCapabilities]:
+        """List available models filtered by user tier.
+
+        Args:
+            user_tier: User tier (admin, full, limited)
+            category: Optional category filter
+            provider: Optional provider filter
+
+        Returns:
+            List of ModelCapabilities the user can access
+        """
+        all_models = self.list_models(category=category, provider=provider)
+        model_ids = [m.model_id for m in all_models]
+        accessible_model_ids = UserTierFilter.filter_models_by_tier(model_ids, user_tier, self)
+
+        return [m for m in all_models if m.model_id in accessible_model_ids]
+
+    def select_best_model_for_tier(
+        self,
+        user_tier: str,
+        task_type: str,
+        max_tokens_needed: int | None = None,
+    ) -> str:
+        """Select the best available model for a task type and user tier.
+
+        Args:
+            user_tier: User tier (admin, full, limited)
+            task_type: Type of task ("reasoning", "general", "vision", etc.)
+            max_tokens_needed: Minimum context window required
+
+        Returns:
+            Model ID string for the best available model
+        """
+        # First, get the best model without tier restrictions
+        allow_premium = user_tier in ["admin", "full"]  # Only admin and full users can access premium
+        best_model = self.select_best_model(task_type, allow_premium=allow_premium, max_tokens_needed=max_tokens_needed)
+
+        # Then check if the user can access it
+        if UserTierFilter.can_access_model(best_model, user_tier, self):
+            return best_model
+
+        # If not, get a fallback chain based on tier
+        fallback_chain = self.get_fallback_chain_for_tier(user_tier, task_type)
+
+        for model_id in fallback_chain:
+            if self.is_model_available(model_id):
+                self.logger.debug(f"Selected fallback model {model_id} for user tier {user_tier}")
+                return model_id
+
+        # Ultimate fallback - ensure it's tier-appropriate
+        ultimate_fallback = "deepseek/deepseek-chat-v3-0324:free"  # Always a free model
+        if UserTierFilter.can_access_model(ultimate_fallback, user_tier, self):
+            return ultimate_fallback
+
+        # This should never happen, but return first free model if it does
+        free_models = self.list_models_for_tier(user_tier, category="free_general")
+        if free_models:
+            return free_models[0].model_id
+
+        return ultimate_fallback
+
+    def get_fallback_chain_for_tier(self, user_tier: str, task_type: str = "general") -> list[str]:
+        """Get fallback chain appropriate for user tier.
+
+        Args:
+            user_tier: User tier (admin, full, limited)
+            task_type: Type of task for chain selection
+
+        Returns:
+            List of model IDs in fallback order
+        """
+        # Determine the appropriate fallback chain category
+        if user_tier == "limited":
+            chain_category = "free_general"
+        else:
+            # For admin/full users, choose chain based on task type
+            chain_category = {
+                "reasoning": "premium_reasoning",
+                "vision": "premium_reasoning",
+                "complex": "premium_reasoning",
+                "general": "free_general",
+            }.get(task_type, "free_general")
+
+        # Get the fallback chain
+        chain = self.get_fallback_chain(chain_category)
+
+        # Filter the chain by user tier permissions
+        filtered_chain = UserTierFilter.filter_models_by_tier(chain, user_tier, self)
+
+        return filtered_chain
+
+    def can_user_access_model(self, user_tier: str, model_id: str) -> bool:
+        """Check if a user tier can access a specific model.
+
+        Args:
+            user_tier: User tier (admin, full, limited)
+            model_id: Model ID to check
+
+        Returns:
+            True if user can access the model, False otherwise
+        """
+        return UserTierFilter.can_access_model(model_id, user_tier, self)
 
 
 # Global registry instance for convenient access

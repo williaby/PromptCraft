@@ -669,9 +669,20 @@ Regular paragraph text continues.
             temperature,
         )
 
-        # Should return 9 values
-        assert len(result) == 9
-        enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = result
+        # Should return 10 values
+        assert len(result) == 10
+        (
+            enhanced,
+            clean_enhanced,
+            context,
+            request,
+            examples,
+            augmentations,
+            tone_format,
+            evaluation,
+            attribution,
+            file_sources,
+        ) = result
 
         assert len(enhanced) > 0
         assert "sort numbers" in enhanced.lower()
@@ -685,15 +696,15 @@ Regular paragraph text continues.
 
         # Test custom model
         result = journey.enhance_prompt("test input", [], "custom", "custom-model-name", "basic", "basic", 0.5)
-        assert "custom-model-name" in result[7]  # attribution
+        assert "custom-model-name" in result[8]  # attribution
 
         # Test free mode
         result = journey.enhance_prompt("test input", [], "free_mode", "", "basic", "basic", 0.5)
-        assert "llama-4-maverick:free" in result[7]
+        assert "llama-4-maverick:free" in result[8]
 
         # Test premium mode
         result = journey.enhance_prompt("test input", [], "premium", "", "basic", "basic", 0.5)
-        assert "claude-3.5-sonnet" in result[7]
+        assert "claude-3.5-sonnet" in result[8]
 
     def test_enhance_prompt_with_files(self):
         """Test enhance_prompt with file uploads."""
@@ -719,9 +730,18 @@ Regular paragraph text continues.
                 0.7,
             )
 
-            enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = (
-                result
-            )
+            (
+                enhanced,
+                clean_enhanced,
+                context,
+                request,
+                examples,
+                augmentations,
+                tone_format,
+                evaluation,
+                attribution,
+                file_sources,
+            ) = result
 
             assert "File content for enhancement" in enhanced
             assert "FILE:" in file_sources
@@ -745,7 +765,7 @@ Regular paragraph text continues.
         result = journey.enhance_prompt("test", [mock_file], "standard", "", "basic", "basic", 0.5)
 
         # Should still return 9 values even with errors
-        assert len(result) == 9
+        assert len(result) == 10
 
     def test_copy_code_blocks(self):
         """Test copying code blocks functionality."""
@@ -965,11 +985,25 @@ Regular paragraph text continues.
 
         result = journey.enhance_prompt_full("Test input", [], "free_mode", "", "comprehensive", "advanced", 0.8)
 
-        assert len(result) == 9
-        enhanced, context, request, examples, augmentations, tone_format, evaluation, attribution, file_sources = result
+        assert len(result) == 10
+        (
+            enhanced_with_analysis,
+            clean_enhanced,
+            context,
+            request,
+            examples,
+            augmentations,
+            tone_format,
+            evaluation,
+            attribution,
+            file_sources,
+        ) = result
 
         assert "llama-4-maverick:free" in attribution
-        assert len(enhanced) > 0
+        assert len(enhanced_with_analysis) > 0
+        assert len(clean_enhanced) > 0
+        # Should have CREATE framework structure
+        assert "C.R.E.A.T.E." in enhanced_with_analysis or "# C - Context" in clean_enhanced
 
     def test_enhance_prompt_method_at_line_1178(self):
         """Test the enhance_prompt method starting at line 1178."""

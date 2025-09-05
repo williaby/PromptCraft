@@ -71,6 +71,7 @@ from src.core.vector_store import (
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import WorkflowStep
 from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
+from src.metrics.collector import get_metrics_collector
 
 # Constants for HyDE processing thresholds (per hyde-processor.md)
 HIGH_SPECIFICITY_THRESHOLD = 85
@@ -313,6 +314,19 @@ class HydeProcessor:
         # Initialize vector store connection
         self._vector_store_connected = False
 
+        # Initialize metrics collector (will be set up lazily)
+        self._metrics_collector = None
+
+    async def _get_metrics_collector(self):
+        """Get or initialize the metrics collector."""
+        if self._metrics_collector is None:
+            try:
+                self._metrics_collector = await get_metrics_collector()
+            except Exception as e:
+                self.logger.warning("Failed to initialize metrics collector: %s", str(e))
+                self._metrics_collector = None
+        return self._metrics_collector
+
     @cache_hyde_processing
     @monitor_performance("three_tier_analysis")
     async def three_tier_analysis(self, query: str) -> EnhancedQuery:
@@ -351,6 +365,30 @@ class HydeProcessor:
             hypothetical_docs = []
 
         processing_time = time.time() - start_time
+
+        # Record metrics for the query processing
+        try:
+            await self._get_metrics_collector()
+            if self._metrics_collector:
+                response_time_ms = int(processing_time * 1000)
+                hyde_score = int(analysis.specificity_score)
+
+                # Generate a session ID if not provided (for standalone testing)
+                session_id = f"hyde_{int(time.time() * 1000)}"
+
+                await self._metrics_collector.record_query_processed(
+                    session_id=session_id,
+                    hyde_score=hyde_score,
+                    action_taken=strategy,
+                    response_time_ms=response_time_ms,
+                    query_text=query[:200],  # Limit query text length for storage
+                    conceptual_issues=getattr(analysis, "detected_issues", []),
+                    vector_search_results=len(hypothetical_docs),
+                    vector_store_type=getattr(self.vector_store, "__class__.__name__", "unknown"),
+                )
+        except Exception as e:
+            # Don't fail the main operation if metrics collection fails
+            self.logger.debug("Failed to record query metrics: %s", str(e))
 
         self.logger.info(
             "Three-tier analysis completed in %.3fs: %s strategy for specificity %.1f",

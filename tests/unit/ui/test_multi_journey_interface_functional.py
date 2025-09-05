@@ -163,41 +163,41 @@ class TestMultiJourneyInterfaceFunctional:
 
         # Test with short text
         result = interface._create_fallback_result(short_text, "gpt-4o-mini")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Enhanced Prompt (Fallback Mode)" in result[0]
         assert short_text in result[0]
-        assert "gpt-4o-mini" in result[7]
+        assert "gpt-4o-mini" in result[8]
 
         # Test with long text (should be truncated)
         result = interface._create_fallback_result(long_text, "custom-model")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Enhanced Prompt (Fallback Mode)" in result[0]
         assert "..." in result[0]  # Should be truncated
-        assert "custom-model" in result[7]
+        assert "custom-model" in result[8]
 
         # Test _create_timeout_fallback_result
         result = interface._create_timeout_fallback_result(short_text, "timeout-model")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Enhanced Prompt (Timeout Recovery)" in result[0]
         assert "Processing Timeout Notice" in result[0]
-        assert "timeout-model" in result[7]
+        assert "timeout-model" in result[8]
 
         # Test with long text for timeout
         result = interface._create_timeout_fallback_result(long_text, "timeout-model")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "..." in result[0]  # Should be truncated
 
         # Test _create_error_fallback_result
         error_msg = "Test error message"
         result = interface._create_error_fallback_result(short_text, "error-model", error_msg)
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Enhanced Prompt (Error Recovery)" in result[0]
         assert "System Recovery Mode" in result[0]
-        assert "error-model" in result[7]
+        assert "error-model" in result[8]
 
         # Test with long text for error
         result = interface._create_error_fallback_result(long_text, "error-model", error_msg)
-        assert len(result) == 9
+        assert len(result) == 10
         assert "..." in result[0]  # Should be truncated
 
     def test_text_truncation_comprehensive(self, interface):
@@ -236,7 +236,7 @@ class TestMultiJourneyInterfaceFunctional:
 
         # Test class constants
         assert interface.MAX_TEXT_INPUT_SIZE == 50000
-        assert interface.MIN_RESULT_FIELDS == 9
+        assert interface.MIN_RESULT_FIELDS == 10
         assert interface.MAX_PREVIEW_CHARS == 250
         assert interface.MAX_SUMMARY_CHARS == 100
         assert interface.MAX_FALLBACK_CHARS == 500

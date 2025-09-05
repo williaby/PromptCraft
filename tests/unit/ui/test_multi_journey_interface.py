@@ -984,19 +984,19 @@ class TestMultiJourneyInterfaceExtended:
 
         # Test basic fallback
         result = interface._create_fallback_result("Test input", "gpt-4o-mini")
-        assert len(result) == 9  # Should return 9-tuple
+        assert len(result) == 10  # Should return 10-tuple
         assert "Test input" in result[0]
         assert "Fallback Mode" in result[0]
 
         # Test timeout fallback
         result = interface._create_timeout_fallback_result("Long input text", "claude-3-haiku")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Timeout Recovery" in result[0]
         assert "Long input text" in result[0]
 
         # Test error fallback
         result = interface._create_error_fallback_result("Error input", "gpt-4o", "Connection failed")
-        assert len(result) == 9
+        assert len(result) == 10
         assert "Error Recovery" in result[0]
         assert "Error input" in result[0]
 

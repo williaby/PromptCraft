@@ -55,6 +55,8 @@ class AuthConfig(BaseModel):
     # Email whitelist configuration
     email_whitelist: list[str] = Field(default_factory=list, description="List of allowed emails and domains")
     admin_emails: list[str] = Field(default_factory=list, description="List of admin email addresses")
+    full_users: list[str] = Field(default_factory=list, description="List of full tier user emails")
+    limited_users: list[str] = Field(default_factory=list, description="List of limited tier user emails")
     case_sensitive_emails: bool = False
 
     # Session management
@@ -143,13 +145,14 @@ class AuthConfig(BaseModel):
         if not self.dev_mode and not self.email_whitelist:
             warnings.append("Email whitelist is empty in production mode")
 
-        # Check admin emails are in whitelist
+        # Check tier emails are in whitelist
+        validator = EmailWhitelistValidator(
+            self.email_whitelist, self.admin_emails, self.full_users, self.limited_users, self.case_sensitive_emails,
+        )
 
-        validator = EmailWhitelistValidator(self.email_whitelist, self.admin_emails, self.case_sensitive_emails)
-
-        for admin_email in self.admin_emails:
-            if not validator.is_authorized(admin_email):
-                warnings.append(f"Admin email {admin_email} is not in whitelist")
+        # Get additional validation warnings from the validator
+        validator_warnings = validator.validate_whitelist_config()
+        warnings.extend(validator_warnings)
 
         # Check for insecure configurations
         if not self.session_cookie_secure and not self.dev_mode:
@@ -190,6 +193,8 @@ class ConfigLoader:
         # Email settings
         config_data["email_whitelist"] = os.getenv(f"{prefix}EMAIL_WHITELIST", "")
         config_data["admin_emails"] = os.getenv(f"{prefix}ADMIN_EMAILS", "")
+        config_data["full_users"] = os.getenv(f"{prefix}FULL_USERS", "")
+        config_data["limited_users"] = os.getenv(f"{prefix}LIMITED_USERS", "")
         config_data["case_sensitive_emails"] = cls._get_bool_env(f"{prefix}CASE_SENSITIVE_EMAILS", False)
 
         # Session settings
@@ -291,6 +296,8 @@ class ConfigManager:
         return EmailWhitelistValidator(
             whitelist=self.config.email_whitelist,
             admin_emails=self.config.admin_emails,
+            full_users=self.config.full_users,
+            limited_users=self.config.limited_users,
             case_sensitive=self.config.case_sensitive_emails,
         )
 
