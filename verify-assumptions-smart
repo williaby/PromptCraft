@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# Response-Aware Development (RAD) Verification Command
+#
+# Command-line interface for the RAD verification system.
+# Provides easy access to assumption detection and AI-powered verification.
+#
+
+set -euo pipefail
+
+# Get script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}" && pwd)"
+
+# Default arguments
+ARGS=""
+
+# Parse command line arguments and convert to Python script format
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --strategy=*)
+            ARGS="$ARGS $1"
+            shift
+            ;;
+        --budget=*)
+            ARGS="$ARGS $1"
+            shift
+            ;;
+        --scope=*)
+            ARGS="$ARGS $1"
+            shift
+            ;;
+        --apply-fixes=*)
+            ARGS="$ARGS $1"
+            shift
+            ;;
+        --output-format=*)
+            ARGS="$ARGS $1"
+            shift
+            ;;
+        --explain)
+            ARGS="$ARGS --explain"
+            shift
+            ;;
+        --help|-h)
+            echo "Response-Aware Development (RAD) Verification"
+            echo ""
+            echo "USAGE:"
+            echo "  verify-assumptions-smart [OPTIONS]"
+            echo ""
+            echo "OPTIONS:"
+            echo "  --strategy=STRATEGY      Verification strategy: tiered, uniform, critical-only (default: tiered)"
+            echo "  --budget=BUDGET          Budget preference: premium, balanced, free-only (default: balanced)"
+            echo "  --scope=SCOPE            File scope: current-file, changed-files, all-files (default: changed-files)"
+            echo "  --apply-fixes=MODE       Fix handling: auto, review, none (default: review)"
+            echo "  --output-format=FORMAT   Output format: markdown, json, text (default: markdown)"
+            echo "  --explain                Show model selection reasoning"
+            echo "  --help, -h               Show this help message"
+            echo ""
+            echo "EXAMPLES:"
+            echo "  verify-assumptions-smart                                    # Basic verification of changed files"
+            echo "  verify-assumptions-smart --strategy=critical-only           # Only process critical assumptions"
+            echo "  verify-assumptions-smart --budget=premium --scope=all-files # Full analysis with premium models"
+            echo "  verify-assumptions-smart --apply-fixes=auto                 # Auto-apply safe fixes"
+            echo ""
+            echo "ASSUMPTION TAGS:"
+            echo "  #CRITICAL: category: description  # Production blockers (premium AI models)"
+            echo "  #ASSUME: category: description    # Standard assumptions (balanced models)"
+            echo "  #EDGE: category: description      # Edge cases (fast free models)"
+            echo ""
+            echo "DOCUMENTATION:"
+            echo "  Response-Aware Development: /docs/response-aware-development.md"
+            echo "  Assumption Categories: /docs/standards/assumption-categories.md"
+            echo "  AI Model Selection: /docs/standards/ai-model-selection.md"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            echo "Use --help for usage information" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Change to project root
+cd "$PROJECT_ROOT"
+
+# Check if we're in a git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "❌ Error: Not in a git repository" >&2
+    echo "The RAD verification system requires git to track file changes." >&2
+    exit 1
+fi
+
+# Check Python environment
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Error: Python 3 not found" >&2
+    echo "Please install Python 3.8+ to use the verification system." >&2
+    exit 1
+fi
+
+# Run the Python verification script
+PYTHON_SCRIPT="$SCRIPT_DIR/scripts/verify-assumptions-smart.py"
+
+if [[ ! -f "$PYTHON_SCRIPT" ]]; then
+    echo "❌ Error: Verification script not found: $PYTHON_SCRIPT" >&2
+    exit 1
+fi
+
+# Execute with arguments
+exec python3 "$PYTHON_SCRIPT" $ARGS
