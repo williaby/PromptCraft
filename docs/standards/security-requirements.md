@@ -9,12 +9,14 @@
 **Environment must have both GPG and SSH keys configured:**
 
 #### GPG Key Requirements
+
 - **Purpose**: For .env file encryption/decryption
 - **Usage**: Encrypts sensitive environment variables locally
 - **Validation**: Must be accessible to the application
 - **Separation**: Separate from commit signing to avoid conflicts
 
 #### SSH Key Requirements
+
 - **Purpose**: For signed commits to GitHub
 - **Usage**: Commit verification and authentication
 - **Configuration**: Must be configured in Git for signed commits
@@ -59,11 +61,13 @@ def encrypt_env_file(content: str) -> str:
 **Local development requires service account for assured-oss package access:**
 
 #### File Location Priority
+
 1. `.gcp/service-account.json` (preferred, git-ignored)
 2. `secrets/service-account.json` (alternative, git-ignored)
 3. `~/.config/promptcraft/service-account.json` (user-global)
 
 #### Setup Process
+
 ```bash
 # Create secure directory
 mkdir -p .gcp
@@ -76,6 +80,7 @@ cp /path/to/your/service-account.json .gcp/service-account.json
 ```
 
 #### Security Requirements
+
 - Service account file MUST be git-ignored
 - Never commit service account credentials
 - Re-run setup script if access tokens expire (1 hour lifetime)
@@ -152,6 +157,7 @@ nox -s security                    # Comprehensive security analysis
 ### Exclusion Patterns
 
 **Bandit Security Exclusions** (configured in pyproject.toml):
+
 - `B101`: Skip assert statements in tests
 - `B601`: Skip shell=True in controlled contexts
 

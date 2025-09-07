@@ -29,6 +29,7 @@ User Query → Signal Extraction → Scoring Engine → Category Selection → F
 ### 1. Primary Signal Types
 
 #### A. Keyword Analysis Engine
+
 ```python
 KEYWORD_PATTERNS = {
     'git': {
@@ -71,6 +72,7 @@ KEYWORD_PATTERNS = {
 ```
 
 #### B. Context Clue Detection
+
 ```python
 CONTEXT_PATTERNS = {
     'file_extensions': {
@@ -99,6 +101,7 @@ CONTEXT_PATTERNS = {
 ```
 
 #### C. Environment State Analysis
+
 ```python
 class EnvironmentAnalyzer:
     def analyze_git_state(self, repo_path: str) -> Dict[str, float]:
@@ -145,6 +148,7 @@ class EnvironmentAnalyzer:
 ### 2. Conversation History Analysis
 
 #### Session Pattern Recognition
+
 ```python
 class SessionAnalyzer:
     def __init__(self):
@@ -851,6 +855,7 @@ class PerformanceBenchmark:
 ## Implementation Roadmap
 
 ### Phase 1: Core Infrastructure (Weeks 1-2)
+
 1. **Signal Extraction Framework**
    - Implement keyword analysis engine
    - Build context clue detection
@@ -867,6 +872,7 @@ class PerformanceBenchmark:
    - Performance baseline establishment
 
 ### Phase 2: Intelligence Layer (Weeks 3-4)
+
 1. **Learning System**
    - Implement usage pattern tracking
    - Build accuracy metrics collection
@@ -883,6 +889,7 @@ class PerformanceBenchmark:
    - Context-dependent resolution
 
 ### Phase 3: Optimization & Validation (Weeks 5-6)
+
 1. **Performance Optimization**
    - Latency optimization (<50ms)
    - Memory management (<10MB)
@@ -901,6 +908,7 @@ class PerformanceBenchmark:
 ## Expected Outcomes
 
 ### Quantitative Improvements
+
 - **Token Reduction**: 70%+ reduction in average context size
 - **Response Time**: 2.3x faster context processing
 - **Accuracy**: >85% precision, >90% recall on category prediction
@@ -908,6 +916,7 @@ class PerformanceBenchmark:
 - **Memory**: <10MB total footprint
 
 ### Qualitative Benefits
+
 - **User Experience**: Reduced frustration from missing functionality
 - **Developer Productivity**: Faster context loading and processing
 - **System Efficiency**: Optimal resource utilization

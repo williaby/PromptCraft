@@ -5,6 +5,7 @@
 ## Current State Analysis
 
 ### Problems Identified
+
 - **5+ overlapping coverage systems** producing conflicting results (5.99% to 90.1%)
 - **29 coverage-related scripts** creating maintenance overhead
 - **Multiple test execution approaches** causing redundant test runs
@@ -12,6 +13,7 @@
 - **Performance penalties** from context tracking approaches
 
 ### Coverage Variations Found
+
 | System | Coverage % | Files Analyzed | Data Source |
 |--------|------------|----------------|-------------|
 | Standard Coverage.py | 5.99% | 84 files | `.coverage` + `coverage.xml` |
@@ -25,12 +27,14 @@
 ### Single Source of Truth: VS Code "Run Tests with Coverage"
 
 **Primary Flow**:
+
 1. **VS Code generates**: `.coverage`, `coverage.xml`, `htmlcov/`, `reports/junit.xml`
 2. **Single analysis script**: Interprets VS Code output for enhanced views
 3. **File path classification**: Determines test types without re-running tests
 4. **Generate enhanced reports**: File/function/class views by test type
 
 ### Key Design Principles
+
 - ✅ **Single test execution**: Only VS Code "Run Tests with Coverage"
 - ✅ **Fast local development**: No performance penalties
 - ✅ **Path-based classification**: Determine test types from file paths
@@ -42,8 +46,10 @@
 ### Core Components (Keep & Align)
 
 #### 1. VS Code Configuration (✅ Keep - Already Optimal)
+
 **File**: `.vscode/settings.json`
 **Status**: ✅ Well-configured
+
 ```json
 "python.testing.coverageArgs": [
     "--cov=src",
@@ -55,25 +61,31 @@
 ```
 
 #### 2. Coverage.py Configuration (✅ Keep - Minor Alignment)
+
 **File**: `pyproject.toml`
 **Current Status**: ✅ Good foundation
 **Alignment Needed**:
+
 - Remove `dynamic_context = "test_function"` (performance overhead)
 - Keep `branch = true` and `parallel = true`
 - Ensure output paths match VS Code
 
 #### 3. Single Analysis Script (🔄 Create New)
+
 **File**: `scripts/vscode_coverage_analyzer.py` (NEW)
 **Purpose**: Single script to process VS Code coverage output
 **Features**:
+
 - Parse `coverage.xml` and `htmlcov/` from VS Code
 - File path-based test type classification
 - Generate enhanced HTML reports with file/function/class views
 - Support aggregated and by-test-type views
 
 #### 4. Test Type Classification (🔄 Reuse Logic)
+
 **Source**: Extract from `scripts/path_based_coverage_analyzer.py`
 **Logic**:
+
 ```python
 test_types = {
     'unit': {'patterns': ['src/core/', 'src/agents/'], 'exclude': ['integration']},
@@ -87,6 +99,7 @@ test_types = {
 ### Files to Delete (🗑️ Redundant)
 
 #### Coverage Scripts (Delete 26 of 29)
+
 - `scripts/simplified_coverage_automation.py` ❌
 - `scripts/vscode_coverage_integration_v2.py` ❌
 - `scripts/coverage_file_watcher.py` ❌
@@ -115,11 +128,13 @@ test_types = {
 - `scripts/vscode_coverage_integration.py` ❌
 
 #### Keep Essential Scripts (3 of 29)
+
 - `scripts/vscode_coverage_analyzer.py` ✅ (NEW - single analysis script)
 - `scripts/quality-gates.py` ✅ (uses coverage for validation)
 - `pytest_plugins/coverage_hook_plugin.py` ✅ (if auto-trigger needed)
 
 #### HTML Reports (Clean Up 100+ files)
+
 - Keep: `reports/coverage/index.html` (main dashboard)
 - Delete: All redundant coverage subdirectories
   - `reports/coverage/by-type/*/` ❌ (regenerate from single source)
@@ -129,6 +144,7 @@ test_types = {
   - Individual `*_coverage.html` files ❌
 
 #### Configuration Files (Align)
+
 - `conftest.py` 🔄 Remove pytest plugin registration if not needed
 - `noxfile.py` 🔄 Simplify coverage sessions
 - Remove: Database files (`analytics.db`, `ab_testing.db`) if not used
@@ -136,6 +152,7 @@ test_types = {
 ## Implementation Strategy
 
 ### Phase 1: Consolidate to Single Source (Week 1)
+
 1. **Disable multiple systems**
    - Comment out pytest plugin registration
    - Stop background file watchers
@@ -152,12 +169,14 @@ test_types = {
    - Generate enhanced reports from VS Code output
 
 ### Phase 2: Clean Up Redundant Files (Week 2)
+
 1. **Delete redundant scripts** (26 files)
 2. **Clean up HTML reports** (90+ files)
 3. **Update documentation** to reflect new approach
 4. **Update CI/CD** to use simplified approach
 
 ### Phase 3: Enhance and Optimize (Week 3)
+
 1. **Add file/function/class level views**
 2. **Implement test type aggregation**
 3. **Optimize report generation speed**
@@ -166,18 +185,21 @@ test_types = {
 ## Success Metrics
 
 ### Performance Targets
+
 - ✅ **Test execution**: Same speed as current VS Code (no overhead)
 - ✅ **Report generation**: < 5 seconds after test completion
 - ✅ **File count**: Reduce from 29 scripts to 3
 - ✅ **HTML reports**: Reduce from 100+ to ~10 essential reports
 
 ### Functionality Targets
+
 - ✅ **Coverage views**: File, function, class level analysis
 - ✅ **Test type breakdowns**: Unit, auth, security, integration, performance
 - ✅ **Aggregated views**: Overall project coverage with drill-down
 - ✅ **Consistency**: Single source of truth, no conflicting percentages
 
 ### Developer Experience
+
 - ✅ **One-click coverage**: VS Code "Run Tests with Coverage" button
 - ✅ **Fast feedback**: No waiting for multiple systems
 - ✅ **Clear reporting**: Unambiguous coverage numbers
@@ -186,6 +208,7 @@ test_types = {
 ## Risk Mitigation
 
 ### Backup Current System
+
 ```bash
 # Before cleanup, backup current approach
 mkdir backup_coverage_system/
@@ -194,11 +217,13 @@ cp -r reports/coverage/ backup_coverage_system/reports/
 ```
 
 ### Incremental Migration
+
 - Keep one old script working during transition
 - Test new approach in parallel before switching
 - Validate coverage numbers match expected ranges
 
 ### Rollback Plan
+
 - Restore from backup if issues found
 - Document any gaps in new approach
 - Gradual re-introduction of needed complexity

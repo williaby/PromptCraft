@@ -18,12 +18,14 @@ The AUTH-4 database consolidation to PostgreSQL is **feasible and recommended** 
 ## Hardware Analysis
 
 ### System Specifications
+
 - **CPU:** 20 cores @ 1.0GHz+ (WSL2 virtualized)
 - **Memory:** 1.7GB available (88.9% current usage indicates memory-constrained environment)
 - **Storage:** 876.8GB available (adequate for database growth)
 - **Platform:** Linux-6.6.87.2-microsoft-standard-WSL2
 
 ### Homelab Classification
+
 **Budget Homelab Tier** - Requires conservative resource management with realistic performance expectations.
 
 ## Performance Validation Results
@@ -50,6 +52,7 @@ The AUTH-4 database consolidation to PostgreSQL is **feasible and recommended** 
 ### Recommended Configuration
 
 **Primary Recommendation: Performance Configuration**
+
 ```python
 # SQLAlchemy Engine Configuration
 {
@@ -69,6 +72,7 @@ The AUTH-4 database consolidation to PostgreSQL is **feasible and recommended** 
 ```
 
 **Resource Impact:**
+
 - Memory Usage: 16.9% (300MB)
 - Max Concurrent Users: 60
 - Expected CPU Overhead: 10%
@@ -76,6 +80,7 @@ The AUTH-4 database consolidation to PostgreSQL is **feasible and recommended** 
 ### Alternative Configuration (Conservative)
 
 For extremely resource-constrained environments:
+
 ```python
 {
     "pool_size": 5,
@@ -87,6 +92,7 @@ For extremely resource-constrained environments:
 ```
 
 **Resource Impact:**
+
 - Memory Usage: 2.0% (35MB)
 - Max Concurrent Users: 7
 - Expected CPU Overhead: 2%
@@ -94,6 +100,7 @@ For extremely resource-constrained environments:
 ## Migration Analysis
 
 ### Migration Overview
+
 - **Total Databases:** 4 (security_events.db, ab_testing.db, analytics.db, metrics.db)
 - **Total Data Size:** 4.3MB
 - **Total Records:** ~13,000 rows
@@ -106,6 +113,7 @@ For extremely resource-constrained environments:
 | Phase 1 | 25 minutes | 209MB (11.8%) | 40% | ✅ FEASIBLE |
 
 ### Migration Characteristics
+
 - **Parallelizable:** Yes (multiple small databases)
 - **Resource Efficient:** Low memory footprint
 - **Low Risk:** All databases are small with simple schemas
@@ -147,21 +155,25 @@ For extremely resource-constrained environments:
 ## Homelab-Specific Recommendations
 
 ### 1. Performance Expectations
+
 - Target **sub-100ms** response times for typical queries
 - Expect **higher latency during peak usage** (200-400ms acceptable)
 - Plan for **5-10 concurrent users** maximum sustained load
 
 ### 2. Resource Management
+
 - **Memory:** Keep total database connections under 300MB
 - **CPU:** Expect 10-20% baseline CPU usage for PostgreSQL
 - **Storage:** Monitor log growth, implement rotation
 
 ### 3. Operational Practices
+
 - **Regular Maintenance:** Weekly VACUUM, monthly statistics update
 - **Connection Monitoring:** Alert if pool exhaustion occurs
 - **Backup Strategy:** Daily backups with 7-day retention
 
 ### 4. Scaling Considerations
+
 - **Vertical Scaling:** Additional RAM would significantly improve performance
 - **Connection Limits:** Current configuration supports growth to ~100 users
 - **Storage:** Plan for 2-3x data growth over next 2 years
@@ -169,18 +181,21 @@ For extremely resource-constrained environments:
 ## Implementation Roadmap
 
 ### Phase 1: Pre-Migration (1-2 days)
+
 1. ✅ Performance validation completed
 2. Set up PostgreSQL server (if not already running)
 3. Test backup and restore procedures
 4. Configure monitoring tools
 
 ### Phase 2: Migration (< 4 hours)
+
 1. Create database schema
 2. Migrate data (25 minutes estimated)
 3. Validate data integrity
 4. Update application configuration
 
 ### Phase 3: Post-Migration (1 week)
+
 1. Monitor performance metrics
 2. Optimize connection pool settings
 3. Establish maintenance procedures

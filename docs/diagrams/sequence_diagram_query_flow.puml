@@ -1,0 +1,25 @@
+@startuml Query_Flow
+autonumber
+
+actor User
+participant "Gradio UI" as gradio
+participant "FastAPI Backend" as fastapi
+participant "Zen MCP Server" as zen_mcp
+participant "HyDE" as hyde
+participant "LlamaIndex" as llama_index
+participant "Qdrant" as qdrant
+
+User -> gradio: Submits query
+gradio -> fastapi: Sends query to backend
+fastapi -> zen_mcp: Orchestrates agents
+zen_mcp -> hyde: Enhances query
+hyde -> llama_index: Generates hypothetical document
+llama_index -> qdrant: Searches for similar documents
+qdrant --> llama_index: Returns relevant documents
+llama_index --> hyde: Returns enhanced context
+hyde --> zen_mcp: Returns enhanced query
+zen_mcp -> fastapi: Returns final response
+fastapi --> gradio: Sends response to UI
+gradio --> User: Displays response
+
+@enduml

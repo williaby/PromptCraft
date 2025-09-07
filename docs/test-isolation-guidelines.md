@@ -5,6 +5,7 @@ This document provides comprehensive guidelines for maintaining proper test isol
 ## Overview
 
 Test isolation ensures that each test runs in a clean environment, independent of other tests. This prevents:
+
 - State leakage between tests
 - Order-dependent test failures
 - Inconsistent test results
@@ -15,6 +16,7 @@ Test isolation ensures that each test runs in a clean environment, independent o
 ### 1. Clean State Between Tests
 
 Each test should start with a clean slate:
+
 - No shared global variables
 - No persistent mock configurations
 - No environment variable modifications
@@ -23,6 +25,7 @@ Each test should start with a clean slate:
 ### 2. Isolated Dependencies
 
 Tests should not depend on:
+
 - External services (use mocks)
 - File system state (use temporary directories)
 - Network resources (use mock responses)
@@ -31,6 +34,7 @@ Tests should not depend on:
 ### 3. Predictable Cleanup
 
 All test resources should be cleaned up automatically:
+
 - Mock objects should be stopped
 - Temporary files should be deleted
 - Environment variables should be restored
@@ -142,6 +146,7 @@ def test_comprehensive(comprehensive_isolation):
 ### 1. Use Factory Pattern
 
 **DO:**
+
 ```python
 def test_user_authentication():
     # Fresh instances for each test
@@ -150,6 +155,7 @@ def test_user_authentication():
 ```
 
 **DON'T:**
+
 ```python
 # Shared instance across tests - can leak state
 SHARED_VALIDATOR = JWTValidator(...)
@@ -162,6 +168,7 @@ def test_user_authentication():
 ### 2. Avoid Global State
 
 **DO:**
+
 ```python
 def test_configuration():
     # Create isolated config for test
@@ -170,6 +177,7 @@ def test_configuration():
 ```
 
 **DON'T:**
+
 ```python
 # Modifying global state
 import src.config as config
@@ -182,6 +190,7 @@ def test_configuration():
 ### 3. Use Context Managers for Resource Management
 
 **DO:**
+
 ```python
 def test_file_processing():
     with isolated_temp_directory() as temp_dir:
@@ -192,6 +201,7 @@ def test_file_processing():
 ```
 
 **DON'T:**
+
 ```python
 def test_file_processing():
     # Manual cleanup - error prone
@@ -225,6 +235,7 @@ assert validate_test_isolation(test_example)
 ### 1. Shared Mocks at Class Level
 
 **BAD:**
+
 ```python
 class TestUserManagement:
     @patch('src.auth.jwt_validator.JWTValidator')
@@ -242,6 +253,7 @@ class TestUserManagement:
 ```
 
 **GOOD:**
+
 ```python
 class TestUserManagement:
     def test_method1(self):
@@ -259,6 +271,7 @@ class TestUserManagement:
 ### 2. Environment Variable Pollution
 
 **BAD:**
+
 ```python
 def test_debug_mode():
     os.environ['DEBUG'] = 'true'
@@ -271,6 +284,7 @@ def test_production_mode():
 ```
 
 **GOOD:**
+
 ```python
 def test_debug_mode():
     with isolated_environment_vars(DEBUG='true'):
@@ -285,6 +299,7 @@ def test_production_mode():
 ### 3. Database State Leakage
 
 **BAD:**
+
 ```python
 def test_user_creation():
     user = User.create(email="test@example.com")
@@ -297,6 +312,7 @@ def test_user_listing():
 ```
 
 **GOOD:**
+
 ```python
 def test_user_creation(isolated_database_session):
     session = isolated_database_session
@@ -318,6 +334,7 @@ def test_user_listing(isolated_database_session):
 If tests fail inconsistently or only when run in certain orders:
 
 1. **Use strict validation:**
+
 ```python
 def test_suspicious():
     assert_no_state_leakage(strict=True)  # Fails if state detected
@@ -331,6 +348,7 @@ def test_suspicious():
    - Database transactions not rolled back
 
 3. **Run tests in isolation:**
+
 ```bash
 # Run single test to verify it passes alone
 poetry run pytest tests/test_module.py::test_function -v
@@ -379,6 +397,7 @@ def test_performance_impact():
 ### Example Migration
 
 **Before:**
+
 ```python
 class TestAuthenticationOld:
     def setUp(self):
@@ -395,6 +414,7 @@ class TestAuthenticationOld:
 ```
 
 **After:**
+
 ```python
 class TestAuthenticationNew:
     def test_valid_token(self):

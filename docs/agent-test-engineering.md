@@ -5,6 +5,7 @@ The TestEngineeringAgent is a specialized AI agent designed to assist developers
 ## Overview
 
 This agent provides capabilities for:
+
 - Test generation and scaffolding
 - Test execution and debugging
 - Coverage analysis and improvement
@@ -18,6 +19,7 @@ To use the TestEngineeringAgent, you can interact with it through the PromptCraf
 ### Example Tasks
 
 1. **Generate Tests**
+
    ```
    Task: generate_tests
    Content: Create unit tests for src/core/query_counselor.py
@@ -25,6 +27,7 @@ To use the TestEngineeringAgent, you can interact with it through the PromptCraf
    ```
 
 2. **Run Tests**
+
    ```
    Task: run_tests
    Content: tests/unit/test_query_counselor.py
@@ -32,6 +35,7 @@ To use the TestEngineeringAgent, you can interact with it through the PromptCraf
    ```
 
 3. **Debug Tests**
+
    ```
    Task: debug_tests
    Content: tests/unit/test_query_counselor.py::test_complex_function
@@ -39,6 +43,7 @@ To use the TestEngineeringAgent, you can interact with it through the PromptCraf
    ```
 
 4. **Analyze Coverage**
+
    ```
    Task: analyze_coverage
    Content: src/core/query_counselor.py
@@ -58,6 +63,7 @@ To use the TestEngineeringAgent, you can interact with it through the PromptCraf
 ## Configuration
 
 The agent can be configured with:
+
 - `default_test_type`: Default test type when not specified (default: "unit")
 - `coverage_target`: Target coverage percentage (default: 80.0)
 - `timeout`: Test execution timeout in seconds (default: 300)

@@ -5,18 +5,21 @@ The PromptCraft-Hybrid application implements a three-tier user access system th
 ## User Tier Overview
 
 ### 🔒 Limited Tier
+
 - **Access Level**: Free models only
 - **Available Models**: DeepSeek V3, Gemini 2.0 Flash, Qwen 3 32B, and other free OpenRouter models
 - **Use Case**: Basic users, trial accounts, or cost-sensitive environments
 - **UI Indicators**: Gray tier badge, restricted model selection options
 
 ### ⭐ Full Tier
+
 - **Access Level**: All models (free and premium)
 - **Available Models**: All free models plus Claude, GPT-4, GPT-5, premium reasoning models
 - **Use Case**: Standard users with full feature access
 - **UI Indicators**: Blue tier badge, complete model selection
 
 ### 👑 Admin Tier
+
 - **Access Level**: Full administrative access
 - **Available Models**: All models plus admin override capabilities
 - **Use Case**: System administrators, account managers
@@ -114,12 +117,14 @@ sequenceDiagram
 ## Model Categories
 
 ### Free Models (Limited Tier Access)
+
 - `deepseek/deepseek-chat-v3-0324:free` - DeepSeek V3
 - `google/gemini-2.0-flash-exp:free` - Gemini 2.0 Flash
 - `qwen/qwen3-32b:free` - Qwen 3 32B
 - Additional free models from OpenRouter
 
 ### Premium Models (Full/Admin Tier Only)
+
 - `anthropic/claude-3-opus` - Claude 3 Opus
 - `anthropic/claude-3-sonnet` - Claude 3 Sonnet
 - `openai/gpt-4` - GPT-4
@@ -131,11 +136,13 @@ sequenceDiagram
 ### Adding a New Admin User
 
 1. Add email to `PROMPTCRAFT_ADMIN_EMAILS`:
+
    ```bash
    PROMPTCRAFT_ADMIN_EMAILS=existing-admin@example.com,new-admin@company.com
    ```
 
 2. Ensure email is also in the general whitelist:
+
    ```bash
    PROMPTCRAFT_EMAIL_WHITELIST=existing-users@example.com,new-admin@company.com
    ```
@@ -222,6 +229,7 @@ PROMPTCRAFT_DEV_MODE=true  # For development only
 ```
 
 This will provide detailed logs about:
+
 - Email whitelist validation
 - Tier assignment decisions
 - Model access checks

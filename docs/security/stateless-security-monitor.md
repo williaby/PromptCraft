@@ -22,21 +22,25 @@ The following in-memory state has been removed:
 Four new PostgreSQL tables support the stateless design:
 
 #### SecurityEvent (security_events_monitor)
+
 - Stores security events for monitoring and correlation
 - Indexed by entity_key, timestamp, event_type, severity
 - Replaces in-memory `_event_history`
 
 #### BlockedEntity (blocked_entities)
+
 - Stores blocked IP addresses and users
 - Supports expiration dates and blocking reasons
 - Replaces in-memory `_blocked_ips` and `_blocked_users`
 
 #### ThreatScore (threat_scores)
+
 - Stores dynamic threat scores with automatic decay
 - Supports upsert operations for efficient updates
 - Replaces in-memory `_threat_scores`
 
 #### MonitoringThreshold (monitoring_thresholds)
+
 - Stores configurable monitoring thresholds
 - Allows runtime configuration updates
 - Supports multiple threshold types
@@ -295,11 +299,13 @@ async def cleanup_old_data(self, retention_hours: int = 24) -> Dict[str, int]:
 ### Database Setup
 
 1. Run the migration script:
+
    ```bash
    alembic upgrade head
    ```
 
 2. Verify tables were created:
+
    ```sql
    \dt *security* *blocked* *threat* *monitoring*
    ```

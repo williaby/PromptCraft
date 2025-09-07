@@ -9,21 +9,25 @@ This document outlines comprehensive procedures for responding to security incid
 ### Severity Levels
 
 #### **Critical (P0)**
+
 - **Response Time**: Immediate (< 15 minutes)
 - **Examples**: Data breach, system compromise, service unavailable
 - **Escalation**: Immediately notify all stakeholders
 
 #### **High (P1)**
+
 - **Response Time**: < 1 hour
 - **Examples**: Authentication bypass, privilege escalation, significant data exposure
 - **Escalation**: Notify security team and management within 30 minutes
 
 #### **Medium (P2)**
+
 - **Response Time**: < 4 hours
 - **Examples**: Failed login attempts, suspicious activity patterns, minor data exposure
 - **Escalation**: Log incident and notify security team
 
 #### **Low (P3)**
+
 - **Response Time**: < 24 hours
 - **Examples**: Policy violations, configuration drift, informational alerts
 - **Escalation**: Standard logging and review process
@@ -77,18 +81,21 @@ graph TD
 ### 2. Containment Actions by Incident Type
 
 #### Authentication Incidents
+
 - **Account Lockout**: Automatically lock compromised accounts
 - **IP Blocking**: Block suspicious IP addresses for 1-24 hours
 - **Rate Limiting**: Apply aggressive rate limiting to affected endpoints
 - **Session Termination**: Invalidate all sessions for compromised accounts
 
 #### Access Control Incidents
+
 - **Permission Revocation**: Remove elevated permissions immediately
 - **Role Suspension**: Temporarily suspend affected user roles
 - **Resource Isolation**: Isolate accessed resources from network
 - **Audit Trail Lock**: Secure audit logs for forensic analysis
 
 #### Data Security Incidents
+
 - **Data Classification**: Immediately classify exposed data sensitivity
 - **Access Monitoring**: Enhanced monitoring of data access patterns
 - **Backup Isolation**: Isolate backups to prevent lateral movement
@@ -127,6 +134,7 @@ Management Escalation:
 ## Response Team Roles and Responsibilities
 
 ### Incident Commander (IC)
+
 - **Primary Role**: Overall incident coordination and decision-making
 - **Responsibilities**:
   - Assess incident severity and classify appropriately
@@ -136,6 +144,7 @@ Management Escalation:
   - Ensure proper documentation and post-incident review
 
 ### Security Analyst
+
 - **Primary Role**: Technical investigation and analysis
 - **Responsibilities**:
   - Analyze security events and logs
@@ -144,6 +153,7 @@ Management Escalation:
   - Document technical findings and evidence
 
 ### System Administrator
+
 - **Primary Role**: System containment and recovery actions
 - **Responsibilities**:
   - Execute containment procedures (blocking IPs, isolating systems)
@@ -152,6 +162,7 @@ Management Escalation:
   - Validate system integrity post-incident
 
 ### Communication Lead
+
 - **Primary Role**: Internal and external communication coordination
 - **Responsibilities**:
   - Manage stakeholder communications
@@ -162,6 +173,7 @@ Management Escalation:
 ## Integration Points with Existing Systems
 
 ### Security Event Logging Integration
+
 - **System**: PromptCraft Security Logger (`SecurityLogger`)
 - **Integration**: All incident response actions logged as security events
 - **Event Types**:
@@ -171,6 +183,7 @@ Management Escalation:
   - `INCIDENT_RESOLVED`
 
 ### Alert Engine Integration
+
 - **System**: Security Alert Engine (`AlertEngine`)
 - **Integration**: Incident responses trigger appropriate alerts
 - **Notification Channels**:
@@ -179,6 +192,7 @@ Management Escalation:
   - Webhook: External SIEM/SOAR platform integration
 
 ### Monitoring Dashboard Integration
+
 - **System**: Security Dashboard (`SecurityDashboard`)
 - **Integration**: Real-time incident status display
 - **Features**:
@@ -188,6 +202,7 @@ Management Escalation:
   - Resolution timeline
 
 ### Audit Service Integration
+
 - **System**: Audit Service (`AuditService`)
 - **Integration**: Incident actions included in compliance reports
 - **Reporting**: Monthly incident summary reports for compliance
@@ -257,18 +272,21 @@ Management Escalation:
 ## Response Time Requirements
 
 ### Initial Response Times
+
 - **P0 (Critical)**: 15 minutes maximum
 - **P1 (High)**: 1 hour maximum
 - **P2 (Medium)**: 4 hours maximum
 - **P3 (Low)**: 24 hours maximum
 
 ### Containment Time Requirements
+
 - **Active Attacks**: 30 minutes maximum for initial containment
 - **Account Compromise**: 15 minutes maximum for account lockout
 - **Data Exposure**: 1 hour maximum for access restriction
 - **System Compromise**: 2 hours maximum for isolation
 
 ### Resolution Time Targets
+
 - **P0 Incidents**: 4 hours for full resolution
 - **P1 Incidents**: 24 hours for full resolution
 - **P2 Incidents**: 72 hours for full resolution
@@ -277,18 +295,21 @@ Management Escalation:
 ## Post-Incident Activities
 
 ### Immediate Post-Incident (Within 2 hours)
+
 1. **Incident Status Update**: Confirm incident containment
 2. **Stakeholder Notification**: Update all relevant parties
 3. **Evidence Preservation**: Secure all logs and forensic data
 4. **Initial Assessment**: Preliminary impact and root cause analysis
 
 ### Short-term Post-Incident (Within 24 hours)
+
 1. **Detailed Investigation**: Complete forensic analysis
 2. **Impact Assessment**: Full scope of incident impact
 3. **Preliminary Report**: Initial findings and actions taken
 4. **System Hardening**: Implement immediate security improvements
 
 ### Long-term Post-Incident (Within 7 days)
+
 1. **Post-Incident Review**: Team retrospective and lessons learned
 2. **Final Report**: Comprehensive incident documentation
 3. **Process Improvements**: Update procedures based on findings
@@ -297,12 +318,14 @@ Management Escalation:
 ## Compliance and Regulatory Considerations
 
 ### Data Breach Notification Requirements
+
 - **GDPR**: 72 hours to regulatory authority, without undue delay to data subjects
 - **CCPA**: Without unreasonable delay after discovery
 - **Industry Standards**: Follow sector-specific requirements
 - **Internal Policy**: 24 hours maximum for internal reporting
 
 ### Documentation Requirements
+
 - **Incident Timeline**: Complete chronological record
 - **Actions Taken**: All containment and recovery actions
 - **Evidence Chain**: Proper forensic evidence handling
@@ -310,6 +333,7 @@ Management Escalation:
 - **Lessons Learned**: Process improvements and recommendations
 
 ### Audit Trail Requirements
+
 - **System Logs**: Preserve all relevant system and security logs
 - **Access Logs**: Document all system and data access during incident
 - **Communication Records**: Archive all incident-related communications
@@ -318,18 +342,21 @@ Management Escalation:
 ## Training and Preparedness
 
 ### Regular Training Requirements
+
 - **Monthly**: Security incident simulation exercises
 - **Quarterly**: Response procedure review and updates
 - **Annually**: Comprehensive tabletop exercises
 - **Ad-hoc**: Training after significant incidents or process changes
 
 ### Skills and Certification Requirements
+
 - **Incident Commander**: SANS incident response certification recommended
 - **Security Analyst**: Digital forensics and malware analysis training
 - **System Administrator**: System hardening and recovery procedures
 - **Communication Lead**: Crisis communication and stakeholder management
 
 ### Testing and Validation
+
 - **Response Time Testing**: Monthly automated response time validation
 - **Communication Testing**: Quarterly contact tree verification
 - **System Testing**: Semi-annual disaster recovery and continuity testing
@@ -338,18 +365,21 @@ Management Escalation:
 ## Contact Information and Resources
 
 ### Internal Contacts
+
 - **Security Operations Center**: [INTERNAL_ONLY]
 - **IT Infrastructure Team**: [INTERNAL_ONLY]
 - **Legal Department**: [INTERNAL_ONLY]
 - **Executive Team**: [INTERNAL_ONLY]
 
 ### External Resources
+
 - **Law Enforcement**: FBI Internet Crime Complaint Center (IC3)
 - **CERT Coordination Center**: US-CERT incident reporting
 - **Industry Sharing**: Relevant ISAC organizations
 - **Legal Counsel**: External cybersecurity legal specialists
 
 ### Emergency Vendors
+
 - **Incident Response**: Pre-contracted IR specialist firm
 - **Digital Forensics**: Certified forensics investigation service
 - **Legal Services**: Cybersecurity legal advisory firm

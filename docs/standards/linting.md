@@ -16,6 +16,7 @@
 ### Configuration File Alignment
 
 All linting configurations must maintain consistency:
+
 - `.editorconfig` ↔ `pyproject.toml` (indentation, line length)
 - `.yamllint.yml` ↔ `pyproject.toml` (exclude patterns, line length)
 - `.markdownlint.json` ↔ project standards (line length, style)
@@ -84,6 +85,7 @@ skips = ["B101", "B601"]  # Skip assert_used and shell_injection_process
 ```
 
 **Commands**:
+
 ```bash
 # MUST RUN before committing Python changes
 poetry run black --check .          # Code formatting check
@@ -124,6 +126,7 @@ poetry run bandit -r src            # Security scanning
 ```
 
 **Commands**:
+
 ```bash
 # MUST RUN before committing Markdown changes
 markdownlint **/*.md                                    # Check all markdown files
@@ -165,6 +168,7 @@ ignore: |
 ```
 
 **Commands**:
+
 ```bash
 # MUST RUN before committing YAML changes
 yamllint .                           # Check all YAML files
@@ -233,6 +237,7 @@ repos:
 ```
 
 **Setup and Usage**:
+
 ```bash
 # Install pre-commit hooks (MANDATORY)
 poetry run pre-commit install
@@ -310,6 +315,7 @@ jobs:
 ### Python Linting Issues
 
 #### Import Organization (Ruff I001)
+
 ```python
 # Wrong
 import sys
@@ -326,6 +332,7 @@ from typing import Dict
 ```
 
 #### Line Length (Black/Ruff E501)
+
 ```python
 # Wrong
 really_long_function_name_that_exceeds_line_length(argument1, argument2, argument3, argument4, argument5)
@@ -337,6 +344,7 @@ really_long_function_name_that_exceeds_line_length(
 ```
 
 #### Type Annotations (MyPy/Ruff ANN)
+
 ```python
 # Wrong
 def process_data(data):
@@ -348,6 +356,7 @@ def process_data(data: str) -> str:
 ```
 
 #### Security Issues (Bandit)
+
 ```python
 # Wrong
 password = "hardcoded_password"
@@ -361,6 +370,7 @@ subprocess.run(["rm", "-rf", validated_path])  # No shell=True
 ### Markdown Linting Issues
 
 #### Line Length (MD013)
+
 ```markdown
 <!-- Wrong -->
 This is a very long line that exceeds the 120 character limit and should be broken into multiple lines for better readability.
@@ -371,6 +381,7 @@ multiple lines for better readability.
 ```
 
 #### List Consistency (MD030)
+
 ```markdown
 <!-- Wrong -->
 - Item 1
@@ -386,6 +397,7 @@ multiple lines for better readability.
 ### YAML Linting Issues
 
 #### Indentation (yamllint indentation)
+
 ```yaml
 # Wrong
 services:
@@ -403,6 +415,7 @@ services:
 ```
 
 #### Line Length (yamllint line-length)
+
 ```yaml
 # Wrong
 description: "This is a very long description that exceeds the line length limit and should be broken"

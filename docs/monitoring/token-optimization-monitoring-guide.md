@@ -7,18 +7,21 @@ The Token Optimization Performance Monitoring System provides comprehensive moni
 ## Key Features
 
 ### 📊 Core Monitoring Capabilities
+
 - **Token Usage Tracking**: Measure actual vs. baseline token consumption
 - **Function Loading Performance**: Monitor loading latency by tier (Tier 1: <50ms, Tier 2: <100ms, Tier 3: <200ms)
 - **User Experience Metrics**: Track success rates, error rates, and user satisfaction
 - **Statistical Validation**: Rigorous statistical testing of optimization claims
 
 ### 🎯 Validation Goals
+
 - **Primary Goal**: Validate 70% token reduction with 95% confidence
 - **Performance Goal**: Maintain function loading latency under 200ms (P95)
 - **Experience Goal**: Maintain 95%+ success rate and 80%+ task detection accuracy
 - **Reliability Goal**: Keep fallback activation rate under 10%
 
 ### 🔄 Real-time Capabilities
+
 - Live dashboard with WebSocket updates
 - Automated alerting and notifications
 - Trend analysis and anomaly detection
@@ -429,6 +432,7 @@ print(f"Evidence Strength: {validation['evidence_strength']}")
 ### Common Issues
 
 1. **Low Token Reduction**
+
    ```python
    # Check task detection accuracy
    report = await monitor.get_optimization_report()
@@ -440,6 +444,7 @@ print(f"Evidence Strength: {validation['evidence_strength']}")
    ```
 
 2. **High Loading Latency**
+
    ```python
    # Check cache performance
    tier_metrics = monitor.function_metrics[FunctionTier.TIER_1]
@@ -451,6 +456,7 @@ print(f"Evidence Strength: {validation['evidence_strength']}")
    ```
 
 3. **Validation Failures**
+
    ```python
    # Check sample size and statistical power
    validation = report["validation_results"]["token_reduction_claim"]
@@ -520,12 +526,14 @@ WS /ws/dashboard                   # Real-time updates
 ## Privacy and Security
 
 ### Data Protection
+
 - User identifiers are anonymized by default
 - No raw session data collected unless explicitly enabled
 - Configurable data retention periods
 - GDPR-compliant data handling
 
 ### Security Measures
+
 - No sensitive information in metrics
 - Secure external integration credentials
 - Rate limiting on API endpoints
@@ -534,24 +542,28 @@ WS /ws/dashboard                   # Real-time updates
 ## Best Practices
 
 ### 1. Session Monitoring
+
 - Always call `start_session_monitoring()` before other tracking
 - Ensure `end_session_monitoring()` is called even on errors
 - Use meaningful session and user IDs (but anonymized)
 - Specify accurate task types for better analysis
 
 ### 2. Function Loading Tracking
+
 - Record loading metrics immediately after function loading
 - Accurately specify function tiers based on usage patterns
 - Track cache hits/misses for performance optimization
 - Include actual token consumption measurements
 
 ### 3. Performance Optimization
+
 - Monitor tier assignment accuracy regularly
 - Optimize based on actual usage patterns, not assumptions
 - Use statistical validation before claiming performance improvements
 - Set up automated alerts for performance regressions
 
 ### 4. Statistical Validation
+
 - Collect sufficient sample sizes (50+ for robust validation)
 - Use appropriate confidence levels (95% recommended)
 - Consider effect sizes, not just statistical significance

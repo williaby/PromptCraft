@@ -5,6 +5,7 @@ The QwenTestEngineerAgent is a specialized AI agent designed specifically to ass
 ## Overview
 
 This agent provides capabilities tailored for an AI assistant working with testing infrastructure:
+
 - Test generation and scaffolding
 - Test execution and debugging assistance
 - Coverage analysis and improvement suggestions
@@ -18,6 +19,7 @@ To use the QwenTestEngineerAgent, you can interact with it through the PromptCra
 ### Example Tasks
 
 1. **Generate Tests**
+
    ```
    Task: generate_tests
    Content: src/core/query_counselor.py
@@ -25,6 +27,7 @@ To use the QwenTestEngineerAgent, you can interact with it through the PromptCra
    ```
 
 2. **Run Tests**
+
    ```
    Task: run_tests
    Content: tests/unit/
@@ -32,6 +35,7 @@ To use the QwenTestEngineerAgent, you can interact with it through the PromptCra
    ```
 
 3. **Analyze Coverage**
+
    ```
    Task: analyze_coverage
    Content: .
@@ -39,6 +43,7 @@ To use the QwenTestEngineerAgent, you can interact with it through the PromptCra
    ```
 
 4. **Debug Failures**
+
    ```
    Task: debug_failures
    Content: tests/unit/test_example.py
@@ -46,6 +51,7 @@ To use the QwenTestEngineerAgent, you can interact with it through the PromptCra
    ```
 
 5. **Suggest Improvements**
+
    ```
    Task: suggest_improvements
    Content: any text (not used)

@@ -5,6 +5,7 @@
 ## File Structure Requirements
 
 ### Directory Convention
+
 ```text
 /knowledge/{agent_id}/{kebab-case-filename}.md
 ```

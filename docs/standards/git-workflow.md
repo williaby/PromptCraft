@@ -194,6 +194,7 @@ Related to #456
 ### Review Checklist
 
 #### Code Quality
+
 - [ ] Code follows project standards and conventions
 - [ ] Logic is clear and well-documented
 - [ ] No code duplication or unnecessary complexity
@@ -201,6 +202,7 @@ Related to #456
 - [ ] Performance implications considered
 
 #### Security
+
 - [ ] Input validation implemented
 - [ ] No hardcoded secrets or sensitive data
 - [ ] Authentication/authorization properly implemented
@@ -208,6 +210,7 @@ Related to #456
 - [ ] Dependency security issues resolved
 
 #### Testing
+
 - [ ] Adequate test coverage (minimum 80%)
 - [ ] Tests are meaningful and test actual functionality
 - [ ] Edge cases and error conditions tested
@@ -215,6 +218,7 @@ Related to #456
 - [ ] Performance tests for performance-critical changes
 
 #### Documentation
+
 - [ ] Code comments explain complex logic
 - [ ] API documentation updated if applicable
 - [ ] Knowledge base updated for new features
@@ -351,6 +355,7 @@ repos:
 ### Branch Protection Rules
 
 **Main Branch Protection**:
+
 - Require pull request reviews before merging
 - Dismiss stale PR approvals when new commits are pushed
 - Require status checks to pass before merging

@@ -1,0 +1,22 @@
+@startuml Deployment
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+title Deployment Diagram for PromptCraft Hybrid System
+
+node "On-Premise Ubuntu VM" {
+  node "Docker" {
+    container "FastAPI Backend"
+    container "Gradio UI"
+    container "Prefect"
+    container "Zen MCP Server"
+  }
+}
+
+node "Cloud" {
+  database "Qdrant" {
+    folder "Vector Store"
+  }
+}
+
+"FastAPI Backend" --> "Qdrant" : "Connects to"
+@enduml

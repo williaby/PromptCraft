@@ -5,6 +5,7 @@
 ## Code Quality & Formatting
 
 ### Essential Commands
+
 ```bash
 # Format code
 make format
@@ -38,6 +39,7 @@ poetry run pre-commit run --all-files
 ### Test Performance Tiers
 
 **Fast Development Loop (< 1 minute)**
+
 ```bash
 # Core unit tests only - fastest feedback
 make test-fast
@@ -46,6 +48,7 @@ poetry run pytest tests/unit/ tests/auth/ -m "not slow and not performance and n
 ```
 
 **Pre-commit Validation (< 2 minutes)**
+
 ```bash
 # Unit + auth + essential integration tests
 make test-pre-commit
@@ -54,6 +57,7 @@ poetry run pytest tests/unit/ tests/auth/ tests/integration/ -m "not performance
 ```
 
 **PR Validation (< 5 minutes)**
+
 ```bash
 # All tests except performance/stress (CI default for PRs)
 make test-pr
@@ -62,6 +66,7 @@ poetry run pytest -m "not performance and not stress" --maxfail=10
 ```
 
 **Full Test Suite**
+
 ```bash
 # Complete test suite including performance tests (main branch/scheduled)
 make test
@@ -70,6 +75,7 @@ poetry run pytest -v --cov=src --cov-report=html --cov-report=term-missing
 ```
 
 **Performance Tests Only**
+
 ```bash
 # Run only performance and stress tests
 make test-performance

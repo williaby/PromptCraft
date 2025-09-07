@@ -61,6 +61,7 @@ AI tools configuration is tracked in `.vscode/settings.json`:
 The system automatically creates configuration files for each tool:
 
 ### Claude Code: `.claude/settings.json`
+
 ```json
 {
   "mcp": {
@@ -75,6 +76,7 @@ The system automatically creates configuration files for each tool:
 ```
 
 ### GitHub Copilot: `.github/copilot.yml`
+
 ```yaml
 suggestions:
   enabled: true
@@ -88,6 +90,7 @@ exclude:
 ```
 
 ### Gemini CLI: `.gemini/config.json`
+
 ```json
 {
   "project": "PromptCraft-Hybrid",
@@ -102,6 +105,7 @@ exclude:
 ```
 
 ### Qwen CLI: `.qwen/config.json`
+
 ```json
 {
   "project": "PromptCraft-Hybrid",
@@ -117,6 +121,7 @@ exclude:
 ```
 
 ### OpenAI CLI: `.openai/config.json`
+
 ```json
 {
   "project": "PromptCraft-Hybrid",
@@ -136,12 +141,14 @@ exclude:
 ## Manual Setup
 
 ### Quick Setup (Interactive)
+
 ```bash
 # Run the interactive setup script
 ./scripts/setup_ai_tools.sh
 ```
 
 ### Individual Tool Validation
+
 ```bash
 # Check all tools with full report
 python scripts/ai_tools_validator.py
@@ -185,18 +192,21 @@ Each tool is configured with PromptCraft-specific context:
 ## Troubleshooting
 
 ### Tool Not Detected
+
 1. Check if the tool is in your PATH: `which <command>`
 2. Verify installation: `<command> --version`
 3. Check VS Code terminal environment
 4. Restart VS Code after installing tools
 
 ### Configuration Issues
+
 1. Check for missing API keys in `.env`
 2. Verify configuration file syntax
 3. Run validation manually: `python scripts/ai_tools_validator.py`
 4. Recreate templates: `python scripts/ai_tools_validator.py --create-templates`
 
 ### VS Code Integration
+
 1. Ensure tasks.json includes the "Validate AI Tools" task
 2. Check if task runs on folder open: "runOn": "folderOpen"
 3. View task output in VS Code Terminal panel

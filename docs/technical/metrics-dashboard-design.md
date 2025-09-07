@@ -10,17 +10,20 @@
 Based on the Executive Team Layered Consensus recommendations, the metrics dashboard MUST capture:
 
 ### Core HyDE Performance Metrics (Weeks 1-4)
+
 1. **Mismatch Detection Rate (MDR)**: % queries triggering conceptual warnings
 2. **User Agreement Rate (UAR)**: % users accepting suggested corrections (Target: >70%)
 3. **False Positive/Negative Reports**: 👍/👎 feedback on each flag
 4. **Top Unhandled Mismatches**: Categorized user-reported gaps
 
 ### System Performance Metrics
+
 5. **P95 Latency**: Query→response time (monitor Qdrant impact)
 6. **Infrastructure Cost**: Track cost changes post-Qdrant
 7. **Error Rate**: System stability measurement
 
 ### Strategic Intelligence Metrics
+
 8. **Differentiation Value**: User surveys comparing to other AI tools
 9. **Action Rate**: How often users modify queries after warnings
 10. **Domain Gap Analysis**: Weekly categorization of missed mismatches
@@ -30,6 +33,7 @@ Based on the Executive Team Layered Consensus recommendations, the metrics dashb
 ### Data Collection Layer
 
 #### Event Tracking Schema
+
 ```python
 from datetime import datetime
 from enum import Enum
@@ -74,6 +78,7 @@ class MetricEvent(BaseModel):
 ```
 
 #### Metrics Collector Service
+
 ```python
 class MetricsCollector:
     """Centralized metrics collection service"""
@@ -127,6 +132,7 @@ class MetricsCollector:
 ### Dashboard UI Layer
 
 #### Real-Time Metrics Display
+
 ```yaml
 # Dashboard layout configuration
 dashboard_sections:
@@ -165,6 +171,7 @@ dashboard_sections:
 ```
 
 #### Privacy-Compliant Data Handling
+
 ```python
 class PrivacyCompliantStorage:
     """Ensures user data protection while enabling analytics"""
@@ -187,6 +194,7 @@ class PrivacyCompliantStorage:
 ## 📊 Metric Definitions & Calculations
 
 ### 1. Mismatch Detection Rate (MDR)
+
 ```python
 def calculate_mdr(events: list[MetricEvent]) -> float:
     """% queries triggering conceptual warnings"""
@@ -198,6 +206,7 @@ def calculate_mdr(events: list[MetricEvent]) -> float:
 ```
 
 ### 2. User Agreement Rate (UAR)
+
 ```python
 def calculate_uar(events: list[MetricEvent]) -> float:
     """% users accepting suggested corrections"""
@@ -209,6 +218,7 @@ def calculate_uar(events: list[MetricEvent]) -> float:
 ```
 
 ### 3. P95 Latency
+
 ```python
 def calculate_p95_latency(events: list[MetricEvent]) -> float:
     """95th percentile query response time"""
@@ -220,6 +230,7 @@ def calculate_p95_latency(events: list[MetricEvent]) -> float:
 ```
 
 ### 4. Action Rate
+
 ```python
 def calculate_action_rate(events: list[MetricEvent]) -> Dict[str, float]:
     """How often users modify queries after warnings"""
@@ -236,6 +247,7 @@ def calculate_action_rate(events: list[MetricEvent]) -> Dict[str, float]:
 ## 🚨 Alerting & Thresholds
 
 ### Critical Alerts (Immediate notification)
+
 ```yaml
 critical_alerts:
   error_rate:
@@ -266,6 +278,7 @@ warning_alerts:
 ```
 
 ### Dashboard Alert Integration
+
 ```python
 class AlertManager:
     """Real-time alerting for dashboard metrics"""
@@ -291,6 +304,7 @@ class AlertManager:
 ## 🔧 Implementation Plan
 
 ### Phase 1: Core Infrastructure (Day 1)
+
 ```bash
 # Create metrics collection system
 touch src/metrics/collector.py
@@ -307,6 +321,7 @@ touch templates/dashboard/metrics.html
 ```
 
 ### Phase 2: Integration Points (Day 1)
+
 ```python
 # Journey1 Integration
 class Journey1SmartTemplates:
@@ -332,6 +347,7 @@ class Journey1SmartTemplates:
 ```
 
 ### Phase 3: Dashboard UI (Day 2)
+
 ```python
 # Gradio dashboard integration
 def create_metrics_tab():
@@ -354,6 +370,7 @@ def create_metrics_tab():
 ```
 
 ### Phase 4: Feedback Integration (Day 2)
+
 ```python
 # Add feedback buttons to UI responses
 def add_feedback_buttons(response_html: str, session_id: str, response_type: str) -> str:
@@ -371,6 +388,7 @@ def add_feedback_buttons(response_html: str, session_id: str, response_type: str
 ## 📈 Success Criteria
 
 ### Technical Validation
+
 - [✅] All 10 required metrics collecting data
 - [✅] Real-time dashboard displaying current values
 - [✅] User feedback mechanism integrated
@@ -378,12 +396,14 @@ def add_feedback_buttons(response_html: str, session_id: str, response_type: str
 - [✅] Alerting system functional
 
 ### Data Quality
+
 - [✅] Metrics calculations mathematically correct
 - [✅] Event storage reliable and performant
 - [✅] Dashboard refresh rates appropriate
 - [✅] Alert thresholds validated against expected ranges
 
 ### User Experience
+
 - [✅] Dashboard loads in <3 seconds
 - [✅] Feedback buttons accessible and functional
 - [✅] Mobile-responsive dashboard design
@@ -392,6 +412,7 @@ def add_feedback_buttons(response_html: str, session_id: str, response_type: str
 ## 🚀 Day 1 Production Readiness
 
 ### Required for Sprint 1 Launch
+
 1. **Core Metrics Collection**: All 10 metrics recording events ✅
 2. **Basic Dashboard**: Real-time display of key metrics ✅
 3. **User Feedback**: 👍/👎 buttons integrated in UI ✅
@@ -399,6 +420,7 @@ def add_feedback_buttons(response_html: str, session_id: str, response_type: str
 5. **Privacy**: No PII stored in metrics database ✅
 
 ### Post-Launch Enhancements (Weeks 2-4)
+
 1. **Advanced Analytics**: Trend analysis and pattern detection
 2. **Custom Dashboards**: Role-based views for different team members
 3. **A/B Testing**: Compare different HyDE configurations
@@ -411,6 +433,7 @@ def add_feedback_buttons(response_html: str, session_id: str, response_type: str
 **STATUS**: 🔧 **DESIGN COMPLETE** - Ready for implementation
 
 **Implementation Path**:
+
 1. **Day 1**: Core metrics collection infrastructure + database schema
 2. **Day 2**: Dashboard UI + user feedback integration + alerting setup
 
