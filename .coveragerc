@@ -1,0 +1,41 @@
+[run]
+source = src
+branch = true
+parallel = true
+context = ${COVERAGE_CONTEXT}
+data_file = .coverage
+omit =
+    tests/*
+    scripts/*
+    */migrations/*
+    */vendor/*
+    */__pycache__/*
+    */node_modules/*
+    zen-mcp-server/*
+    */zen-mcp-server/*
+    /home/byron/dev/zen-mcp-server/*
+    /home/byron/dev/PromptCraft/zen-mcp-server/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = false
+fail_under = 80
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml
