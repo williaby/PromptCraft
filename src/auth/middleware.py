@@ -23,7 +23,7 @@ from slowapi.util import get_remote_address
 from sqlalchemy import func, select, text, update
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.database import DatabaseError, get_database_manager_async
+from src.database import DatabaseError
 from src.database.connection import get_db
 from src.database.models import AuthenticationEvent, UserSession
 
@@ -31,9 +31,8 @@ from .models import AuthenticatedUser, AuthenticationError, JWTValidationError, 
 
 # Import auth_simple compatibility types
 try:
-    from typing import Any as JWTValidator  # Placeholder type for compatibility
-
     from src.auth_simple import AuthConfig as AuthenticationConfig
+    from src.auth_simple.cloudflare_auth import JWTValidator
 except ImportError:
     # Fallback types for compatibility
     class AuthenticationConfig:
@@ -41,6 +40,13 @@ except ImportError:
 
     class JWTValidator:
         """Compatibility placeholder for JWTValidator."""
+
+        def __init__(self, *args, **kwargs):
+            """Initialize placeholder JWTValidator."""
+
+        def validate_token(self, token, **kwargs):
+            """Placeholder token validation that returns None."""
+            return
 
 
 # Security logging compatibility
@@ -87,7 +93,8 @@ class SecurityLogger:
             details: Additional event details as dictionary
         """
         # Convert enums to strings for logging
-        event_type_str = str(event_type.value) if hasattr(event_type, "value") else str(event_type)
+        # Use enum name (e.g., "LOGIN_SUCCESS") instead of value (e.g., "login_success") to match test expectations
+        event_type_str = str(event_type.name) if hasattr(event_type, "name") else str(event_type)
         severity_str = str(severity.value) if hasattr(severity, "value") else str(severity or "INFO")
 
         # Build log message
@@ -780,9 +787,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             return
 
         try:
-            db_manager = await get_database_manager_async()
-            async with db_manager.get_session() as session:
-
+            # Use the legacy get_db() which works as async context manager
+            async for session in get_db():
                 # Extract Cloudflare subject from JWT claims
                 cloudflare_sub = authenticated_user.jwt_claims.get("sub", "unknown")
 
@@ -817,6 +823,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     session.add(new_session)
 
                 await session.commit()
+                # Break after first (and only) session
+                break
 
         except DatabaseError as e:
             # Log database errors but don't fail authentication
@@ -854,11 +862,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             # Ensure we get a string, not a MagicMock object
             host = getattr(request.client, "host", None)
             if host and isinstance(host, str):
-                return host
+                # Validate it looks like a reasonable IP address (max 39 chars for IPv6)
+                if len(host) <= 39:
+                    return host
+                return None
             try:
                 host_str = str(host)
-                # Validate it looks like an IP address (max 45 chars for IPv6)
-                if len(host_str) <= 45:
+                # Validate it looks like an IP address (max 39 chars for IPv6)
+                if len(host_str) <= 39:
                     return host_str
             except Exception:  # nosec B110  # noqa: S110
                 # Silently ignore IP parsing errors - acceptable for IP extraction
@@ -928,9 +939,6 @@ def setup_authentication(
         algorithm=config.jwt_algorithm,
     )
 
-    # Create rate limiter
-    limiter = create_rate_limiter(config)
-
     # Add middleware using standard FastAPI method with kwargs
     app.add_middleware(
         AuthenticationMiddleware,
@@ -939,10 +947,16 @@ def setup_authentication(
         database_enabled=database_enabled,
     )
 
+    # Setup rate limiting only if enabled
+    limiter = None
     if config.rate_limiting_enabled:
+        limiter = create_rate_limiter(config)
         app.add_middleware(SlowAPIMiddleware)
         app.state.limiter = limiter
         app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    else:
+        # Create a dummy limiter for compatibility but don't set app.state.limiter
+        limiter = create_rate_limiter(config)
 
     logger.info("Authentication middleware and rate limiting configured")
 
