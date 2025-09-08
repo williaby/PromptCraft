@@ -7,14 +7,14 @@ export class Journey1Page extends BasePage {
   readonly fileUpload: Locator;
   readonly modelSelector: Locator;
   readonly customModelSelector: Locator;
-  
+
   // Action buttons
   readonly enhanceButton: Locator;
   readonly clearButton: Locator;
   readonly copyCodeButton: Locator;
   readonly copyMarkdownButton: Locator;
   readonly exportButton: Locator;
-  
+
   // Output elements
   readonly enhancedPromptOutput: Locator;
   readonly contextAnalysis: Locator;
@@ -25,43 +25,43 @@ export class Journey1Page extends BasePage {
   readonly evaluationCriteria: Locator;
   readonly modelAttribution: Locator;
   readonly fileSources: Locator;
-  
+
   // Status elements
   readonly progressIndicator: Locator;
   readonly costTracker: Locator;
   readonly errorMessage: Locator;
-  
+
   constructor(page: Page) {
     super(page);
-    
-    // Initialize Journey 1 specific locators
-    this.textInput = page.locator('textarea[placeholder*="prompt"], textarea[label*="Input"]').first();
+
+    // Initialize Journey 1 specific locators with Gradio-optimized selectors
+    this.textInput = page.locator('textarea, [data-testid*="textbox"]').first();
     this.fileUpload = page.locator('input[type="file"]').first();
-    this.modelSelector = page.locator('select, .dropdown').filter({ hasText: /gpt|claude|model/i }).first();
-    this.customModelSelector = page.locator('input[placeholder*="custom"], input[label*="Custom"]').first();
-    
-    // Action buttons
-    this.enhanceButton = page.locator('button', { hasText: /enhance|process|submit/i }).first();
-    this.clearButton = page.locator('button', { hasText: /clear|reset/i }).first();
-    this.copyCodeButton = page.locator('button', { hasText: /copy.*code/i }).first();
-    this.copyMarkdownButton = page.locator('button', { hasText: /copy.*markdown/i }).first();
-    this.exportButton = page.locator('button', { hasText: /export/i }).first();
-    
-    // Output elements - look for C.R.E.A.T.E. framework sections
-    this.enhancedPromptOutput = page.locator('[data-testid="enhanced-prompt"], .output-text').first();
+    this.modelSelector = page.locator('select, [role="combobox"], [data-testid*="dropdown"]').first();
+    this.customModelSelector = page.locator('input[placeholder*="custom" i], input[aria-label*="custom" i]').first();
+
+    // Action buttons with improved selectors (simpler approach without regex)
+    this.enhanceButton = page.locator('button').filter({ hasText: /enhance/i }).or(page.locator('button[variant="primary"]')).first();
+    this.clearButton = page.locator('button:has-text(/clear|reset/i)').first();
+    this.copyCodeButton = page.locator('button:has-text(/copy.*code/i)').first();
+    this.copyMarkdownButton = page.locator('button:has-text(/copy.*markdown/i)').first();
+    this.exportButton = page.locator('button:has-text(/export/i)').first();
+
+    // Output elements - improved Gradio-specific selectors for C.R.E.A.T.E. framework sections
+    this.enhancedPromptOutput = page.locator('textarea[readonly], [data-testid*="textbox"][readonly], .output-text').first();
     this.contextAnalysis = page.locator('text=Context:').locator('..').first();
     this.requestSpecification = page.locator('text=Request:').locator('..').first();
     this.examplesSection = page.locator('text=Examples:').locator('..').first();
     this.augmentationsSection = page.locator('text=Augmentations:').locator('..').first();
     this.toneFormat = page.locator('text=Tone:').locator('..').first();
     this.evaluationCriteria = page.locator('text=Evaluation:').locator('..').first();
-    this.modelAttribution = page.locator('.model-attribution, [id="model-attribution"]');
-    this.fileSources = page.locator('#file-sources, [data-testid="file-sources"]');
-    
-    // Status elements
-    this.progressIndicator = page.locator('.progress-indicator, .loading, [data-testid="progress"]');
-    this.costTracker = page.locator('text=Cost:').locator('..').or(page.locator('.cost-tracker'));
-    this.errorMessage = page.locator('.error, .alert-error, [data-testid="error"]');
+    this.modelAttribution = page.locator('.model-attribution, [data-testid*="model"], text=Model:').first();
+    this.fileSources = page.locator('[data-testid*="file"], .file-sources, text=Sources:').first();
+
+    // Status elements with better fallback selectors
+    this.progressIndicator = page.locator('[data-testid*="progress"], .progress, .loading, .spinner').first();
+    this.costTracker = page.locator('text=Cost:').locator('..').or(page.locator('[data-testid*="cost"], .cost-tracker')).first();
+    this.errorMessage = page.locator('[data-testid*="error"], .error, .alert-error, [role="alert"]').first();
   }
 
   /**
@@ -74,11 +74,18 @@ export class Journey1Page extends BasePage {
   }
 
   /**
-   * Wait for Journey 1 specific components to load
+   * Wait for Journey 1 specific components to load with improved Gradio loading detection
    */
   async waitForJourney1Load() {
-    await this.textInput.waitFor({ state: 'visible' });
-    await this.enhanceButton.waitFor({ state: 'visible' });
+    // Wait for Gradio to fully initialize
+    await this.page.waitForLoadState('networkidle');
+
+    // Wait for key elements to be visible and interactive
+    await this.textInput.waitFor({ state: 'visible', timeout: 15000 });
+    await this.enhanceButton.waitFor({ state: 'visible', timeout: 15000 });
+
+    // Additional wait to ensure Gradio components are fully interactive
+    await this.page.waitForTimeout(1000);
   }
 
   /**
@@ -101,10 +108,10 @@ export class Journey1Page extends BasePage {
    */
   async uploadTestFile(filePath: string) {
     await this.uploadFile(this.fileUpload, filePath);
-    
+
     // Wait for file to be processed
     await this.page.waitForTimeout(1000);
-    
+
     // Check if file processing completed
     await this.page.waitForFunction(() => {
       const fileProcessingElements = document.querySelectorAll('.processing-file, .uploading');
@@ -117,17 +124,17 @@ export class Journey1Page extends BasePage {
    */
   async enhancePrompt(timeout = 30000) {
     await this.enhanceButton.click();
-    
+
     // Wait for processing to start (progress indicator appears)
     try {
       await this.progressIndicator.waitFor({ state: 'visible', timeout: 5000 });
     } catch {
       // Progress indicator might not appear for quick responses
     }
-    
+
     // Wait for processing to complete (progress indicator disappears)
     await this.progressIndicator.waitFor({ state: 'hidden', timeout });
-    
+
     // Wait for output to appear
     await this.enhancedPromptOutput.waitFor({ state: 'visible', timeout: 5000 });
   }
@@ -171,7 +178,7 @@ export class Journey1Page extends BasePage {
    */
   async copyCodeBlocks() {
     await this.copyCodeButton.click();
-    
+
     // Wait for success feedback
     await this.waitForText('copied', 3000);
   }
@@ -181,7 +188,7 @@ export class Journey1Page extends BasePage {
    */
   async copyAsMarkdown() {
     await this.copyMarkdownButton.click();
-    
+
     // Wait for success feedback
     await this.waitForText('copied', 3000);
   }
@@ -191,18 +198,18 @@ export class Journey1Page extends BasePage {
    */
   async exportContent(format: 'md' | 'txt' | 'json' = 'md') {
     await this.exportButton.click();
-    
+
     // Select format if dropdown appears
     try {
       await this.page.locator(`text=${format.toUpperCase()}`).click({ timeout: 2000 });
     } catch {
       // Format selector might not be visible or format already selected
     }
-    
+
     // Wait for download to be triggered
     const downloadPromise = this.page.waitForEvent('download');
     const download = await downloadPromise;
-    
+
     return download;
   }
 
@@ -212,12 +219,12 @@ export class Journey1Page extends BasePage {
   async getModelAttribution() {
     await this.modelAttribution.waitFor({ state: 'visible' });
     const text = await this.modelAttribution.textContent();
-    
+
     // Parse model name, time, and cost from attribution
     const modelMatch = text?.match(/Generated by:\s*([^\s|]+)/);
     const timeMatch = text?.match(/Time:\s*([\d.]+s)/);
     const costMatch = text?.match(/Cost:\s*\$?([\d.]+)/);
-    
+
     return {
       model: modelMatch?.[1] || 'unknown',
       time: timeMatch?.[1] || '0s',
@@ -232,7 +239,7 @@ export class Journey1Page extends BasePage {
     try {
       await this.fileSources.waitFor({ state: 'visible', timeout: 3000 });
       const text = await this.fileSources.textContent() || '';
-      
+
       // Extract file names from the sources text
       const fileMatches = text.match(/([^\s]+\.(txt|md|csv|json|pdf|docx))/g);
       return fileMatches || [];
@@ -286,7 +293,7 @@ export class Journey1Page extends BasePage {
     } else {
       await this.textInput.clear();
     }
-    
+
     await this.page.waitForTimeout(500);
   }
 
@@ -295,7 +302,7 @@ export class Journey1Page extends BasePage {
    */
   async testFileValidation(filePath: string, expectError = false) {
     await this.uploadFile(this.fileUpload, filePath);
-    
+
     if (expectError) {
       // Expect error message to appear
       await this.errorMessage.waitFor({ state: 'visible', timeout: 5000 });

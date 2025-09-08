@@ -56,6 +56,8 @@ class TestUserTierIntegration:
         request = Mock(spec=Request)
         request.headers = Headers(mock_cloudflare_headers)
         request.state = Mock()
+        # Configure state to support both attribute and dict-like access
+        request.state.user = {}
         return request
 
     def test_limited_user_tier_detection(self, limited_user_validator, mock_request):
@@ -101,32 +103,40 @@ class TestUserTierIntegration:
         assert tier.can_access_premium_models is True
         assert tier.has_admin_privileges is True
 
-    def test_middleware_injects_tier_information(self, full_user_validator, mock_request):
+    async def test_middleware_injects_tier_information(self, full_user_validator, mock_request):
         """Test that middleware correctly injects tier information into request state."""
+        # Update headers to match the full_user_validator
+        from starlette.datastructures import Headers
+
+        mock_request.headers = Headers(
+            {"cf-access-authenticated-user-email": "full@example.com", "cf-ray": "test-ray-id", "cf-ipcountry": "US"},
+        )
+
         # Create middleware components
         cloudflare_auth = CloudflareAuthHandler()
         session_manager = SimpleSessionManager()
 
-        # Mock the Cloudflare user extraction
+        # Mock the Cloudflare user extraction - use email that matches validator
         mock_user = Mock()
-        mock_user.email = "full@example.com"
+        mock_user.email = "full@example.com"  # Match the full_user_validator fixture
         mock_user.authenticated_at = "2023-01-01T00:00:00Z"
 
         with patch.object(cloudflare_auth, "extract_user_from_request", return_value=mock_user):
-            middleware = CloudflareAccessMiddleware(
-                app=None,
-                whitelist_validator=full_user_validator,
-                session_manager=session_manager,
-            )
+            with patch.object(cloudflare_auth, "create_user_context", return_value={}):
+                middleware = CloudflareAccessMiddleware(
+                    app=None,
+                    whitelist_validator=full_user_validator,
+                    session_manager=session_manager,
+                )
 
-            # Simulate the authentication process
-            middleware._authenticate_request(mock_request)
+                # Simulate the authentication process
+                await middleware._authenticate_request(mock_request)
 
-            # Check that tier information is injected
-            assert hasattr(mock_request.state, "user")
-            assert mock_request.state.user["user_tier"] == "full"
-            assert mock_request.state.user["can_access_premium"] is True
-            assert mock_request.state.user["is_admin"] is False
+                # Check that tier information is injected
+                assert hasattr(mock_request.state, "user")
+                assert mock_request.state.user["user_tier"] == "full"
+                assert mock_request.state.user["can_access_premium"] is True
+                assert mock_request.state.user["is_admin"] is False
 
     @patch("src.mcp_integration.model_registry.ModelRegistry.get_model_capabilities")
     def test_model_registry_tier_filtering(self, mock_get_capabilities):
