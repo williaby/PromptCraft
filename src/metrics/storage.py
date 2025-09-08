@@ -18,7 +18,7 @@ from .events import MetricEvent, MetricEventType
 class MetricsStorage:
     """Storage backend for metric events with SQLite support."""
 
-    def __init__(self, database_path: str = "metrics.db"):
+    def __init__(self, database_path: str = "metrics.db") -> None:
         """Initialize metrics storage with database connection."""
         self.database_path = database_path
         self.logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class MetricsStorage:
             placeholders = ", ".join(["?" for _ in columns])
             values = [storage_dict[col] for col in columns]
 
-            insert_sql = f"""
+            insert_sql = f"""  # noqa: S608
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
@@ -123,7 +123,7 @@ class MetricsStorage:
                 conn.execute(insert_sql, values)
                 conn.commit()
 
-            self.logger.debug("Stored metric event: %s (%s)", event.event_id, event.event_type.value)
+            self.logger.debug("Stored metric event: %s (%s)", event.event_id, event.event_type)
             return True
 
         except Exception as e:
@@ -142,7 +142,7 @@ class MetricsStorage:
             columns = list(storage_dicts[0].keys())
             placeholders = ", ".join(["?" for _ in columns])
 
-            insert_sql = f"""
+            insert_sql = f"""  # noqa: S608
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
@@ -167,10 +167,10 @@ class MetricsStorage:
 
     async def get_events(
         self,
-        event_types: list[MetricEventType] = None,
-        session_id: str = None,
-        start_time: str = None,
-        end_time: str = None,
+        event_types: list[MetricEventType] | None = None,
+        session_id: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
         limit: int = 1000,
     ) -> list[MetricEvent]:
         """Retrieve events with optional filtering."""
@@ -196,7 +196,7 @@ class MetricsStorage:
                 params.append(end_time)
 
             query += " ORDER BY timestamp DESC LIMIT ?"
-            params.append(limit)
+            params.append(str(limit))
 
             with sqlite3.connect(self.database_path) as conn:
                 conn.row_factory = sqlite3.Row  # Enable column access by name
@@ -309,9 +309,10 @@ class MetricsStorage:
 
             # Calculate user agreement rate
             feedback_counts = summary["user_feedback"]
-            total_feedback = sum(feedback_counts.values())
-            if total_feedback > 0:
-                positive_feedback = feedback_counts.get("thumbs_up", 0)
+            if isinstance(feedback_counts, dict):
+                total_feedback = sum(feedback_counts.values())
+                if total_feedback > 0:
+                    positive_feedback = feedback_counts.get("thumbs_up", 0)
                 summary["user_agreement_rate"] = (positive_feedback / total_feedback) * 100
 
             return summary

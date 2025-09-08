@@ -219,15 +219,23 @@ class EmailWhitelistValidator:
         normalized_email = self._normalize_email(email)
 
         # Check tiers in priority order: admin -> full -> limited
-        if normalized_email in self.admin_emails:
-            logger.debug("Email %s has admin tier", email)
-            return UserTier.ADMIN
-        if normalized_email in self.full_users:
-            logger.debug("Email %s has full tier", email)
-            return UserTier.FULL
-        if normalized_email in self.limited_users:
-            logger.debug("Email %s has limited tier", email)
-            return UserTier.LIMITED
+        # First check exact email matches
+        tier_lists = (self.admin_emails, self.full_users, self.limited_users)
+        tier_types = (UserTier.ADMIN, UserTier.FULL, UserTier.LIMITED)
+
+        for tier_list, tier_type in zip(tier_lists, tier_types, strict=False):
+            if normalized_email in tier_list:
+                logger.debug("Email %s has %s tier (exact match)", email, tier_type.value)
+                return tier_type
+
+        # Then check domain pattern matches if no exact match found
+        if "@" in normalized_email:
+            domain = "@" + normalized_email.split("@")[1]
+            for tier_list, tier_type in zip(tier_lists, tier_types, strict=False):
+                if domain in tier_list:
+                    logger.debug("Email %s has %s tier (domain match: %s)", email, tier_type.value, domain)
+                    return tier_type
+
         # Default to limited tier for authorized users not explicitly assigned
         logger.debug("Email %s defaulted to limited tier", email)
         return UserTier.LIMITED
@@ -426,7 +434,10 @@ class WhitelistManager:
 
 
 def create_validator_from_env(
-    whitelist_str: str, admin_emails_str: str = "", full_users_str: str = "", limited_users_str: str = "",
+    whitelist_str: str,
+    admin_emails_str: str = "",
+    full_users_str: str = "",
+    limited_users_str: str = "",
 ) -> EmailWhitelistValidator:
     """Create EmailWhitelistValidator from environment variable strings.
 
@@ -447,5 +458,8 @@ def create_validator_from_env(
     )
 
     return EmailWhitelistValidator(
-        whitelist=whitelist, admin_emails=admin_emails, full_users=full_users, limited_users=limited_users,
+        whitelist=whitelist,
+        admin_emails=admin_emails,
+        full_users=full_users,
+        limited_users=limited_users,
     )

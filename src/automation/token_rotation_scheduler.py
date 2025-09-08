@@ -64,14 +64,15 @@ class TokenRotationPlan:
 class TokenRotationScheduler:
     """Automated token rotation scheduler."""
 
-    def __init__(self, settings: Any | None = None) -> None:
+    def __init__(self, settings: Any | None = None, token_manager: ServiceTokenManager | None = None) -> None:
         """Initialize token rotation scheduler.
 
         Args:
             settings: Application settings (optional)
+            token_manager: Service token manager instance (optional, creates default if None)
         """
         self.settings = settings
-        self.token_manager = ServiceTokenManager()
+        self.token_manager = token_manager or ServiceTokenManager()
         # Monitoring integration placeholder (ServiceTokenMonitor dependency removed for MyPy compatibility)
 
         # Rotation policies

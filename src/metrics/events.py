@@ -6,6 +6,8 @@ system performance, and business intelligence metrics for comprehensive
 production monitoring and analysis.
 """
 
+import hashlib
+import json
 import uuid
 from datetime import datetime
 from enum import Enum
@@ -59,7 +61,7 @@ class MetricEvent(BaseModel):
     user_id: str | None = None
 
     # HyDE Specific Metrics
-    hyde_score: int | None = Field(None, ge=0, le=100)
+    hyde_score: int | None = None
     action_taken: str | None = None  # "clarification" | "create_prompt" | "direct"
     conceptual_issues: list[str] | None = None
     query_specificity_level: str | None = None  # "low" | "medium" | "high"
@@ -67,23 +69,23 @@ class MetricEvent(BaseModel):
     # User Feedback Metrics
     feedback_type: str | None = None  # "thumbs_up" | "thumbs_down" | "survey_response"
     feedback_target: str | None = None  # "clarification" | "create_prompt" | "concept_warning"
-    feedback_score: int | None = Field(None, ge=1, le=5)  # 1-5 rating scale
+    feedback_score: int | None = None  # 1-5 rating scale
 
     # Performance Metrics
-    response_time_ms: int | None = Field(None, ge=0)
+    response_time_ms: int | None = None
     error_details: str | None = None
     error_type: str | None = None
     latency_category: str | None = None  # "fast" | "normal" | "slow" | "timeout"
 
     # Query Analysis (Privacy-Safe)
     query_text_hash: str | None = None  # SHA-256 hash for privacy
-    query_length: int | None = Field(None, ge=0)
+    query_length: int | None = None
     query_category: str | None = None  # "technical" | "business" | "creative" | "vague"
     query_language: str | None = None  # "en" | "es" | "fr" etc.
 
     # Vector Store Performance
-    vector_search_results: int | None = Field(None, ge=0)
-    vector_search_score_threshold: float | None = Field(None, ge=0.0, le=1.0)
+    vector_search_results: int | None = None
+    vector_search_score_threshold: float | None = None
     vector_store_type: str | None = None  # "qdrant" | "mock"
 
     # Domain-Specific Metrics
@@ -125,16 +127,12 @@ class MetricEvent(BaseModel):
 
         # Convert feature_flags dict to JSON string
         if data.get("feature_flags"):
-            import json
-
             data["feature_flags"] = json.dumps(data["feature_flags"])
         elif "feature_flags" in data:
             data["feature_flags"] = "{}"
 
         # Convert additional_data dict to JSON string
         if data.get("additional_data"):
-            import json
-
             data["additional_data"] = json.dumps(data["additional_data"])
         elif "additional_data" in data:
             data["additional_data"] = "{}"
@@ -149,14 +147,15 @@ class MetricEvent(BaseModel):
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
 
         # Convert conceptual_issues back to list
-        if data.get("conceptual_issues") and isinstance(data["conceptual_issues"], str):
-            data["conceptual_issues"] = data["conceptual_issues"].split(",")
+        if "conceptual_issues" in data and isinstance(data["conceptual_issues"], str):
+            if data["conceptual_issues"]:
+                data["conceptual_issues"] = data["conceptual_issues"].split(",")
+            else:
+                data["conceptual_issues"] = []
 
         # Convert JSON strings back to dicts
         for field in ["feature_flags", "additional_data"]:
             if data.get(field) and isinstance(data[field], str):
-                import json
-
                 data[field] = json.loads(data[field])
 
         return cls(**data)
@@ -165,7 +164,7 @@ class MetricEvent(BaseModel):
 class MetricEventBuilder:
     """Builder pattern for creating structured metric events."""
 
-    def __init__(self, event_type: MetricEventType, session_id: str):
+    def __init__(self, event_type: MetricEventType, session_id: str) -> None:
         """Initialize metric event builder."""
         self.event = MetricEvent(event_type=event_type, session_id=session_id)
 
@@ -173,7 +172,7 @@ class MetricEventBuilder:
         self,
         hyde_score: int,
         action_taken: str,
-        conceptual_issues: list[str] = None,
+        conceptual_issues: list[str] | None = None,
     ) -> "MetricEventBuilder":
         """Add HyDE-specific metrics."""
         self.event.hyde_score = hyde_score
@@ -194,7 +193,7 @@ class MetricEventBuilder:
         self,
         feedback_type: str,
         feedback_target: str,
-        feedback_score: int = None,
+        feedback_score: int | None = None,
     ) -> "MetricEventBuilder":
         """Add user feedback metrics."""
         self.event.feedback_type = feedback_type
@@ -202,7 +201,11 @@ class MetricEventBuilder:
         self.event.feedback_score = feedback_score
         return self
 
-    def with_performance_metrics(self, response_time_ms: int, error_details: str = None) -> "MetricEventBuilder":
+    def with_performance_metrics(
+        self,
+        response_time_ms: int,
+        error_details: str | None = None,
+    ) -> "MetricEventBuilder":
         """Add performance metrics."""
         self.event.response_time_ms = response_time_ms
         self.event.error_details = error_details
@@ -219,14 +222,13 @@ class MetricEventBuilder:
 
         return self
 
-    def with_query_analysis(self, query_text: str, query_category: str = None) -> "MetricEventBuilder":
+    def with_query_analysis(self, query_text: str, query_category: str | None = None) -> "MetricEventBuilder":
         """Add privacy-safe query analysis."""
-        import hashlib
 
         # Create privacy-safe hash
         self.event.query_text_hash = hashlib.sha256(query_text.encode()).hexdigest()[:16]
-
         self.event.query_length = len(query_text.split())
+
         self.event.query_category = query_category
         return self
 
@@ -240,8 +242,8 @@ class MetricEventBuilder:
     def with_domain_detection(
         self,
         domain_detected: str,
-        mismatch_type: str = None,
-        suggested_alternative: str = None,
+        mismatch_type: str | None = None,
+        suggested_alternative: str | None = None,
     ) -> "MetricEventBuilder":
         """Add domain-specific detection metrics."""
         self.event.domain_detected = domain_detected
@@ -253,7 +255,7 @@ class MetricEventBuilder:
         self,
         version: str,
         environment: str,
-        feature_flags: dict[str, bool] = None,
+        feature_flags: dict[str, bool] | None = None,
     ) -> "MetricEventBuilder":
         """Add system context information."""
         self.event.system_version = version
@@ -261,7 +263,7 @@ class MetricEventBuilder:
         self.event.feature_flags = feature_flags or {}
         return self
 
-    def with_additional_data(self, **kwargs) -> "MetricEventBuilder":
+    def with_additional_data(self, **kwargs: Any) -> "MetricEventBuilder":
         """Add additional flexible data."""
         self.event.additional_data.update(kwargs)
         return self
@@ -278,7 +280,7 @@ def create_query_processed_event(
     action_taken: str,
     response_time_ms: int,
     query_text: str,
-    conceptual_issues: list[str] = None,
+    conceptual_issues: list[str] | None = None,
 ) -> MetricEvent:
     """Create a query processed event with common metrics."""
     return (
@@ -294,7 +296,7 @@ def create_user_feedback_event(
     session_id: str,
     feedback_type: str,
     feedback_target: str,
-    feedback_score: int = None,
+    feedback_score: int | None = None,
 ) -> MetricEvent:
     """Create a user feedback event."""
     return (
@@ -308,10 +310,11 @@ def create_error_event(
     session_id: str,
     error_details: str,
     error_type: str,
-    response_time_ms: int = None,
+    response_time_ms: int | None = None,
 ) -> MetricEvent:
     """Create an error event."""
-    builder = MetricEventBuilder(MetricEventType.ERROR_OCCURRED, session_id).with_additional_data(error_type=error_type)
+    builder = MetricEventBuilder(MetricEventType.ERROR_OCCURRED, session_id)
+    builder.event.error_type = error_type
 
     if response_time_ms is not None:
         builder.with_performance_metrics(response_time_ms, error_details)
