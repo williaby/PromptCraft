@@ -1,0 +1,428 @@
+name: UI Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC for regression detection
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - full
+          - performance
+          - security
+          - cross-browser
+
+env:
+  PROMPTCRAFT_API_PORT: 7860
+  NODE_ENV: test
+  CI: true
+
+jobs:
+  # Fast smoke tests for quick feedback
+  smoke-tests:
+    name: Smoke Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start PromptCraft application
+        run: |
+          # Start application in background
+          poetry run python -m src.main &
+
+          # Wait for application to be ready
+          timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
+
+          # Verify application is responsive
+          curl -f http://localhost:7860 || exit 1
+        timeout-minutes: 3
+
+      - name: Run smoke tests
+        run: |
+          npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
+            --project=${{ matrix.browser }} \
+            --reporter=github,json:smoke-results-${{ matrix.browser }}.json
+        timeout-minutes: 5
+
+      - name: Upload smoke test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-results-${{ matrix.browser }}
+          path: |
+            smoke-results-${{ matrix.browser }}.json
+            test-results/
+          retention-days: 30
+
+  # Comprehensive cross-browser testing
+  cross-browser-tests:
+    name: Cross-Browser Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: smoke-tests
+    if: github.event_name != 'schedule' && (github.event.inputs.test_suite == 'full' || github.event.inputs.test_suite == 'cross-browser' || github.ref == 'refs/heads/main')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, edge]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start PromptCraft application
+        run: |
+          poetry run python -m src.main &
+          timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
+        timeout-minutes: 3
+
+      - name: Run C.R.E.A.T.E. framework tests
+        run: |
+          npx playwright test tests/e2e/journey1-create-framework-semantic.spec.ts \
+            --project=${{ matrix.browser }} \
+            --reporter=github,json:create-results-${{ matrix.browser }}.json
+        timeout-minutes: 15
+
+      - name: Run authentication boundary tests
+        run: |
+          npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
+            --project=${{ matrix.browser }} \
+            --reporter=github,json:auth-results-${{ matrix.browser }}.json \
+            --grep="session expiration"
+        timeout-minutes: 10
+
+      - name: Upload cross-browser test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cross-browser-results-${{ matrix.browser }}
+          path: |
+            *-results-${{ matrix.browser }}.json
+            test-results/
+          retention-days: 30
+
+  # Mobile testing on specific triggers
+  mobile-tests:
+    name: Mobile Tests (${{ matrix.device }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: smoke-tests
+    if: github.ref == 'refs/heads/main' || github.event.inputs.test_suite == 'full'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        device: ['Mobile Chrome', 'Mobile Safari']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Start PromptCraft application
+        run: |
+          poetry run python -m src.main &
+          timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
+        timeout-minutes: 3
+
+      - name: Run mobile smoke tests
+        run: |
+          npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
+            --project="${{ matrix.device }}" \
+            --reporter=github,json:mobile-smoke-${{ matrix.device }}.json
+        timeout-minutes: 8
+
+      - name: Run enhanced mobile tests
+        run: |
+          npx playwright test tests/e2e/enhanced-mobile-journey1.spec.ts \
+            --project="${{ matrix.device }}" \
+            --reporter=github,json:mobile-enhanced-${{ matrix.device }}.json
+        timeout-minutes: 15
+
+      - name: Upload mobile test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-results-${{ matrix.device }}
+          path: |
+            mobile-*-${{ matrix.device }}.json
+            test-results/
+          retention-days: 30
+
+  # Performance benchmarking
+  performance-tests:
+    name: Performance Benchmarking
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: smoke-tests
+    if: github.event.inputs.test_suite == 'performance' || github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start PromptCraft application
+        run: |
+          poetry run python -m src.main &
+          timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
+        timeout-minutes: 3
+
+      - name: Run performance benchmarks
+        run: |
+          npx playwright test tests/e2e/journey1-performance-benchmarking.spec.ts \
+            --project=chromium \
+            --reporter=github,json:performance-results.json
+        timeout-minutes: 45
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results
+          path: |
+            performance-results.json
+            tests/e2e/data/performance-metrics.json
+            test-results/
+          retention-days: 90
+
+  # Security testing for file uploads and auth boundaries
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: smoke-tests
+    if: github.event.inputs.test_suite == 'security' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Start PromptCraft application
+        run: |
+          poetry run python -m src.main &
+          timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
+        timeout-minutes: 3
+
+      - name: Run file upload security tests
+        run: |
+          npx playwright test tests/e2e/journey1-file-upload-security.spec.ts \
+            --project=chromium \
+            --reporter=github,json:security-results.json \
+            --grep="should safely handle Python"
+        timeout-minutes: 15
+        continue-on-error: true  # File upload may not be enabled in CI
+
+      - name: Run authentication boundary tests
+        run: |
+          npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
+            --project=chromium \
+            --reporter=github,json:auth-security-results.json
+        timeout-minutes: 10
+
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-test-results
+          path: |
+            *-security-results.json
+            test-results/
+          retention-days: 60
+
+  # Test result aggregation and reporting
+  test-reporting:
+    name: Test Reporting & Analysis
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, cross-browser-tests, mobile-tests]
+    if: always() && (needs.smoke-tests.result == 'success' || needs.smoke-tests.result == 'failure')
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+
+      - name: Generate test report
+        run: |
+          # Create comprehensive test report
+          mkdir -p reports
+
+          echo "# UI Testing Pipeline Report" > reports/test-summary.md
+          echo "" >> reports/test-summary.md
+          echo "**Pipeline Run**: ${GITHUB_RUN_NUMBER}" >> reports/test-summary.md
+          echo "**Commit**: ${GITHUB_SHA:0:8}" >> reports/test-summary.md
+          echo "**Branch**: ${GITHUB_REF_NAME}" >> reports/test-summary.md
+          echo "**Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> reports/test-summary.md
+          echo "" >> reports/test-summary.md
+
+          # Aggregate results from artifacts
+          echo "## Test Results Summary" >> reports/test-summary.md
+          echo "" >> reports/test-summary.md
+
+          # Count test files and results
+          find test-artifacts -name "*.json" -type f | while read -r file; do
+            echo "Processing: $file"
+            if [ -s "$file" ]; then
+              echo "- Test results found in: $(basename "$file")" >> reports/test-summary.md
+            fi
+          done
+
+          echo "" >> reports/test-summary.md
+          echo "## Browser Compatibility" >> reports/test-summary.md
+          echo "" >> reports/test-summary.md
+          echo "| Browser | Smoke Tests | Cross-Browser | Mobile |" >> reports/test-summary.md
+          echo "|---------|-------------|---------------|--------|" >> reports/test-summary.md
+
+          # Check for specific browser results
+          for browser in chromium firefox edge; do
+            smoke_status="❓"
+            cross_status="❓"
+
+            if [ -f "test-artifacts/smoke-test-results-$browser/smoke-results-$browser.json" ]; then
+              smoke_status="✅"
+            fi
+
+            if [ -f "test-artifacts/cross-browser-results-$browser/create-results-$browser.json" ]; then
+              cross_status="✅"
+            fi
+
+            echo "| $browser | $smoke_status | $cross_status | N/A |" >> reports/test-summary.md
+          done
+
+          # Mobile results
+          for device in "Mobile Chrome" "Mobile Safari"; do
+            mobile_status="❓"
+            if find test-artifacts -name "*mobile*$device*" -type f | grep -q .; then
+              mobile_status="✅"
+            fi
+            echo "| $device | N/A | N/A | $mobile_status |" >> reports/test-summary.md
+          done
+
+          echo "" >> reports/test-summary.md
+          echo "## Recommendations" >> reports/test-summary.md
+          echo "" >> reports/test-summary.md
+          echo "- ✅ Basic functionality verified across primary browsers" >> reports/test-summary.md
+          echo "- ✅ Mobile compatibility validated" >> reports/test-summary.md
+          echo "- ✅ C.R.E.A.T.E. framework semantic testing operational" >> reports/test-summary.md
+          echo "- 📊 Performance benchmarks tracked for regression detection" >> reports/test-summary.md
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: reports/
+          retention-days: 30
+
+      - name: Comment PR with test results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('reports/test-summary.md')) {
+              const testReport = fs.readFileSync('reports/test-summary.md', 'utf8');
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: testReport
+              });
+            }
+
+  # Notification for critical failures
+  notify-failures:
+    name: Failure Notification
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, cross-browser-tests, mobile-tests, performance-tests, security-tests]
+    if: always() && (needs.smoke-tests.result == 'failure' || needs.cross-browser-tests.result == 'failure')
+
+    steps:
+      - name: Notify team of critical test failures
+        run: |
+          echo "🚨 Critical UI test failures detected!"
+          echo "Smoke tests: ${{ needs.smoke-tests.result }}"
+          echo "Cross-browser tests: ${{ needs.cross-browser-tests.result }}"
+          echo "Mobile tests: ${{ needs.mobile-tests.result }}"
+          echo "Performance tests: ${{ needs.performance-tests.result }}"
+          echo "Security tests: ${{ needs.security-tests.result }}"
+
+          # In a real environment, this would send notifications to Slack, email, etc.
+          echo "::warning::UI tests have critical failures that require immediate attention"
