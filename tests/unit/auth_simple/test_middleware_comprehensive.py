@@ -66,7 +66,10 @@ class TestSimpleSessionManager:
         cf_context = {"cf_ray": "test-ray", "ip_country": "US"}
 
         session_id = session_manager.create_session(
-            email="admin@example.com", is_admin=True, user_tier="admin", cf_context=cf_context,
+            email="admin@example.com",
+            is_admin=True,
+            user_tier="admin",
+            cf_context=cf_context,
         )
 
         session = session_manager.sessions[session_id]
@@ -232,7 +235,9 @@ class TestCloudflareAccessMiddleware:
     def test_initialization_with_custom_session_manager(self, mock_validator, mock_session_manager):
         """Test initialization with custom session manager."""
         middleware = CloudflareAccessMiddleware(
-            app=None, whitelist_validator=mock_validator, session_manager=mock_session_manager,
+            app=None,
+            whitelist_validator=mock_validator,
+            session_manager=mock_session_manager,
         )
 
         assert middleware.session_manager == mock_session_manager
@@ -248,7 +253,9 @@ class TestCloudflareAccessMiddleware:
     def test_initialization_disable_cookies(self, mock_validator):
         """Test initialization with disabled session cookies."""
         middleware = CloudflareAccessMiddleware(
-            app=None, whitelist_validator=mock_validator, enable_session_cookies=False,
+            app=None,
+            whitelist_validator=mock_validator,
+            enable_session_cookies=False,
         )
 
         assert middleware.enable_session_cookies is False
@@ -292,7 +299,9 @@ class TestCloudflareAccessMiddleware:
         # Mock successful authentication flow
         with patch.object(CloudflareAccessMiddleware, "_authenticate_request", new_callable=AsyncMock):
             middleware = CloudflareAccessMiddleware(
-                app=None, whitelist_validator=mock_validator, session_manager=mock_session_manager,
+                app=None,
+                whitelist_validator=mock_validator,
+                session_manager=mock_session_manager,
             )
 
             response = await middleware.dispatch(mock_request, call_next)
@@ -344,7 +353,9 @@ class TestCloudflareAccessMiddleware:
         middleware = CloudflareAccessMiddleware(app=None, whitelist_validator=mock_validator)
 
         with patch.object(
-            middleware.cloudflare_auth, "extract_user_from_request", side_effect=CloudflareAuthError("No user found"),
+            middleware.cloudflare_auth,
+            "extract_user_from_request",
+            side_effect=CloudflareAuthError("No user found"),
         ):
             with pytest.raises(HTTPException) as exc_info:
                 await middleware._authenticate_request(mock_request)
@@ -399,7 +410,9 @@ class TestCloudflareAccessMiddleware:
         mock_session_manager.get_session.side_effect = mock_get_session
 
         middleware = CloudflareAccessMiddleware(
-            app=None, whitelist_validator=mock_validator, session_manager=mock_session_manager,
+            app=None,
+            whitelist_validator=mock_validator,
+            session_manager=mock_session_manager,
         )
 
         with (
@@ -439,7 +452,9 @@ class TestCloudflareAccessMiddleware:
         mock_session_manager.get_session.return_value = existing_session
 
         middleware = CloudflareAccessMiddleware(
-            app=None, whitelist_validator=mock_validator, session_manager=mock_session_manager,
+            app=None,
+            whitelist_validator=mock_validator,
+            session_manager=mock_session_manager,
         )
 
         with patch.object(middleware.cloudflare_auth, "extract_user_from_request", return_value=mock_user):
@@ -452,7 +467,10 @@ class TestCloudflareAccessMiddleware:
 
     @pytest.mark.asyncio
     async def test_authenticate_request_session_creation_failure(
-        self, mock_validator, mock_session_manager, mock_request,
+        self,
+        mock_validator,
+        mock_session_manager,
+        mock_request,
     ):
         """Test authentication when session creation fails."""
         mock_user = Mock()
@@ -467,7 +485,9 @@ class TestCloudflareAccessMiddleware:
         mock_session_manager.get_session.side_effect = [None, None]  # Creation fails
 
         middleware = CloudflareAccessMiddleware(
-            app=None, whitelist_validator=mock_validator, session_manager=mock_session_manager,
+            app=None,
+            whitelist_validator=mock_validator,
+            session_manager=mock_session_manager,
         )
 
         with (
@@ -635,5 +655,8 @@ class TestCreateAuthMiddleware:
             assert public_paths.issubset(middleware.all_public_paths)
 
             mock_create_validator.assert_called_once_with(
-                "test@example.com", "admin@example.com", "full@example.com", "limited@example.com",
+                "test@example.com",
+                "admin@example.com",
+                "full@example.com",
+                "limited@example.com",
             )

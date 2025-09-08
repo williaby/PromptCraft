@@ -27,7 +27,8 @@ class TestCloudflareUser:
     def test_valid_user_creation(self):
         """Test creating a valid CloudflareUser."""
         user = CloudflareUser(
-            email="test@example.com", headers={"cf-access-authenticated-user-email": "test@example.com"},
+            email="test@example.com",
+            headers={"cf-access-authenticated-user-email": "test@example.com"},
         )
         assert user.email == "test@example.com"
         assert user.source == "cloudflare_access"

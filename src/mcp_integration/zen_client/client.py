@@ -158,7 +158,9 @@ class ZenMCPStdioClient:
 
         try:
             result, used_mcp = await self.connection_manager.with_fallback_to_http(
-                mcp_operation, endpoint, request_data,
+                mcp_operation,
+                endpoint,
+                request_data,
             )
 
             return AnalysisResult(
@@ -197,7 +199,9 @@ class ZenMCPStdioClient:
 
         try:
             result, used_mcp = await self.connection_manager.with_fallback_to_http(
-                mcp_operation, endpoint, request_data,
+                mcp_operation,
+                endpoint,
+                request_data,
             )
 
             return ExecutionResult(
@@ -236,7 +240,9 @@ class ZenMCPStdioClient:
 
         try:
             result, used_mcp = await self.connection_manager.with_fallback_to_http(
-                mcp_operation, endpoint, request_data,
+                mcp_operation,
+                endpoint,
+                request_data,
             )
 
             # Handle model data format compatibility
