@@ -136,6 +136,7 @@ dmypy.json
 # Repository backup directories
 backup/
 backup_*/
+agents-backup/
 
 
 # Azure

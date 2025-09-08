@@ -15,6 +15,7 @@ omit =
     */zen-mcp-server/*
     /home/byron/dev/zen-mcp-server/*
     /home/byron/dev/PromptCraft/zen-mcp-server/*
+    agents-backup/*
 
 [report]
 exclude_lines =

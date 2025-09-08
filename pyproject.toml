@@ -351,6 +351,7 @@ omit = [
     "*/vendor/*",
     "*/__pycache__/*",
     "*/node_modules/*",
+    "agents-backup/*",
 ]
 
 [tool.coverage.report]
@@ -380,7 +381,7 @@ output = "coverage.xml"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra --strict-markers --strict-config --asyncio-mode=auto -m 'not slow' --tb=short"
+addopts = "-ra --strict-markers --strict-config --asyncio-mode=auto -m 'not slow' --tb=short --ignore=agents-backup"
 testpaths = ["tests"]
 pythonpath = [".", "scripts"]
 python_files = ["test_*.py", "*_test.py"]

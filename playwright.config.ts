@@ -23,22 +23,22 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:7860',
-    
+
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    
+
     /* Take screenshot on failure */
     screenshot: 'only-on-failure',
-    
+
     /* Record video on failure */
     video: 'retain-on-failure',
-    
+
     /* Set default timeouts */
     actionTimeout: 10000,
     navigationTimeout: 30000,
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for cross-browser testing */
   projects: [
     {
       name: 'chromium',
@@ -55,20 +55,21 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'] },
     },
 
-    /* Test against mobile viewports. */
+    // Mobile browser testing
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
     },
+
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
     },
 
-    /* Test against branded browsers. */
+    // Edge browser testing
     {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
+      name: 'edge',
+      use: { ...devices['Desktop Edge'] },
     },
   ],
 
@@ -90,10 +91,10 @@ export default defineConfig({
 
   /* Test output directory */
   outputDir: 'test-results/',
-  
+
   /* Global test timeout */
   timeout: 60 * 1000, // 60 seconds
-  
+
   /* Expect timeout for assertions */
   expect: {
     timeout: 15 * 1000, // 15 seconds

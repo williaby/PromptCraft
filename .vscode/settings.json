@@ -17,7 +17,8 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestArgs": [
         "-m",
-        "not slow and not performance and not stress"
+        "not slow and not performance and not stress",
+        "--ignore=agents-backup"
     ],
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     "python.testing.pytest.path": ["poetry", "run", "pytest"],
@@ -33,7 +34,8 @@
         "--cov-report=html",
         "--cov-report=xml:coverage.xml",
         "--junitxml=reports/junit.xml",
-        "--cov-report=term"
+        "--cov-report=term",
+        "--ignore=agents-backup"
     ],
     "ai-tools": {
         "validation": {
