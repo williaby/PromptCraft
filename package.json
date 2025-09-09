@@ -49,7 +49,10 @@
     "lint:md": "npx markdownlint-cli2 \"**/*.md\" --ignore node_modules --ignore webapp",
     "lint:md:fix": "npx markdownlint-cli2 \"**/*.md\" --ignore node_modules --ignore webapp --fix",
     "lint:md:standard": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore webapp",
-    "lint:md:standard:fix": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore webapp --fix"
+    "lint:md:standard:fix": "npx markdownlint \"**/*.md\" --ignore node_modules --ignore webapp --fix",
+    "mcp:install": "npm install",
+    "mcp:test": "node scripts/test-mcp-connections.js",
+    "mcp:list": "npm ls --depth=0 | grep mcp"
   },
   "repository": {
     "type": "git",
@@ -64,7 +67,11 @@
   "homepage": "https://github.com/williaby/PromptCraft#readme",
   "devDependencies": {
     "@playwright/test": "^1.55.0",
-    "markdownlint-cli2": "^0.13.0"
+    "markdownlint-cli2": "^0.13.0",
+    "@jschuller/perplexity-mcp": "latest",
+    "tavily-mcp": "latest",
+    "@upstash/context7-mcp": "latest",
+    "@sentry/mcp-server": "latest"
   },
   "packageManager": "npm@11.4.2+sha512.f90c1ec8b207b625d6edb6693aef23dacb39c38e4217fe8c46a973f119cab392ac0de23fe3f07e583188dae9fd9108b3845ad6f525b598742bd060ebad60bff3"
 }

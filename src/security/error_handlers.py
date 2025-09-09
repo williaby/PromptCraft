@@ -40,9 +40,9 @@ Called by:
 Complexity: O(1) for error response generation, O(n) for validation error processing where n is error count
 """
 
+from collections.abc import Callable
 import logging
 import traceback
-from collections.abc import Callable
 from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -53,6 +53,7 @@ from starlette.responses import Response
 
 from src.auth.exceptions import AuthExceptionHandler
 from src.config.settings import get_settings
+
 
 logger = logging.getLogger(__name__)
 

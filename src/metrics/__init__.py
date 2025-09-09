@@ -10,4 +10,5 @@ from .collector import MetricsCollector
 from .events import MetricEvent, MetricEventType
 from .storage import MetricsStorage
 
+
 __all__ = ["MetricEvent", "MetricEventType", "MetricsCollector", "MetricsStorage"]

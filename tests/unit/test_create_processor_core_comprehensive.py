@@ -4,12 +4,13 @@ This module provides comprehensive unit test coverage for the core CreateProcess
 class that implements the C.R.E.A.T.E. framework prompt processing functionality.
 """
 
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

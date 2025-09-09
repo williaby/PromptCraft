@@ -4,6 +4,7 @@ import os
 import sys
 from unittest import mock
 
+
 # Add the project root to sys.path so we can import launch_admin
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 import launch_admin
@@ -110,7 +111,7 @@ class TestLaunchAdmin:
 
             with mock.patch("launch_admin.main") as mock_main:
                 # Simulate running the script
-                exec(compile(open("launch_admin.py").read(), "launch_admin.py", "exec"))
+                exec(compile(open("scripts/launch_admin.py").read(), "scripts/launch_admin.py", "exec"))
 
                 # Note: This won't actually call main() in our test environment
                 # but we can verify the structure is correct

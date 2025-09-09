@@ -46,9 +46,9 @@ Called by:
 Complexity: O(1) for registration and retrieval operations
 """
 
+from collections.abc import Callable
 import inspect
 import logging
-from collections.abc import Callable
 from typing import Any
 
 from .exceptions import AgentRegistrationError

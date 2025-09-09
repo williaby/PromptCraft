@@ -1,9 +1,9 @@
 """Comprehensive tests for multi_journey_interface.py coverage gaps - targeting 0% coverage functions."""
 
+from pathlib import Path
 import tarfile
 import tempfile
 import time
-from pathlib import Path
 from unittest.mock import Mock
 
 import gradio as gr

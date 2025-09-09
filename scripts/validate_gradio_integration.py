@@ -8,8 +8,9 @@ the requirements specified in the Phase 1 Issue 5 implementation plan.
 
 import importlib.util
 import inspect
-import sys
 from pathlib import Path
+import sys
+
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent

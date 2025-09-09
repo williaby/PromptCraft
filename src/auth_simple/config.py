@@ -5,16 +5,16 @@ authentication system, including environment variable loading, validation, and
 feature flag management.
 """
 
-import logging
-import os
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
+import os
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
 from .whitelist import EmailWhitelistValidator
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +113,22 @@ class AuthConfig(BaseModel):
             return [email.strip() for email in v.split(",") if email.strip()]
         return v or []
 
+    @field_validator("full_users", mode="before")
+    @classmethod
+    def parse_full_users(cls, v: Any) -> list[str]:
+        """Parse full users from string or list."""
+        if isinstance(v, str):
+            return [email.strip() for email in v.split(",") if email.strip()]
+        return v or []
+
+    @field_validator("limited_users", mode="before")
+    @classmethod
+    def parse_limited_users(cls, v: Any) -> list[str]:
+        """Parse limited users from string or list."""
+        if isinstance(v, str):
+            return [email.strip() for email in v.split(",") if email.strip()]
+        return v or []
+
     @field_validator("public_paths", mode="before")
     @classmethod
     def parse_public_paths(cls, v: Any) -> set[str]:
@@ -147,7 +163,11 @@ class AuthConfig(BaseModel):
 
         # Check tier emails are in whitelist
         validator = EmailWhitelistValidator(
-            self.email_whitelist, self.admin_emails, self.full_users, self.limited_users, self.case_sensitive_emails,
+            self.email_whitelist,
+            self.admin_emails,
+            self.full_users,
+            self.limited_users,
+            self.case_sensitive_emails,
         )
 
         # Get additional validation warnings from the validator
@@ -303,6 +323,8 @@ class ConfigManager:
 
     def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
+        # Lazy import to avoid circular dependencies
+        from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
 
         validator = self.create_whitelist_validator()
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)

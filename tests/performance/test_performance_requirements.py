@@ -7,8 +7,8 @@ meet the strict 2-second response time requirement under various load conditions
 
 import asyncio
 import contextlib
-import time
 from statistics import mean, stdev
+import time
 
 import pytest
 

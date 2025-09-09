@@ -17,20 +17,22 @@ Test Coverage:
 import asyncio
 import contextlib
 import logging
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import pytest
 
+
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.ui.multi_journey_interface import MultiJourneyInterface
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

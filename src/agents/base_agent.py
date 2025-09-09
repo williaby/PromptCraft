@@ -53,10 +53,10 @@ Called by:
 Complexity: O(1) - Abstract interface with no algorithmic complexity
 """
 
+from abc import ABC, abstractmethod
 import asyncio
 import logging
 import time
-from abc import ABC, abstractmethod
 from typing import Any
 
 from src.utils.observability import (

@@ -12,8 +12,8 @@ Tests all functionality including:
 - Main function integration
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -389,6 +389,102 @@ class TestIntelligentFunctionLoader:
                 for indicator in expected_indicators:
                     assert indicator in enhanced
 
+    async def test_enhance_context_permission_error(self):
+        """Test context enhancement with PermissionError (covers lines 352-353)."""
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
+
+            # Mock Path operations to simulate PermissionError during rglob
+            with patch("examples.task_detection_integration.Path") as mock_path_class:
+                mock_path_instance = Mock()
+                mock_path_instance.exists.return_value = True
+                mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
+                
+                # Make rglob raise PermissionError to trigger the exception handling
+                mock_path_instance.rglob.side_effect = PermissionError("Access denied")
+                
+                mock_path_class.return_value = mock_path_instance
+                mock_path_class.cwd.return_value = mock_path_instance
+
+                # Test context enhancement with permission error
+                base_context = {"user_provided": "value"}
+                enhanced = await loader._enhance_context(base_context)
+
+                # Should complete successfully despite PermissionError
+                assert enhanced["user_provided"] == "value"
+                assert "working_directory" in enhanced
+                # file_extensions should be empty list due to PermissionError
+                assert enhanced["file_extensions"] == []
+
+    async def test_enhance_context_javascript_project(self):
+        """Test context enhancement with JavaScript files (covers line 361)."""
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
+
+            # Mock Path operations with JavaScript files
+            with patch("examples.task_detection_integration.Path") as mock_path_class:
+                mock_path_instance = Mock()
+                mock_path_instance.exists.return_value = True
+                mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
+
+                # Mock JavaScript files
+                mock_files = [
+                    Mock(is_file=lambda: True, suffix=".js"),
+                    Mock(is_file=lambda: True, suffix=".ts"),
+                    Mock(is_file=lambda: True, suffix=".jsx"),
+                ]
+                mock_path_instance.rglob.return_value = mock_files
+
+                mock_path_class.return_value = mock_path_instance
+                mock_path_class.cwd.return_value = mock_path_instance
+
+                # Test context enhancement
+                enhanced = await loader._enhance_context({})
+
+                # Should detect JavaScript project
+                assert enhanced["project_language"] == "javascript"
+                assert ".js" in enhanced["file_extensions"]
+                assert ".ts" in enhanced["file_extensions"]
+                assert ".jsx" in enhanced["file_extensions"]
+
+    async def test_enhance_context_java_project(self):
+        """Test context enhancement with Java files (covers line 363)."""
+        with (
+            patch("examples.task_detection_integration.TaskDetectionSystem"),
+            patch("examples.task_detection_integration.ConfigManager"),
+        ):
+            loader = IntelligentFunctionLoader("production")
+
+            # Mock Path operations with Java files
+            with patch("examples.task_detection_integration.Path") as mock_path_class:
+                mock_path_instance = Mock()
+                mock_path_instance.exists.return_value = True
+                mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
+
+                # Mock Java files
+                mock_files = [
+                    Mock(is_file=lambda: True, suffix=".java"),
+                    Mock(is_file=lambda: True, suffix=".kt"),
+                ]
+                mock_path_instance.rglob.return_value = mock_files
+
+                mock_path_class.return_value = mock_path_instance
+                mock_path_class.cwd.return_value = mock_path_instance
+
+                # Test context enhancement
+                enhanced = await loader._enhance_context({})
+
+                # Should detect Java project
+                assert enhanced["project_language"] == "java"
+                assert ".java" in enhanced["file_extensions"]
+                assert ".kt" in enhanced["file_extensions"]
+
     def test_load_functions_from_detection(self):
         """Test loading functions based on detection result."""
         with (
@@ -581,6 +677,93 @@ class TestTaskDetectionDemo:
         demo = TaskDetectionDemo()
 
         # Should run without exceptions
+        await demo.run_demo_scenarios()
+
+        # Check that loader was called for each scenario
+        assert mock_loader.load_functions_for_query.call_count == 6  # 6 scenarios in the demo
+
+    @patch("examples.task_detection_integration.IntelligentFunctionLoader")
+    async def test_run_demo_scenarios_with_fallback_applied(self, mock_loader_class):
+        """Test running demo scenarios with fallback applied (covers line 512)."""
+        # Mock the loader with fallback_applied=True
+        mock_loader = Mock()
+        mock_result = {
+            "detection_result": Mock(
+                categories={"core": True, "git": True},
+                confidence_scores={"core": 0.9, "git": 0.8},
+                fallback_applied=True,  # This will trigger line 512
+            ),
+            "stats": Mock(),
+        }
+        mock_loader.load_functions_for_query = AsyncMock(return_value=mock_result)
+        mock_loader.get_performance_summary.return_value = {
+            "average_detection_time_ms": 25.0,
+            "average_token_savings_percent": 70.0,
+            "performance_target_met": True,
+        }
+        mock_loader_class.return_value = mock_loader
+
+        demo = TaskDetectionDemo()
+
+        # Should run without exceptions and hit the fallback_applied branch
+        await demo.run_demo_scenarios()
+
+        # Check that loader was called for each scenario
+        assert mock_loader.load_functions_for_query.call_count == 6  # 6 scenarios in the demo
+
+    @patch("examples.task_detection_integration.IntelligentFunctionLoader")
+    async def test_run_demo_scenarios_with_top_scores(self, mock_loader_class):
+        """Test running demo scenarios with top scores (covers branch 521->500)."""
+        # Mock the loader with specific confidence scores
+        mock_loader = Mock()
+        mock_result = {
+            "detection_result": Mock(
+                categories={"core": True, "git": True, "analysis": True},
+                confidence_scores={"core": 0.9, "git": 0.8, "analysis": 0.7},  # Multiple scores for top_scores logic
+                fallback_applied=None,
+            ),
+            "stats": Mock(),
+        }
+        mock_loader.load_functions_for_query = AsyncMock(return_value=mock_result)
+        mock_loader.get_performance_summary.return_value = {
+            "average_detection_time_ms": 25.0,
+            "average_token_savings_percent": 70.0,
+            "performance_target_met": True,
+        }
+        mock_loader_class.return_value = mock_loader
+
+        demo = TaskDetectionDemo()
+
+        # Should run without exceptions and process top scores
+        await demo.run_demo_scenarios()
+
+        # Check that loader was called for each scenario
+        assert mock_loader.load_functions_for_query.call_count == 6  # 6 scenarios in the demo
+
+    @patch("examples.task_detection_integration.IntelligentFunctionLoader")  
+    async def test_run_demo_scenarios_empty_top_scores(self, mock_loader_class):
+        """Test running demo scenarios with empty top scores."""
+        # Mock the loader with empty confidence scores
+        mock_loader = Mock()
+        mock_result = {
+            "detection_result": Mock(
+                categories={"core": True, "git": True},
+                confidence_scores={},  # Empty scores to test empty top_scores
+                fallback_applied=None,
+            ),
+            "stats": Mock(),
+        }
+        mock_loader.load_functions_for_query = AsyncMock(return_value=mock_result)
+        mock_loader.get_performance_summary.return_value = {
+            "average_detection_time_ms": 25.0,
+            "average_token_savings_percent": 70.0,
+            "performance_target_met": True,
+        }
+        mock_loader_class.return_value = mock_loader
+
+        demo = TaskDetectionDemo()
+
+        # Should run without exceptions even with empty top_scores
         await demo.run_demo_scenarios()
 
         # Check that loader was called for each scenario
@@ -887,12 +1070,14 @@ class TestMainFunction:
         mock_validator_class.return_value = mock_validator
 
         # Mock config manager
-        mock_config_manager.return_value.list_configs.return_value = [
+        mock_config_manager_instance = Mock()
+        mock_config_manager_instance.list_configs.return_value = [
             "development",
             "production",
             "performance_critical",
         ]
-        mock_config_manager.return_value.get_config.return_value = Mock()
+        mock_config_manager_instance.get_config.return_value = Mock()
+        mock_config_manager.return_value = mock_config_manager_instance
 
         # Should run without exceptions
         await main()
@@ -900,7 +1085,48 @@ class TestMainFunction:
         # Verify all components were called
         mock_demo.run_demo_scenarios.assert_called_once()
         mock_validator.validate_accuracy.assert_called_once()
-        mock_config_manager.return_value.list_configs.assert_called_once()
+        mock_config_manager_instance.list_configs.assert_called_once()
+
+    @patch("examples.task_detection_integration.TaskDetectionDemo")
+    @patch("examples.task_detection_integration.AccuracyValidator")
+    @patch("examples.task_detection_integration.ConfigManager")
+    async def test_main_function_with_missing_configs(self, mock_config_manager, mock_validator_class, mock_demo_class):
+        """Test main function with missing configs (covers branch 624->623)."""
+        # Mock the demo and validator
+        mock_demo = Mock()
+        mock_demo.run_demo_scenarios = AsyncMock()
+        mock_demo_class.return_value = mock_demo
+
+        mock_validator = Mock()
+        mock_validator.validate_accuracy = AsyncMock(return_value={"precision": 0.9, "recall": 0.85, "f1_score": 0.87})
+        mock_validator_class.return_value = mock_validator
+
+        # Mock config manager with configs that DON'T include the expected ones
+        mock_config_manager_instance = Mock()
+        mock_config_manager_instance.list_configs.return_value = [
+            "testing",  # Different configs than expected
+            "staging", 
+        ]
+        mock_config_manager_instance.get_config.return_value = Mock()
+        mock_config_manager.return_value = mock_config_manager_instance
+
+        # Should run without exceptions even if configs are missing
+        await main()
+
+        # Verify components were still called
+        mock_demo.run_demo_scenarios.assert_called_once()
+        mock_validator.validate_accuracy.assert_called_once()
+        mock_config_manager_instance.list_configs.assert_called_once()
+        
+        # get_config should NOT be called for the missing configs
+        # Only called if configs exist in the list
+        config_calls = mock_config_manager_instance.get_config.call_args_list
+        called_configs = [call[0][0] for call in config_calls]
+        
+        # None of the expected configs should have been loaded since they're not in the list
+        assert "development" not in called_configs
+        assert "production" not in called_configs
+        assert "performance_critical" not in called_configs
 
     @patch("examples.task_detection_integration.TaskDetectionDemo")
     async def test_main_function_with_exception(self, mock_demo_class):

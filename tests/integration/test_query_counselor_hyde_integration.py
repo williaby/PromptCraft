@@ -6,12 +6,13 @@ validating the complete query processing workflow with enhanced retrieval.
 
 import asyncio
 import contextlib
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

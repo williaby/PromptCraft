@@ -1,7 +1,7 @@
 """Comprehensive tests for src/utils/encryption.py module."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import Mock, patch
 
 import pytest

@@ -1,0 +1,131 @@
+# MCP Server Discovery Configuration
+# Defines priority order and strategies for discovering MCP servers
+
+version: "1.0"
+
+# Global discovery settings
+settings:
+  cache_ttl_minutes: 5
+  health_check_timeout: 10
+  max_deployment_retries: 3
+  resource_check_enabled: true
+
+# Server-specific discovery configurations
+servers:
+  zen-mcp:
+    priority_order:
+      1: external_deployment    # Check for existing server first
+      2: user_installation      # Check user's dev environment
+      3: docker_sidecar         # Use docker-compose service
+      4: embedded_submodule     # Last resort: bundled version
+    
+    discovery_strategies:
+      external:
+        - type: port_check
+          ports: [8000, 8001, 8002]
+          health_endpoint: "/health"
+        - type: env_variable
+          variables: ["ZEN_MCP_URL", "PROMPTCRAFT_ZEN_MCP_SERVER_URL"]
+        - type: process_check
+          patterns: ["zen-mcp-server", "poetry run python -m src.main"]
+      
+      user:
+        - type: path_check
+          paths: 
+            - "~/dev/zen-mcp-server"
+            - "~/.claude/servers/zen-mcp"
+            - "../zen-mcp-server"
+        - type: lock_file
+          patterns: ["/tmp/.zen-mcp.lock", "~/.zen-mcp.lock"]
+    
+    resource_requirements:
+      memory_mb: 512
+      cpu_cores: 0.5
+      ports: [8000]
+      dependencies: ["python", "poetry"]
+    
+    deployment_config:
+      prevent_duplicate: true
+      auto_restart: true
+      health_check_interval: 60
+
+  context7:
+    priority_order:
+      1: npx_cloud            # Always prefer NPX for cloud servers
+      2: external_deployment  # User's deployment
+    
+    discovery_strategies:
+      npx:
+        - type: npx_available
+          package: "@upstash/context7-mcp"
+      external:
+        - type: env_variable
+          variables: ["CONTEXT7_URL", "UPSTASH_CONTEXT7_URL"]
+    
+    resource_requirements:
+      memory_mb: 100
+      cpu_cores: 0.1
+      dependencies: ["node", "npx"]
+    
+    deployment_config:
+      type: "npx"
+      on_demand: true
+
+  perplexity:
+    priority_order:
+      1: npx_cloud
+      2: external_deployment
+    
+    discovery_strategies:
+      npx:
+        - type: npx_available
+          package: "@jschuller/perplexity-mcp"
+      external:
+        - type: env_variable
+          variables: ["PERPLEXITY_MCP_URL"]
+    
+    resource_requirements:
+      memory_mb: 50
+      cpu_cores: 0.1
+      dependencies: ["node", "npx"]
+    
+    deployment_config:
+      type: "npx"
+      on_demand: true
+      requires_api_key: "PERPLEXITY_API_KEY"
+
+  sentry:
+    priority_order:
+      1: npx_cloud
+      2: external_deployment
+    
+    discovery_strategies:
+      npx:
+        - type: npx_available
+          package: "@sentry/mcp-server"
+      external:
+        - type: env_variable
+          variables: ["SENTRY_MCP_URL"]
+    
+    resource_requirements:
+      memory_mb: 75
+      cpu_cores: 0.1
+      dependencies: ["node", "npx"]
+    
+    deployment_config:
+      type: "npx"
+      on_demand: true
+      requires_api_key: "SENTRY_AUTH_TOKEN"
+
+# Global resource limits
+resource_limits:
+  total_memory_mb: 2048
+  max_concurrent_servers: 8
+  max_embedded_servers: 3  # Limit resource-heavy embedded servers
+
+# Production overrides
+production:
+  discovery_timeout: 30
+  health_check_timeout: 15
+  prefer_external: true  # Prefer external deployments in production
+  disable_embedded: false  # Can disable embedded servers in prod

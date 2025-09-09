@@ -9,8 +9,8 @@ Target Coverage: 90%+
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-import pytest
 from fastapi import HTTPException, Request
+import pytest
 
 from src.auth_simple.cloudflare_auth import (
     CloudflareAuthError,

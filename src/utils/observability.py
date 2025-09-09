@@ -6,16 +6,17 @@ comprehensive monitoring and debugging of the agent system. It includes
 tracing, metrics, and structured logging for production observability.
 """
 
+from collections.abc import Callable
+from contextlib import contextmanager
 import functools
 import json
 import logging
 import threading
 import time
-from collections.abc import Callable
-from contextlib import contextmanager
 from typing import Any
 
 from src.utils.time_utils import utc_timestamp
+
 
 # Optional OpenTelemetry imports
 try:

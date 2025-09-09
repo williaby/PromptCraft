@@ -5,11 +5,11 @@ It provides configuration status models and utilities for exposing operational
 information through health check endpoints without revealing sensitive data.
 """
 
+from datetime import datetime, timezone
 import logging
 import os
-import re
-from datetime import datetime, timezone
 from pathlib import Path
+import re
 from typing import Any
 
 from pydantic import BaseModel, Field, computed_field
@@ -22,6 +22,7 @@ from .settings import (
     validate_encryption_available,
 )
 from .validation import validate_configuration_on_startup
+
 
 # Conditional import for MCP integration to avoid circular imports
 try:

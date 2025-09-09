@@ -215,6 +215,28 @@ local.settings.json
 *_REVIEW.md
 *_PROGRESS.md
 
+# Database Files (Local Development)
+# =================================
+*.db
+*.sqlite
+*.sqlite3
+
+# Analysis and Report Files (Generated)
+# =================================
+*_analysis.json
+*_results.json
+*_violations.json
+*_errors*.txt
+lint_breakdown*.txt
+bandit_analysis.json
+mypy_analysis.txt
+
+# Temporary Directories
+# =================================
+temp*/
+tmp*/
+.tmp/
+
 # Documentation Build
 # =================================
 # MkDocs build output (deployed to GitHub Pages)

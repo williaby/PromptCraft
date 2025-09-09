@@ -1,8 +1,8 @@
 """Shared fixtures for authentication tests - compatible with simplified auth system."""
 
 import base64
-import json
 from datetime import timedelta
+import json
 from typing import Any
 from unittest.mock import Mock
 

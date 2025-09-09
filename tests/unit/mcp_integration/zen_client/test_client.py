@@ -361,16 +361,29 @@ class TestZenMCPStdioClient:
             await client._send_mcp_request("test_tool", {"arg": "value"})
 
     @pytest.mark.asyncio
-    async def test_read_response_success(self, mock_event_loop):
+    async def test_read_response_success(self):
         """Test successful response reading."""
         client = ZenMCPStdioClient(server_path="./test_server.py")
 
         mock_process = Mock()
         mock_process.stdout = Mock()
 
-        response = await client._read_response(mock_process, "test-id")
+        # Mock the response data that should be returned
+        response_data = '{"jsonrpc": "2.0", "id": "test-id", "result": {"test": "test response"}}'
 
-        assert "test response" in response
+        # Mock readline to return the response
+        mock_process.stdout.readline.return_value = response_data
+
+        with patch("asyncio.get_event_loop") as mock_get_loop:
+            mock_loop = Mock()
+            mock_get_loop.return_value = mock_loop
+
+            # Mock run_in_executor to return a coroutine that resolves to the mocked readline result
+            mock_loop.run_in_executor = AsyncMock(return_value=response_data)
+
+            response = await client._read_response(mock_process, "test-id")
+
+            assert "test response" in response
 
     @pytest.mark.asyncio
     async def test_read_response_no_stdout(self):

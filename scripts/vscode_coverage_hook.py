@@ -17,9 +17,10 @@ Integration Options:
 3. File Watcher: Continuous monitoring for changes
 """
 
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
+
 
 # Add scripts directory to path
 scripts_dir = Path(__file__).parent

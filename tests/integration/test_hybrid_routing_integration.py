@@ -6,11 +6,12 @@ QueryCounselor and HydeProcessor, demonstrating end-to-end hybrid routing
 functionality with OpenRouter API fallback to MCP services.
 """
 
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))
@@ -21,10 +22,8 @@ from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import (
     MCPConnectionState,
     MCPHealthStatus,
-    WorkflowStep,
-)
-from src.mcp_integration.mcp_client import (
     Response as MCPResponse,
+    WorkflowStep,
 )
 
 

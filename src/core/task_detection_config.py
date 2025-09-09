@@ -6,9 +6,9 @@ performance characteristics, and fallback behavior.
 """
 
 import contextlib
-import json
 from dataclasses import dataclass, field
 from enum import Enum
+import json
 from pathlib import Path
 from typing import Any
 

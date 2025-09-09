@@ -6,16 +6,17 @@ learning-based improvements to the function loading system.
 """
 
 import asyncio
-import json
-import logging
-import sqlite3
 from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
+import json
+import logging
 from pathlib import Path
+import sqlite3
 from typing import Any
 
 from src.utils.datetime_compat import UTC, timedelta
+
 
 logger = logging.getLogger(__name__)
 

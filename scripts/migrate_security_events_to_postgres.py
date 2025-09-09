@@ -24,20 +24,22 @@ Requirements:
 
 import argparse
 import asyncio
+from datetime import UTC, datetime
 import json
 import logging
+from pathlib import Path
 import shutil
 import sqlite3
 import sys
-from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
+
 
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.auth.database.security_events_postgres import SecurityEventsPostgreSQL
 from src.auth.models import SecurityEventCreate, SecurityEventSeverity, SecurityEventType
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

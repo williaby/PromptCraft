@@ -35,6 +35,7 @@ from src.core.vector_store import (
     vector_store_connection,
 )
 
+
 # Import for integration tests
 try:
     from src.core.hyde_processor import HydeProcessor, HypotheticalDocument

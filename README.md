@@ -69,6 +69,63 @@ This project is built on several key concepts and a unique hybrid architecture.
 | **Application Host**         | Ubuntu VM           | Hosts MCP stack on VM (192.168.1.205)               |
 | **Unified Access**           | Cloudflared Tunnel  | Single domain access for all journeys              |
 
+### 🚀 Hybrid Infrastructure Discovery
+
+PromptCraft features an intelligent **Hybrid Infrastructure Discovery System** that seamlessly migrates user-level configurations to project-level deployment while preventing resource conflicts and duplication.
+
+**Key Capabilities:**
+
+* **Smart Service Detection**: Automatically discovers existing MCP servers from multiple sources (user-level ~/.claude, Docker containers, NPX services, environment variables)
+* **Anti-Duplication**: File locks and resource monitoring prevent duplicate service deployment
+* **Cascade Loading**: Intelligent fallback strategy (External → User → Project → Docker → NPX)
+* **Agent Discovery**: 24+ YAML-defined AI agents automatically detected and available for dynamic loading
+* **Resource Management**: CPU/memory constraints and performance monitoring prevent system degradation
+
+**Discovery API Endpoints:**
+
+* `/api/discovery/agents` - List available agents (24+ detected)
+* `/api/discovery/status` - Infrastructure health monitoring
+* `/api/discovery/mcp-servers` - MCP server discovery status
+* `/api/agents/{id}/load` - Dynamic agent loading
+* `/api/agents/{id}/unload` - Resource cleanup
+
+**Benefits:**
+
+* ✅ **Zero Configuration**: Automatically detects and reuses existing services
+* ✅ **Resource Efficient**: Eliminates duplicate deployments and optimizes memory usage
+* ✅ **Production Ready**: Team deployment without manual service setup
+* ✅ **Development Friendly**: Works seamlessly with local development environments
+
+**Usage Examples:**
+
+```python
+# Discover and connect to MCP servers
+from mcp_integration.smart_discovery import SmartMCPDiscovery
+
+discovery = SmartMCPDiscovery()
+
+# Auto-discover context7 MCP server (NPX-based)
+context7 = await discovery.discover_server("context7")
+# Returns: ServerConnection(url="npx://@upstash/context7-mcp", type="npx", ...)
+
+# Auto-discover zen-mcp server (local deployment)  
+zen_mcp = await discovery.discover_server("zen-mcp")
+# Returns: ServerConnection(url="http://localhost:8000", type="embedded", ...)
+```
+
+```bash
+# Test NPX MCP integration
+npm install  # Installs @upstash/context7-mcp, @jschuller/perplexity-mcp, etc.
+python validate_npx_integration.py  # Validates complete NPX setup
+
+# Discovery API endpoints
+curl http://localhost:7862/api/discovery/status          # Infrastructure status
+curl http://localhost:7862/api/discovery/mcp-servers     # Available MCP servers
+curl http://localhost:7862/api/discovery/agents          # Available agents
+```
+
+> _For detailed technical implementation, see [ADR-014: Hybrid Infrastructure Discovery](./docs/planning/ADR.md#17-adr-014-hybrid-infrastructure-discovery-and-integration)._
+
 > _For a complete breakdown of the architecture and the rationale behind these choices, please see our
 [**Architecture Decision Record (ADR)**](./docs/planning/ADR.md)._
 

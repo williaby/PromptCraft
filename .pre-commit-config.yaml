@@ -32,7 +32,14 @@ repos:
         entry: poetry run ruff check
         language: system
         types: [python]
-        args: [--fix, --exit-non-zero-on-fix, --line-length=120]
+        args: [--fix, --line-length=120]
+      - id: ruff-datetime-check
+        name: ruff-datetime-check
+        entry: poetry run ruff check
+        language: system
+        types: [python]
+        files: ^src/
+        args: [--select=DTZ005, --line-length=120]
       - id: mypy
         name: mypy
         entry: poetry run mypy

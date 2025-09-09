@@ -22,6 +22,7 @@ from . import (
     setup_auth_middleware,
 )
 
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -142,7 +143,11 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
 
     return {
         "authenticated": True,
-        "user": {"email": user["email"], "role": user["role"], "is_admin": is_admin_user(request)},
+        "user": {
+            "email": user.get("email", "unknown"), 
+            "role": user.get("role", "user"), 
+            "is_admin": is_admin_user(request),
+        },
     }
 
 

@@ -7,13 +7,16 @@ for the application with comprehensive security hardening.
 Note: Security configuration uses environment variables for flexible deployment.
 """
 
-import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import logging
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.agents.discovery import AgentDiscoverySystem, AgentResourceManager, DynamicAgentLoader
+from src.api.hybrid_infrastructure_endpoints import register_hybrid_infrastructure_routes
 
 # AUTH-4 Router imports removed - complex authentication system cleaned up
 # Simplified authentication system
@@ -36,6 +39,9 @@ from src.config.settings import (
     get_settings,
 )
 
+# Hybrid infrastructure imports
+from src.mcp_integration.config_manager import MCPConfigurationManager
+
 # Security imports
 from src.security.audit_logging import AuditEventSeverity, AuditEventType, audit_logger_instance
 from src.security.error_handlers import setup_secure_error_handlers
@@ -43,6 +49,7 @@ from src.security.input_validation import SecureQueryParams, SecureTextInput
 from src.security.middleware import setup_security_middleware
 from src.security.rate_limiting import RateLimits, rate_limit, setup_rate_limiting
 from src.utils.circuit_breaker import get_all_circuit_breakers
+
 
 # Configure logging
 logging.basicConfig(
@@ -79,6 +86,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Store settings in app state for access in endpoints
         app.state.settings = settings
+        
+        # Initialize hybrid infrastructure
+        logger.info("Initializing hybrid infrastructure...")
+        
+        # Initialize MCP configuration manager with discovery
+        app.state.mcp_manager = MCPConfigurationManager(enable_discovery=True)
+        logger.info("MCP configuration manager initialized")
+        
+        # Initialize agent discovery and resource management
+        app.state.agent_discovery = AgentDiscoverySystem()
+        app.state.agent_resource_manager = AgentResourceManager()
+        app.state.agent_loader = DynamicAgentLoader(
+            app.state.agent_discovery,
+            app.state.agent_resource_manager,
+        )
+        logger.info("Agent discovery system initialized")
+        
+        # Log available agents
+        available_agents = app.state.agent_discovery.get_available_agents()
+        logger.info(f"Found {len(available_agents)} available agents: {available_agents[:10]}...")
 
         # Log application startup audit event
         audit_logger_instance.log_security_event(
@@ -127,6 +154,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
         raise
     finally:
+        # Cleanup hybrid infrastructure resources
+        if hasattr(app.state, "agent_resource_manager"):
+            try:
+                resource_usage = app.state.agent_resource_manager.get_resource_usage()
+                logger.info(f"Final resource usage: {resource_usage}")
+            except Exception as e:
+                logger.warning(f"Failed to get resource usage during shutdown: {e}")
+        
         # Log application shutdown
         audit_logger_instance.log_security_event(
             AuditEventType.ADMIN_SYSTEM_SHUTDOWN,
@@ -215,8 +250,11 @@ def create_app() -> FastAPI:
         app.include_router(audit_router)
         app.include_router(role_router)
         app.include_router(create_router)
+        
+        # Register hybrid infrastructure routes
+        register_hybrid_infrastructure_routes(app)
 
-        logger.info("API routers configured: auth, system, audit, roles, create")
+        logger.info("API routers configured: auth, system, audit, roles, create, hybrid-infrastructure")
     except ImportError as e:
         logger.warning("Some API routers could not be imported (continuing without them): %s", e)
 

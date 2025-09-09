@@ -5,9 +5,10 @@ that can be used across the entire PromptCraft project for security-sensitive
 operations like jitter, sampling, and simulation.
 """
 
-import secrets
 from collections.abc import Sequence
+import secrets
 from typing import Any, TypeVar
+
 
 T = TypeVar("T")
 

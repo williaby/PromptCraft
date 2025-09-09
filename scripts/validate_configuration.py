@@ -9,9 +9,10 @@ This script addresses Phase 1 Issue 44: Configuration Standardization and Line L
 """
 
 import json
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
+
 
 try:
     import tomllib

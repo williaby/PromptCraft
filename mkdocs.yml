@@ -23,6 +23,8 @@ nav:
       - Four Journeys: planning/four-journeys.md
   - Planning:
       - Project Hub: planning/project_hub.md
+      - Project Overview: planning/overview.md
+      - File Review: planning/file-review.md
       - Development Guidelines: planning/development.md
       - Architecture: planning/ADR.md
       - Phase 1 Issues: planning/phase-1-issues.md

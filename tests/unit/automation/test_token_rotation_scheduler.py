@@ -7,11 +7,9 @@ functionality, including scheduling, execution, notifications, and error handlin
 FIXED: Uses dependency injection to prevent ServiceTokenManager initialization hangs.
 """
 
-import pytest
 import asyncio
 from datetime import datetime, timedelta
-from unittest.mock import Mock, AsyncMock, patch, call
-from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock, Mock, call, patch
 
 from src.automation.token_rotation_scheduler import (
     TokenRotationPlan,
@@ -43,7 +41,7 @@ class TestTokenRotationPlan:
             token_name="test-token",
             token_id="token-123",
             rotation_reason="Age-based rotation",
-            scheduled_time=scheduled_time
+            scheduled_time=scheduled_time,
         )
 
         assert plan.token_name == "test-token"
@@ -69,7 +67,7 @@ class TestTokenRotationPlan:
             rotation_reason="High usage rotation",
             scheduled_time=scheduled_time,
             rotation_type="usage_based",
-            metadata=metadata
+            metadata=metadata,
         )
 
         assert plan.rotation_type == "usage_based"
@@ -84,7 +82,7 @@ class TestTokenRotationPlan:
             token_name="status-token",
             token_id="status-123",
             rotation_reason="Status test",
-            scheduled_time=scheduled_time
+            scheduled_time=scheduled_time,
         )
 
         # Initial state
@@ -110,10 +108,11 @@ class TestTokenRotationSchedulerInit:
 
     def test_scheduler_initialization_default(self):
         """Test scheduler initializes with default settings."""
-        scheduler = TokenRotationScheduler()
+        mock_token_manager = create_mock_token_manager()
+        scheduler = TokenRotationScheduler(token_manager=mock_token_manager)
 
         assert scheduler.settings is None
-        assert hasattr(scheduler, 'token_manager')
+        assert hasattr(scheduler, "token_manager")
         assert scheduler.default_rotation_age_days == 90
         assert scheduler.high_usage_threshold == 1000
         assert scheduler.high_usage_rotation_days == 30
@@ -126,11 +125,12 @@ class TestTokenRotationSchedulerInit:
         """Test scheduler initialization with custom settings."""
         mock_settings = Mock()
         mock_settings.token_rotation_age_days = 60
+        mock_token_manager = create_mock_token_manager()
 
-        scheduler = TokenRotationScheduler(settings=mock_settings)
+        scheduler = TokenRotationScheduler(settings=mock_settings, token_manager=mock_token_manager)
 
         assert scheduler.settings is mock_settings
-        assert hasattr(scheduler, 'token_manager')
+        assert hasattr(scheduler, "token_manager")
 
 
 class TestCalculateMaintenanceWindow:
@@ -141,7 +141,7 @@ class TestCalculateMaintenanceWindow:
         mock_token_manager = create_mock_token_manager()
         self.scheduler = TokenRotationScheduler(token_manager=mock_token_manager)
 
-    @patch('src.automation.token_rotation_scheduler.datetime')
+    @patch("src.automation.token_rotation_scheduler.datetime")
     def test_calculate_next_maintenance_window_before_2am(self, mock_datetime):
         """Test maintenance window calculation when current time is before 2 AM."""
         # Mock current time as 1:30 AM UTC
@@ -154,28 +154,28 @@ class TestCalculateMaintenanceWindow:
         expected = datetime(2024, 1, 15, 2, 0, 0, tzinfo=UTC)
         assert result == expected
 
-    @patch('src.automation.token_rotation_scheduler.datetime')
+    @patch("src.automation.token_rotation_scheduler.datetime")
     def test_calculate_next_maintenance_window_after_2am(self, mock_datetime):
         """Test maintenance window calculation when current time is after 2 AM."""
         # Mock current time as 3:30 AM UTC
         mock_now = datetime(2024, 1, 15, 3, 30, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
 
-        with patch('src.automation.token_rotation_scheduler.timedelta', wraps=timedelta):
+        with patch("src.automation.token_rotation_scheduler.timedelta", wraps=timedelta):
             result = self.scheduler._calculate_next_maintenance_window()
 
         # Should schedule for tomorrow at 2 AM
         expected = datetime(2024, 1, 16, 2, 0, 0, tzinfo=UTC)
         assert result == expected
 
-    @patch('src.automation.token_rotation_scheduler.datetime')
+    @patch("src.automation.token_rotation_scheduler.datetime")
     def test_calculate_next_maintenance_window_exactly_2am(self, mock_datetime):
         """Test maintenance window calculation when current time is exactly 2 AM."""
         # Mock current time as exactly 2:00 AM UTC
         mock_now = datetime(2024, 1, 15, 2, 0, 0, tzinfo=UTC)
         mock_datetime.now.return_value = mock_now
 
-        with patch('src.automation.token_rotation_scheduler.timedelta', wraps=timedelta):
+        with patch("src.automation.token_rotation_scheduler.timedelta", wraps=timedelta):
             result = self.scheduler._calculate_next_maintenance_window()
 
         # Should schedule for tomorrow at 2 AM
@@ -214,7 +214,7 @@ class TestAnalyzeTokensForRotation:
             yield mock_session
 
         # Mock get_db function for age-based test
-        with patch('src.automation.token_rotation_scheduler.get_db', return_value=mock_db_generator()):
+        with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
             plans = await self.scheduler.analyze_tokens_for_rotation()
 
         assert len(plans) == 1
@@ -249,7 +249,7 @@ class TestAnalyzeTokensForRotation:
             yield mock_session
 
         # Mock get_db function for usage-based test
-        with patch('src.automation.token_rotation_scheduler.get_db', return_value=mock_db_generator()):
+        with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
             plans = await self.scheduler.analyze_tokens_for_rotation()
 
         assert len(plans) == 1
@@ -282,19 +282,18 @@ class TestAnalyzeTokensForRotation:
             yield mock_session
 
         # Mock get_db function
-        with patch('src.automation.token_rotation_scheduler.get_db', return_value=mock_db_generator()):
+        with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
+            plans = await self.scheduler.analyze_tokens_for_rotation()
 
-        plans = await self.scheduler.analyze_tokens_for_rotation()
-
-        assert len(plans) == 1
-        plan = plans[0]
-        assert plan.rotation_type == "manual"
-        assert "Manual rotation requested" in plan.rotation_reason
+            assert len(plans) == 1
+            plan = plans[0]
+            assert plan.rotation_type == "manual"
+            assert "Manual rotation requested" in plan.rotation_reason
 
     async def test_analyze_tokens_for_rotation_database_error(self):
         """Test analysis handles database errors gracefully."""
         # Mock database to raise exception
-        with patch('src.automation.token_rotation_scheduler.get_db', side_effect=Exception("Database connection failed")):
+        with patch("src.automation.token_rotation_scheduler.get_db", side_effect=Exception("Database connection failed")):
             plans = await self.scheduler.analyze_tokens_for_rotation()
 
         # Should return mock plan when database fails
@@ -313,9 +312,8 @@ class TestAnalyzeTokensForRotation:
             yield mock_session
 
         # Mock get_db function
-        with patch('src.automation.token_rotation_scheduler.get_db', return_value=mock_db_generator()):
-
-        plans = await self.scheduler.analyze_tokens_for_rotation()
+        with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
+            plans = await self.scheduler.analyze_tokens_for_rotation()
 
         # Should return mock plan for testing
         assert len(plans) == 1
@@ -339,7 +337,7 @@ class TestScheduleTokenRotation:
             token_name="schedule-token",
             token_id="schedule-123",
             rotation_reason="Test scheduling",
-            scheduled_time=future_time
+            scheduled_time=future_time,
         )
 
         # Mock notification method
@@ -360,7 +358,7 @@ class TestScheduleTokenRotation:
             token_name="past-token",
             token_id="past-123",
             rotation_reason="Past time test",
-            scheduled_time=past_time
+            scheduled_time=past_time,
         )
 
         result = await self.scheduler.schedule_token_rotation(plan)
@@ -375,7 +373,7 @@ class TestScheduleTokenRotation:
             token_name="error-token",
             token_id="error-123",
             rotation_reason="Error test",
-            scheduled_time=future_time
+            scheduled_time=future_time,
         )
 
         # Mock notification to raise exception
@@ -400,12 +398,12 @@ class TestExecuteRotationPlan:
             token_name="execute-token",
             token_id="execute-123",
             rotation_reason="Execution test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock successful rotation
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            return_value=("new_token_value", "new_token_id")
+            return_value=("new_token_value", "new_token_id"),
         )
         self.scheduler._send_rotation_notification = AsyncMock()
 
@@ -429,12 +427,12 @@ class TestExecuteRotationPlan:
             token_name="failover-token",
             token_id="failover-123",
             rotation_reason="Failover test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock token manager to raise exception (triggering mock fallback)
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            side_effect=Exception("Token manager failed")
+            side_effect=Exception("Token manager failed"),
         )
         self.scheduler._send_rotation_notification = AsyncMock()
 
@@ -452,7 +450,7 @@ class TestExecuteRotationPlan:
             token_name="noresult-token",
             token_id="noresult-123",
             rotation_reason="No result test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock token manager to return None
@@ -475,12 +473,12 @@ class TestExecuteRotationPlan:
             token_name="exception-token",
             token_id="exception-123",
             rotation_reason="Exception test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock notification to raise exception after token manager
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            return_value=("token", "id")
+            return_value=("token", "id"),
         )
         # Make _send_rotation_notification raise exception on "completed" call
         def notification_side_effect(plan, event_type):
@@ -502,11 +500,11 @@ class TestExecuteRotationPlan:
             token_name=long_token_name,
             token_id="long-123",
             rotation_reason="Very long rotation reason that exceeds fifty characters and should be truncated for security",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            return_value=("new_token", "new_id")
+            return_value=("new_token", "new_id"),
         )
         self.scheduler._send_rotation_notification = AsyncMock()
 
@@ -530,7 +528,7 @@ class TestNotificationSystem:
             token_name="notify-token",
             token_id="notify-123",
             rotation_reason="Notification test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock notification callbacks
@@ -550,7 +548,7 @@ class TestNotificationSystem:
             token_name="callback-error-token",
             token_id="callback-error-123",
             rotation_reason="Callback error test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         # Mock callbacks - one succeeds, one fails
@@ -570,7 +568,7 @@ class TestNotificationSystem:
             token_name="event-token",
             token_id="event-123",
             rotation_reason="Event test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         callback = AsyncMock()
@@ -593,7 +591,7 @@ class TestSchedulerWorkflowMethods:
         mock_token_manager = create_mock_token_manager()
         self.scheduler = TokenRotationScheduler(token_manager=mock_token_manager)
 
-    @patch('src.automation.token_rotation_scheduler.datetime')
+    @patch("src.automation.token_rotation_scheduler.datetime")
     async def test_run_scheduled_rotations_with_pending(self, mock_datetime):
         """Test running scheduled rotations with pending plans."""
         # Mock current time
@@ -605,14 +603,14 @@ class TestSchedulerWorkflowMethods:
             token_name="ready-token",
             token_id="ready-123",
             rotation_reason="Ready for rotation",
-            scheduled_time=mock_now - timedelta(minutes=1)  # Past due
+            scheduled_time=mock_now - timedelta(minutes=1),  # Past due
         )
 
         future_plan = TokenRotationPlan(
             token_name="future-token",
             token_id="future-123",
             rotation_reason="Future rotation",
-            scheduled_time=mock_now + timedelta(hours=1)  # Future
+            scheduled_time=mock_now + timedelta(hours=1),  # Future
         )
 
         self.scheduler._rotation_plans = [ready_plan, future_plan]
@@ -665,7 +663,7 @@ class TestSchedulerWorkflowMethods:
             token_name="cycle-token",
             token_id="cycle-123",
             rotation_reason="Full cycle test",
-            scheduled_time=datetime.now(UTC) + timedelta(hours=1)
+            scheduled_time=datetime.now(UTC) + timedelta(hours=1),
         )
 
         self.scheduler.analyze_tokens_for_rotation = AsyncMock(return_value=[mock_plan])
@@ -673,7 +671,7 @@ class TestSchedulerWorkflowMethods:
         self.scheduler.run_scheduled_rotations = AsyncMock(return_value={
             "status": "no_rotations_due",
             "timestamp": datetime.now(UTC).isoformat(),
-            "scheduled_count": 0
+            "scheduled_count": 0,
         })
 
         result = await self.scheduler.run_rotation_scheduler()
@@ -703,7 +701,7 @@ class TestErrorHandlingAndEdgeCases:
             token_name=malicious_name,
             token_id="sanitize-123",
             rotation_reason="Sanitization test",
-            scheduled_time=datetime.now(UTC) + timedelta(hours=1)
+            scheduled_time=datetime.now(UTC) + timedelta(hours=1),
         )
 
         # Mock notification to avoid actual calls
@@ -721,11 +719,11 @@ class TestErrorHandlingAndEdgeCases:
             token_name="reason-token",
             token_id="reason-123",
             rotation_reason=long_reason,
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            return_value=("token", "id")
+            return_value=("token", "id"),
         )
         self.scheduler._send_rotation_notification = AsyncMock()
 
@@ -741,13 +739,13 @@ class TestErrorHandlingAndEdgeCases:
                 token_name=f"concurrent-token-{i}",
                 token_id=f"concurrent-{i}",
                 rotation_reason=f"Concurrent test {i}",
-                scheduled_time=datetime.now(UTC)
+                scheduled_time=datetime.now(UTC),
             )
             plans.append(plan)
 
         # Mock successful rotations
         self.scheduler.token_manager.rotate_service_token = AsyncMock(
-            return_value=("token", "id")
+            return_value=("token", "id"),
         )
         self.scheduler._send_rotation_notification = AsyncMock()
 
@@ -761,19 +759,23 @@ class TestErrorHandlingAndEdgeCases:
 
     async def test_start_rotation_daemon_parameters(self):
         """Test daemon startup with various parameter combinations."""
-        # Create shutdown event that's immediately set to prevent infinite loop
+        # Create shutdown event that will be set after first iteration
         shutdown_event = asyncio.Event()
-        shutdown_event.set()  # Immediately set to stop the daemon
 
         # Mock run_rotation_scheduler to avoid actual processing
-        self.scheduler.run_rotation_scheduler = AsyncMock(return_value={
-            "status": "completed",
-            "new_plans_created": 0,
-            "new_plans_scheduled": 0,
-            "rotations_completed": 0
-        })
+        async def mock_run_scheduler():
+            # Set shutdown event after first call to prevent infinite loop
+            shutdown_event.set()
+            return {
+                "status": "completed",
+                "new_plans_created": 0,
+                "new_plans_scheduled": 0,
+                "rotations_completed": 0,
+            }
 
-        # Test with default parameters - should exit immediately due to shutdown event
+        self.scheduler.run_rotation_scheduler = AsyncMock(side_effect=mock_run_scheduler)
+
+        # Test with default parameters - should call run_rotation_scheduler once then exit
         await self.scheduler.start_rotation_daemon(shutdown_event=shutdown_event)
 
         # Verify the scheduler was called at least once
@@ -795,7 +797,7 @@ class TestErrorHandlingAndEdgeCases:
             token_name="callback-test",
             token_id="callback-123",
             rotation_reason="Callback registration test",
-            scheduled_time=datetime.now(UTC)
+            scheduled_time=datetime.now(UTC),
         )
 
         await self.scheduler._send_rotation_notification(plan, "scheduled")
@@ -815,7 +817,7 @@ class TestIntegrationScenarios:
     async def test_complete_rotation_workflow(self):
         """Test complete rotation workflow from analysis to completion."""
         # Step 1: Mock database analysis
-        with patch('src.automation.token_rotation_scheduler.get_db') as mock_get_db:
+        with patch("src.automation.token_rotation_scheduler.get_db") as mock_get_db:
             mock_session = AsyncMock()
             mock_result = Mock()
 
@@ -835,28 +837,28 @@ class TestIntegrationScenarios:
                 yield mock_session
 
             # Mock get_db function
-        with patch('src.automation.token_rotation_scheduler.get_db', return_value=mock_db_generator()):
+            with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
 
-            # Step 2: Analyze tokens
-            plans = await self.scheduler.analyze_tokens_for_rotation()
-            assert len(plans) == 1
+                # Step 2: Analyze tokens
+                plans = await self.scheduler.analyze_tokens_for_rotation()
+                assert len(plans) == 1
 
-            # Step 3: Schedule rotation
-            self.scheduler._send_rotation_notification = AsyncMock()
-            scheduled = await self.scheduler.schedule_token_rotation(plans[0])
-            assert scheduled is True
+                # Step 3: Schedule rotation
+                self.scheduler._send_rotation_notification = AsyncMock()
+                scheduled = await self.scheduler.schedule_token_rotation(plans[0])
+                assert scheduled is True
 
-            # Step 4: Execute rotation
-            self.scheduler.token_manager.rotate_service_token = AsyncMock(
-                return_value=("new_token", "new_id")
-            )
-            executed = await self.scheduler.execute_rotation_plan(plans[0])
-            assert executed is True
+                # Step 4: Execute rotation
+                self.scheduler.token_manager.rotate_service_token = AsyncMock(
+                    return_value=("new_token", "new_id"),
+                )
+                executed = await self.scheduler.execute_rotation_plan(plans[0])
+                assert executed is True
 
-            # Step 5: Verify final state
-            assert plans[0].status == "completed"
-            assert plans[0].new_token_value == "new_token"
-            assert plans[0].new_token_id == "new_id"
+                # Step 5: Verify final state
+                assert plans[0].status == "completed"
+                assert plans[0].new_token_value == "new_token"
+                assert plans[0].new_token_id == "new_id"
 
     async def test_high_volume_rotation_scenario(self):
         """Test handling of high-volume rotation scenario."""
@@ -867,7 +869,7 @@ class TestIntegrationScenarios:
                 token_name=f"volume-token-{i}",
                 token_id=f"volume-{i}",
                 rotation_reason=f"High volume test {i}",
-                scheduled_time=datetime.now(UTC) - timedelta(minutes=i)  # Stagger times
+                scheduled_time=datetime.now(UTC) - timedelta(minutes=i),  # Stagger times
             )
             plans.append(plan)
 
@@ -891,14 +893,14 @@ class TestIntegrationScenarios:
             token_name="success-token",
             token_id="success-123",
             rotation_reason="Will succeed",
-            scheduled_time=datetime.now(UTC) - timedelta(minutes=1)
+            scheduled_time=datetime.now(UTC) - timedelta(minutes=1),
         )
 
         failure_plan = TokenRotationPlan(
             token_name="failure-token",
             token_id="failure-123",
             rotation_reason="Will fail",
-            scheduled_time=datetime.now(UTC) - timedelta(minutes=2)
+            scheduled_time=datetime.now(UTC) - timedelta(minutes=2),
         )
 
         self.scheduler._rotation_plans = [success_plan, failure_plan]
@@ -907,8 +909,7 @@ class TestIntegrationScenarios:
         def mock_execute(plan):
             if plan.token_id == "success-123":
                 return AsyncMock(return_value=True)()
-            else:
-                return AsyncMock(return_value=False)()
+            return AsyncMock(return_value=False)()
 
         self.scheduler.execute_rotation_plan = mock_execute
 

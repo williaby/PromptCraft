@@ -6,29 +6,30 @@ system, including workflow results, execution steps, and agent responses.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
 import json
+from typing import Any
 
 
 @dataclass
 class WorkflowResult:
     """
     Result of a workflow step execution.
-    
+
     Represents the outcome of executing a single step in a workflow,
     including success status, response content, and metadata.
     """
+
     step_id: str
     success: bool
     content: str
     confidence: float = 0.0
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    execution_time: Optional[float] = None
+    error_message: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    execution_time: float | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "step_id": self.step_id,
@@ -40,14 +41,14 @@ class WorkflowResult:
             "execution_time": self.execution_time,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowResult":
+    def from_dict(cls, data: dict[str, Any]) -> "WorkflowResult":
         """Create from dictionary representation."""
-        timestamp = None
+        timestamp = datetime.now(UTC)
         if data.get("timestamp"):
             timestamp = datetime.fromisoformat(data["timestamp"])
-        
+
         return cls(
             step_id=data["step_id"],
             success=data["success"],
@@ -58,7 +59,7 @@ class WorkflowResult:
             execution_time=data.get("execution_time"),
             timestamp=timestamp,
         )
-    
+
     def to_json(self) -> str:
         """Convert to JSON representation."""
         return json.dumps(self.to_dict(), default=str)
@@ -68,18 +69,19 @@ class WorkflowResult:
 class WorkflowStep:
     """
     Definition of a workflow step.
-    
+
     Represents a single step in a multi-step workflow, including
     input data, configuration, and execution parameters.
     """
+
     step_id: str
     agent_id: str
-    input_data: Dict[str, Any]
+    input_data: dict[str, Any]
     timeout_seconds: float = 30.0
     retry_count: int = 3
-    dependencies: List[str] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    dependencies: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "step_id": self.step_id,
@@ -89,9 +91,9 @@ class WorkflowStep:
             "retry_count": self.retry_count,
             "dependencies": self.dependencies,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WorkflowStep":
+    def from_dict(cls, data: dict[str, Any]) -> "WorkflowStep":
         """Create from dictionary representation."""
         return cls(
             step_id=data["step_id"],
@@ -107,33 +109,34 @@ class WorkflowStep:
 class ModelMetadata:
     """
     Metadata for an AI model.
-    
+
     Contains information about model capabilities, costs, and characteristics
     used for intelligent model selection and routing.
     """
+
     model_id: str
     name: str
     provider: str
     tier: str
     cost_per_token: float = 0.0
-    specialization: Optional[str] = None
+    specialization: str | None = None
     context_window: int = 4096
     max_tokens: int = 4096
     status: str = "active"
     channel: str = "stable"
-    humaneval_score: Optional[float] = None
-    capabilities: List[str] = field(default_factory=list)
-    
+    humaneval_score: float | None = None
+    capabilities: list[str] = field(default_factory=list)
+
     @property
     def display_name(self) -> str:
         """Get formatted display name for UI."""
         emoji = "🆓" if self.cost_per_token == 0.0 else "💰"
         specialization_text = f" - {self.specialization.upper()}" if self.specialization else ""
         score_text = f" (Score: {self.humaneval_score})" if self.humaneval_score else ""
-        
+
         return f"{emoji} {self.name}{specialization_text}{score_text}"
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "model_id": self.model_id,
@@ -149,9 +152,9 @@ class ModelMetadata:
             "humaneval_score": self.humaneval_score,
             "capabilities": self.capabilities,
         }
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ModelMetadata":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelMetadata":
         """Create from dictionary representation."""
         return cls(
             model_id=data["model_id"],
@@ -169,22 +172,23 @@ class ModelMetadata:
         )
 
 
-@dataclass  
+@dataclass
 class ModelRecommendation:
     """
     AI model recommendation with reasoning.
-    
+
     Contains a recommended model along with the reasoning for the selection
     and alternative options.
     """
+
     model_id: str
     model_name: str
     tier: str
     reasoning: str
     confidence_score: float = 0.0
     estimated_cost: float = 0.0
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "model_id": self.model_id,
@@ -200,19 +204,20 @@ class ModelRecommendation:
 class RoutingAnalysis:
     """
     Analysis result for routing decisions.
-    
+
     Contains task analysis, complexity assessment, and model recommendations
     for intelligent routing decisions.
     """
+
     task_type: str
     complexity_score: float
     complexity_level: str
-    indicators: List[str]
+    indicators: list[str]
     reasoning: str
     primary_recommendation: ModelRecommendation
-    alternatives: List[ModelRecommendation] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    alternatives: list[ModelRecommendation] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "task_type": self.task_type,
@@ -229,20 +234,21 @@ class RoutingAnalysis:
 class ExecutionResult:
     """
     Result of executing a request through the MCP system.
-    
+
     Contains the response content, metadata about execution,
     and routing information.
     """
+
     success: bool
     content: str
     model_used: str
     response_time: float
     estimated_cost: float
-    routing_analysis: Optional[RoutingAnalysis] = None
-    error_message: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def to_dict(self) -> Dict[str, Any]:
+    routing_analysis: RoutingAnalysis | None = None
+    error_message: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return {
             "success": self.success,
@@ -259,15 +265,17 @@ class ExecutionResult:
 # Model channel types
 class ModelChannel:
     """Model channel constants."""
+
     STABLE = "stable"
     EXPERIMENTAL = "experimental"
 
 
-# Model tier constants  
+# Model tier constants
 class ModelTier:
     """Model tier constants."""
+
     FREE_CHAMPION = "free_champion"
-    VALUE_TIER = "value_tier" 
+    VALUE_TIER = "value_tier"
     OPEN_SOURCE = "open_source"
     HIGH_PERF = "high_perf"
     PREMIUM = "premium"
@@ -276,6 +284,7 @@ class ModelTier:
 # Task type constants
 class TaskType:
     """Task type constants."""
+
     CODE_GENERATION = "code_generation"
     DEBUGGING = "debugging"
     GENERAL = "general"
@@ -285,14 +294,46 @@ class TaskType:
     REASONING = "reasoning"
 
 
+# MCP Connection Models for Smart Discovery
+
+@dataclass
+class MCPConnectionConfig:
+    """Configuration for MCP server connection."""
+    server_path: str
+    env_vars: dict[str, str] = field(default_factory=dict)
+    timeout: float = 30.0
+
+
+@dataclass 
+class MCPConnectionStatus:
+    """Status of an MCP server connection."""
+    connected: bool
+    server_name: str
+    url: str | None = None
+    error_message: str | None = None
+    last_check: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class MCPHealthCheck:
+    """Health check result for MCP server."""
+    healthy: bool
+    response_time: float | None = None
+    error: str | None = None
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+
+
 __all__ = [
-    "WorkflowResult",
-    "WorkflowStep", 
+    "ExecutionResult", 
+    "MCPConnectionConfig",
+    "MCPConnectionStatus",
+    "MCPHealthCheck",
+    "ModelChannel",
     "ModelMetadata",
     "ModelRecommendation",
-    "RoutingAnalysis",
-    "ExecutionResult",
-    "ModelChannel",
     "ModelTier",
+    "RoutingAnalysis",
     "TaskType",
+    "WorkflowResult",
+    "WorkflowStep",
 ]

@@ -5,13 +5,14 @@ including adding/removing users from tiers, validating email addresses, and pers
 changes to the configuration.
 """
 
+from datetime import UTC, datetime
 import json
 import logging
 import re
-from datetime import datetime
 from typing import Any
 
-from src.auth_simple.config import ConfigManager, get_config_manager
+from src.auth_simple.config import ConfigLoader, ConfigManager, get_config_manager
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class UserTierManagerError(Exception):
 class UserTierManager:
     """Manages user tier assignments and provides admin interface functionality."""
 
-    def __init__(self, config_manager: ConfigManager | None = None):
+    def __init__(self, config_manager: ConfigManager | None = None) -> None:
         """Initialize the user tier manager.
 
         Args:
@@ -56,7 +57,7 @@ class UserTierManager:
         email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(email_pattern, email.strip()))
 
-    def get_all_users(self) -> dict[str, dict[str, Any]]:
+    def get_all_users(self) -> dict[str, list[dict[str, Any]]]:
         """Get all users organized by tier.
 
         Returns:
@@ -68,7 +69,7 @@ class UserTierManager:
             for entry in self.config_manager.config.email_whitelist:
                 whitelist_emails.add(entry.lower())
 
-            users_by_tier = {"admin": [], "full": [], "limited": [], "unassigned": []}
+            users_by_tier: dict[str, list[dict[str, Any]]] = {"admin": [], "full": [], "limited": [], "unassigned": []}
 
             # Categorize tier users
             for email in self.config_manager.config.admin_emails:
@@ -104,7 +105,7 @@ class UserTierManager:
             return users_by_tier
 
         except Exception as e:
-            logger.error(f"Error getting all users: {e}")
+            logger.error("Error getting all users: %s", e)
             raise UserTierManagerError(f"Failed to retrieve users: {e}")
 
     def assign_user_tier(self, email: str, tier: str, admin_email: str) -> tuple[bool, str]:
@@ -150,15 +151,15 @@ class UserTierManager:
                     "email": email,
                     "tier": tier,
                     "admin": admin_email,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
             )
 
-            logger.info(f"User {email} assigned to {tier} tier by {admin_email}")
+            logger.info("User %s assigned to %s tier by %s", email, tier, admin_email)
             return True, f"Successfully assigned {email} to {tier} tier"
 
         except Exception as e:
-            logger.error(f"Error assigning user tier: {e}")
+            logger.error("Error assigning user tier: %s", e)
             return False, f"Failed to assign tier: {e}"
 
     def remove_user_tier(self, email: str, admin_email: str) -> tuple[bool, str]:
@@ -180,15 +181,15 @@ class UserTierManager:
                         "action": "remove_tier",
                         "email": email,
                         "admin": admin_email,
-                        "timestamp": datetime.now().isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                     },
                 )
-                logger.info(f"User {email} removed from all tiers by {admin_email}")
+                logger.info("User %s removed from all tiers by %s", email, admin_email)
 
             return success, msg
 
         except Exception as e:
-            logger.error(f"Error removing user tier: {e}")
+            logger.error("Error removing user tier: %s", e)
             return False, f"Failed to remove tier: {e}"
 
     def _remove_from_all_tiers(self, email: str) -> tuple[bool, str]:
@@ -242,7 +243,7 @@ class UserTierManager:
             }
 
         except Exception as e:
-            logger.error(f"Error getting user tier info: {e}")
+            logger.error("Error getting user tier info: %s", e)
             return None
 
     def validate_tier_configuration(self) -> list[str]:
@@ -252,9 +253,10 @@ class UserTierManager:
             List of warning messages
         """
         try:
-            return self.validator.validate_whitelist_config()
+            result = self.validator.validate_whitelist_config()
+            return result if isinstance(result, list) else [str(result)]
         except Exception as e:
-            logger.error(f"Error validating configuration: {e}")
+            logger.error("Error validating configuration: %s", e)
             return [f"Configuration validation failed: {e}"]
 
     def get_tier_statistics(self) -> dict[str, Any]:
@@ -273,14 +275,14 @@ class UserTierManager:
                         stats["individual_emails"] + len([d for d in stats["domains"] if d.startswith("@")])
                     ),
                     "changes_made": len(self.changes_log),
-                    "last_modified": datetime.now().isoformat(),
+                    "last_modified": datetime.now(UTC).isoformat(),
                 },
             )
 
-            return stats
+            return stats if isinstance(stats, dict) else {"error": "Invalid stats format"}
 
         except Exception as e:
-            logger.error(f"Error getting tier statistics: {e}")
+            logger.error("Error getting tier statistics: %s", e)
             return {"error": f"Failed to get statistics: {e}"}
 
     def bulk_assign_tier(self, emails: list[str], tier: str, admin_email: str) -> dict[str, Any]:
@@ -294,7 +296,7 @@ class UserTierManager:
         Returns:
             Dictionary with results
         """
-        results = {"successful": [], "failed": [], "total": len(emails)}
+        results: dict[str, Any] = {"successful": [], "failed": [], "total": len(emails)}
 
         for email in emails:
             success, msg = self.assign_user_tier(email.strip(), tier, admin_email)
@@ -313,7 +315,7 @@ class UserTierManager:
         """
         try:
             config_export = {
-                "exported_at": datetime.now().isoformat(),
+                "exported_at": datetime.now(UTC).isoformat(),
                 "admin_emails": self.config_manager.config.admin_emails,
                 "full_users": self.config_manager.config.full_users,
                 "limited_users": self.config_manager.config.limited_users,
@@ -325,7 +327,7 @@ class UserTierManager:
             return json.dumps(config_export, indent=2)
 
         except Exception as e:
-            logger.error(f"Error exporting configuration: {e}")
+            logger.error("Error exporting configuration: %s", e)
             return json.dumps({"error": f"Export failed: {e}"})
 
     def search_users(self, query: str) -> list[dict[str, Any]]:
@@ -344,16 +346,17 @@ class UserTierManager:
             query_lower = query.lower()
 
             for tier, users in all_users.items():
-                for user in users:
-                    if query_lower in user["email"].lower():
-                        user_info = user.copy()
-                        user_info["current_tier"] = tier
-                        matching_users.append(user_info)
+                if isinstance(users, list):
+                    for user in users:
+                        if isinstance(user, dict) and "email" in user and query_lower in user["email"].lower():
+                            user_info = user.copy()
+                            user_info["current_tier"] = tier
+                            matching_users.append(user_info)
 
             return matching_users
 
         except Exception as e:
-            logger.error(f"Error searching users: {e}")
+            logger.error("Error searching users: %s", e)
             return []
 
     def get_changes_log(self, limit: int = 100) -> list[dict[str, Any]]:
@@ -382,7 +385,7 @@ class UserTierManager:
             self.config_manager._validate_config()
 
             # Generate updated environment variables
-            env_updates = {
+            {
                 "PROMPTCRAFT_ADMIN_EMAILS": ",".join(self.config_manager.config.admin_emails),
                 "PROMPTCRAFT_FULL_USERS": ",".join(self.config_manager.config.full_users),
                 "PROMPTCRAFT_LIMITED_USERS": ",".join(self.config_manager.config.limited_users),
@@ -390,16 +393,16 @@ class UserTierManager:
 
             # Log the configuration update
             logger.info("Persisting tier configuration changes")
-            logger.info(f"Admin emails: {len(self.config_manager.config.admin_emails)}")
-            logger.info(f"Full users: {len(self.config_manager.config.full_users)}")
-            logger.info(f"Limited users: {len(self.config_manager.config.limited_users)}")
+            logger.info("Admin emails: %d", len(self.config_manager.config.admin_emails))
+            logger.info("Full users: %d", len(self.config_manager.config.full_users))
+            logger.info("Limited users: %d", len(self.config_manager.config.limited_users))
 
             # Add change to log
             self.changes_log.append(
                 {
                     "action": "persist_config",
                     "admin": "system",
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                     "changes_count": len(self.changes_log),
                 },
             )
@@ -407,7 +410,7 @@ class UserTierManager:
             return True, "Configuration changes applied to current session. Restart application for full effect."
 
         except Exception as e:
-            logger.error(f"Error persisting changes: {e}")
+            logger.error("Error persisting changes: %s", e)
             return False, f"Failed to persist changes: {e}"
 
     def reload_configuration(self) -> tuple[bool, str]:
@@ -418,7 +421,7 @@ class UserTierManager:
         """
         try:
             # Recreate config manager to reload from environment
-            from src.auth_simple.config import ConfigLoader
+            # ConfigLoader imported at top level
 
             new_config = ConfigLoader.load_from_env()
             self.config_manager.config = new_config
@@ -431,7 +434,7 @@ class UserTierManager:
             return True, "Configuration successfully reloaded from environment"
 
         except Exception as e:
-            logger.error(f"Error reloading configuration: {e}")
+            logger.error("Error reloading configuration: %s", e)
             return False, f"Failed to reload configuration: {e}"
 
     def generate_env_file_updates(self) -> str:
@@ -441,7 +444,7 @@ class UserTierManager:
             String with environment variable updates
         """
         try:
-            env_content = f"""# User Tier Configuration - Updated {datetime.now().isoformat()}
+            return f"""# User Tier Configuration - Updated {datetime.now(UTC).isoformat()}
 # Generated by PromptCraft Admin Interface
 
 # Admin Users (full access to all models and system features)
@@ -457,8 +460,7 @@ PROMPTCRAFT_LIMITED_USERS={','.join(self.config_manager.config.limited_users)}
 # PROMPTCRAFT_EMAIL_WHITELIST={','.join(self.config_manager.config.email_whitelist)}
 """
 
-            return env_content
 
         except Exception as e:
-            logger.error(f"Error generating env file updates: {e}")
+            logger.error("Error generating env file updates: %s", e)
             return f"# Error generating environment updates: {e}"

@@ -3,8 +3,9 @@
 from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from fastapi import HTTPException, Request, Response
+from fastapi.responses import JSONResponse
+import pytest
 from starlette.datastructures import Headers
 
 from src.auth_simple.cloudflare_auth import CloudflareAuthError
@@ -322,10 +323,11 @@ class TestCloudflareAccessMiddleware:
         ):
             middleware = CloudflareAccessMiddleware(app=None, whitelist_validator=mock_validator)
 
-            with pytest.raises(HTTPException) as exc_info:
-                await middleware.dispatch(mock_request, call_next)
+            response = await middleware.dispatch(mock_request, call_next)
 
-            assert exc_info.value.status_code == 401
+            # Should return JSONResponse instead of raising HTTPException
+            assert isinstance(response, JSONResponse)
+            assert response.status_code == 401
             call_next.assert_not_called()
 
     @pytest.mark.asyncio
@@ -423,7 +425,12 @@ class TestCloudflareAccessMiddleware:
             await middleware._authenticate_request(mock_request)
 
             # Verify session creation
-            mock_session_manager.create_session.assert_called_once_with("test@example.com", True, "admin", {})
+            mock_session_manager.create_session.assert_called_once_with(
+                email="test@example.com", 
+                is_admin=True, 
+                user_tier="admin", 
+                cf_context={},
+            )
 
             # Verify user context injection
             assert hasattr(mock_request.state, "user")
@@ -521,9 +528,14 @@ class TestCloudflareAccessMiddleware:
     async def test_dispatch_with_session_cookie_setting(self, mock_validator, mock_request):
         """Test dispatch that sets session cookie."""
         call_next = AsyncMock(return_value=Response())
-        mock_request.state.new_session_id = "new_session"
+        
+        # Mock user context with session ID
+        mock_user = {"session_id": "new_session", "email": "test@example.com"}
+        mock_request.state.user = mock_user
+        mock_request.cookies = {"not_session": "other"}  # No existing session_id cookie
 
         middleware = CloudflareAccessMiddleware(app=None, whitelist_validator=mock_validator)
+        middleware.enable_session_cookies = True  # Enable session cookies
 
         with (
             patch.object(middleware, "_authenticate_request", new_callable=AsyncMock),
@@ -651,12 +663,398 @@ class TestCreateAuthMiddleware:
             )
 
             assert isinstance(middleware, CloudflareAccessMiddleware)
+            assert middleware.whitelist_validator == mock_validator
             assert middleware.session_manager.session_timeout == 1800
-            assert public_paths.issubset(middleware.all_public_paths)
-
+            assert public_paths.issubset(middleware.public_paths)
+            
             mock_create_validator.assert_called_once_with(
                 "test@example.com",
-                "admin@example.com",
+                "admin@example.com", 
                 "full@example.com",
                 "limited@example.com",
             )
+
+
+class TestCloudflareAccessMiddlewareSessionCookies:
+    """Tests for session cookie functionality."""
+
+    def test_set_session_cookie(self):
+        """Test _set_session_cookie method."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.session_timeout = 3600
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+        )
+        
+        response = Mock()
+        middleware._set_session_cookie(response, "test-session-123")
+        
+        response.set_cookie.assert_called_once_with(
+            key="session_id",
+            value="test-session-123",
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=3600,
+        )
+
+    async def test_dispatch_sets_session_cookie_for_new_session(self):
+        """Test that new session cookie is set when new session is created."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        validator.is_authorized.return_value = True
+        validator.get_user_tier.return_value = UserTier.FULL
+        
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.get_session.return_value = None  # No existing session
+        session_manager.create_session.return_value = "new-session-123"
+        session_manager.session_timeout = 3600
+        
+        # Mock the created session data
+        session_data = {
+            "email": "test@example.com",
+            "is_admin": False,
+            "user_tier": "full",
+            "can_access_premium": True,
+            "created_at": datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC),
+            "cf_context": {"cf_ray": "test-ray"},
+        }
+        # Return session data when get_session is called after creation
+        def get_session_side_effect(session_id):
+            if session_id == "new-session-123":
+                return session_data
+            return None
+        session_manager.get_session.side_effect = get_session_side_effect
+        
+        cloudflare_auth = Mock()
+        cloudflare_user = Mock()
+        cloudflare_user.email = "test@example.com"
+        cloudflare_auth.extract_user_from_request.return_value = cloudflare_user
+        cloudflare_auth.create_user_context.return_value = {"cf_ray": "test-ray"}
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+            enable_session_cookies=True,
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        # Mock request and response
+        request = Mock(spec=Request)
+        request.url.path = "/protected"
+        request.method = "GET"
+        request.cookies = {}  # No existing session cookie
+        request.state = Mock()
+        
+        response = Mock(spec=Response)
+        
+        async def mock_call_next(req):
+            return response
+        
+        with patch.object(middleware, "_set_session_cookie") as mock_set_cookie:
+            result = await middleware.dispatch(request, mock_call_next)
+            
+            # Should have set new_session_id on request state
+            assert hasattr(request.state, "new_session_id")
+            assert request.state.new_session_id == "new-session-123"
+            
+            # Should have called _set_session_cookie
+            mock_set_cookie.assert_called_once_with(response, "new-session-123")
+
+    async def test_dispatch_no_cookie_when_disabled(self):
+        """Test that no session cookie is set when cookies are disabled."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        validator.is_authorized.return_value = True
+        validator.get_user_tier.return_value = UserTier.FULL
+        
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.get_session.return_value = None
+        session_manager.create_session.return_value = "new-session-123"
+        
+        session_data = {
+            "email": "test@example.com",
+            "is_admin": False,
+            "user_tier": "full",
+            "can_access_premium": True,
+            "created_at": datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC),
+            "cf_context": {"cf_ray": "test-ray"},
+        }
+        session_manager.get_session.side_effect = lambda sid: session_data if sid == "new-session-123" else None
+        
+        cloudflare_auth = Mock()
+        cloudflare_user = Mock()
+        cloudflare_user.email = "test@example.com"
+        cloudflare_auth.extract_user_from_request.return_value = cloudflare_user
+        cloudflare_auth.create_user_context.return_value = {"cf_ray": "test-ray"}
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+            enable_session_cookies=False,  # Disabled
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        request = Mock(spec=Request)
+        request.url.path = "/protected"
+        request.method = "GET"
+        request.cookies = {}
+        request.state = Mock()
+        
+        response = Mock(spec=Response)
+        
+        async def mock_call_next(req):
+            return response
+        
+        with patch.object(middleware, "_set_session_cookie") as mock_set_cookie:
+            result = await middleware.dispatch(request, mock_call_next)
+            
+            # Should not have called _set_session_cookie
+            mock_set_cookie.assert_not_called()
+
+    async def test_dispatch_uses_existing_session_cookie(self):
+        """Test that existing session cookie is used when valid."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        validator.is_authorized.return_value = True
+        validator.get_user_tier.return_value = UserTier.ADMIN
+        
+        # Existing session data
+        existing_session = {
+            "email": "admin@example.com",
+            "is_admin": True,
+            "user_tier": "admin",
+            "can_access_premium": True,
+            "created_at": datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC),
+            "cf_context": {"cf_ray": "existing-ray"},
+        }
+        
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.get_session.return_value = existing_session
+        session_manager.session_timeout = 3600
+        
+        cloudflare_auth = Mock()
+        cloudflare_user = Mock()
+        cloudflare_user.email = "admin@example.com"
+        cloudflare_auth.extract_user_from_request.return_value = cloudflare_user
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+            enable_session_cookies=True,
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        request = Mock(spec=Request)
+        request.url.path = "/admin"
+        request.method = "GET"
+        request.cookies = {"session_id": "existing-session-123"}
+        request.state = Mock()
+        
+        response = Mock(spec=Response)
+        
+        async def mock_call_next(req):
+            return response
+        
+        result = await middleware.dispatch(request, mock_call_next)
+        
+        # Should have used existing session
+        session_manager.get_session.assert_called_with("existing-session-123")
+        
+        # Should not create new session
+        session_manager.create_session.assert_not_called()
+        
+        # Should have updated user context with existing session
+        assert request.state.user["email"] == "admin@example.com"
+        assert request.state.user["is_admin"] is True
+        
+        # Should not have created a new session, so session_id should be the existing one
+        assert request.state.user["session_id"] == "existing-session-123"
+
+    async def test_dispatch_session_creation_failure(self):
+        """Test handling of session creation failure."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        validator.is_authorized.return_value = True
+        validator.get_user_tier.return_value = UserTier.FULL
+        
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.get_session.return_value = None  # No existing session
+        session_manager.create_session.return_value = "new-session-123"
+        # Simulate session creation failure - get_session returns None after creation
+        session_manager.get_session.side_effect = [None, None]  # First call for existing check, second for retrieval
+        
+        cloudflare_auth = Mock()
+        cloudflare_user = Mock()
+        cloudflare_user.email = "test@example.com"
+        cloudflare_auth.extract_user_from_request.return_value = cloudflare_user
+        cloudflare_auth.create_user_context.return_value = {"cf_ray": "test-ray"}
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        request = Mock(spec=Request)
+        request.url.path = "/protected"
+        request.method = "GET"
+        request.cookies = {}
+        request.state = Mock()
+        
+        async def mock_call_next(req):
+            return Mock(spec=Response)
+        
+        response = await middleware.dispatch(request, mock_call_next)
+        
+        # Should return JSONResponse instead of raising HTTPException
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 500
+        assert "Session creation failed" in str(response.body)
+
+
+class TestCloudflareAccessMiddlewareEdgeCases:
+    """Tests for edge cases and error conditions."""
+
+    async def test_dispatch_static_path_bypass(self):
+        """Test that static paths bypass authentication."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        session_manager = Mock(spec=SimpleSessionManager)
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+        )
+        
+        request = Mock(spec=Request)
+        request.url.path = "/static/css/style.css"
+        request.method = "GET"
+        
+        response = Mock(spec=Response)
+        
+        async def mock_call_next(req):
+            return response
+        
+        result = await middleware.dispatch(request, mock_call_next)
+        
+        # Should bypass authentication for static paths
+        assert result == response
+        validator.is_authorized.assert_not_called()
+
+    async def test_dispatch_tier_update_in_existing_session(self):
+        """Test that existing session is updated with current tier info."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        validator.is_authorized.return_value = True
+        # User tier changed from LIMITED to FULL
+        validator.get_user_tier.return_value = UserTier.FULL
+        
+        # Existing session with old tier info
+        existing_session = {
+            "email": "user@example.com",
+            "is_admin": False,
+            "user_tier": "limited",  # Old tier
+            "can_access_premium": False,  # Old value
+            "created_at": datetime(2023, 1, 1, 10, 0, 0, tzinfo=UTC),
+            "cf_context": {"cf_ray": "existing-ray"},
+        }
+        
+        session_manager = Mock(spec=SimpleSessionManager)
+        session_manager.get_session.return_value = existing_session
+        
+        cloudflare_auth = Mock()
+        cloudflare_user = Mock()
+        cloudflare_user.email = "user@example.com"
+        cloudflare_auth.extract_user_from_request.return_value = cloudflare_user
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        request = Mock(spec=Request)
+        request.url.path = "/protected"
+        request.method = "GET"
+        request.cookies = {"session_id": "existing-session-123"}
+        request.state = Mock()
+        
+        response = Mock(spec=Response)
+        
+        async def mock_call_next(req):
+            return response
+        
+        result = await middleware.dispatch(request, mock_call_next)
+        
+        # Should have updated session with new tier info
+        assert existing_session["user_tier"] == "full"
+        assert existing_session["is_admin"] is False
+        assert existing_session["can_access_premium"] is True
+        
+        # Should have set correct user context
+        assert request.state.user["user_tier"] == "full"
+        assert request.state.user["can_access_premium"] is True
+
+    async def test_dispatch_middleware_exception_handling(self):
+        """Test middleware exception handling for unexpected errors."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        session_manager = Mock(spec=SimpleSessionManager)
+        
+        cloudflare_auth = Mock()
+        # Simulate unexpected exception during authentication
+        cloudflare_auth.extract_user_from_request.side_effect = Exception("Unexpected error")
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+        )
+        middleware.cloudflare_auth = cloudflare_auth
+        
+        request = Mock(spec=Request)
+        request.url.path = "/protected"
+        request.method = "GET"
+        request.cookies = {}
+        request.state = Mock()
+        
+        async def mock_call_next(req):
+            return Mock(spec=Response)
+        
+        with patch("src.auth_simple.middleware.logger") as mock_logger:
+            result = await middleware.dispatch(request, mock_call_next)
+            
+            # Should return 500 error response
+            assert hasattr(result, "status_code")
+            assert result.status_code == 500
+            
+            # Should log the error
+            mock_logger.error.assert_called_with("Middleware error: %s", mock_logger.error.call_args[0][1])
+
+    def test_is_public_path_edge_cases(self):
+        """Test _is_public_path with various path formats."""
+        validator = Mock(spec=EmailWhitelistValidator)
+        session_manager = Mock(spec=SimpleSessionManager)
+        
+        middleware = CloudflareAccessMiddleware(
+            app=None,
+            whitelist_validator=validator,
+            session_manager=session_manager,
+            public_paths={"/api/health", "/docs"},
+        )
+        
+        # Test exact matches
+        assert middleware._is_public_path("/api/health") is True
+        assert middleware._is_public_path("/docs") is True
+        
+        # Test static path prefix
+        assert middleware._is_public_path("/static/css/style.css") is True
+        assert middleware._is_public_path("/static/") is True
+        
+        # Test non-matches
+        assert middleware._is_public_path("/api/protected") is False
+        assert middleware._is_public_path("/admin") is False

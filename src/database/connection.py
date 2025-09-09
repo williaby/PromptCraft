@@ -10,10 +10,10 @@ This module provides async database connection management with:
 """
 
 import asyncio
-import logging
-import time
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+import logging
+import time
 from typing import Any
 
 from sqlalchemy import text
@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
 from src.config.settings import ApplicationSettings, get_settings
+
 
 logger = logging.getLogger(__name__)
 

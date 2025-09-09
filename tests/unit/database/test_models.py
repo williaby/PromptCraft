@@ -1,12 +1,12 @@
 """Unit tests for database models."""
 
-import time
-import uuid
 from datetime import datetime, timedelta
+import time
 from unittest.mock import MagicMock
+import uuid
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.auth.models import (
     ServiceTokenCreate,

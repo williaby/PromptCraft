@@ -24,6 +24,7 @@ from src.auth.role_manager import (
 )
 from src.utils.datetime_compat import UTC
 
+
 # =============================================================================
 # FIXTURES
 # =============================================================================
@@ -420,15 +421,18 @@ class TestUserRoleAssignment:
         role_manager._db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
 
         # Mock user exists and role exists
-        mock_user_result = MagicMock()
-        mock_user_result.scalar_one_or_none.return_value = "test@example.com"
+        mock_user_exists_result = MagicMock()
+        mock_user_exists_result.scalar_one_or_none.return_value = "test@example.com"
 
         mock_role_result = MagicMock()
         mock_role_result.scalar_one_or_none.return_value = 1
 
+        mock_user_id_result = MagicMock() 
+        mock_user_id_result.scalar_one_or_none.return_value = "user-uuid-123"
+
         mock_assign_result = MagicMock()
 
-        mock_session.execute.side_effect = [mock_user_result, mock_role_result, mock_assign_result]
+        mock_session.execute.side_effect = [mock_user_exists_result, mock_role_result, mock_user_id_result, mock_assign_result]
 
         result = await role_manager.assign_user_role("test@example.com", "test_role", "admin@example.com")
 
@@ -519,35 +523,29 @@ class TestUserRoleAssignment:
 
     async def test_get_user_permissions(self, role_manager, mock_session):
         """Test getting all user permissions through roles."""
-        # Mock the database manager's session to return our mock session
-        role_manager._db_manager.get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-        role_manager._db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
+        # Mock the get_user_roles and get_role_permissions methods
+        mock_user_roles = [
+            {
+                "role_id": 1,
+                "role_name": "admin", 
+                "role_description": "Administrator role",
+                "assigned_at": datetime.now(UTC),
+            },
+        ]
+        
+        # Mock the methods that get_user_permissions calls
+        with patch.object(role_manager, "get_user_roles", new_callable=AsyncMock) as mock_get_roles, \
+             patch.object(role_manager, "get_role_permissions", new_callable=AsyncMock) as mock_get_perms:
+            
+            mock_get_roles.return_value = mock_user_roles
+            mock_get_perms.return_value = {"admin:access", "users:read", "users:write"}
 
-        # Mock user roles
-        mock_row = MagicMock()
-        mock_row.role_id = 1
-        mock_row.role_name = "admin"
-        mock_row.role_description = "Administrator role"
-        mock_row.assigned_at = datetime.now(UTC)
+            result = await role_manager.get_user_permissions("test@example.com")
 
-        mock_roles_result = MagicMock()
-        mock_roles_result.fetchall.return_value = [mock_row]
-
-        # Mock role permissions
-        mock_role_result = MagicMock()
-        mock_role_result.scalar_one_or_none.return_value = 1
-
-        mock_perm_result = MagicMock()
-        mock_perm_result.fetchall.return_value = [("admin:access",), ("users:read",), ("users:write",)]
-
-        mock_session.execute.side_effect = [mock_roles_result, mock_role_result, mock_perm_result]
-
-        result = await role_manager.get_user_permissions("test@example.com")
-
-        assert isinstance(result, set)
-        assert "admin:access" in result
-        assert "users:read" in result
-        assert "users:write" in result
+            assert isinstance(result, set)
+            assert "admin:access" in result
+            assert "users:read" in result
+            assert "users:write" in result
 
 
 # =============================================================================
@@ -859,8 +857,11 @@ class TestIntegrationScenarios:
         mock_perm_result = MagicMock()
         mock_perm_result.scalar_one_or_none.return_value = 1
 
-        mock_user_result = MagicMock()
-        mock_user_result.scalar_one_or_none.return_value = "user@example.com"
+        mock_user_exists_result = MagicMock()
+        mock_user_exists_result.scalar_one_or_none.return_value = "user@example.com"
+        
+        mock_user_id_result = MagicMock()
+        mock_user_id_result.scalar_one_or_none.return_value = "user-uuid-123"
 
         # Mock insert statement with on_conflict_do_nothing method
         mock_insert = MagicMock()
@@ -874,8 +875,9 @@ class TestIntegrationScenarios:
             mock_perm_result,  # Permission exists
             MagicMock(),  # Assignment (insert with on_conflict_do_nothing)
             # Assign to user
-            mock_user_result,  # User exists
+            mock_user_exists_result,  # User exists
             mock_role_result,  # Role exists
+            mock_user_id_result,  # Get user ID for SQLite path
             MagicMock(),  # User role assignment (database function call)
         ]
 

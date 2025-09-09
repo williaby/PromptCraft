@@ -1,8 +1,8 @@
 """Benchmark tests for core algorithms and performance-critical functions."""
 
 import json
-import time
 from pathlib import Path
+import time
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 

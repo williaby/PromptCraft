@@ -56,16 +56,17 @@ Example Usage:
 Complexity: O(1) for model lookups, O(n) for fallback chain processing where n is chain length
 """
 
+from dataclasses import dataclass, field
 import logging
 import os
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel, Field, field_validator
+import yaml
 
 from src.config.settings import get_settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -653,7 +654,10 @@ class ModelRegistry:
         self.logger.info(f"Reloaded {len(self._models)} models")
 
     def list_models_for_tier(
-        self, user_tier: str, category: str | None = None, provider: str | None = None,
+        self,
+        user_tier: str,
+        category: str | None = None,
+        provider: str | None = None,
     ) -> list[ModelCapabilities]:
         """List available models filtered by user tier.
 
@@ -741,9 +745,8 @@ class ModelRegistry:
         chain = self.get_fallback_chain(chain_category)
 
         # Filter the chain by user tier permissions
-        filtered_chain = UserTierFilter.filter_models_by_tier(chain, user_tier, self)
+        return UserTierFilter.filter_models_by_tier(chain, user_tier, self)
 
-        return filtered_chain
 
     def can_user_access_model(self, user_tier: str, model_id: str) -> bool:
         """Check if a user tier can access a specific model.

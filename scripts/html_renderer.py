@@ -6,8 +6,8 @@ This provides the essential HTMLRenderer class to fix the import error
 in vscode_coverage_hook.py while maintaining the existing interface.
 """
 
-import time
 from pathlib import Path
+import time
 from typing import Any
 
 

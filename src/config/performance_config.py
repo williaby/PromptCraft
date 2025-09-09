@@ -10,6 +10,7 @@ from typing import Any
 
 from src.config.settings import get_settings
 
+
 # Performance validation constants
 MIN_CACHE_TTL_SECONDS = 60  # Minimum cache TTL in seconds
 MIN_VECTOR_CONNECTIONS = 5  # Minimum number of vector connections

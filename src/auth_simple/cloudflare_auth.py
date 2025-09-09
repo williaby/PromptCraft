@@ -5,14 +5,15 @@ and validation, replacing the complex 22K+ line authentication system with a str
 approach focused on the Cf-Access-Authenticated-User-Email header.
 """
 
-import logging
 from datetime import datetime
+import logging
 from typing import Any
 
 from fastapi import HTTPException, Request
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.utils.datetime_compat import UTC
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,13 @@ class CloudflareUser(BaseModel):
     """User information extracted from Cloudflare Access headers."""
 
     email: str
-    authenticated_at: datetime = datetime.now(UTC)
+    authenticated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source: str = "cloudflare_access"
-    headers: dict[str, str] = {}
+    headers: dict[str, str] = Field(default_factory=dict)
 
-    @validator("email")
-    def validate_email(cls, v: str) -> str:  # noqa: N805
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
         """Ensure email is valid format."""
         if not v or "@" not in v:
             raise ValueError("Invalid email format")

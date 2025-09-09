@@ -5,13 +5,14 @@ using pytest parametrization for comprehensive boundary condition coverage.
 """
 
 import json
+from queue import Queue
 import threading
 import time
-from queue import Queue
 from typing import Any
 
-import pytest
 from pydantic import ValidationError
+import pytest
+
 
 # Import application components with graceful fallbacks
 try:

@@ -685,17 +685,24 @@ class TestErrorHandling:
         # Should handle gracefully and return evaluation
         assert isinstance(result, ComprehensiveEvaluation)
 
-    @patch("src.core.anchor_qr_evaluator.logging")
-    def test_evaluation_with_logging_errors(self, mock_logging):
+    def test_evaluation_with_logging_errors(self):
         """Test evaluation continues even with logging errors."""
-        # Make logger.info raise an exception
-        mock_logging.getLogger.return_value.info.side_effect = Exception("Logging error")
-
         evaluator = ANCHORQREvaluator()
-        result = evaluator.evaluate_prompt("test", {"query": "test"})
+        
+        # Mock the logger to raise an exception when called
+        original_logger = evaluator.logger
+        mock_logger = patch.object(evaluator, "logger")
+        mock_instance = mock_logger.start()
+        mock_instance.info.side_effect = Exception("Logging error")
 
-        # Evaluation should still complete
-        assert isinstance(result, ComprehensiveEvaluation)
+        try:
+            result = evaluator.evaluate_prompt("test", {"query": "test"})
+            # Evaluation should still complete
+            assert isinstance(result, ComprehensiveEvaluation)
+        finally:
+            mock_logger.stop()
+            # Restore original logger
+            evaluator.logger = original_logger
 
 
 class TestIntegration:

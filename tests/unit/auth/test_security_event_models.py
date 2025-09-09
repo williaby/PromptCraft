@@ -21,25 +21,39 @@ from src.utils.time_utils import UTC, utc_now
 
 
 class TestSecurityEventType:
-    """Test SecurityEventType enum with all 19 event types."""
+    """Test SecurityEventType enum with all 25 event types."""
 
     def test_all_event_types_defined(self):
         """Test that all expected event types are defined."""
         expected_types = {
+            # Authentication events
             "login_success",
-            "login_failure",
+            "login_failure", 
+            "login_failed",  # Alias for LOGIN_FAILURE
             "logout",
             "session_expired",
+            # Service token events
             "service_token_auth",
             "service_token_created",
             "service_token_revoked",
             "service_token_expired",
+            # Account security events
             "password_changed",
             "account_lockout",
             "account_unlock",
+            # API and access events
+            "api_access",
+            # Data security events
+            "data_breach",
+            "data_export",
+            "data_access",
+            # Privilege and access events
+            "privilege_escalation",
+            # Suspicious activity events
             "suspicious_activity",
             "brute_force_attempt",
             "rate_limit_exceeded",
+            # System events
             "system_error",
             "security_alert",
             "configuration_changed",
@@ -49,7 +63,7 @@ class TestSecurityEventType:
 
         actual_types = {event_type.value for event_type in SecurityEventType}
         assert actual_types == expected_types
-        assert len(list(SecurityEventType)) == 19
+        assert len(list(SecurityEventType)) == 25  # Updated count
 
     def test_event_type_string_values(self):
         """Test specific event type string values."""
@@ -192,7 +206,7 @@ class TestSecurityEventModel:
         # Note: The IP validator is permissive for development use
         # It allows invalid formats to pass through for complex IPv6 or unknown formats
         # The following IPs will be accepted but not validated
-        relaxed_ips = ["invalid_ip", "not.an.ip", ""]
+        relaxed_ips = ["invalid_ip", "not.an.ip"]  # Removed empty string as it's now rejected
         for ip in relaxed_ips:
             valid_event_data["ip_address"] = ip
             event = SecurityEvent(**valid_event_data)

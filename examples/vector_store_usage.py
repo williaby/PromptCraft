@@ -22,6 +22,7 @@ from src.core.vector_store import (
     vector_store_connection,
 )
 
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

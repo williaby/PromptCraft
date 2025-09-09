@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Debug the routing logic to understand the gradual rollout issue."""
 
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import Mock
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import MCPConnectionState
+
 
 # Create mock clients
 mock_openrouter_client = Mock()

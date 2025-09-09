@@ -7,6 +7,7 @@ monitoring and business intelligence.
 """
 
 import asyncio
+import contextlib
 import logging
 from typing import Any
 
@@ -25,7 +26,7 @@ from .storage import MetricsStorage
 class MetricsCollector:
     """Central service for collecting and storing production metrics."""
 
-    def __init__(self, storage_backend: str = "sqlite", database_path: str = "metrics.db"):
+    def __init__(self, storage_backend: str = "sqlite", database_path: str = "metrics.db") -> None:
         """Initialize metrics collector with storage backend."""
         self.logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class MetricsCollector:
         self._flush_interval = 30  # seconds
 
         # Start background flush task
-        self._flush_task = None
+        self._flush_task: asyncio.Task[None] | None = None
         self._shutdown = False
 
     async def start(self) -> None:
@@ -55,20 +56,21 @@ class MetricsCollector:
         """Stop the metrics collector and flush remaining events."""
         self._shutdown = True
         if self._flush_task:
-            await self._flush_task
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._flush_task
         await self.flush_events()
         self.logger.info("Metrics collector stopped")
 
     async def record_query_processed(
         self,
         session_id: str,
-        hyde_score: int,
+        hyde_score: int | None,
         action_taken: str,
         response_time_ms: int,
-        query_text: str,
-        conceptual_issues: list[str] = None,
-        vector_search_results: int = None,
-        vector_store_type: str = None,
+        query_text: str | None,
+        conceptual_issues: list[str] | None = None,
+        vector_search_results: int | None = None,
+        vector_store_type: str | None = None,
     ) -> str:
         """Record a query processing event."""
         try:
@@ -90,7 +92,7 @@ class MetricsCollector:
             await self._add_event_to_buffer(event)
 
             self.logger.debug(
-                "Recorded query processed: hyde_score=%d, action=%s, time=%dms",
+                "Recorded query processed: hyde_score=%s, action=%s, time=%dms",
                 hyde_score,
                 action_taken,
                 response_time_ms,
@@ -107,8 +109,8 @@ class MetricsCollector:
         session_id: str,
         feedback_type: str,
         feedback_target: str,
-        feedback_score: int = None,
-        additional_context: dict[str, Any] = None,
+        feedback_score: int | None = None,
+        additional_context: dict[str, Any] | None = None,
     ) -> str:
         """Record user feedback event."""
         try:
@@ -145,7 +147,7 @@ class MetricsCollector:
         mismatch_type: str,
         suggested_alternative: str,
         hyde_score: int,
-        query_text: str = None,
+        query_text: str | None = None,
     ) -> str:
         """Record conceptual mismatch detection event."""
         try:
@@ -184,8 +186,8 @@ class MetricsCollector:
         session_id: str,
         error_details: str,
         error_type: str,
-        response_time_ms: int = None,
-        additional_context: dict[str, Any] = None,
+        response_time_ms: int | None = None,
+        additional_context: dict[str, Any] | None = None,
     ) -> str:
         """Record system error event."""
         try:
@@ -210,7 +212,7 @@ class MetricsCollector:
             self.logger.error("Failed to record error event: %s", str(e))
             return ""
 
-    async def record_custom_event(self, event_type: MetricEventType, session_id: str, **kwargs) -> str:
+    async def record_custom_event(self, event_type: MetricEventType, session_id: str, **kwargs: Any) -> str:
         """Record a custom event with flexible parameters."""
         try:
             builder = MetricEventBuilder(event_type, session_id)
@@ -224,7 +226,9 @@ class MetricsCollector:
                 )
 
             if "response_time_ms" in kwargs:
-                builder.with_performance_metrics(kwargs.get("response_time_ms"), kwargs.get("error_details"))
+                response_time = kwargs.get("response_time_ms")
+                if isinstance(response_time, int):
+                    builder.with_performance_metrics(response_time, kwargs.get("error_details"))
 
             if "query_text" in kwargs:
                 builder.with_query_analysis(kwargs.get("query_text"), kwargs.get("query_category"))
@@ -280,11 +284,17 @@ class MetricsCollector:
             events_to_flush = self._event_buffer.copy()
             self._event_buffer.clear()
 
-        # Store events
-        stored_count = await self.storage.store_events_batch(events_to_flush)
-
-        self.logger.debug("Flushed %d events to storage", stored_count)
-        return stored_count
+        try:
+            # Store events
+            stored_count = await self.storage.store_events_batch(events_to_flush)
+            self.logger.debug("Flushed %d events to storage", stored_count)
+            return stored_count
+        except Exception as e:
+            self.logger.error("Failed to flush events to storage: %s", str(e))
+            # Return events to buffer on failure
+            async with self._buffer_lock:
+                self._event_buffer.extend(events_to_flush)
+            return 0
 
     async def _add_event_to_buffer(self, event: MetricEvent) -> None:
         """Add event to buffer and trigger flush if needed."""
@@ -330,9 +340,9 @@ class MetricsCollector:
         """Clean up old metric data."""
         return await self.storage.cleanup_old_events(days_to_keep)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Cleanup on garbage collection."""
-        if hasattr(self, "_flush_task") and self._flush_task and not self._flush_task.done():
+        if hasattr(self, "_flush_task") and self._flush_task is not None and not self._flush_task.done():
             self._flush_task.cancel()
 
 

@@ -16,6 +16,7 @@ from src.utils.performance_monitor import (
     get_sla_monitor,
 )
 
+
 # Initialize router
 router = APIRouter(
     prefix="/api/v1/monitoring",

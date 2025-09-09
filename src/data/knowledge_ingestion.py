@@ -8,8 +8,8 @@ processing, progress tracking, and error handling for large knowledge bases.
 
 import hashlib
 import logging
-import time
 from pathlib import Path
+import time
 from typing import Any
 
 from qdrant_client import QdrantClient
@@ -23,7 +23,7 @@ from ..core.vector_stores.collection_manager import QdrantCollectionManager
 class KnowledgeIngestionPipeline:
     """Pipeline for ingesting knowledge base files into Qdrant."""
 
-    def __init__(self, client: QdrantClient, embedding_model: SentenceTransformer | None = None):
+    def __init__(self, client: QdrantClient, embedding_model: SentenceTransformer | None = None) -> None:
         """Initialize knowledge ingestion pipeline."""
         self.client = client
         self.logger = logging.getLogger(__name__)
@@ -161,7 +161,7 @@ class KnowledgeIngestionPipeline:
     def _generate_document_id(self, file_path: Path, chunk_index: int) -> str:
         """Generate unique document ID from file path and chunk index."""
         # Create a hash from file path to ensure uniqueness
-        file_hash = hashlib.md5(str(file_path).encode()).hexdigest()[:8]
+        file_hash = hashlib.sha256(str(file_path).encode()).hexdigest()[:8]
         return f"{file_path.stem}_{file_hash}_{chunk_index}"
 
     def _extract_metadata(self, file_path: Path, content: str, chunk_index: int) -> dict[str, Any]:
@@ -182,7 +182,7 @@ class KnowledgeIngestionPipeline:
         # Extract additional metadata from content
         if "## " in content:
             # This chunk contains a header
-            header_line = [line for line in content.split("\n") if line.startswith("## ")][0]
+            header_line = next(line for line in content.split("\n") if line.startswith("## "))
             metadata["section_title"] = header_line.replace("## ", "").strip()
 
         # Add difficulty level based on content complexity
@@ -199,7 +199,7 @@ class KnowledgeIngestionPipeline:
         self,
         documents: list[dict[str, Any]],
         collection_name: str,
-        batch_size: int = None,
+        batch_size: int | None = None,
     ) -> dict[str, Any]:
         """Insert documents into Qdrant in batches."""
         if batch_size is None:
@@ -293,7 +293,9 @@ class KnowledgeIngestionPipeline:
                     {
                         "score": search_results[0].score if search_results else None,
                         "content_preview": (
-                            search_results[0].payload.get("content", "")[:100] if search_results else None
+                            search_results[0].payload.get("content", "")[:100] 
+                            if search_results and search_results[0].payload 
+                            else None
                         ),
                     }
                     if search_results

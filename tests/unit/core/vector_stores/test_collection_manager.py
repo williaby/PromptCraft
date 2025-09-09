@@ -125,8 +125,9 @@ class TestQdrantCollectionManager:
         """Test validating existing collections."""
         # Mock collection info
         collection_info = Mock()
-        collection_info.config.params.vectors.size = 384
-        collection_info.config.params.vectors.distance.value = "cosine"
+        # Create a proper VectorParams mock
+        vectors_mock = VectorParams(size=384, distance=Distance.COSINE)
+        collection_info.config.params.vectors = vectors_mock
         collection_info.points_count = 100
         collection_info.segments_count = 1
         collection_info.status.value = "green"
@@ -177,8 +178,9 @@ class TestQdrantCollectionManager:
         collection_info = Mock()
         collection_info.points_count = 50
         collection_info.segments_count = 2
-        collection_info.config.params.vectors.size = 384
-        collection_info.config.params.vectors.distance.value = "cosine"
+        # Create a proper VectorParams mock
+        vectors_mock = VectorParams(size=384, distance=Distance.COSINE)
+        collection_info.config.params.vectors = vectors_mock
         collection_info.status.value = "green"
 
         mock_client.get_collection.return_value = collection_info
@@ -192,7 +194,7 @@ class TestQdrantCollectionManager:
             assert collection_stats["points_count"] == 50
             assert collection_stats["segments_count"] == 2
             assert collection_stats["vector_size"] == 384
-            assert collection_stats["distance"] == "cosine"
+            assert collection_stats["distance"] == "Cosine"
             assert collection_stats["status"] == "green"
             assert "disk_usage" in collection_stats
 

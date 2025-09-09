@@ -1,13 +1,13 @@
 """Unit tests for MCP integration components."""
 
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest import mock
 from unittest.mock import Mock
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.config_manager import (

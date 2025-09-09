@@ -4,13 +4,13 @@ This module contains comprehensive unit tests for the template system
 in Phase 1 Issue 4, focusing on template management and processing.
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
+from pydantic import ValidationError
 import pytest
 import yaml
-from pydantic import ValidationError
 
 from src.core.template_system_core import (
     TemplateManager,

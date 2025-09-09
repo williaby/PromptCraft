@@ -2,8 +2,8 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
 from fastapi import Request
+import pytest
 from starlette.datastructures import Headers
 
 from src.auth_simple.cloudflare_auth import CloudflareAuthHandler

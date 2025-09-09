@@ -6,19 +6,20 @@ while maintaining conservative defaults and ensuring discoverability.
 """
 
 import asyncio
-import json
-import logging
-import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
+import json
+import logging
 from pathlib import Path
+import time
 from typing import Any
 
 from src.utils.datetime_compat import UTC
 
 from .task_detection import TaskDetectionSystem
 from .task_detection_config import ConfigManager
+
 
 logger = logging.getLogger(__name__)
 

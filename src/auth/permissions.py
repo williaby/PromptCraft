@@ -12,22 +12,24 @@ Key Features:
 - Hierarchical role inheritance for JWT users
 """
 
-import logging
 from collections.abc import Callable
+import logging
 from typing import Any
 
 from fastapi import Depends
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth import ServiceTokenUser, require_authentication
 from src.auth.exceptions import AuthExceptionHandler
 from src.auth.types import AuthenticatedUserType
 from src.database.connection import get_db
 
+
 logger = logging.getLogger(__name__)
 
 
-async def user_has_permission(user_email: str, permission_name: str) -> bool:
+async def user_has_permission(user_email: str, permission_name: str, session: AsyncSession | None = None) -> bool:
     """Check if a JWT user has a specific permission through their assigned roles.
 
     This function queries the database to check if a user has been assigned
@@ -37,6 +39,7 @@ async def user_has_permission(user_email: str, permission_name: str) -> bool:
     Args:
         user_email: Email address of the user
         permission_name: Name of the permission to check (e.g., 'tokens:create')
+        session: Optional database session to use (for testing)
 
     Returns:
         True if user has the permission, False otherwise
@@ -45,23 +48,57 @@ async def user_has_permission(user_email: str, permission_name: str) -> bool:
         Exception: If database query fails (logged but not re-raised)
     """
     try:
-        db_gen = get_db()
-        try:
-            session = await db_gen.__anext__()
-        except AttributeError:
-            if hasattr(db_gen, "__aenter__"):
-                session = await db_gen.__aenter__()
-            else:
-                raise RuntimeError("No database session available") from None
+        if session is None:
+            db_gen = get_db()
+            try:
+                session = await db_gen.__anext__()
+            except AttributeError:
+                if hasattr(db_gen, "__aenter__"):
+                    session = await db_gen.__aenter__()
+                else:
+                    raise RuntimeError("No database session available") from None
 
-        # Use the database function for permission checking
-        result = await session.execute(
-            text("SELECT user_has_permission(:user_email, :permission_name)"),
-            {"user_email": user_email, "permission_name": permission_name},
-        )
-        has_permission = result.scalar()
-        logger.debug(f"User {user_email} permission check for '{permission_name}': {has_permission}")
-        return bool(has_permission)
+        # Try PostgreSQL function first, fall back to SQLAlchemy queries
+        try:
+            # Use the database function for permission checking (PostgreSQL)
+            result = await session.execute(
+                text("SELECT user_has_permission(:user_email, :permission_name)"),
+                {"user_email": user_email, "permission_name": permission_name},
+            )
+            has_permission = result.scalar()
+            logger.debug(f"User {user_email} permission check for '{permission_name}' (PG function): {has_permission}")
+            return bool(has_permission)
+        except Exception as pg_error:
+            # Fallback to SQLAlchemy queries for SQLite compatibility
+            logger.debug(f"PostgreSQL function unavailable, using SQLAlchemy fallback: {pg_error}")
+            
+            from sqlalchemy import select
+
+            from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
+            
+            # Check if user exists and get their roles with permissions
+            # This mimics the PostgreSQL function behavior using pure SQLAlchemy
+            user_permissions_query = (
+                select(Permission.name)
+                .select_from(
+                    UserSession.__table__
+                    .join(user_roles_table, UserSession.id == user_roles_table.c.user_id)
+                    .join(Role.__table__, user_roles_table.c.role_id == Role.id)
+                    .join(role_permissions_table, Role.id == role_permissions_table.c.role_id)
+                    .join(Permission.__table__, role_permissions_table.c.permission_id == Permission.id),
+                )
+                .where(UserSession.email == user_email)
+                .distinct()
+            )
+            
+            result = await session.execute(user_permissions_query)
+            user_permissions = [row[0] for row in result.fetchall()]
+            
+            has_permission = permission_name in user_permissions
+            logger.debug(f"User {user_email} permission check for '{permission_name}' (SQLAlchemy): {has_permission}")
+            logger.debug(f"User {user_email} has permissions: {user_permissions}")
+            return has_permission
+
     except Exception as e:
         logger.error(f"Permission check failed for user {user_email}, permission {permission_name}: {e}")
         # Fail-safe: deny permission on database errors

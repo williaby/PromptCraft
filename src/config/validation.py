@@ -7,6 +7,7 @@ between settings and health modules.
 import logging
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from .settings import ApplicationSettings
 

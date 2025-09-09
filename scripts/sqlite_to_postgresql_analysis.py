@@ -20,15 +20,16 @@ Usage:
     python sqlite_to_postgresql_analysis.py
 """
 
+from dataclasses import asdict, dataclass
+from datetime import datetime
 import json
 import logging
+from pathlib import Path
 import re
 import sqlite3
 import sys
-from dataclasses import asdict, dataclass
-from datetime import datetime
-from pathlib import Path
 from typing import Any, ClassVar
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

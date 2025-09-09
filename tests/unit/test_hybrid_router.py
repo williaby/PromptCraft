@@ -13,8 +13,8 @@ Test Coverage:
     - MCPClientInterface compliance and error handling
 """
 
-import zlib
 from unittest.mock import MagicMock, patch
+import zlib
 
 import pytest
 

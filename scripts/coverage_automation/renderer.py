@@ -3,9 +3,9 @@ Coverage report rendering and generation.
 """
 
 import json
+from pathlib import Path
 import subprocess
 import time
-from pathlib import Path
 from typing import Any
 
 from .classifier import TestTypeClassifier

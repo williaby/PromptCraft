@@ -14,6 +14,7 @@ from .integration_test_base import (
     wait_for_database_operation,
 )
 
+
 __all__ = [
     "AuthenticatedIntegrationTestBase",
     "DatabaseIntegrationTestBase",

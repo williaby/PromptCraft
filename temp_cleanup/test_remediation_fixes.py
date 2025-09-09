@@ -7,10 +7,11 @@ implemented to address the critical issues identified by the multi-agent review.
 """
 
 import inspect
+from pathlib import Path
 import sys
 import tempfile
 import traceback
-from pathlib import Path
+
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "src"))

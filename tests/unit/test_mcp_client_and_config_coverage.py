@@ -4,8 +4,8 @@ Simple tests to improve coverage for client.py and config_manager.py by actually
 """
 
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import mock_open, patch
 
 import pytest

@@ -6,8 +6,8 @@ including SecretStr handling, encrypted file loading, and graceful degradation.
 
 import logging
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest

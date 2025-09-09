@@ -53,9 +53,9 @@ class TestVectorStoreImports:
     def test_required_dependencies_importable(self):
         """Test that required dependencies can be imported."""
         # Test standard library imports
+        from abc import ABC, abstractmethod
         import asyncio
         import logging
-        from abc import ABC, abstractmethod
 
         assert asyncio is not None
         assert logging is not None

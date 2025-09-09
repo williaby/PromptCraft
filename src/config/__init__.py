@@ -11,6 +11,7 @@ from .health import (
 )
 from .settings import ApplicationSettings, get_settings, reload_settings
 
+
 __all__ = [
     "ApplicationSettings",
     "ConfigurationStatusModel",

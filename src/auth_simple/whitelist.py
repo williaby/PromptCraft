@@ -5,11 +5,12 @@ enabling authorization of specific emails or entire domains (@company.com).
 Supports both individual email addresses, admin privilege detection, and user tier management.
 """
 
-import logging
 from dataclasses import dataclass
 from enum import Enum
+import logging
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +61,9 @@ class EmailWhitelistConfig(BaseModel):
     limited_users: list[str] = []
     case_sensitive: bool = False
 
-    @validator("whitelist", "admin_emails", "full_users", "limited_users", pre=True)
-    def normalize_emails(cls, v: str | list[str]) -> list[str]:  # noqa: N805
+    @field_validator("whitelist", "admin_emails", "full_users", "limited_users", mode="before")
+    @classmethod
+    def normalize_emails(cls, v: str | list[str]) -> list[str]:
         """Normalize email addresses to lowercase unless case_sensitive."""
         if isinstance(v, str):
             v = [email.strip() for email in v.split(",") if email.strip()]

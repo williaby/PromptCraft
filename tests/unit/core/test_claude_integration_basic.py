@@ -48,11 +48,11 @@ class TestClaudeIntegrationImports:
     def test_required_dependencies_importable(self):
         """Test that required dependencies can be imported."""
         import asyncio
-        import contextlib
-        import logging
         from collections.abc import Callable
+        import contextlib
         from dataclasses import asdict, dataclass, field
         from datetime import datetime
+        import logging
         from typing import Any
 
         assert asyncio is not None

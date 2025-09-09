@@ -35,9 +35,9 @@ Called by:
 Complexity: O(1) for header operations, O(n) for header masking where n is header count
 """
 
+from collections.abc import Callable
 import logging
 import time
-from collections.abc import Callable
 from typing import Any, cast
 
 from fastapi import Request, Response
@@ -45,6 +45,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response as StarletteResponse
 
 from src.config.settings import get_settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +210,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             - dict.items(): Header iteration
             - str.lower(): Case-insensitive header matching
         """
-        sensitive_keys = {"authorization", "cookie", "proxy-authorization", "x-api-key"}
+        sensitive_keys = {"authorization", "cookie", "set-cookie", "proxy-authorization", "x-api-key"}
         masked_headers = {}
 
         for key, value in headers.items():
@@ -220,15 +221,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         return masked_headers
 
-    def __init__(self, app: Any, log_body: bool = False) -> None:
+    def __init__(self, app: Any, log_body: bool = False, slow_request_threshold: float = 1.0) -> None:
         """Initialize request logging middleware.
 
         Args:
             app: The ASGI application
             log_body: Whether to log request bodies (be careful with sensitive data)
+            slow_request_threshold: Threshold in seconds for slow request logging
         """
         super().__init__(app)
         self.log_body = log_body
+        self.slow_request_threshold = slow_request_threshold
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Process request with security logging.
@@ -251,11 +254,22 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Calculate processing time
         process_time = time.time() - start_time
 
+        # Check for slow requests and log warning if needed
+        if process_time > self.slow_request_threshold:
+            logger.warning(
+                "Slow request detected: %s %s took %.3fs (threshold: %.3fs) from %s",
+                request.method,
+                request.url.path,
+                process_time,
+                self.slow_request_threshold,
+                getattr(getattr(request, "client", None), "host", "unknown"),
+            )
+
         # Log response
         self._log_response(request, response, process_time)
 
-        # Add timing header
-        response.headers["X-Process-Time"] = str(process_time)
+        # Add timing header (format to 6 decimal places max)
+        response.headers["X-Process-Time"] = f"{process_time:.6f}"
 
         # Cast to Response type for MyPy
         return cast(StarletteResponse, response)
@@ -347,21 +361,29 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return request.client.host if request.client else "unknown"
 
 
-def setup_security_middleware(app: Any) -> None:
+def setup_security_middleware(app: Any, csp_policy: str | None = None, slow_request_threshold: float | None = None) -> None:
     """Configure security middleware for the FastAPI application.
 
     This function adds all necessary security middleware in the correct order.
 
     Args:
         app: The FastAPI application instance
+        csp_policy: Optional custom CSP policy for SecurityHeadersMiddleware
+        slow_request_threshold: Optional custom threshold for slow request logging
     """
     settings = get_settings(validate_on_startup=False)
 
     # Add request logging middleware (outermost layer)
-    app.add_middleware(RequestLoggingMiddleware, log_body=False)
+    request_logging_kwargs = {"log_body": False}
+    if slow_request_threshold is not None:
+        request_logging_kwargs["slow_request_threshold"] = slow_request_threshold
+    app.add_middleware(RequestLoggingMiddleware, **request_logging_kwargs)
 
     # Add security headers middleware
-    app.add_middleware(SecurityHeadersMiddleware)
+    security_headers_kwargs = {}
+    if csp_policy is not None:
+        security_headers_kwargs["csp_policy"] = csp_policy
+    app.add_middleware(SecurityHeadersMiddleware, **security_headers_kwargs)
 
     logger.info(
         "Security middleware configured for %s environment",

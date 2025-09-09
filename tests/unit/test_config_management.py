@@ -6,21 +6,21 @@ management system including settings, validation, health checks, and performance
 configuration.
 """
 
+from datetime import datetime
 import os
+from pathlib import Path
 import sys
 import tempfile
-from datetime import datetime
-from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 
-import src.config.settings
 from src.config.constants import (
     CORS_ORIGINS_BY_ENVIRONMENT,
     FILE_PATH_PATTERNS,
@@ -52,6 +52,7 @@ from src.config.performance_config import (
     get_performance_config,
     validate_performance_requirements,
 )
+import src.config.settings
 from src.config.settings import (
     ApplicationSettings,
     ConfigurationValidationError,

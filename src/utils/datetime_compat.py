@@ -8,10 +8,11 @@ Phase 1: Emergency fix for Python 3.10 compatibility
 Phase 2: Full compatibility layer (expanded incrementally)
 """
 
-import sys
-import warnings
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
+import sys
+import warnings
+
 
 # Version detection
 PY_VERSION = sys.version_info[:2]
@@ -31,27 +32,30 @@ else:
 # Export the UTC constant for consistent imports
 __all__ = [
     "UTC",
+    "MockDatetime",
     "aware_to_naive",
+    "datetime",  # Re-export datetime class for unified imports
     "ensure_aware",
     "is_aware",
     "is_naive",
+    "local_now",
+    # Testing utilities
+    "mock_now",
     "naive_to_aware",
+    "parse_iso",
     "safe_compare",
     "timedelta",
+    "timestamp_now",
+    "to_iso",
     "utc_from_timestamp",
     "utc_now",
 ]
 
 
-def utc_now() -> datetime:
-    """
-    Get current UTC time as timezone-aware datetime.
-    Replaces deprecated datetime.utcnow() with proper timezone handling.
+# Global variable to hold mocked time (for testing utilities)
+_mock_now_time: datetime | None = None
 
-    Returns:
-        Timezone-aware datetime in UTC
-    """
-    return datetime.now(UTC)
+# Note: utc_now() is defined later with mock support
 
 
 def utc_from_timestamp(timestamp: float) -> datetime:
@@ -66,6 +70,86 @@ def utc_from_timestamp(timestamp: float) -> datetime:
         Timezone-aware datetime in UTC
     """
     return datetime.fromtimestamp(timestamp, UTC)
+
+
+def local_now() -> datetime:
+    """
+    Get current time in the system's local timezone.
+    
+    Returns:
+        Timezone-aware datetime in local timezone
+    """
+    return datetime.now().astimezone()
+
+
+def timestamp_now() -> float:
+    """
+    Get current UTC time as Unix timestamp.
+    Useful for caching, TTL calculations, and performance measurements.
+
+    Returns:
+        Unix timestamp (seconds since epoch)
+    """
+    if _mock_now_time is not None:
+        return _mock_now_time.timestamp()
+    return datetime.now(UTC).timestamp()
+
+
+def parse_iso(iso_string: str, assume_utc: bool = True) -> datetime:
+    """
+    Parse ISO format datetime string with timezone handling.
+    
+    Args:
+        iso_string: ISO format datetime string (e.g., "2023-01-01T12:00:00Z")
+        assume_utc: If True, assume UTC for naive datetimes (default: True)
+    
+    Returns:
+        Timezone-aware datetime
+    
+    Raises:
+        ValueError: If string cannot be parsed
+    """
+    try:
+        # Handle timezone-aware ISO strings
+        if iso_string.endswith("Z"):
+            # Replace 'Z' with '+00:00' for proper parsing
+            dt = datetime.fromisoformat(iso_string.replace("Z", "+00:00"))
+        elif "+" in iso_string or iso_string.count("-") > 2:
+            # Has timezone offset
+            dt = datetime.fromisoformat(iso_string)
+        else:
+            # Naive datetime
+            dt = datetime.fromisoformat(iso_string)
+            if assume_utc:
+                dt = dt.replace(tzinfo=UTC)
+        
+        return dt if is_aware(dt) else ensure_aware(dt, UTC if assume_utc else None)
+    except ValueError as e:
+        raise ValueError(f"Invalid ISO datetime string '{iso_string}': {e}") from e
+
+
+def to_iso(dt: datetime, include_timezone: bool = True) -> str:
+    """
+    Convert datetime to ISO format string.
+    
+    Args:
+        dt: Datetime to convert
+        include_timezone: Include timezone info in output (default: True)
+    
+    Returns:
+        ISO format string
+    """
+    if is_naive(dt):
+        dt = ensure_aware(dt, UTC)
+    
+    if include_timezone:
+        # Use 'Z' suffix for UTC, otherwise keep timezone offset
+        if dt.tzinfo == UTC:
+            return dt.isoformat().replace("+00:00", "Z")
+        return dt.isoformat()
+    
+    # Strip timezone for naive-style output
+    return dt.replace(tzinfo=None).isoformat()
 
 
 def is_aware(dt: datetime) -> bool:
@@ -222,7 +306,7 @@ def assert_datetime_aware(dt: datetime, context: str = "") -> datetime:
 def utcnow_compat() -> datetime:
     """Legacy compatibility for datetime.utcnow() - use utc_now() instead."""
     warnings.warn("utcnow_compat() is deprecated, use utc_now() instead", DeprecationWarning, stacklevel=2)
-    return utc_now()
+    return _original_utc_now()
 
 
 def utcfromtimestamp_compat(timestamp: float) -> datetime:
@@ -233,3 +317,89 @@ def utcfromtimestamp_compat(timestamp: float) -> datetime:
         stacklevel=2,
     )
     return utc_from_timestamp(timestamp)
+
+
+# Testing utilities - support for mocking utc_now() behavior
+
+
+class MockDatetime:
+    """
+    Context manager for mocking utc_now() calls in tests.
+    
+    Usage:
+        with MockDatetime("2023-01-01T12:00:00Z"):
+            # Code that calls utc_now() will return the mocked time
+            assert utc_now() == datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
+    """
+    
+    def __init__(self, mock_time: str | datetime) -> None:
+        """
+        Initialize mock datetime context.
+        
+        Args:
+            mock_time: Time to mock (ISO string or datetime object)
+        """
+        if isinstance(mock_time, str):
+            self.mock_time = parse_iso(mock_time)
+        else:
+            self.mock_time = ensure_aware(mock_time, UTC)
+        
+        self.previous_mock_time = None
+    
+    def __enter__(self):
+        """Start mocking datetime functions."""
+        global _mock_now_time
+        self.previous_mock_time = _mock_now_time
+        _mock_now_time = self.mock_time
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Stop mocking datetime functions."""
+        global _mock_now_time
+        _mock_now_time = self.previous_mock_time
+
+
+# Global variable is already defined above
+
+
+def mock_now(mock_time: str | datetime | None = None) -> datetime:
+    """
+    Get mocked current time for testing, or real time if not mocking.
+    
+    Args:
+        mock_time: Time to mock (ISO string or datetime object). 
+                  If None, uses global mock time or real time.
+    
+    Returns:
+        Mocked or real current UTC time
+    """
+    if mock_time is not None:
+        if isinstance(mock_time, str):
+            return parse_iso(mock_time)
+        return ensure_aware(mock_time, UTC)
+    
+    if _mock_now_time is not None:
+        return _mock_now_time
+    
+    return _original_utc_now()
+
+
+# Modify utc_now to use mock when available
+def _original_utc_now() -> datetime:
+    """Original UTC now implementation."""
+    return datetime.now(UTC)
+
+
+def utc_now() -> datetime:
+    """
+    Get current UTC time as timezone-aware datetime.
+    Replaces deprecated datetime.utcnow() with proper timezone handling.
+    
+    In tests, will return mocked time if MockDatetime context is active.
+
+    Returns:
+        Timezone-aware datetime in UTC
+    """
+    if _mock_now_time is not None:
+        return _mock_now_time
+    return _original_utc_now()

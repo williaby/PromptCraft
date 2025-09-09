@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Simple security metrics collection script for testing purposes."""
 
-import os
 from datetime import UTC, datetime
+import os
 from pathlib import Path
 
 

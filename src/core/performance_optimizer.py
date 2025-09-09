@@ -14,15 +14,16 @@ Key optimizations:
 """
 
 import asyncio
-import hashlib
-import logging
-import time
 from collections import OrderedDict
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
+import hashlib
+import logging
+import time
 from typing import Any, TypeVar
+
 
 # Type variables for generic caching
 T = TypeVar("T")

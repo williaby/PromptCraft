@@ -7,9 +7,9 @@ for MVP validation. Detailed performance testing is deferred to future phases.
 
 import time
 
-import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
+import pytest
 
 
 class TestPerformanceSmoke:

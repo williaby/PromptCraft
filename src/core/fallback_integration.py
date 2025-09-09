@@ -26,10 +26,10 @@ Architecture:
 """
 
 import asyncio
-import logging
-import time
 from dataclasses import dataclass
 from enum import Enum
+import logging
+import time
 from typing import Any
 
 from src.core.conservative_fallback_chain import (
@@ -40,6 +40,7 @@ from src.core.conservative_fallback_chain import (
 from src.core.task_detection import DetectionResult, TaskDetectionSystem
 from src.core.task_detection_config import DetectionMode, TaskDetectionConfig
 from src.utils.logging_mixin import LoggerMixin
+
 
 logger = logging.getLogger(__name__)
 

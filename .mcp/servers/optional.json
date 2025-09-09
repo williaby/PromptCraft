@@ -1,0 +1,77 @@
+{
+  "version": "1.0",
+  "description": "Optional MCP servers for enhanced functionality",
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "UPSTASH_REDIS_REST_URL": "${UPSTASH_REDIS_REST_URL}",
+        "UPSTASH_REDIS_REST_TOKEN": "${UPSTASH_REDIS_REST_TOKEN}"
+      },
+      "enabled": true,
+      "priority": 200,
+      "timeout": 30,
+      "retry_attempts": 2,
+      "docker_compatible": true,
+      "memory_requirement": "100MB",
+      "deployment_preference": "npx",
+      "docker_features": ["networking"],
+      "npx_features": ["cloud", "auto_update"],
+      "health_check": {
+        "type": "api_key_required",
+        "required_env": ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"]
+      }
+    },
+    "perplexity": {
+      "command": "npx",
+      "args": ["-y", "@jschuller/perplexity-mcp"],
+      "env": {
+        "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
+      },
+      "enabled": false,
+      "priority": 300,
+      "timeout": 30,
+      "retry_attempts": 2,
+      "docker_compatible": true,
+      "memory_requirement": "50MB",
+      "deployment_preference": "npx",
+      "docker_features": ["networking"],
+      "npx_features": ["cloud", "auto_update"],
+      "health_check": {
+        "type": "api_key_required",
+        "required_env": ["PERPLEXITY_API_KEY"]
+      }
+    },
+    "sentry": {
+      "command": "npx",
+      "args": ["-y", "@sentry/mcp-server"],
+      "env": {
+        "SENTRY_AUTH_TOKEN": "${SENTRY_AUTH_TOKEN}",
+        "SENTRY_ORG": "${SENTRY_ORG}",
+        "SENTRY_PROJECT": "${SENTRY_PROJECT}"
+      },
+      "enabled": false,
+      "priority": 400,
+      "timeout": 30,
+      "retry_attempts": 2,
+      "docker_compatible": true,
+      "memory_requirement": "75MB",
+      "deployment_preference": "npx",
+      "docker_features": ["networking"],
+      "npx_features": ["cloud", "auto_update"],
+      "health_check": {
+        "type": "api_key_required",
+        "required_env": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG"]
+      }
+    }
+  },
+  "global_settings": {
+    "parallel_execution": true,
+    "max_concurrent_servers": 3,
+    "health_check_interval": 120,
+    "auto_restart": false,
+    "graceful_degradation": true,
+    "fallback_enabled": true
+  }
+}

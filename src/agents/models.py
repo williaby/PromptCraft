@@ -49,9 +49,9 @@ Called by:
 Complexity: O(1) - Data models with validation have constant time complexity
 """
 
-import uuid
 from datetime import datetime
 from typing import Any
+import uuid
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 

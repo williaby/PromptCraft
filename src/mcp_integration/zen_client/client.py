@@ -9,8 +9,8 @@ error handling, and connection management.
 import asyncio
 import json
 import logging
-import uuid
 from typing import Any
+import uuid
 
 from .error_handler import MCPConnectionManager, RetryHandler
 from .models import (
@@ -28,6 +28,7 @@ from .models import (
 )
 from .protocol_bridge import MCPProtocolBridge
 from .subprocess_manager import ProcessPool, ZenMCPProcess
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class ZenMCPStdioClient:
         env_vars: dict[str, str] | None = None,
         fallback_config: FallbackConfig | None = None,
         connection_timeout: float = 30.0,
-    ):
+    ) -> None:
         """
         Initialize PromptCraft MCP client.
 
@@ -115,7 +116,7 @@ class ZenMCPStdioClient:
                 logger.error(f"Failed to connect to zen-mcp-server: {e}")
                 return False
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Disconnect from zen-mcp-server and cleanup resources."""
         async with self._lock:
             try:
@@ -151,7 +152,7 @@ class ZenMCPStdioClient:
         endpoint = "/api/promptcraft/route/analyze"
         request_data = request.dict()
 
-        async def mcp_operation():
+        async def mcp_operation() -> dict[str, Any]:
             mcp_call = self.protocol_bridge.http_to_mcp_request(endpoint, request_data)
             mcp_result = await self.call_tool(mcp_call.name, mcp_call.arguments)
             return self.protocol_bridge.mcp_to_http_response(endpoint, mcp_result)
@@ -192,7 +193,7 @@ class ZenMCPStdioClient:
         endpoint = "/api/promptcraft/execute/smart"
         request_data = request.dict()
 
-        async def mcp_operation():
+        async def mcp_operation() -> dict[str, Any]:
             mcp_call = self.protocol_bridge.http_to_mcp_request(endpoint, request_data)
             mcp_result = await self.call_tool(mcp_call.name, mcp_call.arguments)
             return self.protocol_bridge.mcp_to_http_response(endpoint, mcp_result)
@@ -233,7 +234,7 @@ class ZenMCPStdioClient:
         endpoint = "/api/promptcraft/models/available"
         request_data = request.dict()
 
-        async def mcp_operation():
+        async def mcp_operation() -> dict[str, Any]:
             mcp_call = self.protocol_bridge.http_to_mcp_request(endpoint, request_data)
             mcp_result = await self.call_tool(mcp_call.name, mcp_call.arguments)
             return self.protocol_bridge.mcp_to_http_response(endpoint, mcp_result)
@@ -290,10 +291,11 @@ class ZenMCPStdioClient:
         if not self.connected or not self.current_process:
             raise Exception("Not connected to zen-mcp-server")
 
-        async def operation():
+        async def operation() -> dict[str, Any]:
             return await self._send_mcp_request(tool_name, arguments)
 
-        return await self.retry_handler.with_retry(operation, f"call_tool({tool_name})")
+        result = await self.retry_handler.with_retry(operation, f"call_tool({tool_name})")
+        return result if isinstance(result, dict) else {"error": "Invalid result type"}
 
     async def _send_mcp_request(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """
@@ -353,7 +355,8 @@ class ZenMCPStdioClient:
 
             # Extract result
             if "result" in response:
-                return response["result"]
+                result = response["result"]
+                return result if isinstance(result, dict) else {"content": str(result)}
             raise Exception("No result in MCP response")
 
         except TimeoutError:
@@ -381,12 +384,12 @@ class ZenMCPStdioClient:
         # Read response lines until we find our response
         while True:
             try:
-                line = await asyncio.get_event_loop().run_in_executor(None, process.stdout.readline)
+                line_bytes = await asyncio.get_event_loop().run_in_executor(None, process.stdout.readline)
 
-                if not line:
+                if not line_bytes:
                     raise Exception("Process stdout closed unexpectedly")
 
-                line = line.strip()
+                line = line_bytes.strip() if isinstance(line_bytes, str) else line_bytes.decode().strip()
                 if not line:
                     continue
 
@@ -394,7 +397,7 @@ class ZenMCPStdioClient:
                 try:
                     response_data = json.loads(line)
                     if response_data.get("id") == request_id:
-                        return line
+                        return str(line)
                     # else: different request, keep reading
                 except json.JSONDecodeError:
                     # Not JSON, might be log output, ignore
@@ -437,14 +440,16 @@ class ZenMCPStdioClient:
 
     def is_connected(self) -> bool:
         """Check if client is connected."""
-        return self.connected and self.current_process and self.current_process.is_running()
+        if not self.connected or not self.current_process:
+            return False
+        return self.current_process.is_running()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "ZenMCPStdioClient":
         """Async context manager entry."""
         await self.connect()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.disconnect()
 

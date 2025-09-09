@@ -37,10 +37,10 @@ Complexity: O(n*m) where n is number of test scenarios and m is component comple
 """
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
@@ -60,6 +60,7 @@ from tests.performance.performance_config import (
     PerformanceThresholds,
     PerformanceValidator,
 )
+
 
 # Configure logging for performance tests
 logging.basicConfig(level=logging.INFO)

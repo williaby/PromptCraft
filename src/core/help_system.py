@@ -5,9 +5,9 @@ Provides context-aware help, learning guidance, and progressive disclosure
 for user override commands and power user features.
 """
 
-import re
 from dataclasses import dataclass, field
 from datetime import datetime
+import re
 from typing import Any
 
 from src.utils.datetime_compat import utc_now

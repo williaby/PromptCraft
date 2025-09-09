@@ -1,0 +1,184 @@
+# Agent Discovery Configuration
+# Defines priority order and strategies for discovering agents
+
+version: "1.0"
+
+# Global discovery settings
+settings:
+  cache_ttl_minutes: 30
+  max_concurrent_agents: 10
+  resource_monitoring_enabled: true
+  remote_registry_enabled: false
+
+# Default priority order for all agents unless overridden
+default_priority_order:
+  - user_override        # ~/.claude/agents/
+  - project_specific     # .agents/core/ and .agents/project/
+  - bundled_default      # .agents/defaults/
+  - remote_registry      # https://agents.promptcraft.ai
+
+# Agent-specific discovery configurations
+agents:
+  code-reviewer:
+    priority_order:
+      - user_override
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "256MB"
+      model: "sonnet"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: []
+
+  test-engineer:
+    priority_order:
+      - user_override
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "512MB"
+      model: "opus"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: ["pytest", "coverage"]
+
+  security-auditor:
+    priority_order:
+      - user_override
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "256MB"
+      model: "opus"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: ["bandit", "safety"]
+
+  ai-engineer:
+    priority_order:
+      - project_specific   # Project-specific implementation preferred
+      - user_override
+      - bundled_default
+    
+    resource_requirements:
+      memory: "512MB"
+      model: "opus"
+      execution_mode: "async"
+    
+    dependencies:
+      services:
+        qdrant: "192.168.1.16:6333"
+        zen_mcp: "auto_discover"
+      packages:
+        - "openai>=1.0.0"
+        - "qdrant-client>=1.5.0"
+
+  prompt-engineer:
+    priority_order:
+      - user_override
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "256MB"
+      model: "opus"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: []
+
+  documentation-writer:
+    priority_order:
+      - user_override
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "128MB"
+      model: "sonnet"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: []
+
+  knowledge-manager:
+    priority_order:
+      - project_specific
+      - user_override
+      - bundled_default
+    
+    resource_requirements:
+      memory: "256MB"
+      model: "sonnet"
+      execution_mode: "async"
+    
+    dependencies:
+      services:
+        qdrant: "192.168.1.16:6333"
+      packages:
+        - "qdrant-client>=1.5.0"
+
+  journey-orchestrator:
+    priority_order:
+      - project_specific
+      - bundled_default
+    
+    resource_requirements:
+      memory: "256MB"
+      model: "sonnet"
+      execution_mode: "async"
+    
+    dependencies:
+      services: {}
+      packages: []
+
+# Global resource limits
+resource_limits:
+  total_memory_mb: 2048
+  max_concurrent_agents: 10
+  model_limits:
+    opus: 3
+    sonnet: 8
+    haiku: 15
+
+# Search path configuration
+search_paths:
+  user_level: "~/.claude/agents"
+  project_core: ".agents/core"
+  project_specific: ".agents/project"
+  bundled_defaults: ".agents/defaults"
+
+# Context loading configuration
+context_config:
+  shared_context_path: ".agents/context"
+  max_context_size_mb: 10
+  context_cache_enabled: true
+  context_cache_ttl_minutes: 60
+
+# Remote registry configuration (disabled by default)
+remote_registry:
+  enabled: false
+  url: "https://agents.promptcraft.ai"
+  timeout: 30
+  max_agents: 5
+  cache_ttl_hours: 24
+
+# Production overrides
+production:
+  max_concurrent_agents: 15
+  resource_limits:
+    total_memory_mb: 4096
+  prefer_project_agents: true
+  disable_user_overrides: false

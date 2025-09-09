@@ -23,8 +23,8 @@ and missing Base import. See https://github.com/your-repo/issues/XXX for trackin
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

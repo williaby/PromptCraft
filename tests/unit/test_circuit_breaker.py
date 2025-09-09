@@ -5,8 +5,8 @@ external service failures with configurable thresholds and recovery.
 """
 
 import asyncio
-import threading
 from datetime import datetime, timedelta
+import threading
 from unittest.mock import Mock, patch
 
 import pytest

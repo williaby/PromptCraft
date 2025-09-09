@@ -7,9 +7,9 @@ following the pattern established in ledgerbase for secure .env file handling.
 
 import logging
 import os
+from pathlib import Path
 import subprocess  # nosec B404
 import sys
-from pathlib import Path
 
 import gnupg
 

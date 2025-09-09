@@ -7,6 +7,7 @@ of truth for authorization configuration.
 
 from typing import Final
 
+
 # User Roles
 ROLE_ADMIN: Final[str] = "admin"
 ROLE_USER: Final[str] = "user"

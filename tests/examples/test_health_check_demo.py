@@ -320,6 +320,35 @@ class TestDemonstrateHttpEndpoints:
         assert no_server_found
 
     @pytest.mark.asyncio
+    @patch("examples.health_check_demo.httpx.AsyncClient")
+    @patch("examples.health_check_demo.console")
+    async def test_demonstrate_http_endpoints_non_200_response(self, mock_console, mock_client_class):
+        """Test HTTP endpoints demonstration when server responds with non-200 status (covers branch 231->exit)."""
+        mock_client = AsyncMock()
+        
+        # Mock ping response with non-200 status code (e.g., 404, 500, etc.)
+        mock_ping_response = Mock()
+        mock_ping_response.status_code = 404  # Not HTTP_OK (200)
+        
+        mock_client.get.return_value = mock_ping_response
+        mock_client_class.return_value.__aenter__.return_value = mock_client
+
+        await demonstrate_http_endpoints()
+
+        # Should attempt to connect to ping endpoint
+        mock_client.get.assert_called()
+
+        # Should NOT display live server responses (because status != 200)
+        # Should show example responses instead
+        print_calls = [str(call) for call in mock_console.print.call_args_list]
+        live_server_found = any("Live server detected" in call for call in print_calls)
+        assert not live_server_found  # Should not find live server message
+
+        # Should show example endpoints instead
+        example_response_found = any("GET /health:" in call for call in print_calls)
+        assert example_response_found
+
+    @pytest.mark.asyncio
     @patch("examples.health_check_demo.console")
     async def test_demonstrate_http_endpoints_example_responses(self, mock_console):
         """Test that example responses are shown."""

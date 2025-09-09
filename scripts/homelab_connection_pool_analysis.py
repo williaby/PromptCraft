@@ -6,11 +6,12 @@ considering limited CPU and memory resources while maintaining good performance
 for the AUTH-4 database consolidation.
 """
 
-import logging
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 import psutil
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

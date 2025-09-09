@@ -11,13 +11,14 @@ import pandas as pd
 
 from src.admin.user_tier_manager import UserTierManager
 
+
 logger = logging.getLogger(__name__)
 
 
 class TierManagementInterface:
     """Gradio interface for user tier management."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the tier management interface."""
         self.tier_manager = UserTierManager()
 
@@ -117,28 +118,28 @@ class TierManagementInterface:
                     stats_display = gr.HTML(elem_id="stats-display")
 
                     # User Tables by Tier
-                    with gr.Tab("Admin Users") as admin_users_tab:
+                    with gr.Tab("Admin Users"):
                         admin_users_df = gr.Dataframe(
                             headers=["Email", "Access Level", "Status"],
                             elem_id="admin-users-table",
                             interactive=False,
                         )
 
-                    with gr.Tab("Full Users") as full_users_tab:
+                    with gr.Tab("Full Users"):
                         full_users_df = gr.Dataframe(
                             headers=["Email", "Access Level", "Status"],
                             elem_id="full-users-table",
                             interactive=False,
                         )
 
-                    with gr.Tab("Limited Users") as limited_users_tab:
+                    with gr.Tab("Limited Users"):
                         limited_users_df = gr.Dataframe(
                             headers=["Email", "Access Level", "Status"],
                             elem_id="limited-users-table",
                             interactive=False,
                         )
 
-                    with gr.Tab("Unassigned") as unassigned_tab:
+                    with gr.Tab("Unassigned"):
                         unassigned_df = gr.Dataframe(
                             headers=["Email", "Status", "Note"],
                             elem_id="unassigned-table",
@@ -146,31 +147,30 @@ class TierManagementInterface:
                         )
 
             # Configuration and Logs Section
-            with gr.Row():
-                with gr.Column():
-                    gr.HTML("<h3>⚙️ Configuration Management</h3>")
+            with gr.Row(), gr.Column():
+                gr.HTML("<h3>⚙️ Configuration Management</h3>")
 
-                    with gr.Row():
-                        validate_config_button = gr.Button("Validate Configuration", variant="secondary")
-                        export_config_button = gr.Button("Export Configuration", variant="secondary")
-                        persist_changes_button = gr.Button("Apply Changes", variant="primary")
+                with gr.Row():
+                    validate_config_button = gr.Button("Validate Configuration", variant="secondary")
+                    export_config_button = gr.Button("Export Configuration", variant="secondary")
+                    persist_changes_button = gr.Button("Apply Changes", variant="primary")
 
-                    with gr.Row():
-                        reload_config_button = gr.Button("Reload from Environment", variant="secondary")
-                        generate_env_button = gr.Button("Generate .env Updates", variant="secondary")
+                with gr.Row():
+                    reload_config_button = gr.Button("Reload from Environment", variant="secondary")
+                    generate_env_button = gr.Button("Generate .env Updates", variant="secondary")
 
-                    config_status = gr.HTML(elem_id="config-status")
+                config_status = gr.HTML(elem_id="config-status")
 
-                    # Changes Log
-                    with gr.Group():
-                        gr.HTML("<h4>Recent Changes</h4>")
-                        changes_log = gr.Textbox(
-                            label="Activity Log",
-                            lines=10,
-                            elem_id="changes-log",
-                            interactive=False,
-                        )
-                        refresh_log_button = gr.Button("Refresh Log", variant="secondary")
+                # Changes Log
+                with gr.Group():
+                    gr.HTML("<h4>Recent Changes</h4>")
+                    changes_log = gr.Textbox(
+                        label="Activity Log",
+                        lines=10,
+                        elem_id="changes-log",
+                        interactive=False,
+                    )
+                    refresh_log_button = gr.Button("Refresh Log", variant="secondary")
 
             # Event Handlers
             self._setup_event_handlers(
@@ -203,43 +203,41 @@ class TierManagementInterface:
 
         return admin_tab
 
-    def _setup_event_handlers(self, **components):
+    def _setup_event_handlers(self, **components) -> None:
         """Setup event handlers for all components."""
 
         # Assign tier button
         components["assign_button"].click(
             fn=self._assign_tier,
             inputs=[components["user_email_input"], components["tier_selection"]],
-            outputs=[components["assignment_result"], components["stats_display"]]
-            + self._get_table_outputs(components),
+            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Remove tier button
         components["remove_button"].click(
             fn=self._remove_tier,
             inputs=[components["user_email_input"]],
-            outputs=[components["assignment_result"], components["stats_display"]]
-            + self._get_table_outputs(components),
+            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Bulk assign button
         components["bulk_assign_button"].click(
             fn=self._bulk_assign,
             inputs=[components["bulk_emails"], components["bulk_tier"]],
-            outputs=[components["bulk_result"], components["stats_display"]] + self._get_table_outputs(components),
+            outputs=[components["bulk_result"], components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Search button
         components["search_button"].click(
             fn=self._search_users,
             inputs=[components["search_input"]],
-            outputs=[components["stats_display"]] + self._get_table_outputs(components),
+            outputs=[components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Refresh button
         components["refresh_button"].click(
             fn=self._refresh_all_data,
-            outputs=[components["stats_display"]] + self._get_table_outputs(components),
+            outputs=[components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Validate config button
@@ -257,7 +255,7 @@ class TierManagementInterface:
         # Reload config button
         components["reload_config_button"].click(
             fn=self._reload_configuration,
-            outputs=[components["config_status"], components["stats_display"]] + self._get_table_outputs(components),
+            outputs=[components["config_status"], components["stats_display"], *self._get_table_outputs(components)],
         )
 
         # Generate env button
@@ -306,7 +304,7 @@ class TierManagementInterface:
             return (result_html, stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error in assign_tier: {e}")
+            logger.error("Error in assign_tier: %s", e)
             error_html = f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px; margin: 8px 0;">
                     <strong style="color: #dc2626;">❌ System Error:</strong> {e!s}
@@ -340,7 +338,7 @@ class TierManagementInterface:
             return (result_html, stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error in remove_tier: {e}")
+            logger.error("Error in remove_tier: %s", e)
             return (f"System error: {e!s}", "", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     def _bulk_assign(
@@ -389,7 +387,7 @@ class TierManagementInterface:
             return (result_html, stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error in bulk_assign: {e}")
+            logger.error("Error in bulk_assign: %s", e)
             return (f"System error: {e!s}", "", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     def _search_users(self, query: str) -> tuple[str, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -417,7 +415,7 @@ class TierManagementInterface:
             return (stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error in search_users: {e}")
+            logger.error("Error in search_users: %s", e)
             return (f"Search error: {e!s}", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     def _refresh_all_data(self) -> tuple[str, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -428,7 +426,7 @@ class TierManagementInterface:
             return (stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error refreshing data: {e}")
+            logger.error("Error refreshing data: %s", e)
             return (f"Refresh error: {e!s}", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     def _validate_configuration(self) -> str:
@@ -456,7 +454,7 @@ class TierManagementInterface:
                 """
 
         except Exception as e:
-            logger.error(f"Error validating configuration: {e}")
+            logger.error("Error validating configuration: %s", e)
             return f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px;">
                     <strong style="color: #dc2626;">❌ Validation Error:</strong> {e!s}
@@ -479,7 +477,7 @@ class TierManagementInterface:
             """
 
         except Exception as e:
-            logger.error(f"Error exporting configuration: {e}")
+            logger.error("Error exporting configuration: %s", e)
             return f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px;">
                     <strong style="color: #dc2626;">❌ Export Error:</strong> {e!s}
@@ -505,7 +503,7 @@ class TierManagementInterface:
             return log_text
 
         except Exception as e:
-            logger.error(f"Error refreshing changes log: {e}")
+            logger.error("Error refreshing changes log: %s", e)
             return f"Error loading changes log: {e!s}"
 
     def _persist_changes(self) -> str:
@@ -527,7 +525,7 @@ class TierManagementInterface:
                 """
 
         except Exception as e:
-            logger.error(f"Error persisting changes: {e}")
+            logger.error("Error persisting changes: %s", e)
             return f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px;">
                     <strong style="color: #dc2626;">❌ System Error:</strong> {e!s}
@@ -560,7 +558,7 @@ class TierManagementInterface:
             return (status_html, stats_html, *tables)
 
         except Exception as e:
-            logger.error(f"Error reloading configuration: {e}")
+            logger.error("Error reloading configuration: %s", e)
             error_html = f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px;">
                     <strong style="color: #dc2626;">❌ System Error:</strong> {e!s}
@@ -589,7 +587,7 @@ class TierManagementInterface:
             """
 
         except Exception as e:
-            logger.error(f"Error generating env updates: {e}")
+            logger.error("Error generating env updates: %s", e)
             return f"""
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 6px; padding: 12px;">
                     <strong style="color: #dc2626;">❌ Generation Error:</strong> {e!s}
@@ -620,7 +618,7 @@ class TierManagementInterface:
             """
 
         except Exception as e:
-            logger.error(f"Error generating stats HTML: {e}")
+            logger.error("Error generating stats HTML: %s", e)
             return f"<div>Error loading statistics: {e!s}</div>"
 
     def _generate_user_tables(self) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -630,7 +628,7 @@ class TierManagementInterface:
             return self._generate_tables_from_data(users_by_tier)
 
         except Exception as e:
-            logger.error(f"Error generating user tables: {e}")
+            logger.error("Error generating user tables: %s", e)
             return (pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame())
 
     def _generate_tables_from_data(

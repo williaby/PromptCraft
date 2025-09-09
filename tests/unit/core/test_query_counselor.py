@@ -38,8 +38,7 @@ from src.core.query_counselor import (
     WorkflowStep,
 )
 from src.mcp_integration.hybrid_router import RoutingStrategy
-from src.mcp_integration.mcp_client import MCPError
-from src.mcp_integration.mcp_client import Response as MCPResponse
+from src.mcp_integration.mcp_client import MCPError, Response as MCPResponse
 
 
 class TestDataModels:

@@ -4,14 +4,15 @@ This module provides the essential template management functionality for Phase 1
 implementing basic template loading and validation without advanced features.
 """
 
-import logging
 from dataclasses import dataclass
 from enum import Enum
+import logging
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import BaseModel, Field, ValidationError
+import yaml
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

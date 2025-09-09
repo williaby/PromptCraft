@@ -6,11 +6,11 @@ with the existing Claude Code command structure and workflows.
 """
 
 import asyncio
-import contextlib
-import logging
 from collections.abc import Callable
+import contextlib
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
+import logging
 from typing import Any, cast
 
 from src.utils.datetime_compat import UTC
@@ -20,6 +20,7 @@ from .help_system import InteractiveHelpSystem
 from .task_detection import TaskDetectionSystem
 from .task_detection_config import ConfigManager
 from .user_control_system import CommandResult, UserControlSystem
+
 
 logger = logging.getLogger(__name__)
 

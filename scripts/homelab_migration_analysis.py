@@ -7,14 +7,15 @@ to a consolidated PostgreSQL schema in a homelab environment, considering
 processing power, storage constraints, and migration complexity.
 """
 
+from dataclasses import dataclass
 import logging
+from pathlib import Path
 import re
 import sqlite3
-from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import psutil
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

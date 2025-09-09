@@ -41,9 +41,9 @@ Called by:
 Complexity: O(n*m) where n is number of available agents and m is query complexity
 """
 
+from enum import Enum
 import logging
 import time
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -57,14 +57,11 @@ from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import (
     MCPClientInterface,
     MCPError,
-)
-from src.mcp_integration.mcp_client import (
     Response as MCPResponse,
-)
-from src.mcp_integration.mcp_client import (
     WorkflowStep as MCPWorkflowStep,
 )
 from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
+
 
 # Constants for query complexity analysis
 COMPLEX_QUERY_WORD_THRESHOLD = 20

@@ -1,7 +1,7 @@
 """Unit tests for create_models_core API models."""
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.api.models.create_models_core import (
     CreateRequestModel,

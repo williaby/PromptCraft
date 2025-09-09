@@ -10,8 +10,8 @@ sophisticated coverage reporting functionality while eliminating the 5x test
 execution inefficiency.
 """
 
-import time
 from pathlib import Path
+import time
 from typing import Any
 
 from defusedxml import ElementTree as ET  # noqa: N817

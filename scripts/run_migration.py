@@ -8,8 +8,9 @@ Access Control system on top of the existing AUTH-1 and AUTH-2 infrastructure.
 import asyncio
 import logging
 import os
-import sys
 from pathlib import Path
+import sys
+
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -17,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from sqlalchemy import text
 
 from src.database.connection import get_database_manager
+
 
 # Configure logging
 logging.basicConfig(

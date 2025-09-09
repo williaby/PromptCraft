@@ -6,19 +6,20 @@ loading system's 70% token reduction goal. It tracks token usage, function loadi
 efficiency, and user experience metrics to ensure optimization claims are validated.
 """
 
-import logging
-import time
 from collections import deque
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
+import logging
 from statistics import mean, median
+import time
 from typing import Any
 
 from src.core.analytics_engine import AnalyticsEngine
 from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
 from src.utils.performance_monitor import MetricData, MetricType, PerformanceMonitor
+
 
 logger = logging.getLogger(__name__)
 

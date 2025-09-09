@@ -8,9 +8,9 @@ between SQLite and PostgreSQL databases.
 """
 
 import json
+from pathlib import Path
 import re
 import sqlite3
-from pathlib import Path
 
 
 def validate_sql_identifier(identifier: str) -> str:

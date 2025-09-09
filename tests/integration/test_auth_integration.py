@@ -12,17 +12,17 @@ This module tests the complete integration of:
 # ruff: noqa: S106
 
 import asyncio
-import hashlib
-import time
-import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
+import hashlib
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
+import uuid
 
-import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.config import AuthenticationConfig
@@ -125,10 +125,7 @@ class TestAuthenticationIntegration:
         async def mock_db_generator():
             yield mock_database_session
 
-        with (
-            patch("src.auth.middleware.get_database_manager_async", return_value=mock_manager),
-            patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator()),
-        ):
+        with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator()):
             yield mock_manager
 
     @pytest.fixture
@@ -332,11 +329,12 @@ class TestAuthenticationIntegration:
         """Test graceful degradation when database is unavailable."""
         app = FastAPI()
 
-        # Mock database failure
-        with patch("src.auth.middleware.get_database_manager_async") as mock_get_db:
-            mock_db = AsyncMock()
-            mock_db.get_session.side_effect = Exception("Database connection failed")
-            mock_get_db.return_value = mock_db
+        # Mock database failure  
+        async def mock_db_generator_failure():
+            raise Exception("Database connection failed")
+            yield  # This line never executes but satisfies the generator requirement
+
+        with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_failure()):
 
             app.add_middleware(
                 AuthenticationMiddleware,

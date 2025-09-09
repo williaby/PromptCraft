@@ -2,9 +2,9 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+import pytest
 
 from src.config.settings import ApplicationSettings, ConfigurationValidationError
 from src.main import app, create_app, lifespan

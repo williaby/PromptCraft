@@ -45,6 +45,7 @@ from src.security.audit_logging import audit_logger_instance
 from src.security.rate_limiting import RateLimits, rate_limit
 from src.utils.datetime_compat import utc_now
 
+
 logger = logging.getLogger(__name__)
 
 # Create router for A/B testing endpoints

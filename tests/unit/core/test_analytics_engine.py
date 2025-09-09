@@ -5,10 +5,10 @@ Focuses on testing individual components like UsageTracker, PatternDetector,
 and InsightGenerator in isolation.
 """
 
-import json
-import sqlite3
 from datetime import datetime, timedelta
+import json
 from pathlib import Path
+import sqlite3
 from unittest.mock import patch
 
 import pytest

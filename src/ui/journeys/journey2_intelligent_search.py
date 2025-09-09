@@ -5,8 +5,6 @@ This module implements the OpenRouter execution interface for enhanced prompts
 created in Journey 1, with placeholder for future HyDE-powered search integration.
 """
 
-import asyncio
-import json
 import logging
 import time
 from typing import Any
@@ -16,6 +14,7 @@ import gradio as gr
 from src.mcp_integration.openrouter_client import OpenRouterClient
 from src.mcp_integration.zen_stdio_client import ZenStdioMCPClient
 from src.utils.logging_mixin import LoggerMixin
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,22 +42,22 @@ class Journey2IntelligentSearch(LoggerMixin):
         self.openrouter_client = OpenRouterClient()
         self.zen_client = ZenStdioMCPClient()
         self.mcp_enabled = True  # Enable MCP routing by default
-        self._routing_metadata = {}  # Track routing decisions
+        self._routing_metadata: dict[str, Any] = {}  # Track routing decisions
 
     async def _execute_with_intelligent_routing(
         self,
         enhanced_prompt: str,
         user_tier: str,
-        workflow_step: dict[str, Any]
+        workflow_step: dict[str, Any],
     ) -> tuple[list[Any], dict[str, Any]]:
         """
         Execute with intelligent routing: zen MCP first, OpenRouter fallback.
-        
+
         Args:
             enhanced_prompt: The prompt to execute
-            user_tier: User access tier  
+            user_tier: User access tier
             workflow_step: Workflow step configuration
-            
+
         Returns:
             Tuple of (responses, routing_metadata)
         """
@@ -68,88 +67,93 @@ class Journey2IntelligentSearch(LoggerMixin):
             "zen_success": False,
             "fallback_used": False,
             "routing_time_ms": 0,
-            "error_details": None
+            "error_details": None,
         }
-        
+
         routing_start = time.time()
-        
+
         # Phase 1: Try zen MCP routing if enabled
         if self.mcp_enabled:
             routing_metadata["zen_attempted"] = True
             try:
-                self.log_info("🚀 Attempting zen MCP intelligent routing...")
-                
-                # Connect to zen MCP server  
+                self.logger.info("🚀 Attempting zen MCP intelligent routing...")
+
+                # Connect to zen MCP server
                 zen_connected = await self.zen_client.connect()
-                
+
                 if zen_connected:
                     # Try to get model recommendations first
                     recommendations = await self.zen_client.get_model_recommendations(enhanced_prompt)
-                    
+
                     if recommendations:
-                        self.log_info(f"✅ Zen routing - Recommended model: {recommendations.primary_recommendation.model_name}")
+                        self.logger.info(
+                            "✅ Zen routing - Recommended model: %s",
+                            recommendations.primary_recommendation.model_name,
+                        )
                         routing_metadata["recommended_model"] = recommendations.primary_recommendation.model_name
                         routing_metadata["task_type"] = recommendations.task_type
                         routing_metadata["complexity_level"] = recommendations.complexity_level
-                    
+
                     # Execute with zen routing
                     result = await self.zen_client.execute_with_routing(enhanced_prompt)
-                    
+
                     if result["success"]:
                         # Convert zen result to Response format
                         from src.mcp_integration.mcp_client import Response
+
                         response = Response(
                             agent_id="zen_routing",
                             content=result["result"]["content"],
                             metadata=result["result"]["routing_metadata"],
                             confidence=result["result"]["routing_metadata"].get("confidence", 0.9),
                             processing_time=result["result"]["response_time"],
-                            success=True
+                            success=True,
                         )
-                        
+
                         routing_metadata["zen_success"] = True
                         routing_metadata["routing_method"] = "zen_mcp"
                         routing_metadata["model_used"] = result["result"]["model_used"]
-                        routing_metadata["cost_optimized"] = result["result"]["routing_metadata"].get("cost_optimized", False)
-                        
+                        routing_metadata["cost_optimized"] = result["result"]["routing_metadata"].get(
+                            "cost_optimized", False,
+                        )
+
                         await self.zen_client.disconnect()
                         routing_metadata["routing_time_ms"] = (time.time() - routing_start) * 1000
-                        
-                        self.log_info("✅ Zen MCP routing successful!")
+
+                        self.logger.info("✅ Zen MCP routing successful!")
                         return ([response], routing_metadata)
-                    else:
-                        self.log_warning(f"⚠️ Zen execution failed: {result['error']}")
-                        routing_metadata["error_details"] = result['error']
-                        
+                    self.logger.warning("⚠️ Zen execution failed: %s", result["error"])
+                    routing_metadata["error_details"] = result["error"]
+
                 else:
-                    self.log_warning("⚠️ Could not connect to zen MCP server")
+                    self.logger.warning("⚠️ Could not connect to zen MCP server")
                     routing_metadata["error_details"] = "Connection failed"
-                    
+
                 # Ensure cleanup on failure
                 await self.zen_client.disconnect()
-                    
+
             except Exception as e:
-                self.log_error(f"❌ Zen MCP routing error: {e}")
+                self.logger.error("❌ Zen MCP routing error: %s", e)
                 routing_metadata["error_details"] = str(e)
                 # Ensure cleanup on exception
                 try:
                     await self.zen_client.disconnect()
-                except:
-                    pass
-        
+                except Exception as e:
+                    self.logger.debug("Error during zen client disconnect: %s", e)
+
         # Phase 2: Fallback to OpenRouter (existing logic)
         routing_metadata["fallback_used"] = True
         routing_metadata["routing_method"] = "openrouter_fallback"
-        
-        self.log_info("🔄 Falling back to OpenRouter routing...")
-        
+
+        self.logger.info("🔄 Falling back to OpenRouter routing...")
+
         try:
             # Ensure OpenRouter connection
             await self.openrouter_client.connect()
 
-            # Execute the workflow step  
-            from src.mcp_integration.models import WorkflowStep
-            
+            # Execute the workflow step
+            from src.mcp_integration.mcp_client import WorkflowStep
+
             step = WorkflowStep(
                 step_id=workflow_step["step_id"],
                 agent_id=workflow_step["agent_id"],
@@ -158,24 +162,21 @@ class Journey2IntelligentSearch(LoggerMixin):
             )
 
             responses = await self.openrouter_client.orchestrate_agents([step])
-            
+
             routing_metadata["routing_time_ms"] = (time.time() - routing_start) * 1000
-            
+
             if responses and len(responses) > 0 and responses[0].success:
-                self.log_info("✅ OpenRouter fallback successful!")
+                self.logger.info("✅ OpenRouter fallback successful!")
                 return (responses, routing_metadata)
-            else:
-                error_msg = responses[0].error_message if responses and len(responses) > 0 else "Unknown error"
-                routing_metadata["error_details"] = error_msg
-                raise Exception(f"OpenRouter execution failed: {error_msg}")
-                
+            error_msg = responses[0].error_message if responses and len(responses) > 0 else "Unknown error"
+            routing_metadata["error_details"] = error_msg
+            raise Exception(f"OpenRouter execution failed: {error_msg}")
+
         except Exception as e:
-            self.log_error(f"❌ OpenRouter fallback also failed: {e}")
+            self.logger.error("❌ OpenRouter fallback also failed: %s", e)
             routing_metadata["error_details"] = f"Both zen and OpenRouter failed: {e}"
             routing_metadata["routing_time_ms"] = (time.time() - routing_start) * 1000
             raise e
-            
-        return ([], routing_metadata)
 
     async def execute_prompt(
         self,
@@ -233,9 +234,11 @@ class Journey2IntelligentSearch(LoggerMixin):
             # Execute with intelligent routing (zen MCP → OpenRouter fallback)
             try:
                 responses, routing_metadata = await self._execute_with_intelligent_routing(
-                    enhanced_prompt, user_tier, workflow_step
+                    enhanced_prompt,
+                    user_tier,
+                    workflow_step,
                 )
-                
+
                 # Store routing metadata for use in response
                 self._routing_metadata = routing_metadata
 
@@ -252,7 +255,7 @@ class Journey2IntelligentSearch(LoggerMixin):
                         routing_icon = "🚀" if routing_metadata.get("zen_success") else "🔄"
                         routing_method = "zen MCP" if routing_metadata.get("zen_success") else "OpenRouter"
                         routing_color = "#4CAF50" if routing_metadata.get("zen_success") else "#FF9800"
-                        
+
                         # Create model attribution with routing info
                         model_attribution = f"""
                         <div class="model-attribution">
@@ -280,7 +283,7 @@ class Journey2IntelligentSearch(LoggerMixin):
                                 <li><strong>zen Attempted:</strong> {'Yes' if routing_metadata.get("zen_attempted") else 'No'}</li>
                                 <li><strong>Routing Time:</strong> {routing_metadata.get("routing_time_ms", 0):.1f}ms</li>
                             """
-                        
+
                         execution_stats = f"""
                         <div class="execution-stats">
                             <h4>📊 Execution Statistics</h4>
@@ -302,38 +305,36 @@ class Journey2IntelligentSearch(LoggerMixin):
                             execution_stats,
                             "",
                         )
-                    else:
-                        error_msg = response.error_message or "Unknown execution error"
-                        return (
-                            "",
-                            "",
-                            "",
-                            f"❌ Execution Error: {error_msg}",
-                        )
-                else:
+                    error_msg = response.error_message or "Unknown execution error"
                     return (
                         "",
                         "",
                         "",
-                        "❌ No response received from OpenRouter. Please try again.",
+                        f"❌ Execution Error: {error_msg}",
                     )
-
-            except Exception as api_error:
-                self.logger.error(f"OpenRouter API error: {api_error}")
                 return (
                     "",
                     "",
                     "",
-                    f"❌ API Error: {str(api_error)}. Please check your configuration and try again.",
+                    "❌ No response received from OpenRouter. Please try again.",
+                )
+
+            except Exception as api_error:
+                self.logger.error("OpenRouter API error: %s", api_error)
+                return (
+                    "",
+                    "",
+                    "",
+                    f"❌ API Error: {api_error!s}. Please check your configuration and try again.",
                 )
 
         except Exception as e:
-            self.logger.error(f"Journey 2 execution error: {e}")
+            self.logger.error("Journey 2 execution error: %s", e)
             return (
                 "",
                 "",
                 "",
-                f"❌ Execution Error: {str(e)}. Please try again or contact support.",
+                f"❌ Execution Error: {e!s}. Please try again or contact support.",
             )
 
     def _select_model(self, model_mode: str, custom_model: str, user_tier: str) -> str:
@@ -341,21 +342,20 @@ class Journey2IntelligentSearch(LoggerMixin):
         # Enforce tier restrictions
         if user_tier == "limited":
             # Limited users can only use free models
-            if model_mode == "free_mode" or model_mode == "basic":
+            if model_mode in {"free_mode", "basic"}:
                 return "deepseek/deepseek-chat:free"
-            else:
-                self.logger.warning(f"Limited user attempted to use {model_mode}, defaulting to free model")
-                return "deepseek/deepseek-chat:free"
+            self.logger.warning("Limited user attempted to use %s, defaulting to free model", model_mode)
+            return "deepseek/deepseek-chat:free"
 
         # Full and admin users have access to all models
         if model_mode == "custom" and custom_model:
             return custom_model
-        elif model_mode == "free_mode":
+        if model_mode == "free_mode":
             return "deepseek/deepseek-chat:free"
-        elif model_mode == "premium":
+        if model_mode == "premium":
             return "anthropic/claude-3-5-sonnet-20241022"
-        else:  # standard
-            return "openai/gpt-4o-mini"
+        # standard
+        return "openai/gpt-4o-mini"
 
     def _calculate_cost(self, model: str, input_length: int, output_length: int) -> float:
         """Calculate estimated cost for the request."""
@@ -392,7 +392,7 @@ class Journey2IntelligentSearch(LoggerMixin):
             "augmentations": create_breakdown.get("augmentations", ""),
             "tone_format": create_breakdown.get("tone_format", ""),
             "evaluation": create_breakdown.get("evaluation", ""),
-            "transfer_timestamp": time.time(),
+            "transfer_timestamp": str(time.time()),
             "source": "journey1_smart_templates",
         }
 
@@ -430,7 +430,7 @@ class Journey2IntelligentSearch(LoggerMixin):
             return "Response too short for insight extraction."
 
         # Simple extraction - take first paragraph or first few sentences
-        lines = response_content.split('\n')
+        lines = response_content.split("\n")
         non_empty_lines = [line.strip() for line in lines if line.strip()]
 
         if not non_empty_lines:
@@ -445,7 +445,7 @@ class Journey2IntelligentSearch(LoggerMixin):
 
         # Fallback: take first few lines
         insight_lines = non_empty_lines[:3]
-        insight_text = ' '.join(insight_lines)
+        insight_text = " ".join(insight_lines)
 
         if len(insight_text) > RESPONSE_PREVIEW_LENGTH:
             return f"{insight_text[:RESPONSE_PREVIEW_LENGTH]}..."
@@ -488,26 +488,26 @@ class Journey2IntelligentSearch(LoggerMixin):
                 ("🆓 DeepSeek Chat (Free)", "deepseek/deepseek-chat:free"),
                 ("🆓 Llama 3.3 70B (Free)", "meta-llama/llama-3.3-70b-instruct:free"),
             ]
-        elif user_tier == "full":
+        if user_tier == "full":
             return [
                 ("🆓 DeepSeek Chat (Free)", "deepseek/deepseek-chat:free"),
                 ("🆓 Llama 3.3 70B (Free)", "meta-llama/llama-3.3-70b-instruct:free"),
                 ("⚡ GPT-4o Mini", "openai/gpt-4o-mini"),
                 ("🚀 Claude 3.5 Sonnet", "anthropic/claude-3-5-sonnet-20241022"),
             ]
-        else:  # admin
-            return [
-                ("🆓 DeepSeek Chat (Free)", "deepseek/deepseek-chat:free"),
-                ("🆓 Llama 3.3 70B (Free)", "meta-llama/llama-3.3-70b-instruct:free"),
-                ("⚡ GPT-4o Mini", "openai/gpt-4o-mini"),
-                ("🚀 Claude 3.5 Sonnet", "anthropic/claude-3-5-sonnet-20241022"),
-                ("🚀 GPT-4o", "openai/gpt-4o"),
-            ]
+        # admin
+        return [
+            ("🆓 DeepSeek Chat (Free)", "deepseek/deepseek-chat:free"),
+            ("🆓 Llama 3.3 70B (Free)", "meta-llama/llama-3.3-70b-instruct:free"),
+            ("⚡ GPT-4o Mini", "openai/gpt-4o-mini"),
+            ("🚀 Claude 3.5 Sonnet", "anthropic/claude-3-5-sonnet-20241022"),
+            ("🚀 GPT-4o", "openai/gpt-4o"),
+        ]
 
     def create_execution_interface(
         self,
         user_tier: str = "limited",
-        transfer_data: dict = None,
+        transfer_data: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Create the Journey 2 execution interface components.
@@ -522,7 +522,7 @@ class Journey2IntelligentSearch(LoggerMixin):
         # Pre-fill with transfer data if available
         initial_prompt = transfer_data.get("enhanced_prompt", "") if transfer_data else ""
 
-        components = {
+        return {
             "prompt_input": gr.Textbox(
                 label="Enhanced Prompt to Execute",
                 placeholder="Paste your enhanced prompt from Journey 1 here, or create one manually...",
@@ -575,4 +575,3 @@ class Journey2IntelligentSearch(LoggerMixin):
             "error_display": gr.HTML(""),
         }
 
-        return components

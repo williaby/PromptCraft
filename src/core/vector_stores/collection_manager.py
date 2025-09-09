@@ -12,13 +12,13 @@ from typing import Any
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 
-from ...config.qdrant_settings import qdrant_settings
+from src.config.qdrant_settings import qdrant_settings
 
 
 class QdrantCollectionManager:
     """Manages Qdrant collections for different knowledge types."""
 
-    def __init__(self, client: QdrantClient):
+    def __init__(self, client: QdrantClient) -> None:
         """Initialize collection manager with Qdrant client."""
         self.client = client
         self.logger = logging.getLogger(__name__)
@@ -51,7 +51,17 @@ class QdrantCollectionManager:
         results = {}
         for collection_name, config in collections.items():
             try:
-                result = await self.create_collection(collection_name, config["vector_size"], config["distance"])
+                vector_size = config["vector_size"]
+                distance = config["distance"]
+                if isinstance(vector_size, int) and isinstance(distance, Distance):
+                    result = await self.create_collection(collection_name, vector_size, distance)
+                else:
+                    # Handle type conversion
+                    result = await self.create_collection(
+                        collection_name, 
+                        int(vector_size) if vector_size is not None else None,  # type: ignore[call-overload]
+                        distance if isinstance(distance, Distance) else Distance.COSINE,
+                    )
                 results[collection_name] = result
                 if result:
                     self.logger.info("Created collection '%s': %s", collection_name, config["description"])
@@ -64,7 +74,7 @@ class QdrantCollectionManager:
     async def create_collection(
         self,
         collection_name: str,
-        vector_size: int = None,
+        vector_size: int | None = None,
         distance: Distance = Distance.COSINE,
     ) -> bool:
         """Create a single collection with specified parameters."""
@@ -105,10 +115,24 @@ class QdrantCollectionManager:
         for collection_name in required_collections:
             try:
                 collection_info = self.client.get_collection(collection_name)
+                
+                # Handle different vector params structures
+                vectors = collection_info.config.params.vectors
+                if isinstance(vectors, VectorParams):
+                    vector_size = vectors.size
+                    distance = vectors.distance.value
+                elif isinstance(vectors, dict) and "default" in vectors:
+                    default_vectors = vectors["default"]
+                    vector_size = default_vectors.size if hasattr(default_vectors, "size") else 0
+                    distance = default_vectors.distance.value if hasattr(default_vectors, "distance") else "unknown"
+                else:
+                    vector_size = 0
+                    distance = "unknown"
+                
                 validation_results[collection_name] = {
                     "exists": True,
-                    "vector_size": collection_info.config.params.vectors.size,
-                    "distance": collection_info.config.params.vectors.distance.value,
+                    "vector_size": vector_size,
+                    "distance": distance,
                     "points_count": collection_info.points_count,
                     "segments_count": collection_info.segments_count,
                     "status": collection_info.status.value,
@@ -129,13 +153,27 @@ class QdrantCollectionManager:
             for collection in collections.collections:
                 try:
                     info = self.client.get_collection(collection.name)
+                    
+                    # Handle different vector params structures
+                    vectors = info.config.params.vectors
+                    if isinstance(vectors, VectorParams):
+                        vector_size = vectors.size
+                        distance = vectors.distance.value
+                    elif isinstance(vectors, dict) and "default" in vectors:
+                        default_vectors = vectors["default"]
+                        vector_size = default_vectors.size if hasattr(default_vectors, "size") else 0
+                        distance = default_vectors.distance.value if hasattr(default_vectors, "distance") else "unknown"
+                    else:
+                        vector_size = 0
+                        distance = "unknown"
+                    
                     stats[collection.name] = {
                         "points_count": info.points_count,
                         "segments_count": info.segments_count,
-                        "vector_size": info.config.params.vectors.size,
-                        "distance": info.config.params.vectors.distance.value,
+                        "vector_size": vector_size,
+                        "distance": distance,
                         "status": info.status.value,
-                        "disk_usage": info.config.params.vectors.size * info.points_count * 4,  # Approximate
+                        "disk_usage": vector_size * (info.points_count or 0) * 4 if vector_size > 0 else 0,  # Approximate
                     }
                 except Exception as e:
                     stats[collection.name] = {"error": str(e)}

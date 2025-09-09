@@ -5,14 +5,14 @@ It verifies that health check endpoints expose only safe operational information
 and never leak sensitive configuration data.
 """
 
+from datetime import datetime
 import json
 import os
-from datetime import datetime
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+import pytest
 
 from src.config.health import (
     ConfigurationStatusModel,

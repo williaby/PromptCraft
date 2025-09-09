@@ -45,10 +45,10 @@ Complexity: O(k*n) where k is number of tiers and n is query/document complexity
 """
 
 import asyncio
-import logging
-import time
 from dataclasses import dataclass
 from enum import Enum
+import logging
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -62,16 +62,15 @@ from src.core.vector_store import (
     AbstractVectorStore,
     EnhancedMockVectorStore,
     SearchParameters,
+    SearchResult as VectorSearchResult,
     SearchStrategy,
     VectorStoreFactory,
-)
-from src.core.vector_store import (
-    SearchResult as VectorSearchResult,
 )
 from src.mcp_integration.hybrid_router import HybridRouter, RoutingStrategy
 from src.mcp_integration.mcp_client import WorkflowStep
 from src.mcp_integration.model_registry import ModelRegistry, get_model_registry
-from src.metrics.collector import get_metrics_collector
+from src.metrics.collector import MetricsCollector, get_metrics_collector
+
 
 # Constants for HyDE processing thresholds (per hyde-processor.md)
 HIGH_SPECIFICITY_THRESHOLD = 85
@@ -315,9 +314,9 @@ class HydeProcessor:
         self._vector_store_connected = False
 
         # Initialize metrics collector (will be set up lazily)
-        self._metrics_collector = None
+        self._metrics_collector: MetricsCollector | None = None
 
-    async def _get_metrics_collector(self):
+    async def _get_metrics_collector(self) -> MetricsCollector | None:
         """Get or initialize the metrics collector."""
         if self._metrics_collector is None:
             try:

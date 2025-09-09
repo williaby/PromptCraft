@@ -7,15 +7,16 @@ query processing, and configuration management.
 
 import asyncio
 import logging
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-import tenacity
 from qdrant_client.http.exceptions import ResponseHandlingException
+import tenacity
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

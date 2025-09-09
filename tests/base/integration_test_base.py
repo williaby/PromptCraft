@@ -6,11 +6,11 @@ Provides FastAPI test client with real services and database connections.
 import asyncio
 from collections.abc import AsyncGenerator
 
-import pytest
-import pytest_asyncio
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
+import pytest
+import pytest_asyncio
 
 from src.api.auth_endpoints import audit_router, auth_router, system_router
 from src.auth.middleware import require_authentication, require_role
@@ -102,8 +102,18 @@ class DatabaseIntegrationTestBase(IntegrationTestBase):
     @pytest_asyncio.fixture
     async def db_test_app(self, test_app, test_db_with_override):
         """FastAPI app with real database connection."""
-        # The test_db_with_override fixture already patches get_db globally
+        # Unpack the test database session and override function
+        test_db_session, override_get_db = test_db_with_override
+        
+        # Apply the database dependency override to the FastAPI app
+        from src.database.connection import get_db
+        test_app.dependency_overrides[get_db] = override_get_db
+        
         yield test_app
+        
+        # Clean up the override
+        if get_db in test_app.dependency_overrides:
+            del test_app.dependency_overrides[get_db]
 
     @pytest.fixture
     def db_test_client(self, db_test_app):
@@ -117,6 +127,8 @@ class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrat
     @pytest.fixture
     def full_integration_app(self, test_app, test_db_with_override, admin_user):
         """FastAPI app with database and authentication."""
+        # Unpack the test database session and override function
+        test_db_session, override_get_db = test_db_with_override
 
         def mock_auth():
             return admin_user
@@ -124,6 +136,9 @@ class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrat
         def mock_admin_role(request):
             return admin_user
 
+        # Apply all dependency overrides
+        from src.database.connection import get_db
+        test_app.dependency_overrides[get_db] = override_get_db
         test_app.dependency_overrides[require_authentication] = mock_auth
         test_app.dependency_overrides[require_role] = lambda request, role: admin_user
 

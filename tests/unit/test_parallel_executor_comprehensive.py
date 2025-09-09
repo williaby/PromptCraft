@@ -4,12 +4,13 @@ This module provides comprehensive unit test coverage for the ParallelSubagentEx
 class that coordinates parallel execution of subagents via MCP servers.
 """
 
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

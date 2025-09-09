@@ -3,9 +3,8 @@
 import json
 from typing import Any
 
+from hypothesis import assume, given, strategies as st
 import pytest
-from hypothesis import assume, given
-from hypothesis import strategies as st
 
 
 class TestQueryProcessingProperties:

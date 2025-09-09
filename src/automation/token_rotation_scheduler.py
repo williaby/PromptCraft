@@ -9,9 +9,9 @@ This module provides automated token rotation capabilities including:
 """
 
 import asyncio
-import logging
 from collections.abc import Callable
 from datetime import datetime
+import logging
 from typing import Any
 
 from sqlalchemy import text
@@ -19,6 +19,7 @@ from sqlalchemy import text
 from src.auth.service_token_manager import ServiceTokenManager
 from src.database.connection import get_db
 from src.utils.datetime_compat import UTC, timedelta
+
 
 # Note: ServiceTokenMonitor integration temporarily disabled due to circular import issues
 

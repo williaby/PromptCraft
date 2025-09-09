@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 
+
 try:
     import gnupg
 except ImportError:
@@ -27,6 +28,7 @@ from src.config.settings import (
 )
 
 from .encryption import EncryptionError, validate_environment_keys
+
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,9 @@ that currently have 0% coverage, significantly improving diff coverage reporting
 
 import json
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.dynamic_loading_endpoints import router as dynamic_loading_router
 from tests.base import FullIntegrationTestBase

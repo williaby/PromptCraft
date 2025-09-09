@@ -73,6 +73,7 @@ from .whitelist import (
     create_validator_from_env,
 )
 
+
 logger = logging.getLogger(__name__)
 
 # Package metadata
@@ -230,9 +231,5 @@ def create_test_middleware(**config_overrides: Any) -> Any:
 # Package initialization logging
 logger.info("Initialized auth_simple package v%s", __version__)
 
-# Log configuration summary on import
-try:
-    config_info = get_version_info()
-    logger.info("Authentication configuration: %s", config_info["config_summary"])
-except Exception as e:
-    logger.warning("Could not load configuration summary: %s", e)
+# Note: Configuration summary logging removed to prevent circular import issues
+# during module initialization. Use get_version_info() explicitly when needed.

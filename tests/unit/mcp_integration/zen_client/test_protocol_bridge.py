@@ -3,8 +3,8 @@
 import json
 from unittest.mock import patch
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.mcp_integration.zen_client.models import (
     MCPToolCall,
@@ -247,24 +247,24 @@ class TestMCPProtocolBridge:
         bridge = MCPProtocolBridge()
 
         mcp_result = {"content": [{"text": "PromptCraft MCP Bridge Result: invalid json content"}]}
-        endpoint = "/api/promptcraft/route/analyze"
+        endpoint = "/api/other/generic"  # Use a non-specific endpoint for generic response
 
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
         assert response["success"] is True
-        assert "invalid json content" in response["content"]
+        assert "invalid json content" in str(response["result"])
 
     def test_mcp_to_http_response_no_bridge_prefix(self):
         """Test MCP to HTTP conversion without bridge prefix."""
         bridge = MCPProtocolBridge()
 
         mcp_result = {"content": [{"text": "Some other response format"}]}
-        endpoint = "/api/promptcraft/route/analyze"
+        endpoint = "/api/other/generic"  # Use a non-specific endpoint for generic response
 
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
         assert response["success"] is True
-        assert response["content"] == "Some other response format"
+        assert response["result"] == "Some other response format"
 
     def test_mcp_to_http_response_unsupported_endpoint(self):
         """Test MCP to HTTP conversion for unsupported endpoint."""
@@ -277,21 +277,23 @@ class TestMCPProtocolBridge:
 
         # Should use generic response format
         assert response["success"] is True
-        assert response["result"]["content"][0]["text"] == "test"
+        assert response["result"] == "test"
 
     def test_mcp_to_http_response_exception_handling(self):
-        """Test MCP to HTTP conversion exception handling."""
+        """Test MCP to HTTP conversion with resilient JSON handling."""
         bridge = MCPProtocolBridge()
 
-        # Force an exception during parsing
+        # Invalid JSON should fall back to default response structure
         mcp_result = {"content": [{"text": "PromptCraft MCP Bridge Result: {"}]}  # Invalid JSON
         endpoint = "/api/promptcraft/route/analyze"
 
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
-        assert response["success"] is False
-        assert "Bridge translation error" in response["error"]
-        assert "raw_mcp_result" in response
+        # Should be resilient and return a valid response with defaults
+        assert response["success"] is True
+        assert "analysis" in response
+        assert "recommendations" in response
+        assert response["analysis"]["task_type"] == "general"
 
     def test_format_route_analysis_response_success(self):
         """Test formatting route analysis response for success case."""
@@ -543,12 +545,13 @@ class TestProtocolBridgeEdgeCases:
     """Test edge cases and error conditions for protocol bridge."""
 
     def test_mcp_to_http_response_deeply_nested_json(self):
-        """Test MCP response with deeply nested JSON content."""
+        """Test MCP response with deeply nested JSON content gets parsed and formatted properly."""
         bridge = MCPProtocolBridge()
 
         complex_data = {
             "success": True,
-            "analysis": {"nested": {"deeply": {"complex": "data", "arrays": [1, 2, {"inner": "value"}]}}},
+            "analysis": {"task_type": "custom", "complexity_score": 0.8},
+            "recommendations": {"primary_model": "test-model"},
         }
 
         mcp_result = {"content": [{"text": "PromptCraft MCP Bridge Result: " + json.dumps(complex_data)}]}
@@ -557,7 +560,9 @@ class TestProtocolBridgeEdgeCases:
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
         assert response["success"] is True
-        assert response["analysis"]["nested"]["deeply"]["complex"] == "data"
+        assert response["analysis"]["task_type"] == "custom"
+        assert response["analysis"]["complexity_score"] == 0.8
+        assert response["recommendations"]["primary_model"] == "test-model"
 
     def test_http_to_mcp_request_with_optional_fields(self):
         """Test HTTP to MCP conversion with optional fields."""
@@ -578,7 +583,7 @@ class TestProtocolBridgeEdgeCases:
         assert "task_type" in mcp_call.arguments
 
     def test_mcp_to_http_response_malformed_bridge_result(self):
-        """Test MCP response with malformed bridge result format."""
+        """Test MCP response with malformed bridge result format falls back gracefully."""
         bridge = MCPProtocolBridge()
 
         mcp_result = {"content": [{"text": "PromptCraft MCP Bridge Result: {incomplete json"}]}
@@ -587,7 +592,9 @@ class TestProtocolBridgeEdgeCases:
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
         assert response["success"] is True
-        assert "incomplete json" in response["content"]
+        assert "analysis" in response
+        assert "recommendations" in response
+        assert response["analysis"]["task_type"] == "general"
 
     def test_response_formatting_with_missing_optional_fields(self):
         """Test response formatting when optional fields are missing."""
@@ -622,7 +629,7 @@ class TestProtocolBridgeEdgeCases:
 
     @patch("json.loads")
     def test_json_parsing_exception_handling(self, mock_json_loads):
-        """Test exception handling during JSON parsing."""
+        """Test exception handling during JSON parsing falls back gracefully."""
         bridge = MCPProtocolBridge()
 
         mock_json_loads.side_effect = json.JSONDecodeError("Invalid JSON", "doc", 0)
@@ -632,9 +639,10 @@ class TestProtocolBridgeEdgeCases:
 
         response = bridge.mcp_to_http_response(endpoint, mcp_result)
 
-        # Should fall back to using raw content
+        # Should fall back to structured response with defaults
         assert response["success"] is True
-        assert "content" in response
+        assert "analysis" in response
+        assert "recommendations" in response
 
     def test_bridge_tool_name_customization(self):
         """Test that bridge tool name can be customized."""

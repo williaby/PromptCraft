@@ -15,13 +15,14 @@ Test Coverage:
 - Model selection and cost tracking
 """
 
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import gradio as gr
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

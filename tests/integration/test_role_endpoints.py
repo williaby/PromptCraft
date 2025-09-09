@@ -11,12 +11,12 @@ FastAPI endpoints, testing the complete API layer including:
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.auth import require_authentication as auth_require_authentication
 from src.auth.middleware import require_authentication
-from src.auth.permissions import Permissions, require_permission
 from src.auth.role_manager import (
     PermissionNotFoundError,
     RoleManagerError,
@@ -26,17 +26,19 @@ from src.auth.role_manager import (
 from src.utils.datetime_compat import UTC
 
 
-@pytest.fixture
-def client(mock_authenticated_user):
-    """Create a test client for FastAPI app with authentication override."""
-    from fastapi import FastAPI
-
+@pytest.fixture(scope="session")
+def test_app():
+    """Create a test FastAPI app once per session for better performance."""
     from src.api.role_endpoints import role_router
 
-    # Create a clean test app without authentication middleware
-    test_app = FastAPI(title="Test App")
-    test_app.include_router(role_router)
+    app = FastAPI(title="Test App")
+    app.include_router(role_router)
+    return app
 
+
+@pytest.fixture
+def client(test_app, mock_authenticated_user):
+    """Create a test client with authentication override."""
     # Override authentication using the dependency injection pattern
     def mock_require_authentication():
         return mock_authenticated_user
@@ -45,17 +47,11 @@ def client(mock_authenticated_user):
     test_app.dependency_overrides[require_authentication] = mock_require_authentication
     test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
 
-    # Mock user_has_permission to always return True for any permission check
-    async def mock_user_has_permission(user_email: str, permission_name: str) -> bool:
-        return True
-
-    # Apply the patch for the permission checking
-    with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission):
-        try:
-            yield TestClient(test_app)
-        finally:
-            # Clean up the override after the test
-            test_app.dependency_overrides.clear()
+    try:
+        yield TestClient(test_app)
+    finally:
+        # Clean up the override after the test
+        test_app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -68,6 +64,25 @@ def mock_authenticated_user():
     user.__bool__ = lambda self: True
     user.__nonzero__ = lambda self: True  # Python 2 compatibility
     return user
+
+
+@pytest.fixture(autouse=True)
+def mock_user_permissions():
+    """Auto-use fixture to mock user permissions globally."""
+    async def mock_user_has_permission(user_email: str, permission_name: str) -> bool:
+        return True
+    
+    with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def mock_role_manager():
+    """Auto-use fixture to mock RoleManager globally."""
+    with patch("src.api.role_endpoints.RoleManager") as mock_class:
+        mock_manager = AsyncMock()
+        mock_class.return_value = mock_manager
+        yield mock_manager
 
 
 @pytest.fixture
@@ -113,22 +128,17 @@ def sample_user_role_data():
 class TestRoleCreationEndpoints:
     """Test role creation API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_create_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test successful role creation via API."""
         # Setup mocks
-        mock_user_has_permission.return_value = True  # Grant permission
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.create_role.return_value = sample_role_data
+        mock_role_manager.create_role.return_value = sample_role_data
 
         # Test data
         request_data = {
@@ -143,33 +153,26 @@ class TestRoleCreationEndpoints:
         assert response.status_code == 200
         assert response.json()["name"] == "test_role"
         assert response.json()["description"] == "Test role description"
-        mock_manager.create_role.assert_called_once_with(
+        mock_role_manager.create_role.assert_called_once_with(
             name="test_role",
             description="Test role description",
             parent_role_name=None,
         )
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_create_role_with_parent(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test role creation with parent role."""
-        # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-
         # Mock parent role check
         parent_role_data = sample_role_data.copy()
         parent_role_data["name"] = "parent_role"
-        mock_manager.get_role.return_value = parent_role_data
-        mock_manager.create_role.return_value = sample_role_data
+        mock_role_manager.get_role.return_value = parent_role_data
+        mock_role_manager.create_role.return_value = sample_role_data
 
         # Test data
         request_data = {
@@ -183,28 +186,23 @@ class TestRoleCreationEndpoints:
 
         # Assert response
         assert response.status_code == 200
-        mock_manager.get_role.assert_called_once_with("parent_role")
-        mock_manager.create_role.assert_called_once_with(
+        mock_role_manager.get_role.assert_called_once_with("parent_role")
+        mock_role_manager.create_role.assert_called_once_with(
             name="test_role",
             description="Test role description",
             parent_role_name="parent_role",
         )
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_create_role_invalid_parent(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test role creation with non-existent parent role."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_role.return_value = None  # Parent doesn't exist
+        mock_role_manager.get_role.return_value = None  # Parent doesn't exist
 
         # Test data
         request_data = {
@@ -221,23 +219,18 @@ class TestRoleCreationEndpoints:
         response_data = response.json()
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "does not exist" in detail_text
-        mock_manager.get_role.assert_called_once_with("nonexistent_parent")
+        mock_role_manager.get_role.assert_called_once_with("nonexistent_parent")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_create_role_already_exists(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test role creation when role already exists."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.create_role.side_effect = RoleManagerError("Role 'test_role' already exists")
+        mock_role_manager.create_role.side_effect = RoleManagerError("Role 'test_role' already exists")
 
         # Test data
         request_data = {
@@ -258,22 +251,17 @@ class TestRoleCreationEndpoints:
 class TestRoleRetrievalEndpoints:
     """Test role retrieval API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_list_roles_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test successful role listing via API."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.list_roles.return_value = [sample_role_data]
+        mock_role_manager.list_roles.return_value = [sample_role_data]
 
         # Make request
         response = client.get("/api/v1/roles/")
@@ -283,48 +271,38 @@ class TestRoleRetrievalEndpoints:
         roles = response.json()
         assert len(roles) == 1
         assert roles[0]["name"] == "test_role"
-        mock_manager.list_roles.assert_called_once_with(include_inactive=False)
+        mock_role_manager.list_roles.assert_called_once_with(include_inactive=False)
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_list_roles_include_inactive(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test role listing including inactive roles."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.list_roles.return_value = [sample_role_data]
+        mock_role_manager.list_roles.return_value = [sample_role_data]
 
         # Make request
         response = client.get("/api/v1/roles/?include_inactive=true")
 
         # Assert response
         assert response.status_code == 200
-        mock_manager.list_roles.assert_called_once_with(include_inactive=True)
+        mock_role_manager.list_roles.assert_called_once_with(include_inactive=True)
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_get_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test successful individual role retrieval."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_role.return_value = sample_role_data
+        mock_role_manager.get_role.return_value = sample_role_data
 
         # Make request
         response = client.get("/api/v1/roles/test_role")
@@ -332,23 +310,18 @@ class TestRoleRetrievalEndpoints:
         # Assert response
         assert response.status_code == 200
         assert response.json()["name"] == "test_role"
-        mock_manager.get_role.assert_called_once_with("test_role")
+        mock_role_manager.get_role.assert_called_once_with("test_role")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_get_role_not_found(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
         client,
         mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test role retrieval for non-existent role."""
         # Setup mocks
-        mock_user_has_permission.return_value = True
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_role.return_value = None
+        mock_role_manager.get_role.return_value = None
 
         # Make request
         response = client.get("/api/v1/roles/nonexistent_role")
@@ -364,21 +337,14 @@ class TestRoleRetrievalEndpoints:
 class TestRolePermissionEndpoints:
     """Test role permission management API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_get_role_permissions_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful role permissions retrieval."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_role_permissions.return_value = {"tokens:create", "tokens:read"}
+        mock_role_manager.get_role_permissions.return_value = {"tokens:create", "tokens:read"}
 
         # Make request
         response = client.get("/api/v1/roles/test_role/permissions")
@@ -388,23 +354,16 @@ class TestRolePermissionEndpoints:
         data = response.json()
         assert data["role_name"] == "test_role"
         assert set(data["permissions"]) == {"tokens:create", "tokens:read"}
-        mock_manager.get_role_permissions.assert_called_once_with("test_role")
+        mock_role_manager.get_role_permissions.assert_called_once_with("test_role")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_assign_permission_to_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful permission assignment to role."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.assign_permission_to_role.return_value = True
+        mock_role_manager.assign_permission_to_role.return_value = True
 
         # Test data
         request_data = {
@@ -421,23 +380,16 @@ class TestRolePermissionEndpoints:
         assert data["status"] == "success"
         assert "assigned" in data["message"]
         assert data["assigned_by"] == "admin@example.com"
-        mock_manager.assign_permission_to_role.assert_called_once_with("test_role", "tokens:create")
+        mock_role_manager.assign_permission_to_role.assert_called_once_with("test_role", "tokens:create")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_revoke_permission_from_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful permission revocation from role."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.revoke_permission_from_role.return_value = True
+        mock_role_manager.revoke_permission_from_role.return_value = True
 
         # Make request
         response = client.delete("/api/v1/roles/test_role/permissions/tokens:create")
@@ -448,27 +400,20 @@ class TestRolePermissionEndpoints:
         assert data["status"] == "success"
         assert "revoked" in data["message"]
         assert data["revoked_by"] == "admin@example.com"
-        mock_manager.revoke_permission_from_role.assert_called_once_with("test_role", "tokens:create")
+        mock_role_manager.revoke_permission_from_role.assert_called_once_with("test_role", "tokens:create")
 
 
 class TestUserRoleAssignmentEndpoints:
     """Test user role assignment API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_assign_user_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful user role assignment."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.assign_user_role.return_value = True
+        mock_role_manager.assign_user_role.return_value = True
 
         # Test data
         request_data = {
@@ -485,27 +430,20 @@ class TestUserRoleAssignmentEndpoints:
         assert data["status"] == "success"
         assert "assigned" in data["message"]
         assert data["assigned_by"] == "admin@example.com"
-        mock_manager.assign_user_role.assert_called_once_with(
+        mock_role_manager.assign_user_role.assert_called_once_with(
             user_email="user@example.com",
             role_name="test_role",
             assigned_by="admin@example.com",
         )
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_revoke_user_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful user role revocation."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.revoke_user_role.return_value = True
+        mock_role_manager.revoke_user_role.return_value = True
 
         # Make request
         response = client.delete("/api/v1/roles/assignments?user_email=user@example.com&role_name=test_role")
@@ -516,26 +454,19 @@ class TestUserRoleAssignmentEndpoints:
         assert data["status"] == "success"
         assert "revoked" in data["message"]
         assert data["revoked_by"] == "admin@example.com"
-        mock_manager.revoke_user_role.assert_called_once_with(
+        mock_role_manager.revoke_user_role.assert_called_once_with(
             user_email="user@example.com",
             role_name="test_role",
         )
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_revoke_user_role_not_assigned(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test user role revocation when role wasn't assigned."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.revoke_user_role.return_value = False
+        mock_role_manager.revoke_user_role.return_value = False
 
         # Make request
         response = client.delete("/api/v1/roles/assignments?user_email=user@example.com&role_name=test_role")
@@ -546,22 +477,15 @@ class TestUserRoleAssignmentEndpoints:
         assert data["status"] == "no_change"
         assert "was not assigned" in data["message"]
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_get_user_roles_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
         sample_user_role_data,
     ):
         """Test successful user roles retrieval."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_user_roles.return_value = [sample_user_role_data]
+        mock_role_manager.get_user_roles.return_value = [sample_user_role_data]
 
         # Make request
         response = client.get("/api/v1/roles/users/user@example.com/roles")
@@ -571,25 +495,18 @@ class TestUserRoleAssignmentEndpoints:
         roles = response.json()
         assert len(roles) == 1
         assert roles[0]["role_name"] == "test_role"
-        mock_manager.get_user_roles.assert_called_once_with("user@example.com")
+        mock_role_manager.get_user_roles.assert_called_once_with("user@example.com")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_get_user_permissions_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
         sample_user_role_data,
     ):
         """Test successful user permissions retrieval."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.get_user_roles.return_value = [sample_user_role_data]
-        mock_manager.get_user_permissions.return_value = {"tokens:create", "tokens:read"}
+        mock_role_manager.get_user_roles.return_value = [sample_user_role_data]
+        mock_role_manager.get_user_permissions.return_value = {"tokens:create", "tokens:read"}
 
         # Make request
         response = client.get("/api/v1/roles/users/user@example.com/permissions")
@@ -600,28 +517,21 @@ class TestUserRoleAssignmentEndpoints:
         assert data["user_email"] == "user@example.com"
         assert len(data["roles"]) == 1
         assert set(data["permissions"]) == {"tokens:create", "tokens:read"}
-        mock_manager.get_user_roles.assert_called_once_with("user@example.com")
-        mock_manager.get_user_permissions.assert_called_once_with("user@example.com")
+        mock_role_manager.get_user_roles.assert_called_once_with("user@example.com")
+        mock_role_manager.get_user_permissions.assert_called_once_with("user@example.com")
 
 
 class TestRoleDeletionEndpoints:
     """Test role deletion API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_delete_role_success(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful role deletion."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.delete_role.return_value = True
+        mock_role_manager.delete_role.return_value = True
 
         # Make request
         response = client.delete("/api/v1/roles/test_role")
@@ -633,23 +543,16 @@ class TestRoleDeletionEndpoints:
         assert "deleted" in data["message"]
         assert data["deleted_by"] == "admin@example.com"
         assert data["force"] == "False"
-        mock_manager.delete_role.assert_called_once_with("test_role", force=False)
+        mock_role_manager.delete_role.assert_called_once_with("test_role", force=False)
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_delete_role_force(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test force role deletion."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.delete_role.return_value = True
+        mock_role_manager.delete_role.return_value = True
 
         # Make request
         response = client.delete("/api/v1/roles/test_role?force=true")
@@ -658,23 +561,16 @@ class TestRoleDeletionEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["force"] == "True"
-        mock_manager.delete_role.assert_called_once_with("test_role", force=True)
+        mock_role_manager.delete_role.assert_called_once_with("test_role", force=True)
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_delete_role_not_found(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test role deletion for non-existent role."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.delete_role.side_effect = RoleNotFoundError("Role 'nonexistent' not found")
+        mock_role_manager.delete_role.side_effect = RoleNotFoundError("Role 'nonexistent' not found")
 
         # Make request
         response = client.delete("/api/v1/roles/nonexistent")
@@ -689,21 +585,14 @@ class TestRoleDeletionEndpoints:
 class TestRoleHierarchyValidationEndpoints:
     """Test role hierarchy validation API endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_validate_role_hierarchy_valid(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test successful role hierarchy validation."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.validate_role_hierarchy.return_value = True
+        mock_role_manager.validate_role_hierarchy.return_value = True
 
         # Make request
         response = client.post("/api/v1/roles/validate-hierarchy?role_name=child_role&parent_role_name=parent_role")
@@ -713,23 +602,16 @@ class TestRoleHierarchyValidationEndpoints:
         data = response.json()
         assert data["is_valid"] is True
         assert "is valid" in data["message"]
-        mock_manager.validate_role_hierarchy.assert_called_once_with("child_role", "parent_role")
+        mock_role_manager.validate_role_hierarchy.assert_called_once_with("child_role", "parent_role")
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_validate_role_hierarchy_invalid(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test role hierarchy validation with circular dependency."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.validate_role_hierarchy.return_value = False
+        mock_role_manager.validate_role_hierarchy.return_value = False
 
         # Make request
         response = client.post("/api/v1/roles/validate-hierarchy?role_name=child_role&parent_role_name=parent_role")
@@ -744,24 +626,15 @@ class TestRoleHierarchyValidationEndpoints:
 class TestServiceTokenAuthentication:
     """Test service token authentication for role endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_service_token_role_creation(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
+        test_app,
         mock_service_token,
+        mock_role_manager,
         sample_role_data,
     ):
         """Test role creation using service token authentication."""
-        from fastapi import FastAPI
-
-        from src.api.role_endpoints import role_router
-
-        # Create a clean test app without authentication middleware
-        test_app = FastAPI(title="Test App")
-        test_app.include_router(role_router)
-
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
@@ -770,54 +643,37 @@ class TestServiceTokenAuthentication:
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
 
-        # Mock user_has_permission to always return True for service tokens
-        async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
-            return True
+        try:
+            # Setup mocks
+            mock_role_manager.create_role.return_value = sample_role_data
 
-        # Apply the patch for the permission checking
-        with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission_func):
-            try:
-                # Setup mocks
-                mock_manager = AsyncMock()
-                mock_role_manager_class.return_value = mock_manager
-                mock_manager.create_role.return_value = sample_role_data
+            # Test data
+            request_data = {
+                "name": "test_role",
+                "description": "Test role description",
+            }
 
-                # Test data
-                request_data = {
-                    "name": "test_role",
-                    "description": "Test role description",
-                }
+            # Create client with app
+            client = TestClient(test_app)
 
-                # Create client with clean app
-                client = TestClient(test_app)
+            # Make request
+            response = client.post("/api/v1/roles/", json=request_data)
 
-                # Make request
-                response = client.post("/api/v1/roles/", json=request_data)
+            # Assert response
+            assert response.status_code == 200
+            assert response.json()["name"] == "test_role"
+        finally:
+            # Clean up override
+            test_app.dependency_overrides.clear()
 
-                # Assert response
-                assert response.status_code == 200
-                assert response.json()["name"] == "test_role"
-            finally:
-                # Clean up override
-                test_app.dependency_overrides.clear()
-
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_service_token_user_assignment(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
+        test_app,
         mock_service_token,
+        mock_role_manager,
     ):
         """Test user role assignment using service token authentication."""
-        from fastapi import FastAPI
-
-        from src.api.role_endpoints import role_router
-
-        # Create a clean test app without authentication middleware
-        test_app = FastAPI(title="Test App")
-        test_app.include_router(role_router)
-
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
@@ -826,62 +682,47 @@ class TestServiceTokenAuthentication:
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
 
-        # Mock user_has_permission to always return True for service tokens
-        async def mock_user_has_permission_func(user_email: str, permission_name: str) -> bool:
-            return True
+        try:
+            # Setup mocks
+            mock_role_manager.assign_user_role.return_value = True
 
-        # Apply the patch for the permission checking
-        with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission_func):
-            try:
-                # Setup mocks
-                mock_manager = AsyncMock()
-                mock_role_manager_class.return_value = mock_manager
-                mock_manager.assign_user_role.return_value = True
+            # Test data
+            request_data = {
+                "user_email": "user@example.com",
+                "role_name": "test_role",
+            }
 
-                # Test data
-                request_data = {
-                    "user_email": "user@example.com",
-                    "role_name": "test_role",
-                }
+            # Create client with app
+            client = TestClient(test_app)
 
-                # Create client with clean app
-                client = TestClient(test_app)
+            # Make request
+            response = client.post("/api/v1/roles/assignments", json=request_data)
 
-                # Make request
-                response = client.post("/api/v1/roles/assignments", json=request_data)
-
-                # Assert response
-                assert response.status_code == 200
-                data = response.json()
-                assert data["assigned_by"] == "admin-service-token@service.local"
-                mock_manager.assign_user_role.assert_called_once_with(
-                    user_email="user@example.com",
-                    role_name="test_role",
-                    assigned_by="admin-service-token@service.local",
-                )
-            finally:
-                # Clean up override
-                test_app.dependency_overrides.clear()
+            # Assert response
+            assert response.status_code == 200
+            data = response.json()
+            assert data["assigned_by"] == "admin-service-token@service.local"
+            mock_role_manager.assign_user_role.assert_called_once_with(
+                user_email="user@example.com",
+                role_name="test_role",
+                assigned_by="admin-service-token@service.local",
+            )
+        finally:
+            # Clean up override
+            test_app.dependency_overrides.clear()
 
 
 class TestErrorHandlingScenarios:
     """Test error handling and edge cases for role endpoints."""
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_user_not_found_error(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test handling of UserNotFoundError."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.assign_user_role.side_effect = UserNotFoundError("User 'nonexistent@example.com' not found")
+        mock_role_manager.assign_user_role.side_effect = UserNotFoundError("User 'nonexistent@example.com' not found")
 
         # Test data
         request_data = {
@@ -898,21 +739,14 @@ class TestErrorHandlingScenarios:
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "not found" in detail_text
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_permission_not_found_error(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test handling of PermissionNotFoundError."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.assign_permission_to_role.side_effect = PermissionNotFoundError(
+        mock_role_manager.assign_permission_to_role.side_effect = PermissionNotFoundError(
             "Permission 'nonexistent:permission' not found",
         )
 
@@ -931,21 +765,14 @@ class TestErrorHandlingScenarios:
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "not found" in detail_text
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_general_role_manager_error(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test handling of general RoleManagerError."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.create_role.side_effect = RoleManagerError("Database connection failed")
+        mock_role_manager.create_role.side_effect = RoleManagerError("Database connection failed")
 
         # Test data
         request_data = {
@@ -962,21 +789,14 @@ class TestErrorHandlingScenarios:
         detail_text = response_data.get("detail") or response_data.get("error", "")
         assert "Database connection failed" in detail_text
 
-    @patch("src.auth.permissions.user_has_permission")
-    @patch("src.api.role_endpoints.RoleManager")
+    @pytest.mark.timeout(30)
     def test_unexpected_exception(
         self,
-        mock_role_manager_class,
-        mock_user_has_permission,
-        client,
-        mock_authenticated_user,
+        client, mock_authenticated_user, mock_role_manager,
     ):
         """Test handling of unexpected exceptions."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
-        mock_manager = AsyncMock()
-        mock_role_manager_class.return_value = mock_manager
-        mock_manager.list_roles.side_effect = Exception("Unexpected database error")
+        mock_role_manager.list_roles.side_effect = Exception("Unexpected database error")
 
         # Make request
         response = client.get("/api/v1/roles/")
@@ -993,7 +813,7 @@ class TestPermissionEnforcement:
 
     def test_insufficient_permissions_role_creation(self, mock_authenticated_user):
         """Test role creation with insufficient permissions."""
-        from fastapi import FastAPI, HTTPException
+        from fastapi import FastAPI
 
         from src.api.role_endpoints import role_router
 
@@ -1005,14 +825,9 @@ class TestPermissionEnforcement:
         def mock_require_authentication():
             return mock_authenticated_user
 
-        # Setup mocks to simulate permission denial
-        def mock_permission_checker():
-            raise HTTPException(status_code=403, detail="Insufficient permissions: roles:create required")
-
         # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
-        test_app.dependency_overrides[require_permission(Permissions.ROLES_CREATE)] = mock_permission_checker
 
         # Test data
         request_data = {
@@ -1020,9 +835,12 @@ class TestPermissionEnforcement:
             "description": "Test role description",
         }
 
-        # Create client and make request
-        client = TestClient(test_app)
-        response = client.post("/api/v1/roles/", json=request_data)
+        # Setup mocks to simulate permission denial by patching the permission check function
+        from unittest.mock import patch
+        with patch("src.auth.permissions.user_has_permission", return_value=False):
+            # Create client and make request
+            client = TestClient(test_app)
+            response = client.post("/api/v1/roles/", json=request_data)
 
         # Assert response
         assert response.status_code == 403
@@ -1035,7 +853,7 @@ class TestPermissionEnforcement:
 
     def test_insufficient_permissions_user_assignment(self, mock_authenticated_user):
         """Test user role assignment with insufficient permissions."""
-        from fastapi import FastAPI, HTTPException
+        from fastapi import FastAPI
 
         from src.api.role_endpoints import role_router
 
@@ -1047,14 +865,9 @@ class TestPermissionEnforcement:
         def mock_require_authentication():
             return mock_authenticated_user
 
-        # Setup mocks to simulate permission denial
-        def mock_permission_checker():
-            raise HTTPException(status_code=403, detail="Insufficient permissions: roles:assign required")
-
         # Override authentication dependencies
         test_app.dependency_overrides[require_authentication] = mock_require_authentication
         test_app.dependency_overrides[auth_require_authentication] = mock_require_authentication
-        test_app.dependency_overrides[require_permission(Permissions.ROLES_ASSIGN)] = mock_permission_checker
 
         # Test data
         request_data = {
@@ -1062,9 +875,12 @@ class TestPermissionEnforcement:
             "role_name": "test_role",
         }
 
-        # Create client and make request
-        client = TestClient(test_app)
-        response = client.post("/api/v1/roles/assignments", json=request_data)
+        # Setup mocks to simulate permission denial by patching the permission check function
+        from unittest.mock import patch
+        with patch("src.auth.permissions.user_has_permission", return_value=False):
+            # Create client and make request
+            client = TestClient(test_app)
+            response = client.post("/api/v1/roles/assignments", json=request_data)
 
         # Assert response
         assert response.status_code == 403
@@ -1091,7 +907,6 @@ class TestRequestValidation:
     def test_missing_required_fields(self, mock_user_has_permission, client, mock_authenticated_user):
         """Test handling of missing required fields."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
 
         # Test data with missing required field
         request_data = {
@@ -1109,7 +924,6 @@ class TestRequestValidation:
     def test_empty_role_name(self, mock_user_has_permission, client, mock_authenticated_user):
         """Test handling of empty role name."""
         # Setup mocks
-        mock_user_has_permission.return_value = lambda: mock_authenticated_user
 
         # Test data with empty name
         request_data = {

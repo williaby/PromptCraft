@@ -6,11 +6,12 @@ for hybrid routing integration with OpenRouter and MCP services.
 """
 
 import asyncio
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))

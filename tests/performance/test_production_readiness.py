@@ -6,16 +6,17 @@ requirement and can handle concurrent load effectively.
 """
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import os
+from pathlib import Path
 import statistics
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
@@ -34,6 +35,7 @@ from src.core.vector_store import (
 from src.mcp_integration.config_manager import MCPConfigurationManager
 from src.mcp_integration.mcp_client import MCPConnectionState, ZenMCPClient
 from src.utils.performance_monitor import PerformanceMonitor
+
 
 # CI environment detection for more lenient thresholds
 IS_CI = os.getenv("CI", "").lower() in ("true", "1", "yes") or os.getenv("GITHUB_ACTIONS", "").lower() == "true"

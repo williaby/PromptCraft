@@ -38,8 +38,6 @@ from .auth_fixtures import (
     test_service_user,
 )
 from .database import (
-    sync_test_engine,
-    sync_test_session,
     test_db_session,
     test_db_with_override,
     test_engine,
@@ -66,6 +64,7 @@ from .security_service_mocks import (
     mock_security_logger,
     mock_security_monitor,
 )
+
 
 __all__ = [
     # "ContainerTestHelper",  # Disabled due to missing auth.database module

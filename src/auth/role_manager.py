@@ -21,6 +21,7 @@ from src.database.base_service import DatabaseService
 from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
 from src.utils.datetime_compat import utc_now
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -223,12 +224,31 @@ class RoleManager(DatabaseService):
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
-                # Use database function for permission resolution
-                result = await session.execute(
-                    text("SELECT permission_name FROM get_role_permissions(:role_id)"),
-                    {"role_id": role_id},
-                )
-                permissions = {row[0] for row in result.fetchall()}
+                # Detect database type
+                db_engine_name = session.bind.dialect.name
+                
+                if db_engine_name == "postgresql":
+                    # Use database function for permission resolution
+                    result = await session.execute(
+                        text("SELECT permission_name FROM get_role_permissions(:role_id)"),
+                        {"role_id": role_id},
+                    )
+                    permissions = {row[0] for row in result.fetchall()}
+                else:
+                    # Use regular SQL query for SQLite and other databases
+                    # Convert UUID to string for SQLite compatibility
+                    role_id_str = str(role_id)
+                    result = await session.execute(
+                        text("""
+                            SELECT p.name
+                            FROM role_permissions rp
+                            INNER JOIN permissions p ON rp.permission_id = p.id
+                            WHERE rp.role_id = :role_id
+                            AND p.is_active = true
+                        """),
+                        {"role_id": role_id_str},
+                    )
+                    permissions = {row[0] for row in result.fetchall()}
 
                 logger.debug(f"Role '{role_name}' has {len(permissions)} permissions (including inherited)")
                 return permissions
@@ -380,11 +400,35 @@ class RoleManager(DatabaseService):
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
-                # Use database function for assignment
-                await session.execute(
-                    text("SELECT assign_user_role(:user_email, :role_id, :assigned_by)"),
-                    {"user_email": user_email, "role_id": role_id, "assigned_by": assigned_by},
-                )
+                # Detect database type
+                db_engine_name = session.bind.dialect.name
+                
+                if db_engine_name == "postgresql":
+                    # Use database function for PostgreSQL
+                    await session.execute(
+                        text("SELECT assign_user_role(:user_email, :role_id, :assigned_by)"),
+                        {"user_email": user_email, "role_id": role_id, "assigned_by": assigned_by},
+                    )
+                else:
+                    # Use regular SQL query for SQLite and other databases
+                    # First get user_id from email
+                    user_result = await session.execute(
+                        select(UserSession.id).where(UserSession.email == user_email),
+                    )
+                    user_id = user_result.scalar_one_or_none()
+                    if not user_id:
+                        raise UserNotFoundError(f"User '{user_email}' not found")
+                    
+                    # Insert into user_roles table (with UUID string conversion for SQLite)
+                    user_id_str = str(user_id)
+                    role_id_str = str(role_id)
+                    
+                    # Use INSERT OR IGNORE for idempotency (SQLite equivalent of ON CONFLICT DO NOTHING)
+                    await session.execute(
+                        text("INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)"),
+                        {"user_id": user_id_str, "role_id": role_id_str},
+                    )
+                
                 await session.commit()
 
                 await self.log_operation_success(
@@ -457,23 +501,71 @@ class RoleManager(DatabaseService):
         """
         try:
             async with self.get_session() as session:
-                # Use database function to get user roles
-                result = await session.execute(
-                    text("SELECT * FROM get_user_roles(:user_email)"),
-                    {"user_email": user_email},
-                )
-                rows = result.fetchall()
-
-                roles = []
-                for row in rows:
-                    roles.append(
-                        {
-                            "role_id": row.role_id,
-                            "role_name": row.role_name,
-                            "role_description": row.role_description,
-                            "assigned_at": row.assigned_at,
-                        },
+                # Detect database type
+                db_engine_name = session.bind.dialect.name
+                
+                if db_engine_name == "postgresql":
+                    # Use database function for PostgreSQL
+                    result = await session.execute(
+                        text("SELECT * FROM get_user_roles(:user_email)"),
+                        {"user_email": user_email},
                     )
+                    rows = result.fetchall()
+                    
+                    roles = []
+                    for row in rows:
+                        roles.append(
+                            {
+                                "role_id": row.role_id,
+                                "role_name": row.role_name,
+                                "role_description": row.role_description,
+                                "assigned_at": row.assigned_at,
+                            },
+                        )
+                else:
+                    # Use regular SQL query for SQLite and other databases
+                    # First find the user by email to get their user_id
+                    user_result = await session.execute(
+                        text("SELECT id FROM user_sessions WHERE email = :user_email"),
+                        {"user_email": user_email},
+                    )
+                    user_row = user_result.fetchone()
+                    
+                    if not user_row:
+                        logger.debug(f"User '{user_email}' not found in user_sessions")
+                        return []
+                    
+                    user_id = user_row.id
+                    
+                    # Now get roles using user_id (convert UUID to string for SQLite)
+                    user_id_str = str(user_id)
+                    result = await session.execute(
+                        text("""
+                            SELECT
+                                r.id as role_id,
+                                r.name as role_name,
+                                r.description as role_description,
+                                r.created_at as assigned_at
+                            FROM user_roles ur
+                            INNER JOIN roles r ON ur.role_id = r.id
+                            WHERE ur.user_id = :user_id
+                            AND r.is_active = true
+                            ORDER BY r.created_at DESC
+                        """),
+                        {"user_id": user_id_str},
+                    )
+                    rows = result.fetchall()
+                    
+                    roles = []
+                    for row in rows:
+                        roles.append(
+                            {
+                                "role_id": row.role_id,
+                                "role_name": row.role_name,
+                                "role_description": row.role_description,
+                                "assigned_at": row.assigned_at,
+                            },
+                        )
 
                 logger.debug(f"User '{user_email}' has {len(roles)} assigned roles")
                 return roles

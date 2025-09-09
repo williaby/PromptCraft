@@ -6,11 +6,12 @@ class including three-tier analysis, query enhancement, and vector store integra
 """
 
 import asyncio
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))

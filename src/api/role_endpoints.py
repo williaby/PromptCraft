@@ -24,6 +24,7 @@ from src.auth.role_manager import (
 )
 from src.auth.types import AuthenticatedUserType
 
+
 # =============================================================================
 # REQUEST/RESPONSE MODELS
 # =============================================================================

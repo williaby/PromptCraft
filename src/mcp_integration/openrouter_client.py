@@ -74,6 +74,7 @@ from src.utils.circuit_breaker import (
     get_circuit_breaker,
 )
 
+
 logger = logging.getLogger(__name__)
 
 # OpenRouter API constants

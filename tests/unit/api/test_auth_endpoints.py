@@ -7,9 +7,9 @@ system status, and audit logging functionality.
 
 from unittest.mock import AsyncMock, Mock
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.auth_endpoints import (
     audit_router,
@@ -202,19 +202,10 @@ class TestAuthEndpoints:
 
     def test_create_service_token_success(self, app, client, mock_service_token_manager, mock_jwt_user, monkeypatch):
         """Test POST /auth/tokens endpoint successful token creation."""
-
-        # Skip the problematic admin endpoints for now - focus on fixing the dependency pattern
-        # This is a complex FastAPI dependency injection issue with lambda dependencies
-        pytest.skip(
-            "Admin endpoints require complex lambda dependency mocking - deferred until dependency pattern is refactored",
-        )
-
-        monkeypatch.setattr(ServiceTokenManager, "__init__", lambda self: None)
-        monkeypatch.setattr(
-            ServiceTokenManager,
-            "create_service_token",
-            mock_service_token_manager.create_service_token,
-        )
+        
+        # Use proper FastAPI dependency overrides instead of problematic monkeypatch
+        app.dependency_overrides[require_admin_role] = lambda: mock_jwt_user
+        app.dependency_overrides[get_service_token_manager] = lambda: mock_service_token_manager
 
         token_request = {
             "token_name": "test_api_token",
@@ -224,40 +215,46 @@ class TestAuthEndpoints:
             "environment": "development",
         }
 
-        response = client.post("/api/v1/auth/tokens", json=token_request)
+        try:
+            response = client.post("/api/v1/auth/tokens", json=token_request)
 
-        assert response.status_code == 200
-        data = response.json()
+            assert response.status_code == 201
+            data = response.json()
 
-        assert data["token_id"] == "token_id_456"  # noqa: S105
-        assert data["token_name"] == "test_api_token"  # noqa: S105
-        assert data["token_value"] == "sk_test_new_token_123"  # noqa: S105
-        assert data["metadata"]["permissions"] == ["read", "write"]
-        assert data["metadata"]["created_by"] == "admin@example.com"
-        assert data["metadata"]["purpose"] == "API testing"
-        assert data["metadata"]["environment"] == "development"
+            assert data["token_id"] == "token_id_456"  # noqa: S105
+            assert data["token_name"] == "test_api_token"  # noqa: S105
+            assert data["token_value"] == "sk_test_new_token_123"  # noqa: S105
+            assert data["metadata"]["permissions"] == ["read", "write"]
+            assert data["metadata"]["created_by"] == "admin@example.com"
+            assert data["metadata"]["purpose"] == "API testing"
+            assert data["metadata"]["environment"] == "development"
+        finally:
+            # Clean up dependency overrides
+            app.dependency_overrides.clear()
 
     def test_create_service_token_duplicate_name(self, app, client, mock_jwt_user, monkeypatch):
         """Test POST /auth/tokens endpoint with duplicate token name."""
-
-        pytest.skip("Admin endpoints require lambda dependency refactoring - deferred")
-
+        
         mock_manager = AsyncMock(spec=ServiceTokenManager)
         mock_manager.create_service_token.side_effect = ValueError("Token name already exists")
-
-        monkeypatch.setattr("src.api.auth_endpoints.require_role", lambda r, role: mock_jwt_user)
-        monkeypatch.setattr(ServiceTokenManager, "__init__", lambda self: None)
-        monkeypatch.setattr(ServiceTokenManager, "create_service_token", mock_manager.create_service_token)
+        
+        # Use proper FastAPI dependency overrides
+        app.dependency_overrides[require_admin_role] = lambda: mock_jwt_user
+        app.dependency_overrides[get_service_token_manager] = lambda: mock_manager
 
         token_request = {
             "token_name": "duplicate_token",
             "permissions": ["read"],
         }
 
-        response = client.post("/api/v1/auth/tokens", json=token_request)
+        try:
+            response = client.post("/api/v1/auth/tokens", json=token_request)
 
-        assert response.status_code == 400
-        assert "Token name already exists" in response.json()["detail"]
+            assert response.status_code == 400
+            assert "Token name already exists" in response.json()["detail"]
+        finally:
+            # Clean up dependency overrides
+            app.dependency_overrides.clear()
 
     def test_create_service_token_creation_failed(self, app, client, mock_jwt_user):
         """Test POST /auth/tokens endpoint when token creation returns None."""

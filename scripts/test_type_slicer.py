@@ -6,9 +6,9 @@ This provides the essential TestTypeSlicer class to fix the import error
 in vscode_coverage_hook.py while maintaining the existing interface.
 """
 
-import re
 from collections import defaultdict
 from pathlib import Path
+import re
 from typing import Any, ClassVar
 
 

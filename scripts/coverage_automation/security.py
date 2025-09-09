@@ -3,8 +3,8 @@ Security utilities for coverage automation.
 """
 
 import html
-import string
 from pathlib import Path
+import string
 from typing import Any
 
 

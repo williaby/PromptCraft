@@ -6,12 +6,13 @@ optimization system including caching, monitoring, and optimization strategies.
 """
 
 import asyncio
+from pathlib import Path
 import sys
 import time
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / ".." / ".." / "src"))

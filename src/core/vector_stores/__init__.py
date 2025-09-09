@@ -8,6 +8,7 @@ This package provides various vector database implementations including:
 All implementations follow the AbstractVectorStore interface.
 """
 
-from ..vector_store import QdrantVectorStore
+from src.core.vector_store import QdrantVectorStore
+
 
 __all__ = ["QdrantVectorStore"]

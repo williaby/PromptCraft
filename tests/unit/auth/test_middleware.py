@@ -9,9 +9,9 @@ ServiceTokenUser, security logging components, and all helper functions to achie
 import logging
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from fastapi import Response
 from fastapi.responses import JSONResponse
+import pytest
 
 from src.auth.middleware import (
     AuthenticationMiddleware,

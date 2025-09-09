@@ -45,11 +45,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, cast
 
-import structlog
 from fastapi import Request, status
+import structlog
 
 from src.config.settings import get_settings
 from src.utils.datetime_compat import UTC
+
 
 # Configure structured logging for comprehensive audit trails
 # This configuration creates JSON-formatted logs with ISO timestamps,
@@ -224,7 +225,7 @@ class AuditEvent:
             - Convenience functions: For common event types
 
         Calls:
-            - datetime.now(): For ISO timestamp generation
+            - utc_now(): For ISO timestamp generation
             - UTC timezone handling for consistent timestamps
         """
         self.event_type = event_type
@@ -236,7 +237,7 @@ class AuditEvent:
         self.resource = resource
         self.action = action
         self.outcome = outcome
-        self.additional_data = additional_data or {}
+        self.additional_data = additional_data
 
     def to_dict(self) -> dict[str, Any]:
         """Convert audit event to dictionary for logging.
@@ -264,8 +265,11 @@ class AuditEvent:
             "severity": self.severity.value,
             "message": self.message,
             "timestamp": self.timestamp,
-            "outcome": self.outcome,
         }
+        
+        # Only include outcome if it has a value
+        if self.outcome is not None:
+            event_data["outcome"] = self.outcome
 
         # Add request information if available
         if self.request:
@@ -273,6 +277,7 @@ class AuditEvent:
             request_data = {
                 "method": self.request.method,
                 "path": self.request.url.path,
+                "query": self.request.url.query,
                 "query_params": dict(self.request.query_params) if self.request.query_params else {},
                 "client_ip": self._get_client_ip(self.request),
                 "user_agent": self.request.headers.get("user-agent", "unknown"),
@@ -291,8 +296,8 @@ class AuditEvent:
         if self.action:
             event_data["action"] = self.action
 
-        # Add additional context data
-        if self.additional_data:
+        # Add additional context data (always include, even if empty)
+        if self.additional_data is not None:
             event_data["additional_data"] = dict(self.additional_data)  # type: ignore[assignment]
 
         return event_data
@@ -375,15 +380,48 @@ class AuditLogger:
         """
         event_data = event.to_dict()
 
-        # Log based on severity
-        if event.severity == AuditEventSeverity.CRITICAL:
-            self.logger.critical(event.message, **event_data)
-        elif event.severity == AuditEventSeverity.HIGH:
-            self.logger.error(event.message, **event_data)
-        elif event.severity == AuditEventSeverity.MEDIUM:
-            self.logger.warning(event.message, **event_data)
-        else:
-            self.logger.info(event.message, **event_data)
+        # Log based on severity - handle both standard and structured loggers
+        if hasattr(self.logger, "bind"):  # Structured logger (structlog)
+            logger_with_context = self.logger.bind(**event_data)
+            if event.severity == AuditEventSeverity.CRITICAL:
+                logger_with_context.critical(event.message)
+            elif event.severity == AuditEventSeverity.HIGH:
+                logger_with_context.error(event.message)
+            elif event.severity == AuditEventSeverity.MEDIUM:
+                logger_with_context.warning(event.message)
+            else:
+                logger_with_context.info(event.message)
+        else:  # Standard logger - include structured data in message
+            # For standard logging, include key data in the message
+            structured_message = event.message
+            if event.user_id:
+                structured_message += f" [user_id={event.user_id}]"
+            if event.resource:
+                structured_message += f" [resource={event.resource}]"
+            if event.action:
+                structured_message += f" [action={event.action}]"
+            if event.outcome:
+                structured_message += f" [outcome={event.outcome}]"
+            # Add client IP and user agent if available from request
+            if event.request:
+                client_ip = event._get_client_ip(event.request)
+                if client_ip:
+                    structured_message += f" [client_ip={client_ip}]"
+                user_agent = event.request.headers.get("user-agent")
+                if user_agent:
+                    structured_message += f" [user_agent={user_agent}]"
+            if event.additional_data:
+                for key, value in event.additional_data.items():
+                    structured_message += f" [{key}={value}]"
+            
+            if event.severity == AuditEventSeverity.CRITICAL:
+                self.logger.critical(structured_message)
+            elif event.severity == AuditEventSeverity.HIGH:
+                self.logger.error(structured_message)
+            elif event.severity == AuditEventSeverity.MEDIUM:
+                self.logger.warning(structured_message)
+            else:
+                self.logger.info(structured_message)
 
     def log_authentication_event(
         self,
@@ -423,6 +461,7 @@ class AuditLogger:
             message=message,
             request=request,
             user_id=user_id,
+            resource=request.url.path if request else None,
             action="authenticate",
             outcome=outcome,
             additional_data=additional_data,

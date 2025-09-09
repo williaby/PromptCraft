@@ -45,13 +45,14 @@ Time Complexity: O(n) for n agent orchestration requests
 Space Complexity: O(k) where k is the number of concurrent connections
 """
 
+from abc import ABC, abstractmethod
 import asyncio
 import contextlib
+from enum import Enum
 import logging
 import time
-from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any
+
 
 try:
     import httpx
@@ -69,6 +70,7 @@ from tenacity import (
 
 from src.config.settings import get_settings
 from src.utils.secure_random import secure_random
+
 
 logger = logging.getLogger(__name__)
 

@@ -5,8 +5,8 @@ This module creates functional tests that actually exercise the nested functions
 by creating a working interface and triggering the event handlers.
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import Mock, patch
 
 import pytest

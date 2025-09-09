@@ -4,6 +4,7 @@ from pathlib import Path
 
 import nox
 
+
 # Python versions to test
 PYTHON_VERSIONS = ["3.11", "3.12"]
 

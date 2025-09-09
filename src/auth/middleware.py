@@ -9,10 +9,10 @@ This module provides FastAPI middleware for JWT-based authentication with:
 - Database tracking for usage analytics and audit logging
 """
 
+from collections.abc import Awaitable, Callable
 import hashlib
 import logging
 import time
-from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -29,6 +29,7 @@ from src.database.models import AuthenticationEvent, UserSession
 
 from .models import AuthenticatedUser, AuthenticationError, JWTValidationError, SecurityEventSeverity, SecurityEventType
 
+
 # Import auth_simple compatibility types
 try:
     from src.auth_simple import AuthConfig as AuthenticationConfig
@@ -41,10 +42,10 @@ except ImportError:
     class JWTValidator:
         """Compatibility placeholder for JWTValidator."""
 
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             """Initialize placeholder JWTValidator."""
 
-        def validate_token(self, token, **kwargs):
+        def validate_token(self, token, **kwargs) -> None:
             """Placeholder token validation that returns None."""
             return
 

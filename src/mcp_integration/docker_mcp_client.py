@@ -5,6 +5,7 @@ from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin
 
+
 logger = logging.getLogger(__name__)
 
 

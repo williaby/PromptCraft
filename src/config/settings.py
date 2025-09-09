@@ -7,8 +7,8 @@ It provides type-safe configuration with validation and environment-specific loa
 
 import logging
 import os
-import re
 from pathlib import Path
+import re
 from typing import Any, Literal
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
@@ -25,6 +25,7 @@ from src.utils.encryption import (
 
 # Import constants after other imports to avoid circular dependency
 from .constants import SECRET_FIELD_NAMES
+
 
 # Constants
 MAX_HOSTNAME_LENGTH = 253

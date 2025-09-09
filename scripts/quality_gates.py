@@ -10,11 +10,11 @@ This script enforces quality standards across multiple dimensions:
 """
 
 import argparse
+from dataclasses import dataclass
 import json
+from pathlib import Path
 import subprocess
 import sys
-from dataclasses import dataclass
-from pathlib import Path
 
 import defusedxml.ElementTree as ET  # noqa: N817
 

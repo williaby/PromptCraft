@@ -279,6 +279,30 @@ class TestDemonstrationFunctions:
         assert IntegrationMode.ACTIVE in modes_tested
 
     @pytest.mark.asyncio
+    @patch("examples.fallback_system_demo.create_enhanced_task_detection")
+    async def test_demonstrate_integration_modes_with_fallback_applied(self, mock_create_enhanced):
+        """Test integration modes demonstration with fallback applied (covers line 242)."""
+        mock_enhanced_system = Mock()
+        # Mock result with fallback_applied=True to trigger the pass statement on line 242
+        mock_enhanced_system.detect_categories = AsyncMock(
+            return_value=DetectionResult(
+                categories={"git": True},
+                confidence_scores={"git": 0.9},
+                detection_time_ms=50.0,
+                signals_used={},
+                fallback_applied=True,  # This will trigger line 242
+            ),
+        )
+        mock_create_enhanced.return_value = mock_enhanced_system
+
+        # Should run without exceptions and hit the fallback_applied branch
+        await demonstrate_integration_modes()
+
+        # Verify enhanced system was created
+        assert mock_create_enhanced.call_count == 3  # 3 integration modes
+        assert mock_enhanced_system.detect_categories.call_count == 3
+
+    @pytest.mark.asyncio
     @patch("examples.fallback_system_demo.create_conservative_fallback_chain")
     async def test_demonstrate_health_monitoring(self, mock_create_chain):
         """Test health monitoring demonstration."""
@@ -301,6 +325,95 @@ class TestDemonstrationFunctions:
         assert mock_chain.get_health_status.called
         # Should have 10 calls (one for each iteration)
         assert mock_chain.get_function_categories.call_count == 10
+
+    @pytest.mark.asyncio
+    @patch("examples.fallback_system_demo.create_conservative_fallback_chain")
+    async def test_demonstrate_health_monitoring_missing_performance(self, mock_create_chain):
+        """Test health monitoring when performance key is missing (covers branch 272->275)."""
+        mock_chain = Mock()
+        mock_chain.get_function_categories = AsyncMock(return_value=({"core": True}, {"strategy": "optimized"}))
+        # Mock health status without "performance" key
+        mock_chain.get_health_status = Mock(
+            return_value={
+                "recovery": {"failures_handled": 3, "recovery_time": 0.1},
+                "learning": {"insights": ["Insight 1", "Insight 2", "Insight 3"]},
+            },
+        )
+        mock_create_chain.return_value = mock_chain
+
+        # Should run without exceptions
+        await demonstrate_health_monitoring()
+
+        # Verify health monitoring was called
+        assert mock_create_chain.called
+        assert mock_chain.get_health_status.called
+
+    @pytest.mark.asyncio
+    @patch("examples.fallback_system_demo.create_conservative_fallback_chain")
+    async def test_demonstrate_health_monitoring_missing_recovery(self, mock_create_chain):
+        """Test health monitoring when recovery key is missing (covers branch 275->278)."""
+        mock_chain = Mock()
+        mock_chain.get_function_categories = AsyncMock(return_value=({"core": True}, {"strategy": "optimized"}))
+        # Mock health status without "recovery" key
+        mock_chain.get_health_status = Mock(
+            return_value={
+                "performance": {"avg_response_time": 0.05, "success_rate": 0.95},
+                "learning": {"insights": ["Insight 1", "Insight 2", "Insight 3"]},
+            },
+        )
+        mock_create_chain.return_value = mock_chain
+
+        # Should run without exceptions
+        await demonstrate_health_monitoring()
+
+        # Verify health monitoring was called
+        assert mock_create_chain.called
+        assert mock_chain.get_health_status.called
+
+    @pytest.mark.asyncio
+    @patch("examples.fallback_system_demo.create_conservative_fallback_chain")
+    async def test_demonstrate_health_monitoring_missing_learning(self, mock_create_chain):
+        """Test health monitoring when learning key is missing (covers branch 278->exit)."""
+        mock_chain = Mock()
+        mock_chain.get_function_categories = AsyncMock(return_value=({"core": True}, {"strategy": "optimized"}))
+        # Mock health status without "learning" key
+        mock_chain.get_health_status = Mock(
+            return_value={
+                "performance": {"avg_response_time": 0.05, "success_rate": 0.95},
+                "recovery": {"failures_handled": 3, "recovery_time": 0.1},
+            },
+        )
+        mock_create_chain.return_value = mock_chain
+
+        # Should run without exceptions
+        await demonstrate_health_monitoring()
+
+        # Verify health monitoring was called
+        assert mock_create_chain.called
+        assert mock_chain.get_health_status.called
+
+    @pytest.mark.asyncio
+    @patch("examples.fallback_system_demo.create_conservative_fallback_chain")
+    async def test_demonstrate_health_monitoring_empty_insights(self, mock_create_chain):
+        """Test health monitoring when learning insights are empty (covers branch 281->exit)."""
+        mock_chain = Mock()
+        mock_chain.get_function_categories = AsyncMock(return_value=({"core": True}, {"strategy": "optimized"}))
+        # Mock health status with empty insights list
+        mock_chain.get_health_status = Mock(
+            return_value={
+                "performance": {"avg_response_time": 0.05, "success_rate": 0.95},
+                "recovery": {"failures_handled": 3, "recovery_time": 0.1},
+                "learning": {"insights": []},  # Empty insights list
+            },
+        )
+        mock_create_chain.return_value = mock_chain
+
+        # Should run without exceptions
+        await demonstrate_health_monitoring()
+
+        # Verify health monitoring was called
+        assert mock_create_chain.called
+        assert mock_chain.get_health_status.called
 
     @pytest.mark.asyncio
     @patch("examples.fallback_system_demo.create_conservative_fallback_chain")

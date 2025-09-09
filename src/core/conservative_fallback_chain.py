@@ -32,19 +32,20 @@ Dependencies:
 """
 
 import asyncio
-import logging
-import time
-import traceback
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import wraps
+import logging
+import time
+import traceback
 from typing import Any
 
 from src.core.task_detection import DetectionResult, TaskDetectionSystem
 from src.core.task_detection_config import DetectionMode, TaskDetectionConfig
 from src.utils.logging_mixin import LoggerMixin
+
 
 logger = logging.getLogger(__name__)
 

@@ -6,8 +6,8 @@ testing all field validators, methods, configuration options, and edge cases.
 Uses proper pytest markers for codecov integration per codecov.yml auth component.
 """
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.auth.config import AuthenticationConfig
 

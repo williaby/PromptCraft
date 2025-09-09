@@ -1,8 +1,8 @@
 """Parallel Subagent Executor for MCP server coordination."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin
@@ -10,6 +10,7 @@ from src.utils.logging_mixin import LoggerMixin
 from .client import MCPClient
 from .config_manager import MCPConfigurationManager
 from .docker_mcp_client import DockerMCPClient
+
 
 logger = logging.getLogger(__name__)
 

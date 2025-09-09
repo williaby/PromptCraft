@@ -19,6 +19,7 @@ from .connection import (
 )
 from .models import AuthenticationEvent, Base, ServiceToken, UserSession
 
+
 __all__ = [
     "AuthenticationEvent",
     "Base",

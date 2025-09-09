@@ -12,10 +12,10 @@ This module targets specific functions identified in the coverage report to achi
 - MultiJourneyInterface._validate_file_content_and_mime (40%)
 """
 
+from pathlib import Path
 import signal
 import tempfile
 import time
-from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, patch
 

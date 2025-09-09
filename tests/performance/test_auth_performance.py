@@ -21,18 +21,18 @@ Tests verify:
 # Performance tests for authentication systems - database mocking handled via pytest fixtures
 
 import asyncio
+from collections.abc import AsyncGenerator
+from datetime import datetime, timedelta, timezone
 import gc
 import statistics
 import time
-from collections.abc import AsyncGenerator
-from datetime import datetime, timedelta, timezone
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import psutil
-import pytest
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+import psutil
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.config import AuthenticationConfig
@@ -77,12 +77,9 @@ def mocked_auth_db():
     # Targets to be patched (only for auth performance tests)
     patch_targets = [
         "src.auth.middleware.get_db",
-        "src.auth.middleware.get_database_manager_async",
-        "src.database.connection.get_database_manager_async",
         "src.database.connection.get_db",
         "src.database.connection.get_db_session",
         "src.database.connection.initialize_database",
-        "src.database.get_database_manager_async",
         "src.database.get_db",
         "src.database.get_db_session",
     ]
@@ -90,10 +87,7 @@ def mocked_auth_db():
     # Create and start patches
     patchers = []
     for target in patch_targets:
-        if target.endswith("get_database_manager_async"):
-            patcher = patch(target, side_effect=mock_get_database_manager_async)
-        else:
-            patcher = patch(target, side_effect=mock_get_db_context)
+        patcher = patch(target, side_effect=mock_get_db_context)
         patchers.append(patcher)
 
     try:
@@ -244,7 +238,10 @@ class TestAuthenticationPerformance:
             "response_time_ms": 2.1,  # Fast response
         }
 
-        with patch("src.auth.middleware.get_database_manager_async", return_value=mock_manager):
+        async def mock_db_generator():
+            yield mock_session
+
+        with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator()):
             yield mock_manager
 
     @pytest.fixture
@@ -556,13 +553,12 @@ class TestAuthenticationPerformance:
         # Test with database enabled
         app_with_db = FastAPI()
 
-        with patch("src.auth.middleware.get_database_manager_async") as mock_get_db:
-            # Mock fast database manager
-            mock_db = AsyncMock()
+        # Mock fast database session generator
+        async def mock_db_generator_fast():
             mock_session = AsyncMock()
-            mock_db.get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_db.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
-            mock_get_db.return_value = mock_db
+            yield mock_session
+
+        with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_fast()):
 
             app_with_db.add_middleware(
                 AuthenticationMiddleware,
@@ -682,10 +678,11 @@ class TestAuthenticationPerformance:
         app = FastAPI()
 
         # Mock database failure
-        with patch("src.auth.middleware.get_database_manager_async") as mock_get_db:
-            mock_db = AsyncMock()
-            mock_db.get_session.side_effect = Exception("Database connection failed")
-            mock_get_db.return_value = mock_db
+        async def mock_db_generator_failure():
+            raise Exception("Database connection failed")
+            yield  # This line never executes but satisfies the generator requirement
+
+        with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_failure()):
 
             app.add_middleware(
                 AuthenticationMiddleware,

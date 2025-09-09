@@ -9,8 +9,8 @@ This module provides extensive test coverage for AuthenticationConfig class:
 - Integration scenarios
 """
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.auth.config import AuthenticationConfig
 

@@ -7,10 +7,10 @@ This module provides comprehensive service token management including:
 - Bulk operations for administrative tasks
 """
 
+from datetime import datetime
 import hashlib
 import logging
 import secrets
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import text
@@ -18,6 +18,7 @@ from sqlalchemy import text
 from src.database.connection import get_database_manager
 from src.database.models import AuthenticationEvent, ServiceToken
 from src.utils.datetime_compat import UTC, timedelta
+
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +172,7 @@ class ServiceTokenManager:
                         SELECT id, token_name, is_active
                         FROM service_tokens
                         WHERE token_name = :identifier
-                           OR id::text = :identifier
+                           OR CAST(id AS TEXT) = :identifier
                            OR token_hash = :identifier
                     """,
                     ),
@@ -294,7 +295,7 @@ class ServiceTokenManager:
                         SELECT id, token_name, token_metadata, expires_at
                         FROM service_tokens
                         WHERE (token_name = :identifier
-                           OR id::text = :identifier
+                           OR CAST(id AS TEXT) = :identifier
                            OR token_hash = :identifier)
                            AND is_active = TRUE
                     """,
@@ -401,7 +402,7 @@ class ServiceTokenManager:
                                 END as is_expired
                             FROM service_tokens
                             WHERE token_name = :identifier
-                               OR id::text = :identifier
+                               OR CAST(id AS TEXT) = :identifier
                                OR token_hash = :identifier
                         """,
                         ),

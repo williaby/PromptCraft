@@ -305,15 +305,23 @@ class TestUserTierManager:
 
     def test_reload_configuration(self, tier_manager):
         """Test reloading configuration."""
-        with patch("src.auth_simple.config.ConfigLoader") as mock_loader:
-            mock_config = Mock(spec=AuthConfig)
+        with patch("src.admin.user_tier_manager.ConfigLoader") as mock_loader:
+            # Create a real AuthConfig object instead of a Mock
+            from src.auth_simple.config import AuthConfig
+            mock_config = AuthConfig(
+                email_whitelist=["test@example.com"],
+                admin_emails=["admin@example.com"],
+                enabled=True,
+            )
             mock_loader.load_from_env.return_value = mock_config
 
             success, message = tier_manager.reload_configuration()
 
             assert success is True
             assert "Configuration successfully reloaded" in message
-            assert tier_manager.config_manager.config == mock_config
+            # Compare specific attributes instead of the whole object
+            assert tier_manager.config_manager.config.email_whitelist == mock_config.email_whitelist
+            assert tier_manager.config_manager.config.admin_emails == mock_config.admin_emails
             assert tier_manager.changes_log == []
 
     def test_generate_env_file_updates(self, tier_manager):
@@ -393,7 +401,7 @@ class TestUserTierManager:
 
     def test_error_handling_in_reload_configuration(self, tier_manager):
         """Test error handling in reload_configuration method."""
-        with patch("src.auth_simple.config.ConfigLoader") as mock_loader:
+        with patch("src.admin.user_tier_manager.ConfigLoader") as mock_loader:
             mock_loader.load_from_env.side_effect = Exception("Test error")
 
             success, message = tier_manager.reload_configuration()

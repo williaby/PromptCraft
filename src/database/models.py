@@ -6,9 +6,9 @@ This module defines database models for:
 - Authentication event logging (AUTH-1)
 """
 
-import uuid
 from datetime import datetime
 from typing import Any
+import uuid
 
 from sqlalchemy import JSON, TIMESTAMP, Boolean, Column, ForeignKey, Integer, String, Table, Text, TypeDecorator, func
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID

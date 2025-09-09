@@ -314,10 +314,9 @@ class TestMainFunction:
         mock_get_logger.return_value = mock_logger
 
         # Import and execute main
-        from examples.encryption_usage import __name__ as module_name
-
         # Import all functions first
         from examples.encryption_usage import (
+            __name__ as module_name,
             create_example_env_files,
             demonstrate_development_setup,
             demonstrate_encryption_workflow,

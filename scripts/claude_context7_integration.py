@@ -12,9 +12,10 @@ Usage:
 """
 
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any
+
 
 # Handle tomllib import for different Python versions
 try:

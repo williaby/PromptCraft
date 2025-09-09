@@ -12,6 +12,7 @@ from .renderer import CoverageRenderer
 from .security import HTMLSanitizer, SecurityValidator
 from .watcher import CoverageWatcher
 
+
 __all__ = [
     "CoverageAutomationCLI",
     "CoverageRenderer",

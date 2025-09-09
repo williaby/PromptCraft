@@ -97,18 +97,18 @@ thresholds:
   tier3_base_threshold: 0.55
 tier_definitions:
   tier1_categories:
-    - core
-    - git
+  - core
+  - git
   tier1_token_cost: 12300
   tier2_categories:
-    - analysis
-    - quality
-    - debug
-    - test
-    - security
+  - analysis
+  - quality
+  - debug
+  - test
+  - security
   tier2_token_cost: 19540
   tier3_categories:
-    - external
-    - infrastructure
+  - external
+  - infrastructure
   tier3_token_cost: 5800
 version: 1.0.0

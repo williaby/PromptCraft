@@ -4,19 +4,20 @@ Automatically generates test-type-specific coverage reports.
 """
 
 import json
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import time
-import xml.etree.ElementTree as ET
-from pathlib import Path
 from typing import Any
+import xml.etree.ElementTree as ET
 
 import pytest
 
 from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
+
 
 # Coverage hook functionality integrated directly to avoid plugin conflicts
 

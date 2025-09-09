@@ -6,12 +6,12 @@ system performance, and business intelligence metrics for comprehensive
 production monitoring and analysis.
 """
 
-import hashlib
-import json
-import uuid
 from datetime import datetime
 from enum import Enum
+import hashlib
+import json
 from typing import Any
+import uuid
 
 from pydantic import BaseModel, Field
 
@@ -170,7 +170,7 @@ class MetricEventBuilder:
 
     def with_hyde_metrics(
         self,
-        hyde_score: int,
+        hyde_score: int | None,
         action_taken: str,
         conceptual_issues: list[str] | None = None,
     ) -> "MetricEventBuilder":
@@ -180,12 +180,15 @@ class MetricEventBuilder:
         self.event.conceptual_issues = conceptual_issues or []
 
         # Determine specificity level from score
-        if hyde_score >= 85:
-            self.event.query_specificity_level = "high"
-        elif hyde_score >= 40:
-            self.event.query_specificity_level = "medium"
+        if hyde_score is not None:
+            if hyde_score >= 85:
+                self.event.query_specificity_level = "high"
+            elif hyde_score >= 40:
+                self.event.query_specificity_level = "medium"
+            else:
+                self.event.query_specificity_level = "low"
         else:
-            self.event.query_specificity_level = "low"
+            self.event.query_specificity_level = "unknown"
 
         return self
 
@@ -222,12 +225,16 @@ class MetricEventBuilder:
 
         return self
 
-    def with_query_analysis(self, query_text: str, query_category: str | None = None) -> "MetricEventBuilder":
+    def with_query_analysis(self, query_text: str | None, query_category: str | None = None) -> "MetricEventBuilder":
         """Add privacy-safe query analysis."""
 
-        # Create privacy-safe hash
-        self.event.query_text_hash = hashlib.sha256(query_text.encode()).hexdigest()[:16]
-        self.event.query_length = len(query_text.split())
+        if query_text is not None:
+            # Create privacy-safe hash
+            self.event.query_text_hash = hashlib.sha256(query_text.encode()).hexdigest()[:16]
+            self.event.query_length = len(query_text.split())
+        else:
+            self.event.query_text_hash = "null"
+            self.event.query_length = 0
 
         self.event.query_category = query_category
         return self
@@ -276,10 +283,10 @@ class MetricEventBuilder:
 # Factory functions for common event types
 def create_query_processed_event(
     session_id: str,
-    hyde_score: int,
+    hyde_score: int | None,
     action_taken: str,
     response_time_ms: int,
-    query_text: str,
+    query_text: str | None,
     conceptual_issues: list[str] | None = None,
 ) -> MetricEvent:
     """Create a query processed event with common metrics."""

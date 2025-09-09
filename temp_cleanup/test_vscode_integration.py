@@ -7,9 +7,9 @@ using the configured pytest environment.
 """
 
 # Security: subprocess used for controlled VS Code integration testing - no user input processed
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_command(command: list[str], _description: str) -> bool:

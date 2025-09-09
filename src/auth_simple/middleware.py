@@ -5,20 +5,21 @@ Cloudflare Access header extraction with email whitelist validation,
 replacing complex JWT validation with simple header-based authentication.
 """
 
-import logging
-import secrets
 from collections.abc import Callable
 from datetime import datetime
+import logging
+import secrets
 from typing import Any
 
 from fastapi import HTTPException, Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.utils.datetime_compat import UTC
 
 from .cloudflare_auth import CloudflareAuthError, CloudflareAuthHandler
 from .whitelist import EmailWhitelistValidator
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,11 @@ class SimpleSessionManager:
         logger.info("Initialized session manager with %ss timeout", session_timeout)
 
     def create_session(
-        self, email: str, is_admin: bool, user_tier: str, cf_context: dict[str, Any] | None = None,
+        self,
+        email: str,
+        is_admin: bool,
+        user_tier: str,
+        cf_context: dict[str, Any] | None = None,
     ) -> str:
         """Create a new session for the user.
 
@@ -124,7 +129,7 @@ class SimpleSessionManager:
             logger.debug("Cleaned up %s expired sessions", len(expired_sessions))
 
 
-class CloudflareAccessMiddleware(BaseHTTPMiddleware):
+class CloudflareAccessMiddleware:
     """Streamlined Cloudflare Access middleware for email whitelist authentication.
 
     This middleware:
@@ -137,7 +142,7 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app: Any,
+        app: ASGIApp,
         whitelist_validator: EmailWhitelistValidator,
         session_manager: SimpleSessionManager | None = None,
         public_paths: set[str] | None = None,
@@ -147,14 +152,14 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         """Initialize the middleware.
 
         Args:
-            app: FastAPI application
+            app: ASGI application
             whitelist_validator: Email whitelist validator
             session_manager: Session manager (creates default if None)
             public_paths: Paths that don't require authentication
             health_check_paths: Health check paths (always public)
             enable_session_cookies: Whether to use session cookies
         """
-        super().__init__(app)
+        self.app = app
         self.validator = whitelist_validator
         self.whitelist_validator = whitelist_validator  # Alias for setup function compatibility
         self.session_manager = session_manager or SimpleSessionManager()
@@ -192,38 +197,85 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         logger.info("Initialized Cloudflare Access middleware with %s public paths", len(self.all_public_paths))
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Process request through authentication middleware.
+        """Compatibility method for BaseHTTPMiddleware pattern."""
+        # Skip authentication for public paths
+        if self._is_public_path(request.url.path):
+            return await call_next(request)
+
+        # Handle authentication
+        try:
+            await self._authenticate_request(request)
+            response = await call_next(request)
+            
+            # Handle session cookies if enabled and new session was created
+            if (self.enable_session_cookies and 
+                hasattr(request.state, "user") and 
+                request.state.user.get("session_id")):
+                # Check if this is a new session (not from existing cookie)
+                session_id = request.state.user.get("session_id")
+                existing_session_id = request.cookies.get("session_id")
+                
+                if session_id != existing_session_id:
+                    # This is a new session, set the cookie and state
+                    request.state.new_session_id = session_id
+                    self._set_session_cookie(response, session_id)
+            
+            return response
+        except HTTPException as e:
+            from starlette.responses import JSONResponse
+            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+        except Exception as e:
+            logger.error("Middleware error: %s", e)
+            from starlette.responses import JSONResponse
+            return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI middleware implementation.
 
         Args:
-            request: Incoming request
-            call_next: Next middleware in chain
-
-        Returns:
-            Response from application or authentication error
+            scope: ASGI scope dict
+            receive: ASGI receive callable
+            send: ASGI send callable
         """
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive)
+        
         try:
             # Skip authentication for public paths
             if self._is_public_path(request.url.path):
-                return await call_next(request)  # type: ignore[no-any-return]
+                await self.app(scope, receive, send)
+                return
 
             # Handle authentication
             await self._authenticate_request(request)
 
-            # Process request
-            response = await call_next(request)
+            # Wrap send to intercept and modify response for session cookies
+            if (self.enable_session_cookies and 
+                hasattr(request.state, "user") and 
+                request.state.user.get("session_id")):
+                
+                # Check if this is a new session
+                session_id = request.state.user.get("session_id")
+                existing_session_id = request.cookies.get("session_id")
+                
+                if session_id != existing_session_id:
+                    # Wrap send to add session cookie
+                    send = self._wrap_send_for_session_cookie(send, session_id)
 
-            # Set session cookie if needed
-            if self.enable_session_cookies and hasattr(request.state, "new_session_id"):
-                self._set_session_cookie(response, request.state.new_session_id)
+            # Continue to app
+            await self.app(scope, receive, send)
 
-            return response  # type: ignore[no-any-return]
-
-        except HTTPException:
-            # Re-raise HTTP exceptions (like 401, 403)
-            raise
+        except HTTPException as e:
+            # Convert HTTP exceptions to JSON responses
+            response = JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+            await response(scope, receive, send)
         except Exception as e:
             logger.error("Middleware error: %s", e)
-            return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
+            response = JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
+            await response(scope, receive, send)
 
     def _is_public_path(self, path: str) -> bool:
         """Check if path is public (no authentication required)."""
@@ -238,10 +290,6 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
         Raises:
             HTTPException: If authentication fails
         """
-        # Try to get existing session first
-        session_id = request.cookies.get("session_id") if self.enable_session_cookies else None
-        existing_session = self.session_manager.get_session(session_id) if session_id else None
-
         # Extract user from Cloudflare headers
         try:
             cloudflare_user = self.cloudflare_auth.extract_user_from_request(request)
@@ -256,50 +304,57 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
 
         # Get user tier information
         user_tier = self.validator.get_user_tier(cloudflare_user.email)
-        is_admin = user_tier.has_admin_privileges
-        can_access_premium = user_tier.can_access_premium_models
-
-        # Check if existing session matches current user
-        if existing_session and existing_session["email"] == cloudflare_user.email:
-            # Use existing session, but update tier info if needed
-            session_data: dict[str, Any] = existing_session
-            # Update session with current tier info in case it changed
-            session_data["user_tier"] = user_tier.value
-            session_data["is_admin"] = is_admin
-            session_data["can_access_premium"] = can_access_premium
-        else:
-            # Create new session with tier information
-            cf_context = self.cloudflare_auth.create_user_context(cloudflare_user)
-
-            new_session_id = self.session_manager.create_session(
-                cloudflare_user.email, is_admin, user_tier.value, cf_context,
-            )
-
-            retrieved_session_data = self.session_manager.get_session(new_session_id)
-            if retrieved_session_data is None:
-                raise HTTPException(status_code=500, detail="Session creation failed")
-            session_data = retrieved_session_data
-            session_data["can_access_premium"] = can_access_premium
-            if self.enable_session_cookies:
-                request.state.new_session_id = new_session_id
-
-        # Inject user context into request state
+        
+        # Check for existing session first
+        session_id = None
+        session_data = None
+        existing_session_id = request.cookies.get("session_id")
+        
+        if existing_session_id:
+            session_data = self.session_manager.get_session(existing_session_id)
+            if session_data and session_data["email"] == cloudflare_user.email:
+                # Use existing session but update with current tier info
+                session_id = existing_session_id
+                # Update session data with current tier information
+                session_data["user_tier"] = user_tier.value
+                session_data["is_admin"] = user_tier.has_admin_privileges
+                session_data["can_access_premium"] = user_tier.can_access_premium_models
+        
+        if not session_id:
+            # Create new session if no valid existing session
+            try:
+                session_id = self.session_manager.create_session(
+                    email=cloudflare_user.email,
+                    is_admin=user_tier.has_admin_privileges,
+                    user_tier=user_tier.value,
+                    cf_context={},
+                )
+                # Verify session was created successfully
+                if not session_id or not self.session_manager.get_session(session_id):
+                    raise HTTPException(status_code=500, detail="Session creation failed")
+            except Exception as e:
+                if isinstance(e, HTTPException):
+                    raise
+                logger.error("Session creation error: %s", e)
+                raise HTTPException(status_code=500, detail="Session creation failed") from e
+        
+        # Create user context with session
         request.state.user = {
             "email": cloudflare_user.email,
-            "is_admin": session_data["is_admin"],
-            "user_tier": session_data["user_tier"],
-            "role": "admin" if session_data["is_admin"] else "user",
-            "can_access_premium": session_data["can_access_premium"],
-            "session_id": session_id or getattr(request.state, "new_session_id", None),
-            "authenticated_at": session_data["created_at"],
-            "cf_context": session_data["cf_context"],
+            "is_admin": user_tier.has_admin_privileges,
+            "user_tier": user_tier.value,
+            "role": "admin" if user_tier.has_admin_privileges else "user",
+            "can_access_premium": user_tier.can_access_premium_models,
+            "session_id": session_id,
+            "authenticated_at": session_data.get("authenticated_at") if session_data else datetime.now(UTC),
+            "cf_context": session_data.get("cf_context", {}) if session_data else {},
         }
 
         logger.debug(
             "Authenticated user %s with tier %s (premium access: %s)",
             cloudflare_user.email,
-            session_data["user_tier"],
-            session_data["can_access_premium"],
+            user_tier.value,
+            user_tier.can_access_premium_models,
         )
 
     def _set_session_cookie(self, response: Response, session_id: str) -> None:
@@ -317,6 +372,35 @@ class CloudflareAccessMiddleware(BaseHTTPMiddleware):
             samesite="strict",
             max_age=self.session_manager.session_timeout,
         )
+
+    def _wrap_send_for_session_cookie(self, send: Send, session_id: str) -> Send:
+        """Wrap the ASGI send callable to add session cookie to response.
+        
+        Args:
+            send: Original ASGI send callable
+            session_id: Session ID to set in cookie
+            
+        Returns:
+            Wrapped send callable that adds session cookie
+        """
+        async def wrapped_send(message: dict[str, Any]) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                
+                # Create cookie header
+                cookie_value = (
+                    f"session_id={session_id}; "
+                    f"Max-Age={self.session_manager.session_timeout}; "
+                    "HttpOnly; Secure; SameSite=Strict"
+                )
+                headers.append([b"set-cookie", cookie_value.encode()])
+                
+                # Update message with new headers
+                message = {**message, "headers": headers}
+            
+            await send(message)
+        
+        return wrapped_send
 
 
 class AuthenticationDependency:

@@ -7,15 +7,16 @@ reduction while maintaining functionality.
 """
 
 import asyncio
-import logging
-import time
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
+import logging
+import time
 from typing import Any
 
 from src.utils.datetime_compat import UTC, timedelta
+
 
 logger = logging.getLogger(__name__)
 

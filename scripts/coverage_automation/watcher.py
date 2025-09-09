@@ -2,8 +2,8 @@
 File monitoring and coverage detection for automation.
 """
 
-import time
 from pathlib import Path
+import time
 
 from .config import TestPatternConfig
 

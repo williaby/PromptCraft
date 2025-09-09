@@ -1,13 +1,23 @@
+from src.utils.datetime_compat import to_iso, utc_now
+
+
 """MCP Configuration Manager for server configuration and validation."""
 
 import json
 import logging
 from pathlib import Path
-from typing import Any
+
+# Use lazy imports to avoid circular dependencies  
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, model_validator
 
 from src.utils.logging_mixin import LoggerMixin
+
+
+if TYPE_CHECKING:
+    from .smart_discovery import SmartMCPDiscovery
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +48,27 @@ class MCPServerConfig(BaseModel):
             raise ValueError("Either 'command' or 'transport' must be specified")
 
         return self
+        
+    async def discover_and_connect_server(self, server_name: str) -> Any | None:
+        """Discover and establish connection to MCP server.
+        
+        Args:
+            server_name: Name of the server to discover
+            
+        Returns:
+            ServerConnection if successful, None otherwise
+        """
+        if not self.discovery:
+            self.logger.warning("Server discovery not enabled")
+            return None
+            
+        try:
+            connection = await self.discovery.discover_server(server_name)
+            self.logger.info(f"Successfully discovered {server_name}: {connection.url}")
+            return connection
+        except Exception as e:
+            self.logger.error(f"Failed to discover server {server_name}: {e}")
+            return None
 
 
 class MCPConfigurationBundle(BaseModel):
@@ -58,19 +89,36 @@ class MCPConfigurationManager(LoggerMixin):
     """Manager for MCP server configuration and validation.
 
     Handles loading, validation, and management of MCP server configurations,
-    including support for parallel execution and health monitoring.
+    including support for parallel execution, health monitoring, and intelligent
+    server discovery.
     """
 
-    def __init__(self, config_path: Path | None = None) -> None:
+    def __init__(self, config_path: Path | None = None, enable_discovery: bool = True) -> None:
         """Initialize configuration manager.
 
         Args:
             config_path: Path to MCP configuration file
+            enable_discovery: Whether to enable intelligent server discovery
         """
         super().__init__()
         self.config_path = config_path or Path(".mcp.json")
         self.backup_path = self.config_path.with_suffix(".json.backup")
         self.configuration: MCPConfigurationBundle | None = None
+        
+        # Initialize smart discovery and connection bridge if enabled
+        self.discovery: SmartMCPDiscovery | None = None
+        self.connection_bridge = None
+        if enable_discovery:
+            try:
+                from .connection_bridge import MCPConnectionBridge
+                from .smart_discovery import SmartMCPDiscovery
+                
+                self.discovery = SmartMCPDiscovery()
+                self.connection_bridge = MCPConnectionBridge(self.discovery)
+                self.logger.info("Smart MCP discovery and connection bridge enabled")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize MCP discovery: {e}")
+        
         self._load_configuration()
 
     def _load_configuration(self) -> None:
@@ -297,3 +345,131 @@ class MCPConfigurationManager(LoggerMixin):
             "errors": validation["errors"],
             "warnings": validation["warnings"],
         }
+
+    def _merge_configurations(self, configs: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
+        """Merge multiple configuration sources.
+
+        Args:
+            configs: List of (source_name, config_dict) tuples
+
+        Returns:
+            Merged configuration dictionary
+        """
+        merged_config = {"mcpServers": {}}
+        
+        for source, config in configs:
+            self.logger.debug(f"Merging configuration from {source}")
+            
+            # Merge mcp servers
+            if "mcpServers" in config:
+                merged_config["mcpServers"].update(config["mcpServers"])
+            
+            # Merge other top-level settings (last one wins)
+            for key, value in config.items():
+                if key != "mcpServers":
+                    merged_config[key] = value
+        
+        return merged_config
+    
+    # Connection Bridge Integration Methods
+    
+    async def connect_to_server(self, server_name: str) -> Any | None:
+        """Connect to an MCP server using discovery and connection bridge.
+        
+        Args:
+            server_name: Name of the server to connect to
+            
+        Returns:
+            ActiveConnection if successful, None otherwise
+        """
+        if not self.connection_bridge:
+            self.logger.warning("Connection bridge not available")
+            return None
+        
+        try:
+            return await self.connection_bridge.connect_to_server(server_name)
+        except Exception as e:
+            self.logger.error(f"Failed to connect to server {server_name}: {e}")
+            return None
+    
+    async def disconnect_from_server(self, server_name: str) -> bool:
+        """Disconnect from an MCP server.
+        
+        Args:
+            server_name: Name of the server to disconnect from
+            
+        Returns:
+            True if disconnected successfully
+        """
+        if not self.connection_bridge:
+            return False
+        
+        return await self.connection_bridge.disconnect_server(server_name)
+    
+    async def get_connection_status(self) -> dict[str, Any]:
+        """Get status of all MCP server connections.
+        
+        Returns:
+            Dictionary with connection status information
+        """
+        if not self.connection_bridge:
+            return {
+                "connection_bridge_available": False,
+                "total_connections": 0,
+                "connections": {},
+            }
+        
+        status = await self.connection_bridge.get_connection_status()
+        status["connection_bridge_available"] = True
+        return status
+    
+    async def health_check(self) -> dict[str, Any]:
+        """Perform comprehensive health check of MCP system.
+        
+        Returns:
+            Dictionary with health check results
+        """
+        config_validation = self.validate_configuration()
+        
+        if self.connection_bridge:
+            bridge_health = await self.connection_bridge.health_check()
+        else:
+            bridge_health = {
+                "healthy": False,
+                "error": "Connection bridge not available",
+            }
+        
+        # Discovery status
+        discovery_status = {
+            "enabled": self.discovery is not None,
+            "available_servers": [],
+        }
+        
+        if self.discovery:
+            try:
+                # Try to get some basic discovery info without full discovery
+                discovery_status["available_servers"] = ["context7", "perplexity", "sentry", "tavily"]
+            except Exception as e:
+                self.logger.debug(f"Could not get discovery status: {e}")
+        
+        overall_healthy = (
+            config_validation["valid"] and 
+            bridge_health["healthy"]
+        )
+        
+        return {
+            "healthy": overall_healthy,
+            "configuration": config_validation,
+            "connection_bridge": bridge_health,
+            "discovery": discovery_status,
+            "timestamp": to_iso(utc_now()),
+        }
+    
+    async def shutdown(self) -> None:
+        """Shutdown MCP configuration manager and clean up resources."""
+        self.logger.info("Shutting down MCP Configuration Manager...")
+        
+        if self.connection_bridge:
+            await self.connection_bridge.shutdown()
+        
+        self.logger.info("MCP Configuration Manager shutdown complete")

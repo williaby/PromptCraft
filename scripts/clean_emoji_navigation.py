@@ -3,8 +3,8 @@
 Clean emoji navigation blocks from htmlcov files.
 """
 
-import re
 from pathlib import Path
+import re
 
 
 def clean_emoji_navigation(file_path: str) -> bool:

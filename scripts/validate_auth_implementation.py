@@ -21,9 +21,10 @@ Run this script to ensure both AUTH-1 and AUTH-2 implementations meet all requir
 
 import asyncio
 import logging
-import sys
 from pathlib import Path
+import sys
 from typing import Any
+
 
 # Add src directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -33,6 +34,7 @@ from sqlalchemy import text
 from src.config.settings import get_settings
 from src.database.connection import DatabaseManager, database_health_check, initialize_database
 from src.database.models import ServiceToken
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

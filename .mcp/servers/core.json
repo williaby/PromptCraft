@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "description": "Core MCP servers required for PromptCraft functionality",
+  "mcpServers": {
+    "zen": {
+      "command": "poetry",
+      "args": ["run", "python", "-m", "src.main"],
+      "cwd": "vendors/zen-mcp-server",
+      "env": {
+        "ZEN_MCP_PORT": "8000",
+        "ZEN_MCP_HOST": "localhost",
+        "PROMPTCRAFT_INTEGRATION": "true"
+      },
+      "enabled": true,
+      "priority": 100,
+      "timeout": 30,
+      "retry_attempts": 3,
+      "docker_compatible": true,
+      "memory_requirement": "512MB",
+      "deployment_preference": "auto",
+      "docker_features": ["stdio", "networking"],
+      "self_hosted_features": ["stdio", "http", "websocket"],
+      "health_check": {
+        "endpoint": "/health",
+        "interval": 60,
+        "timeout": 10
+      }
+    }
+  },
+  "global_settings": {
+    "parallel_execution": true,
+    "max_concurrent_servers": 5,
+    "health_check_interval": 60,
+    "auto_restart": true,
+    "discovery_enabled": true
+  }
+}

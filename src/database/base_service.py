@@ -12,9 +12,9 @@ All database service classes should inherit from DatabaseService to ensure
 consistent patterns and eliminate code duplication.
 """
 
-import logging
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+import logging
 from typing import Any, TypeVar
 
 from sqlalchemy import select, text
@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
 from src.database.connection import DatabaseError, get_database_manager
+
 
 logger = logging.getLogger(__name__)
 

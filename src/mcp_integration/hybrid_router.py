@@ -26,12 +26,12 @@ Time Complexity: O(1) for routing decisions, O(n) for workflow orchestration
 Space Complexity: O(k) where k is the number of active connections
 """
 
-import logging
-import time
-import zlib
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
+import time
 from typing import Any
+import zlib
 
 from src.config.settings import get_settings
 from src.mcp_integration.mcp_client import (
@@ -53,6 +53,7 @@ from src.utils.circuit_breaker import (
     get_circuit_breaker,
 )
 from src.utils.logging_mixin import LoggerMixin
+
 
 # Routing constants
 MAX_TRAFFIC_PERCENTAGE = 100  # Maximum traffic percentage for rollout

@@ -4,10 +4,10 @@ This module provides the essential FastAPI application for Phase 1 Issue 4,
 implementing the basic C.R.E.A.T.E. framework API without advanced features.
 """
 
-import logging
-import time
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+import logging
+import time
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.routers.create_core import router as create_router
 from src.config.settings import get_settings
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

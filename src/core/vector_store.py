@@ -52,14 +52,14 @@ Performance Characteristics:
     - Memory usage: Configurable connection pool size and caching
 """
 
-import asyncio
-import logging
-import time
 from abc import ABC, abstractmethod
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -70,6 +70,7 @@ from src.core.performance_optimizer import (
     monitor_performance,
 )
 from src.utils.secure_random import secure_random
+
 
 # Optional imports for Qdrant - only available if qdrant-client is installed
 try:

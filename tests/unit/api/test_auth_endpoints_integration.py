@@ -5,9 +5,9 @@ This replaces the over-mocked approach with real service instances and database 
 to achieve actual code coverage for diff reporting.
 """
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.auth_endpoints import (
     audit_router,
@@ -19,6 +19,7 @@ from src.api.auth_endpoints import (
 from src.auth import require_role
 from src.auth.middleware import require_authentication
 from tests.base import FullIntegrationTestBase, assert_error_response, assert_successful_response
+
 
 # Import fixtures directly to ensure pytest can find them
 
@@ -49,7 +50,7 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         data = response.json()
 
         assert data["user_type"] == "service_token"
-        assert data["token_name"] == "test_service_token"  # nosec
+        assert data["token_name"] == test_service_token["token_name"]  # nosec
         assert data["token_id"] == test_service_token["token_id"]
         assert data["permissions"] == ["read", "write", "system_status", "audit_log"]
         assert data["usage_count"] == 0
@@ -127,7 +128,6 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         assert "token_id" in data
         assert data["metadata"]["purpose"] == "Token created by integration test"
 
-    @pytest.mark.skip(reason="Test database isolation issue - token fixture not available to create duplicate")
     def test_create_service_token_duplicate_name(
         self,
         test_db_with_override,
@@ -147,14 +147,13 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         response = client.post(
             "/api/v1/auth/tokens",
             json={
-                "token_name": "test_service_token",  # Same name as fixture
+                "token_name": test_service_token["token_name"],  # Same name as fixture
                 "purpose": "Duplicate name test",
             },
         )
 
         assert_error_response(response, 400, "already exists")
 
-    @pytest.mark.skip(reason="Test database isolation issue - token fixture not available to revoke")
     @pytest.mark.asyncio
     async def test_revoke_service_token_success(
         self,
@@ -218,7 +217,6 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         assert len(data) >= 1  # At least one token from fixtures
         assert all("token_name" in token for token in data)
 
-    @pytest.mark.skip(reason="Test database isolation issue - token fixture not available for analytics")
     def test_get_token_analytics_success(
         self,
         test_db_with_override,
@@ -242,7 +240,7 @@ class TestAuthEndpointsIntegration(FullIntegrationTestBase):
         assert "token_name" in data
         assert "usage_count" in data
         assert "created_at" in data
-        assert data["is_active"] is True
+        assert data["is_active"] in [True, 1]  # Handle both boolean (PostgreSQL) and integer (SQLite)
 
     def test_emergency_revoke_all_tokens(
         self,

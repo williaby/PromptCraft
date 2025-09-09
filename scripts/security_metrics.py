@@ -12,16 +12,17 @@ This script collects comprehensive metrics about security gate effectiveness, in
 """
 
 import argparse
-import json
-import os
-import sys
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
+import json
+import os
 from pathlib import Path
+import sys
 from typing import Any
 
 import requests
 import yaml
+
 
 # Constants for magic numbers
 MINOR_DISRUPTION_HOURS = 2

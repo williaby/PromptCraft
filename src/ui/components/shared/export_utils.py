@@ -6,12 +6,13 @@ with comprehensive metadata including model attribution, file sources,
 and session information.
 """
 
+from datetime import datetime
 import json
 import logging
-from datetime import datetime
 from typing import Any
 
 from src.utils.datetime_compat import UTC
+
 
 logger = logging.getLogger(__name__)
 

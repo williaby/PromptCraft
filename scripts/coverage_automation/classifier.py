@@ -2,8 +2,8 @@
 Test type classification and coverage analysis.
 """
 
-import re
 from pathlib import Path
+import re
 from typing import Any, ClassVar
 
 from .config import TestPatternConfig

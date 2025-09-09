@@ -6,10 +6,10 @@ including database operations, event storage, querying, and cleanup functionalit
 """
 
 import asyncio
-import sqlite3
-import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+import sqlite3
+import tempfile
 
 import pytest
 

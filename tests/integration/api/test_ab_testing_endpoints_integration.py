@@ -5,9 +5,9 @@ This creates comprehensive test coverage for the A/B testing API endpoints
 that currently have 0% coverage, significantly improving diff coverage reporting.
 """
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.ab_testing_endpoints import router as ab_testing_router
 from tests.base import FullIntegrationTestBase

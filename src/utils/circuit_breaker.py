@@ -8,19 +8,20 @@ Following the approved Phase 1 Issue NEW-11 implementation plan.
 """
 
 import asyncio
-import logging
-import threading
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from functools import wraps
+import logging
+import threading
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from src.utils.observability import get_metrics_collector, trace_agent_operation
 from src.utils.secure_random import secure_jitter
 from src.utils.time_utils import utc_now
+
 
 if TYPE_CHECKING:
     pass

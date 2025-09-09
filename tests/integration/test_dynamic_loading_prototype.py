@@ -25,8 +25,8 @@ initialization problems that need to be resolved.
 # Configuration issues resolved - tests now enabled
 import time
 
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.dynamic_loading_endpoints import router
 from src.core.comprehensive_prototype_demo import (

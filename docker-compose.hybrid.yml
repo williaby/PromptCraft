@@ -1,0 +1,315 @@
+version: '3.8'
+
+# PromptCraft Hybrid Deployment
+# Supports intelligent MCP server discovery with optional embedded services
+# Use: docker-compose -f docker-compose.hybrid.yml up
+
+services:
+  # Main application with intelligent discovery
+  promptcraft:
+    build: 
+      context: .
+      dockerfile: Dockerfile.hybrid
+    container_name: promptcraft-hybrid
+    ports:
+      - "7860:7860"  # Gradio UI
+      - "7862:7862"  # FastAPI backend
+    environment:
+      # Discovery configuration
+      MCP_DISCOVERY_MODE: intelligent
+      MCP_ZEN_PREFERENCE: external_first
+      AGENT_DISCOVERY_MODE: intelligent
+      
+      # PromptCraft configuration
+      PROMPTCRAFT_HOST: "0.0.0.0"
+      PROMPTCRAFT_PORT: 7860
+      PROMPTCRAFT_API_PORT: 7862
+      
+      # External services
+      QDRANT_HOST: "${QDRANT_HOST:-192.168.1.16}"
+      QDRANT_PORT: "${QDRANT_PORT:-6333}"
+      REDIS_HOST: "${REDIS_HOST:-redis}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      
+      # Environment-specific settings
+      ENVIRONMENT: "${ENVIRONMENT:-production}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      
+      # Resource limits
+      MAX_CONCURRENT_AGENTS: "${MAX_CONCURRENT_AGENTS:-10}"
+      AGENT_MEMORY_LIMIT: "${AGENT_MEMORY_LIMIT:-2048}"
+      MCP_RESOURCE_LIMIT: "${MCP_RESOURCE_LIMIT:-1024}"
+      
+    volumes:
+      # Mount configuration directories
+      - ./.mcp:/app/.mcp:ro
+      - ./.agents:/app/.agents:ro
+      
+      # Mount logs and data for persistence
+      - promptcraft-logs:/app/logs
+      - promptcraft-data:/app/data
+      
+      # Optional: Mount user-level overrides (bind mount for development)
+      - type: bind
+        source: ${HOME}/.claude/agents
+        target: /home/promptcraft/.claude/agents
+        read_only: true
+        bind:
+          create_host_path: true
+      
+    depends_on:
+      redis:
+        condition: service_healthy
+      zen-mcp:
+        condition: service_healthy
+        required: false  # Optional dependency
+    
+    networks:
+      - promptcraft-network
+    
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health || http://localhost:7862/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis for caching and session management
+  redis:
+    image: "redis:7-alpine"
+    container_name: promptcraft-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - promptcraft-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.2'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Zen MCP Server (only started if external not found)
+  zen-mcp:
+    build: 
+      context: ./vendors/zen-mcp-server
+      dockerfile: Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: zen-mcp-server
+    ports:
+      - "8001:8000"  # Different port to avoid conflicts
+    environment:
+      ZEN_MCP_PORT: 8000
+      ZEN_MCP_HOST: "0.0.0.0"
+      PROMPTCRAFT_INTEGRATION: "true"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      REDIS_URL: "redis://redis:6379"
+      
+    volumes:
+      - zen-logs:/app/logs
+      - zen-data:/app/data
+      
+    networks:
+      - promptcraft-network
+    
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    profiles:
+      - with-zen  # Only starts with --profile with-zen
+
+  # Optional: Local Qdrant (if external not available)
+  qdrant-local:
+    image: qdrant/qdrant:v1.7.0
+    container_name: qdrant-local
+    ports:
+      - "6334:6333"  # Different port to avoid conflicts
+      - "6335:6334"  # GRPC port
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__STORAGE__STORAGE_PATH: "/qdrant/storage"
+      QDRANT__LOG_LEVEL: "${QDRANT_LOG_LEVEL:-INFO}"
+      
+    volumes:
+      - qdrant-storage:/qdrant/storage
+      - qdrant-config:/qdrant/config
+      
+    networks:
+      - promptcraft-network
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.2'
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    
+    profiles:
+      - with-qdrant  # Only starts with --profile with-qdrant
+
+  # Monitoring and observability
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - promptcraft-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.3'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel,grafana-worldmap-panel"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning
+    networks:
+      - promptcraft-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.3'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+    profiles:
+      - monitoring
+
+  # Load balancer for production
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - promptcraft
+    networks:
+      - promptcraft-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    profiles:
+      - production
+
+networks:
+  promptcraft-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  # Application data
+  promptcraft-logs:
+    driver: local
+  promptcraft-data:
+    driver: local
+  
+  # Redis data
+  redis-data:
+    driver: local
+  
+  # MCP server data
+  zen-logs:
+    driver: local
+  zen-data:
+    driver: local
+    
+  # Qdrant data
+  qdrant-storage:
+    driver: local
+  qdrant-config:
+    driver: local
+    
+  # Monitoring data
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  
+  # Nginx logs
+  nginx-logs:
+    driver: local

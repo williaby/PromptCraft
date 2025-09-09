@@ -7,9 +7,9 @@ creation, event storage, and query operations for analytics.
 """
 
 import logging
+from pathlib import Path
 import sqlite3
 import time
-from pathlib import Path
 from typing import Any
 
 from .events import MetricEvent, MetricEventType
@@ -113,11 +113,11 @@ class MetricsStorage:
             placeholders = ", ".join(["?" for _ in columns])
             values = [storage_dict[col] for col in columns]
 
-            insert_sql = f"""  # noqa: S608
+            insert_sql = f"""
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
-            """
+            """  # noqa: S608
 
             with sqlite3.connect(self.database_path) as conn:
                 conn.execute(insert_sql, values)
@@ -142,11 +142,11 @@ class MetricsStorage:
             columns = list(storage_dicts[0].keys())
             placeholders = ", ".join(["?" for _ in columns])
 
-            insert_sql = f"""  # noqa: S608
+            insert_sql = f"""
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
-            """
+            """  # noqa: S608
 
             # Prepare values for batch insert
             batch_values = []
@@ -313,7 +313,7 @@ class MetricsStorage:
                 total_feedback = sum(feedback_counts.values())
                 if total_feedback > 0:
                     positive_feedback = feedback_counts.get("thumbs_up", 0)
-                summary["user_agreement_rate"] = (positive_feedback / total_feedback) * 100
+                    summary["user_agreement_rate"] = (positive_feedback / total_feedback) * 100
 
             return summary
 

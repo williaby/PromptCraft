@@ -2,8 +2,8 @@
 Command-line interface for coverage automation.
 """
 
-import subprocess
 from pathlib import Path
+import subprocess
 
 from .classifier import TestTypeClassifier
 from .config import TestPatternConfig

@@ -18,7 +18,7 @@ import asyncio
 import builtins
 import contextlib
 import time
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -31,7 +31,6 @@ from src.core.dynamic_function_loader import (
     SessionStatus,
 )
 from src.core.task_detection import DetectionResult
-from src.core.task_detection_config import ConfigManager
 
 
 class TestFunctionRegistry:
@@ -160,7 +159,15 @@ class TestDynamicFunctionLoader:
     @pytest.fixture
     async def loader(self):
         """Create a test loader instance."""
-        config_manager = ConfigManager()
+        # Mock the config manager to avoid loading actual YAML files
+        config_manager = Mock()
+        mock_config = Mock()
+        mock_config.mode = Mock()
+        mock_config.mode.value = "conservative"
+        mock_config.fallback_configs = []
+        mock_config.loading = {"enabled": True, "timeout": 30}
+        config_manager.get_config.return_value = mock_config
+        
         loader = DynamicFunctionLoader(config_manager)
         yield loader
 

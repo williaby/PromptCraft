@@ -22,6 +22,7 @@ from src.auth.role_manager import (
     UserNotFoundError,
 )
 
+
 logger = logging.getLogger(__name__)
 
 

@@ -26,9 +26,9 @@ Integration with VS Code:
 
 import contextlib
 import os
+from pathlib import Path
 import subprocess  # nosec B404  # Required for coverage hook integration
 import sys
-from pathlib import Path
 
 
 def pytest_configure(config: object) -> None:

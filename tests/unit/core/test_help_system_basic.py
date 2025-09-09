@@ -64,9 +64,9 @@ class TestHelpSystemImports:
 
     def test_required_dependencies_importable(self):
         """Test that required dependencies can be imported."""
-        import re
         from dataclasses import dataclass, field
         from datetime import datetime
+        import re
         from typing import Any
 
         assert re is not None

@@ -16,17 +16,17 @@ Usage:
     python scripts/simplified_coverage_automation.py --watch
 """
 
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from functools import lru_cache
 import json
+from pathlib import Path
 import re
 
 # Security: subprocess used for controlled coverage automation - no user input processed
 import subprocess
 import time
-from dataclasses import dataclass
-from datetime import datetime
-from enum import Enum
-from functools import lru_cache
-from pathlib import Path
 from typing import Any, ClassVar
 
 import yaml

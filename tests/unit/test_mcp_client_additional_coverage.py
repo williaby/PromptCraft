@@ -10,8 +10,8 @@ Goal: Achieve 80%+ coverage for both files.
 from pathlib import Path
 from unittest.mock import Mock, mock_open, patch
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.config_manager import (

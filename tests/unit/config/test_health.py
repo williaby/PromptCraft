@@ -7,8 +7,8 @@ configuration status models, validation error sanitization, and MCP integration.
 Uses proper pytest markers for codecov integration per codecov.yml config component.
 """
 
-import os
 from datetime import datetime
+import os
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 

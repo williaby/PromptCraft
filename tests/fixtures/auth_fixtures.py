@@ -3,13 +3,13 @@
 Provides real authentication services and tokens for testing without mocking.
 """
 
+from datetime import datetime
 import secrets
 import uuid
-from datetime import datetime
 
+from fastapi import Request
 import pytest
 import pytest_asyncio
-from fastapi import Request
 
 from src.auth.middleware import AuthenticatedUser, ServiceTokenUser
 from src.auth.models import UserRole
@@ -22,11 +22,14 @@ from src.utils.datetime_compat import UTC, timedelta
 async def real_service_token_manager(test_db_with_override):
     """Provide real ServiceTokenManager with test database connection."""
     from unittest.mock import AsyncMock, MagicMock, patch
+    
+    # Unpack the tuple from test_db_with_override fixture
+    test_db_session, override_get_db = test_db_with_override
 
     # Create mock database manager that returns test database session
     mock_db_manager = MagicMock()
     mock_context_manager = AsyncMock()
-    mock_context_manager.__aenter__ = AsyncMock(return_value=test_db_with_override)
+    mock_context_manager.__aenter__ = AsyncMock(return_value=test_db_session)  # Return session, not tuple
     mock_context_manager.__aexit__ = AsyncMock(return_value=None)
     mock_db_manager.get_session.return_value = mock_context_manager
 
@@ -39,15 +42,21 @@ async def real_service_token_manager(test_db_with_override):
 @pytest_asyncio.fixture
 async def test_service_token(test_db_with_override):
     """Create a real service token in test database."""
+    # Unpack the tuple from test_db_with_override fixture
+    test_db_session, override_get_db = test_db_with_override
+    
     # Create token directly in database
     token_id = uuid.uuid4()
     token_value = f"sk_{secrets.token_urlsafe(32)}"
     token_hash = ServiceTokenManager().hash_token(token_value)
+    
+    # Generate unique token name for each test to avoid UNIQUE constraint failures
+    unique_token_name = f"test_service_token_{secrets.token_hex(8)}"
 
     # nosec: B106 - test token name is not a password
     service_token = ServiceToken(
         id=token_id,
-        token_name="test_service_token",  # noqa: S106
+        token_name=unique_token_name,
         token_hash=token_hash,
         is_active=True,
         usage_count=0,
@@ -56,13 +65,13 @@ async def test_service_token(test_db_with_override):
         last_used=None,
     )
 
-    test_db_with_override.add(service_token)
-    await test_db_with_override.commit()
+    test_db_session.add(service_token)
+    await test_db_session.flush()  # Use flush instead of commit to avoid transaction issues
 
     return {
         "token_value": token_value,
         "token_id": str(token_id),  # Convert UUID to string
-        "token_name": "test_service_token",
+        "token_name": unique_token_name,
         "metadata": {"permissions": ["read", "write", "system_status", "audit_log"], "test": True},
     }
 
@@ -182,6 +191,9 @@ def auth_middleware_user(regular_user):
 @pytest_asyncio.fixture
 async def multiple_service_tokens(test_db_with_override):
     """Create multiple service tokens for testing list operations."""
+    # Unpack the tuple from test_db_with_override fixture
+    test_db_session, override_get_db = test_db_with_override
+    
     tokens = []
 
     for i in range(3):
@@ -200,7 +212,7 @@ async def multiple_service_tokens(test_db_with_override):
             last_used=datetime.now(UTC) - timedelta(hours=i),
         )
 
-        test_db_with_override.add(service_token)
+        test_db_session.add(service_token)
         tokens.append(
             {
                 "token_value": token_value,
@@ -210,5 +222,5 @@ async def multiple_service_tokens(test_db_with_override):
             },
         )
 
-    await test_db_with_override.commit()
+    await test_db_session.flush()  # Use flush instead of commit to avoid transaction issues
     return tokens

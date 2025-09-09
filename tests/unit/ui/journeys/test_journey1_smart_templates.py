@@ -7,8 +7,8 @@ testing file content extraction, C.R.E.A.T.E. framework functionality, and UI in
 
 import contextlib
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest

@@ -9,8 +9,8 @@ This module provides extensive test coverage for all authentication model classe
 - Edge cases and validation scenarios
 """
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.auth.models import AuthenticatedUser, JWTValidationError, UserRole
 

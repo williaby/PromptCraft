@@ -4,8 +4,8 @@ This module provides mock implementations and fixtures for all security services
 to enable comprehensive testing without external dependencies.
 """
 
-import logging
 from datetime import datetime, timedelta
+import logging
 from typing import Any
 from uuid import uuid4
 
@@ -13,6 +13,7 @@ import pytest
 
 from src.auth.models import SecurityEventCreate
 from src.utils.datetime_compat import UTC
+
 
 logger = logging.getLogger(__name__)
 

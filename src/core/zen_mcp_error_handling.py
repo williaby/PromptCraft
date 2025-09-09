@@ -42,9 +42,9 @@ Complexity: O(1) for circuit breaker operations, O(n) for retry attempts where n
 """
 
 import asyncio
+from collections.abc import Awaitable, Callable
 import logging
 import time
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin

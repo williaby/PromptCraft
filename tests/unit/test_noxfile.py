@@ -2,12 +2,13 @@
 
 # Import the noxfile module
 import contextlib
-import sys
 from pathlib import Path
+import sys
 from unittest.mock import Mock, call, patch
 
-import pytest
 from nox import Session
+import pytest
+
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import noxfile
@@ -154,6 +155,249 @@ class TestBasicSessions:
             "integration-tests",
             external=True,
         )
+
+    def test_tests_security_session(self, mock_session):
+        """Test tests_security session functionality."""
+        noxfile.tests_security(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with security test args
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "security",
+            "--cov=src",
+            "--cov-branch",
+            "--cov-report=xml:coverage-security.xml",
+            "--cov-report=json:coverage-security.json",
+            "--cov-report=term-missing",
+            "-v",
+        )
+
+    def test_tests_security_with_codecov_token(self, mock_session):
+        """Test tests_security session with CODECOV_TOKEN present."""
+        mock_session.env = {"CODECOV_TOKEN": "test-token"}
+
+        noxfile.tests_security(mock_session)
+
+        # Verify codecov upload was called (covers branch 226->exit)
+        mock_session.run.assert_any_call(
+            "codecov",
+            "-f",
+            "coverage-security.xml",
+            "-F",
+            "security", 
+            "-n",
+            "security-tests",
+            external=True,
+        )
+
+    def test_tests_security_without_codecov_token(self, mock_session):
+        """Test tests_security session without CODECOV_TOKEN."""
+        mock_session.env = {}
+
+        noxfile.tests_security(mock_session)
+
+        # Verify codecov upload was NOT called
+        codecov_calls = [call for call in mock_session.run.call_args_list if "codecov" in str(call)]
+        assert len(codecov_calls) == 0
+
+    def test_tests_fast_session(self, mock_session):
+        """Test tests_fast session functionality.""" 
+        noxfile.tests_fast(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with fast test args
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "not slow",
+            "--cov=src",
+            "--cov-branch", 
+            "--cov-report=xml:coverage-fast.xml",
+            "--cov-report=json:coverage-fast.json",
+            "--cov-report=term-missing",
+            "--maxfail=5",
+            "-v",
+        )
+
+    def test_tests_fast_with_codecov_token(self, mock_session):
+        """Test tests_fast session with CODECOV_TOKEN present."""
+        mock_session.env = {"CODECOV_TOKEN": "test-token"}
+
+        noxfile.tests_fast(mock_session)
+
+        # Verify codecov upload was called (covers branch 247->exit)
+        mock_session.run.assert_any_call(
+            "codecov",
+            "-f",
+            "coverage-fast.xml",
+            "-F",
+            "fast",
+            "-n", 
+            "fast-tests",
+            external=True,
+        )
+
+    def test_tests_fast_without_codecov_token(self, mock_session):
+        """Test tests_fast session without CODECOV_TOKEN."""
+        mock_session.env = {}
+
+        noxfile.tests_fast(mock_session)
+
+        # Verify codecov upload was NOT called
+        codecov_calls = [call for call in mock_session.run.call_args_list if "codecov" in str(call)]
+        assert len(codecov_calls) == 0
+
+    def test_unit_session(self, mock_session):
+        """Test unit session functionality."""
+        noxfile.unit(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with unit test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "not component and not contract and not integration and not e2e and not perf and not chaos and not slow",
+            "--cov=src",
+            "--cov-branch",
+            "--cov-fail-under=80",
+            "-v",
+        )
+
+    def test_component_session(self, mock_session):
+        """Test component session functionality."""
+        noxfile.component(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with component test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "component",
+            "--cov=src",
+            "--cov-branch", 
+            "--cov-fail-under=75",
+            "-v",
+        )
+
+    def test_integration_session(self, mock_session):
+        """Test integration session functionality."""
+        noxfile.integration(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with integration test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "integration",
+            "--cov=src",
+            "--cov-branch",
+            "-v",
+        )
+
+    def test_e2e_session(self, mock_session):
+        """Test e2e session functionality."""
+        noxfile.e2e(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with e2e test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "e2e",
+            "-v",
+            "--tb=short",
+        )
+
+    def test_perf_session(self, mock_session):
+        """Test perf session functionality."""
+        noxfile.perf(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with performance test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "perf or performance",
+            "-v",
+            "--tb=short",
+            "--durations=10",
+        )
+
+    def test_security_tests_session(self, mock_session):
+        """Test security_tests session functionality."""
+        noxfile.security_tests(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with security test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "security",
+            "-v",
+        )
+
+    def test_chaos_tests_session(self, mock_session):
+        """Test chaos_tests session functionality."""
+        noxfile.chaos_tests(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with chaos test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "chaos",
+            "-v",
+            "--tb=short",
+        )
+
+    def test_fast_session(self, mock_session):
+        """Test fast session functionality."""
+        noxfile.fast(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify pytest with fast test markers
+        mock_session.run.assert_any_call(
+            "pytest",
+            "-m",
+            "not slow",
+            "--cov=src",
+            "--cov-branch",
+            "--cov-fail-under=75",
+            "--maxfail=5",
+            "-v",
+        )
+
+    def test_codecov_analysis_session(self, mock_session):
+        """Test codecov_analysis session functionality.""" 
+        noxfile.codecov_analysis(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+
+        # Verify codecov analysis script execution
+        mock_session.run.assert_any_call("python", "codecov_analysis.py")
 
 
 class TestLintingAndFormatting:
@@ -319,6 +563,54 @@ class TestPreCommitSession:
         # Verify poetry install and pre-commit execution
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
         mock_session.run.assert_any_call("pre-commit", "run", "--all-files")
+
+
+class TestMetricsSession:
+    """Test metrics session functionality."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock nox session."""
+        session = Mock(spec=Session)
+        session.log = Mock()
+        return session
+
+    @patch("noxfile.Path")
+    def test_metrics_session_with_existing_script(self, mock_path, mock_session):
+        """Test metrics session when test_metrics_dashboard.py exists."""
+        # Mock Path to show script exists
+        script_path_mock = Mock()
+        script_path_mock.exists.return_value = True
+        mock_path.return_value = script_path_mock
+
+        noxfile.metrics(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        
+        # Verify script execution (this covers line 156)
+        mock_session.run.assert_any_call("python", "test_metrics_dashboard.py")
+
+    @patch("noxfile.Path")  
+    def test_metrics_session_without_script(self, mock_path, mock_session):
+        """Test metrics session when test_metrics_dashboard.py does not exist."""
+        # Mock Path constructor to return a mock object
+        script_path_mock = Mock()
+        script_path_mock.exists.return_value = False
+        script_path_mock.__str__ = lambda x: "test_metrics_dashboard.py"
+        mock_path.return_value = script_path_mock
+
+        noxfile.metrics(mock_session)
+
+        # Verify poetry install
+        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        
+        # Verify warning message is logged (with correct mock string representation)
+        mock_session.log.assert_any_call("Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.")
+        
+        # Verify script is NOT executed
+        script_calls = [call for call in mock_session.run.call_args_list if "test_metrics_dashboard.py" in str(call)]
+        assert len(script_calls) == 0
 
 
 class TestAdvancedTestingSessions:

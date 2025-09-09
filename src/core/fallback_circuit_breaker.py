@@ -27,17 +27,18 @@ Dependencies:
     - src.utils.resilience: For base circuit breaker interfaces
 """
 
-import asyncio
-import logging
-import time
 from abc import ABC, abstractmethod
+import asyncio
 from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
+import logging
+import time
 from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin
+
 
 logger = logging.getLogger(__name__)
 

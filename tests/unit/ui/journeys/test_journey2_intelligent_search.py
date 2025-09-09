@@ -295,7 +295,7 @@ class TestJourney2IntelligentSearch:
         assert transfer["enhanced_prompt"] == enhanced_prompt
         assert transfer["context"] == create_breakdown["context"]
         assert transfer["source"] == "journey1_smart_templates"
-        assert transfer["transfer_timestamp"] == 1234567890
+        assert transfer["transfer_timestamp"] == "1234567890"
 
     def test_format_response_for_display_normal(self, journey2_instance):
         """Test response formatting for normal-length response."""

@@ -19,12 +19,13 @@ Performance Targets:
 - Basic timing metrics for performance monitoring
 """
 
+from dataclasses import dataclass
+from enum import Enum
 import logging
 import re
 import time
-from dataclasses import dataclass
-from enum import Enum
 from typing import Any
+
 
 # Try to import structlog, fall back to standard logging if not available
 try:
