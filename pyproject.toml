@@ -50,10 +50,12 @@ cryptography = "^45.0.0"
 pyjwt = {version = "^2.10.1", extras = ["crypto"]}
 python-gnupg = "^0.5.2"
 pyyaml = "^6.0.2"
+toml = "^0.10.2"
 python-multipart = "^0.0.18"
 redis = {extras = ["hiredis"], version = "^6.0.0"}
 prometheus-client = "^0.20.0"
 python-dotenv = "^1.0.1"
+python-magic = "^0.4.27"
 structlog = ">=24.0.0,<26.0.0"
 rich = "^14.0.0"
 tenacity = "^9.0.0"
@@ -65,7 +67,18 @@ sentry-sdk = ">=2.0.0,<3.0.0"
 opentelemetry-api = "^1.25.0"
 typing-extensions = ">=4.10.0,<5.0.0"
 slowapi = "^0.1.9"
+cachetools = "^6.1.0"
+defusedxml = "^0.7.1"
 starlette = "~0.47.2"
+# Database dependencies for AUTH-1 enhanced authentication and AUTH-2 service token management
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+asyncpg = "^0.30.0"
+alembic = "^1.14.0"
+aiohttp = "^3.12.15"
+plotly = "^6.3.0"
+pandas = "^2.3.1"
+jinja2 = "^3.1.6"
+h2 = "^4.3.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0.1"
