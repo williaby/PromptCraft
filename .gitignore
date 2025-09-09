@@ -165,6 +165,8 @@ agents-backup/
 
 # Local Development
 *.env.zen-vm.template
+.env.zen-mcp-server
+*.env.zen-*
 .secrets.baseline
 
 # Services
