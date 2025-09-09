@@ -6,8 +6,8 @@ including event recording, buffering, background processing, and global collecto
 """
 
 import asyncio
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -593,11 +593,16 @@ class TestMetricsCollectorAnalytics:
 class TestMetricsCollectorGlobalInstance:
     """Test global collector instance management."""
 
+    def setup_method(self):
+        """Clean up global state before test."""
+        # Reset global collector to ensure clean state
+        import src.metrics.collector as collector_module
+        collector_module._global_collector = None
+
     def teardown_method(self):
         """Clean up global state."""
         # Reset global collector
         import src.metrics.collector as collector_module
-
         collector_module._global_collector = None
 
     @pytest.mark.asyncio
@@ -876,10 +881,14 @@ class TestMetricsCollectorIntegration:
         # Should complete in reasonable time
         assert collection_time < 5.0
 
-        # Flush all events
+        # Attempt to flush remaining events (should be 0 due to auto-flushing)
         start_flush_time = time.time()
         flushed_count = await self.collector.flush_events()
         flush_time = time.time() - start_flush_time
 
-        assert flushed_count == 50
+        # Auto-flush should have processed all events already, so buffer should be empty
+        assert flushed_count == 0  # No remaining events to flush
         assert flush_time < 2.0
+
+        # Verify events were auto-flushed by checking buffer is empty
+        assert len(self.collector._event_buffer) == 0
