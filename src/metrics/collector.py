@@ -125,6 +125,11 @@ class MetricsCollector:
         """Record a query processed event."""
         try:
             event_id = str(uuid.uuid4())[:8]
+
+            # Handle conceptual_issues conversion
+            if "conceptual_issues" in kwargs and kwargs["conceptual_issues"] is None:
+                kwargs["conceptual_issues"] = []
+
             # Store event in buffer for test compatibility
             event = MockMetricEvent(
                 event_type=MetricEventType.QUERY_PROCESSED,
@@ -228,9 +233,8 @@ class MetricsCollector:
 
             # Process query_text if provided
             query_text = kwargs.pop("query_text", None)
-            if query_text:
-                kwargs["query_text_hash"] = self._hash_text(query_text)
-                kwargs["query_length"] = len(query_text.split())
+            kwargs["query_text_hash"] = self._hash_text(query_text)
+            kwargs["query_length"] = len(query_text.split()) if query_text else 0
 
             # Move custom fields to additional_data
             standard_fields = {
@@ -240,6 +244,8 @@ class MetricsCollector:
                 "response_time_ms",
                 "error_details",
                 "query_category",
+                "query_text_hash",
+                "query_length",
             }
             additional_data = {}
             for key, _value in list(kwargs.items()):
@@ -261,6 +267,11 @@ class MetricsCollector:
 
     async def flush_events(self) -> int:
         """Flush events from buffer to storage."""
+        async with self._lock:
+            return await self._flush_events_internal()
+
+    async def _flush_events_internal(self) -> int:
+        """Internal flush method that doesn't acquire lock."""
         try:
             if not self._event_buffer:
                 return 0
@@ -305,8 +316,8 @@ class MetricsCollector:
 
             # Auto-flush when buffer reaches batch size
             if len(self._event_buffer) >= self._batch_size:
-                # Flush in background to avoid blocking
-                self._flush_task = asyncio.create_task(self.flush_events())
+                # Flush in background but wait for it within the lock to maintain consistency
+                await self._flush_events_internal()
 
 
 class MockStorage:

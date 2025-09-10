@@ -4,7 +4,7 @@ Metric event types and definitions.
 This module defines the various types of metrics events that can be collected.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -24,6 +24,9 @@ class MetricEventType(Enum):
     USER_FEEDBACK = "user_feedback"
     CONCEPTUAL_MISMATCH = "conceptual_mismatch"
     ERROR_OCCURRED = "error_occurred"
+    CACHE_HIT = "cache_hit"
+    CACHE_MISS = "cache_miss"
+    VECTOR_SEARCH = "vector_search"
 
 
 class MetricEvent:
@@ -37,7 +40,7 @@ class MetricEvent:
     ) -> None:
         self.event_type = event_type
         self.data = data
-        self.timestamp = timestamp or datetime.now(timezone.utc)
+        self.timestamp = timestamp or datetime.now(UTC)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary representation."""
