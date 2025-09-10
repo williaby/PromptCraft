@@ -8,7 +8,7 @@ with a simple Cloudflare Access + email whitelist approach.
 import logging
 from typing import Any
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 # Import the simplified authentication system
@@ -142,7 +142,7 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
 
     return {
         "authenticated": True,
-        "user": {"email": user["email"], "role": user["role"], "is_admin": is_admin_user(request)},
+        "user": {"email": user["email"], "role": user.get("role", "user"), "is_admin": is_admin_user(request)},
     }
 
 
@@ -182,7 +182,14 @@ if config_manager.config.dev_mode:
     @app.get("/dev/simulate-cloudflare-user")
     async def simulate_cloudflare_user(email: str = "dev@example.com") -> dict[str, Any]:
         """Development endpoint to simulate Cloudflare user headers."""
-        mock_headers = config_manager.get_mock_headers()
+        # Runtime check for dev_mode to handle production scenarios
+        from . import get_config_manager  # Import inside function to get patched version  # noqa: PLC0415
+
+        current_config_manager = get_config_manager()
+        if not current_config_manager.config.dev_mode:
+            raise HTTPException(status_code=404, detail="Development endpoint not available in production")
+
+        mock_headers = current_config_manager.get_mock_headers()
         mock_headers["cf-access-authenticated-user-email"] = email
 
         return {

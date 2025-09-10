@@ -686,11 +686,9 @@ class TestDevelopmentUtilities:
             headers = get_cloudflare_auth_headers("dev@example.com")
             response = client.get("/dev/simulate-cloudflare-user", headers=headers)
 
-            # Note: The endpoint is registered because dev_mode was True during import.
-            # In a real scenario, the module would be imported with dev_mode=False.
-            # For this test, we verify the endpoint exists but would return different behavior.
-            # Since endpoint registration happens at import time, we test runtime behavior.
-            assert response.status_code == 200  # Endpoint exists due to import-time registration
+            # The endpoint is registered at import time but should return 404 at runtime
+            # when dev_mode is False
+            assert response.status_code == 404  # Runtime check prevents access in production
 
         finally:
             # Restore middleware stack
