@@ -10,9 +10,7 @@ import os
 import statistics
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,18 +19,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
-from src.core.hyde_processor import HydeProcessor
-from src.core.performance_optimizer import PerformanceOptimizer
 from src.core.query_counselor import QueryCounselor
 from src.core.vector_store import (
     DEFAULT_VECTOR_DIMENSIONS,
     ConnectionStatus,
     EnhancedMockVectorStore,
-    SearchParameters,
-    VectorDocument,
 )
 from src.mcp_integration.config_manager import MCPConfigurationManager
-from src.mcp_integration.mcp_client import MCPConnectionState, ZenMCPClient
+from src.mcp_integration.mcp_client import MCPConnectionState
 from src.utils.performance_monitor import PerformanceMonitor
 
 # CI environment detection for more lenient thresholds

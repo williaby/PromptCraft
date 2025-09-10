@@ -25,7 +25,7 @@ import gc
 import statistics
 import time
 from collections.abc import AsyncGenerator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -36,10 +36,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.config import AuthenticationConfig
-from src.auth.middleware import AuthenticationMiddleware, ServiceTokenUser
+from src.auth.middleware import AuthenticationMiddleware
 from src.auth.models import AuthenticatedUser, UserRole
 from src.auth.service_token_manager import ServiceTokenManager
-from src.database import DatabaseManager, get_database_manager
+from src.database import DatabaseManager
 from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
 
@@ -983,7 +983,6 @@ class TestRoleBasedPermissionPerformance:
     @pytest.fixture
     def mock_permission_validator(self):
         """Mock high-performance permission validator."""
-        from src.auth.permissions import require_permission
 
         def fast_check_permission(user_email: str, permission: str):
             # Simulate 1-5ms permission check using database function

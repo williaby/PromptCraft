@@ -207,9 +207,8 @@ class HomelabPerformanceTester:
             results.update(
                 {
                     "connection_successful": True,
-                    "connection_latency_ms": base + random.uniform(-10, 20),  # noqa: S311 - performance simulation
-                    "simple_query_latency_ms": base * 0.3
-                    + random.uniform(-5, 10),  # noqa: S311 - performance simulation
+                    "connection_latency_ms": base + random.uniform(-10, 20),
+                    "simple_query_latency_ms": base * 0.3 + random.uniform(-5, 10),
                     "postgres_version": "PostgreSQL 15.3 (Simulated Homelab Instance)",
                     "simulation_mode": True,
                 },

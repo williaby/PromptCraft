@@ -8,7 +8,7 @@ meet the strict 2-second response time requirement under various load conditions
 import asyncio
 import contextlib
 import time
-from statistics import mean, stdev
+from statistics import mean
 
 import pytest
 
@@ -16,7 +16,6 @@ from src.core.hyde_processor import HydeProcessor
 from src.core.performance_optimizer import (
     PerformanceOptimizer,
     clear_all_caches,
-    get_performance_stats,
     warm_up_system,
 )
 from src.core.query_counselor import QueryCounselor
@@ -351,7 +350,7 @@ class TestPerformanceRequirements:
     @pytest.mark.asyncio
     async def test_error_handling_performance(self):
         """Test that error handling doesn't degrade performance."""
-        from unittest.mock import AsyncMock, patch
+        from unittest.mock import patch
 
         from src.core.hyde_processor import HydeProcessor
         from src.core.vector_store import VectorStoreFactory, VectorStoreType

@@ -61,7 +61,7 @@ class TestMetricsCollectorLifecycle:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_start_collector(self):
         """Test starting the metrics collector."""
         await self.collector.start()
@@ -72,7 +72,7 @@ class TestMetricsCollectorLifecycle:
         # Clean up
         await self.collector.stop()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_start_collector_already_started(self):
         """Test starting collector when already started."""
         await self.collector.start()
@@ -87,7 +87,7 @@ class TestMetricsCollectorLifecycle:
         # Clean up
         await self.collector.stop()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_stop_collector(self):
         """Test stopping the metrics collector."""
         await self.collector.start()
@@ -98,7 +98,7 @@ class TestMetricsCollectorLifecycle:
         assert self.collector._shutdown is True
         assert self.collector._flush_task.done() or self.collector._flush_task.cancelled()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_stop_collector_not_started(self):
         """Test stopping collector that was never started."""
         # Should not raise error
@@ -122,7 +122,7 @@ class TestMetricsCollectorEventRecording:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_query_processed_basic(self):
         """Test recording basic query processed event."""
         event_id = await self.collector.record_query_processed(
@@ -145,7 +145,7 @@ class TestMetricsCollectorEventRecording:
         assert event.query_text_hash is not None
         assert event.query_length == 2  # "test query" has 2 words
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_query_processed_with_optional_fields(self):
         """Test recording query processed event with optional fields."""
         event_id = await self.collector.record_query_processed(
@@ -165,7 +165,7 @@ class TestMetricsCollectorEventRecording:
         assert event.vector_search_results == 25
         assert event.vector_store_type == "qdrant"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_query_processed_error_handling(self):
         """Test query processed recording handles errors gracefully."""
         # Mock buffer addition to raise exception
@@ -182,7 +182,7 @@ class TestMetricsCollectorEventRecording:
 
         assert event_id == ""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_user_feedback_basic(self):
         """Test recording basic user feedback event."""
         event_id = await self.collector.record_user_feedback(
@@ -199,7 +199,7 @@ class TestMetricsCollectorEventRecording:
         assert event.feedback_type == "thumbs_up"
         assert event.feedback_target == "response_quality"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_user_feedback_with_score(self):
         """Test recording user feedback with score and context."""
         additional_context = {"comment": "Great response!", "category": "helpful"}
@@ -218,7 +218,7 @@ class TestMetricsCollectorEventRecording:
         assert event.additional_data["comment"] == "Great response!"
         assert event.additional_data["category"] == "helpful"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_conceptual_mismatch_basic(self):
         """Test recording basic conceptual mismatch event."""
         event_id = await self.collector.record_conceptual_mismatch(
@@ -237,7 +237,7 @@ class TestMetricsCollectorEventRecording:
         assert event.suggested_alternative == "business_general"
         assert event.hyde_score == 45
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_conceptual_mismatch_with_query_analysis(self):
         """Test conceptual mismatch recording with query text analysis."""
         query_text = "How do I calculate compound interest for my investment portfolio?"
@@ -257,7 +257,7 @@ class TestMetricsCollectorEventRecording:
         assert len(event.query_text_hash) == 16  # SHA256 truncated to 16 chars
         assert event.query_length == len(query_text.split())
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_error_basic(self):
         """Test recording basic error event."""
         event_id = await self.collector.record_error(
@@ -272,7 +272,7 @@ class TestMetricsCollectorEventRecording:
         assert event.error_details == "Database connection failed"
         assert event.error_type == "database_error"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_error_with_timing_and_context(self):
         """Test recording error with response time and additional context."""
         context = {"component": "vector_store", "operation": "search", "retry_count": 2}
@@ -291,7 +291,7 @@ class TestMetricsCollectorEventRecording:
         assert event.additional_data["component"] == "vector_store"
         assert event.additional_data["retry_count"] == 2
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_custom_event_basic(self):
         """Test recording basic custom event."""
         event_id = await self.collector.record_custom_event(
@@ -304,7 +304,7 @@ class TestMetricsCollectorEventRecording:
         assert event.event_type == MetricEventType.CACHE_HIT
         assert event.session_id == "custom-session"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_record_custom_event_with_all_fields(self):
         """Test recording custom event with all possible fields."""
         event_id = await self.collector.record_custom_event(
@@ -347,7 +347,7 @@ class TestMetricsCollectorBuffering:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_manual_flush_events(self):
         """Test manual flushing of buffered events."""
         # Add events to buffer
@@ -368,14 +368,14 @@ class TestMetricsCollectorBuffering:
         assert flushed_count == 3
         assert len(self.collector._event_buffer) == 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_flush_empty_buffer(self):
         """Test flushing empty event buffer."""
         flushed_count = await self.collector.flush_events()
 
         assert flushed_count == 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_auto_flush_on_buffer_full(self):
         """Test automatic flushing when buffer reaches batch size."""
         # Set small batch size for testing
@@ -400,7 +400,7 @@ class TestMetricsCollectorBuffering:
 
         assert len(self.collector._event_buffer) == 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_flush_events_storage_error(self):
         """Test flush handling when storage fails."""
         # Mock storage to fail
@@ -437,7 +437,7 @@ class TestMetricsCollectorBackgroundProcessing:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_background_flush_task(self):
         """Test background flush task processes events."""
         # Set short flush interval for testing
@@ -467,7 +467,7 @@ class TestMetricsCollectorBackgroundProcessing:
         # Clean up
         await self.collector.stop()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_background_flush_error_handling(self):
         """Test background flush handles errors gracefully."""
         # Set short interval
@@ -496,7 +496,7 @@ class TestMetricsCollectorBackgroundProcessing:
         # Clean up
         await self.collector.stop()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_background_flush_shutdown_handling(self):
         """Test background flush respects shutdown signal."""
         # Start collector
@@ -525,7 +525,7 @@ class TestMetricsCollectorAnalytics:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_get_current_metrics(self):
         """Test retrieving current metrics summary."""
         # Add some test events
@@ -551,7 +551,7 @@ class TestMetricsCollectorAnalytics:
         # Buffer should be empty after auto-flush
         assert len(self.collector._event_buffer) == 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_get_current_metrics_storage_error(self):
         """Test get_current_metrics handles storage errors."""
         # Mock storage to fail
@@ -562,7 +562,7 @@ class TestMetricsCollectorAnalytics:
         assert "error" in metrics
         assert "Storage failed" in metrics["error"]
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_get_storage_stats(self):
         """Test retrieving storage statistics."""
         # Mock storage stats
@@ -578,7 +578,7 @@ class TestMetricsCollectorAnalytics:
 
         assert stats == mock_stats
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_cleanup_old_data(self):
         """Test cleaning up old metric data."""
         # Mock storage cleanup
@@ -607,7 +607,7 @@ class TestMetricsCollectorGlobalInstance:
 
         collector_module._global_collector = None
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_get_metrics_collector_creates_instance(self):
         """Test get_metrics_collector creates global instance."""
         with patch("src.metrics.collector.MetricsCollector") as MockCollector:
@@ -620,7 +620,7 @@ class TestMetricsCollectorGlobalInstance:
             MockCollector.assert_called_once()
             mock_instance.start.assert_called_once()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_get_metrics_collector_returns_existing_instance(self):
         """Test get_metrics_collector returns existing instance."""
         with patch("src.metrics.collector.MetricsCollector") as MockCollector:
@@ -638,7 +638,7 @@ class TestMetricsCollectorGlobalInstance:
             # Start should only be called once
             mock_instance.start.assert_called_once()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_shutdown_metrics_collector(self):
         """Test shutdown of global metrics collector."""
         with patch("src.metrics.collector.MetricsCollector") as MockCollector:
@@ -659,7 +659,7 @@ class TestMetricsCollectorGlobalInstance:
 
             assert collector_module._global_collector is None
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_shutdown_metrics_collector_none(self):
         """Test shutdown when no global collector exists."""
         # Should not raise error
@@ -711,7 +711,7 @@ class TestMetricsCollectorErrorHandling:
 
         collector._flush_task.cancel.assert_not_called()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_concurrent_event_recording(self):
         """Test concurrent event recording doesn't cause issues."""
 
@@ -736,7 +736,7 @@ class TestMetricsCollectorErrorHandling:
         # Verify total events were recorded by checking the remaining events
         # (The auto-flushed events would be in storage, not accessible via _event_buffer)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_event_recording_with_none_values(self):
         """Test event recording handles None values gracefully."""
         event_id = await self.collector.record_query_processed(
@@ -757,7 +757,7 @@ class TestMetricsCollectorErrorHandling:
         assert event.query_length == 0  # None query_text becomes 0 length
         assert event.conceptual_issues == []  # None list becomes empty list
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_flush_with_storage_partial_failure(self):
         """Test flush when storage partially fails."""
         # Mock storage to return partial success
@@ -794,7 +794,7 @@ class TestMetricsCollectorIntegration:
 
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_complete_metrics_collection_workflow(self):
         """Test complete workflow from startup to shutdown."""
         # Start collector
@@ -840,7 +840,7 @@ class TestMetricsCollectorIntegration:
 
         assert self.collector._shutdown is True
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_high_volume_collection_performance(self):
         """Test collector performance with high volume of events."""
         import time

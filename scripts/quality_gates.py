@@ -130,7 +130,7 @@ class QualityGateValidator:
         try:
             # Run radon for complexity analysis
             # Security: Using hardcoded command with fixed args, cwd controlled
-            complexity_result = subprocess.run(  # noqa: S603
+            complexity_result = subprocess.run(
                 ["poetry", "run", "radon", "cc", "src", "--json"],
                 check=False,
                 capture_output=True,
@@ -157,7 +157,7 @@ class QualityGateValidator:
 
             # Run maintainability index
             # Security: Using hardcoded command with fixed args, cwd controlled
-            mi_result = subprocess.run(  # noqa: S603
+            mi_result = subprocess.run(
                 ["poetry", "run", "radon", "mi", "src", "--json"],
                 check=False,
                 capture_output=True,
@@ -188,7 +188,7 @@ class QualityGateValidator:
         try:
             # Run bandit security scan
             # Security: Using hardcoded command with fixed args, cwd controlled
-            bandit_result = subprocess.run(  # noqa: S603
+            bandit_result = subprocess.run(
                 ["poetry", "run", "bandit", "-r", "src", "-f", "json"],
                 check=False,
                 capture_output=True,
@@ -217,7 +217,7 @@ class QualityGateValidator:
 
             # Run safety check for vulnerabilities
             # Security: Using hardcoded command with fixed args, cwd controlled
-            safety_result = subprocess.run(  # noqa: S603
+            safety_result = subprocess.run(
                 ["poetry", "run", "safety", "check", "--json"],
                 check=False,
                 capture_output=True,
@@ -292,7 +292,7 @@ class QualityGateValidator:
         try:
             # Check docstring coverage
             # Security: Using hardcoded command with fixed args, cwd controlled
-            docstring_result = subprocess.run(  # noqa: S603
+            docstring_result = subprocess.run(
                 ["poetry", "run", "interrogate", "src", "--generate-badge", ".", "--badge-format", "svg"],
                 check=False,
                 capture_output=True,
@@ -321,7 +321,7 @@ class QualityGateValidator:
 
             # Check markdown linting
             # Security: Using hardcoded command with fixed args, cwd controlled
-            md_result = subprocess.run(  # noqa: S603
+            md_result = subprocess.run(
                 ["markdownlint", "**/*.md"],
                 check=False,
                 capture_output=True,

@@ -73,7 +73,7 @@ def wait_for_coverage_files(max_wait_seconds=5):
                 print(f"✅ Found fresh coverage data (coverage: {coverage_age:.1f}s, junit: {junit_age:.1f}s old)")
                 return True
 
-        time.sleep(0.5)  # noqa: S110 - Coverage file availability polling interval
+        time.sleep(0.5)
 
     print("⚠️  Coverage files not found or not recent - continuing anyway")
     return False
@@ -99,7 +99,7 @@ def main():
     simplified_script = project_root / "scripts" / "simplified_coverage_automation.py"
 
     try:
-        # Security: subprocess used for controlled coverage automation - no user input processed  # noqa: S603
+        # Security: subprocess used for controlled coverage automation - no user input processed
         result = subprocess.run(
             [sys.executable, str(simplified_script)],
             check=False,

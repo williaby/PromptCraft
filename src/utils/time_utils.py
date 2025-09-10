@@ -11,7 +11,7 @@ Key design principles:
 - Work seamlessly with linting tools (ruff, black, mypy)
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 
 def utc_now() -> datetime:
@@ -150,7 +150,7 @@ def parse_iso_datetime(iso_string: str) -> datetime:
 
 
 # Commonly used timezone constant
-UTC = timezone.utc  # Safe alias for compatibility
+UTC = UTC  # Safe alias for compatibility
 
 
 # Export public API

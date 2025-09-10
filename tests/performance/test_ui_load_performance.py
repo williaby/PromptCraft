@@ -14,7 +14,6 @@ Test Coverage:
 - Throughput and scalability measurement
 """
 
-import asyncio
 import gc
 import logging
 import os
@@ -23,7 +22,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import psutil
 import pytest
@@ -33,7 +32,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from src.config.settings import ApplicationSettings
 from src.ui.multi_journey_interface import MultiJourneyInterface
-from src.utils.performance_monitor import MetricType, PerformanceMonitor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -40,24 +40,18 @@ import asyncio
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
 
-from src.core.hyde_processor import EnhancedQuery, HydeProcessor, RankedResults, SpecificityLevel
-from src.core.query_counselor import FinalResponse, QueryCounselor, QueryIntent, QueryType
+from src.core.hyde_processor import HydeProcessor
+from src.core.query_counselor import QueryCounselor, QueryIntent, QueryType
 from src.utils.performance_monitor import (
-    MetricData,
-    MetricType,
     PerformanceMonitor,
-    PerformanceTracker,
     SLAMonitor,
-    track_performance,
 )
 from tests.performance.performance_config import (
     DEFAULT_THRESHOLDS,
-    PerformanceThresholds,
     PerformanceValidator,
 )
 

@@ -94,7 +94,7 @@ class TestRateLimiting:
             result = get_client_identifier(request)
             assert result == "127.0.0.1"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_rate_limit_exceeded_handler(self):
         """Test rate limit exceeded handler response."""
         request = Mock(spec=Request)
@@ -280,7 +280,7 @@ class TestSecurityHeaders:
         middleware = SecurityHeadersMiddleware(app_mock)
         assert middleware.csp_policy is not None
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_security_headers_added(self):
         """Test that security headers are added to responses."""
         with TestClient(app) as client:
@@ -572,7 +572,7 @@ class TestSecurityCompliance:
 class TestSecurityErrorHandlers:
     """Extended tests for secure error handling."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_development(self):
         """Test secure error response in development mode."""
 
@@ -598,7 +598,7 @@ class TestSecurityErrorHandlers:
             assert "debug" in content
             assert "error_type" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_secure_error_response_production(self):
         """Test secure error response in production mode."""
 
@@ -630,7 +630,7 @@ class TestSecurityErrorHandlers:
             assert "Internal error details" not in content
             assert "Internal server error" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_http_exception_handler(self):
         """Test HTTP exception handler."""
         request = Mock(spec=Request)
@@ -643,7 +643,7 @@ class TestSecurityErrorHandlers:
         response = await http_exception_handler(request, exc)
         assert response.status_code == 404
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_development(self):
         """Test validation exception handler in development."""
 
@@ -669,7 +669,7 @@ class TestSecurityErrorHandlers:
             content = response.body.decode()
             assert "validation_errors" in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validation_exception_handler_production(self):
         """Test validation exception handler in production."""
 
@@ -690,7 +690,7 @@ class TestSecurityErrorHandlers:
             assert "Invalid request data" in content
             assert "validation_errors" not in content
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_general_exception_handler(self):
         """Test general exception handler."""
         request = Mock(spec=Request)
@@ -1093,7 +1093,7 @@ class TestConfigurationCoverage:
 class TestMainErrorHandling:
     """Test error handling paths in main.py."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error(self):
         """Test lifespan handling of configuration validation errors."""
 
@@ -1112,7 +1112,7 @@ class TestMainErrorHandling:
                 async with lifespan(test_app):
                     pass
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error(self):
         """Test lifespan handling of unexpected errors."""
 
@@ -1157,7 +1157,7 @@ class TestMainErrorHandling:
             assert app is not None
             assert app.title == "PromptCraft-Hybrid"  # Default from ApplicationSettings
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_unhealthy_configuration(self):
         """Test health check when configuration is unhealthy."""
         client = TestClient(app)
@@ -1179,7 +1179,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 503
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_health_check_exception_handling(self):
         """Test health check exception handling."""
         client = TestClient(app)
@@ -1196,7 +1196,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 500
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_debug_mode(self):
         """Test configuration health endpoint with validation error in debug mode."""
         client = TestClient(app)
@@ -1229,7 +1229,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 500
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_validation_error_production_mode(self):
         """Test configuration health endpoint with validation error in production mode."""
         client = TestClient(app)
@@ -1260,7 +1260,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 500
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_debug_mode_exception(self):
         """Test configuration health when debug mode check fails."""
         client = TestClient(app)
@@ -1290,7 +1290,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 500
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_configuration_health_general_exception(self):
         """Test configuration health endpoint with general exception."""
         client = TestClient(app)
@@ -1307,7 +1307,7 @@ class TestMainErrorHandling:
             assert data["error"] == expected_error
             assert data["status_code"] == 500
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_root_endpoint_fallback(self):
         """Test root endpoint fallback when settings not in app state."""
         client = TestClient(app)
@@ -1653,7 +1653,7 @@ class TestRateLimitingEdgeCases:
 class TestLifespanCoverage:
     """Test lifespan function coverage for startup and shutdown scenarios."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_successful_startup_shutdown(self):
         """Test successful lifespan startup and shutdown cycle."""
 
@@ -1679,7 +1679,7 @@ class TestLifespanCoverage:
                 # Verify audit events were logged
                 assert mock_logger.log_security_event.call_count >= 2  # Startup and shutdown
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_configuration_validation_error_with_audit(self):
         """Test lifespan configuration error handling with audit logging."""
 
@@ -1710,7 +1710,7 @@ class TestLifespanCoverage:
             ]
             assert len(validation_calls) > 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_lifespan_unexpected_error_with_audit(self):
         """Test lifespan unexpected error handling with audit logging."""
 
