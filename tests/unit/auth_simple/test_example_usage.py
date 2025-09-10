@@ -626,13 +626,18 @@ class TestDevelopmentUtilities:
         """Test development endpoint with default email."""
         from src.auth_simple import example_usage
 
+        # Ensure dev mode is enabled and force config isolation for CI
         setup_mocks["config_manager"].config.dev_mode = True
 
-        # Clear middleware stack to bypass authentication middleware
-        original_middleware_stack = example_usage.app.user_middleware[:]
-        example_usage.app.user_middleware.clear()
+        # Store original middleware stack defensively to prevent CI race conditions
+        original_middleware_stack = getattr(example_usage.app, "user_middleware", [])
+        original_middleware_backup = list(original_middleware_stack) if original_middleware_stack else []
 
         try:
+            # Clear middleware stack to bypass authentication middleware
+            if hasattr(example_usage.app, "user_middleware"):
+                example_usage.app.user_middleware.clear()
+
             headers = get_cloudflare_auth_headers("dev@example.com")
             response = dev_client.get("/dev/simulate-cloudflare-user", headers=headers)
 
@@ -642,32 +647,53 @@ class TestDevelopmentUtilities:
             assert "simulated_headers" in data
             assert data["simulated_headers"]["cf-access-authenticated-user-email"] == "dev@example.com"
             assert "instructions" in data
+        except Exception:
+            # If test fails, ensure we still restore state for CI stability
+            raise
         finally:
-            # Restore middleware stack
-            example_usage.app.user_middleware.clear()
-            example_usage.app.user_middleware.extend(original_middleware_stack)
+            # Restore middleware stack more defensively for CI environment
+            if hasattr(example_usage.app, "user_middleware"):
+                example_usage.app.user_middleware.clear()
+                if original_middleware_backup:
+                    example_usage.app.user_middleware.extend(original_middleware_backup)
+
+            # Ensure config state is reset for subsequent tests in CI
+            setup_mocks["config_manager"].config.dev_mode = True
 
     def test_simulate_cloudflare_user_custom_email(self, dev_client, setup_mocks):
         """Test development endpoint with custom email."""
         from src.auth_simple import example_usage
 
+        # Ensure dev mode is enabled and force config isolation for CI
         setup_mocks["config_manager"].config.dev_mode = True
 
-        # Clear middleware stack to bypass authentication middleware
-        original_middleware_stack = example_usage.app.user_middleware[:]
-        example_usage.app.user_middleware.clear()
+        # Store original middleware stack defensively to prevent CI race conditions
+        original_middleware_stack = getattr(example_usage.app, "user_middleware", [])
+        original_middleware_backup = list(original_middleware_stack) if original_middleware_stack else []
 
         try:
+            # Clear middleware stack to bypass authentication middleware
+            if hasattr(example_usage.app, "user_middleware"):
+                example_usage.app.user_middleware.clear()
+
             headers = get_cloudflare_auth_headers("dev@example.com")
             response = dev_client.get("/dev/simulate-cloudflare-user?email=custom@example.com", headers=headers)
 
             assert response.status_code == 200
             data = response.json()
             assert data["simulated_headers"]["cf-access-authenticated-user-email"] == "custom@example.com"
+        except Exception:
+            # If test fails, ensure we still restore state for CI stability
+            raise
         finally:
-            # Restore middleware stack
-            example_usage.app.user_middleware.clear()
-            example_usage.app.user_middleware.extend(original_middleware_stack)
+            # Restore middleware stack more defensively for CI environment
+            if hasattr(example_usage.app, "user_middleware"):
+                example_usage.app.user_middleware.clear()
+                if original_middleware_backup:
+                    example_usage.app.user_middleware.extend(original_middleware_backup)
+
+            # Ensure config state is reset for subsequent tests in CI
+            setup_mocks["config_manager"].config.dev_mode = True
 
     def test_dev_endpoint_not_available_in_production(self, setup_mocks):
         """Test that dev endpoint is not available when dev_mode is False."""
