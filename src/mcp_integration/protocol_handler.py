@@ -69,7 +69,7 @@ class MCPRequest:
     id: str = field(default_factory=lambda: f"req_{id(object())}")
 
     def to_dict(self) -> dict[str, Any]:
-        data = {"jsonrpc": "2.0", "id": self.id, "method": self.method}
+        data: dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id, "method": self.method}
         if self.params is not None:
             data["params"] = self.params
         return data
@@ -85,7 +85,7 @@ class MCPResponse:
     error: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        data = {"jsonrpc": "2.0", "id": self.id}
+        data: dict[str, Any] = {"jsonrpc": self.jsonrpc, "id": self.id}
         if self.error is not None:
             data["error"] = self.error
         else:
@@ -102,7 +102,7 @@ class MCPNotification:
     params: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        data = {"jsonrpc": "2.0", "method": self.method}
+        data: dict[str, Any] = {"jsonrpc": self.jsonrpc, "method": self.method}
         if self.params is not None:
             data["params"] = self.params
         return data

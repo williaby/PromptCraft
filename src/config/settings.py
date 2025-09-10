@@ -33,6 +33,8 @@ MAX_PORT_NUMBER = 65535
 PRIVILEGED_PORT_THRESHOLD = 1024
 HTTP_PORT = 80
 HTTPS_PORT = 443
+POSTGRESQL_IDENTIFIER_LIMIT = 63  # PostgreSQL maximum identifier length
+MAX_DATABASE_TIMEOUT_SECONDS = 300  # 5 minutes maximum timeout
 
 
 def _get_project_root() -> Path:
@@ -698,7 +700,7 @@ class ApplicationSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: type["ApplicationSettings"],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
@@ -707,14 +709,20 @@ class ApplicationSettings(BaseSettings):
         """Customize settings sources to integrate custom .env file loading."""
 
         class CustomEnvSettingsSource(PydanticBaseSettingsSource):
-            def get_field_value(self, field_info: FieldInfo, field_name: str) -> tuple[Any, str] | tuple[None, None]:
+            def get_field_value(self, field_info: FieldInfo, field_name: str) -> tuple[Any, str, bool]:  # noqa: ARG002
                 # Get values from our custom env loader
                 custom_env_vars = _env_file_settings()
                 if field_name in custom_env_vars:
-                    return custom_env_vars[field_name], field_name
-                return None, None
+                    return custom_env_vars[field_name], field_name, False
+                return None, "", False
 
-            def prepare_field_value(self, field_name: str, value: Any, value_origin: Any) -> Any:
+            def prepare_field_value(
+                self,
+                field_name: str,  # noqa: ARG002
+                field: FieldInfo,  # noqa: ARG002
+                value: Any,
+                value_is_complex: bool,  # noqa: ARG002
+            ) -> Any:
                 return value
 
             def __call__(self) -> dict[str, Any]:
@@ -1030,7 +1038,7 @@ class ApplicationSettings(BaseSettings):
                 "Must start with letter or underscore, contain only letters, digits, and underscores.",
             )
 
-        if len(v) > 63:  # PostgreSQL identifier limit
+        if len(v) > POSTGRESQL_IDENTIFIER_LIMIT:
             raise ValueError(
                 f"Database identifier too long ({len(v)} characters). "
                 "PostgreSQL identifiers must be 63 characters or less.",
@@ -1057,7 +1065,7 @@ class ApplicationSettings(BaseSettings):
                 "Database timeout must be positive. Common values: 30.0 (default), 60.0 (extended), 10.0 (fast).",
             )
 
-        if v > 300:  # 5 minutes
+        if v > MAX_DATABASE_TIMEOUT_SECONDS:
             raise ValueError(
                 "Database timeout too high (> 5 minutes). "
                 "Long timeouts can cause request queuing and poor user experience.",
