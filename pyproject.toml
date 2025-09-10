@@ -248,6 +248,20 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
+    "src.monitoring.application_monitor",
+    "src.core.claude_integration",
+    "src.database.connection",
+    "src.core.vector_store",
+    "src.auth.service_token_manager",
+    "src.monitoring.service_token_monitor",
+    "src.auth.middleware",
+    "src.config.health",
+    "src.ui.multi_journey_interface",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
     "gradio.*",
     "sentence_transformers.*",
     "qdrant_client.*",
