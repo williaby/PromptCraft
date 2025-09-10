@@ -8,7 +8,7 @@ managing communication with MCP servers.
 import asyncio
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -34,65 +34,78 @@ class MCPStandardErrors(Enum):
     INTERNAL_ERROR = -32603
 
 
-class MCPError(Exception):
-    """Base MCP error."""
+@dataclass
+class MCPError:
+    """MCP error response message."""
 
-    def __init__(self, code: int, message: str, data: Any | None = None):
+    jsonrpc: str = "2.0"
+    error: dict[str, Any] = field(default_factory=dict)
+    id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data = {"jsonrpc": self.jsonrpc, "error": self.error}
+        if self.id is not None:
+            data["id"] = self.id
+        return data
+
+
+class MCPProtocolError(Exception):
+    """MCP protocol-specific error exception."""
+
+    def __init__(self, code: int, message: str, data: Any | None = None) -> None:
         self.code = code
         self.message = message
         self.data = data
         super().__init__(f"MCP Error {code}: {message}")
 
 
-class MCPProtocolError(MCPError):
-    """MCP protocol-specific error."""
-
-
-
 @dataclass
 class MCPRequest:
     """MCP request message."""
 
-    id: str | int
-    method: str
-    params: dict[str, Any] | None = None
+    jsonrpc: str = "2.0"
+    method: str = ""
+    params: dict[str, Any] = field(default_factory=dict)
+    id: str = field(default_factory=lambda: f"req_{id(object())}")
 
     def to_dict(self) -> dict[str, Any]:
-        result = {"jsonrpc": "2.0", "id": self.id, "method": self.method}
+        data = {"jsonrpc": "2.0", "id": self.id, "method": self.method}
         if self.params is not None:
-            result["params"] = self.params
-        return result
+            data["params"] = self.params
+        return data
 
 
 @dataclass
 class MCPResponse:
     """MCP response message."""
 
-    id: str | int
+    jsonrpc: str = "2.0"
+    id: str = ""
     result: Any | None = None
     error: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        result = {"jsonrpc": "2.0", "id": self.id}
+        data = {"jsonrpc": "2.0", "id": self.id}
         if self.error is not None:
-            result["error"] = self.error
+            data["error"] = self.error
         else:
-            result["result"] = self.result
-        return result
+            data["result"] = self.result
+        return data
 
 
 @dataclass
 class MCPNotification:
     """MCP notification message."""
 
-    method: str
-    params: dict[str, Any] | None = None
+    jsonrpc: str = "2.0"
+    method: str = ""
+    params: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        result = {"jsonrpc": "2.0", "method": self.method}
+        data = {"jsonrpc": "2.0", "method": self.method}
         if self.params is not None:
-            result["params"] = self.params
-        return result
+            data["params"] = self.params
+        return data
 
 
 class MCPMethodRegistry:
@@ -134,10 +147,7 @@ class MCPProtocolHandler:
     async def handle_message(self, message: str | dict[str, Any]) -> dict[str, Any] | None:
         """Handle an incoming MCP message."""
         try:
-            if isinstance(message, str):
-                data = json.loads(message)
-            else:
-                data = message
+            data = json.loads(message) if isinstance(message, str) else message
 
             # Determine message type and handle accordingly
             if "id" in data and "method" in data:
@@ -153,13 +163,14 @@ class MCPProtocolHandler:
                 return None
             raise MCPProtocolError(MCPStandardErrors.INVALID_REQUEST.value, "Invalid message format")
 
-        except json.JSONDecodeError:
-            raise MCPProtocolError(MCPStandardErrors.PARSE_ERROR.value, "Failed to parse JSON")
+        except json.JSONDecodeError as e:
+            raise MCPProtocolError(MCPStandardErrors.PARSE_ERROR.value, "Failed to parse JSON") from e
         except Exception as e:
-            logger.error(f"Error handling MCP message: {e}")
+            logger.error("Error handling MCP message: %s", e)
             if "id" in locals() and "data" in locals() and "id" in data:
                 return MCPResponse(
-                    id=data["id"], error={"code": MCPStandardErrors.INTERNAL_ERROR.value, "message": str(e)},
+                    id=data["id"],
+                    error={"code": MCPStandardErrors.INTERNAL_ERROR.value, "message": str(e)},
                 ).to_dict()
             raise
 
@@ -189,15 +200,16 @@ class MCPProtocolHandler:
             return MCPResponse(id=data["id"], result=result).to_dict()
 
         except Exception as e:
-            logger.error(f"Error executing method {method}: {e}")
+            logger.error("Error executing method %s: %s", method, e)
             return MCPResponse(
-                id=data["id"], error={"code": MCPStandardErrors.INTERNAL_ERROR.value, "message": str(e)},
+                id=data["id"],
+                error={"code": MCPStandardErrors.INTERNAL_ERROR.value, "message": str(e)},
             ).to_dict()
 
     async def _handle_response(self, data: dict[str, Any]) -> None:
         """Handle a response message."""
         # In a full implementation, this would match responses to pending requests
-        logger.debug(f"Received response: {data}")
+        logger.debug("Received response: %s", data)
 
     async def _handle_notification(self, data: dict[str, Any]) -> None:
         """Handle a notification message."""
@@ -215,9 +227,9 @@ class MCPProtocolHandler:
                 else:
                     handler(params)
             except Exception as e:
-                logger.error(f"Error handling notification {method}: {e}")
+                logger.error("Error handling notification %s: %s", method, e)
         else:
-            logger.warning(f"No handler for notification method: {method}")
+            logger.warning("No handler for notification method: %s", method)
 
     def register_method(self, method: str, handler: Any) -> None:
         """Register a method handler."""

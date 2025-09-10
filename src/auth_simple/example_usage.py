@@ -88,13 +88,9 @@ async def get_user_profile(user: Any = Depends(require_auth)) -> dict[str, Any]:
     return {
         "profile": {
             "email": user["email"],
-            "role": user.get("role", "user"),
-            "authenticated_at": (
-                user.get("authenticated_at", "unknown").isoformat()
-                if hasattr(user.get("authenticated_at"), "isoformat")
-                else str(user.get("authenticated_at", "unknown"))
-            ),
-            "session_id": user.get("session_id", "unknown"),
+            "role": user["role"],
+            "authenticated_at": user["authenticated_at"].isoformat(),
+            "session_id": user["session_id"],
         },
     }
 
@@ -107,8 +103,8 @@ async def user_dashboard(_request: Request, user: Any = Depends(require_auth)) -
     return {
         "dashboard": {
             "welcome_message": f"Welcome {user['email']}!",
-            "role": user.get("role", "user"),
-            "is_admin": user.get("is_admin", False),
+            "role": user["role"],
+            "is_admin": user["is_admin"],
             "cloudflare_info": {
                 "country": cf_context.get("ip_country", "unknown"),
                 "cf_ray": cf_context.get("cf_ray", "unknown"),
@@ -146,7 +142,7 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
 
     return {
         "authenticated": True,
-        "user": {"email": user["email"], "role": user.get("role", "user"), "is_admin": is_admin_user(request)},
+        "user": {"email": user["email"], "role": user["role"], "is_admin": is_admin_user(request)},
     }
 
 
