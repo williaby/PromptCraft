@@ -32,6 +32,8 @@ class MCPStandardErrors(Enum):
     METHOD_NOT_FOUND = -32601
     INVALID_PARAMS = -32602
     INTERNAL_ERROR = -32603
+    SERVER_ERROR_START = -32099
+    SERVER_ERROR_END = -32000
 
 
 @dataclass
@@ -133,6 +135,9 @@ class MCPProtocolHandler:
     def __init__(self) -> None:
         self.registry = MCPMethodRegistry()
         self.running = False
+        self.pending_requests: dict[str, Any] = {}
+        self.request_timeout = 30.0
+        self.logger = logger
 
     async def start(self) -> None:
         """Start the protocol handler."""
@@ -234,3 +239,18 @@ class MCPProtocolHandler:
     def register_method(self, method: str, handler: Any) -> None:
         """Register a method handler."""
         self.registry.register(method, handler)
+
+    def create_request(self, method: str, params: dict[str, Any] | None = None) -> MCPRequest:
+        """Create an MCP request."""
+        return MCPRequest(method=method, params=params or {})
+
+    def create_response(self, request_id: str, result: Any = None) -> MCPResponse:
+        """Create an MCP response."""
+        return MCPResponse(id=request_id, result=result)
+
+    def create_error(self, request_id: str, code: int, message: str, data: Any | None = None) -> MCPResponse:
+        """Create an MCP error response."""
+        error = {"code": code, "message": message}
+        if data is not None:
+            error["data"] = data
+        return MCPResponse(id=request_id, error=error)

@@ -132,13 +132,13 @@ class TestMCPStandardErrors:
 
     def test_standard_error_codes(self):
         """Test standard error code values."""
-        assert MCPStandardErrors.PARSE_ERROR == -32700
-        assert MCPStandardErrors.INVALID_REQUEST == -32600
-        assert MCPStandardErrors.METHOD_NOT_FOUND == -32601
-        assert MCPStandardErrors.INVALID_PARAMS == -32602
-        assert MCPStandardErrors.INTERNAL_ERROR == -32603
-        assert MCPStandardErrors.SERVER_ERROR_START == -32099
-        assert MCPStandardErrors.SERVER_ERROR_END == -32000
+        assert MCPStandardErrors.PARSE_ERROR.value == -32700
+        assert MCPStandardErrors.INVALID_REQUEST.value == -32600
+        assert MCPStandardErrors.METHOD_NOT_FOUND.value == -32601
+        assert MCPStandardErrors.INVALID_PARAMS.value == -32602
+        assert MCPStandardErrors.INTERNAL_ERROR.value == -32603
+        assert MCPStandardErrors.SERVER_ERROR_START.value == -32099
+        assert MCPStandardErrors.SERVER_ERROR_END.value == -32000
 
 
 class TestMCPProtocolHandler:
