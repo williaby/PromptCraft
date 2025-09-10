@@ -94,6 +94,9 @@ aiohttp==3.12.15 ; python_version >= "3.11" and python_version < "3.13" \
 aiosignal==1.4.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e \
     --hash=sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7
+aiosqlite==0.20.0 ; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:36a1deaca0cac40ebe32aac9977a6e2bbc7f5189f23f4a54d5908986729e5bd6 \
+    --hash=sha256:6d35c8c256637f4672f843c31021464090805bf925385ac39473fb16eaaca3d7
 alembic==1.16.5 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:a88bb7f6e513bd4301ecf4c7f2206fe93f9913f9b48dac3b78babde2d6fe765e \
     --hash=sha256:e845dfe090c5ffa7b92593ae6687c5cb1a101e91fa53868497dbd79847f9dbe3
