@@ -295,7 +295,7 @@ class TestMessageSerialization:
         with pytest.raises(MCPProtocolError) as exc_info:
             handler.serialize_message("invalid")
 
-        assert exc_info.value.code == MCPStandardErrors.INTERNAL_ERROR
+        assert exc_info.value.code == MCPStandardErrors.INTERNAL_ERROR.value
         assert "Message serialization failed" in exc_info.value.message
 
 
@@ -375,7 +375,7 @@ class TestMessageDeserialization:
         with pytest.raises(MCPProtocolError) as exc_info:
             handler.deserialize_message("invalid json")
 
-        assert exc_info.value.code == MCPStandardErrors.PARSE_ERROR
+        assert exc_info.value.code == MCPStandardErrors.PARSE_ERROR.value
         assert "JSON parsing failed" in exc_info.value.message
 
     def test_deserialize_invalid_jsonrpc(self, handler):
@@ -386,7 +386,7 @@ class TestMessageDeserialization:
         with pytest.raises(MCPProtocolError) as exc_info:
             handler.deserialize_message(message_str)
 
-        assert exc_info.value.code == MCPStandardErrors.INVALID_REQUEST
+        assert exc_info.value.code == MCPStandardErrors.INVALID_REQUEST.value
         assert "Invalid JSON-RPC 2.0 format" in exc_info.value.message
 
     def test_deserialize_missing_required_fields(self, handler):
@@ -397,7 +397,7 @@ class TestMessageDeserialization:
         with pytest.raises(MCPProtocolError) as exc_info:
             handler.deserialize_message(message_str)
 
-        assert exc_info.value.code == MCPStandardErrors.INVALID_REQUEST
+        assert exc_info.value.code == MCPStandardErrors.INVALID_REQUEST.value
         assert "Message does not contain required fields" in exc_info.value.message
 
 
@@ -439,11 +439,10 @@ class TestAsyncCommunication:
         writer = AsyncMock()
         request = MCPRequest(method="test", id="123")
 
-        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
-            with pytest.raises(MCPProtocolError) as exc_info:
-                await handler.send_request(writer, request)
+        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError), pytest.raises(MCPProtocolError) as exc_info:
+            await handler.send_request(writer, request)
 
-        assert exc_info.value.code == MCPStandardErrors.INTERNAL_ERROR
+        assert exc_info.value.code == MCPStandardErrors.INTERNAL_ERROR.value
         assert "Request timeout" in exc_info.value.message
         assert request.id not in handler.pending_requests
 
@@ -579,7 +578,7 @@ class TestMessageTypeDetection:
 
     def test_get_message_type_unknown(self, handler):
         """Test getting unknown message type."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Unknown message type") as exc_info:
             handler.get_message_type("invalid")
 
         assert "Unknown message type" in str(exc_info.value)
@@ -670,7 +669,7 @@ class TestMCPMethodRegistry:
 
         assert isinstance(response, MCPError)
         assert response.id == "123"
-        assert response.error["code"] == MCPStandardErrors.METHOD_NOT_FOUND
+        assert response.error["code"] == MCPStandardErrors.METHOD_NOT_FOUND.value
         assert "Method not found" in response.error["message"]
 
     @pytest.mark.asyncio
@@ -687,5 +686,5 @@ class TestMCPMethodRegistry:
 
         assert isinstance(response, MCPError)
         assert response.id == "123"
-        assert response.error["code"] == MCPStandardErrors.INTERNAL_ERROR
+        assert response.error["code"] == MCPStandardErrors.INTERNAL_ERROR.value
         assert "Handler error" in response.error["message"]
