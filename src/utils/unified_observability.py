@@ -302,7 +302,7 @@ class ObservabilitySystem:
         """Initialize observability system."""
         self.config = config
         self.metrics_collector: MetricsCollector | None = None
-        self.tracer = None
+        self.tracer: Any = None
         self._configured = False
 
         # Configure on initialization
@@ -339,7 +339,7 @@ class ObservabilitySystem:
                 processors.append(structlog.dev.ConsoleRenderer())
 
             structlog.configure(
-                processors=processors,
+                processors=processors,  # type: ignore[arg-type]
                 context_class=dict,
                 logger_factory=LoggerFactory(),
                 wrapper_class=structlog.stdlib.BoundLogger,
@@ -417,8 +417,9 @@ class ObservabilitySystem:
         user_id: str | None = None,
     ) -> Generator[None, None, None]:
         """Set correlation context for current thread."""
-        # Use instance correlation context
-        ctx = self.correlation_context
+        # Use global correlation context instance (avoid method name conflict)
+        global correlation_context
+        ctx = correlation_context
         old_correlation = ctx.get_correlation_id()
         old_request = ctx.get_request_id()
         old_user = ctx.get_user_id()
@@ -473,6 +474,7 @@ def get_logger(name: str = __name__) -> UnifiedLogger:
     if _observability_system is None:
         configure_observability()
 
+    assert _observability_system is not None
     return _observability_system.get_logger(name)
 
 
@@ -481,6 +483,7 @@ def get_metrics() -> MetricsCollector | None:
     if _observability_system is None:
         configure_observability()
 
+    assert _observability_system is not None
     return _observability_system.get_metrics()
 
 
@@ -489,6 +492,7 @@ def get_observability_system() -> ObservabilitySystem:
     if _observability_system is None:
         configure_observability()
 
+    assert _observability_system is not None
     return _observability_system
 
 
@@ -509,11 +513,11 @@ def observe_performance(operation_name: str | None = None) -> Callable:
 
             with system.trace_span(name, function=func.__name__):
                 try:
-                    logger.debug("Starting %s", name, operation=name, args_count=len(args))
+                    logger.debug("Starting %s", name, operation=name, args_count=len(args))  # type: ignore[call-arg]
                     result = func(*args, **kwargs)
 
                     duration = time.time() - start_time
-                    logger.info("Completed %s", name, operation=name, duration=duration, success=True)
+                    logger.info("Completed %s", name, operation=name, duration=duration, success=True)  # type: ignore[call-arg]
 
                     if metrics:
                         metrics.request_duration.labels(method="function", endpoint=name).observe(duration)
@@ -522,7 +526,7 @@ def observe_performance(operation_name: str | None = None) -> Callable:
 
                 except Exception as e:
                     duration = time.time() - start_time
-                    logger.error("Failed %s", name, operation=name, duration=duration, error=str(e), success=False)
+                    logger.error("Failed %s", name, operation=name, duration=duration, error=str(e), success=False)  # type: ignore[call-arg]
 
                     if metrics:
                         metrics.record_error(error_type=type(e).__name__)
@@ -539,7 +543,7 @@ def log_security_event(event_type: str, severity: str = "info", **details: Any) 
     logger = get_logger("security")
     metrics = get_metrics()
 
-    logger.info("Security event: %s", event_type, event_type=event_type, severity=severity, **details)
+    logger.info("Security event: %s", event_type, event_type=event_type, severity=severity, **details)  # type: ignore[call-arg]
 
     if metrics:
         metrics.record_security_event(event_type, severity)
