@@ -213,10 +213,10 @@ def _load_vault_secrets() -> dict[str, Any]:
         loaded_count = sum(1 for v in secrets.values() if v is not None)
         logger.info("Loaded %d secrets from HashiCorp Vault", loaded_count)
 
-    except Exception as e:
+    except Exception:
         # Log warning but don't fail - allow fallback to encrypted files
         logger = logging.getLogger(__name__)
-        logger.warning("Failed to load secrets from HashiCorp Vault: %s", str(e))
+        logger.warning("Failed to load secrets from HashiCorp Vault")
 
     return env_vars
 

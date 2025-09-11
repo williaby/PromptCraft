@@ -12,45 +12,14 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
-import re
 import time
 from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from requests.packages.urllib3.util.retry import Retry  # type: ignore
 
 from .encryption import EncryptionError, GPGError, load_encrypted_env
-
-
-def mask_secrets_in_log(message: str) -> str:
-    """
-    Mask potential secret values in log messages for security.
-
-    Args:
-        message: Log message that might contain secrets
-
-    Returns:
-        Message with potential secrets masked
-    """
-    # Patterns that might indicate secret values
-    patterns = [
-        (r"(password['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
-        (r"(token['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
-        (r"(secret['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
-        (r"(key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
-        (r"(api[_-]?key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
-        # Mask anything that looks like JWT tokens
-        (r"(eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*)", r"***JWT_TOKEN_MASKED***"),
-        # Mask base64-encoded strings that might be secrets (longer than 20 chars)
-        (r"([A-Za-z0-9+/]{20,}={0,2})", r"***BASE64_MASKED***"),
-    ]
-
-    masked_message = message
-    for pattern, replacement in patterns:
-        masked_message = re.sub(pattern, replacement, masked_message, flags=re.IGNORECASE)
-
-    return masked_message
 
 
 @dataclass
@@ -152,7 +121,8 @@ class GenericSecretsManager:
         # Check cache first
         if self._is_cache_valid(secret_name):
             self.logger.debug("Retrieved secret from cache")
-            return self._cache[secret_name]
+            cached_value = self._cache[secret_name]
+            return str(cached_value) if cached_value is not None else None
 
         # Try HashiCorp Vault first
         if self.config.vault_url and self.config.vault_token:
@@ -177,10 +147,8 @@ class GenericSecretsManager:
                         if attempt == self.config.retry_attempts - 1:
                             break
                         await asyncio.sleep(2**attempt)  # Exponential backoff
-            except Exception as e:
-                self.logger.warning(
-                    "Failed to retrieve secret from HashiCorp Vault: %s", mask_secrets_in_log(str(e)),
-                )
+            except Exception:
+                self.logger.warning("Failed to retrieve secret from HashiCorp Vault")
 
         # Fallback to encrypted env files
         try:
@@ -189,10 +157,8 @@ class GenericSecretsManager:
                 self._cache_secret(secret_name, secret)
                 self.logger.debug("Retrieved secret from encrypted env file")
                 return secret
-        except (EncryptionError, GPGError, FileNotFoundError) as e:
-            self.logger.debug(
-                "Could not retrieve secret from encrypted files: %s", mask_secrets_in_log(str(e)),
-            )
+        except (EncryptionError, GPGError, FileNotFoundError):
+            self.logger.debug("Could not retrieve secret from encrypted files")
 
         # Final fallback to environment variables
         env_secret = os.getenv(f"PROMPTCRAFT_{secret_name.upper()}")
@@ -217,7 +183,7 @@ class GenericSecretsManager:
         try:
             return asyncio.run(self.get_secret_async(secret_name))
         except Exception as e:
-            self.logger.error("Failed to retrieve secret: %s", mask_secrets_in_log(str(e)))
+            self.logger.error("Failed to retrieve secret")
             raise SecretsManagerError(f"Secret retrieval failed for '{secret_name}': {e}") from e
 
     async def _get_vault_secret(self, secret_name: str) -> str | None:
@@ -241,16 +207,15 @@ class GenericSecretsManager:
 
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get("data", {}).get("data", {}).get("value")
+                    value = data.get("data", {}).get("data", {}).get("value")
+                    return str(value) if value is not None else None
                 return None
 
             # Run the synchronous request in a thread pool
             return await asyncio.get_event_loop().run_in_executor(None, _sync_get_secret)
 
-        except Exception as e:
-            self.logger.debug(
-                "HashiCorp Vault secret not found or inaccessible: %s", mask_secrets_in_log(str(e)),
-            )
+        except Exception:
+            self.logger.debug("HashiCorp Vault secret not found or inaccessible")
             return None
 
     def _get_encrypted_secret(self, secret_name: str) -> str | None:
@@ -320,8 +285,7 @@ class GenericSecretsManager:
         # Security: Verify SSL certificates
         session.verify = True
 
-        # Set reasonable timeout
-        session.timeout = self.config.timeout
+        # Set reasonable timeout (note: timeout is set per request, not on session)
 
         return session
 
@@ -338,7 +302,7 @@ class GenericSecretsManager:
         try:
             return asyncio.run(self._get_multiple_secrets_async(secret_names))
         except Exception as e:
-            self.logger.error("Failed to retrieve multiple secrets: %s", mask_secrets_in_log(str(e)))
+            self.logger.error("Failed to retrieve multiple secrets")
             raise SecretsManagerError(f"Multiple secret retrieval failed: {e}") from e
 
     async def _get_multiple_secrets_async(self, secret_names: list[str]) -> dict[str, str | None]:
@@ -347,7 +311,7 @@ class GenericSecretsManager:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         return {
-            name: result if not isinstance(result, Exception) else None
+            name: str(result) if not isinstance(result, Exception) and result is not None else None
             for name, result in zip(secret_names, results, strict=True)
         }
 
