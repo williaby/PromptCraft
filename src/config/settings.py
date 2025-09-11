@@ -23,6 +23,24 @@ from src.utils.encryption import (
     validate_environment_keys,
 )
 
+
+# Import secrets management functionality with fallback
+try:
+    from src.utils.secrets_manager import (
+        OPTIONAL_SECRETS,
+        REQUIRED_SECRETS_PROD,
+        REQUIRED_SECRETS_STAGING,
+        get_multiple_secrets,
+    )
+
+    SECRETS_MANAGER_AVAILABLE = True
+except ImportError:
+    SECRETS_MANAGER_AVAILABLE = False
+    get_multiple_secrets = None
+    REQUIRED_SECRETS_PROD = []
+    REQUIRED_SECRETS_STAGING = []
+    OPTIONAL_SECRETS = []
+
 # Import constants after other imports to avoid circular dependency
 from .constants import SECRET_FIELD_NAMES
 
@@ -156,17 +174,65 @@ def _load_encrypted_env_file(file_path: Path) -> dict[str, Any]:
     return env_vars
 
 
-def _env_file_settings() -> dict[str, Any]:
-    """Custom settings source for environment-specific .env file loading.
-
-    This function implements the secure file loading hierarchy:
-    1. .env.{environment}.gpg file (encrypted, highest priority)
-    2. .env.{environment} file (fallback for development)
-    3. .env.gpg file (encrypted base file)
-    4. .env file (fallback base file)
+def _load_vault_secrets() -> dict[str, Any]:
+    """Load secrets from HashiCorp Vault for production environments.
 
     Returns:
-        Dictionary of configuration values from .env files.
+        Dictionary of secrets loaded from Vault with PROMPTCRAFT_ prefix removed.
+    """
+    env_vars: dict[str, Any] = {}
+
+    if not SECRETS_MANAGER_AVAILABLE:
+        logger = logging.getLogger(__name__)
+        logger.debug("Secrets manager not available, skipping Vault loading")
+        return env_vars
+
+    try:
+        # Determine which secrets to load based on environment
+        current_env = _detect_environment()
+
+        if current_env == "prod":
+            secret_names = REQUIRED_SECRETS_PROD + OPTIONAL_SECRETS
+        elif current_env == "staging":
+            secret_names = REQUIRED_SECRETS_STAGING + OPTIONAL_SECRETS
+        else:
+            # Development - only load optional secrets if available
+            secret_names = OPTIONAL_SECRETS
+
+        # Load secrets from HashiCorp Vault
+        secrets = get_multiple_secrets(secret_names)
+
+        # Convert to environment variable format (remove PROMPTCRAFT_ prefix for Pydantic)
+        for secret_name, secret_value in secrets.items():
+            if secret_value is not None:
+                # Convert secret_name to Pydantic field format (lowercase)
+                pydantic_field_name = secret_name.lower()
+                env_vars[pydantic_field_name] = secret_value
+
+        logger = logging.getLogger(__name__)
+        loaded_count = sum(1 for v in secrets.values() if v is not None)
+        logger.info("Loaded %d secrets from HashiCorp Vault", loaded_count)
+
+    except Exception as e:
+        # Log warning but don't fail - allow fallback to encrypted files
+        logger = logging.getLogger(__name__)
+        logger.warning("Failed to load secrets from HashiCorp Vault: %s", e)
+
+    return env_vars
+
+
+def _env_file_settings() -> dict[str, Any]:
+    """Custom settings source for environment-specific .env file loading with HashiCorp Vault integration.
+
+    This function implements the secure file loading hierarchy:
+    1. HashiCorp Vault (production, highest priority)
+    2. .env.{environment}.gpg file (encrypted, high priority)
+    3. .env.{environment} file (fallback for development)
+    4. .env.gpg file (encrypted base file)
+    5. .env file (fallback base file)
+
+    Returns:
+        Dictionary of configuration values from all sources.
     """
     project_root = _get_project_root()
     env_vars: dict[str, Any] = {}
@@ -186,9 +252,13 @@ def _env_file_settings() -> dict[str, Any]:
     env_specific_file = project_root / f".env.{current_env}"
     env_vars.update(_load_env_file(env_specific_file))
 
-    # Try to load encrypted environment-specific file (highest priority)
+    # Try to load encrypted environment-specific file (higher priority)
     env_encrypted_file = project_root / f".env.{current_env}.gpg"
     env_vars.update(_load_encrypted_env_file(env_encrypted_file))
+
+    # Load secrets from HashiCorp Vault (highest priority for production)
+    if current_env in ("prod", "staging"):
+        env_vars.update(_load_vault_secrets())
 
     return env_vars
 
@@ -709,7 +779,7 @@ class ApplicationSettings(BaseSettings):
 
         class CustomEnvSettingsSource(PydanticBaseSettingsSource):
             def get_field_value(self, field_info: FieldInfo, field_name: str) -> tuple[Any, str] | tuple[None, None]:
-                # Get values from our custom env loader
+                # Get values from our custom env loader (includes Azure Key Vault integration)
                 custom_env_vars = _env_file_settings()
                 if field_name in custom_env_vars:
                     return custom_env_vars[field_name], field_name
