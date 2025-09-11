@@ -174,7 +174,7 @@ class TestAuthConstants:
         def is_admin_email(email: str) -> bool:
             """Helper function to test admin detection pattern."""
             username = email.split("@")[0].lower()
-            return any(username.startswith(prefix) for prefix in constants.ADMIN_ROLE_PREFIXES)
+            return any(username.startswith(prefix) for prefix in ADMIN_ROLE_PREFIXES)
 
         for email in admin_emails:
             assert is_admin_email(email), f"Should detect {email} as admin"
@@ -195,37 +195,37 @@ class TestAuthConstants:
 
         for token in valid_service_tokens:
             assert token.startswith(
-                constants.SERVICE_TOKEN_PREFIX,
+                SERVICE_TOKEN_PREFIX,
             ), f"Token {token} should be identified as service token"
 
         for token in invalid_tokens:
             assert not token.startswith(
-                constants.SERVICE_TOKEN_PREFIX,
+                SERVICE_TOKEN_PREFIX,
             ), f"Token {token} should not be identified as service token"
 
     def test_jwt_claims_can_be_used_as_dict_keys(self):
         """Test that JWT claim constants work as dictionary keys."""
         jwt_payload = {
-            constants.JWT_CLAIM_EMAIL: "user@example.com",
-            constants.JWT_CLAIM_SUB: "123456",
-            constants.JWT_CLAIM_GROUPS: ["users", "admins"],
-            constants.JWT_CLAIM_EXP: 1234567890,
-            constants.JWT_CLAIM_IAT: 1234567800,
+            JWT_CLAIM_EMAIL: "user@example.com",
+            JWT_CLAIM_SUB: "123456",
+            JWT_CLAIM_GROUPS: ["users", "admins"],
+            JWT_CLAIM_EXP: 1234567890,
+            JWT_CLAIM_IAT: 1234567800,
         }
 
-        assert jwt_payload[constants.JWT_CLAIM_EMAIL] == "user@example.com"
-        assert jwt_payload[constants.JWT_CLAIM_SUB] == "123456"
-        assert jwt_payload[constants.JWT_CLAIM_GROUPS] == ["users", "admins"]
-        assert jwt_payload[constants.JWT_CLAIM_EXP] == 1234567890
-        assert jwt_payload[constants.JWT_CLAIM_IAT] == 1234567800
+        assert jwt_payload[JWT_CLAIM_EMAIL] == "user@example.com"
+        assert jwt_payload[JWT_CLAIM_SUB] == "123456"
+        assert jwt_payload[JWT_CLAIM_GROUPS] == ["users", "admins"]
+        assert jwt_payload[JWT_CLAIM_EXP] == 1234567890
+        assert jwt_payload[JWT_CLAIM_IAT] == 1234567800
 
     def test_error_codes_for_exception_handling(self):
         """Test that error code constants can be used in exception handling."""
         error_mapping = {
-            constants.ERROR_CODE_TOKEN_NOT_FOUND: "Token was not found in the system",
-            constants.ERROR_CODE_TOKEN_INACTIVE: "Token is inactive and cannot be used",
-            constants.ERROR_CODE_TOKEN_EXPIRED: "Token has expired and must be refreshed",
-            constants.ERROR_CODE_VALIDATION_EXCEPTION: "Validation failed for the request",
+            ERROR_CODE_TOKEN_NOT_FOUND: "Token was not found in the system",
+            ERROR_CODE_TOKEN_INACTIVE: "Token is inactive and cannot be used",
+            ERROR_CODE_TOKEN_EXPIRED: "Token has expired and must be refreshed",
+            ERROR_CODE_VALIDATION_EXCEPTION: "Validation failed for the request",
         }
 
         # Test that all error codes have meaningful messages

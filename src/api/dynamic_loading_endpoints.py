@@ -437,6 +437,9 @@ async def run_comprehensive_demo(
             status_code=status.HTTP_200_OK,
         )
 
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 503) without modification
+        raise
     except Exception as e:
         logger.exception("Demo execution failed: %s", e)
         raise HTTPException(
@@ -569,6 +572,9 @@ async def get_function_registry_stats(
 
         return JSONResponse(content=stats)
 
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 503) without modification
+        raise
     except Exception as e:
         logger.error("Failed to get function registry stats: %s", e)
         raise HTTPException(

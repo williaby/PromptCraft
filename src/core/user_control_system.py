@@ -484,6 +484,73 @@ class PerformanceMonitor:
             },
         )
 
+    def record_command_execution(
+        self,
+        command: str,
+        duration: float,
+        success: bool,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Record command execution performance"""
+        self.metrics["function_calls"][command] += 1
+        self.record_loading_time(f"command_{command}", duration * 1000)  # Convert to ms
+        # Always record command metadata for performance summary
+        if "command_metadata" not in self.metrics:
+            self.metrics["command_metadata"] = []
+        self.metrics["command_metadata"].append(
+            {
+                "command": command,
+                "duration": duration,
+                "success": success,
+                "tokens": metadata.get("tokens", 0) if metadata else 0,  # Default to 0 if no tokens
+                "timestamp": datetime.now(UTC),
+            },
+        )
+
+    def record_category_performance(self, category: str, duration: float, tokens: int, success_rate: float) -> None:
+        """Record category performance metrics"""
+        if "category_performance" not in self.metrics:
+            self.metrics["category_performance"] = []
+        self.metrics["category_performance"].append(
+            {
+                "category": category,
+                "duration": duration,
+                "tokens": tokens,
+                "success_rate": success_rate,
+                "timestamp": datetime.now(UTC),
+            },
+        )
+        self.metrics["category_usage"][category] += 1
+
+    def get_performance_summary(self) -> dict[str, Any]:
+        """Get comprehensive performance summary"""
+        command_metadata = self.metrics.get("command_metadata", [])
+        total_tokens = sum(cmd["tokens"] for cmd in command_metadata)
+        successful_commands = sum(1 for cmd in command_metadata if cmd["success"])
+        total_commands = len(command_metadata)
+        avg_command_time = (
+            sum(cmd["duration"] for cmd in command_metadata) / total_commands if total_commands > 0 else 0
+        )
+        command_success_rate = successful_commands / total_commands if total_commands > 0 else 0
+
+        # Build category performance summary
+        category_performance = {}
+        for cat_perf in self.metrics.get("category_performance", []):
+            category_performance[cat_perf["category"]] = {
+                "avg_load_time": cat_perf["duration"],
+                "avg_token_cost": cat_perf["tokens"],
+                "avg_success_rate": cat_perf["success_rate"],
+            }
+
+        return {
+            "total_tokens_used": total_tokens,
+            "avg_command_time": avg_command_time,
+            "command_success_rate": command_success_rate,
+            "total_commands": total_commands,
+            "successful_commands": successful_commands,
+            "category_performance": category_performance,
+        }
+
     def get_function_stats(self) -> CommandResult:
         """Get current function loading statistics"""
         total_calls = sum(self.metrics["function_calls"].values())
@@ -504,7 +571,7 @@ class PerformanceMonitor:
             data={
                 "total_function_calls": total_calls,
                 "avg_loading_time_ms": round(avg_loading_time, 2),
-                "cache_hit_rate": round(cache_hit_rate * 100, 1),
+                "cache_hit_rate": cache_hit_rate,
                 "uptime_seconds": round(time.time() - self.start_time, 1),
                 "most_used_functions": dict(
                     Counter(self.metrics["function_calls"]).most_common(5),
@@ -558,8 +625,8 @@ class PerformanceMonitor:
 class ProfileManager:
     """Manages session profiles for saving/loading function configurations"""
 
-    def __init__(self, config_dir: Path | None = None) -> None:
-        self.config_dir = config_dir or Path("user_profiles")
+    def __init__(self, config_dir: Path | str | None = None) -> None:
+        self.config_dir = Path(config_dir) if config_dir else Path("user_profiles")
         self.config_dir.mkdir(exist_ok=True)
         self.profiles: dict[str, SessionProfile] = {}
         self._load_profiles()
@@ -721,6 +788,85 @@ class ProfileManager:
             },
         )
 
+    def save_profile(self, profile: SessionProfile) -> CommandResult:
+        """Save a SessionProfile object directly"""
+        try:
+            self.profiles[profile.name] = profile
+            self._save_profile(profile)
+            return CommandResult(
+                success=True,
+                message=f"Profile '{profile.name}' saved successfully",
+                data={"profile_name": profile.name, "file_path": str(self.config_dir / f"{profile.name}.json")},
+            )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Failed to save profile: {e}",
+            )
+
+    def get_profiles_list(self) -> list[SessionProfile]:
+        """Get list of profiles (for tests)"""
+        return list(self.profiles.values())
+
+    def delete_profile(self, name: str) -> CommandResult:
+        """Delete a profile by name"""
+        if name not in self.profiles:
+            return CommandResult(
+                success=False,
+                message=f"Profile '{name}' not found",
+            )
+
+        try:
+            # Remove from memory
+            del self.profiles[name]
+            # Remove file
+            profile_file = self.config_dir / f"{name}.json"
+            if profile_file.exists():
+                profile_file.unlink()
+
+            return CommandResult(
+                success=True,
+                message=f"Profile '{name}' deleted successfully",
+            )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete profile: {e}",
+            )
+
+    def apply_profile(self, name: str, session: "UserSession") -> CommandResult:
+        """Apply a profile to a user session"""
+        if name not in self.profiles:
+            return CommandResult(
+                success=False,
+                message=f"Profile '{name}' not found",
+            )
+
+        try:
+            profile = self.profiles[name]
+            session.active_categories = profile.categories.copy()
+            session.performance_mode = profile.performance_mode
+
+            # Update usage stats
+            profile.usage_count += 1
+            profile.last_used = datetime.now(UTC)
+            self._save_profile(profile)  # Save updated usage stats
+
+            return CommandResult(
+                success=True,
+                message=f"Profile '{name}' applied successfully",
+                data={
+                    "profile_name": name,
+                    "categories_applied": profile.categories,
+                    "performance_mode": profile.performance_mode,
+                },
+            )
+        except Exception as e:
+            return CommandResult(
+                success=False,
+                message=f"Failed to apply profile: {e}",
+            )
+
     def _save_profile(self, profile: SessionProfile) -> None:
         """Save profile to disk"""
         profile_file = self.config_dir / f"{profile.name}.json"
@@ -849,7 +995,7 @@ class CommandParser:
     def parse_command(self, command_line: str) -> dict[str, Any]:
         """Parse a user command line"""
         if not command_line.startswith("/"):
-            return {"error": "Commands must start with /"}
+            return {"error": "Commands must start with '/'"}
 
         # Remove leading slash and split
         parts = command_line[1:].split()
@@ -896,7 +1042,8 @@ class CommandParser:
 
         return {
             "command": command,
-            "args": parsed_args,
+            "args": args,  # Keep original list format for test compatibility
+            "parsed_args": parsed_args,  # Dict format for handlers
             "flags": flags,
             "handler": command_info["handler"],
         }
@@ -906,8 +1053,16 @@ class CommandParser:
         # Simple similarity based on common prefixes/suffixes
         suggestions = []
         for cmd in self.commands:
-            if cmd.startswith(command[:3]) or command in cmd:
+            if len(command) >= 3 and (cmd.startswith(command[:3]) or command in cmd):
                 suggestions.append(cmd)
+            elif len(command) < 3:
+                # For very short commands, suggest based on first character
+                if cmd.startswith(command[0]):
+                    suggestions.append(cmd)
+
+        # If no suggestions found, suggest some popular commands
+        if not suggestions:
+            suggestions = ["help", "list-categories", "load-category"]
 
         return suggestions[:3]  # Top 3 suggestions
 
@@ -1008,13 +1163,20 @@ class UserControlSystem:
                 )
 
             # Execute command
-            result: CommandResult = await handler_method(parsed["args"], parsed["flags"])
+            result: CommandResult = await handler_method(parsed["parsed_args"], parsed["flags"])
 
             # Record performance
             execution_time = (time.perf_counter() - start_time) * 1000
             self.performance_monitor.record_loading_time(
                 f"command_{parsed['command']}",
                 execution_time,
+            )
+            # Record command execution for performance summary
+            self.performance_monitor.record_command_execution(
+                parsed["command"],
+                execution_time / 1000.0,  # Convert back to seconds
+                result.success,
+                {"execution_time_ms": execution_time},
             )
 
             # Update session history

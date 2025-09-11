@@ -34,6 +34,120 @@ from src.core.dynamic_function_loader import LoadingStrategy
 from src.core.dynamic_loading_integration import IntegrationMode
 
 
+@pytest.fixture
+def mock_integration():
+    """Create mock integration for testing."""
+    integration = AsyncMock()
+
+    # Mock process_query response
+    query_result = Mock()
+    query_result.success = True
+    query_result.session_id = "test_session_123"
+    query_result.total_time_ms = 150.0
+    query_result.baseline_tokens = 1000
+    query_result.optimized_tokens = 250
+    query_result.reduction_percentage = 75.0
+    query_result.target_achieved = True
+    query_result.detection_time_ms = 25.0
+    query_result.loading_time_ms = 100.0
+    query_result.cache_hit = False
+    query_result.fallback_used = False
+    query_result.user_commands = ["/optimize", "/analyze"]
+    query_result.error_message = None
+
+    # Mock detection result
+    detection_result = Mock()
+    detection_result.categories = ["optimization", "analysis"]
+    detection_result.confidence_scores = {"optimization": 0.95, "analysis": 0.87}
+    detection_result.fallback_applied = False
+    query_result.detection_result = detection_result
+
+    integration.process_query.return_value = query_result
+
+    # Mock system status
+    integration.get_system_status.return_value = {
+        "integration_health": "healthy",
+        "mode": "production",
+        "metrics": {
+            "total_queries_processed": 1250,
+            "success_rate": 95.5,
+            "average_reduction_percentage": 72.3,
+            "target_achievement_rate": 88.7,
+            "average_total_time_ms": 145.2,
+            "cache_hit_rate": 67.8,
+            "uptime_hours": 48.5,
+            "error_count": 12,
+            "warning_count": 45,
+            "successful_optimizations": 1050,
+            "fallback_activations": 35,
+            "user_commands_executed": 234,
+            "user_command_success_rate": 96.2,
+        },
+        "components": {
+            "function_loader": True,
+            "cache": True,
+            "registry": True,
+        },
+        "features": {
+            "dynamic_loading": True,
+            "user_commands": True,
+            "performance_monitoring": True,
+        },
+        "active_sessions": 15,
+    }
+
+    # Mock performance report
+    integration.get_performance_report.return_value = {
+        "timestamp": "2024-01-15T10:30:00Z",
+        "integration_report": {
+            "integration_metrics": {
+                "total_queries": 1000,
+                "average_reduction": 75.2,
+                "success_rate": 94.8,
+            },
+            "performance_summary": {
+                "avg_processing_time": 152.3,
+                "cache_efficiency": 68.5,
+                "optimization_success": 89.2,
+            },
+            "timing_analysis": {
+                "detection_avg_ms": 28.5,
+                "loading_avg_ms": 95.7,
+                "total_avg_ms": 152.3,
+            },
+            "system_health": {
+                "memory_usage": 45.2,
+                "cpu_usage": 23.8,
+                "error_rate": 2.1,
+            },
+        },
+    }
+
+    # Mock user command execution
+    command_result = Mock()
+    command_result.success = True
+    command_result.message = "Command executed successfully"
+    command_result.data = {"status": "active", "mode": "production"}
+    command_result.suggestions = ["/status", "/help"]
+    integration.execute_user_command.return_value = command_result
+
+    return integration
+
+
+@pytest.fixture
+def client_with_mocked_integration(mock_integration):
+    """Create test client with mocked integration dependency."""
+    from fastapi import FastAPI
+
+    app = FastAPI()
+    app.include_router(router)
+
+    # Override the dependency
+    app.dependency_overrides[get_integration_dependency] = lambda: mock_integration
+
+    return TestClient(app), mock_integration
+
+
 class TestDynamicLoadingModels:
     """Test Pydantic models for dynamic loading endpoints."""
 
@@ -179,118 +293,6 @@ class TestDynamicLoadingModels:
 
 class TestDynamicLoadingEndpoints:
     """Test dynamic loading API endpoints with realistic scenarios."""
-
-    @pytest.fixture
-    def mock_integration(self):
-        """Create mock integration for testing."""
-        integration = AsyncMock()
-
-        # Mock process_query response
-        query_result = Mock()
-        query_result.success = True
-        query_result.session_id = "test_session_123"
-        query_result.total_time_ms = 150.0
-        query_result.baseline_tokens = 1000
-        query_result.optimized_tokens = 250
-        query_result.reduction_percentage = 75.0
-        query_result.target_achieved = True
-        query_result.detection_time_ms = 25.0
-        query_result.loading_time_ms = 100.0
-        query_result.cache_hit = False
-        query_result.fallback_used = False
-        query_result.user_commands = ["/optimize", "/analyze"]
-        query_result.error_message = None
-
-        # Mock detection result
-        detection_result = Mock()
-        detection_result.categories = ["optimization", "analysis"]
-        detection_result.confidence_scores = {"optimization": 0.95, "analysis": 0.87}
-        detection_result.fallback_applied = False
-        query_result.detection_result = detection_result
-
-        integration.process_query.return_value = query_result
-
-        # Mock system status
-        integration.get_system_status.return_value = {
-            "integration_health": "healthy",
-            "mode": "production",
-            "metrics": {
-                "total_queries_processed": 1250,
-                "success_rate": 95.5,
-                "average_reduction_percentage": 72.3,
-                "target_achievement_rate": 88.7,
-                "average_total_time_ms": 145.2,
-                "cache_hit_rate": 67.8,
-                "uptime_hours": 48.5,
-                "error_count": 12,
-                "warning_count": 45,
-                "successful_optimizations": 1050,
-                "fallback_activations": 35,
-                "user_commands_executed": 234,
-                "user_command_success_rate": 96.2,
-            },
-            "components": {
-                "function_loader": True,
-                "cache": True,
-                "registry": True,
-            },
-            "features": {
-                "dynamic_loading": True,
-                "user_commands": True,
-                "performance_monitoring": True,
-            },
-            "active_sessions": 15,
-        }
-
-        # Mock performance report
-        integration.get_performance_report.return_value = {
-            "timestamp": "2024-01-15T10:30:00Z",
-            "integration_report": {
-                "integration_metrics": {
-                    "total_queries": 1000,
-                    "average_reduction": 75.2,
-                    "success_rate": 94.8,
-                },
-                "performance_summary": {
-                    "avg_processing_time": 152.3,
-                    "cache_efficiency": 68.5,
-                    "optimization_success": 89.2,
-                },
-                "timing_analysis": {
-                    "detection_avg_ms": 28.5,
-                    "loading_avg_ms": 95.7,
-                    "total_avg_ms": 152.3,
-                },
-                "system_health": {
-                    "memory_usage": 45.2,
-                    "cpu_usage": 23.8,
-                    "error_rate": 2.1,
-                },
-            },
-        }
-
-        # Mock user command execution
-        command_result = Mock()
-        command_result.success = True
-        command_result.message = "Command executed successfully"
-        command_result.data = {"status": "active", "mode": "production"}
-        command_result.suggestions = ["/status", "/help"]
-        integration.execute_user_command.return_value = command_result
-
-        return integration
-
-    @pytest.fixture
-    def client_with_mocked_integration(self, mock_integration):
-        """Create test client with mocked integration dependency."""
-        from fastapi import FastAPI
-
-        app = FastAPI()
-        app.include_router(router)
-
-        # Override the dependency
-        app.dependency_overrides[get_integration_dependency] = lambda: mock_integration
-
-        return TestClient(app), mock_integration
 
     def test_optimize_query_success(self, client_with_mocked_integration):
         """Test successful query optimization endpoint."""
@@ -571,9 +573,9 @@ class TestDynamicLoadingEndpoints:
         mock_registry.categories = ["optimization", "analysis", "utility"]
 
         # Mock tiers
-        from src.core.function_registry import LoadingTier
+        from src.core.dynamic_function_loader import LoadingTier
 
-        mock_registry.tiers = [LoadingTier.CORE, LoadingTier.STANDARD, LoadingTier.EXTENDED]
+        mock_registry.tiers = [LoadingTier.TIER_1, LoadingTier.TIER_2, LoadingTier.TIER_3]
 
         # Mock tier methods
         mock_registry.get_functions_by_tier.return_value = ["tier_func1", "tier_func2"]
@@ -768,8 +770,11 @@ class TestDynamicLoadingEndpoints:
 
             mock_demo.initialize.return_value = True
             full_results = {
-                "demo_metadata": {"total_scenarios": 6},
-                "performance_summary": {"success_rate": 94.5},
+                "demo_metadata": {"total_scenarios": 6, "total_time_seconds": 42.5},
+                "performance_summary": {
+                    "success_rate": 94.5,
+                    "token_optimization": {"average_reduction": 75.2, "target_achievement_rate": 89.3},
+                },
                 "production_readiness": {"readiness_level": "production-ready"},
                 "detailed_results": ["scenario1", "scenario2"],
             }
@@ -854,8 +859,8 @@ class TestEndpointPerformance:
         """Test that query optimization tracks performance correctly."""
         client, mock_integration = client_with_mocked_integration
 
-        # Mock timing for performance measurement
-        with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150]):
+        # Mock timing for performance measurement - provide enough values for multiple calls
+        with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150, 0.300, 0.450]):
             with patch("src.api.dynamic_loading_endpoints.audit_logger_instance") as mock_audit:
                 response = client.post("/api/v1/dynamic-loading/optimize-query", json={"query": "test query"})
 

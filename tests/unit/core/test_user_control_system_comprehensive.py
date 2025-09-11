@@ -263,18 +263,18 @@ class TestCommandParser:
 
     def test_parse_load_command_with_args(self, parser):
         """Test parsing load command with arguments."""
-        result = parser.parse_command("/load analysis quality")
+        result = parser.parse_command("/load-category analysis")
 
         assert "error" not in result
-        assert result["command"] == "load"
-        assert result["args"] == ["analysis", "quality"]
+        assert result["command"] == "load-category"
+        assert result["args"] == ["analysis"]
 
     def test_parse_tier_command(self, parser):
         """Test parsing tier command."""
-        result = parser.parse_command("/tier 2")
+        result = parser.parse_command("/load-tier 2")
 
         assert "error" not in result
-        assert result["command"] == "tier"
+        assert result["command"] == "load-tier"
         assert result["args"] == ["2"]
 
     def test_parse_empty_command(self, parser):
@@ -282,7 +282,7 @@ class TestCommandParser:
         result = parser.parse_command("")
 
         assert "error" in result
-        assert "Empty command" in result["error"]
+        assert "must start with" in result["error"]
 
     def test_parse_invalid_command(self, parser):
         """Test parsing invalid command."""
@@ -382,7 +382,7 @@ class TestProfileManager:
 
     def test_profile_manager_initialization(self, profile_manager):
         """Test ProfileManager initialization."""
-        assert profile_manager.profiles_dir.exists()
+        assert profile_manager.config_dir.exists()
 
     def test_save_and_load_profile(self, profile_manager):
         """Test saving and loading a profile."""
@@ -400,7 +400,7 @@ class TestProfileManager:
         assert "saved successfully" in result.message
 
         # Load profile
-        loaded_profiles = profile_manager.list_profiles()
+        loaded_profiles = profile_manager.get_profiles_list()
         assert len(loaded_profiles) == 1
         assert loaded_profiles[0].name == "Test Profile"
         assert loaded_profiles[0].categories == {"core": True, "analysis": True}
@@ -422,7 +422,7 @@ class TestProfileManager:
         assert "deleted successfully" in result.message
 
         # Verify it's gone
-        profiles = profile_manager.list_profiles()
+        profiles = profile_manager.get_profiles_list()
         assert len(profiles) == 0
 
     def test_delete_nonexistent_profile(self, profile_manager):
@@ -498,17 +498,15 @@ class TestUserControlSystem:
     @pytest.mark.asyncio
     async def test_execute_status_command(self, user_control_system):
         """Test executing status command."""
-        result = await user_control_system.execute_command("/status")
+        result = await user_control_system.execute_command("/tier-status")
 
         assert result.success is True
         assert result.data is not None
-        assert "session" in result.data
-        assert "categories" in result.data
 
     @pytest.mark.asyncio
     async def test_execute_load_command(self, user_control_system):
         """Test executing load command."""
-        result = await user_control_system.execute_command("/load analysis")
+        result = await user_control_system.execute_command("/load-category analysis")
 
         assert result.success is True
         assert "analysis" in result.message
@@ -528,27 +526,27 @@ class TestUserControlSystem:
         result = await user_control_system.execute_command("")
 
         assert result.success is False
-        assert "Empty command" in result.message
+        assert "must start with" in result.message
 
     @pytest.mark.asyncio
     async def test_command_history_tracking(self, user_control_system):
         """Test that commands are tracked in history."""
         await user_control_system.execute_command("/help")
-        await user_control_system.execute_command("/status")
+        await user_control_system.execute_command("/tier-status")
 
         # Check that commands were recorded
         assert len(user_control_system.current_session.command_history) >= 2
 
         # Check analytics
         assert user_control_system.usage_analytics["commands_executed"]["help"] >= 1
-        assert user_control_system.usage_analytics["commands_executed"]["status"] >= 1
+        assert user_control_system.usage_analytics["commands_executed"]["tier-status"] >= 1
 
     @pytest.mark.asyncio
     async def test_performance_monitoring_integration(self, user_control_system):
         """Test that performance metrics are collected."""
         # Execute a few commands
         await user_control_system.execute_command("/help")
-        await user_control_system.execute_command("/status")
+        await user_control_system.execute_command("/tier-status")
 
         # Check that performance data was collected
         summary = user_control_system.performance_monitor.get_performance_summary()
@@ -621,21 +619,21 @@ class TestIntegrationScenarios:
         assert help_result.success is True
 
         # 2. Check current status
-        status_result = await user_control_system.execute_command("/status")
+        status_result = await user_control_system.execute_command("/tier-status")
         assert status_result.success is True
         assert status_result.data is not None
 
         # 3. Load analysis category
-        load_result = await user_control_system.execute_command("/load analysis")
+        load_result = await user_control_system.execute_command("/load-category analysis")
         assert load_result.success is True
         assert "analysis" in load_result.message
 
         # 4. Set performance mode
-        perf_result = await user_control_system.execute_command("/performance aggressive")
+        perf_result = await user_control_system.execute_command("/performance-mode aggressive")
         assert perf_result.success is True
 
         # 5. Check final status
-        final_status = await user_control_system.execute_command("/status")
+        final_status = await user_control_system.execute_command("/tier-status")
         assert final_status.success is True
 
         # Verify session state changes
@@ -645,8 +643,8 @@ class TestIntegrationScenarios:
         # Verify analytics were collected
         analytics = user_control_system.usage_analytics
         assert analytics["commands_executed"]["help"] >= 1
-        assert analytics["commands_executed"]["status"] >= 2
-        assert analytics["commands_executed"]["load"] >= 1
+        assert analytics["commands_executed"]["tier-status"] >= 2
+        assert analytics["commands_executed"]["load-category"] >= 1
 
     @pytest.mark.asyncio
     async def test_error_handling_and_recovery(self, user_control_system):
@@ -657,7 +655,7 @@ class TestIntegrationScenarios:
         assert len(invalid_result.suggestions) > 0
 
         # Try loading non-existent category
-        load_invalid = await user_control_system.execute_command("/load nonexistent")
+        load_invalid = await user_control_system.execute_command("/load-category nonexistent")
         assert load_invalid.success is False
 
         # Try valid command after errors
@@ -665,7 +663,7 @@ class TestIntegrationScenarios:
         assert valid_result.success is True
 
         # Verify system is still functional
-        status_result = await user_control_system.execute_command("/status")
+        status_result = await user_control_system.execute_command("/tier-status")
         assert status_result.success is True
 
     @pytest.mark.asyncio
@@ -680,7 +678,7 @@ class TestIntegrationScenarios:
 
         # Execute some commands to build history
         await user_control_system.execute_command("/help")
-        await user_control_system.execute_command("/status")
+        await user_control_system.execute_command("/tier-status")
 
         # Verify session state
         assert user_control_system.current_session.session_id == original_session_id

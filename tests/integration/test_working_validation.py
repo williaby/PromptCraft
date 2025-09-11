@@ -4,8 +4,8 @@ Working Authentication and Journey 1 Integration Tests.
 Simple integration tests using correct imports and function names.
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 
@@ -54,8 +54,13 @@ class TestAuthSystemWorking:
         """Test SimpleSessionManager functionality."""
         manager = SimpleSessionManager(session_timeout=3600)
 
-        user_info = {"email": "test@user.com", "role": "user"}
-        session_id = manager.create_session("test@user.com", user_info)
+        # Use correct API signature: create_session(email, is_admin, user_tier, cf_context=None)
+        session_id = manager.create_session(
+            email="test@user.com",
+            is_admin=False,
+            user_tier="user",
+            cf_context={"test": True},
+        )
 
         assert session_id is not None
         assert len(session_id) > 10
@@ -116,11 +121,22 @@ class TestJourney1Working:
             temperature=0.7,
         )
 
-        # Should return tuple of 9 elements
+        # Should return tuple of 10 elements (updated from 9 per production)
         assert isinstance(result, tuple)
-        assert len(result) == 9
+        assert len(result) == 10
 
-        enhanced_prompt, context, request, examples, augmentations, tone, evaluation, model_attr, file_sources = result
+        (
+            enhanced_prompt,
+            clean_prompt,
+            context,
+            request,
+            examples,
+            augmentations,
+            tone,
+            evaluation,
+            model_attr,
+            file_sources,
+        ) = result
 
         # Verify components have content
         assert len(enhanced_prompt) > len(test_input)
@@ -182,9 +198,14 @@ class TestIntegrationWorking:
         assert validator.is_authorized(user_email) is True
         user_role = validator.get_user_role(user_email)
 
-        # Session creation
-        user_info = {"email": user_email, "role": user_role, "cf_ray": "test-123"}
-        session_id = session_manager.create_session(user_email, user_info)
+        # Session creation with correct API signature
+        is_admin = user_role == "admin"  # Convert role to boolean
+        session_id = session_manager.create_session(
+            email=user_email,
+            is_admin=is_admin,
+            user_tier=user_role,
+            cf_context={"cf_ray": "test-123"},
+        )
 
         # Session retrieval (simulating request processing)
         session_data = session_manager.get_session(session_id)
@@ -208,7 +229,7 @@ class TestIntegrationWorking:
         )
 
         assert isinstance(result, tuple)
-        assert len(result) == 9
+        assert len(result) == 10  # Updated from 9 to match production API
         enhanced_prompt = result[0]
         assert len(enhanced_prompt) > 10  # Should generate meaningful output
 
