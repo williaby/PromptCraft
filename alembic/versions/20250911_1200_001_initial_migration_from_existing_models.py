@@ -4,6 +4,59 @@ Revision ID: 001
 Revises:
 Create Date: 2025-09-11 12:00:00.000000
 
+## Data Protection & GDPR Compliance Notes
+
+This migration creates tables that process personal data under GDPR Article 4(1).
+The following data protection measures are implemented:
+
+### Personal Data Categories & Legal Basis:
+- **user_sessions**: Email addresses, IP addresses, user agent strings
+  - Legal Basis: Legitimate interest (security) + Necessary for contract performance
+  - Retention: Session data retained for security monitoring (30 days)
+  
+- **authentication_events**: Email addresses, IP addresses, user agent strings  
+  - Legal Basis: Legitimate interest (security monitoring and fraud prevention)
+  - Retention: Authentication logs retained for 90 days for security analysis
+  
+- **security_events**: IP addresses, user agent strings, email addresses
+  - Legal Basis: Legitimate interest (security monitoring and threat detection)
+  - Retention: Security events retained for 1 year for compliance and investigation
+  
+- **blocked_entities**: Email addresses, IP addresses (when entity_type matches)
+  - Legal Basis: Legitimate interest (security and fraud prevention)
+  - Retention: Retained while security threat persists, reviewed annually
+  
+- **threat_scores**: Email addresses, IP addresses (when entity_type matches)
+  - Legal Basis: Legitimate interest (security monitoring and threat assessment)
+  - Retention: Scores decay over time, full cleanup after 1 year of inactivity
+
+### Data Subject Rights Implementation:
+- **Right of Access**: Query endpoints provide data subject access to their records
+- **Right to Rectification**: Update capabilities for correcting inaccurate data
+- **Right to Erasure**: Cleanup procedures remove data when legally permissible
+- **Right to Portability**: Export functions provide structured data export
+- **Right to Object**: Opt-out mechanisms for non-essential processing
+
+### Security & Technical Measures:
+- All personal data fields encrypted at rest using database-level encryption
+- Access controls enforce principle of least privilege
+- Audit logging tracks all access to personal data tables
+- Regular security assessments ensure continued protection
+- Data minimization: Only necessary fields collected and retained
+
+### Data Transfers & International Processing:
+- Data processing occurs within configured geographic boundaries
+- Cross-border transfers comply with adequacy decisions or standard contractual clauses
+- Cloud provider agreements include GDPR-compliant data processing terms
+
+### Contact Information:
+- Data Protection Officer: privacy@promptcraft.com
+- Privacy Policy: Available at /privacy-policy endpoint
+- Data Subject Requests: privacy-requests@promptcraft.com
+
+This migration establishes the foundation for GDPR-compliant personal data processing
+with built-in privacy by design and security by default principles.
+
 """
 
 from collections.abc import Sequence

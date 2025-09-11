@@ -9,16 +9,48 @@ This module provides secure secret retrieval from various sources with fallback 
 
 import asyncio
 from dataclasses import dataclass
-import json
 import logging
 import os
 from pathlib import Path
+import re
+import time
 from typing import Any
-import urllib.error
-import urllib.parse
-import urllib.request
+
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from .encryption import EncryptionError, GPGError, load_encrypted_env
+
+
+def mask_secrets_in_log(message: str) -> str:
+    """
+    Mask potential secret values in log messages for security.
+    
+    Args:
+        message: Log message that might contain secrets
+        
+    Returns:
+        Message with potential secrets masked
+    """
+    # Patterns that might indicate secret values
+    patterns = [
+        (r"(password['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
+        (r"(token['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
+        (r"(secret['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
+        (r"(key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
+        (r"(api[_-]?key['\"]?\s*[:=]\s*['\"]?)([^'\"\s]+)", r"\1***MASKED***"),
+        # Mask anything that looks like JWT tokens
+        (r"(eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*)", r"***JWT_TOKEN_MASKED***"),
+        # Mask base64-encoded strings that might be secrets (longer than 20 chars)
+        (r"([A-Za-z0-9+/]{20,}={0,2})", r"***BASE64_MASKED***"),
+    ]
+    
+    masked_message = message
+    for pattern, replacement in patterns:
+        masked_message = re.sub(pattern, replacement, masked_message, flags=re.IGNORECASE)
+    
+    return masked_message
 
 
 @dataclass
@@ -49,7 +81,7 @@ class GenericSecretsManager:
     3. Environment variables (development fallback)
     """
 
-    def __init__(self, config: SecretConfig):
+    def __init__(self, config: SecretConfig) -> None:
         """Initialize the secrets manager.
 
         Args:
@@ -70,16 +102,17 @@ class GenericSecretsManager:
 
         try:
             url = f"{self.config.vault_url.rstrip('/')}/v1/sys/health"
-            req = urllib.request.Request(url)
-            req.add_header("X-Vault-Token", self.config.vault_token)
+            headers = {"X-Vault-Token": self.config.vault_token}
 
             if self.config.vault_namespace:
-                req.add_header("X-Vault-Namespace", self.config.vault_namespace)
+                headers["X-Vault-Namespace"] = self.config.vault_namespace
 
-            with urllib.request.urlopen(req, timeout=self.config.timeout) as response:
-                if response.status in (200, 429, 473, 503):  # Various healthy states
-                    self.logger.info("HashiCorp Vault connection verified")
-                    return
+            session = self._create_secure_session()
+            response = session.get(url, headers=headers, timeout=self.config.timeout)
+            
+            if response.status_code in (200, 429, 473, 503):  # Various healthy states
+                self.logger.info("HashiCorp Vault connection verified")
+                return
 
         except Exception as e:
             self.logger.warning("HashiCorp Vault connection test failed: %s", e)
@@ -92,8 +125,6 @@ class GenericSecretsManager:
         if secret_name not in self._cache:
             return False
 
-        import time
-
         timestamp = self._cache_timestamps.get(secret_name, 0)
         return (time.time() - timestamp) < self.config.cache_ttl_seconds
 
@@ -101,8 +132,6 @@ class GenericSecretsManager:
         """Cache a secret value."""
         if not self.config.cache_enabled:
             return
-
-        import time
 
         self._cache[secret_name] = value
         self._cache_timestamps[secret_name] = time.time()
@@ -149,7 +178,7 @@ class GenericSecretsManager:
                             break
                         await asyncio.sleep(2**attempt)  # Exponential backoff
             except Exception as e:
-                self.logger.warning("Failed to retrieve secret '%s' from HashiCorp Vault: %s", secret_name, e)
+                self.logger.warning("Failed to retrieve secret '%s' from HashiCorp Vault: %s", secret_name, mask_secrets_in_log(str(e)))
 
         # Fallback to encrypted env files
         try:
@@ -159,7 +188,7 @@ class GenericSecretsManager:
                 self.logger.debug("Retrieved secret '%s' from encrypted env file", secret_name)
                 return secret
         except (EncryptionError, GPGError, FileNotFoundError) as e:
-            self.logger.debug("Could not retrieve secret '%s' from encrypted files: %s", secret_name, e)
+            self.logger.debug("Could not retrieve secret '%s' from encrypted files: %s", secret_name, mask_secrets_in_log(str(e)))
 
         # Final fallback to environment variables
         env_secret = os.getenv(f"PROMPTCRAFT_{secret_name.upper()}")
@@ -184,7 +213,7 @@ class GenericSecretsManager:
         try:
             return asyncio.run(self.get_secret_async(secret_name))
         except Exception as e:
-            self.logger.error("Failed to retrieve secret '%s': %s", secret_name, e)
+            self.logger.error("Failed to retrieve secret '%s': %s", secret_name, mask_secrets_in_log(str(e)))
             raise SecretsManagerError(f"Secret retrieval failed for '{secret_name}': {e}") from e
 
     async def _get_vault_secret(self, secret_name: str) -> str | None:
@@ -197,26 +226,25 @@ class GenericSecretsManager:
             vault_path = f"{self.config.vault_mount_point}/data/promptcraft/{secret_name}"
             url = f"{self.config.vault_url.rstrip('/')}/v1/{vault_path}"
 
-            def _sync_get_secret():
-                req = urllib.request.Request(url)
-                req.add_header("X-Vault-Token", self.config.vault_token)
+            def _sync_get_secret() -> str | None:
+                headers = {"X-Vault-Token": self.config.vault_token}
 
                 if self.config.vault_namespace:
-                    req.add_header("X-Vault-Namespace", self.config.vault_namespace)
+                    headers["X-Vault-Namespace"] = self.config.vault_namespace
 
-                with urllib.request.urlopen(req, timeout=self.config.timeout) as response:
-                    if response.status == 200:
-                        data = json.loads(response.read().decode("utf-8"))
-                        return data.get("data", {}).get("data", {}).get("value")
-                    return None
+                session = self._create_secure_session()
+                response = session.get(url, headers=headers, timeout=self.config.timeout)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return data.get("data", {}).get("data", {}).get("value")
+                return None
 
             # Run the synchronous request in a thread pool
-            secret = await asyncio.get_event_loop().run_in_executor(None, _sync_get_secret)
-
-            return secret
+            return await asyncio.get_event_loop().run_in_executor(None, _sync_get_secret)
 
         except Exception as e:
-            self.logger.debug("HashiCorp Vault secret '%s' not found or inaccessible: %s", secret_name, e)
+            self.logger.debug("HashiCorp Vault secret '%s' not found or inaccessible: %s", secret_name, mask_secrets_in_log(str(e)))
             return None
 
     def _get_encrypted_secret(self, secret_name: str) -> str | None:
@@ -259,8 +287,8 @@ class GenericSecretsManager:
 
         try:
             with env_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
+                for raw_line in f:
+                    line = raw_line.strip()
                     if line and not line.startswith("#") and "=" in line:
                         key, value = line.split("=", 1)
                         env_vars[key.strip()] = value.strip().strip("\"'")
@@ -268,6 +296,29 @@ class GenericSecretsManager:
             self.logger.debug("Error reading plain env file '%s': %s", env_file, e)
 
         return env_vars
+
+    def _create_secure_session(self) -> requests.Session:
+        """Create a secure requests session with proper configuration."""
+        session = requests.Session()
+        
+        # Configure retry strategy with exponential backoff
+        retry_strategy = Retry(
+            total=self.config.retry_attempts,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+        
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        # Security: Verify SSL certificates
+        session.verify = True
+        
+        # Set reasonable timeout
+        session.timeout = self.config.timeout
+        
+        return session
 
     def get_multiple_secrets(self, secret_names: list[str]) -> dict[str, str | None]:
         """
@@ -282,7 +333,7 @@ class GenericSecretsManager:
         try:
             return asyncio.run(self._get_multiple_secrets_async(secret_names))
         except Exception as e:
-            self.logger.error("Failed to retrieve multiple secrets: %s", e)
+            self.logger.error("Failed to retrieve multiple secrets: %s", mask_secrets_in_log(str(e)))
             raise SecretsManagerError(f"Multiple secret retrieval failed: {e}") from e
 
     async def _get_multiple_secrets_async(self, secret_names: list[str]) -> dict[str, str | None]:
@@ -291,7 +342,7 @@ class GenericSecretsManager:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         return {
-            name: result if not isinstance(result, Exception) else None for name, result in zip(secret_names, results, strict=False)
+            name: result if not isinstance(result, Exception) else None for name, result in zip(secret_names, results, strict=True)
         }
 
     def clear_cache(self) -> None:
@@ -312,7 +363,7 @@ def get_secrets_manager() -> GenericSecretsManager:
     Returns:
         Configured secrets manager instance
     """
-    global _secrets_manager
+    global _secrets_manager  # noqa: PLW0603
 
     if _secrets_manager is None:
         # Configuration from environment variables

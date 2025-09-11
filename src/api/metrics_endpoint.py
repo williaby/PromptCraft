@@ -9,6 +9,12 @@ from typing import Any
 
 
 try:
+    from flask import Blueprint, Flask, Response as FlaskResponse, jsonify
+except ImportError:
+    Blueprint = FlaskResponse = jsonify = Flask = None
+
+
+try:
     from fastapi import APIRouter, Depends, HTTPException, Response
     from fastapi.responses import PlainTextResponse
 
@@ -30,10 +36,7 @@ from src.utils.unified_observability import get_logger, get_metrics, get_observa
 
 
 # Create API router
-if FASTAPI_AVAILABLE:
-    router = APIRouter(prefix="/metrics", tags=["metrics"])
-else:
-    router = None
+router = APIRouter(prefix="/metrics", tags=["metrics"]) if FASTAPI_AVAILABLE else None
 
 
 def get_prometheus_metrics() -> str:
@@ -51,7 +54,7 @@ def get_prometheus_metrics() -> str:
     except Exception as e:
         logger = get_logger(__name__)
         logger.error("Failed to generate Prometheus metrics", error=str(e))
-        raise HTTPException(status_code=500, detail=f"Failed to generate metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate metrics") from e
 
 
 def get_metrics_summary() -> dict[str, Any]:
@@ -89,7 +92,7 @@ def get_metrics_summary() -> dict[str, Any]:
         except Exception as e:
             logger = get_logger(__name__)
             logger.warning("Failed to collect metrics summary", error=str(e))
-            summary["error"] = str(e)
+            summary["error"] = "Failed to collect metrics summary"
 
     return summary
 
@@ -98,7 +101,7 @@ def get_metrics_summary() -> dict[str, Any]:
 if FASTAPI_AVAILABLE and router:
 
     @router.get("/", response_class=PlainTextResponse)
-    async def prometheus_metrics_endpoint():
+    async def prometheus_metrics_endpoint() -> Response:
         """
         Prometheus metrics endpoint.
 
@@ -136,10 +139,10 @@ if FASTAPI_AVAILABLE and router:
                 metrics_collector.record_request("GET", "/metrics", 500, 0.0)
                 metrics_collector.record_error("metrics_endpoint_error")
 
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error") from e
 
     @router.get("/summary")
-    async def metrics_summary_endpoint():
+    async def metrics_summary_endpoint() -> dict[str, Any]:
         """
         Human-readable metrics summary endpoint.
 
@@ -170,10 +173,10 @@ if FASTAPI_AVAILABLE and router:
                 metrics_collector.record_request("GET", "/metrics/summary", 500, 0.0)
                 metrics_collector.record_error("metrics_summary_error")
 
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail="Failed to generate metrics summary") from e
 
     @router.get("/health")
-    async def metrics_health_endpoint():
+    async def metrics_health_endpoint() -> dict[str, Any]:
         """
         Metrics system health check endpoint.
 
@@ -212,38 +215,36 @@ if FASTAPI_AVAILABLE and router:
 
 
 # Flask integration (if needed)
-def create_flask_metrics_blueprint():
+def create_flask_metrics_blueprint() -> Blueprint | None:
     """Create Flask blueprint for metrics endpoints."""
-    try:
-        from flask import Blueprint, Response, jsonify
-    except ImportError:
+    if not Blueprint or not FlaskResponse or not jsonify:
         return None
 
     blueprint = Blueprint("metrics", __name__, url_prefix="/metrics")
 
     @blueprint.route("/")
-    def prometheus_metrics():
+    def prometheus_metrics() -> FlaskResponse:
         """Prometheus metrics endpoint for Flask."""
         try:
             metrics_text = get_prometheus_metrics()
-            return Response(
+            return FlaskResponse(
                 metrics_text,
                 mimetype=CONTENT_TYPE_LATEST,
                 headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"},
             )
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except Exception:
+            return jsonify({"error": "Failed to generate metrics"}), 500
 
     @blueprint.route("/summary")
-    def metrics_summary():
+    def metrics_summary() -> tuple[dict[str, Any], int]:
         """Metrics summary endpoint for Flask."""
         try:
             return jsonify(get_metrics_summary())
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except Exception:
+            return jsonify({"error": "Failed to generate metrics summary"}), 500
 
     @blueprint.route("/health")
-    def metrics_health():
+    def metrics_health() -> tuple[dict[str, Any], int]:
         """Metrics health endpoint for Flask."""
         try:
             observability_status = get_observability_status()
@@ -260,28 +261,25 @@ def create_flask_metrics_blueprint():
             status_code = 200 if health_status["status"] == "healthy" else 503
             return jsonify(health_status), status_code
 
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+        except Exception:
+            return jsonify({"error": "Failed to check metrics health"}), 500
 
     return blueprint
 
 
 # Standalone WSGI application for metrics only
-def create_metrics_wsgi_app():
+def create_metrics_wsgi_app() -> Flask | None:
     """Create standalone WSGI app for metrics collection."""
-    try:
-        from flask import Flask
-
-        app = Flask(__name__)
-
-        blueprint = create_flask_metrics_blueprint()
-        if blueprint:
-            app.register_blueprint(blueprint)
-
-        return app
-
-    except ImportError:
+    if not Flask:
         return None
+
+    app = Flask(__name__)
+
+    blueprint = create_flask_metrics_blueprint()
+    if blueprint:
+        app.register_blueprint(blueprint)
+
+    return app
 
 
 # Direct function access for custom integrations

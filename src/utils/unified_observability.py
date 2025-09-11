@@ -17,7 +17,7 @@ Key Features:
 - Performance monitoring
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
@@ -91,7 +91,7 @@ class ObservabilityConfig:
         log_level: LogLevel = LogLevel.INFO,
         max_log_size_mb: int = 100,
         backup_count: int = 5,
-    ):
+    ) -> None:
         """Initialize observability configuration."""
         self.environment = environment
         self.service_name = service_name
@@ -110,7 +110,7 @@ class ObservabilityConfig:
 class CorrelationContext:
     """Thread-local correlation context for request tracing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize correlation context."""
         self._local = threading.local()
 
@@ -151,7 +151,7 @@ correlation_context = CorrelationContext()
 class MetricsCollector:
     """Prometheus metrics collector for application observability."""
 
-    def __init__(self, registry: CollectorRegistry | None = None):
+    def __init__(self, registry: CollectorRegistry | None = None) -> None:
         """Initialize metrics collector."""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -212,7 +212,7 @@ class MetricsCollector:
 class UnifiedLogger:
     """Unified logger that consolidates all logging approaches."""
 
-    def __init__(self, name: str, config: ObservabilityConfig):
+    def __init__(self, name: str, config: ObservabilityConfig) -> None:
         """Initialize unified logger."""
         self.name = name
         self.config = config
@@ -243,42 +243,42 @@ class UnifiedLogger:
 
         return event_dict
 
-    def debug(self, message: str, **kwargs) -> None:
+    def debug(self, message: str, **kwargs: Any) -> None:
         """Log debug message."""
         if self.config.structured_logging:
             self.logger.debug(message, **self._enrich_event(kwargs))
         else:
             self.logger.debug(message, extra=kwargs)
 
-    def info(self, message: str, **kwargs) -> None:
+    def info(self, message: str, **kwargs: Any) -> None:
         """Log info message."""
         if self.config.structured_logging:
             self.logger.info(message, **self._enrich_event(kwargs))
         else:
             self.logger.info(message, extra=kwargs)
 
-    def warning(self, message: str, **kwargs) -> None:
+    def warning(self, message: str, **kwargs: Any) -> None:
         """Log warning message."""
         if self.config.structured_logging:
             self.logger.warning(message, **self._enrich_event(kwargs))
         else:
             self.logger.warning(message, extra=kwargs)
 
-    def error(self, message: str, **kwargs) -> None:
+    def error(self, message: str, **kwargs: Any) -> None:
         """Log error message."""
         if self.config.structured_logging:
             self.logger.error(message, **self._enrich_event(kwargs))
         else:
             self.logger.error(message, extra=kwargs)
 
-    def critical(self, message: str, **kwargs) -> None:
+    def critical(self, message: str, **kwargs: Any) -> None:
         """Log critical message."""
         if self.config.structured_logging:
             self.logger.critical(message, **self._enrich_event(kwargs))
         else:
             self.logger.critical(message, extra=kwargs)
 
-    def exception(self, message: str, **kwargs) -> None:
+    def exception(self, message: str, **kwargs: Any) -> None:
         """Log exception with traceback."""
         if self.config.structured_logging:
             self.logger.exception(message, **self._enrich_event(kwargs))
@@ -289,7 +289,7 @@ class UnifiedLogger:
 class ObservabilitySystem:
     """Central observability system managing logging, metrics, and tracing."""
 
-    def __init__(self, config: ObservabilityConfig):
+    def __init__(self, config: ObservabilityConfig) -> None:
         """Initialize observability system."""
         self.config = config
         self.metrics_collector: MetricsCollector | None = None
@@ -383,7 +383,7 @@ class ObservabilitySystem:
         return self.metrics_collector
 
     @contextmanager
-    def trace_span(self, name: str, **attributes):
+    def trace_span(self, name: str, **attributes: Any) -> Generator[Any, None, None]:
         """Create a tracing span context manager."""
         if not self.tracer:
             yield None
@@ -401,26 +401,28 @@ class ObservabilitySystem:
                 raise
 
     @contextmanager
-    def correlation_context(self, correlation_id: str = None, request_id: str = None, user_id: str = None):
+    def correlation_context(self, correlation_id: str | None = None, request_id: str | None = None, user_id: str | None = None) -> Generator[None, None, None]:
         """Set correlation context for current thread."""
-        old_correlation = correlation_context.get_correlation_id()
-        old_request = correlation_context.get_request_id()
-        old_user = correlation_context.get_user_id()
+        # Use global correlation_context instance to avoid shadowing
+        global_context = correlation_context
+        old_correlation = global_context.get_correlation_id()
+        old_request = global_context.get_request_id()
+        old_user = global_context.get_user_id()
 
         try:
             if correlation_id:
-                correlation_context.set_correlation_id(correlation_id)
+                global_context.set_correlation_id(correlation_id)
             if request_id:
-                correlation_context.set_request_id(request_id)
+                global_context.set_request_id(request_id)
             if user_id:
-                correlation_context.set_user_id(user_id)
+                global_context.set_user_id(user_id)
 
             yield
         finally:
             # Restore previous context
-            correlation_context.set_correlation_id(old_correlation)
-            correlation_context.set_request_id(old_request)
-            correlation_context.set_user_id(old_user)
+            global_context.set_correlation_id(old_correlation)
+            global_context.set_request_id(old_request)
+            global_context.set_user_id(old_user)
 
 
 # Global observability system instance
@@ -429,7 +431,7 @@ _observability_system: ObservabilitySystem | None = None
 
 def configure_observability(config: ObservabilityConfig | None = None) -> ObservabilitySystem:
     """Configure global observability system."""
-    global _observability_system
+    global _observability_system  # noqa: PLW0603
 
     if config is None:
         # Auto-configure based on environment
@@ -477,14 +479,14 @@ def get_observability_system() -> ObservabilitySystem:
 
 
 # Convenience decorators for common observability patterns
-def observe_performance(operation_name: str = None):
+def observe_performance(operation_name: str | None = None) -> Callable:
     """Decorator to observe function performance."""
 
     def decorator(func: Callable) -> Callable:
         name = operation_name or f"{func.__module__}.{func.__name__}"
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             logger = get_logger(func.__module__)
             metrics = get_metrics()
             system = get_observability_system()
@@ -493,11 +495,11 @@ def observe_performance(operation_name: str = None):
 
             with system.trace_span(name, function=func.__name__):
                 try:
-                    logger.debug(f"Starting {name}", operation=name, args_count=len(args))
+                    logger.debug("Starting %s", name, operation=name, args_count=len(args))
                     result = func(*args, **kwargs)
 
                     duration = time.time() - start_time
-                    logger.info(f"Completed {name}", operation=name, duration=duration, success=True)
+                    logger.info("Completed %s", name, operation=name, duration=duration, success=True)
 
                     if metrics:
                         metrics.request_duration.labels(method="function", endpoint=name).observe(duration)
@@ -506,7 +508,7 @@ def observe_performance(operation_name: str = None):
 
                 except Exception as e:
                     duration = time.time() - start_time
-                    logger.error(f"Failed {name}", operation=name, duration=duration, error=str(e), success=False)
+                    logger.error("Failed %s", name, operation=name, duration=duration, error=str(e), success=False)
 
                     if metrics:
                         metrics.record_error(error_type=type(e).__name__)
@@ -518,12 +520,12 @@ def observe_performance(operation_name: str = None):
     return decorator
 
 
-def log_security_event(event_type: str, severity: str = "info", **details):
+def log_security_event(event_type: str, severity: str = "info", **details: Any) -> None:
     """Log a security event with metrics."""
     logger = get_logger("security")
     metrics = get_metrics()
 
-    logger.info(f"Security event: {event_type}", event_type=event_type, severity=severity, **details)
+    logger.info("Security event: %s", event_type, event_type=event_type, severity=severity, **details)
 
     if metrics:
         metrics.record_security_event(event_type, severity)
@@ -533,7 +535,7 @@ def log_security_event(event_type: str, severity: str = "info", **details):
 class CompatibilityHandler(logging.Handler):
     """Handler that redirects standard logging to unified system."""
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """Emit log record through unified system."""
         try:
             logger = get_logger(record.name)
@@ -580,7 +582,7 @@ class CompatibilityHandler(logging.Handler):
             self.handleError(record)
 
 
-def install_compatibility_handler():
+def install_compatibility_handler() -> None:
     """Install compatibility handler for existing logging calls."""
     handler = CompatibilityHandler()
 
@@ -599,6 +601,7 @@ try:
     # Only install if we're not in a test environment
     if "pytest" not in sys.modules:
         install_compatibility_handler()
-except Exception:
+except Exception as e:
     # Ignore errors during compatibility installation
-    pass
+    # This is intentional for graceful degradation
+    _ = e
