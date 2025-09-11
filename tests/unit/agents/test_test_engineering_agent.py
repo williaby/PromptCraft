@@ -4,8 +4,8 @@ Tests the test engineering agent functionality including test generation,
 analysis, and debugging capabilities using minimal mocking.
 """
 
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pytest

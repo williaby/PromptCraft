@@ -16,9 +16,9 @@ Coverage targets:
 
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+import pytest
 
 from src.api.dynamic_loading_endpoints import (
     DemoRunRequest,
