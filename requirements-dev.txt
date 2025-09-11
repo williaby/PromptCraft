@@ -3872,3 +3872,5 @@ zope-interface==7.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:e204937f67b28d2dca73ca936d3039a144a081fc47a07598d44854ea2a106239 \
     --hash=sha256:eb23f58a446a7f09db85eda09521a498e109f137b85fb278edb2e34841055398 \
     --hash=sha256:f6dd02ec01f4468da0f234da9d9c8545c5412fef80bc590cc51d8dd084138a89
+types-psutil
+pandas-stubs

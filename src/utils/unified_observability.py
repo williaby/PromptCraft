@@ -45,7 +45,6 @@ try:
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
     OPENTELEMETRY_AVAILABLE = False
-    trace = None
 
 try:
     from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
@@ -53,7 +52,6 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    Counter = Histogram = Gauge = CollectorRegistry = None
 
 try:
     from fastapi import Request
@@ -61,7 +59,6 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
-    Request = None
 
 
 class LogLevel(Enum):
@@ -166,11 +163,17 @@ class MetricsCollector:
 
         # Request metrics
         self.request_count = Counter(
-            "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"], registry=self.registry,
+            "http_requests_total",
+            "Total HTTP requests",
+            ["method", "endpoint", "status_code"],
+            registry=self.registry,
         )
 
         self.request_duration = Histogram(
-            "http_request_duration_seconds", "HTTP request duration", ["method", "endpoint"], registry=self.registry,
+            "http_request_duration_seconds",
+            "HTTP request duration",
+            ["method", "endpoint"],
+            registry=self.registry,
         )
 
         # Application metrics
@@ -178,12 +181,18 @@ class MetricsCollector:
 
         # Error metrics
         self.error_count = Counter(
-            "application_errors_total", "Total application errors", ["error_type", "severity"], registry=self.registry,
+            "application_errors_total",
+            "Total application errors",
+            ["error_type", "severity"],
+            registry=self.registry,
         )
 
         # Security metrics
         self.security_events = Counter(
-            "security_events_total", "Security events", ["event_type", "severity"], registry=self.registry,
+            "security_events_total",
+            "Security events",
+            ["event_type", "severity"],
+            registry=self.registry,
         )
 
     def record_request(self, method: str, endpoint: str, status_code: int, duration: float) -> None:
@@ -401,28 +410,33 @@ class ObservabilitySystem:
                 raise
 
     @contextmanager
-    def correlation_context(self, correlation_id: str | None = None, request_id: str | None = None, user_id: str | None = None) -> Generator[None, None, None]:
+    def correlation_context(
+        self,
+        correlation_id: str | None = None,
+        request_id: str | None = None,
+        user_id: str | None = None,
+    ) -> Generator[None, None, None]:
         """Set correlation context for current thread."""
-        # Use global correlation_context instance to avoid shadowing
-        global_context = correlation_context
-        old_correlation = global_context.get_correlation_id()
-        old_request = global_context.get_request_id()
-        old_user = global_context.get_user_id()
+        # Use instance correlation context
+        ctx = self.correlation_context
+        old_correlation = ctx.get_correlation_id()
+        old_request = ctx.get_request_id()
+        old_user = ctx.get_user_id()
 
         try:
             if correlation_id:
-                global_context.set_correlation_id(correlation_id)
+                ctx.set_correlation_id(correlation_id)
             if request_id:
-                global_context.set_request_id(request_id)
+                ctx.set_request_id(request_id)
             if user_id:
-                global_context.set_user_id(user_id)
+                ctx.set_user_id(user_id)
 
             yield
         finally:
             # Restore previous context
-            global_context.set_correlation_id(old_correlation)
-            global_context.set_request_id(old_request)
-            global_context.set_user_id(old_user)
+            ctx.set_correlation_id(old_correlation or "")
+            ctx.set_request_id(old_request or "")
+            ctx.set_user_id(old_user or "")
 
 
 # Global observability system instance

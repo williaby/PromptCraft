@@ -10,14 +10,18 @@ import os
 import sys
 
 from src.utils.unified_observability import (
+    OPENTELEMETRY_AVAILABLE,
+    PROMETHEUS_AVAILABLE,
     LogLevel,
     ObservabilityConfig,
+    ObservabilitySystem,
+    _observability_system,
     configure_observability,
     install_compatibility_handler,
 )
 
 
-def initialize_observability() -> None:
+def initialize_observability() -> ObservabilitySystem:
     """Initialize the observability system with environment-appropriate configuration."""
 
     # Determine environment
@@ -93,7 +97,6 @@ def initialize_observability() -> None:
 
 def get_observability_status() -> dict:
     """Get current observability system status."""
-    from src.utils.unified_observability import OPENTELEMETRY_AVAILABLE, PROMETHEUS_AVAILABLE, _observability_system
 
     if _observability_system is None:
         return {"initialized": False, "error": "Observability system not initialized"}
@@ -125,24 +128,25 @@ if __name__ != "__main__" and "pytest" not in sys.modules:
         import logging
 
         logging.basicConfig(level=logging.INFO)
-        logging.getLogger(__name__).error(f"Failed to initialize observability system: {e}")
+        logging.getLogger(__name__).error("Failed to initialize observability system: %s", e)
 
 
 if __name__ == "__main__":
     # Command-line tool for testing observability initialization
     import json
+    import logging
 
-    print("Initializing observability system...")
+    logging.info("Initializing observability system...")
     system = initialize_observability()
 
-    print("\nObservability system status:")
+    logging.info("Observability system status:")
     status = get_observability_status()
-    print(json.dumps(status, indent=2))
+    logging.info(json.dumps(status, indent=2))
 
-    print("\nTesting unified logger...")
+    logging.info("Testing unified logger...")
     logger = system.get_logger("test")
     logger.info("Test info message", test_key="test_value", number=42)
     logger.warning("Test warning message", warning_type="test")
     logger.error("Test error message", error_code="TEST_ERROR")
 
-    print("\nObservability system test completed successfully!")
+    logging.info("Observability system test completed successfully!")

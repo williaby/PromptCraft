@@ -17,7 +17,7 @@ from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry  # type: ignore
+from requests.packages.urllib3.util.retry import Retry  # type: ignore[import-untyped]
 
 from .encryption import EncryptionError, GPGError, load_encrypted_env
 
@@ -244,7 +244,7 @@ class GenericSecretsManager:
                 # Look for the secret with PROMPTCRAFT_ prefix
                 full_key = f"PROMPTCRAFT_{secret_name.upper()}"
                 if full_key in env_vars:
-                    return env_vars[full_key]
+                    return str(env_vars[full_key])
 
             except Exception as e:
                 self.logger.debug("Could not load env file '%s': %s", env_file, e)
@@ -311,7 +311,7 @@ class GenericSecretsManager:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         return {
-            name: str(result) if not isinstance(result, Exception) and result is not None else None
+            name: str(result) if not isinstance(result, BaseException) and result is not None else None
             for name, result in zip(secret_names, results, strict=True)
         }
 

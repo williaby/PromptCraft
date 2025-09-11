@@ -364,7 +364,9 @@ class TestEdgeCasesAndIntegration:
             run_contract_tests.install_dependencies()
             
             # Assert - The function uses its own __file__, not the test's __file__
-            mock_path.assert_called_with("/home/byron/dev/PromptCraft/tests/contract/run_contract_tests.py")
+            # Use relative path for CI compatibility
+            expected_path = str(Path(__file__).parent.parent / "contract" / "run_contract_tests.py")
+            mock_path.assert_called_with(expected_path)
             mock_subprocess_run.assert_called_once_with(
                 ["poetry", "install"], 
                 check=True, 
