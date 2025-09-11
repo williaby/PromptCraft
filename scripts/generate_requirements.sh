@@ -2,8 +2,8 @@
 
 ##: name = generate_requirements.sh
 ##: description = Generates requirements.txt and requirements-dev.txt from poetry.lock with hash verification for security.
-##: usage = ./scripts/generate_requirements.sh [--without-hashes]
-##: behavior = Uses poetry export to regenerate requirements files with cryptographic hashes by default.
+##: usage = ./scripts/generate_requirements.sh [--with-hashes]
+##: behavior = Uses poetry export to regenerate requirements files without hashes by default for CI compatibility.
 
 set -e
 
@@ -35,12 +35,13 @@ echo "✅ Poetry environment validated"
 echo ""
 
 # Parse command line arguments
-WITHOUT_HASHES=""
-if [[ "$1" == "--without-hashes" ]]; then
-    WITHOUT_HASHES="--without-hashes"
-    echo "🔓 Generating requirements files WITHOUT hashes (compatibility mode)"
-else
+# Default to without hashes to prevent symlink issues in CI
+WITHOUT_HASHES="--without-hashes"
+if [[ "$1" == "--with-hashes" ]]; then
+    WITHOUT_HASHES=""
     echo "🔐 Generating requirements files WITH hashes (secure mode)"
+else
+    echo "🔓 Generating requirements files WITHOUT hashes (compatibility mode)"
 fi
 
 # Backup existing files for rollback capability
