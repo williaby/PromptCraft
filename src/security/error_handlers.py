@@ -169,7 +169,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
         request=request,
         error=exc,
         status_code=exc.status_code,
-        detail=exc.detail if isinstance(exc.detail, str) else "HTTP error",
+        detail=exc.detail if isinstance(exc.detail, str) else str(exc.detail),
     )
 
 
@@ -201,7 +201,7 @@ async def starlette_http_exception_handler(
         request=request,
         error=exc,
         status_code=exc.status_code,
-        detail=exc.detail if isinstance(exc.detail, str) else "HTTP error",
+        detail=exc.detail if isinstance(exc.detail, str) else str(exc.detail),
     )
 
 
@@ -440,29 +440,29 @@ def create_auth_aware_http_exception(
         ... )
     """
     # Route common auth errors through AuthExceptionHandler
-    if status_code == 401:
+    if status_code == status.HTTP_401_UNAUTHORIZED:
         return AuthExceptionHandler.handle_authentication_error(
             detail=detail,
             log_message=log_message or detail,
             user_identifier=user_identifier,
         )
-    if status_code == 403:
+    if status_code == status.HTTP_403_FORBIDDEN:
         return AuthExceptionHandler.handle_permission_error(
             permission_name="access",
             user_identifier=user_identifier,
             detail=detail,
         )
-    if status_code == 422:
+    if status_code == status.HTTP_422_UNPROCESSABLE_ENTITY:
         return AuthExceptionHandler.handle_validation_error(
             detail,
             field_name="request_data",
         )
-    if status_code == 429:
+    if status_code == status.HTTP_429_TOO_MANY_REQUESTS:
         return AuthExceptionHandler.handle_rate_limit_error(
             detail=detail,
             client_identifier=user_identifier,
         )
-    if status_code == 503:
+    if status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
         return AuthExceptionHandler.handle_service_unavailable(
             service_name="application",
             detail=detail,

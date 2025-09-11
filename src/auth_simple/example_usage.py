@@ -177,26 +177,27 @@ async def forbidden_handler(request: Request, _exc: Any) -> JSONResponse:
 
 
 # Development utilities
-if config_manager.config.dev_mode:
+# Always register the endpoint but check dev_mode at runtime for proper test compatibility
 
-    @app.get("/dev/simulate-cloudflare-user")
-    async def simulate_cloudflare_user(email: str = "dev@example.com") -> dict[str, Any]:
-        """Development endpoint to simulate Cloudflare user headers."""
-        # Runtime check for dev_mode to handle production scenarios
-        from . import get_config_manager  # Import inside function to get patched version  # noqa: PLC0415
 
-        current_config_manager = get_config_manager()
-        if not current_config_manager.config.dev_mode:
-            raise HTTPException(status_code=404, detail="Development endpoint not available in production")
+@app.get("/dev/simulate-cloudflare-user")
+async def simulate_cloudflare_user(email: str = "dev@example.com") -> dict[str, Any]:
+    """Development endpoint to simulate Cloudflare user headers."""
+    # Runtime check for dev_mode to handle production scenarios
+    from . import get_config_manager  # Import inside function to get patched version  # noqa: PLC0415
 
-        mock_headers = current_config_manager.get_mock_headers()
-        mock_headers["cf-access-authenticated-user-email"] = email
+    current_config_manager = get_config_manager()
+    if not current_config_manager.config.dev_mode:
+        raise HTTPException(status_code=404, detail="Development endpoint not available in production")
 
-        return {
-            "dev_mode": True,
-            "simulated_headers": mock_headers,
-            "instructions": "Use these headers in your requests for testing",
-        }
+    mock_headers = current_config_manager.get_mock_headers()
+    mock_headers["cf-access-authenticated-user-email"] = email
+
+    return {
+        "dev_mode": True,
+        "simulated_headers": mock_headers,
+        "instructions": "Use these headers in your requests for testing",
+    }
 
 
 # Application startup

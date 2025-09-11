@@ -324,7 +324,7 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
             # Format error message as expected by tests
             error_message = str(detail)
 
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from e
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_message) from e
     except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Configuration health check failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error with expose_error=True for detailed error
