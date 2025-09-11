@@ -216,7 +216,7 @@ def _load_vault_secrets() -> dict[str, Any]:
     except Exception as e:
         # Log warning but don't fail - allow fallback to encrypted files
         logger = logging.getLogger(__name__)
-        logger.warning("Failed to load secrets from HashiCorp Vault: %s", e)
+        logger.warning("Failed to load secrets from HashiCorp Vault: %s", str(e))
 
     return env_vars
 

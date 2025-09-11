@@ -102,6 +102,8 @@ pytest-mock = ">=3.12.0"
 pytest-timeout = ">=2.2.0"
 pytest-xdist = ">=3.5.0"
 pytest-rerunfailures = ">=12.0"
+playwright = "^1.40.0"
+pytest-playwright = "^0.4.3"
 hypothesis = ">=6.98.9"
 faker = ">=37.0.0"
 black = "24.10.0"
@@ -126,6 +128,7 @@ types-cachetools = "^6.1.0.20250717"
 isort = "^6.0.1"
 pytest-docker = "^3.2.3"
 testcontainers = {extras = ["postgres"], version = "^4.12.0"}
+types-requests = "^2.32.4.20250809"
 
 [tool.poetry.group.azure.dependencies]
 
