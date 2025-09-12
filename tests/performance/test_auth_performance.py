@@ -16,10 +16,6 @@ Tests verify:
 - Graceful degradation scenarios
 """
 
-# ruff: noqa: S105
-
-# Performance tests for authentication systems - database mocking handled via pytest fixtures
-
 import asyncio
 from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta, timezone
@@ -42,6 +38,11 @@ from src.auth.service_token_manager import ServiceTokenManager
 from src.database import DatabaseManager, get_database_manager
 from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
+
+
+# ruff: noqa: S105
+
+# Performance tests for authentication systems - database mocking handled via pytest fixtures
 
 
 # Comprehensive Database Mocking for CI Performance Tests

@@ -20,7 +20,6 @@ from src.agents.registry import AgentRegistry
 
 
 # Coverage hook functionality integrated directly to avoid plugin conflicts
-
 # Global variable to track which test types were executed
 executed_test_types: set[str] = set()
 

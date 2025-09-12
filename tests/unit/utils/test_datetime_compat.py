@@ -2,8 +2,6 @@
 Test datetime compatibility module for Python version consistency.
 """
 
-# ruff: noqa: DTZ001  # Tests need to create naive datetimes intentionally
-
 from datetime import datetime, timedelta, timezone
 import time
 import warnings
@@ -11,6 +9,7 @@ import warnings
 import pytest
 
 from src.utils.datetime_compat import (
+    # ruff: noqa: DTZ001  # Tests need to create naive datetimes intentionally
     UTC,
     MockDatetime,
     assert_datetime_aware,

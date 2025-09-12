@@ -9,8 +9,6 @@ This module tests the complete integration of:
 - Error handling and graceful degradation
 """
 
-# ruff: noqa: S106
-
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -31,6 +29,9 @@ from src.auth.models import AuthenticatedUser, ServiceTokenCreate, ServiceTokenR
 from src.database import DatabaseManager
 from src.database.models import ServiceToken, UserSession
 from src.utils.datetime_compat import UTC
+
+
+# ruff: noqa: S106
 
 
 @pytest.mark.integration

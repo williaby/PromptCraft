@@ -12,8 +12,8 @@ import subprocess  # nosec B404  # Required for testing subprocess functionality
 import sys
 from unittest.mock import MagicMock, patch
 
-# Import the module under test
 from pytest_plugins.coverage_hook_plugin import (
+    # Import the module under test
     pytest_configure,
     pytest_runtest_makereport,
     pytest_sessionfinish,

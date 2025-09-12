@@ -6,7 +6,6 @@ Validates modular architecture, security improvements, and backward compatibilit
 import json
 from pathlib import Path
 
-# Add the scripts directory to the path for imports
 import sys
 import tempfile
 from unittest.mock import Mock, patch
@@ -14,6 +13,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 
+# Add the scripts directory to the path for imports
 # Get absolute path to scripts directory from this test file
 # From tests/unit/scripts/ -> ../../../ -> project_root/scripts/
 scripts_path = str(Path(__file__).parent / ".." / ".." / ".." / "scripts")

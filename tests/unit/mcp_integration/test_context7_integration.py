@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Comprehensive tests for Context7 MCP integration functionality.
 
@@ -21,6 +18,7 @@ from src.mcp_integration.context7_integration import (
 from src.mcp_integration.message_router import MCPMessageRouter
 from src.mcp_integration.protocol_handler import MCPProtocolError, MCPStandardErrors
 from src.mcp_integration.tool_router import MCPToolRouter, ToolExecutionResult
+from src.utils.datetime_compat import utc_now
 
 
 class TestContext7Document:

@@ -9,8 +9,6 @@ Tests cover:
 - Error handling in integrated scenarios
 """
 
-# ruff: noqa: S105, S106
-
 import asyncio
 from datetime import datetime, timedelta
 import hashlib
@@ -24,6 +22,9 @@ from src.automation.token_rotation_scheduler import TokenRotationScheduler
 from src.database.models import AuthenticationEvent
 from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
+
+
+# ruff: noqa: S105, S106
 
 
 @pytest.fixture

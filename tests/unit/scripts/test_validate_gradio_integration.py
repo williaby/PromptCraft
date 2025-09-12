@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-# Import the validation script functions
 from scripts.validate_gradio_integration import (
+    # Import the validation script functions
     main,
     validate_export_utils,
     validate_journey1_implementation,

@@ -15,19 +15,19 @@ from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
 
-# Import auth fixtures
 from tests.fixtures.auth_fixtures import *  # noqa: F403
 
-# Import database fixtures
 from tests.fixtures.database import *  # noqa: F403
 
-# Import external service mocks
 from tests.fixtures.external_service_mocks import *  # noqa: F403
 
-# Import security service mocks
 from tests.fixtures.security_service_mocks import *  # noqa: F403
 
 
+# Import auth fixtures
+# Import database fixtures
+# Import external service mocks
+# Import security service mocks
 def pytest_runtest_setup(item):
     """Set coverage context based on test path to match codecov flags."""
     # Use environment variable approach for coverage context

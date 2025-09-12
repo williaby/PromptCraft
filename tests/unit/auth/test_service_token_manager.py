@@ -9,8 +9,6 @@ Tests cover:
 - Error handling and edge cases
 """
 
-# ruff: noqa: S105, S106
-
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,6 +16,9 @@ import pytest
 
 from src.auth.service_token_manager import ServiceTokenManager
 from src.utils.time_utils import utc_now
+
+
+# ruff: noqa: S105, S106
 
 
 class TestServiceTokenManager:

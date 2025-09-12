@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-# Import the actual vector store classes to get coverage
 from src.core.vector_store import (
+    # Import the actual vector store classes to get coverage
     AbstractVectorStore,
     BatchOperationResult,
     ConnectionStatus,
