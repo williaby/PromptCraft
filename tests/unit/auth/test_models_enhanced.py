@@ -215,7 +215,7 @@ class TestSecurityEventBaseValidators:
         ]
 
         for ip in invalid_addresses:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="value is not a valid IPv4 or IPv6 address"):
                 SecurityEventBase(
                     event_type=SecurityEventType.LOGIN_FAILED,
                     severity=SecurityEventSeverity.CRITICAL,

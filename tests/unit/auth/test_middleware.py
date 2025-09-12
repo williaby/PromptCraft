@@ -1364,10 +1364,8 @@ class TestHelperFunctions:
         request = Mock()
         request.state = Mock(spec=[])
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match="Authentication required"):
             require_authentication(request)
-
-        assert "Authentication required" in str(exc_info.value)
 
     def test_require_role_success(self):
         """Test require_role with correct role."""
@@ -1386,20 +1384,16 @@ class TestHelperFunctions:
         mock_user.role.value = "user"
         request.state.authenticated_user = mock_user
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match="Role 'admin' required"):
             require_role(request, "admin")
-
-        assert "Role 'admin' required" in str(exc_info.value)
 
     def test_require_role_no_user(self):
         """Test require_role without authenticated user."""
         request = Mock()
         request.state = Mock(spec=[])
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match="Authentication required"):
             require_role(request, "admin")
-
-        assert "Authentication required" in str(exc_info.value)
 
 
 class TestAuthenticationIntegration:

@@ -470,7 +470,7 @@ class TestEmailWhitelistValidatorTiers:
         )
 
         # These should fail because users aren't in whitelist
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="not authorized"):
             validator.get_user_tier("user@admin.company.com")
 
         # Add domains to whitelist

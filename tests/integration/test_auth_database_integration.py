@@ -474,12 +474,10 @@ class TestAuthDatabaseErrorHandling:
 
     async def test_user_has_permission_database_unavailable(self):
         """Test user_has_permission graceful degradation when database is unavailable."""
-        # Mock database connection failure
-        with pytest.raises(Exception):
-            # This should handle database errors gracefully
-            result = await user_has_permission("test@example.com", "users:read")
-            # Should return False on database errors for security
-            assert result is False
+        # Mock database connection failure - function should gracefully return False
+        result = await user_has_permission("test@example.com", "users:read")
+        # Should return False on database errors for security
+        assert result is False
 
     async def test_permission_check_with_corrupted_data(self, test_db_session: AsyncSession):
         """Test permission checks with corrupted or inconsistent database state."""

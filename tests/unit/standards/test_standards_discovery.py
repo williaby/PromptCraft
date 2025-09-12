@@ -109,14 +109,16 @@ class TestStandardsDiscoverySystem:
 
     def test_get_available_standards_empty_cache(self, discovery_system):
         """Test getting available standards when cache is empty."""
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
-                discovery_system._standards_cache = {}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh,
+        ):
+            discovery_system._standards_cache = {}
 
-                standards = discovery_system.get_available_standards()
+            standards = discovery_system.get_available_standards()
 
-                assert standards == []
-                mock_refresh.assert_called_once()
+            assert standards == []
+            mock_refresh.assert_called_once()
 
     def test_get_available_standards_with_cache(self, discovery_system):
         """Test getting available standards when cache has standards."""

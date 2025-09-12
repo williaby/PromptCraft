@@ -206,10 +206,10 @@ class TestDynamicLoadingModels:
         QueryOptimizationRequest(query="x" * 2000, user_id="u" * 100)  # Maximum
 
         # Invalid lengths
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at least 1 character"):
             QueryOptimizationRequest(query="")  # Empty query
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at most 2000 characters"):
             QueryOptimizationRequest(query="x" * 2001)  # Too long query
 
     def test_user_command_request_validation(self):
@@ -228,7 +228,7 @@ class TestDynamicLoadingModels:
         UserCommandRequest(command="/x")  # Minimum
         UserCommandRequest(command="/" + "x" * 199)  # Maximum
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at most 200 characters"):
             UserCommandRequest(command="/x" * 201)  # Too long
 
     def test_demo_run_request_scenario_validation(self):
