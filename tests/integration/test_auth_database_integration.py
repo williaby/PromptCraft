@@ -172,7 +172,6 @@ class TestAuthDatabaseIntegration:
                 )
 
         # Don't commit - let the transaction rollback handle cleanup
-        # await test_db_session.commit()
 
         return {
             "permissions": {p.name: p for p in permissions},
@@ -502,7 +501,6 @@ class TestAuthDatabaseErrorHandling:
             ),
         )
         # Don't commit - let the transaction rollback handle cleanup
-        # await test_db_session.commit()
 
         # Should handle this gracefully
         result = await user_has_permission("corrupt@example.com", "users:read", session=test_db_session)

@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 
-def json_to_claude_command(name, config):
+def json_to_claude_command(name: str, config: dict) -> str:
     """Convert a JSON MCP server config to a claude mcp add command"""
 
     # Base command
@@ -45,7 +45,7 @@ def json_to_claude_command(name, config):
     return " ".join(cmd_parts)
 
 
-def process_config_file(filepath):
+def process_config_file(filepath: Path) -> list[tuple[str, str]]:
     """Process a single MCP configuration file"""
     with Path(filepath).open() as f:
         data = json.load(f)

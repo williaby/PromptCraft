@@ -9,8 +9,10 @@ from logging.config import fileConfig
 import os
 from pathlib import Path
 import sys
+from typing import Any, Optional
 
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import Connection
 
 from alembic import context
 
@@ -114,7 +116,7 @@ def get_database_url() -> str:
     )
 
 
-def configure_migration_context(connection=None, url=None) -> None:
+def configure_migration_context(connection: Connection | None = None, url: str | None = None) -> None:
     """Configure the migration context with common settings.
 
     Args:
@@ -140,7 +142,7 @@ def configure_migration_context(connection=None, url=None) -> None:
     context.configure(**context_config)
 
 
-def include_object(object, name, type_, reflected, compare_to) -> bool:
+def include_object(object: Any, name: str | None, type_: str, reflected: bool, compare_to: Any | None) -> bool:
     """Determine whether to include an object in migration autogeneration.
 
     This function allows fine-grained control over what database objects

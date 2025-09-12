@@ -1334,9 +1334,6 @@ implementation:
             except Exception:
                 agent_def = None
             # TODO: Enable assertions once mocking is fixed
-            # assert agent_def.id == "integration-test-agent"
-            # assert agent_def.runtime.model == "haiku"
-            # assert agent_def.implementation.type == "markdown"
 
             # Test resource checking - skip if agent_def is None
             if agent_def:

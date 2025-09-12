@@ -13,7 +13,7 @@ Coverage targets:
 - Progressive rollout and feature flag management
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -121,7 +121,7 @@ class TestEnumsAndModels:
         """Test UserCharacteristics to_dict method."""
         characteristics = UserCharacteristics(
             user_id="test_user",
-            registration_date=datetime(2024, 1, 15),
+            registration_date=datetime(2024, 1, 15, tzinfo=UTC),
             usage_frequency="high",
             feature_usage_pattern="advanced",
             error_rate=0.5,

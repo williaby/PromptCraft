@@ -390,7 +390,7 @@ class TestMCPConnectionManager:
         """Test getting circuit breaker status."""
         manager = MCPConnectionManager(fallback_config)
         manager.failure_count = 2
-        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0)
+        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0, tzinfo=UTC)
 
         status = manager.get_circuit_breaker_status()
 

@@ -7,7 +7,7 @@ startup/shutdown events, and development utilities.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, UTC
 import json
 import sys
 from unittest.mock import Mock, patch
@@ -1079,7 +1079,7 @@ class TestModuleCoverageEdgeCases:
         from src.auth_simple import example_usage
         from src.auth_simple.middleware import require_auth
 
-        test_datetime = datetime(2023, 1, 15, 10, 30, 45)
+        test_datetime = datetime(2023, 1, 15, 10, 30, 45, tzinfo=UTC)
         mock_user = {
             "email": "datetime@test.com",
             "role": "user",
