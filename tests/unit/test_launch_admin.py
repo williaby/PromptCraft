@@ -1,8 +1,8 @@
 """Tests for launch_admin.py."""
 
 import os
-import sys
 from pathlib import Path
+import sys
 from unittest import mock
 
 

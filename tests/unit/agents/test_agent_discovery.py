@@ -549,16 +549,17 @@ max_remote_agents: 10
         with (
             patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
             patch.object(discovery_system, "validate_dependencies", return_value=False),
+            pytest.raises(AgentNotFoundError),
         ):
-
-            with pytest.raises(AgentNotFoundError):
-                discovery_system.discover_agent("test-agent")
+            discovery_system.discover_agent("test-agent")
 
     def test_discover_agent_not_found(self, discovery_system):
         """Test discovering agent that doesn't exist."""
-        with patch.object(discovery_system, "_search_by_strategy", return_value=None):
-            with pytest.raises(AgentNotFoundError):
-                discovery_system.discover_agent("nonexistent-agent")
+        with (
+            patch.object(discovery_system, "_search_by_strategy", return_value=None),
+            pytest.raises(AgentNotFoundError),
+        ):
+            discovery_system.discover_agent("nonexistent-agent")
 
     def test_search_by_strategy_user_override(self, discovery_system):
         """Test search by user_override strategy."""

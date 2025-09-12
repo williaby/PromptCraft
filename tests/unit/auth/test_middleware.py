@@ -78,8 +78,8 @@ class TestServiceTokenUser:
     def test_service_token_user_no_permissions(self):
         """Test ServiceTokenUser with no permissions."""
         user = ServiceTokenUser(
-            token_id="service-000",
-            token_name="no_perms_token",
+            token_id="service-000",  # noqa: S106
+            token_name="no_perms_token",  # noqa: S106
             metadata={},
             usage_count=0,
         )  # Test token parameters
@@ -720,8 +720,8 @@ class TestAuthenticationMiddleware:
         token = "sk_service_token_123"  # noqa: S105  # Test token value
 
         mock_service_user = ServiceTokenUser(
-            token_id="123",
-            token_name="test_service",
+            token_id="123",  # noqa: S106
+            token_name="test_service",  # noqa: S106
             metadata={},
             usage_count=0,
         )  # Test token parameters
