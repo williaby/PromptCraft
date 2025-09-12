@@ -637,7 +637,7 @@ class TestConfigLoaderErrors:
                 "PROMPTCRAFT_SESSION_TIMEOUT": "30",  # Too low, should fail validation
             },
         ):
-            with pytest.raises(Exception):  # Should raise validation error
+            with pytest.raises(Exception, match="validation error"):  # Should raise validation error
                 ConfigLoader.load_from_env()
 
     @patch("src.auth_simple.config.logger")
@@ -656,7 +656,7 @@ class TestConfigLoaderErrors:
         """Test that config loading errors are logged."""
         mock_auth_config.side_effect = ValueError("Invalid config")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Invalid config"):
             ConfigLoader.load_from_env()
 
         mock_logger.error.assert_called_with(

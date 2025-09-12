@@ -109,7 +109,7 @@ invalid: yaml: content: [unclosed
         mock_path.read_text.return_value = "# Content"
         mock_path.stat.side_effect = PermissionError("Access denied")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Access denied"):
             discovery_system._create_standard_definition("stat-error", mock_path, "project")
 
     def test_discover_standard_search_exceptions_fallback(self, discovery_system):

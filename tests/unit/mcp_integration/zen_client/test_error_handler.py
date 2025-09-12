@@ -512,7 +512,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delays increase exponentially
@@ -531,7 +531,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delay is capped
@@ -550,7 +550,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Test error")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Test error"):
             await handler.with_retry(mock_operation, "custom_operation")
 
         # The operation name should be used in logging (implicitly tested via no exceptions)

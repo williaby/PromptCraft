@@ -579,10 +579,8 @@ class TestMessageTypeDetection:
 
     def test_get_message_type_unknown(self, handler):
         """Test getting unknown message type."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="Unknown message type"):
             handler.get_message_type("invalid")
-
-        assert "Unknown message type" in str(exc_info.value)
 
 
 class TestMCPMethodRegistry:

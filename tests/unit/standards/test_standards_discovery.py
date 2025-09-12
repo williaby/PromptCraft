@@ -415,7 +415,7 @@ invalid: yaml: content
         mock_path = Mock(spec=Path)
         mock_path.read_text.side_effect = OSError("File read error")
 
-        with pytest.raises(IOError):
+        with pytest.raises(IOError, match="File read error"):
             discovery_system._create_standard_definition("test-standard", mock_path, "project")
 
     def test_refresh_standards_cache(self, discovery_system):
