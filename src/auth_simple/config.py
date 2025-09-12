@@ -330,7 +330,7 @@ class ConfigManager:
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)
 
         return CloudflareAccessMiddleware(
-            app=None,  # Will be set by FastAPI
+            app=None,  # type: ignore[arg-type]  # Will be set by FastAPI
             whitelist_validator=validator,
             session_manager=session_manager,
             public_paths=self.config.public_paths,

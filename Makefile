@@ -1,4 +1,4 @@
-.PHONY: help install setup test test-fast test-pre-commit test-pr test-performance test-smoke test-with-timing lint format security clean
+.PHONY: help install setup test test-fast test-pre-commit test-pr test-performance test-smoke test-with-timing lint mypy-ci mypy-ci-clear format security clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -49,6 +49,12 @@ lint: ## Run linting checks
 	$(POETRY) run mypy src
 	markdownlint **/*.md
 	yamllint .
+
+mypy-ci: ## Run MyPy with CI-matching settings (fresh cache)
+	$(PYTHON) scripts/mypy_ci_match.py
+
+mypy-ci-clear: ## Run MyPy with CI-matching settings (clear cache first)
+	$(PYTHON) scripts/mypy_ci_match.py --clear-cache
 
 format: ## Format code
 	$(POETRY) run black .

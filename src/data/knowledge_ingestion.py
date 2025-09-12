@@ -16,13 +16,18 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 
 
+from typing import Any
+
+# SentenceTransformer (optional dependency)
+SentenceTransformer: Any = None
+SENTENCE_TRANSFORMERS_AVAILABLE = False
+
 try:
     from sentence_transformers import SentenceTransformer
 
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
-    SentenceTransformer = type(None)
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    pass
 
 from ..config.qdrant_settings import qdrant_settings
 from ..core.vector_stores.collection_manager import QdrantCollectionManager

@@ -421,9 +421,9 @@ class MCPConnectionBridge(LoggerMixin):
 
             # Close client connections
             if active_conn.client and hasattr(active_conn.client, "close"):
-                await active_conn.client.close()  # type: ignore[misc]
+                await active_conn.client.close()
             elif active_conn.client and hasattr(active_conn.client, "disconnect"):
-                await active_conn.client.disconnect()  # type: ignore[misc]
+                await active_conn.client.disconnect()
 
         except Exception as e:
             self.logger.error(f"Error during cleanup of {server_name}: {e}")

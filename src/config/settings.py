@@ -74,7 +74,7 @@ def _detect_environment() -> str:
     """
     # First check environment variable
     env_from_var = os.getenv("PROMPTCRAFT_ENVIRONMENT")
-    if env_from_var and env_from_var in ("dev", "staging", "prod"):
+    if env_from_var and env_from_var in ("dev", "staging", "prod", "test"):
         return env_from_var
 
     # Then check .env file if it exists
@@ -88,7 +88,7 @@ def _detect_environment() -> str:
                     line = raw_line.strip()
                     if line.startswith("PROMPTCRAFT_ENVIRONMENT="):
                         env_value = line.split("=", 1)[1].strip().strip("\"'")
-                        if env_value in ("dev", "staging", "prod"):
+                        if env_value in ("dev", "staging", "prod", "test"):
                             return env_value
         except (OSError, UnicodeDecodeError):
             # If we can't read the file, fall back to default
@@ -326,9 +326,9 @@ class ApplicationSettings(BaseSettings):
         description="Application version string",
     )
 
-    environment: Literal["dev", "staging", "prod"] = Field(
+    environment: Literal["dev", "staging", "prod", "test"] = Field(
         default="dev",
-        description="Deployment environment (dev, staging, prod)",
+        description="Deployment environment (dev, staging, prod, test)",
     )
 
     debug: bool = Field(
@@ -996,11 +996,11 @@ class ApplicationSettings(BaseSettings):
         Raises:
             ValueError: If environment-specific requirements are not met.
         """
-        if v not in ("dev", "staging", "prod"):
+        if v not in ("dev", "staging", "prod", "test"):
             raise ValueError(
                 f"Invalid environment: '{v}'. "
                 "Valid environments: 'dev' (development), 'staging' (pre-production), "
-                "'prod' (production).",
+                "'prod' (production), 'test' (testing).",
             )
 
         # Note: Cross-field validation (like checking debug mode based on environment)

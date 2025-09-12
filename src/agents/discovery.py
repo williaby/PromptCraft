@@ -181,7 +181,9 @@ class AgentResourceManager:
             "active_agents": len(self.active_agents),
             "total_memory_mb": total_memory,
             "memory_utilization": (
-                total_memory / int(self.resource_limits["total_memory"]) if self.resource_limits["total_memory"] else 0
+                total_memory / int(str(self.resource_limits["total_memory"]))
+                if self.resource_limits["total_memory"]
+                else 0
             ),
             "model_usage": model_usage,
             "agent_details": dict(self.active_agents),
@@ -485,7 +487,7 @@ class DynamicAgentLoader(LoggerMixin):
             module = importlib.import_module(agent_def.implementation.module)
             agent_class = getattr(module, agent_def.implementation.class_name)
             instance = agent_class(config)
-            return instance  # type: ignore[return-value]
+            return instance  # type: ignore[no-any-return]
         except Exception as e:
             raise ImportError(f"Failed to load Python agent {agent_def.id}: {e}")
 

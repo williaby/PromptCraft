@@ -149,10 +149,7 @@ def create_limiter() -> Limiter:
         default_limits=["100 per minute"],  # Default fallback limit for unspecified endpoints
     )
     # Store the URI as a custom attribute for potential future use
-    limiter._storage_uri = storage_uri  # type: ignore[attr-defined]
-
-    # Store storage_uri for testing/debugging purposes
-    limiter.storage_uri = storage_uri
+    limiter._storage_uri = storage_uri
 
     logger.info(
         "Rate limiter configured with storage: %s (Environment: %s)",

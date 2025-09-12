@@ -23,10 +23,14 @@ from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 
+from typing import Any
+
+# Docker client (optional dependency)
+docker: Any = None
 try:
-    import docker  # type: ignore[import-untyped]
+    import docker
 except ImportError:
-    docker: Any = None
+    pass
 
 
 logger = logging.getLogger(__name__)

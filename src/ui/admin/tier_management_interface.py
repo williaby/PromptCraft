@@ -8,6 +8,7 @@ import logging
 
 import gradio as gr
 import pandas as pd
+from typing import Any
 
 from src.admin.user_tier_manager import UserTierManager
 
@@ -201,23 +202,31 @@ class TierManagementInterface:
                 changes_log=changes_log,
             )
 
-        return admin_tab
+        return admin_tab  # type: ignore[no-any-return]
 
-    def _setup_event_handlers(self, **components) -> None:
+    def _setup_event_handlers(self, **components: Any) -> None:
         """Setup event handlers for all components."""
 
         # Assign tier button
         components["assign_button"].click(
             fn=self._assign_tier,
             inputs=[components["user_email_input"], components["tier_selection"]],
-            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
+            outputs=[
+                components["assignment_result"],
+                components["stats_display"],
+                *self._get_table_outputs(components),
+            ],
         )
 
         # Remove tier button
         components["remove_button"].click(
             fn=self._remove_tier,
             inputs=[components["user_email_input"]],
-            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
+            outputs=[
+                components["assignment_result"],
+                components["stats_display"],
+                *self._get_table_outputs(components),
+            ],
         )
 
         # Bulk assign button
@@ -264,7 +273,7 @@ class TierManagementInterface:
         # Refresh log button
         components["refresh_log_button"].click(fn=self._refresh_changes_log, outputs=[components["changes_log"]])
 
-    def _get_table_outputs(self, components) -> list[gr.Component]:
+    def _get_table_outputs(self, components: dict[str, Any]) -> list[gr.Component]:
         """Get list of table components for outputs."""
         return [
             components["admin_users_df"],
@@ -406,7 +415,7 @@ class TierManagementInterface:
             """
 
             # Organize search results by tier
-            search_results = {"admin": [], "full": [], "limited": [], "unassigned": []}
+            search_results: dict[str, list[Any]] = {"admin": [], "full": [], "limited": [], "unassigned": []}
             for user in matching_users:
                 search_results[user["current_tier"]].append(user)
 
