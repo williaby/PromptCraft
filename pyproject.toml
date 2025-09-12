@@ -37,7 +37,6 @@ documentation = "https://github.com/williaby/PromptCraft/wiki"
 [tool.poetry]
 
 package-mode = false
-requires-poetry = ">=1.8.0"
 
 [tool.poetry.dependencies]
 
