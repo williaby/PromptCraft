@@ -99,7 +99,7 @@ class Journey2IntelligentSearch(LoggerMixin):
 
                     if result["success"]:
                         # Convert zen result to Response format
-                        from src.mcp_integration.mcp_client import Response
+                        from src.mcp_integration.mcp_client import Response  # noqa: PLC0415  # Avoid circular imports
 
                         response = Response(
                             agent_id="zen_routing",
@@ -153,7 +153,7 @@ class Journey2IntelligentSearch(LoggerMixin):
             await self.openrouter_client.connect()
 
             # Execute the workflow step
-            from src.mcp_integration.mcp_client import WorkflowStep
+            from src.mcp_integration.mcp_client import WorkflowStep  # noqa: PLC0415  # Avoid circular imports
 
             step = WorkflowStep(
                 step_id=workflow_step["step_id"],

@@ -50,7 +50,7 @@ class MarkdownAgent(BaseAgent):
         self.context = context
         self.model = model
 
-        self.logger.info(f"Initialized MarkdownAgent {agent_id} with model {model}")
+        self.logger.info("Initialized MarkdownAgent %s with model %s", agent_id, model)
 
     async def execute(self, agent_input: AgentInput) -> AgentOutput:
         """Execute the agent using the BaseAgent interface.
@@ -87,7 +87,7 @@ class MarkdownAgent(BaseAgent):
             )
 
         except Exception as e:
-            self.logger.error(f"Error in execute method: {e}")
+            self.logger.error("Error in execute method: %s", e)
             return self._create_output(
                 content=f"Agent execution failed: {e!s}",
                 metadata={"success": False, "error": str(e)},
@@ -123,7 +123,7 @@ class MarkdownAgent(BaseAgent):
             }
 
         except Exception as e:
-            self.logger.error(f"Error processing input: {e}")
+            self.logger.error("Error processing input: %s", e)
             return {
                 "success": False,
                 "error": str(e),
@@ -176,7 +176,7 @@ class MarkdownAgent(BaseAgent):
         # 3. Manage rate limiting and retries
         # 4. Apply any agent-specific processing
 
-        self.logger.info(f"Calling model {self.model} with prompt length: {len(prompt)}")
+        self.logger.info("Calling model %s with prompt length: %s", self.model, len(prompt))
 
         # Placeholder response - in real implementation this would call actual models
         return f"[MarkdownAgent {self.agent_id}] Processed with {self.model}: {input_data.get('task', input_data.get('content', 'unknown task'))}"

@@ -220,13 +220,9 @@ class CloudflareAccessMiddleware:
 
             return response  # type: ignore[no-any-return]
         except HTTPException as e:
-            from starlette.responses import JSONResponse
-
             return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
         except Exception as e:
             logger.error("Middleware error: %s", e)
-            from starlette.responses import JSONResponse
-
             return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

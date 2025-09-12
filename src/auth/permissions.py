@@ -74,9 +74,15 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
             # Fallback to SQLAlchemy queries for SQLite compatibility
             logger.debug(f"PostgreSQL function unavailable, using SQLAlchemy fallback: {pg_error}")
 
-            from sqlalchemy import select
+            from sqlalchemy import select  # noqa: PLC0415  # Fallback import only when PostgreSQL unavailable
 
-            from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
+            from src.database.models import (  # noqa: PLC0415  # Fallback import only when PostgreSQL unavailable
+                Permission,
+                Role,
+                UserSession,
+                role_permissions_table,
+                user_roles_table,
+            )
 
             # Check if user exists and get their roles with permissions
             # This mimics the PostgreSQL function behavior using pure SQLAlchemy
@@ -93,7 +99,7 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
             )
 
             if session is None:
-                raise RuntimeError("Database session not available")
+                raise RuntimeError("Database session not available") from None
             result = await session.execute(user_permissions_query)
             user_permissions = [row[0] for row in result.fetchall()]
 

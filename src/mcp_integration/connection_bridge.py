@@ -76,10 +76,7 @@ class NPXProcessManager(LoggerMixin):
 
         try:
             # Extract package name from connection URL
-            if connection.url.startswith("npx://"):
-                package_name = connection.url[6:]  # Remove "npx://" prefix
-            else:
-                package_name = config["package"]
+            package_name = connection.url[6:] if connection.url.startswith("npx://") else config["package"]
 
             # Start NPX process with stdio transport
             cmd = ["npx", package_name]

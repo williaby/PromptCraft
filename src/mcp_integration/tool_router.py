@@ -9,6 +9,7 @@ import asyncio
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+import time
 from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin
@@ -89,9 +90,8 @@ class PromptCraftToolExecutor:
             for i, line in enumerate(lines):
                 line_num = start_line + i
                 # Truncate very long lines
-                if len(line) > 2000:
-                    line = line[:2000] + "..."
-                formatted_lines.append(f"{line_num:4d}→{line}")
+                truncated_line = line[:2000] + "..." if len(line) > 2000 else line
+                formatted_lines.append(f"{line_num:4d}→{truncated_line}")
 
             content = "\n".join(formatted_lines)
 
@@ -240,7 +240,8 @@ class PromptCraftToolExecutor:
 
                         if len(search_results) >= limit:
                             break
-                    except Exception:
+                    except Exception as e:
+                        self.logger.debug("File processing error during search: %s", e)
                         continue
 
                 if len(search_results) >= limit:
@@ -370,7 +371,6 @@ class MCPToolRouter(LoggerMixin):
         Returns:
             Tool execution result
         """
-        import time
 
         start_time = time.time()
 

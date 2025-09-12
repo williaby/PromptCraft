@@ -8,6 +8,7 @@ monitoring and business intelligence.
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 from typing import Any
 
@@ -161,8 +162,6 @@ class MetricsCollector:
 
             # Add query analysis if text provided
             if query_text:
-                import hashlib
-
                 event.query_text_hash = hashlib.sha256(query_text.encode()).hexdigest()[:16]
                 event.query_length = len(query_text.split())
 
@@ -308,7 +307,9 @@ class MetricsCollector:
                 self._event_buffer.clear()
 
                 # Flush without holding lock
-                asyncio.create_task(self._flush_events_batch(events_to_flush))
+                _task = asyncio.create_task(
+                    self._flush_events_batch(events_to_flush),
+                )  # Store reference to prevent garbage collection
 
     async def _flush_events_batch(self, events: list[MetricEvent]) -> None:
         """Flush a batch of events to storage."""
@@ -352,7 +353,7 @@ _global_collector: MetricsCollector | None = None
 
 async def get_metrics_collector() -> MetricsCollector:
     """Get or create the global metrics collector instance."""
-    global _global_collector
+    global _global_collector  # noqa: PLW0603  # Singleton pattern requires global state
 
     if _global_collector is None:
         _global_collector = MetricsCollector()
@@ -363,7 +364,7 @@ async def get_metrics_collector() -> MetricsCollector:
 
 async def shutdown_metrics_collector() -> None:
     """Shutdown the global metrics collector."""
-    global _global_collector
+    global _global_collector  # noqa: PLW0603  # Singleton pattern requires global state
 
     if _global_collector is not None:
         await _global_collector.stop()

@@ -384,7 +384,7 @@ class AgentDiscoverySystem(LoggerMixin):
     def _check_qdrant_availability(self, endpoint: str) -> bool:
         """Check if Qdrant is available."""
         try:
-            import requests
+            import requests  # noqa: PLC0415  # Optional dependency, only import when needed
 
             response = requests.get(f"http://{endpoint}/health", timeout=5)
             return response.status_code == 200
@@ -453,12 +453,12 @@ class DynamicAgentLoader(LoggerMixin):
             return agent
 
         except Exception as e:
-            self.logger.error(f"Failed to load agent {agent_id}: {e}")
+            self.logger.error("Failed to load agent %s: %s", agent_id, e)
             raise
 
     def load_markdown_agent(self, agent_def: AgentDefinition, config: dict[str, Any]) -> BaseAgent:
         """Create agent from markdown definition."""
-        from .markdown_agent import MarkdownAgent
+        from .markdown_agent import MarkdownAgent  # noqa: PLC0415  # Avoid circular import
 
         # Load context files
         context_content = self.load_context(agent_def.context)
@@ -487,7 +487,7 @@ class DynamicAgentLoader(LoggerMixin):
             # Type cast to satisfy MyPy - we expect agent classes to return BaseAgent instances
             return agent_class(config)  # type: ignore[no-any-return]
         except Exception as e:
-            raise ImportError(f"Failed to load Python agent {agent_def.id}: {e}")
+            raise ImportError(f"Failed to load Python agent {agent_def.id}: {e}") from e
 
     def load_remote_agent(self, agent_def: AgentDefinition, config: dict[str, Any]) -> BaseAgent:
         """Load remote agent via API."""
@@ -517,7 +517,7 @@ class DynamicAgentLoader(LoggerMixin):
         if agent_id in self.loaded_instances:
             del self.loaded_instances[agent_id]
             self.resource_manager.release_resources(agent_id)
-            self.logger.info(f"Unloaded agent {agent_id}")
+            self.logger.info("Unloaded agent %s", agent_id)
 
 
 class AgentNotFoundError(Exception):

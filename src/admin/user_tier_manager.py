@@ -106,7 +106,7 @@ class UserTierManager:
 
         except Exception as e:
             logger.error("Error getting all users: %s", e)
-            raise UserTierManagerError(f"Failed to retrieve users: {e}")
+            raise UserTierManagerError(f"Failed to retrieve users: {e}") from e
 
     def assign_user_tier(self, email: str, tier: str, admin_email: str) -> tuple[bool, str]:
         """Assign a user to a specific tier.

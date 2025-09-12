@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import logging
 import os
+import time
 from typing import Any
 
 from src.utils.datetime_compat import utc_now
@@ -83,8 +84,6 @@ class Context7Client(LoggerMixin):
         Returns:
             Search results from Context7
         """
-        import time
-
         start_time = time.time()
 
         if not await self.is_connected():
@@ -147,7 +146,7 @@ class Context7Client(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Context7 search failed: {e!s}",
-            )
+            ) from e
 
     async def get_document(self, document_id: str) -> Context7Document | None:
         """Retrieve a specific document by ID.
@@ -189,7 +188,7 @@ class Context7Client(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Failed to get document: {e!s}",
-            )
+            ) from e
 
     async def get_collections(self) -> list[dict[str, Any]]:
         """Get available document collections.
@@ -292,8 +291,6 @@ class Context7Integration(LoggerMixin):
             "total_results": 0,
             "search_time": 0.0,
         }
-
-        import time
 
         start_time = time.time()
 

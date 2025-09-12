@@ -6,7 +6,7 @@ Project-level (.claude/standards/) -> User-level (~/.claude/standards/) fallback
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 import logging
 from pathlib import Path
 from typing import Any
@@ -154,7 +154,7 @@ class StandardsDiscoverySystem(LoggerMixin):
             # Check if file has YAML frontmatter
             if content.startswith("---\n"):
                 try:
-                    import yaml
+                    import yaml  # noqa: PLC0415  # Optional/conditional import
 
                     frontmatter_end = content.find("\n---\n", 4)
                     if frontmatter_end != -1:
@@ -173,7 +173,7 @@ class StandardsDiscoverySystem(LoggerMixin):
                 source_type=source_type,
                 content=content,
                 version=version,
-                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime),
+                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC),
             )
         except Exception as e:
             self.logger.error("Failed to create standard definition for %s: %s", standard_id, e)

@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 import hashlib
 import logging
 import time
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -42,10 +43,10 @@ except ImportError:
     class JWTValidator:
         """Compatibility placeholder for JWTValidator."""
 
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             """Initialize placeholder JWTValidator."""
 
-        def validate_token(self, token, **kwargs) -> None:
+        def validate_token(self, token: str, **kwargs: Any) -> None:
             """Placeholder token validation that returns None."""
             return
 

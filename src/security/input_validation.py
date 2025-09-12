@@ -289,9 +289,7 @@ class BaseSecureModel(BaseModel):
         validate_assignment = True
         # Use enum values
         use_enum_values = True
-        # Strict validation - let individual fields control whitespace stripping
-        # str_strip_whitespace = True  # Controlled per field
-        # anystr_strip_whitespace = True  # Deprecated in Pydantic v2
+        # Strict validation - individual fields control whitespace stripping
 
 
 class SecureTextInput(BaseSecureModel):

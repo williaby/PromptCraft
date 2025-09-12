@@ -324,7 +324,10 @@ class ConfigManager:
     def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
         # Lazy import to avoid circular dependencies
-        from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
+        from .middleware import (  # noqa: PLC0415  # Avoid circular import
+            CloudflareAccessMiddleware,
+            SimpleSessionManager,
+        )
 
         validator = self.create_whitelist_validator()
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)

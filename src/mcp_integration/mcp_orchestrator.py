@@ -7,6 +7,7 @@ connection, protocol communication, and tool execution into a single interface.
 
 from dataclasses import dataclass
 import logging
+import time
 from typing import Any
 
 from src.utils.datetime_compat import to_iso, utc_now
@@ -90,7 +91,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             True if connection successful
         """
-        import time
 
         start_time = time.time()
 
@@ -156,7 +156,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Workflow execution result
         """
-        import time
 
         start_time = time.time()
         workflow_steps: list[str] = []
@@ -198,7 +197,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Search workflow result
         """
-        import time
 
         start_time = time.time()
 
@@ -261,7 +259,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Tool execution workflow result
         """
-        import time
 
         start_time = time.time()
 
@@ -325,7 +322,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Context7 search workflow result
         """
-        import time
 
         start_time = time.time()
 

@@ -7,7 +7,7 @@ Provides native MCP protocol support alongside existing HTTP integration.
 """
 
 import logging
-import os
+from pathlib import Path
 import time
 from typing import Any
 
@@ -155,7 +155,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         except Exception as e:
             self.error_count += 1
             logger.error(f"MCP stdio health check failed: {e}")
-            raise MCPError(f"Health check failed: {e}")
+            raise MCPError(f"Health check failed: {e}") from e
 
     async def get_model_recommendations(self, prompt: str) -> Any:
         """
@@ -183,7 +183,7 @@ class ZenStdioMCPClient(MCPClientInterface):
 
             if result and result.success:
                 # Convert zen result to our RoutingAnalysis format
-                from .models import ModelRecommendation, RoutingAnalysis
+                from .models import ModelRecommendation, RoutingAnalysis  # noqa: PLC0415  # Avoid circular imports
 
                 # Extract primary recommendation
                 if result.recommendations and "primary" in result.recommendations:
@@ -304,14 +304,14 @@ class ZenStdioMCPClient(MCPClientInterface):
         env_vars = {}
 
         # Load from zen server .env if available
-        zen_env_file = "/home/byron/dev/zen-mcp-server/.env"
-        if os.path.exists(zen_env_file):
+        zen_env_path = Path("/home/byron/dev/zen-mcp-server/.env")
+        if zen_env_path.exists():
             try:
-                with open(zen_env_file) as f:
+                with zen_env_path.open() as f:
                     for line in f:
-                        line = line.strip()
-                        if line and not line.startswith("#") and "=" in line:
-                            key, value = line.split("=", 1)
+                        stripped_line = line.strip()
+                        if stripped_line and not stripped_line.startswith("#") and "=" in stripped_line:
+                            key, value = stripped_line.split("=", 1)
                             env_vars[key.strip()] = value.strip()
             except Exception as e:
                 logger.warning(f"Could not load zen server .env: {e}")
@@ -400,7 +400,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         for step in workflow_steps:
             try:
                 # Create a simple response for each step
-                from .mcp_client import Response
+                from .mcp_client import Response  # noqa: PLC0415  # Avoid circular imports
 
                 response = Response(
                     agent_id=step.agent_id,
@@ -411,7 +411,7 @@ class ZenStdioMCPClient(MCPClientInterface):
                 )
                 responses.append(response)
             except Exception as e:
-                from .mcp_client import Response
+                from .mcp_client import Response  # noqa: PLC0415  # Avoid circular imports
 
                 response = Response(
                     agent_id=step.agent_id,

@@ -6,7 +6,7 @@ Project-level (.claude/scripts/) -> User-level (~/.claude/scripts/) fallback.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 import logging
 import os
 from pathlib import Path
@@ -78,7 +78,9 @@ class ScriptsDiscoverySystem(LoggerMixin):
         }
 
         self.logger.info(
-            f"Scripts discovery initialized - Project: {self.project_scripts_path}, User: {self.user_scripts_path}",
+            "Scripts discovery initialized - Project: %s, User: %s",
+            self.project_scripts_path,
+            self.user_scripts_path,
         )
 
     def get_available_scripts(self, refresh_cache: bool = False) -> list[str]:
@@ -137,7 +139,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 # Parse additional metadata from content
                 self._parse_script_metadata(script)
             except Exception as e:
-                self.logger.error(f"Failed to load content for {script_id}: {e}")
+                self.logger.error("Failed to load content for %s: %s", script_id, e)
                 return None
 
         return script.content
@@ -155,13 +157,13 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 script = search_func(script_id)
                 if script:
                     script.source_type = source_type
-                    self.logger.info(f"Found script '{script_id}' from {source_type} source")
+                    self.logger.info("Found script '%s' from %s source", script_id, source_type)
                     return script
             except Exception as e:
-                self.logger.warning(f"Error searching {source_type} scripts for {script_id}: {e}")
+                self.logger.warning("Error searching %s scripts for %s: %s", source_type, script_id, e)
                 continue
 
-        self.logger.warning(f"Script '{script_id}' not found in any source")
+        self.logger.warning("Script '%s' not found in any source", script_id)
         return None
 
     def search_scripts(self, query: str) -> list[ScriptDefinition]:
@@ -246,14 +248,14 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 description_found = False
 
                 for line in lines:
-                    line = line.strip()
-                    if line.startswith(("#", '"""', "'''")):
+                    stripped_line = line.strip()
+                    if stripped_line.startswith(("#", '"""', "'''")):
                         # Skip shebang lines
-                        if line.startswith("#!"):
+                        if stripped_line.startswith("#!"):
                             continue
 
                         # Extract comment content
-                        comment_text = line.lstrip("#\"'").strip()
+                        comment_text = stripped_line.lstrip("#\"'").strip()
                         if comment_text and not description_found and len(comment_text) > 10:
                             description = comment_text[:100] + ("..." if len(comment_text) > 100 else "")
                             description_found = True
@@ -265,7 +267,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                                 version = version_match[1].strip().strip("\"'")
 
             except Exception as e:
-                self.logger.debug(f"Failed to read content for metadata extraction: {e}")
+                self.logger.debug("Failed to read content for metadata extraction: %s", e)
 
             script_def = ScriptDefinition(
                 script_id=script_id,
@@ -278,7 +280,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 content=content,
                 version=version,
                 category=category,
-                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime),
+                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC),
             )
 
             # Parse additional metadata from content
@@ -288,7 +290,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
             return script_def
 
         except Exception as e:
-            self.logger.error(f"Failed to create script definition for {script_id}: {e}")
+            self.logger.error("Failed to create script definition for %s: %s", script_id, e)
             raise
 
     def _parse_script_metadata(self, script: ScriptDefinition) -> None:
@@ -311,18 +313,23 @@ class ScriptsDiscoverySystem(LoggerMixin):
         # Extract dependencies and parameters from comments
         in_header = True
         for i, line in enumerate(lines[:50]):  # Check first 50 lines
-            line = line.strip()
+            stripped_line = line.strip()
 
             # Stop looking once we hit actual code
-            if line and not line.startswith("#") and not line.startswith('"""') and not line.startswith("'''"):
+            if (
+                stripped_line
+                and not stripped_line.startswith("#")
+                and not stripped_line.startswith('"""')
+                and not stripped_line.startswith("'''")
+            ):
                 if i > 5:  # Allow some initial lines
                     in_header = False
                     break
 
-            if in_header and line:
+            if in_header and stripped_line:
                 # Look for dependencies
-                if "depends:" in line.lower() or "requires:" in line.lower():
-                    deps_part = line.split(":", 1)[1] if ":" in line else ""
+                if "depends:" in stripped_line.lower() or "requires:" in stripped_line.lower():
+                    deps_part = stripped_line.split(":", 1)[1] if ":" in stripped_line else ""
                     deps = [dep.strip() for dep in deps_part.replace(",", " ").split() if dep.strip()]
                     script.dependencies.extend(deps)
 
@@ -371,10 +378,10 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 script = self._create_script_definition(script_id, file_path, source_type)
                 self._scripts_cache[script_id] = script
             except Exception as e:
-                self.logger.warning(f"Failed to process script {script_id}: {e}")
+                self.logger.warning("Failed to process script %s: %s", script_id, e)
 
         self._cache_timestamp = utc_now()
-        self.logger.info(f"Refreshed scripts cache with {len(self._scripts_cache)} scripts")
+        self.logger.info("Refreshed scripts cache with %s scripts", len(self._scripts_cache))
 
     def _should_refresh_cache(self) -> bool:
         """Check if cache should be refreshed."""

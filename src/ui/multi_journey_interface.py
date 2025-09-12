@@ -248,7 +248,7 @@ class MultiJourneyInterface(LoggerMixin):
             # Create a simple development admin interface for local use
             self.admin_interface = self._create_dev_admin_interface()
 
-    def _create_dev_admin_interface(self):
+    def _create_dev_admin_interface(self) -> Any:
         """Create a simple development admin interface when auth fails."""
 
         class DevAdminInterface:
@@ -1415,8 +1415,8 @@ class MultiJourneyInterface(LoggerMixin):
                 file_sources = []
                 session_data = {"total_cost": 0.003, "request_count": 1, "avg_response_time": 1.2}
 
-                from datetime import datetime
-                import tempfile
+                from datetime import datetime  # noqa: PLC0415  # Only needed for export functionality
+                import tempfile  # noqa: PLC0415  # Only needed for export functionality
 
                 # Get the export content
                 export_content = export_utils.export_journey1_content(
@@ -1520,7 +1520,9 @@ class MultiJourneyInterface(LoggerMixin):
 
     def _create_journey2_interface(self) -> None:
         """Create Journey 2: Intelligent Search interface with zen routing."""
-        from src.ui.journeys.journey2_intelligent_search import Journey2IntelligentSearch
+        from src.ui.journeys.journey2_intelligent_search import (
+            Journey2IntelligentSearch,  # Avoid circular imports
+        )
 
         # Initialize Journey 2 processor
         journey2_processor = Journey2IntelligentSearch()
@@ -1657,7 +1659,7 @@ class MultiJourneyInterface(LoggerMixin):
                         )
 
                     # Import zen client for routing
-                    from src.mcp_integration.mcp_client import ZenMCPClient
+                    from src.mcp_integration.mcp_client import ZenMCPClient  # noqa: PLC0415  # Avoid circular imports
 
                     # Initialize zen client
                     zen_client = ZenMCPClient()
@@ -1676,9 +1678,9 @@ class MultiJourneyInterface(LoggerMixin):
                         selected_model = "openai/gpt-4o-mini"
 
                     # Execute through zen routing
-                    import asyncio
+                    import asyncio  # noqa: PLC0415  # Only needed for zen routing in this context
 
-                    async def execute_async():
+                    async def execute_async() -> dict[str, Any]:
                         try:
                             # Get routing recommendation first
                             routing_analysis = await zen_client.get_model_recommendations(prompt)

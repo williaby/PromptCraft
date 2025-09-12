@@ -60,7 +60,7 @@ from dataclasses import dataclass, field
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 import yaml
@@ -83,7 +83,7 @@ class UserTierFilter:
     """
 
     # Define which categories are available to each tier
-    TIER_CATEGORY_ACCESS = {
+    TIER_CATEGORY_ACCESS: ClassVar[dict[str, list[str]]] = {
         "admin": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
         "full": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
         "limited": ["free_general"],

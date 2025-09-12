@@ -9,11 +9,13 @@ import asyncio
 import contextlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import json
 import logging
 import os
 from pathlib import Path
 import socket
 import subprocess
+import tempfile
 from typing import Any
 
 from filelock import FileLock
@@ -167,7 +169,7 @@ class SmartMCPDiscovery(LoggerMixin):
             raise ResourceError(f"Insufficient resources for {server_name}")
 
         # 4. Deploy with lock to prevent races
-        lock_path = f"/tmp/.mcp-{server_name}.lock"
+        lock_path = Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock"
         try:
             with FileLock(lock_path, timeout=30):
                 # Double-check after acquiring lock
@@ -314,8 +316,6 @@ class SmartMCPDiscovery(LoggerMixin):
         package_json = Path("package.json")
         if package_json.exists():
             try:
-                import json
-
                 with open(package_json) as f:
                     pkg_data = json.load(f)
 
@@ -368,8 +368,8 @@ class SmartMCPDiscovery(LoggerMixin):
     async def check_lock_files(self, server_name: str) -> ServerConnection | None:
         """Check for lock files indicating running servers."""
         lock_patterns = [
-            f"/tmp/.mcp-{server_name}.lock",
-            f"/tmp/.{server_name}.lock",
+            Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock",
+            Path(tempfile.gettempdir()) / f".{server_name}.lock",
             Path.home() / f".{server_name}.lock",
         ]
 
@@ -479,7 +479,7 @@ class SmartMCPDiscovery(LoggerMixin):
                     url = f"http://localhost:{port}"
                     if self.verify_health(ServerConnection(url, "embedded", "starting", {}, utc_now())):
                         # Create lock file
-                        lock_file = Path(f"/tmp/.mcp-{server_name}.lock")
+                        lock_file = Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock"
                         lock_file.write_text(url)
 
                         return ServerConnection(

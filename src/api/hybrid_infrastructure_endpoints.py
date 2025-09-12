@@ -74,7 +74,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get hybrid infrastructure status: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve infrastructure status")
+            raise HTTPException(status_code=500, detail="Failed to retrieve infrastructure status") from e
 
     @app.get("/api/discovery/mcp-servers")
     async def get_mcp_servers_status(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -105,7 +105,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get MCP servers status: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve MCP status")
+            raise HTTPException(status_code=500, detail="Failed to retrieve MCP status") from e
 
     @app.post("/api/mcp-servers/{server_name}/connect")
     async def connect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -131,7 +131,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Error connecting to MCP server %s: %s", server_name, e)
-            raise HTTPException(status_code=500, detail=f"Failed to connect: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to connect: {e!s}") from e
 
     @app.delete("/api/mcp-servers/{server_name}/disconnect")
     async def disconnect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -153,7 +153,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Error disconnecting from MCP server %s: %s", server_name, e)
-            raise HTTPException(status_code=500, detail=f"Failed to disconnect: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to disconnect: {e!s}") from e
 
     @app.get("/api/mcp-servers/connections")
     async def get_mcp_connections(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -168,7 +168,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get MCP connections: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve connections")
+            raise HTTPException(status_code=500, detail="Failed to retrieve connections") from e
 
     @app.get("/api/mcp-servers/health")
     async def get_mcp_health(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -183,7 +183,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get MCP health: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve health status")
+            raise HTTPException(status_code=500, detail="Failed to retrieve health status") from e
 
     @app.post("/api/agents/{agent_id}/load")
     async def load_agent(agent_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -205,7 +205,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to load agent %s: %s", agent_id, e)
-            raise HTTPException(status_code=500, detail=f"Failed to load agent: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to load agent: {e!s}") from e
 
     @app.delete("/api/agents/{agent_id}/unload")
     async def unload_agent(agent_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -224,7 +224,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to unload agent %s: %s", agent_id, e)
-            raise HTTPException(status_code=500, detail=f"Failed to unload agent: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to unload agent: {e!s}") from e
 
     @app.get("/api/discovery/standards")
     async def get_available_standards(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -247,7 +247,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get available standards: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve standards")
+            raise HTTPException(status_code=500, detail="Failed to retrieve standards") from e
 
     @app.get("/api/discovery/standards/{standard_id}")
     async def get_standard_content(standard_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -277,7 +277,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get standard %s: %s", standard_id, e)
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve standard: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve standard: {e!s}") from e
 
     @app.post("/api/standards/validate")
     async def validate_project_standards(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -298,7 +298,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to validate project standards: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to validate standards compliance")
+            raise HTTPException(status_code=500, detail="Failed to validate standards compliance") from e
 
     @app.get("/api/discovery/commands")
     async def get_available_commands(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -320,7 +320,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get available commands: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve commands")
+            raise HTTPException(status_code=500, detail="Failed to retrieve commands") from e
 
     @app.get("/api/discovery/commands/{command_id}")
     async def get_command_content(command_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -353,7 +353,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get command %s: %s", command_id, e)
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve command: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve command: {e!s}") from e
 
     @app.get("/api/discovery/commands/category/{category}")
     async def get_commands_by_category(category: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -385,7 +385,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get commands for category %s: %s", category, e)
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve category commands: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve category commands: {e!s}") from e
 
     @app.get("/api/commands/search")
     async def search_commands(q: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -418,7 +418,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to search commands with query '%s': %s", q, e)
-            raise HTTPException(status_code=500, detail=f"Failed to search commands: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to search commands: {e!s}") from e
 
     @app.get("/api/discovery/scripts")
     async def get_available_scripts(request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -440,7 +440,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get available scripts: %s", e)
-            raise HTTPException(status_code=500, detail="Failed to retrieve scripts")
+            raise HTTPException(status_code=500, detail="Failed to retrieve scripts") from e
 
     @app.get("/api/discovery/scripts/{script_id}")
     async def get_script_content(script_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -475,7 +475,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get script %s: %s", script_id, e)
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve script: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve script: {e!s}") from e
 
     @app.get("/api/discovery/scripts/category/{category}")
     async def get_scripts_by_category(category: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
@@ -509,6 +509,6 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise
         except Exception as e:
             logger.error("Failed to get scripts for category %s: %s", category, e)
-            raise HTTPException(status_code=500, detail=f"Failed to retrieve category scripts: {e!s}")
+            raise HTTPException(status_code=500, detail=f"Failed to retrieve category scripts: {e!s}") from e
 
     logger.info("Hybrid infrastructure API routes registered")

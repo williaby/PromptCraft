@@ -348,14 +348,14 @@ class MockDatetime:
 
     def __enter__(self) -> "MockDatetime":
         """Start mocking datetime functions."""
-        global _mock_now_time
+        global _mock_now_time  # noqa: PLW0603  # Datetime mocking requires global state
         self.previous_mock_time = _mock_now_time
         _mock_now_time = self.mock_time
         return self
 
     def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: object) -> None:
         """Stop mocking datetime functions."""
-        global _mock_now_time
+        global _mock_now_time  # noqa: PLW0603  # Datetime mocking requires global state
         _mock_now_time = self.previous_mock_time
 
 

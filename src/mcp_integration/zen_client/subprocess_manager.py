@@ -204,7 +204,7 @@ class ZenMCPProcess:
             if self.process and self.process.stderr and self.process.stderr.readable():
                 # Non-blocking read of stderr
                 try:
-                    import select
+                    import select  # noqa: PLC0415  # Platform-specific import for Unix-like systems only
 
                     if self.process and self.process.stderr and select.select([self.process.stderr], [], [], 0)[0]:
                         error_output = self.process.stderr.read()

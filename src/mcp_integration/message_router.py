@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 from src.utils.datetime_compat import utc_now
@@ -165,7 +166,7 @@ class MCPMessageRouter(LoggerMixin):
                 self.servers[server_name] = server_info_obj
 
                 # Start background message handler for this server
-                asyncio.create_task(self._handle_server_messages(server_name, reader, writer))
+                _task = asyncio.create_task(self._handle_server_messages(server_name, reader, writer))  # Keep reference
 
                 # Query server capabilities
                 await self._query_server_capabilities(server_name, writer, reader)
@@ -495,8 +496,6 @@ class MCPMessageRouter(LoggerMixin):
 
         try:
             # This would connect to PromptCraft's Read tool
-            from pathlib import Path
-
             path = Path(file_path)
 
             if not path.exists():

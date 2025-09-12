@@ -6,7 +6,7 @@ Project-level (.claude/commands/) -> User-level (~/.claude/commands/) fallback.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 import logging
 from pathlib import Path
 import re
@@ -61,7 +61,9 @@ class CommandsDiscoverySystem(LoggerMixin):
         }
 
         self.logger.info(
-            f"Commands discovery initialized - Project: {self.project_commands_path}, User: {self.user_commands_path}",
+            "Commands discovery initialized - Project: %s, User: %s",
+            self.project_commands_path,
+            self.user_commands_path,
         )
 
     def get_available_commands(self, refresh_cache: bool = False) -> list[str]:
@@ -104,7 +106,7 @@ class CommandsDiscoverySystem(LoggerMixin):
             if command.source_type == "built-in":
                 # Built-in commands should have content defined when created
                 # If they don't, it's an error in the built-in command definition
-                self.logger.error(f"Built-in command {command_id} was created without content")
+                self.logger.error("Built-in command %s was created without content", command_id)
                 return None
 
             try:
@@ -112,7 +114,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                 # Parse additional metadata from content
                 self._parse_command_metadata(command)
             except Exception as e:
-                self.logger.error(f"Failed to load content for {command_id}: {e}")
+                self.logger.error("Failed to load content for %s: %s", command_id, e)
                 return None
 
         return command.content
@@ -130,13 +132,13 @@ class CommandsDiscoverySystem(LoggerMixin):
                 command = search_func(command_id)
                 if command:
                     command.source_type = source_type
-                    self.logger.info(f"Found command '{command_id}' from {source_type} source")
+                    self.logger.info("Found command '%s' from %s source", command_id, source_type)
                     return command
             except Exception as e:
-                self.logger.warning(f"Error searching {source_type} commands for {command_id}: {e}")
+                self.logger.warning("Error searching %s commands for %s: %s", source_type, command_id, e)
                 continue
 
-        self.logger.warning(f"Command '{command_id}' not found in any source")
+        self.logger.warning("Command '%s' not found in any source", command_id)
         return None
 
     def search_commands(self, query: str) -> list[CommandDefinition]:
@@ -220,7 +222,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                 # Parse YAML frontmatter if present
                 if content.startswith("---\n"):
                     try:
-                        import yaml
+                        import yaml  # noqa: PLC0415  # Optional/conditional import
 
                         frontmatter_end = content.find("\n---\n", 4)
                         if frontmatter_end != -1:
@@ -230,7 +232,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                             version = frontmatter.get("version", version)
                             category = frontmatter.get("category", category)
                     except Exception as e:
-                        self.logger.debug(f"Failed to parse frontmatter for {command_id}: {e}")
+                        self.logger.debug("Failed to parse frontmatter for %s: %s", command_id, e)
 
                 # Extract description from first heading or paragraph if no frontmatter
                 if description == f"{name} command":
@@ -240,23 +242,23 @@ class CommandsDiscoverySystem(LoggerMixin):
                     frontmatter_count = 0
 
                     for line in lines[:15]:  # Check first 15 lines
-                        line = line.strip()
+                        stripped_line = line.strip()
 
                         # Skip frontmatter section
                         if in_frontmatter:
-                            if line == "---":
+                            if stripped_line == "---":
                                 frontmatter_count += 1
                                 if frontmatter_count >= 2:  # Found closing ---
                                     in_frontmatter = False
                             continue
 
                         # Look for first meaningful content line
-                        if line and not line.startswith("#") and not line.startswith("---"):
-                            description = line[:100] + ("..." if len(line) > 100 else "")
+                        if stripped_line and not stripped_line.startswith("#") and not stripped_line.startswith("---"):
+                            description = stripped_line[:100] + ("..." if len(stripped_line) > 100 else "")
                             break
 
             except Exception as e:
-                self.logger.debug(f"Failed to read content for metadata extraction: {e}")
+                self.logger.debug("Failed to read content for metadata extraction: %s", e)
                 content = None
 
             command_def = CommandDefinition(
@@ -268,7 +270,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                 content=content,
                 version=version,
                 category=category,
-                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime),
+                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime, tz=UTC),
             )
 
             # Parse additional metadata from content
@@ -278,7 +280,7 @@ class CommandsDiscoverySystem(LoggerMixin):
             return command_def
 
         except Exception as e:
-            self.logger.error(f"Failed to create command definition for {command_id}: {e}")
+            self.logger.error("Failed to create command definition for %s: %s", command_id, e)
             raise
 
     def _parse_command_metadata(self, command: CommandDefinition) -> None:
@@ -354,7 +356,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                 self._commands_cache[command_id] = command
 
         self._cache_timestamp = utc_now()
-        self.logger.info(f"Refreshed commands cache with {len(self._commands_cache)} commands")
+        self.logger.info("Refreshed commands cache with %s commands", len(self._commands_cache))
 
     def _should_refresh_cache(self) -> bool:
         """Check if cache should be refreshed."""
