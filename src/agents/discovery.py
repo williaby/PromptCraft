@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Agent Discovery and Loading System
 
@@ -18,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 from .base_agent import BaseAgent
@@ -486,8 +484,7 @@ class DynamicAgentLoader(LoggerMixin):
         try:
             module = importlib.import_module(agent_def.implementation.module)
             agent_class = getattr(module, agent_def.implementation.class_name)
-            instance = agent_class(config)
-            return instance  # type: ignore[no-any-return]
+            return agent_class(config)
         except Exception as e:
             raise ImportError(f"Failed to load Python agent {agent_def.id}: {e}")
 

@@ -456,7 +456,7 @@ class TestScoringAndAggregation:
         """Test weighted score with different step scores."""
         # Set different scores for different steps
         scores = [60.0, 70.0, 80.0, 90.0, 85.0, 75.0]
-        for i, (step, result) in enumerate(self.step_results.items()):
+        for i, (_step, result) in enumerate(self.step_results.items()):
             result.score = scores[i]
 
         weighted_score = self.evaluator._calculate_weighted_score(self.step_results)
@@ -526,7 +526,7 @@ class TestCriticalIssuesAndRecommendations:
         """Test identification of low confidence issues."""
         # Create evaluation with multiple low-scoring steps
         step_results = {}
-        for i, step in enumerate(list(EvaluationStep)[:2]):  # First 2 steps with low scores
+        for _i, step in enumerate(list(EvaluationStep)[:2]):  # First 2 steps with low scores
             step_results[step] = EvaluationResult(
                 step=step,
                 score=35.0,
@@ -551,7 +551,7 @@ class TestCriticalIssuesAndRecommendations:
         """Test identification of low score issues."""
         # Create evaluation with multiple low-scoring steps
         step_results = {}
-        for i, step in enumerate(list(EvaluationStep)[:2]):  # First 2 steps with low scores
+        for _i, step in enumerate(list(EvaluationStep)[:2]):  # First 2 steps with low scores
             step_results[step] = EvaluationResult(step=step, score=30.0, confidence=80.0)  # Below 40.0 threshold
 
         evaluation = ComprehensiveEvaluation(
@@ -688,7 +688,7 @@ class TestErrorHandling:
     def test_evaluation_with_logging_errors(self):
         """Test evaluation continues even with logging errors."""
         evaluator = ANCHORQREvaluator()
-        
+
         # Mock the logger to raise an exception when called
         original_logger = evaluator.logger
         mock_logger = patch.object(evaluator, "logger")

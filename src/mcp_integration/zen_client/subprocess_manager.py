@@ -192,11 +192,11 @@ class ZenMCPProcess:
             # Check if process is responsive (basic check)
             if not self.process:
                 return False, "Process is not running"
-            
+
             poll_result = self.process.poll()
             if poll_result is not None:
                 return False, f"Process terminated with code {poll_result}"
-            
+
             if not self.is_running():
                 return False, "Process is not running"
 

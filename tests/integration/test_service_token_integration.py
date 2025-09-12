@@ -176,7 +176,7 @@ class TestServiceTokenIntegration:
                 assert len(token_value) == 67
 
                 # Verify token is in database
-                token_hash = hashlib.sha256(token_value.encode()).hexdigest()
+                hashlib.sha256(token_value.encode()).hexdigest()
 
                 # Verify token was stored correctly by checking the manager's internal state
                 # Since we're using mocks, we verify basic functionality instead of database queries
@@ -227,12 +227,12 @@ class TestServiceTokenIntegration:
                 # Test basic service token functionality with current implementation
                 try:
                     from src.auth.config import AuthenticationConfig
-                    
+
                     config = AuthenticationConfig(cloudflare_access_enabled=False)  # Disable for testing
-                    
+
                     # Use simpler middleware without JWT validation for now
                     middleware = AuthenticationMiddleware(MagicMock(), config=config)
-                    
+
                     # Mock the service token validation to focus on integration flow
                     with patch.object(middleware, "_validate_service_token") as mock_validate:
                         # Setup mock to return a ServiceTokenUser
@@ -242,16 +242,16 @@ class TestServiceTokenIntegration:
                             metadata={"permissions": ["api_read", "system_status"], "environment": "test"},
                         )
                         mock_validate.return_value = mock_user
-                        
+
                         # Test token validation flow
                         authenticated_user = await middleware._validate_service_token(mock_request, token_value)
-                        
+
                         assert isinstance(authenticated_user, ServiceTokenUser)
                         assert authenticated_user.token_name == "middleware-test-token"
                         assert authenticated_user.has_permission("api_read")
                         assert authenticated_user.has_permission("system_status")
                         assert not authenticated_user.has_permission("admin")
-                        
+
                 except ImportError as import_error:
                     pytest.skip(f"Required authentication modules not available: {import_error}")
 

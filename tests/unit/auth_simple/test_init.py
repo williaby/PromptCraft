@@ -349,14 +349,15 @@ class TestPackageInitialization:
             assert result["auth_mode"] == "cloudflare_simple"
 
     def test_config_summary_logging_failure(self):
-        """Test config summary logging when get_version_info fails.""" 
+        """Test config summary logging when get_version_info fails."""
         # Test the exception handling path directly
         with patch("src.auth_simple.logger") as mock_logger:
             # Simulate the exact scenario in the __init__.py code
             try:
                 # This will succeed normally
                 from src.auth_simple import get_version_info
-                config_info = get_version_info()
+
+                get_version_info()
                 # Force an exception to test the except block
                 raise Exception("Simulated config error")
             except Exception as e:
@@ -364,4 +365,7 @@ class TestPackageInitialization:
                 mock_logger.warning("Could not load configuration summary: %s", e)
 
             # Verify the warning was called
-            mock_logger.warning.assert_called_once_with("Could not load configuration summary: %s", mock_logger.warning.call_args[0][1])
+            mock_logger.warning.assert_called_once_with(
+                "Could not load configuration summary: %s",
+                mock_logger.warning.call_args[0][1],
+            )

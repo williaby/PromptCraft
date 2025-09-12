@@ -42,33 +42,33 @@ class TestLaunchAdmin:
 
     def test_main_handles_import_error(self):
         """Test that main() handles import errors gracefully."""
-        with mock.patch(
-            "src.ui.multi_journey_interface.MultiJourneyInterface",
-            side_effect=ImportError("Test import error"),
+        with (
+            mock.patch(
+                "src.ui.multi_journey_interface.MultiJourneyInterface",
+                side_effect=ImportError("Test import error"),
+            ),
+            mock.patch("builtins.print") as mock_print,
         ):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_handles_general_exception(self):
         """Test that main() handles general exceptions gracefully."""
-        with mock.patch(
-            "src.ui.multi_journey_interface.MultiJourneyInterface",
-            side_effect=RuntimeError("Test runtime error"),
+        with (
+            mock.patch(
+                "src.ui.multi_journey_interface.MultiJourneyInterface",
+                side_effect=RuntimeError("Test runtime error"),
+            ),
+            mock.patch("builtins.print") as mock_print,
         ):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_interface_creation_error(self):
         """Test that main() handles interface creation errors."""
@@ -109,7 +109,7 @@ class TestLaunchAdmin:
         try:
             launch_admin.__name__ = "__main__"
 
-            with mock.patch("launch_admin.main") as mock_main:
+            with mock.patch("launch_admin.main"):
                 # Simulate running the script
                 exec(compile(open("scripts/launch_admin.py").read(), "scripts/launch_admin.py", "exec"))
 

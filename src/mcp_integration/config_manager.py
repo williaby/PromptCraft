@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import to_iso, utc_now
-
-
 """MCP Configuration Manager for server configuration and validation."""
 
 import json
@@ -12,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from src.utils.datetime_compat import to_iso, utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 

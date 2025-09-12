@@ -362,7 +362,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 
 def setup_security_middleware(
-    app: Any, csp_policy: str | None = None, slow_request_threshold: float | None = None,
+    app: Any,
+    csp_policy: str | None = None,
+    slow_request_threshold: float | None = None,
 ) -> None:
     """Configure security middleware for the FastAPI application.
 

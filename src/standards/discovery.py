@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Standards Discovery System
 
@@ -14,6 +11,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 

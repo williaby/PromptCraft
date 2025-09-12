@@ -1173,7 +1173,7 @@ class TestRateLimiterFunctions:
         mock_limiter = Mock()
         mock_limiter_class.return_value = mock_limiter
 
-        limiter = create_rate_limiter(mock_config)
+        create_rate_limiter(mock_config)
 
         # Test key function with authenticated user
         call_args = mock_limiter_class.call_args

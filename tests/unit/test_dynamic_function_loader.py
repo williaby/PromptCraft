@@ -167,7 +167,7 @@ class TestDynamicFunctionLoader:
         mock_config.fallback_configs = []
         mock_config.loading = {"enabled": True, "timeout": 30}
         config_manager.get_config.return_value = mock_config
-        
+
         loader = DynamicFunctionLoader(config_manager)
         yield loader
 

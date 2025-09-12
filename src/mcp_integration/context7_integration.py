@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Context7 MCP Server Integration
 
@@ -14,6 +11,7 @@ import logging
 import os
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 from .message_router import MCPMessageRouter
@@ -70,7 +68,10 @@ class Context7Client(LoggerMixin):
         return self.server_name in self.message_router.list_connected_servers()
 
     async def search_documents(
-        self, query: str, limit: int | None = None, filters: dict[str, Any] | None = None,
+        self,
+        query: str,
+        limit: int | None = None,
+        filters: dict[str, Any] | None = None,
     ) -> Context7SearchResult:
         """Search documents using Context7.
 

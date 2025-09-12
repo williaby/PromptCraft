@@ -85,7 +85,7 @@ class TestCreateExperimentRequest:
             CreateExperimentRequest(
                 name="Test",
                 description="Test",
-                rollout_steps=[i for i in range(1, 12)],  # 11 steps
+                rollout_steps=list(range(1, 12)),  # 11 steps
             )
 
 
@@ -626,7 +626,7 @@ class TestEndpointPerformance:
         import time
 
         start_time = time.time()
-        response = self.client.get("/api/v1/ab-testing/experiments")
+        self.client.get("/api/v1/ab-testing/experiments")
         end_time = time.time()
 
         # Skip complex dependency mocking issue for now

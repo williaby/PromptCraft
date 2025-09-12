@@ -15,8 +15,9 @@ from typing import Any
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 
+from ..config.qdrant_settings import qdrant_settings
+from ..core.vector_stores.collection_manager import QdrantCollectionManager
 
-from typing import Any
 
 # SentenceTransformer (optional dependency)
 SentenceTransformer: Any = None
@@ -28,9 +29,6 @@ try:
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     pass
-
-from ..config.qdrant_settings import qdrant_settings
-from ..core.vector_stores.collection_manager import QdrantCollectionManager
 
 
 class KnowledgeIngestionPipeline:

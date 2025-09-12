@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 MCP Message Router and Dispatcher
 
@@ -15,6 +12,7 @@ import json
 import logging
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 from .connection_bridge import ActiveConnection
@@ -112,7 +110,10 @@ class MCPMessageRouter(LoggerMixin):
             return False
 
     async def _initialize_server(
-        self, server_name: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self,
+        server_name: str,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
     ) -> bool:
         """Initialize communication with an MCP server.
 
@@ -179,7 +180,11 @@ class MCPMessageRouter(LoggerMixin):
             return False
 
     async def _send_request_and_wait(
-        self, writer: asyncio.StreamWriter, reader: asyncio.StreamReader, request: MCPRequest, timeout: float = 10.0
+        self,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader,
+        request: MCPRequest,
+        timeout: float = 10.0,
     ) -> Any | None:
         """Send a request and wait for response.
 
@@ -234,7 +239,10 @@ class MCPMessageRouter(LoggerMixin):
         return None
 
     async def _query_server_capabilities(
-        self, server_name: str, writer: asyncio.StreamWriter, reader: asyncio.StreamReader
+        self,
+        server_name: str,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader,
     ) -> None:
         """Query server for available tools, resources, and prompts.
 
@@ -276,7 +284,10 @@ class MCPMessageRouter(LoggerMixin):
             self.logger.error(f"Failed to query capabilities for {server_name}: {e}")
 
     async def _handle_server_messages(
-        self, server_name: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self,
+        server_name: str,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
     ) -> None:
         """Handle incoming messages from an MCP server.
 
@@ -420,7 +431,7 @@ class MCPMessageRouter(LoggerMixin):
                                 "collection": "PromptCraft Documents",
                                 "count": "dynamic",
                                 "access_methods": ["search_documents", "read_file"],
-                            }
+                            },
                         ),
                     },
                 ],

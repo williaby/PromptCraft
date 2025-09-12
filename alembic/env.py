@@ -114,7 +114,7 @@ def get_database_url() -> str:
     )
 
 
-def configure_migration_context(connection=None, url=None):
+def configure_migration_context(connection=None, url=None) -> None:
     """Configure the migration context with common settings.
 
     Args:
@@ -140,7 +140,7 @@ def configure_migration_context(connection=None, url=None):
     context.configure(**context_config)
 
 
-def include_object(object, name, type_, reflected, compare_to):
+def include_object(object, name, type_, reflected, compare_to) -> bool:
     """Determine whether to include an object in migration autogeneration.
 
     This function allows fine-grained control over what database objects
@@ -157,7 +157,7 @@ def include_object(object, name, type_, reflected, compare_to):
         True if the object should be included in migrations
     """
     # Skip temp tables and system tables
-    if type_ == "table" and (name.startswith("temp_") or name.startswith("tmp_") or name.startswith("alembic_")):
+    if type_ == "table" and (name.startswith(("temp_", "tmp_", "alembic_"))):
         return False
 
     # Include all PromptCraft tables

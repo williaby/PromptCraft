@@ -12,10 +12,10 @@ Usage:
 """
 
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 
 
 def run_mypy_ci_match():
@@ -32,7 +32,7 @@ def run_mypy_ci_match():
             {
                 "CI_ENVIRONMENT": "true",
                 "MYPY_CACHE_DIR": temp_cache,
-            }
+            },
         )
 
         # Run MyPy with the exact same command as CI

@@ -747,7 +747,6 @@ class ModelRegistry:
         # Filter the chain by user tier permissions
         return UserTierFilter.filter_models_by_tier(chain, user_tier, self)
 
-
     def can_user_access_model(self, user_tier: str, model_id: str) -> bool:
         """Check if a user tier can access a specific model.
 

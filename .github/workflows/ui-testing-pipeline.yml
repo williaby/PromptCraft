@@ -85,7 +85,8 @@ jobs:
         run: |
           npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
             --project=${{ matrix.browser }} \
-            --reporter=github,json:smoke-results-${{ matrix.browser }}.json
+            --reporter=github \
+            --reporter=json:smoke-results-${{ matrix.browser }}.json
         timeout-minutes: 5
 
       - name: Upload smoke test results

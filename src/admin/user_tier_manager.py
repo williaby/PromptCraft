@@ -460,7 +460,6 @@ PROMPTCRAFT_LIMITED_USERS={','.join(self.config_manager.config.limited_users)}
 # PROMPTCRAFT_EMAIL_WHITELIST={','.join(self.config_manager.config.email_whitelist)}
 """
 
-
         except Exception as e:
             logger.error("Error generating env file updates: %s", e)
             return f"# Error generating environment updates: {e}"

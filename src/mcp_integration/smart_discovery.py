@@ -6,6 +6,7 @@ resource management, and intelligent fallback strategies.
 """
 
 import asyncio
+import contextlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import logging
@@ -23,14 +24,10 @@ from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 
-from typing import Any
-
 # Docker client (optional dependency)
 docker: Any = None
-try:
+with contextlib.suppress(ImportError):
     import docker
-except ImportError:
-    pass
 
 
 logger = logging.getLogger(__name__)

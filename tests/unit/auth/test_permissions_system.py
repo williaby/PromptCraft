@@ -436,11 +436,11 @@ class TestHasServiceTokenPermission:
     def test_has_service_token_permission_edge_cases(self, mock_service_token_user):
         """Test edge cases for service token permission checks."""
         mock_service_token_user.has_permission = Mock(return_value=False)
-        
+
         # Test with empty permission name
         result = has_service_token_permission(mock_service_token_user, "")
         assert result is False
-        
+
         # Test with None permission name (should be handled gracefully)
         try:
             result = has_service_token_permission(mock_service_token_user, None)
@@ -453,18 +453,18 @@ class TestHasServiceTokenPermission:
     def test_has_service_token_permission_complex_names(self, mock_service_token_user):
         """Test complex permission names."""
         mock_service_token_user.has_permission = Mock(return_value=True)
-        
+
         complex_permissions = [
             "system:admin:full",
             "users:create:batch:bulk",
             "api:v2:tokens:rotate:emergency",
             "logs:audit:export:encrypted",
         ]
-        
+
         for permission in complex_permissions:
             result = has_service_token_permission(mock_service_token_user, permission)
             assert result is True
-            
+
         assert mock_service_token_user.has_permission.call_count == len(complex_permissions)
 
 

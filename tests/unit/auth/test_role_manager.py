@@ -427,12 +427,17 @@ class TestUserRoleAssignment:
         mock_role_result = MagicMock()
         mock_role_result.scalar_one_or_none.return_value = 1
 
-        mock_user_id_result = MagicMock() 
+        mock_user_id_result = MagicMock()
         mock_user_id_result.scalar_one_or_none.return_value = "user-uuid-123"
 
         mock_assign_result = MagicMock()
 
-        mock_session.execute.side_effect = [mock_user_exists_result, mock_role_result, mock_user_id_result, mock_assign_result]
+        mock_session.execute.side_effect = [
+            mock_user_exists_result,
+            mock_role_result,
+            mock_user_id_result,
+            mock_assign_result,
+        ]
 
         result = await role_manager.assign_user_role("test@example.com", "test_role", "admin@example.com")
 
@@ -527,16 +532,18 @@ class TestUserRoleAssignment:
         mock_user_roles = [
             {
                 "role_id": 1,
-                "role_name": "admin", 
+                "role_name": "admin",
                 "role_description": "Administrator role",
                 "assigned_at": datetime.now(UTC),
             },
         ]
-        
+
         # Mock the methods that get_user_permissions calls
-        with patch.object(role_manager, "get_user_roles", new_callable=AsyncMock) as mock_get_roles, \
-             patch.object(role_manager, "get_role_permissions", new_callable=AsyncMock) as mock_get_perms:
-            
+        with (
+            patch.object(role_manager, "get_user_roles", new_callable=AsyncMock) as mock_get_roles,
+            patch.object(role_manager, "get_role_permissions", new_callable=AsyncMock) as mock_get_perms,
+        ):
+
             mock_get_roles.return_value = mock_user_roles
             mock_get_perms.return_value = {"admin:access", "users:read", "users:write"}
 
@@ -859,7 +866,7 @@ class TestIntegrationScenarios:
 
         mock_user_exists_result = MagicMock()
         mock_user_exists_result.scalar_one_or_none.return_value = "user@example.com"
-        
+
         mock_user_id_result = MagicMock()
         mock_user_id_result.scalar_one_or_none.return_value = "user-uuid-123"
 

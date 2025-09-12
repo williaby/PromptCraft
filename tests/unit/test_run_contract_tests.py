@@ -432,7 +432,7 @@ class TestParametrizedScenarios:
     """Parametrized tests for various scenarios."""
 
     @pytest.mark.parametrize(
-        "return_code,expected_result",
+        ("return_code", "expected_result"),
         [
             (0, True),
             (1, False),
@@ -468,7 +468,7 @@ class TestParametrizedScenarios:
         assert result is expected_result
 
     @pytest.mark.parametrize(
-        "pact_available,success,should_exit",
+        ("pact_available", "success", "should_exit"),
         [
             (True, True, False),
             (True, False, True),

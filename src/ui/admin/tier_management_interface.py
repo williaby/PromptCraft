@@ -5,10 +5,10 @@ user tier assignments, view user statistics, and monitor system configuration.
 """
 
 import logging
+from typing import Any
 
 import gradio as gr
 import pandas as pd
-from typing import Any
 
 from src.admin.user_tier_manager import UserTierManager
 

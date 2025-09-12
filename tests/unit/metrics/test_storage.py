@@ -33,7 +33,7 @@ class TestMetricsStorageInit:
         """Test storage creates parent directories if they don't exist."""
         with tempfile.TemporaryDirectory() as temp_dir:
             nested_path = Path(temp_dir) / "nested" / "deep" / "metrics.db"
-            storage = MetricsStorage(str(nested_path))
+            MetricsStorage(str(nested_path))
 
             assert nested_path.parent.exists()
             assert nested_path.exists()
@@ -42,7 +42,7 @@ class TestMetricsStorageInit:
         """Test storage creates database schema on initialization."""
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "schema_test.db"
-            storage = MetricsStorage(str(db_path))
+            MetricsStorage(str(db_path))
 
             # Check that tables were created
             conn = sqlite3.connect(str(db_path))

@@ -1074,7 +1074,6 @@ This enhanced prompt applies the C.R.E.A.T.E. methodology with:
 {await self._construct_enhanced_output(input_text, create_knowledge, reasoning_depth)}
 """
 
-
     async def _generate_create_breakdown(
         self,
         input_text: str,
@@ -1367,8 +1366,16 @@ Generate a comprehensive, professional enhanced prompt that demonstrates sophist
 
         for line in lines:
             # Skip the framework analysis sections
-            if (
-                line.startswith(("# Enhanced C.R.E.A.T.E. Framework Prompt", "## Original Query Analysis", "## C.R.E.A.T.E. Framework Application", "### Context Enhancement", "### Request Specification", "### Framework Integration", "### Model Configuration"))
+            if line.startswith(
+                (
+                    "# Enhanced C.R.E.A.T.E. Framework Prompt",
+                    "## Original Query Analysis",
+                    "## C.R.E.A.T.E. Framework Application",
+                    "### Context Enhancement",
+                    "### Request Specification",
+                    "### Framework Integration",
+                    "### Model Configuration",
+                ),
             ):
                 continue
             if line.startswith("---"):

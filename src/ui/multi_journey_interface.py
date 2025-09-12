@@ -867,7 +867,7 @@ class MultiJourneyInterface(LoggerMixin):
                 # Create admin interface - it creates its own Tab internally
                 # Skip admin interface creation during pytest to avoid Gradio compatibility issues
                 admin_tab = self.admin_interface.create_admin_interface()
-                
+
                 # Setup admin tab visibility based on user context
                 self._setup_admin_visibility(admin_tab, user_context)
 

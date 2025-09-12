@@ -198,7 +198,7 @@ class ZenStdioMCPClient(MCPClientInterface):
                     }
                 primary_recommendation = ModelRecommendation(
                     model_id=primary_rec.get("model_id", "unknown"),
-                    model_name=primary_rec.get("model_name", "unknown"), 
+                    model_name=primary_rec.get("model_name", "unknown"),
                     tier=primary_rec.get("tier", "free"),
                     reasoning=primary_rec.get("reasoning", "No reasoning available"),
                     confidence_score=0.9,  # Zen provides high-confidence recommendations

@@ -188,7 +188,7 @@ class TestBasicSessions:
             "-f",
             "coverage-security.xml",
             "-F",
-            "security", 
+            "security",
             "-n",
             "security-tests",
             external=True,
@@ -205,7 +205,7 @@ class TestBasicSessions:
         assert len(codecov_calls) == 0
 
     def test_tests_fast_session(self, mock_session):
-        """Test tests_fast session functionality.""" 
+        """Test tests_fast session functionality."""
         noxfile.tests_fast(mock_session)
 
         # Verify poetry install
@@ -217,7 +217,7 @@ class TestBasicSessions:
             "-m",
             "not slow",
             "--cov=src",
-            "--cov-branch", 
+            "--cov-branch",
             "--cov-report=xml:coverage-fast.xml",
             "--cov-report=json:coverage-fast.json",
             "--cov-report=term-missing",
@@ -238,7 +238,7 @@ class TestBasicSessions:
             "coverage-fast.xml",
             "-F",
             "fast",
-            "-n", 
+            "-n",
             "fast-tests",
             external=True,
         )
@@ -284,7 +284,7 @@ class TestBasicSessions:
             "-m",
             "component",
             "--cov=src",
-            "--cov-branch", 
+            "--cov-branch",
             "--cov-fail-under=75",
             "-v",
         )
@@ -390,7 +390,7 @@ class TestBasicSessions:
         )
 
     def test_codecov_analysis_session(self, mock_session):
-        """Test codecov_analysis session functionality.""" 
+        """Test codecov_analysis session functionality."""
         noxfile.codecov_analysis(mock_session)
 
         # Verify poetry install
@@ -587,11 +587,11 @@ class TestMetricsSession:
 
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
-        
+
         # Verify script execution (this covers line 156)
         mock_session.run.assert_any_call("python", "test_metrics_dashboard.py")
 
-    @patch("noxfile.Path")  
+    @patch("noxfile.Path")
     def test_metrics_session_without_script(self, mock_path, mock_session):
         """Test metrics session when test_metrics_dashboard.py does not exist."""
         # Mock Path constructor to return a mock object
@@ -604,10 +604,12 @@ class TestMetricsSession:
 
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
-        
+
         # Verify warning message is logged (with correct mock string representation)
-        mock_session.log.assert_any_call("Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.")
-        
+        mock_session.log.assert_any_call(
+            "Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.",
+        )
+
         # Verify script is NOT executed
         script_calls = [call for call in mock_session.run.call_args_list if "test_metrics_dashboard.py" in str(call)]
         assert len(script_calls) == 0

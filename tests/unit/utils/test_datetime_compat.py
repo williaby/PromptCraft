@@ -482,7 +482,7 @@ class TestParseIso:
         """parse_iso() should handle ISO strings with Z suffix."""
         iso_str = "2023-01-01T12:00:00Z"
         dt = parse_iso(iso_str)
-        
+
         assert is_aware(dt)
         assert dt.tzinfo == UTC
         assert dt.year == 2023
@@ -494,7 +494,7 @@ class TestParseIso:
         """parse_iso() should handle ISO strings with timezone offset."""
         iso_str = "2023-01-01T12:00:00-05:00"
         dt = parse_iso(iso_str)
-        
+
         assert is_aware(dt)
         assert dt.hour == 12
         # Check timezone offset
@@ -504,7 +504,7 @@ class TestParseIso:
         """parse_iso() should assume UTC for naive ISO strings by default."""
         iso_str = "2023-01-01T12:00:00"
         dt = parse_iso(iso_str, assume_utc=True)
-        
+
         assert is_aware(dt)
         assert dt.tzinfo == UTC
 
@@ -512,7 +512,7 @@ class TestParseIso:
         """parse_iso() should keep naive when assume_utc=False."""
         iso_str = "2023-01-01T12:00:00"
         dt = parse_iso(iso_str, assume_utc=False)
-        
+
         # Should still be made aware but with None timezone handling
         assert is_aware(dt)
 
@@ -520,7 +520,7 @@ class TestParseIso:
         """parse_iso() should preserve microseconds."""
         iso_str = "2023-01-01T12:00:00.123456Z"
         dt = parse_iso(iso_str)
-        
+
         assert dt.microsecond == 123456
 
     def test_parse_iso_invalid_string(self):
@@ -536,7 +536,7 @@ class TestToIso:
         """to_iso() should format UTC datetime with Z suffix."""
         dt = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         iso_str = to_iso(dt)
-        
+
         assert iso_str == "2023-01-01T12:00:00Z"
 
     def test_to_iso_with_timezone_offset(self):
@@ -544,28 +544,28 @@ class TestToIso:
         eastern_tz = timezone(timedelta(hours=-5))
         dt = datetime(2023, 1, 1, 12, 0, 0, tzinfo=eastern_tz)
         iso_str = to_iso(dt)
-        
+
         assert iso_str == "2023-01-01T12:00:00-05:00"
 
     def test_to_iso_naive_datetime(self):
         """to_iso() should handle naive datetime by assuming UTC."""
         dt = datetime(2023, 1, 1, 12, 0, 0)
         iso_str = to_iso(dt)
-        
+
         assert iso_str == "2023-01-01T12:00:00Z"
 
     def test_to_iso_without_timezone(self):
         """to_iso() should strip timezone when include_timezone=False."""
         dt = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         iso_str = to_iso(dt, include_timezone=False)
-        
+
         assert iso_str == "2023-01-01T12:00:00"
 
     def test_to_iso_with_microseconds(self):
         """to_iso() should include microseconds when present."""
         dt = datetime(2023, 1, 1, 12, 0, 0, 123456, tzinfo=UTC)
         iso_str = to_iso(dt)
-        
+
         assert iso_str == "2023-01-01T12:00:00.123456Z"
 
     def test_to_iso_roundtrip(self):
@@ -573,7 +573,7 @@ class TestToIso:
         original_dt = datetime(2023, 1, 1, 12, 0, 0, 123456, tzinfo=UTC)
         iso_str = to_iso(original_dt)
         parsed_dt = parse_iso(iso_str)
-        
+
         assert safe_compare(original_dt, parsed_dt) == 0
 
 
@@ -583,7 +583,7 @@ class TestMockDatetime:
     def test_mock_datetime_with_string(self):
         """MockDatetime should accept ISO string."""
         mock_time = "2023-01-01T12:00:00Z"
-        
+
         with MockDatetime(mock_time):
             dt = utc_now()
             assert dt.year == 2023
@@ -594,7 +594,7 @@ class TestMockDatetime:
     def test_mock_datetime_with_datetime_object(self):
         """MockDatetime should accept datetime object."""
         mock_time = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
-        
+
         with MockDatetime(mock_time):
             dt = utc_now()
             assert safe_compare(dt, mock_time) == 0
@@ -602,17 +602,17 @@ class TestMockDatetime:
     def test_mock_datetime_context_isolation(self):
         """MockDatetime should not affect time outside context."""
         mock_time = "2023-01-01T12:00:00Z"
-        
+
         # Get real time before
         real_time_before = utc_now()
-        
+
         with MockDatetime(mock_time):
             mocked_time = utc_now()
             assert mocked_time.year == 2023
-        
+
         # Get real time after
         real_time_after = utc_now()
-        
+
         # Should be back to real time
         assert real_time_after > real_time_before
         assert real_time_after.year != 2023 or real_time_after != mocked_time
@@ -622,11 +622,11 @@ class TestMockDatetime:
         with MockDatetime("2023-01-01T12:00:00Z"):
             dt1 = utc_now()
             assert dt1.year == 2023
-            
+
             with MockDatetime("2024-01-01T12:00:00Z"):
                 dt2 = utc_now()
                 assert dt2.year == 2024
-            
+
             dt3 = utc_now()
             assert dt3.year == 2023
 
@@ -670,7 +670,7 @@ class TestNewFunctionIntegration:
         with MockDatetime("2023-01-01T12:00:00Z"):
             ts = timestamp_now()
             dt = utc_from_timestamp(ts)
-            
+
             assert dt.year == 2023
             assert dt.month == 1
             assert dt.day == 1
@@ -680,10 +680,10 @@ class TestNewFunctionIntegration:
         """local_now() and utc_now() should have predictable relationship."""
         local_dt = local_now()
         utc_dt = utc_now()
-        
+
         # Convert local to UTC for comparison
         local_as_utc = local_dt.astimezone(UTC)
-        
+
         # Should be very close (within a few seconds due to execution time)
         diff = abs((local_as_utc - utc_dt).total_seconds())
         assert diff < 5.0
@@ -692,10 +692,10 @@ class TestNewFunctionIntegration:
         """ISO parsing should work with timezone conversion functions."""
         iso_str = "2023-01-01T12:00:00-05:00"  # EST
         dt = parse_iso(iso_str)
-        
+
         # Convert to naive UTC
         naive_utc = aware_to_naive(dt, preserve_utc=True)
-        
+
         # Should be 17:00 UTC (12:00 EST + 5 hours)
         assert naive_utc.hour == 17
 
@@ -703,30 +703,33 @@ class TestNewFunctionIntegration:
         """Test a comprehensive workflow using multiple new functions."""
         # Start with ISO string
         iso_input = "2023-06-15T14:30:00-08:00"  # PDT
-        
+
         # Parse it
         dt = parse_iso(iso_input)
         assert dt.hour == 14  # Local time preserved
-        
+
         # Convert to UTC
         utc_dt = dt.astimezone(UTC)
         assert utc_dt.hour == 22  # 14:30 PDT = 22:30 UTC
-        
+
         # Convert back to ISO
         iso_output = to_iso(utc_dt)
         assert iso_output == "2023-06-15T22:30:00Z"
-        
+
         # Parse it back
         final_dt = parse_iso(iso_output)
         assert safe_compare(final_dt, utc_dt) == 0
 
 
-@pytest.mark.parametrize("iso_string,expected_hour", [
-    ("2023-01-01T12:00:00Z", 12),
-    ("2023-01-01T12:00:00+00:00", 12),
-    ("2023-01-01T12:00:00-05:00", 12),  # EST
-    ("2023-01-01T12:00:00+09:00", 12),  # JST
-])
+@pytest.mark.parametrize(
+    ("iso_string", "expected_hour"),
+    [
+        ("2023-01-01T12:00:00Z", 12),
+        ("2023-01-01T12:00:00+00:00", 12),
+        ("2023-01-01T12:00:00-05:00", 12),  # EST
+        ("2023-01-01T12:00:00+09:00", 12),  # JST
+    ],
+)
 def test_iso_parsing_variations(iso_string, expected_hour):
     """Test parse_iso with various timezone formats."""
     dt = parse_iso(iso_string)
