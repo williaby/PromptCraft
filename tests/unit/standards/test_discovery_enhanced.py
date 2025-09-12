@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Enhanced tests for Standards Discovery System to improve coverage.
 
@@ -15,6 +12,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.standards.discovery import StandardDefinition, StandardsDiscoverySystem, StandardsManager
+from src.utils.datetime_compat import utc_now
 
 
 class TestStandardsDiscoveryEnhancedCoverage:

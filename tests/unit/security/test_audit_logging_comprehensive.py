@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive test suite for audit logging with enhanced coverage.
 
 This module provides enhanced test coverage for src/security/audit_logging.py,
@@ -32,6 +29,7 @@ from src.security.audit_logging import (
     log_rate_limit_exceeded,
     log_validation_failure,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestAuditEventClientIPExtraction:

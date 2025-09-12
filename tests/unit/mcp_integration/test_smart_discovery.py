@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for smart MCP server discovery system.
 
@@ -33,6 +30,7 @@ from src.mcp_integration.smart_discovery import (
     ServerRequirements,
     SmartMCPDiscovery,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestServerConnection:

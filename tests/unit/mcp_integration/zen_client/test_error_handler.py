@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive tests for error handling and fallback mechanisms."""
 
 from datetime import UTC, datetime, timedelta
@@ -16,6 +13,7 @@ from src.mcp_integration.zen_client.error_handler import (
     RetryHandler,
 )
 from src.mcp_integration.zen_client.models import BridgeMetrics, FallbackConfig
+from src.utils.datetime_compat import utc_now
 
 
 class TestCircuitBreakerState:

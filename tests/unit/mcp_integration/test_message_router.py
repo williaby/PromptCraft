@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Message Router
 """
@@ -22,6 +19,7 @@ from src.mcp_integration.protocol_handler import (
     MCPResponse,
     MCPStandardErrors,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestMCPServerInfo:

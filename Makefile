@@ -43,12 +43,19 @@ test-smoke: ## Run smoke tests for basic functionality
 test-with-timing: ## Run tests with detailed timing analysis
 	$(POETRY) run pytest --durations=20 --tb=short
 
-lint: ## Run linting checks
-	$(POETRY) run black --check .
-	$(POETRY) run ruff check .
-	$(POETRY) run mypy src
+lint: ## Run linting checks (matches CI exactly)
+	@echo "🔍 Running linting checks (CI-matching configuration)"
+	$(POETRY) run black --check --config=pyproject.toml .
+	$(POETRY) run ruff check --config=pyproject.toml --no-cache .
+	$(POETRY) run mypy src --config-file=pyproject.toml --cache-dir=.mypy_cache
 	markdownlint **/*.md
 	yamllint .
+
+lint-local: ## Run linting checks for local development (with fixes)
+	@echo "🛠️  Running linting checks with auto-fixes for local development"
+	$(POETRY) run black --config=pyproject.toml .
+	$(POETRY) run ruff check --fix --config=pyproject.toml .
+	$(POETRY) run mypy src --config-file=pyproject.toml
 
 mypy-ci: ## Run MyPy with CI-matching settings (fresh cache)
 	$(PYTHON) scripts/mypy_ci_match.py
@@ -56,9 +63,9 @@ mypy-ci: ## Run MyPy with CI-matching settings (fresh cache)
 mypy-ci-clear: ## Run MyPy with CI-matching settings (clear cache first)
 	$(PYTHON) scripts/mypy_ci_match.py --clear-cache
 
-format: ## Format code
-	$(POETRY) run black .
-	$(POETRY) run ruff check --fix .
+format: ## Format code (alias for lint-local for backwards compatibility)
+	@echo "⚠️  Note: 'make format' now runs 'make lint-local' for consistency"
+	$(MAKE) lint-local
 
 security: ## Run security checks
 	$(POETRY) run safety check

@@ -14,13 +14,9 @@ import pytest
 from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
-
 from tests.fixtures.auth_fixtures import *  # noqa: F403
-
 from tests.fixtures.database import *  # noqa: F403
-
 from tests.fixtures.external_service_mocks import *  # noqa: F403
-
 from tests.fixtures.security_service_mocks import *  # noqa: F403
 
 

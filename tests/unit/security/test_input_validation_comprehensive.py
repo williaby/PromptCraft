@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive test suite for input validation with enhanced coverage.
 
 This module provides enhanced test coverage for src/security/input_validation.py,
@@ -22,6 +19,7 @@ from src.security.input_validation import (
     create_input_sanitizer,
     sanitize_dict_values,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestSecureFileUploadComprehensive:

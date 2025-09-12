@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Comprehensive tests for Standards Discovery System.
 
@@ -16,6 +13,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.standards.discovery import StandardDefinition, StandardsDiscoverySystem, StandardsManager
+from src.utils.datetime_compat import utc_now
 
 
 class TestStandardDefinition:

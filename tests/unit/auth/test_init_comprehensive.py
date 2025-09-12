@@ -30,34 +30,40 @@ class TestServiceTokenUser:
     def test_init_with_all_params(self):
         """Test ServiceTokenUser initialization with all parameters."""
         metadata = {"permissions": ["read", "write"], "scopes": ["admin"]}
-        user = ServiceTokenUser(token_id="token123", token_name="Test Token", metadata=metadata, usage_count=5)
+        user = ServiceTokenUser(
+            token_id="token123", token_name="Test Token", metadata=metadata, usage_count=5
+        )  # noqa: S106  # Test token parameters
 
-        assert user.token_id == "token123"
-        assert user.token_name == "Test Token"
+        assert user.token_id == "token123"  # noqa: S105  # Test token value
+        assert user.token_name == "Test Token"  # noqa: S105  # Test token value
         assert user.metadata == metadata
         assert user.usage_count == 5
 
     def test_init_with_minimal_params(self):
         """Test ServiceTokenUser initialization with minimal parameters."""
-        user = ServiceTokenUser(token_id="token456", token_name="Simple Token", metadata=None)
+        user = ServiceTokenUser(
+            token_id="token456", token_name="Simple Token", metadata=None
+        )  # noqa: S106  # Test token parameters
 
-        assert user.token_id == "token456"
-        assert user.token_name == "Simple Token"
+        assert user.token_id == "token456"  # noqa: S105  # Test token value
+        assert user.token_name == "Simple Token"  # noqa: S105  # Test token value
         assert user.metadata == {}
         assert user.usage_count == 0
 
     def test_init_with_empty_metadata(self):
         """Test ServiceTokenUser initialization with empty metadata."""
-        user = ServiceTokenUser(token_id="token789", token_name="Empty Token", metadata={})
+        user = ServiceTokenUser(
+            token_id="token789", token_name="Empty Token", metadata={}
+        )  # noqa: S106  # Test token parameters
 
-        assert user.token_id == "token789"
-        assert user.token_name == "Empty Token"
+        assert user.token_id == "token789"  # noqa: S105  # Test token value
+        assert user.token_name == "Empty Token"  # noqa: S105  # Test token value
         assert user.metadata == {}
 
     def test_has_permission_true(self):
         """Test has_permission returns True when permission exists."""
         metadata = {"permissions": ["read", "write", "delete"]}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         assert user.has_permission("read") is True
         assert user.has_permission("write") is True
@@ -66,7 +72,7 @@ class TestServiceTokenUser:
     def test_has_permission_false(self):
         """Test has_permission returns False when permission doesn't exist."""
         metadata = {"permissions": ["read", "write"]}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         assert user.has_permission("delete") is False
         assert user.has_permission("admin") is False
@@ -74,27 +80,27 @@ class TestServiceTokenUser:
     def test_has_permission_no_permissions_key(self):
         """Test has_permission when permissions key doesn't exist."""
         metadata = {"scopes": ["admin"]}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         assert user.has_permission("read") is False
         assert user.has_permission("admin") is False
 
     def test_has_permission_empty_metadata(self):
         """Test has_permission with empty metadata."""
-        user = ServiceTokenUser("token1", "Test", {})
+        user = ServiceTokenUser("token1", "Test", {})  # Test token parameters
 
         assert user.has_permission("read") is False
 
     def test_has_permission_none_metadata(self):
         """Test has_permission with None metadata."""
-        user = ServiceTokenUser("token1", "Test", None)
+        user = ServiceTokenUser("token1", "Test", None)  # Test token parameters
 
         assert user.has_permission("read") is False
 
     def test_permissions_property_with_permissions(self):
         """Test permissions property when permissions exist."""
         metadata = {"permissions": ["read", "write", "admin"]}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         permissions = user.permissions
         assert isinstance(permissions, list)
@@ -103,7 +109,7 @@ class TestServiceTokenUser:
     def test_permissions_property_no_permissions_key(self):
         """Test permissions property when permissions key doesn't exist."""
         metadata = {"scopes": ["admin"]}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         permissions = user.permissions
         assert isinstance(permissions, list)
@@ -111,7 +117,7 @@ class TestServiceTokenUser:
 
     def test_permissions_property_empty_metadata(self):
         """Test permissions property with empty metadata."""
-        user = ServiceTokenUser("token1", "Test", {})
+        user = ServiceTokenUser("token1", "Test", {})  # Test token parameters
 
         permissions = user.permissions
         assert isinstance(permissions, list)
@@ -120,7 +126,7 @@ class TestServiceTokenUser:
     def test_permissions_property_non_list_permissions(self):
         """Test permissions property when permissions is not a list."""
         metadata = {"permissions": "invalid_format"}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         permissions = user.permissions
         assert isinstance(permissions, list)
@@ -129,7 +135,7 @@ class TestServiceTokenUser:
     def test_permissions_property_none_permissions(self):
         """Test permissions property when permissions is None."""
         metadata = {"permissions": None}
-        user = ServiceTokenUser("token1", "Test", metadata)
+        user = ServiceTokenUser("token1", "Test", metadata)  # Test token parameters
 
         permissions = user.permissions
         assert isinstance(permissions, list)
@@ -324,7 +330,7 @@ class TestEdgeCases:
             "null_value": None,
         }
 
-        user = ServiceTokenUser("complex_token", "Complex Token", metadata)
+        user = ServiceTokenUser("complex_token", "Complex Token", metadata)  # Test token parameters
 
         assert user.metadata == metadata
         assert user.has_permission("read") is True
@@ -365,13 +371,13 @@ class TestEdgeCases:
     def test_service_token_user_usage_count_edge_cases(self):
         """Test ServiceTokenUser with various usage count values."""
         # Negative usage count
-        user1 = ServiceTokenUser("token1", "Test", {}, usage_count=-1)
+        user1 = ServiceTokenUser("token1", "Test", {}, usage_count=-1)  # Test token parameters
         assert user1.usage_count == -1
 
         # Very large usage count
-        user2 = ServiceTokenUser("token2", "Test", {}, usage_count=999999)
+        user2 = ServiceTokenUser("token2", "Test", {}, usage_count=999999)  # Test token parameters
         assert user2.usage_count == 999999
 
         # Zero usage count (default)
-        user3 = ServiceTokenUser("token3", "Test", {})
+        user3 = ServiceTokenUser("token3", "Test", {})  # Test token parameters
         assert user3.usage_count == 0

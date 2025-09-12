@@ -551,8 +551,7 @@ class ComprehensivePrototypeDemo:
     def _analyze_performance_results(self, scenario_results: list[dict[str, Any]]) -> dict[str, Any]:
         """Analyze overall performance across all scenarios."""
         successful_results = [
-            r for r in scenario_results 
-            if r.get("processing_result", {}).get("status", {}).get("success", False)
+            r for r in scenario_results if r.get("processing_result", {}).get("status", {}).get("success", False)
         ]
 
         if not successful_results:

@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Orchestrator
 """
@@ -17,6 +14,7 @@ from src.mcp_integration.mcp_orchestrator import (
     MCPWorkflowResult,
 )
 from src.mcp_integration.tool_router import ToolExecutionResult
+from src.utils.datetime_compat import utc_now
 
 
 class TestMCPWorkflowResult:
