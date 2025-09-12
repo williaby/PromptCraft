@@ -190,7 +190,7 @@ class HeimdallStubServer:
         @self.app.exception_handler(Exception)
         async def global_exception_handler(request, exc):
             """Global exception handler for consistent error responses."""
-            logger.error(f"Unhandled exception: {exc}")
+            logger.error("Unhandled exception: %s", exc)
             return JSONResponse(
                 status_code=500,
                 content={
@@ -203,7 +203,7 @@ class HeimdallStubServer:
 
     def run(self):
         """Run the stub server."""
-        logger.info(f"Starting Heimdall stub server on {self.host}:{self.port}")
+        logger.info("Starting Heimdall stub server on %s:%s", self.host, self.port)
 
         # Handle shutdown signals
         def signal_handler(signum, frame):

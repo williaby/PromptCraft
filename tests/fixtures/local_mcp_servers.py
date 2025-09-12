@@ -40,7 +40,7 @@ class LocalMCPServer:
     async def start(self) -> bool:
         """Start the MCP server process."""
         if self.process and self.process.poll() is None:
-            logger.info(f"Server {self.name} is already running")
+            logger.info("Server %s is already running", self.name)
             return True
 
         try:
@@ -55,7 +55,7 @@ class LocalMCPServer:
                 },
             )
 
-            logger.info(f"Starting {self.name} on port {self.port}")
+            logger.info("Starting %s on port %s", self.name, self.port)
 
             # Start the process
             self.process = subprocess.Popen(
@@ -71,20 +71,20 @@ class LocalMCPServer:
             return await self._wait_for_health()
 
         except Exception as e:
-            logger.error(f"Failed to start {self.name}: {e}")
+            logger.error("Failed to start %s: %s", self.name, e)
             await self.stop()
             return False
 
     async def stop(self) -> None:
         """Stop the MCP server process."""
         if self.process:
-            logger.info(f"Stopping {self.name}")
+            logger.info("Stopping %s", self.name)
             self.process.terminate()
 
             try:
                 self.process.wait(timeout=5.0)
             except subprocess.TimeoutExpired:
-                logger.warning(f"Force killing {self.name}")
+                logger.warning("Force killing %s", self.name)
                 self.process.kill()
                 self.process.wait()
 
@@ -100,14 +100,14 @@ class LocalMCPServer:
                     # Try basic health check
                     response = await client.get(f"{self.base_url}/health")
                     if response.status_code == 200:
-                        logger.info(f"Server {self.name} is healthy")
+                        logger.info("Server %s is healthy", self.name)
                         return True
                 except Exception:
                     pass
 
                 await asyncio.sleep(0.5)
 
-        logger.error(f"Server {self.name} failed health check after {timeout}s")
+        logger.error("Server %s failed health check after %ss", self.name, timeout)
         return False
 
     @property

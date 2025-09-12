@@ -50,7 +50,7 @@ def postgres_container(use_postgresql: bool) -> Generator[object | None, None, N
                 log_database_strategy(use_postgres=True)
                 yield postgres
         except Exception as e:
-            logger.warning(f"Failed to start PostgreSQL container: {e}")
+            logger.warning("Failed to start PostgreSQL container: %s", e)
             log_database_strategy(use_postgres=False)
             yield None
     else:
@@ -78,7 +78,7 @@ def database_url(postgres_container: object | None, use_postgresql: bool) -> str
             asyncpg_url = original_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
         else:
             asyncpg_url = original_url.replace("postgresql://", "postgresql+asyncpg://")
-        logger.info(f"Converted PostgreSQL URL: {original_url} -> {asyncpg_url}")
+        logger.info("Converted PostgreSQL URL: %s -> %s", original_url, asyncpg_url)
         return asyncpg_url
     # Use SQLite fallback
     return "sqlite+aiosqlite:///:memory:"
@@ -151,7 +151,7 @@ async def setup_database_schema(postgres_container: object | None, test_engine, 
         try:
             # Apply schemas using the loader (with validation and fixes)
             applied_schemas = await schema_loader.apply_schemas(conn)
-            logger.info(f"Applied {len(applied_schemas)} PostgreSQL schema files")
+            logger.info("Applied %s PostgreSQL schema files", len(applied_schemas))
 
             # Also create SQLAlchemy tables for auth models
             async with test_engine.begin() as conn_sa:
@@ -225,7 +225,7 @@ async def test_db_session(test_engine, setup_database_schema) -> AsyncGenerator[
                 await trans.rollback()
             except Exception as e:
                 # Transaction may already be closed, log and continue
-                logger.debug(f"Transaction already closed during rollback: {e}")
+                logger.debug("Transaction already closed during rollback: %s", e)
 
 
 @pytest.fixture
