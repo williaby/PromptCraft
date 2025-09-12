@@ -13,6 +13,9 @@ import sys
 import time
 from typing import Any
 
+# Import classes from the smart verifier
+from verify_assumptions_smart import AIVerificationResult, Assumption
+
 
 @dataclass
 class VerificationPrompt:
@@ -22,21 +25,6 @@ class VerificationPrompt:
     risk_level: str
     template: str
     model_requirements: dict[str, Any]
-
-
-@dataclass
-class AIVerificationResult:
-    """Result from AI model verification"""
-
-    assumption_id: str
-    model_used: str
-    status: str  # BLOCKING, REVIEW, NOTE
-    confidence: float
-    issues_found: list[str]
-    suggested_fixes: list[str]
-    defensive_patterns: list[str]
-    verification_time: float
-    cost_estimate: float
 
 
 class PromptTemplates:

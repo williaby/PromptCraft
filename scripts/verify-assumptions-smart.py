@@ -28,6 +28,21 @@ class Assumption:
     line_number: int
     category: str  # CRITICAL, ASSUME, EDGE
     text: str
+
+
+@dataclass
+class AIVerificationResult:
+    """Result from AI model verification"""
+
+    assumption_id: str
+    model_used: str
+    status: str  # BLOCKING, REVIEW, NOTE
+    confidence: float
+    issues_found: list[str]
+    suggested_fixes: list[str]
+    defensive_patterns: list[str]
+    verification_time: float
+    cost_estimate: float
     context_lines: list[str]
     risk_level: str
 

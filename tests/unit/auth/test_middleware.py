@@ -78,8 +78,11 @@ class TestServiceTokenUser:
     def test_service_token_user_no_permissions(self):
         """Test ServiceTokenUser with no permissions."""
         user = ServiceTokenUser(
-            token_id="service-000", token_name="no_perms_token", metadata={}, usage_count=0
-        )  # noqa: S106  # Test token parameters
+            token_id="service-000",
+            token_name="no_perms_token",
+            metadata={},
+            usage_count=0,
+        )  # Test token parameters
 
         assert user.has_permission("read") is False
         assert user.has_permission("write") is False
@@ -502,7 +505,9 @@ class TestAuthenticationMiddleware:
         request.headers = {"CF-Access-Jwt-Assertion": "legacy-jwt-token"}  # Test token value
 
         with patch.object(
-            middleware, "_extract_auth_token", return_value="legacy-jwt-token"
+            middleware,
+            "_extract_auth_token",
+            return_value="legacy-jwt-token",
         ) as mock_extract:  # Test token value
             token = middleware._extract_jwt_token(request)
             assert token == "legacy-jwt-token"  # noqa: S105  # Test token value
@@ -715,8 +720,11 @@ class TestAuthenticationMiddleware:
         token = "sk_service_token_123"  # noqa: S105  # Test token value
 
         mock_service_user = ServiceTokenUser(
-            token_id="123", token_name="test_service", metadata={}, usage_count=0
-        )  # noqa: S106  # Test token parameters
+            token_id="123",
+            token_name="test_service",
+            metadata={},
+            usage_count=0,
+        )  # Test token parameters
 
         with patch.object(middleware, "_extract_auth_token", return_value=token):
             with patch.object(middleware, "_validate_service_token", return_value=mock_service_user):
@@ -789,9 +797,7 @@ class TestAuthenticationMiddleware:
             # Should use service_token_name as user_email
             call_args = mock_session.add.call_args[0][0]
             assert call_args.user_email == "test_service_token"
-            assert (
-                call_args.error_details["service_token_name"] == "test_service_token"
-            )  # noqa: S105  # Test token value
+            assert call_args.error_details["service_token_name"] == "test_service_token"  # Test token value
 
     @pytest.mark.asyncio
     async def test_log_authentication_event_error_handling(self, middleware):

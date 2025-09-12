@@ -43,7 +43,7 @@ class MCPTestClient:
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                logger.debug(f"Making {method} request to {url}")
+                logger.debug("Making %s request to %s", method, url)
 
                 if method.upper() == "GET":
                     response = await client.get(url, headers=default_headers)
@@ -83,7 +83,7 @@ class MCPTestClient:
                     }
 
             except httpx.TimeoutException:
-                logger.error(f"Timeout calling {url}")
+                logger.error("Timeout calling %s", url)
                 return {
                     "error": "timeout",
                     "message": f"Request to {url} timed out",
@@ -91,7 +91,7 @@ class MCPTestClient:
                     "code": 408,
                 }
             except httpx.ConnectError:
-                logger.error(f"Connection error calling {url}")
+                logger.error("Connection error calling %s", url)
                 return {
                     "error": "connection_error",
                     "message": f"Could not connect to {url}",
@@ -99,7 +99,7 @@ class MCPTestClient:
                     "code": 503,
                 }
             except Exception as e:
-                logger.error(f"Unexpected error calling {url}: {e}")
+                logger.error("Unexpected error calling %s: %s", url, e)
                 return {
                     "error": "unknown_error",
                     "message": str(e),
@@ -123,7 +123,7 @@ class MCPTestClient:
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                logger.debug(f"Making {method} request to {url}")
+                logger.debug("Making %s request to %s", method, url)
 
                 if method.upper() == "GET":
                     response = await client.get(url, headers=default_headers)
@@ -161,7 +161,7 @@ class MCPTestClient:
                     }
 
             except httpx.TimeoutException:
-                logger.error(f"Timeout calling {url}")
+                logger.error("Timeout calling %s", url)
                 return {
                     "error": "timeout",
                     "message": f"Request to {url} timed out",
@@ -169,7 +169,7 @@ class MCPTestClient:
                     "code": 408,
                 }
             except httpx.ConnectError:
-                logger.error(f"Connection error calling {url}")
+                logger.error("Connection error calling %s", url)
                 return {
                     "error": "connection_error",
                     "message": f"Could not connect to {url}",
@@ -177,7 +177,7 @@ class MCPTestClient:
                     "code": 503,
                 }
             except Exception as e:
-                logger.error(f"Unexpected error calling {url}: {e}")
+                logger.error("Unexpected error calling %s: %s", url, e)
                 return {
                     "error": "unknown_error",
                     "message": str(e),
@@ -260,29 +260,29 @@ class ContractTestHelpers:
             # Check required fields exist
             for field in required_fields:
                 if field not in response:
-                    logger.error(f"Missing required field '{field}' in {response_type} response")
+                    logger.error("Missing required field '%s' in %s response", field, response_type)
                     return False
 
             # For success responses, check status
             if response_type == "success":
                 if response.get("status") not in ("success", "completed", "healthy"):
-                    logger.error(f"Invalid success status: {response.get('status')}")
+                    logger.error("Invalid success status: %s", response.get("status"))
                     return False
 
             # For error responses, check error structure
             elif response_type == "error":
                 if response.get("status") != "error":
-                    logger.error(f"Invalid error status: {response.get('status')}")
+                    logger.error("Invalid error status: %s", response.get("status"))
                     return False
 
                 if not isinstance(response.get("code"), int):
-                    logger.error(f"Error response missing integer code: {response.get('code')}")
+                    logger.error("Error response missing integer code: %s", response.get("code"))
                     return False
 
             return True
 
         except Exception as e:
-            logger.error(f"Error validating response structure: {e}")
+            logger.error("Error validating response structure: %s", e)
             return False
 
     @staticmethod

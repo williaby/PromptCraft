@@ -240,7 +240,7 @@ class TestAuthenticationPerformance:
         }
 
         async def mock_db_generator():
-            yield mock_session
+            yield mock_database_session
 
         with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator()):
             yield mock_manager

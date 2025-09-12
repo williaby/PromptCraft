@@ -14,6 +14,9 @@ import shutil
 import subprocess
 import sys
 
+# Import the AIVerificationResult class from the smart verifier
+from verify_assumptions_smart import AIVerificationResult
+
 
 @dataclass
 class FixApplication:
