@@ -21,6 +21,9 @@ from tests.fixtures.auth_fixtures import *  # noqa: F403
 # Import database fixtures
 from tests.fixtures.database import *  # noqa: F403
 
+# Import external service mocks
+from tests.fixtures.external_service_mocks import *  # noqa: F403
+
 # Import security service mocks
 from tests.fixtures.security_service_mocks import *  # noqa: F403
 

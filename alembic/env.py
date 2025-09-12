@@ -71,7 +71,13 @@ def get_database_url() -> str:
             if settings.db_password:
                 password = settings.db_password.get_secret_value()
             else:
-                password = "password"  # Default for development
+                # Security: Require explicit password configuration
+                password = os.environ.get("DB_PASSWORD")
+                if not password:
+                    raise ValueError(
+                        "Database password not configured. Set DB_PASSWORD environment variable "
+                        "or configure db_password in application settings.",
+                    )
 
             db_url = (
                 f"postgresql+psycopg2://{settings.db_user}:{password}"
@@ -98,10 +104,14 @@ def get_database_url() -> str:
         logging.info("Using database URL from alembic.ini")
         return config_url
 
-    # Development fallback - use psycopg2 driver for synchronous connections
-    dev_url = "postgresql+psycopg2://promptcraft_rw:password@192.168.1.16:5435/promptcraft_auth"
-    logging.warning("Using development fallback database URL - NOT FOR PRODUCTION")
-    return dev_url
+    # Security: No development fallback with hardcoded credentials
+    raise ValueError(
+        "Database connection not configured. Please set:\n"
+        "- PROMPTCRAFT_DATABASE_URL environment variable, or\n"
+        "- Configure database settings in application config, or\n"
+        "- Set sqlalchemy.url in alembic.ini\n"
+        "Hardcoded development credentials are not permitted for security.",
+    )
 
 
 def configure_migration_context(connection=None, url=None):

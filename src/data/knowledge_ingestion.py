@@ -14,7 +14,15 @@ from typing import Any
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
-from sentence_transformers import SentenceTransformer
+
+
+try:
+    from sentence_transformers import SentenceTransformer
+
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SentenceTransformer = type(None)
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 from ..config.qdrant_settings import qdrant_settings
 from ..core.vector_stores.collection_manager import QdrantCollectionManager
@@ -27,6 +35,10 @@ class KnowledgeIngestionPipeline:
         """Initialize knowledge ingestion pipeline."""
         self.client = client
         self.logger = logging.getLogger(__name__)
+
+        # Check if sentence-transformers is available
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            raise ImportError("sentence-transformers is not installed. Install with: poetry install --with ml")
 
         # Initialize embedding model
         if embedding_model is None:
@@ -293,8 +305,8 @@ class KnowledgeIngestionPipeline:
                     {
                         "score": search_results[0].score if search_results else None,
                         "content_preview": (
-                            search_results[0].payload.get("content", "")[:100] 
-                            if search_results and search_results[0].payload 
+                            search_results[0].payload.get("content", "")[:100]
+                            if search_results and search_results[0].payload
                             else None
                         ),
                     }

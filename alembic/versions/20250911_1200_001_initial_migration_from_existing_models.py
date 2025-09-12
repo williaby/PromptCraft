@@ -13,19 +13,19 @@ The following data protection measures are implemented:
 - **user_sessions**: Email addresses, IP addresses, user agent strings
   - Legal Basis: Legitimate interest (security) + Necessary for contract performance
   - Retention: Session data retained for security monitoring (30 days)
-  
-- **authentication_events**: Email addresses, IP addresses, user agent strings  
+
+- **authentication_events**: Email addresses, IP addresses, user agent strings
   - Legal Basis: Legitimate interest (security monitoring and fraud prevention)
   - Retention: Authentication logs retained for 90 days for security analysis
-  
+
 - **security_events**: IP addresses, user agent strings, email addresses
   - Legal Basis: Legitimate interest (security monitoring and threat detection)
   - Retention: Security events retained for 1 year for compliance and investigation
-  
+
 - **blocked_entities**: Email addresses, IP addresses (when entity_type matches)
   - Legal Basis: Legitimate interest (security and fraud prevention)
   - Retention: Retained while security threat persists, reviewed annually
-  
+
 - **threat_scores**: Email addresses, IP addresses (when entity_type matches)
   - Legal Basis: Legitimate interest (security monitoring and threat assessment)
   - Retention: Scores decay over time, full cleanup after 1 year of inactivity
