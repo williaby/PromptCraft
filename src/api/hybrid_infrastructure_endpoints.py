@@ -162,7 +162,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             if not hasattr(app.state, "mcp_manager"):
                 raise HTTPException(status_code=503, detail="MCP manager not initialized")
 
-            return await app.state.mcp_manager.get_connection_status()
+            return await app.state.mcp_manager.get_connection_status()  # type: ignore[no-any-return]
 
         except HTTPException:
             raise
@@ -177,7 +177,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             if not hasattr(app.state, "mcp_manager"):
                 raise HTTPException(status_code=503, detail="MCP manager not initialized")
 
-            return await app.state.mcp_manager.health_check()
+            return await app.state.mcp_manager.health_check()  # type: ignore[no-any-return]
 
         except HTTPException:
             raise

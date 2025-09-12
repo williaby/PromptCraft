@@ -83,10 +83,11 @@ jobs:
 
       - name: Run smoke tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=smoke-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
             --project=${{ matrix.browser }} \
             --reporter=github \
-            --reporter=json:smoke-results-${{ matrix.browser }}.json
+            --reporter=json
         timeout-minutes: 5
 
       - name: Upload smoke test results
@@ -135,18 +136,20 @@ jobs:
 
       - name: Run C.R.E.A.T.E. framework tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=create-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/journey1-create-framework-semantic.spec.ts \
             --project=${{ matrix.browser }} \
             --reporter=github \
-            --reporter=json:create-results-${{ matrix.browser }}.json
+            --reporter=json
         timeout-minutes: 15
 
       - name: Run authentication boundary tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=auth-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
             --project=${{ matrix.browser }} \
             --reporter=github \
-            --reporter=json:auth-results-${{ matrix.browser }}.json \
+            --reporter=json \
             --grep="session expiration"
         timeout-minutes: 10
 
@@ -196,18 +199,20 @@ jobs:
 
       - name: Run mobile smoke tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="mobile-smoke-${{ matrix.device }}.json" \
           npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
             --project="${{ matrix.device }}" \
             --reporter=github \
-            --reporter=json:mobile-smoke-${{ matrix.device }}.json
+            --reporter=json
         timeout-minutes: 8
 
       - name: Run enhanced mobile tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="mobile-enhanced-${{ matrix.device }}.json" \
           npx playwright test tests/e2e/enhanced-mobile-journey1.spec.ts \
             --project="${{ matrix.device }}" \
             --reporter=github \
-            --reporter=json:mobile-enhanced-${{ matrix.device }}.json
+            --reporter=json
         timeout-minutes: 15
 
       - name: Upload mobile test results
@@ -251,10 +256,11 @@ jobs:
 
       - name: Run performance benchmarks
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=performance-results.json \
           npx playwright test tests/e2e/journey1-performance-benchmarking.spec.ts \
             --project=chromium \
             --reporter=github \
-            --reporter=json:performance-results.json
+            --reporter=json
         timeout-minutes: 45
 
       - name: Upload performance results
@@ -299,20 +305,22 @@ jobs:
 
       - name: Run file upload security tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=security-results.json \
           npx playwright test tests/e2e/journey1-file-upload-security.spec.ts \
             --project=chromium \
             --reporter=github \
-            --reporter=json:security-results.json \
+            --reporter=json \
             --grep="should safely handle Python"
         timeout-minutes: 15
         continue-on-error: true  # File upload may not be enabled in CI
 
       - name: Run authentication boundary tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=auth-security-results.json \
           npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
             --project=chromium \
             --reporter=github \
-            --reporter=json:auth-security-results.json
+            --reporter=json
         timeout-minutes: 10
 
       - name: Upload security test results

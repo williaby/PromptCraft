@@ -484,7 +484,8 @@ class DynamicAgentLoader(LoggerMixin):
         try:
             module = importlib.import_module(agent_def.implementation.module)
             agent_class = getattr(module, agent_def.implementation.class_name)
-            return agent_class(config)
+            # Type cast to satisfy MyPy - we expect agent classes to return BaseAgent instances
+            return agent_class(config)  # type: ignore[no-any-return]
         except Exception as e:
             raise ImportError(f"Failed to load Python agent {agent_def.id}: {e}")
 
