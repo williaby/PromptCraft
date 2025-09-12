@@ -711,9 +711,9 @@ class TestDynamicLoadingEndpoints:
         client, _ = client_with_mocked_integration
 
         # Mock the demo system
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             mock_demo.run_comprehensive_demo.return_value = {
@@ -764,9 +764,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo with full results export."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             full_results = {
@@ -796,9 +796,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo when initialization fails."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = False  # Initialization fails
 
@@ -811,9 +811,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo with execution error."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             mock_demo.run_comprehensive_demo.side_effect = Exception("Demo execution failed")

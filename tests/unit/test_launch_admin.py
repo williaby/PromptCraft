@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 from unittest import mock
 
 
@@ -111,7 +112,8 @@ class TestLaunchAdmin:
 
             with mock.patch("launch_admin.main"):
                 # Simulate running the script
-                exec(compile(open("scripts/launch_admin.py").read(), "scripts/launch_admin.py", "exec"))
+                script_path = Path("scripts/launch_admin.py")
+                exec(compile(script_path.read_text(), str(script_path), "exec"))
 
                 # Note: This won't actually call main() in our test environment
                 # but we can verify the structure is correct

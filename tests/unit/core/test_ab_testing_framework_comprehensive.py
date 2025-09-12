@@ -181,8 +181,8 @@ class TestDatabaseModels:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -231,8 +231,8 @@ class TestUserSegmentation:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -295,8 +295,8 @@ class TestMetricsCollector:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -373,8 +373,8 @@ class TestStatisticalAnalyzer:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 

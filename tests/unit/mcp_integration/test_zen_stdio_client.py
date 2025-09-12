@@ -256,14 +256,14 @@ class TestZenStdioMCPClient:
         mock_zen_client = MockZenClient()
         client.zen_client = mock_zen_client
 
-        with patch("src.mcp_integration.models.ModelRecommendation") as MockModelRec:
-            with patch("src.mcp_integration.models.RoutingAnalysis") as MockRoutingAnalysis:
+        with patch("src.mcp_integration.models.ModelRecommendation") as mock_model_rec_class:
+            with patch("src.mcp_integration.models.RoutingAnalysis") as mock_routing_analysis_class:
                 # Setup mocks
                 mock_model_rec = MagicMock()
-                MockModelRec.return_value = mock_model_rec
+                mock_model_rec_class.return_value = mock_model_rec
 
                 mock_routing_analysis = MagicMock()
-                MockRoutingAnalysis.return_value = mock_routing_analysis
+                mock_routing_analysis_class.return_value = mock_routing_analysis
 
                 result = await client.get_model_recommendations("test prompt")
 
@@ -283,13 +283,13 @@ class TestZenStdioMCPClient:
 
         client.zen_client = mock_zen_client
 
-        with patch("src.mcp_integration.models.ModelRecommendation") as MockModelRec:
+        with patch("src.mcp_integration.models.ModelRecommendation") as mock_model_rec_class:
             with patch("src.mcp_integration.models.RoutingAnalysis"):
                 await client.get_model_recommendations("test prompt")
 
                 # Should handle missing recommendations gracefully
-                MockModelRec.assert_called_once()
-                call_args = MockModelRec.call_args
+                mock_model_rec_class.assert_called_once()
+                call_args = mock_model_rec_class.call_args
                 assert call_args[1]["model_id"] == "unknown"
                 assert call_args[1]["reasoning"] == "No recommendations available"
 
@@ -465,17 +465,17 @@ class TestZenStdioMCPClient:
             MagicMock(step_id="step2", agent_id="agent2"),
         ]
 
-        with patch("src.mcp_integration.mcp_client.Response") as MockResponse:
+        with patch("src.mcp_integration.mcp_client.Response") as mock_response_class:
             mock_response = MagicMock()
-            MockResponse.return_value = mock_response
+            mock_response_class.return_value = mock_response
 
             responses = await client.orchestrate_agents(workflow_steps)
 
             assert len(responses) == 2
-            assert MockResponse.call_count == 2
+            assert mock_response_class.call_count == 2
 
             # Verify response creation calls
-            calls = MockResponse.call_args_list
+            calls = mock_response_class.call_args_list
             assert calls[0][1]["agent_id"] == "agent1"
             assert calls[0][1]["success"] is True
             assert calls[1][1]["agent_id"] == "agent2"
@@ -499,12 +499,12 @@ class TestZenStdioMCPClient:
                 raise Exception("Response creation failed")
             return MagicMock()  # Return mock for error response
 
-        with patch("src.mcp_integration.mcp_client.Response", side_effect=side_effect) as MockResponse:
+        with patch("src.mcp_integration.mcp_client.Response", side_effect=side_effect) as mock_response_class:
             responses = await client.orchestrate_agents(workflow_steps)
 
             assert len(responses) == 1
             # Should create error response when Response creation fails
-            assert MockResponse.call_count == 2  # One for success, one for error handling
+            assert mock_response_class.call_count == 2  # One for success, one for error handling
 
     @pytest.mark.asyncio
     async def test_orchestrate_agents_no_client(self, client):
