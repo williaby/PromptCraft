@@ -47,7 +47,7 @@ def json_to_claude_command(name, config):
 
 def process_config_file(filepath):
     """Process a single MCP configuration file"""
-    with filepath.open() as f:
+    with Path(filepath).open() as f:
         data = json.load(f)
 
     if "mcpServers" not in data:
@@ -78,7 +78,7 @@ def main() -> None:
 
     # Write commands to file
     output_file = Path.home() / ".claude" / "scripts" / "install-all-mcp.sh"
-    with output_file.open("w") as f:
+    with Path(output_file).open("w") as f:
         f.write("#!/bin/bash\n")
         f.write("# Auto-generated MCP installation commands\n")
         f.write("# Generated from JSON configs in ~/.claude/mcp/\n\n")

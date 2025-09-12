@@ -350,7 +350,7 @@ async def experiment_manager(test_db_engine):
     """Create ExperimentManager instance for testing."""
     manager = ExperimentManager(db_url="sqlite:///:memory:")
     manager.engine = test_db_engine
-    manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    manager.session_local = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
     return manager
 
 

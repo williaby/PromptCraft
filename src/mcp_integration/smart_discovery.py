@@ -316,7 +316,7 @@ class SmartMCPDiscovery(LoggerMixin):
         package_json = Path("package.json")
         if package_json.exists():
             try:
-                with package_json.open() as f:
+                with Path(package_json).open() as f:
                     pkg_data = json.load(f)
 
                 # Check both dependencies and devDependencies

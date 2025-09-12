@@ -168,7 +168,7 @@ Install OpenAI Codex CLI:
             try:
                 import tomllib
 
-                with (self.project_root / "pyproject.toml").open("rb") as f:
+                with Path(self.project_root / "pyproject.toml").open("rb") as f:
                     pyproject = tomllib.load(f)
                     deps = pyproject.get("tool", {}).get("poetry", {}).get("dependencies", {})
                     if "fastapi" in deps:
@@ -258,7 +258,7 @@ Install OpenAI Codex CLI:
                 },
             }
 
-            with claude_settings.open("w") as f:
+            with Path(claude_settings).open("w") as f:
                 json.dump(settings_template, f, indent=2)
 
         # GitHub Copilot configuration
@@ -285,7 +285,7 @@ exclude:
   - "**/.venv/**"
   - "**/__pycache__/**"
 """
-            with copilot_config.open("w") as f:
+            with Path(copilot_config).open("w") as f:
                 f.write(copilot_template)
 
         # Gemini CLI configuration
@@ -313,7 +313,7 @@ exclude:
                 },
             }
 
-            with gemini_config.open("w") as f:
+            with Path(gemini_config).open("w") as f:
                 json.dump(gemini_template, f, indent=2)
 
         # Similar templates for other tools...
@@ -339,7 +339,7 @@ exclude:
                 "ignore_patterns": ["*.env*", "*.log", "__pycache__", ".venv", "node_modules"],
             }
 
-            with qwen_config.open("w") as f:
+            with Path(qwen_config).open("w") as f:
                 json.dump(template, f, indent=2)
 
     def _create_openai_config(self) -> None:
@@ -361,7 +361,7 @@ exclude:
                 "exclude_patterns": ["*.env*", "*.log", "**/node_modules/**", "**/.venv/**", "**/__pycache__/**"],
             }
 
-            with openai_config.open("w") as f:
+            with Path(openai_config).open("w") as f:
                 json.dump(template, f, indent=2)
 
     def setup_vscode_integration(self) -> bool:
@@ -376,7 +376,7 @@ exclude:
 
         if settings_file.exists():
             try:
-                with settings_file.open() as f:
+                with Path(settings_file).open() as f:
                     settings = json.load(f)
             except json.JSONDecodeError:
                 pass
@@ -392,7 +392,7 @@ exclude:
                 },
             }
 
-            with settings_file.open("w") as f:
+            with Path(settings_file).open("w") as f:
                 json.dump(settings, f, indent=2)
 
         # Update tasks.json
@@ -401,7 +401,7 @@ exclude:
 
         if tasks_file.exists():
             try:
-                with tasks_file.open() as f:
+                with Path(tasks_file).open() as f:
                     tasks = json.load(f)
             except json.JSONDecodeError:
                 pass
@@ -431,7 +431,7 @@ exclude:
         if not task_exists:
             tasks["tasks"].append(ai_tools_task)
 
-            with tasks_file.open("w") as f:
+            with Path(tasks_file).open("w") as f:
                 json.dump(tasks, f, indent=2)
 
         return True

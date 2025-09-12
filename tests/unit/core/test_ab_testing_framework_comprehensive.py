@@ -440,7 +440,7 @@ class TestExperimentManager:
         """Test ExperimentManager initialization."""
         assert manager is not None
         assert manager.engine is not None
-        assert manager.SessionLocal is not None
+        assert manager.session_local is not None
         assert manager.logger is not None
         assert manager.performance_monitor is not None
 
