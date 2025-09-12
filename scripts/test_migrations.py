@@ -50,7 +50,12 @@ def test_alembic_config():
     try:
         # Test that alembic can load the configuration
         result = subprocess.run(
-            ["poetry", "run", "alembic", "history"], check=False, cwd=project_root, capture_output=True, text=True, timeout=30,
+            ["poetry", "run", "alembic", "history"],
+            check=False,
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
 
         if result.returncode == 0:
@@ -79,8 +84,9 @@ def test_offline_migration():
     try:
         # Test offline migration (SQL generation without database connection)
         result = subprocess.run(
-            ["poetry", "run", "alembic", "upgrade", "001", "--sql"],
-            check=False, cwd=project_root,
+            ["poetry", "run", "alembic", "upgrade", "head", "--sql"],
+            check=False,
+            cwd=project_root,
             capture_output=True,
             text=True,
             env=env,

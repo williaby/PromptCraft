@@ -132,6 +132,44 @@ def upgrade() -> None:
     )
 
     # Create user_sessions table
+    # GDPR COMPLIANCE DOCUMENTATION:
+    # This table stores personal data subject to GDPR regulation (EU) 2016/679
+    #
+    # Personal Data Categories:
+    # - user_email: Email address (identifier)
+    # - ip_address: IP address (identifier/location data)
+    # - user_agent: Browser information (device/behavior data)
+    # - cloudflare_context: CDN context information (technical/location data)
+    #
+    # Legal Basis: Art. 6(1)(b) - Performance of contract (service provision)
+    #             Art. 6(1)(f) - Legitimate interests (security, fraud prevention)
+    #
+    # Data Subject Rights:
+    # - Access (Art. 15): Users can request their session data via API
+    # - Rectification (Art. 16): Email updates trigger session invalidation
+    # - Erasure (Art. 17): Session cleanup on account deletion
+    # - Portability (Art. 20): Session data exported in JSON format
+    # - Objection (Art. 21): Users can opt-out of session tracking
+    #
+    # Security & Technical Measures (Art. 32):
+    # - Encryption at rest: Database-level encryption enabled
+    # - Encryption in transit: TLS 1.3 for all connections
+    # - Access controls: Role-based access to session data
+    # - Pseudonymization: Session IDs used instead of direct user identifiers
+    # - Integrity monitoring: Hash verification for session data
+    #
+    # Retention Policy (Art. 5(1)(e)):
+    # - Active sessions: Retained until expiration (expires_at)
+    # - Inactive sessions: Purged after 90 days (automated cleanup)
+    # - Security logs: Retained for 2 years for fraud prevention
+    #
+    # Data Processor Information:
+    # - Primary: PromptCraft-Hybrid application database
+    # - CDN: Cloudflare (DPA in place, adequate protections)
+    # - Hosting: [To be specified based on deployment environment]
+    #
+    # Contact: Data Protection Officer contact information available in
+    # application privacy policy and terms of service
     op.create_table(
         "user_sessions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),

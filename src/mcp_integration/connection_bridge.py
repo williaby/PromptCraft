@@ -420,9 +420,9 @@ class MCPConnectionBridge(LoggerMixin):
                 self.npx_manager.stop_npx_server(server_name)
 
             # Close client connections
-            if hasattr(active_conn.client, "close"):
+            if active_conn.client and hasattr(active_conn.client, "close"):
                 await active_conn.client.close()  # type: ignore[misc]
-            elif hasattr(active_conn.client, "disconnect"):
+            elif active_conn.client and hasattr(active_conn.client, "disconnect"):
                 await active_conn.client.disconnect()  # type: ignore[misc]
 
         except Exception as e:

@@ -61,6 +61,8 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
         # Try PostgreSQL function first, fall back to SQLAlchemy queries
         try:
             # Use the database function for permission checking (PostgreSQL)
+            if session is None:
+                raise RuntimeError("Database session not available")
             result = await session.execute(
                 text("SELECT user_has_permission(:user_email, :permission_name)"),
                 {"user_email": user_email, "permission_name": permission_name},
@@ -71,18 +73,17 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
         except Exception as pg_error:
             # Fallback to SQLAlchemy queries for SQLite compatibility
             logger.debug(f"PostgreSQL function unavailable, using SQLAlchemy fallback: {pg_error}")
-            
+
             from sqlalchemy import select
 
             from src.database.models import Permission, Role, UserSession, role_permissions_table, user_roles_table
-            
+
             # Check if user exists and get their roles with permissions
             # This mimics the PostgreSQL function behavior using pure SQLAlchemy
             user_permissions_query = (
                 select(Permission.name)
                 .select_from(
-                    UserSession.__table__
-                    .join(user_roles_table, UserSession.id == user_roles_table.c.user_id)
+                    UserSession.__table__.join(user_roles_table, UserSession.id == user_roles_table.c.user_id)
                     .join(Role.__table__, user_roles_table.c.role_id == Role.id)
                     .join(role_permissions_table, Role.id == role_permissions_table.c.role_id)
                     .join(Permission.__table__, role_permissions_table.c.permission_id == Permission.id),
@@ -90,10 +91,12 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
                 .where(UserSession.email == user_email)
                 .distinct()
             )
-            
+
+            if session is None:
+                raise RuntimeError("Database session not available")
             result = await session.execute(user_permissions_query)
             user_permissions = [row[0] for row in result.fetchall()]
-            
+
             has_permission = permission_name in user_permissions
             logger.debug(f"User {user_email} permission check for '{permission_name}' (SQLAlchemy): {has_permission}")
             logger.debug(f"User {user_email} has permissions: {user_permissions}")

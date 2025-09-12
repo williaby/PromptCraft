@@ -7,7 +7,6 @@ metrics, and tracing across all components.
 """
 
 import os
-import sys
 
 from src.utils.unified_observability import (
     OPENTELEMETRY_AVAILABLE,
@@ -119,16 +118,8 @@ def get_observability_status() -> dict:
     }
 
 
-# Auto-initialize if this module is imported and we're not in test mode
-if __name__ != "__main__" and "pytest" not in sys.modules:
-    try:
-        initialize_observability()
-    except Exception as e:
-        # Fallback to basic logging if initialization fails
-        import logging
-
-        logging.basicConfig(level=logging.INFO)
-        logging.getLogger(__name__).error("Failed to initialize observability system: %s", e)
+# Note: Auto-initialization has been removed to prevent side effects and improve testability.
+# Applications should explicitly call initialize_observability() during their startup process.
 
 
 if __name__ == "__main__":

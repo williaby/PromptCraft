@@ -13,13 +13,33 @@ import logging
 import os
 from pathlib import Path
 import time
-from typing import Any
+from typing import Any, NoReturn
 
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry  # type: ignore[import-untyped]
 
-from .encryption import EncryptionError, GPGError, load_encrypted_env
+
+# Optional encryption support with graceful fallback
+try:
+    from .encryption import EncryptionError, GPGError, load_encrypted_env
+
+    ENCRYPTION_AVAILABLE = True
+except ImportError as e:
+    logging.error("Failed to import encryption module: %s. Encrypted env loading is unavailable.", e)
+
+    # Define fallback exception classes to match the real ones
+    class EncryptionError(Exception):  # type: ignore[no-redef]
+        pass
+
+    class GPGError(Exception):  # type: ignore[no-redef]
+        pass
+
+    # Fallback function with matching signature to the real one
+    def load_encrypted_env(env_file_path: str = "") -> NoReturn:  # type: ignore[misc]
+        raise NotImplementedError("Encryption module is missing; encrypted env loading is unavailable.")
+
+    ENCRYPTION_AVAILABLE = False
 
 
 @dataclass
@@ -237,6 +257,9 @@ class GenericSecretsManager:
 
             try:
                 if env_file.suffix == ".gpg":
+                    if not ENCRYPTION_AVAILABLE:
+                        self.logger.warning("Encryption module unavailable, skipping encrypted file: %s", env_file)
+                        continue
                     env_vars = load_encrypted_env(str(env_file))
                 else:
                     env_vars = self._load_plain_env(env_file)

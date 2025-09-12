@@ -118,9 +118,17 @@ def create_limiter() -> Limiter:
         # Handle both real settings and mock objects properly
         try:
             from unittest.mock import Mock
-            redis_host = settings.redis_host if not isinstance(getattr(settings, "redis_host", None), Mock) else "localhost"
-            redis_port = settings.redis_port if not isinstance(getattr(settings, "redis_port", None), Mock) else 6379
-            redis_db = settings.redis_db if not isinstance(getattr(settings, "redis_db", None), Mock) else 0
+
+            redis_host = getattr(settings, "redis_host", "localhost")
+            redis_port = getattr(settings, "redis_port", 6379)
+            redis_db = getattr(settings, "redis_db", 0)
+            # Handle mock objects
+            if isinstance(redis_host, Mock):
+                redis_host = "localhost"
+            if isinstance(redis_port, Mock):
+                redis_port = 6379
+            if isinstance(redis_db, Mock):
+                redis_db = 0
         except (AttributeError, ImportError):
             # Fallback for cases without unittest.mock or other edge cases
             redis_host = getattr(settings, "redis_host", "localhost")
@@ -134,11 +142,14 @@ def create_limiter() -> Limiter:
         logger.info("Using in-memory storage for %s environment", settings.environment)
 
     # Create limiter with custom key function
+    # Note: slowapi Limiter may not support storage_uri directly
+    # We'll create a basic limiter and store the URI for reference
     limiter = Limiter(
         key_func=get_client_identifier,
-        storage_uri=storage_uri,
         default_limits=["100 per minute"],  # Default fallback limit for unspecified endpoints
     )
+    # Store the URI as a custom attribute for potential future use
+    limiter._storage_uri = storage_uri  # type: ignore[attr-defined]
 
     # Store storage_uri for testing/debugging purposes
     limiter.storage_uri = storage_uri

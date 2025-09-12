@@ -27,10 +27,14 @@ import os
 import sys
 import threading
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from structlog.stdlib import LoggerFactory
+
+
+if TYPE_CHECKING:
+    from prometheus_client import CollectorRegistry
 
 
 # Optional imports with graceful degradation
@@ -54,7 +58,7 @@ except ImportError:
     PROMETHEUS_AVAILABLE = False
 
 try:
-    from fastapi import Request
+    import fastapi  # noqa: F401
 
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -148,7 +152,7 @@ correlation_context = CorrelationContext()
 class MetricsCollector:
     """Prometheus metrics collector for application observability."""
 
-    def __init__(self, registry: CollectorRegistry | None = None) -> None:
+    def __init__(self, registry: "CollectorRegistry | None" = None) -> None:
         """Initialize metrics collector."""
         if not PROMETHEUS_AVAILABLE:
             return
@@ -417,27 +421,29 @@ class ObservabilitySystem:
         user_id: str | None = None,
     ) -> Generator[None, None, None]:
         """Set correlation context for current thread."""
-        # Use global correlation context instance (avoid method name conflict)
-        global correlation_context
-        ctx = correlation_context
-        old_correlation = ctx.get_correlation_id()
-        old_request = ctx.get_request_id()
-        old_user = ctx.get_user_id()
+        # Access global correlation context instance using local reference to avoid naming conflict
+        global_context = correlation_context
+        old_correlation = global_context.get_correlation_id()
+        old_request = global_context.get_request_id()
+        old_user = global_context.get_user_id()
 
         try:
             if correlation_id:
-                ctx.set_correlation_id(correlation_id)
+                global_context.set_correlation_id(correlation_id)
             if request_id:
-                ctx.set_request_id(request_id)
+                global_context.set_request_id(request_id)
             if user_id:
-                ctx.set_user_id(user_id)
+                global_context.set_user_id(user_id)
 
             yield
         finally:
-            # Restore previous context
-            ctx.set_correlation_id(old_correlation or "")
-            ctx.set_request_id(old_request or "")
-            ctx.set_user_id(old_user or "")
+            # Restore previous context values (handle None by clearing)
+            if old_correlation is not None:
+                global_context.set_correlation_id(old_correlation)
+            if old_request is not None:
+                global_context.set_request_id(old_request)
+            if old_user is not None:
+                global_context.set_user_id(old_user)
 
 
 # Global observability system instance
