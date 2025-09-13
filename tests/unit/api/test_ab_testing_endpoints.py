@@ -6,7 +6,8 @@ Following minimal mocking principles to test actual processes.
 """
 
 import contextlib
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI

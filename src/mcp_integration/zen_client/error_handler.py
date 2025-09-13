@@ -7,13 +7,15 @@ to ensure reliable operation even when MCP connections fail.
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from enum import Enum
 import logging
 import time
 from typing import Any
 
 import httpx
+
+from src.utils.datetime_compat import UTC
 
 from .models import BridgeMetrics, FallbackConfig, MCPHealthCheck
 
@@ -169,7 +171,7 @@ class MCPConnectionManager:
         if not self.fallback_config.enabled:
             return False
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if self.circuit_state == CircuitBreakerState.OPEN:
             # Check if it's time to test recovery
@@ -202,12 +204,12 @@ class MCPConnectionManager:
     def _record_failure(self) -> None:
         """Record failed operation for circuit breaker."""
         self.failure_count += 1
-        self.last_failure_time = datetime.now(timezone.utc)
+        self.last_failure_time = datetime.now(UTC)
 
         # Open circuit if threshold reached
         if self.failure_count >= self.fallback_config.circuit_breaker_threshold:
             self.circuit_state = CircuitBreakerState.OPEN
-            self.next_attempt_time = datetime.now(timezone.utc) + timedelta(
+            self.next_attempt_time = datetime.now(UTC) + timedelta(
                 seconds=self.fallback_config.circuit_breaker_reset_time,
             )
             logger.warning(
@@ -231,7 +233,7 @@ class MCPConnectionManager:
         if success and not skip_success_count:
             self.metrics.successful_requests += 1
 
-        self.metrics.last_request_time = datetime.now(timezone.utc)
+        self.metrics.last_request_time = datetime.now(UTC)
         self.metrics.uptime = time.time() - self.start_time
 
     async def health_check(self, mcp_client: Any | None = None) -> MCPHealthCheck:

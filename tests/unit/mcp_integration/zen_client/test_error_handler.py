@@ -1,6 +1,6 @@
 """Comprehensive tests for error handling and fallback mechanisms."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import time
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -13,7 +13,7 @@ from src.mcp_integration.zen_client.error_handler import (
     RetryHandler,
 )
 from src.mcp_integration.zen_client.models import BridgeMetrics, FallbackConfig
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 class TestCircuitBreakerState:
@@ -396,7 +396,7 @@ class TestMCPConnectionManager:
 
         assert status["state"] == "closed"
         assert status["failure_count"] == 2
-        assert status["last_failure_time"] == "2024-01-07T10:30:00"
+        assert status["last_failure_time"] == "2024-01-07T10:30:00+00:00"
         assert status["threshold"] == fallback_config.circuit_breaker_threshold
 
     @pytest.mark.asyncio

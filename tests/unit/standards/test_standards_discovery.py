@@ -7,6 +7,7 @@ and compliance validation across project and user standard directories.
 """
 
 from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -365,7 +366,7 @@ class TestStandardsDiscoverySystem:
         assert standard.source_type == "project"
         assert standard.content == "# Simple Standard\nContent here"
         assert standard.version is None
-        assert standard.last_updated == datetime.fromtimestamp(1234567890.0, tz=timezone.utc)
+        assert standard.last_updated == datetime.fromtimestamp(1234567890.0, tz=UTC)
 
     def test_create_standard_definition_with_yaml_frontmatter(self, discovery_system):
         """Test creating a standard definition with YAML frontmatter."""

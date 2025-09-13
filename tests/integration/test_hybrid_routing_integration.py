@@ -220,7 +220,7 @@ class TestHybridRoutingIntegration:
 
         # Verify response
         assert len(responses) == 1
-        assert responses[0].content == "MCP response"  # Should use MCP as per mock configuration
+        assert responses[0].content == "OpenRouter response"  # Should use OpenRouter primary
         assert responses[0].success is True
 
     @pytest.mark.asyncio

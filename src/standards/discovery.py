@@ -6,7 +6,8 @@ Project-level (.claude/standards/) -> User-level (~/.claude/standards/) fallback
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 import logging
 from pathlib import Path
 from typing import Any

@@ -6,7 +6,9 @@ system, including workflow results, execution steps, and agent responses.
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+
+from src.utils.datetime_compat import UTC
 import json
 from typing import Any
 

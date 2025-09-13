@@ -7,7 +7,8 @@ startup/shutdown events, and development utilities.
 """
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 import json
 import sys
 from unittest.mock import Mock, patch

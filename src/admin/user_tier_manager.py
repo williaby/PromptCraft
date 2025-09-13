@@ -5,7 +5,8 @@ including adding/removing users from tiers, validating email addresses, and pers
 changes to the configuration.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.utils.datetime_compat import UTC
 import json
 import logging
 import re

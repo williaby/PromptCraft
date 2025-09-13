@@ -413,9 +413,12 @@ class TestAuthenticationIntegration:
         """Test handling multiple concurrent authentication requests."""
 
         async def make_request():
+            import httpx
             from httpx import AsyncClient
 
-            async with AsyncClient(app=fastapi_app, base_url="http://test") as client:
+            # Use app parameter for testing ASGI app
+            transport = httpx.ASGITransport(app=fastapi_app)
+            async with AsyncClient(transport=transport, base_url="http://testserver") as client:
                 return await client.get(
                     "/api/test",
                     headers={
