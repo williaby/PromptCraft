@@ -770,7 +770,7 @@ def get_model_registry() -> ModelRegistry:
     Returns:
         Singleton ModelRegistry instance
     """
-    global _global_registry  # noqa: PLW0603
+    global _global_registry
     if _global_registry is None:
         _global_registry = ModelRegistry()
     return _global_registry
@@ -778,7 +778,7 @@ def get_model_registry() -> ModelRegistry:
 
 def reload_model_registry() -> None:
     """Reload global ModelRegistry configuration."""
-    global _global_registry  # noqa: PLW0603
+    global _global_registry
     if _global_registry is not None:
         _global_registry.reload_config()
     else:
@@ -787,5 +787,5 @@ def reload_model_registry() -> None:
 
 def clear_model_registry() -> None:
     """Clear global ModelRegistry (for testing)."""
-    global _global_registry  # noqa: PLW0603
+    global _global_registry
     _global_registry = None

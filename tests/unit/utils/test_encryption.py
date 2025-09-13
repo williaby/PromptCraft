@@ -275,7 +275,7 @@ class TestDecryptEnvFile:
         result = decrypt_env_file("encrypted-content", "secret-passphrase")
 
         assert result == "TEST_VAR=value"
-        mock_gpg.decrypt.assert_called_once_with("encrypted-content", passphrase="secret-passphrase")  # noqa: S106
+        mock_gpg.decrypt.assert_called_once_with("encrypted-content", passphrase="secret-passphrase")
 
     @patch("src.utils.encryption.gnupg.GPG")
     def test_decryption_failure(self, mock_gpg_class):

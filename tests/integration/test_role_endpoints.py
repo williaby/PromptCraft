@@ -94,8 +94,8 @@ def mock_service_token():
 
     # Create a real ServiceTokenUser instance with admin permissions
     return ServiceTokenUser(
-        token_id="test-token-id",  # noqa: S106  # Test token ID
-        token_name="admin-service-token",  # noqa: S106  # Test token name
+        token_id="test-token-id",  # Test token ID
+        token_name="admin-service-token",  # Test token name
         metadata={"permissions": ["admin"]},  # admin permission grants all access
         usage_count=1,
     )

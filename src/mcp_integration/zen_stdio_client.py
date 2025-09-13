@@ -183,7 +183,7 @@ class ZenStdioMCPClient(MCPClientInterface):
 
             if result and result.success:
                 # Convert zen result to our RoutingAnalysis format
-                from .models import ModelRecommendation, RoutingAnalysis  # noqa: PLC0415  # Avoid circular imports
+                from .models import ModelRecommendation, RoutingAnalysis  # Avoid circular imports
 
                 # Extract primary recommendation
                 if result.recommendations and "primary" in result.recommendations:
@@ -400,7 +400,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         for step in workflow_steps:
             try:
                 # Create a simple response for each step
-                from .mcp_client import Response  # noqa: PLC0415  # Avoid circular imports
+                from .mcp_client import Response  # Avoid circular imports
 
                 response = Response(
                     agent_id=step.agent_id,
@@ -411,7 +411,7 @@ class ZenStdioMCPClient(MCPClientInterface):
                 )
                 responses.append(response)
             except Exception as e:
-                from .mcp_client import Response  # noqa: PLC0415  # Avoid circular imports
+                from .mcp_client import Response  # Avoid circular imports
 
                 response = Response(
                     agent_id=step.agent_id,

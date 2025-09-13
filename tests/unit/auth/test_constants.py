@@ -80,13 +80,13 @@ class TestAuthConstants:
 
     def test_service_token_prefix(self):
         """Test service token prefix."""
-        assert SERVICE_TOKEN_PREFIX == "sk_"  # noqa: S105  # Test constant
+        assert SERVICE_TOKEN_PREFIX == "sk_"  # Test constant
         assert isinstance(SERVICE_TOKEN_PREFIX, str)
 
     def test_auth_event_types(self):
         """Test authentication event type constants."""
         assert AUTH_EVENT_JWT == "jwt_auth"
-        assert AUTH_EVENT_SERVICE_TOKEN == "service_token_auth"  # noqa: S105  # Test constant
+        assert AUTH_EVENT_SERVICE_TOKEN == "service_token_auth"  # Test constant
         assert AUTH_EVENT_GENERAL == "auth"
 
     def test_jwt_claim_names(self):
@@ -99,14 +99,14 @@ class TestAuthConstants:
 
     def test_error_codes(self):
         """Test error code constants."""
-        assert ERROR_CODE_TOKEN_NOT_FOUND == "token_not_found"  # noqa: S105  # Test constant
-        assert ERROR_CODE_TOKEN_INACTIVE == "token_inactive"  # noqa: S105  # Test constant
-        assert ERROR_CODE_TOKEN_EXPIRED == "token_expired"  # noqa: S105  # Test constant
+        assert ERROR_CODE_TOKEN_NOT_FOUND == "token_not_found"  # Test constant
+        assert ERROR_CODE_TOKEN_INACTIVE == "token_inactive"  # Test constant
+        assert ERROR_CODE_TOKEN_EXPIRED == "token_expired"  # Test constant
         assert ERROR_CODE_VALIDATION_EXCEPTION == "validation_exception"
 
     def test_user_types(self):
         """Test user type constants."""
-        assert USER_TYPE_SERVICE_TOKEN == "service_token"  # noqa: S105  # Test constant
+        assert USER_TYPE_SERVICE_TOKEN == "service_token"  # Test constant
         assert USER_TYPE_JWT == "jwt"
         assert USER_TYPE_JWT_USER == "jwt_user"
 

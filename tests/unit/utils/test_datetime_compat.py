@@ -9,7 +9,7 @@ import warnings
 import pytest
 
 from src.utils.datetime_compat import (
-    # ruff: noqa: DTZ001  # Tests need to create naive datetimes intentionally
+    # Tests need to create naive datetimes intentionally
     UTC,
     MockDatetime,
     assert_datetime_aware,

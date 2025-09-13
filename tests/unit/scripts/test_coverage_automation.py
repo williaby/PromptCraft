@@ -323,7 +323,7 @@ class TestStructuredLogging:
         security_logger = get_security_logger()
 
         # Test security violation logging
-        test_path = Path("/tmp/test.py")  # noqa: S108
+        test_path = Path("/tmp/test.py")
         security_logger.log_path_validation_failure(test_path, "test violation")
 
         # Check security log format
@@ -386,7 +386,7 @@ global:
         """Test main automation workflow maintains compatibility."""
         # Setup mocks
         mock_detect.return_value = True
-        mock_generate.return_value = "/tmp/report.html"  # noqa: S108
+        mock_generate.return_value = "/tmp/report.html"
 
         # Create CLI and test workflow
         cli = CoverageAutomationCLI(tmp_path)

@@ -318,7 +318,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
 
         return code_blocks
 
-    def _detect_language(self, code: str) -> str:  # noqa: PLR0911
+    def _detect_language(self, code: str) -> str:
         """Detect programming language from code content."""
         # Simple language detection using string operations (safer than regex)
         code_lower = code.lower()
@@ -342,7 +342,7 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
             return "yaml"
         return "text"
 
-    def _extract_comments(self, code: str, language: str) -> list[str]:  # noqa: PLR0912
+    def _extract_comments(self, code: str, language: str) -> list[str]:
         """Extract comments from code based on language."""
         comments = []
 

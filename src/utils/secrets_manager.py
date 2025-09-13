@@ -356,7 +356,7 @@ def get_secrets_manager() -> GenericSecretsManager:
     Returns:
         Configured secrets manager instance
     """
-    global _secrets_manager  # noqa: PLW0603
+    global _secrets_manager
 
     if _secrets_manager is None:
         # Configuration from environment variables

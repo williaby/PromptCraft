@@ -111,7 +111,7 @@ class SimpleSessionManager:
 
     def _is_session_expired(self, session: dict) -> bool:
         """Check if session has expired."""
-        from datetime import timedelta  # noqa: PLC0415
+        from datetime import timedelta
 
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
         return bool(datetime.now(UTC) > expiry)
@@ -458,7 +458,7 @@ def create_auth_middleware(
     Returns:
         Configured CloudflareAccessMiddleware
     """
-    from .whitelist import create_validator_from_env  # noqa: PLC0415
+    from .whitelist import create_validator_from_env
 
     # Create whitelist validator with tier support
     validator = create_validator_from_env(whitelist_str, admin_emails_str, full_users_str, limited_users_str)

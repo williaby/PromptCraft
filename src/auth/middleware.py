@@ -873,7 +873,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 # Validate it looks like an IP address (max 39 chars for IPv6)
                 if len(host_str) <= 39:
                     return host_str
-            except Exception:  # nosec B110  # noqa: S110
+            except Exception:  # nosec B110
                 # Silently ignore IP parsing errors - acceptable for IP extraction
                 pass
 

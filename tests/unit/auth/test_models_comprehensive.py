@@ -92,7 +92,7 @@ class TestAuthenticatedUser:
 
         # Cannot be used in sets without custom __hash__
         with pytest.raises(TypeError):
-            {user1}  # noqa: B018
+            {user1}
 
     def test_string_representation(self):
         """Test string representation of AuthenticatedUser."""

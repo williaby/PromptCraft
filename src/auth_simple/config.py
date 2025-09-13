@@ -324,7 +324,7 @@ class ConfigManager:
     def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
         # Lazy import to avoid circular dependencies
-        from .middleware import (  # noqa: PLC0415  # Avoid circular import
+        from .middleware import (  # Avoid circular import
             CloudflareAccessMiddleware,
             SimpleSessionManager,
         )
@@ -364,7 +364,7 @@ _config_manager: ConfigManager | None = None
 
 def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
-    global _config_manager  # noqa: PLW0603
+    global _config_manager
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager
@@ -377,5 +377,5 @@ def get_auth_config() -> AuthConfig:
 
 def reset_config() -> None:
     """Reset global configuration (for testing)."""
-    global _config_manager  # noqa: PLW0603
+    global _config_manager
     _config_manager = None

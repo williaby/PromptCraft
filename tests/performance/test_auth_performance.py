@@ -40,8 +40,6 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
 
 
-# ruff: noqa: S105
-
 # Performance tests for authentication systems - database mocking handled via pytest fixtures
 
 

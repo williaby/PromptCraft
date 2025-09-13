@@ -74,9 +74,9 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
             # Fallback to SQLAlchemy queries for SQLite compatibility
             logger.debug(f"PostgreSQL function unavailable, using SQLAlchemy fallback: {pg_error}")
 
-            from sqlalchemy import select  # noqa: PLC0415  # Fallback import only when PostgreSQL unavailable
+            from sqlalchemy import select  # Fallback import only when PostgreSQL unavailable
 
-            from src.database.models import (  # noqa: PLC0415  # Fallback import only when PostgreSQL unavailable
+            from src.database.models import (  # Fallback import only when PostgreSQL unavailable
                 Permission,
                 Role,
                 UserSession,

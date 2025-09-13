@@ -61,7 +61,7 @@ class Journey1SmartTemplates(LoggerMixin):
         self.hyde_processor = HydeProcessor()
         self.query_counselor = QueryCounselor()
 
-    def extract_file_content(self, file_path: str) -> tuple[str, str]:  # noqa: PLR0911
+    def extract_file_content(self, file_path: str) -> tuple[str, str]:
         """
         Extract content from uploaded file with enhanced processing.
 

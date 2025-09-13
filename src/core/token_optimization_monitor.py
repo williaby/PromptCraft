@@ -725,7 +725,7 @@ _global_monitor: TokenOptimizationMonitor | None = None
 
 def get_token_optimization_monitor() -> TokenOptimizationMonitor:
     """Get the global token optimization monitor instance."""
-    global _global_monitor  # noqa: PLW0603
+    global _global_monitor
     if _global_monitor is None:
         _global_monitor = TokenOptimizationMonitor()
     return _global_monitor

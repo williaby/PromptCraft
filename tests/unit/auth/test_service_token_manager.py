@@ -18,9 +18,6 @@ from src.auth.service_token_manager import ServiceTokenManager
 from src.utils.time_utils import utc_now
 
 
-# ruff: noqa: S105, S106
-
-
 class TestServiceTokenManager:
     """Test cases for ServiceTokenManager."""
 

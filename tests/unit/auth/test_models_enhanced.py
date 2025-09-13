@@ -32,7 +32,7 @@ class TestServiceTokenResponseFromOrm:
         # Mock SQLAlchemy model with all fields
         mock_token = Mock()
         mock_token.id = uuid.uuid4()
-        mock_token.token_name = "test-service-token"  # noqa: S105  # Test token value
+        mock_token.token_name = "test-service-token"  # Test token value
         mock_token.created_at = datetime.now(UTC)
         mock_token.last_used = datetime.now(UTC)
         mock_token.usage_count = 42
@@ -45,7 +45,7 @@ class TestServiceTokenResponseFromOrm:
         response = ServiceTokenResponse.from_orm_model(mock_token)
 
         assert response.id == mock_token.id
-        assert response.token_name == "test-service-token"  # noqa: S105  # Test token value
+        assert response.token_name == "test-service-token"  # Test token value
         assert response.created_at == mock_token.created_at
         assert response.last_used == mock_token.last_used
         assert response.usage_count == 42
@@ -59,7 +59,7 @@ class TestServiceTokenResponseFromOrm:
         """Test from_orm_model with minimal SQLAlchemy model."""
         mock_token = Mock()
         mock_token.id = uuid.uuid4()
-        mock_token.token_name = "minimal-token"  # noqa: S105  # Test token value
+        mock_token.token_name = "minimal-token"  # Test token value
         mock_token.created_at = datetime.now(UTC)
         mock_token.last_used = None
         mock_token.usage_count = 0
@@ -73,7 +73,7 @@ class TestServiceTokenResponseFromOrm:
         response = ServiceTokenResponse.from_orm_model(mock_token)
 
         assert response.id == mock_token.id
-        assert response.token_name == "minimal-token"  # noqa: S105  # Test token value
+        assert response.token_name == "minimal-token"  # Test token value
         assert response.last_used is None
         assert response.usage_count == 0
         assert response.expires_at is None
@@ -85,7 +85,7 @@ class TestServiceTokenResponseFromOrm:
         """Test from_orm_model with inactive token."""
         mock_token = Mock()
         mock_token.id = uuid.uuid4()
-        mock_token.token_name = "inactive-token"  # noqa: S105  # Test token value
+        mock_token.token_name = "inactive-token"  # Test token value
         mock_token.created_at = datetime.now(UTC)
         mock_token.last_used = datetime.now(UTC)
         mock_token.usage_count = 100
@@ -107,7 +107,7 @@ class TestServiceTokenResponseFromOrm:
         """Test from_orm_model with expired token."""
         mock_token = Mock()
         mock_token.id = uuid.uuid4()
-        mock_token.token_name = "expired-token"  # noqa: S105  # Test token value
+        mock_token.token_name = "expired-token"  # Test token value
         mock_token.created_at = datetime.now(UTC)
         mock_token.last_used = datetime.now(UTC)
         mock_token.usage_count = 1000
@@ -129,7 +129,7 @@ class TestServiceTokenResponseFromOrm:
         """Test from_orm_model when SQLAlchemy model has is_valid attribute."""
         mock_token = Mock()
         mock_token.id = uuid.uuid4()
-        mock_token.token_name = "has-is-valid"  # noqa: S105  # Test token value
+        mock_token.token_name = "has-is-valid"  # Test token value
         mock_token.created_at = datetime.now(UTC)
         mock_token.last_used = None
         mock_token.usage_count = 5
@@ -156,7 +156,7 @@ class TestSecurityEventBaseValidators:
             "172.16.0.1",
             "127.0.0.1",
             "255.255.255.255",
-            "0.0.0.0",  # noqa: S104
+            "0.0.0.0",
         ]
 
         for ip in valid_ipv4_addresses:
@@ -191,7 +191,7 @@ class TestSecurityEventBaseValidators:
             "localhost",
             "127.0.0.1",
             "::1",
-            "0.0.0.0",  # noqa: S104
+            "0.0.0.0",
         ]
 
         for ip in localhost_addresses:

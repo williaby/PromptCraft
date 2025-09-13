@@ -353,7 +353,7 @@ _global_collector: MetricsCollector | None = None
 
 async def get_metrics_collector() -> MetricsCollector:
     """Get or create the global metrics collector instance."""
-    global _global_collector  # noqa: PLW0603  # Singleton pattern requires global state
+    global _global_collector  # Singleton pattern requires global state
 
     if _global_collector is None:
         _global_collector = MetricsCollector()
@@ -364,7 +364,7 @@ async def get_metrics_collector() -> MetricsCollector:
 
 async def shutdown_metrics_collector() -> None:
     """Shutdown the global metrics collector."""
-    global _global_collector  # noqa: PLW0603  # Singleton pattern requires global state
+    global _global_collector  # Singleton pattern requires global state
 
     if _global_collector is not None:
         await _global_collector.stop()

@@ -479,7 +479,7 @@ Regular paragraph text continues.
             assert result is None or isinstance(result, str)
         except Exception as e:
             # Expected in test environment without clipboard access
-            assert "clipboard" in str(e).lower() or "not supported" in str(e).lower()  # noqa: PT017
+            assert "clipboard" in str(e).lower() or "not supported" in str(e).lower()
 
     def test_get_supported_formats(self):
         """Test getting supported file formats."""

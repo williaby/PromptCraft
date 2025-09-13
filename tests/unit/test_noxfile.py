@@ -518,7 +518,7 @@ class TestDependencyManagement:
     def test_deps_session(self, mock_path, mock_session):
         """Test deps session functionality."""
         # Mock temporary directory creation with context manager
-        temp_dir = "/tmp/test"  # noqa: S108
+        temp_dir = "/tmp/test"
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock
@@ -846,12 +846,12 @@ class TestEdgeCasesAndErrorHandling:
         """Test deps session handles Path errors gracefully."""
         # Mock Path.cwd() to raise an exception
         mock_path.cwd.side_effect = Exception("Path error")
-        mock_session.create_tmp.return_value = "/tmp/test"  # noqa: S108
+        mock_session.create_tmp.return_value = "/tmp/test"
 
         # Create a proper context manager mock for chdir
         class MockContextManager:
             def __enter__(self):
-                return "/tmp/test"  # noqa: S108
+                return "/tmp/test"
 
             def __exit__(self, *args):
                 return None
@@ -937,7 +937,7 @@ def test_all_sessions_install_dependencies(session_function, expected_installs):
     mock_session.env = {}
     mock_session.log = Mock()
     mock_session.error = Mock()
-    mock_session.create_tmp = Mock(return_value="/tmp/test")  # noqa: S108
+    mock_session.create_tmp = Mock(return_value="/tmp/test")
 
     # Handle exceptions for sessions that might fail
     with contextlib.suppress(Exception):
@@ -1081,7 +1081,7 @@ class TestComplexScenarios:
     def test_temporary_directory_usage(self, mock_mkdtemp):
         """Test sessions that use temporary directories."""
         mock_session = Mock(spec=Session)
-        temp_dir = "/tmp/nox-test-123"  # noqa: S108
+        temp_dir = "/tmp/nox-test-123"
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock for chdir

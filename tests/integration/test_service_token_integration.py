@@ -24,9 +24,6 @@ from src.monitoring.service_token_monitor import ServiceTokenMonitor
 from src.utils.datetime_compat import UTC
 
 
-# ruff: noqa: S105, S106
-
-
 @pytest.fixture
 async def db_session():
     """Create mock database session for integration testing."""

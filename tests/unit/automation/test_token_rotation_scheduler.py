@@ -38,14 +38,14 @@ class TestTokenRotationPlan:
         scheduled_time = datetime.now(UTC) + timedelta(hours=1)
 
         plan = TokenRotationPlan(
-            token_name="test-token",  # noqa: S106  # Test token parameter
-            token_id="token-123",  # noqa: S106  # Test token parameter
+            token_name="test-token",  # Test token parameter
+            token_id="token-123",  # Test token parameter
             rotation_reason="Age-based rotation",
             scheduled_time=scheduled_time,
         )
 
-        assert plan.token_name == "test-token"  # noqa: S105  # Test token value
-        assert plan.token_id == "token-123"  # noqa: S105  # Test token value
+        assert plan.token_name == "test-token"  # Test token value
+        assert plan.token_id == "token-123"  # Test token value
         assert plan.rotation_reason == "Age-based rotation"
         assert plan.scheduled_time == scheduled_time
         assert plan.rotation_type == "scheduled"  # Default value
@@ -62,8 +62,8 @@ class TestTokenRotationPlan:
         metadata = {"usage": 500, "priority": "high"}
 
         plan = TokenRotationPlan(
-            token_name="api-token",  # noqa: S106  # Test token parameter
-            token_id="api-456",  # noqa: S106  # Test token parameter
+            token_name="api-token",  # Test token parameter
+            token_id="api-456",  # Test token parameter
             rotation_reason="High usage rotation",
             scheduled_time=scheduled_time,
             rotation_type="usage_based",
@@ -79,8 +79,8 @@ class TestTokenRotationPlan:
         scheduled_time = datetime.now(UTC) + timedelta(hours=1)
 
         plan = TokenRotationPlan(
-            token_name="status-token",  # noqa: S106  # Test token parameter
-            token_id="status-123",  # noqa: S106  # Test token parameter
+            token_name="status-token",  # Test token parameter
+            token_id="status-123",  # Test token parameter
             rotation_reason="Status test",
             scheduled_time=scheduled_time,
         )
@@ -94,13 +94,13 @@ class TestTokenRotationPlan:
 
         plan.status = "completed"
         plan.completed_at = datetime.now(UTC)
-        plan.new_token_value = "new_value"  # noqa: S105  # Test token value
-        plan.new_token_id = "new_id"  # noqa: S105  # Test token value
+        plan.new_token_value = "new_value"  # Test token value
+        plan.new_token_id = "new_id"  # Test token value
 
         assert plan.status == "completed"
         assert plan.completed_at is not None
-        assert plan.new_token_value == "new_value"  # noqa: S105  # Test token value
-        assert plan.new_token_id == "new_id"  # noqa: S105  # Test token value
+        assert plan.new_token_value == "new_value"  # Test token value
+        assert plan.new_token_id == "new_id"  # Test token value
 
 
 class TestTokenRotationSchedulerInit:
@@ -200,7 +200,7 @@ class TestAnalyzeTokensForRotation:
         # Mock token data - old token needing rotation
         mock_row = Mock()
         mock_row.id = "token-123"  # Test token value
-        mock_row.token_name = "old-api-token"  # noqa: S105  # Test token value
+        mock_row.token_name = "old-api-token"  # Test token value
         mock_row.created_at = datetime.now(UTC) - timedelta(days=100)
         mock_row.usage_count = 50
         mock_row.last_used = datetime.now(UTC) - timedelta(days=5)
@@ -219,8 +219,8 @@ class TestAnalyzeTokensForRotation:
 
         assert len(plans) == 1
         plan = plans[0]
-        assert plan.token_name == "old-api-token"  # noqa: S105  # Test token value
-        assert plan.token_id == "token-123"  # noqa: S105  # Test token value
+        assert plan.token_name == "old-api-token"  # Test token value
+        assert plan.token_id == "token-123"  # Test token value
         assert "Age-based rotation" in plan.rotation_reason
         assert plan.rotation_type == "age_based"
         assert plan.metadata["age_days"] == 100
@@ -235,7 +235,7 @@ class TestAnalyzeTokensForRotation:
         # Mock token data - high usage token
         mock_row = Mock()
         mock_row.id = "token-456"  # Test token value
-        mock_row.token_name = "high-usage-token"  # noqa: S105  # Test token value
+        mock_row.token_name = "high-usage-token"  # Test token value
         mock_row.created_at = datetime.now(UTC) - timedelta(days=45)
         mock_row.usage_count = 1500  # Above high_usage_threshold
         mock_row.last_used = datetime.now(UTC) - timedelta(hours=2)
@@ -254,7 +254,7 @@ class TestAnalyzeTokensForRotation:
 
         assert len(plans) == 1
         plan = plans[0]
-        assert plan.token_name == "high-usage-token"  # noqa: S105  # Test token value
+        assert plan.token_name == "high-usage-token"  # Test token value
         assert plan.rotation_type == "usage_based"
         assert "High usage rotation" in plan.rotation_reason
         assert plan.metadata["current_usage"] == 1500
@@ -268,7 +268,7 @@ class TestAnalyzeTokensForRotation:
         # Mock token data - manual rotation flag
         mock_row = Mock()
         mock_row.id = "token-789"  # Test token value
-        mock_row.token_name = "manual-rotation-token"  # noqa: S105  # Test token value
+        mock_row.token_name = "manual-rotation-token"  # Test token value
         mock_row.created_at = datetime.now(UTC) - timedelta(days=30)
         mock_row.usage_count = 100
         mock_row.last_used = datetime.now(UTC) - timedelta(days=1)
@@ -301,7 +301,7 @@ class TestAnalyzeTokensForRotation:
 
         # Should return mock plan when database fails
         assert len(plans) == 1
-        assert plans[0].token_name == "old-token-for-rotation"  # noqa: S105  # Test token value
+        assert plans[0].token_name == "old-token-for-rotation"  # Test token value
 
     async def test_analyze_tokens_for_rotation_empty_results(self):
         """Test analysis creates mock plan when no tokens need rotation."""
@@ -321,7 +321,7 @@ class TestAnalyzeTokensForRotation:
         # Should return mock plan for testing
         assert len(plans) == 1
         mock_plan = plans[0]
-        assert mock_plan.token_name == "old-token-for-rotation"  # noqa: S105  # Test token value
+        assert mock_plan.token_name == "old-token-for-rotation"  # Test token value
         assert mock_plan.rotation_type == "age_based"
 
 
@@ -337,8 +337,8 @@ class TestScheduleTokenRotation:
         """Test successful token rotation scheduling."""
         future_time = datetime.now(UTC) + timedelta(hours=2)
         plan = TokenRotationPlan(
-            token_name="schedule-token",  # noqa: S106  # Test token parameter
-            token_id="schedule-123",  # noqa: S106  # Test token parameter
+            token_name="schedule-token",  # Test token parameter
+            token_id="schedule-123",  # Test token parameter
             rotation_reason="Test scheduling",
             scheduled_time=future_time,
         )
@@ -358,8 +358,8 @@ class TestScheduleTokenRotation:
         """Test scheduling fails for past time."""
         past_time = datetime.now(UTC) - timedelta(hours=1)
         plan = TokenRotationPlan(
-            token_name="past-token",  # noqa: S106  # Test token parameter
-            token_id="past-123",  # noqa: S106  # Test token parameter
+            token_name="past-token",  # Test token parameter
+            token_id="past-123",  # Test token parameter
             rotation_reason="Past time test",
             scheduled_time=past_time,
         )
@@ -373,8 +373,8 @@ class TestScheduleTokenRotation:
         """Test scheduling handles exceptions gracefully."""
         future_time = datetime.now(UTC) + timedelta(hours=2)
         plan = TokenRotationPlan(
-            token_name="error-token",  # noqa: S106  # Test token parameter
-            token_id="error-123",  # noqa: S106  # Test token parameter
+            token_name="error-token",  # Test token parameter
+            token_id="error-123",  # Test token parameter
             rotation_reason="Error test",
             scheduled_time=future_time,
         )
@@ -398,8 +398,8 @@ class TestExecuteRotationPlan:
     async def test_execute_rotation_plan_success(self):
         """Test successful rotation plan execution."""
         plan = TokenRotationPlan(
-            token_name="execute-token",  # noqa: S106  # Test token parameter
-            token_id="execute-123",  # noqa: S106  # Test token parameter
+            token_name="execute-token",  # Test token parameter
+            token_id="execute-123",  # Test token parameter
             rotation_reason="Execution test",
             scheduled_time=datetime.now(UTC),
         )
@@ -414,8 +414,8 @@ class TestExecuteRotationPlan:
 
         assert result is True
         assert plan.status == "completed"
-        assert plan.new_token_value == "new_token_value"  # noqa: S105  # Test token value
-        assert plan.new_token_id == "new_token_id"  # noqa: S105  # Test token value
+        assert plan.new_token_value == "new_token_value"  # Test token value
+        assert plan.new_token_id == "new_token_id"  # Test token value
         assert plan.completed_at is not None
 
         # Verify notifications
@@ -427,8 +427,8 @@ class TestExecuteRotationPlan:
     async def test_execute_rotation_plan_token_manager_failure(self):
         """Test rotation when token manager fails (falls back to mock)."""
         plan = TokenRotationPlan(
-            token_name="failover-token",  # noqa: S106  # Test token parameter
-            token_id="failover-123",  # noqa: S106  # Test token parameter
+            token_name="failover-token",  # Test token parameter
+            token_id="failover-123",  # Test token parameter
             rotation_reason="Failover test",
             scheduled_time=datetime.now(UTC),
         )
@@ -444,14 +444,14 @@ class TestExecuteRotationPlan:
         # Should succeed using mock fallback
         assert result is True
         assert plan.status == "completed"
-        assert plan.new_token_value == "sk_test_rotated_token_12345"  # noqa: S105  # Test token value
-        assert plan.new_token_id == "new_token_id_12345"  # noqa: S105  # Test token value
+        assert plan.new_token_value == "sk_test_rotated_token_12345"  # Test token value
+        assert plan.new_token_id == "new_token_id_12345"  # Test token value
 
     async def test_execute_rotation_plan_no_result(self):
         """Test rotation when no result is returned."""
         plan = TokenRotationPlan(
-            token_name="noresult-token",  # noqa: S106  # Test token parameter
-            token_id="noresult-123",  # noqa: S106  # Test token parameter
+            token_name="noresult-token",  # Test token parameter
+            token_id="noresult-123",  # Test token parameter
             rotation_reason="No result test",
             scheduled_time=datetime.now(UTC),
         )
@@ -473,8 +473,8 @@ class TestExecuteRotationPlan:
     async def test_execute_rotation_plan_exception_handling(self):
         """Test rotation handles general exceptions."""
         plan = TokenRotationPlan(
-            token_name="exception-token",  # noqa: S106  # Test token parameter
-            token_id="exception-123",  # noqa: S106  # Test token parameter
+            token_name="exception-token",  # Test token parameter
+            token_id="exception-123",  # Test token parameter
             rotation_reason="Exception test",
             scheduled_time=datetime.now(UTC),
         )
@@ -499,12 +499,10 @@ class TestExecuteRotationPlan:
 
     async def test_execute_rotation_plan_long_token_name_sanitization(self):
         """Test rotation with long token names that need sanitization."""
-        long_token_name = (
-            "very_long_token_name_that_exceeds_twenty_characters_and_should_be_truncated"  # noqa: S105  # Test constant
-        )
+        long_token_name = "very_long_token_name_that_exceeds_twenty_characters_and_should_be_truncated"  # Test constant
         plan = TokenRotationPlan(
             token_name=long_token_name,
-            token_id="long-123",  # noqa: S106  # Test token parameter
+            token_id="long-123",  # Test token parameter
             rotation_reason="Very long rotation reason that exceeds fifty characters and should be truncated for security",
             scheduled_time=datetime.now(UTC),
         )
@@ -531,8 +529,8 @@ class TestNotificationSystem:
     async def test_send_rotation_notification_starting(self):
         """Test sending rotation starting notification."""
         plan = TokenRotationPlan(
-            token_name="notify-token",  # noqa: S106  # Test token parameter
-            token_id="notify-123",  # noqa: S106  # Test token parameter
+            token_name="notify-token",  # Test token parameter
+            token_id="notify-123",  # Test token parameter
             rotation_reason="Notification test",
             scheduled_time=datetime.now(UTC),
         )
@@ -551,8 +549,8 @@ class TestNotificationSystem:
     async def test_send_rotation_notification_callback_exception(self):
         """Test notification handles callback exceptions gracefully."""
         plan = TokenRotationPlan(
-            token_name="callback-error-token",  # noqa: S106  # Test token parameter
-            token_id="callback-error-123",  # noqa: S106  # Test token parameter
+            token_name="callback-error-token",  # Test token parameter
+            token_id="callback-error-123",  # Test token parameter
             rotation_reason="Callback error test",
             scheduled_time=datetime.now(UTC),
         )
@@ -571,8 +569,8 @@ class TestNotificationSystem:
     async def test_send_rotation_notification_different_event_types(self):
         """Test notifications for different event types."""
         plan = TokenRotationPlan(
-            token_name="event-token",  # noqa: S106  # Test token parameter
-            token_id="event-123",  # noqa: S106  # Test token parameter
+            token_name="event-token",  # Test token parameter
+            token_id="event-123",  # Test token parameter
             rotation_reason="Event test",
             scheduled_time=datetime.now(UTC),
         )
@@ -606,15 +604,15 @@ class TestSchedulerWorkflowMethods:
 
         # Create plans - one ready, one future
         ready_plan = TokenRotationPlan(
-            token_name="ready-token",  # noqa: S106  # Test token parameter
-            token_id="ready-123",  # noqa: S106  # Test token parameter
+            token_name="ready-token",  # Test token parameter
+            token_id="ready-123",  # Test token parameter
             rotation_reason="Ready for rotation",
             scheduled_time=mock_now - timedelta(minutes=1),  # Past due
         )
 
         future_plan = TokenRotationPlan(
-            token_name="future-token",  # noqa: S106  # Test token parameter
-            token_id="future-123",  # noqa: S106  # Test token parameter
+            token_name="future-token",  # Test token parameter
+            token_id="future-123",  # Test token parameter
             rotation_reason="Future rotation",
             scheduled_time=mock_now + timedelta(hours=1),  # Future
         )
@@ -666,8 +664,8 @@ class TestSchedulerWorkflowMethods:
         """Test complete rotation scheduler cycle."""
         # Mock analyze_tokens_for_rotation to return plans
         mock_plan = TokenRotationPlan(
-            token_name="cycle-token",  # noqa: S106  # Test token parameter
-            token_id="cycle-123",  # noqa: S106  # Test token parameter
+            token_name="cycle-token",  # Test token parameter
+            token_id="cycle-123",  # Test token parameter
             rotation_reason="Full cycle test",
             scheduled_time=datetime.now(UTC) + timedelta(hours=1),
         )
@@ -707,7 +705,7 @@ class TestErrorHandlingAndEdgeCases:
         malicious_name = "token\nwith\r\nnewlines"
         plan = TokenRotationPlan(
             token_name=malicious_name,
-            token_id="sanitize-123",  # noqa: S106  # Test token parameter
+            token_id="sanitize-123",  # Test token parameter
             rotation_reason="Sanitization test",
             scheduled_time=datetime.now(UTC) + timedelta(hours=1),
         )
@@ -724,8 +722,8 @@ class TestErrorHandlingAndEdgeCases:
         """Test rotation reason sanitization for long strings with special chars."""
         long_reason = "Very long reason with \n newlines and \r carriage returns " * 5
         plan = TokenRotationPlan(
-            token_name="reason-token",  # noqa: S106  # Test token parameter
-            token_id="reason-123",  # noqa: S106  # Test token parameter
+            token_name="reason-token",  # Test token parameter
+            token_id="reason-123",  # Test token parameter
             rotation_reason=long_reason,
             scheduled_time=datetime.now(UTC),
         )
@@ -802,8 +800,8 @@ class TestErrorHandlingAndEdgeCases:
         self.scheduler._notification_callbacks.append(callback2)
 
         plan = TokenRotationPlan(
-            token_name="callback-test",  # noqa: S106  # Test token parameter
-            token_id="callback-123",  # noqa: S106  # Test token parameter
+            token_name="callback-test",  # Test token parameter
+            token_id="callback-123",  # Test token parameter
             rotation_reason="Callback registration test",
             scheduled_time=datetime.now(UTC),
         )
@@ -831,7 +829,7 @@ class TestIntegrationScenarios:
 
             mock_row = Mock()
             mock_row.id = "workflow-123"  # Test token value
-            mock_row.token_name = "workflow-token"  # noqa: S105  # Test token value
+            mock_row.token_name = "workflow-token"  # Test token value
             mock_row.created_at = datetime.now(UTC) - timedelta(days=100)
             mock_row.usage_count = 50
             mock_row.last_used = datetime.now(UTC) - timedelta(days=1)
@@ -865,8 +863,8 @@ class TestIntegrationScenarios:
 
                 # Step 5: Verify final state
                 assert plans[0].status == "completed"
-                assert plans[0].new_token_value == "new_token"  # noqa: S105  # Test token value
-                assert plans[0].new_token_id == "new_id"  # noqa: S105  # Test token value
+                assert plans[0].new_token_value == "new_token"  # Test token value
+                assert plans[0].new_token_id == "new_id"  # Test token value
 
     async def test_high_volume_rotation_scenario(self):
         """Test handling of high-volume rotation scenario."""
@@ -898,15 +896,15 @@ class TestIntegrationScenarios:
         """Test scenario with mixed successes and failures."""
         # Create plans that will have mixed outcomes
         success_plan = TokenRotationPlan(
-            token_name="success-token",  # noqa: S106  # Test token parameter
-            token_id="success-123",  # noqa: S106  # Test token parameter
+            token_name="success-token",  # Test token parameter
+            token_id="success-123",  # Test token parameter
             rotation_reason="Will succeed",
             scheduled_time=datetime.now(UTC) - timedelta(minutes=1),
         )
 
         failure_plan = TokenRotationPlan(
-            token_name="failure-token",  # noqa: S106  # Test token parameter
-            token_id="failure-123",  # noqa: S106  # Test token parameter
+            token_name="failure-token",  # Test token parameter
+            token_id="failure-123",  # Test token parameter
             rotation_reason="Will fail",
             scheduled_time=datetime.now(UTC) - timedelta(minutes=2),
         )
@@ -915,7 +913,7 @@ class TestIntegrationScenarios:
 
         # Mock mixed results
         def mock_execute(plan):
-            if plan.token_id == "success-123":  # noqa: S105  # Test token value
+            if plan.token_id == "success-123":  # Test token value
                 return AsyncMock(return_value=True)()
             return AsyncMock(return_value=False)()
 

@@ -31,9 +31,6 @@ from src.database.models import ServiceToken, UserSession
 from src.utils.datetime_compat import UTC
 
 
-# ruff: noqa: S106
-
-
 @pytest.mark.integration
 class TestAuthenticationIntegration:
     """Integration tests for complete authentication flow."""

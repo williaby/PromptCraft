@@ -438,7 +438,7 @@ class FunctionLoader:
 
     def __init__(self) -> None:
         # Import here to avoid circular imports
-        from .task_detection_config import default_config  # noqa: PLC0415  # Avoid circular import
+        from .task_detection_config import default_config  # Avoid circular import
 
         config = default_config
         self.tier_definitions = {
@@ -650,7 +650,7 @@ class TaskDetectionSystem:
         self.cache_timestamps: dict[str, datetime] = {}
         self.max_cache_age = timedelta(hours=1)
 
-    @lru_cache(maxsize=1000)  # noqa: B019
+    @lru_cache(maxsize=1000)
     def _cached_keyword_analysis(self, query: str) -> dict[str, float]:
         """Cached keyword analysis for performance"""
         return self.keyword_analyzer.analyze(query)

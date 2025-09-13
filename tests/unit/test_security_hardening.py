@@ -1879,7 +1879,7 @@ class TestMainScriptExecution:
             try:
                 main_path = Path("src/main.py")
                 with main_path.open() as f:
-                    exec(compile(f.read(), "src/main.py", "exec"))  # noqa: S102
+                    exec(compile(f.read(), "src/main.py", "exec"))
             except SystemExit:
                 pass  # Expected due to configuration error
             except Exception as e:

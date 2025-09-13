@@ -117,7 +117,7 @@ def create_limiter() -> Limiter:
         # Production: Use Redis for distributed rate limiting
         # Handle both real settings and mock objects properly
         try:
-            from unittest.mock import Mock  # noqa: PLC0415  # Only needed for mock detection in testing context
+            from unittest.mock import Mock  # Only needed for mock detection in testing context
 
             redis_host = getattr(settings, "redis_host", "localhost")
             redis_port = getattr(settings, "redis_port", 6379)

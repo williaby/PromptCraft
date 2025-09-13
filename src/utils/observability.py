@@ -369,7 +369,7 @@ _metrics_collector = None
 
 def get_instrumentor() -> "OpenTelemetryInstrumentor":
     """Get global OpenTelemetry instrumentor."""
-    global _observability_instrumentor  # noqa: PLW0603
+    global _observability_instrumentor
     if _observability_instrumentor is None:
         _observability_instrumentor = OpenTelemetryInstrumentor()
     return _observability_instrumentor
@@ -377,7 +377,7 @@ def get_instrumentor() -> "OpenTelemetryInstrumentor":
 
 def get_metrics_collector() -> "AgentMetrics":
     """Get global metrics collector."""
-    global _metrics_collector  # noqa: PLW0603
+    global _metrics_collector
     if _metrics_collector is None:
         _metrics_collector = AgentMetrics()
     return _metrics_collector

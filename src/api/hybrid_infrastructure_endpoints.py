@@ -24,7 +24,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
     """Register hybrid infrastructure API routes with the FastAPI app."""
 
     @app.get("/api/discovery/agents")
-    async def get_available_agents(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_available_agents(request: Request) -> dict[str, Any]:
         """Get list of available agents through discovery system."""
         try:
             if not hasattr(app.state, "agent_discovery"):
@@ -46,7 +46,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve agents") from e
 
     @app.get("/api/discovery/status")
-    async def get_hybrid_infrastructure_status(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_hybrid_infrastructure_status(request: Request) -> dict[str, Any]:
         """Get overall hybrid infrastructure status."""
         try:
             status = {
@@ -77,7 +77,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve infrastructure status") from e
 
     @app.get("/api/discovery/mcp-servers")
-    async def get_mcp_servers_status(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_mcp_servers_status(request: Request) -> dict[str, Any]:
         """Get MCP servers discovery and connection status."""
         try:
             if not hasattr(app.state, "mcp_manager"):
@@ -108,7 +108,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve MCP status") from e
 
     @app.post("/api/mcp-servers/{server_name}/connect")
-    async def connect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def connect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:
         """Connect to a specific MCP server using discovery and connection bridge."""
         try:
             if not hasattr(app.state, "mcp_manager"):
@@ -134,7 +134,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to connect: {e!s}") from e
 
     @app.delete("/api/mcp-servers/{server_name}/disconnect")
-    async def disconnect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def disconnect_mcp_server(server_name: str, request: Request) -> dict[str, Any]:
         """Disconnect from a specific MCP server."""
         try:
             if not hasattr(app.state, "mcp_manager"):
@@ -156,7 +156,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to disconnect: {e!s}") from e
 
     @app.get("/api/mcp-servers/connections")
-    async def get_mcp_connections(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_mcp_connections(request: Request) -> dict[str, Any]:
         """Get status of all active MCP server connections."""
         try:
             if not hasattr(app.state, "mcp_manager"):
@@ -171,7 +171,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve connections") from e
 
     @app.get("/api/mcp-servers/health")
-    async def get_mcp_health(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_mcp_health(request: Request) -> dict[str, Any]:
         """Get comprehensive health status of MCP system."""
         try:
             if not hasattr(app.state, "mcp_manager"):
@@ -186,7 +186,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve health status") from e
 
     @app.post("/api/agents/{agent_id}/load")
-    async def load_agent(agent_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def load_agent(agent_id: str, request: Request) -> dict[str, Any]:
         """Load a specific agent dynamically."""
         try:
             if not hasattr(app.state, "agent_loader"):
@@ -208,7 +208,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to load agent: {e!s}") from e
 
     @app.delete("/api/agents/{agent_id}/unload")
-    async def unload_agent(agent_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def unload_agent(agent_id: str, request: Request) -> dict[str, Any]:
         """Unload a specific agent and free resources."""
         try:
             if not hasattr(app.state, "agent_loader"):
@@ -227,7 +227,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to unload agent: {e!s}") from e
 
     @app.get("/api/discovery/standards")
-    async def get_available_standards(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_available_standards(request: Request) -> dict[str, Any]:
         """Get list of available development standards."""
         try:
             if not hasattr(app.state, "standards_manager"):
@@ -250,7 +250,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve standards") from e
 
     @app.get("/api/discovery/standards/{standard_id}")
-    async def get_standard_content(standard_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_standard_content(standard_id: str, request: Request) -> dict[str, Any]:
         """Get content of a specific development standard."""
         try:
             if not hasattr(app.state, "standards_manager"):
@@ -280,7 +280,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve standard: {e!s}") from e
 
     @app.post("/api/standards/validate")
-    async def validate_project_standards(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def validate_project_standards(request: Request) -> dict[str, Any]:
         """Validate project compliance against development standards."""
         try:
             if not hasattr(app.state, "standards_manager"):
@@ -301,7 +301,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to validate standards compliance") from e
 
     @app.get("/api/discovery/commands")
-    async def get_available_commands(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_available_commands(request: Request) -> dict[str, Any]:
         """Get list of available Claude Code slash commands."""
         try:
             if not hasattr(app.state, "commands_manager"):
@@ -323,7 +323,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve commands") from e
 
     @app.get("/api/discovery/commands/{command_id}")
-    async def get_command_content(command_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_command_content(command_id: str, request: Request) -> dict[str, Any]:
         """Get content of a specific Claude Code command."""
         try:
             if not hasattr(app.state, "commands_manager"):
@@ -356,7 +356,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve command: {e!s}") from e
 
     @app.get("/api/discovery/commands/category/{category}")
-    async def get_commands_by_category(category: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_commands_by_category(category: str, request: Request) -> dict[str, Any]:
         """Get commands filtered by category."""
         try:
             if not hasattr(app.state, "commands_manager"):
@@ -388,7 +388,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve category commands: {e!s}") from e
 
     @app.get("/api/commands/search")
-    async def search_commands(q: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def search_commands(q: str, request: Request) -> dict[str, Any]:
         """Search commands by query string."""
         try:
             if not hasattr(app.state, "commands_manager"):
@@ -421,7 +421,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to search commands: {e!s}") from e
 
     @app.get("/api/discovery/scripts")
-    async def get_available_scripts(request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_available_scripts(request: Request) -> dict[str, Any]:
         """Get list of available automation scripts."""
         try:
             if not hasattr(app.state, "scripts_manager"):
@@ -443,7 +443,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail="Failed to retrieve scripts") from e
 
     @app.get("/api/discovery/scripts/{script_id}")
-    async def get_script_content(script_id: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_script_content(script_id: str, request: Request) -> dict[str, Any]:
         """Get content of a specific automation script."""
         try:
             if not hasattr(app.state, "scripts_manager"):
@@ -478,7 +478,7 @@ def register_hybrid_infrastructure_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=500, detail=f"Failed to retrieve script: {e!s}") from e
 
     @app.get("/api/discovery/scripts/category/{category}")
-    async def get_scripts_by_category(category: str, request: Request) -> dict[str, Any]:  # noqa: ARG001
+    async def get_scripts_by_category(category: str, request: Request) -> dict[str, Any]:
         """Get scripts filtered by category."""
         try:
             if not hasattr(app.state, "scripts_manager"):

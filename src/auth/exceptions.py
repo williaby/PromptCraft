@@ -240,7 +240,7 @@ class AuthExceptionHandler:
         )
 
     @classmethod
-    def handle_role_manager_error(  # noqa: PLR0911  # Exception mapping requires multiple returns
+    def handle_role_manager_error(  # Exception mapping requires multiple returns
         cls,
         error: Exception,
     ) -> HTTPException:

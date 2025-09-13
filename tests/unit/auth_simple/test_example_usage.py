@@ -821,7 +821,7 @@ if __name__ == "__main__":
                         # Verify uvicorn.run was called with correct parameters
                         mock_uvicorn_run.assert_called_once_with(
                             "example_usage:app",
-                            host="0.0.0.0",  # noqa: S104
+                            host="0.0.0.0",
                             port=8000,
                             reload=True,
                             log_level="info",

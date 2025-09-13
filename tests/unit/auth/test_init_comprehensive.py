@@ -31,40 +31,40 @@ class TestServiceTokenUser:
         """Test ServiceTokenUser initialization with all parameters."""
         metadata = {"permissions": ["read", "write"], "scopes": ["admin"]}
         user = ServiceTokenUser(
-            token_id="token123",  # noqa: S106
-            token_name="Test Token",  # noqa: S106
+            token_id="token123",
+            token_name="Test Token",
             metadata=metadata,
             usage_count=5,
         )  # Test token parameters
 
-        assert user.token_id == "token123"  # noqa: S105  # Test token value
-        assert user.token_name == "Test Token"  # noqa: S105  # Test token value
+        assert user.token_id == "token123"  # Test token value
+        assert user.token_name == "Test Token"  # Test token value
         assert user.metadata == metadata
         assert user.usage_count == 5
 
     def test_init_with_minimal_params(self):
         """Test ServiceTokenUser initialization with minimal parameters."""
         user = ServiceTokenUser(
-            token_id="token456",  # noqa: S106
-            token_name="Simple Token",  # noqa: S106
+            token_id="token456",
+            token_name="Simple Token",
             metadata=None,
         )  # Test token parameters
 
-        assert user.token_id == "token456"  # noqa: S105  # Test token value
-        assert user.token_name == "Simple Token"  # noqa: S105  # Test token value
+        assert user.token_id == "token456"  # Test token value
+        assert user.token_name == "Simple Token"  # Test token value
         assert user.metadata == {}
         assert user.usage_count == 0
 
     def test_init_with_empty_metadata(self):
         """Test ServiceTokenUser initialization with empty metadata."""
         user = ServiceTokenUser(
-            token_id="token789",  # noqa: S106
-            token_name="Empty Token",  # noqa: S106
+            token_id="token789",
+            token_name="Empty Token",
             metadata={},
         )  # Test token parameters
 
-        assert user.token_id == "token789"  # noqa: S105  # Test token value
-        assert user.token_name == "Empty Token"  # noqa: S105  # Test token value
+        assert user.token_id == "token789"  # Test token value
+        assert user.token_name == "Empty Token"  # Test token value
         assert user.metadata == {}
 
     def test_has_permission_true(self):

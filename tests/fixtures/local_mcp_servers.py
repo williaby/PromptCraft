@@ -58,8 +58,8 @@ class LocalMCPServer:
             logger.info("Starting %s on port %s", self.name, self.port)
 
             # Start the process
-            self.process = subprocess.Popen(  # noqa: S603
-                ["python", str(self.server_path)],  # noqa: S607
+            self.process = subprocess.Popen(
+                ["python", str(self.server_path)],
                 env=env,
                 cwd=self.server_path.parent,
                 stdout=subprocess.PIPE,

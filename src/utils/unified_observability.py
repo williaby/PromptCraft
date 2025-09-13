@@ -58,7 +58,7 @@ except ImportError:
     PROMETHEUS_AVAILABLE = False
 
 try:
-    import fastapi  # noqa: F401
+    import fastapi
 
     FASTAPI_AVAILABLE = True
 except ImportError:
@@ -452,7 +452,7 @@ _observability_system: ObservabilitySystem | None = None
 
 def configure_observability(config: ObservabilityConfig | None = None) -> ObservabilitySystem:
     """Configure global observability system."""
-    global _observability_system  # noqa: PLW0603
+    global _observability_system
 
     if config is None:
         # Auto-configure based on environment

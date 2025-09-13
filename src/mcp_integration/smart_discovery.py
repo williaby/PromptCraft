@@ -243,7 +243,7 @@ class SmartMCPDiscovery(LoggerMixin):
                             resource_usage={"port": port},
                             discovered_at=utc_now(),
                         )
-                except Exception:  # noqa: S110
+                except Exception:
                     pass
         return None
 
@@ -387,7 +387,7 @@ class SmartMCPDiscovery(LoggerMixin):
                             resource_usage={},
                             discovered_at=utc_now(),
                         )
-                except Exception:  # noqa: S110
+                except Exception:
                     pass
 
         return None
@@ -466,7 +466,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 try:
                     port = self.find_available_port(8000, 8010)
                     cmd = ["poetry", "run", "python", "-m", "src.main", "--port", str(port)]
-                    process = subprocess.Popen(  # noqa: S603
+                    process = subprocess.Popen(
                         cmd,
                         cwd=zen_path,
                         stdout=subprocess.PIPE,

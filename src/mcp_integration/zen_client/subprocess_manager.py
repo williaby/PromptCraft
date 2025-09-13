@@ -64,7 +64,7 @@ class ZenMCPProcess:
             logger.info(f"Starting zen-mcp-server: {python_path} {server_path}")
 
             # Start the subprocess
-            self.process = subprocess.Popen(  # noqa: S603
+            self.process = subprocess.Popen(
                 [str(python_path), str(server_path)],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -204,7 +204,7 @@ class ZenMCPProcess:
             if self.process and self.process.stderr and self.process.stderr.readable():
                 # Non-blocking read of stderr
                 try:
-                    import select  # noqa: PLC0415  # Platform-specific import for Unix-like systems only
+                    import select  # Platform-specific import for Unix-like systems only
 
                     if self.process and self.process.stderr and select.select([self.process.stderr], [], [], 0)[0]:
                         error_output = self.process.stderr.read()

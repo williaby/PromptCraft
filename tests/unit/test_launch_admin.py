@@ -7,7 +7,7 @@ from unittest import mock
 
 
 # Add the project root to sys.path so we can import launch_admin
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import launch_admin
 
 
@@ -33,7 +33,7 @@ class TestLaunchAdmin:
             mock_interface.assert_called_once()
             mock_interface.return_value.create_interface.assert_called_once()
             mock_app.launch.assert_called_once_with(
-                server_name="0.0.0.0",  # noqa: S104
+                server_name="0.0.0.0",
                 server_port=7861,
                 share=False,
                 debug=True,

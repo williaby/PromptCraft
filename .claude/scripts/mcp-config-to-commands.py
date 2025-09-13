@@ -89,7 +89,7 @@ def main() -> None:
             f.write(f"echo 'Installing {name}...'\n")
             f.write(f"{cmd}\n\n")
 
-    os.chmod(output_file, 0o755)
+    Path(output_file).chmod(0o755)  # Script needs executable permissions
 
 
 if __name__ == "__main__":

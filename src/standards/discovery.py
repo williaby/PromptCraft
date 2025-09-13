@@ -155,7 +155,7 @@ class StandardsDiscoverySystem(LoggerMixin):
             # Check if file has YAML frontmatter
             if content.startswith("---\n"):
                 try:
-                    import yaml  # noqa: PLC0415  # Optional/conditional import
+                    import yaml  # Optional/conditional import
 
                     frontmatter_end = content.find("\n---\n", 4)
                     if frontmatter_end != -1:

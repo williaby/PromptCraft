@@ -223,7 +223,7 @@ class CommandsDiscoverySystem(LoggerMixin):
                 # Parse YAML frontmatter if present
                 if content.startswith("---\n"):
                     try:
-                        import yaml  # noqa: PLC0415  # Optional/conditional import
+                        import yaml  # Optional/conditional import
 
                         frontmatter_end = content.find("\n---\n", 4)
                         if frontmatter_end != -1:

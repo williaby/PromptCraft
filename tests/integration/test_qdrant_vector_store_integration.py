@@ -232,7 +232,7 @@ class TestQdrantVectorStoreIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_qdrant_vector_store_mocked_operations(  # noqa: PLR0915
+    async def test_qdrant_vector_store_mocked_operations(
         self,
         qdrant_config,
         sample_documents,

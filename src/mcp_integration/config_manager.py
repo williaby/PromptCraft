@@ -90,8 +90,8 @@ class MCPConfigurationManager(LoggerMixin):
         self.connection_bridge = None
         if enable_discovery:
             try:
-                from .connection_bridge import MCPConnectionBridge  # noqa: PLC0415  # Avoid circular import
-                from .smart_discovery import SmartMCPDiscovery  # noqa: PLC0415  # Avoid circular import
+                from .connection_bridge import MCPConnectionBridge  # Avoid circular import
+                from .smart_discovery import SmartMCPDiscovery  # Avoid circular import
 
                 self.discovery = SmartMCPDiscovery()
                 self.connection_bridge = MCPConnectionBridge(self.discovery)

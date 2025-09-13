@@ -36,8 +36,8 @@ def main() -> None:
 
     try:
         # Execute the main validation script
-        result = subprocess.run(  # noqa: S603
-            ["python", str(script_path), *script_args],  # noqa: S607
+        result = subprocess.run(
+            ["python", str(script_path), *script_args],
             check=False,
             cwd=Path.cwd(),
         )
