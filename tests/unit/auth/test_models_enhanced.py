@@ -156,7 +156,7 @@ class TestSecurityEventBaseValidators:
             "172.16.0.1",
             "127.0.0.1",
             "255.255.255.255",
-            "0.0.0.0",
+            "0.0.0.0",  # noqa: S104
         ]
 
         for ip in valid_ipv4_addresses:
@@ -191,7 +191,7 @@ class TestSecurityEventBaseValidators:
             "localhost",
             "127.0.0.1",
             "::1",
-            "0.0.0.0",
+            "0.0.0.0",  # noqa: S104
         ]
 
         for ip in localhost_addresses:

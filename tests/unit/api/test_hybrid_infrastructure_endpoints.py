@@ -2,7 +2,7 @@
 Tests for Hybrid Infrastructure API Endpoints
 """
 
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException

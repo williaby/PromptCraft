@@ -249,7 +249,7 @@ class SecurityEventBase(BaseModel):
             return v
 
         # Allow localhost for development
-        if v in ["localhost", "127.0.0.1", "::1", "0.0.0.0"]:
+        if v in ["localhost", "127.0.0.1", "::1", "0.0.0.0"]:  # noqa: S104
             return v
 
         # Validate IPv4 addresses

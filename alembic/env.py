@@ -9,7 +9,7 @@ from logging.config import fileConfig
 import os
 from pathlib import Path
 import sys
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection

@@ -64,7 +64,7 @@ class ZenMCPProcess:
             logger.info(f"Starting zen-mcp-server: {python_path} {server_path}")
 
             # Start the subprocess
-            self.process = subprocess.Popen(
+            self.process = subprocess.Popen(  # noqa: S603
                 [str(python_path), str(server_path)],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

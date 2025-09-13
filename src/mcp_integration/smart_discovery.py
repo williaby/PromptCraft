@@ -466,7 +466,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 try:
                     port = self.find_available_port(8000, 8010)
                     cmd = ["poetry", "run", "python", "-m", "src.main", "--port", str(port)]
-                    process = subprocess.Popen(
+                    process = subprocess.Popen(  # noqa: S603
                         cmd,
                         cwd=zen_path,
                         stdout=subprocess.PIPE,

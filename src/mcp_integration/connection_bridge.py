@@ -83,7 +83,7 @@ class NPXProcessManager(LoggerMixin):
 
             self.logger.info(f"Starting NPX server: {' '.join(cmd)}")
 
-            process = subprocess.Popen(
+            process = subprocess.Popen(  # noqa: S603
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

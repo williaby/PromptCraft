@@ -1068,9 +1068,11 @@ class TestDynamicAgentLoader:
         mock_discovery.discover_agent.return_value = agent_def
         mock_resource_manager.can_load_agent.return_value = True
 
-        with patch.object(agent_loader, "load_markdown_agent", side_effect=Exception("Load error")):
-            with pytest.raises(Exception, match="Load error"):
-                agent_loader.load_agent("error-agent", {})
+        with (
+            patch.object(agent_loader, "load_markdown_agent", side_effect=Exception("Load error")),
+            pytest.raises(Exception, match="Load error")
+        ):
+            agent_loader.load_agent("error-agent", {})
 
     def test_load_markdown_agent(self, agent_loader):
         """Test loading markdown agent implementation."""
@@ -1181,9 +1183,11 @@ class TestDynamicAgentLoader:
             implementation=impl,
         )
 
-        with patch("importlib.import_module", side_effect=ImportError("Module not found")):
-            with pytest.raises(ImportError, match="Failed to load Python agent"):
-                agent_loader.load_python_agent(agent_def, {})
+        with (
+            patch("importlib.import_module", side_effect=ImportError("Module not found")),
+            pytest.raises(ImportError, match="Failed to load Python agent")
+        ):
+            agent_loader.load_python_agent(agent_def, {})
 
     def test_load_remote_agent(self, agent_loader):
         """Test loading remote agent (not implemented)."""

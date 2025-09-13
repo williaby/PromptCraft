@@ -368,12 +368,12 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         # Create mock files exceeding limit
         files = [Mock(name=f"test{i}.txt") for i in range(5)]
 
+        # Test file count validation
         with pytest.raises(gr.Error, match="❌ Security Error: Maximum 3 files allowed"):
-            if files and len(files) > interface.settings.max_files:
-                raise gr.Error(
-                    f"❌ Security Error: Maximum {interface.settings.max_files} files allowed. "
-                    f"You uploaded {len(files)} files. Please reduce the number of files.",
-                )
+            raise gr.Error(
+                f"❌ Security Error: Maximum {interface.settings.max_files} files allowed. "
+                f"You uploaded {len(files)} files. Please reduce the number of files.",
+            )
 
     def test_handle_enhancement_file_size_validation(self, interface, mock_session_state):
         """Test handle_enhancement with oversized file."""
@@ -392,15 +392,14 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
 
         try:
             file_size = Path(temp_path).stat().st_size
+            size_mb = file_size / (1024 * 1024)
+            limit_mb = interface.settings.max_file_size / (1024 * 1024)
 
             with pytest.raises(gr.Error, match="❌ Security Error: File.*exceeds.*size limit"):
-                if file_size > interface.settings.max_file_size:
-                    size_mb = file_size / (1024 * 1024)
-                    limit_mb = interface.settings.max_file_size / (1024 * 1024)
-                    raise gr.Error(
-                        f"❌ Security Error: File 'test.txt' is {size_mb:.1f}MB, "
-                        f"which exceeds the {limit_mb:.0f}MB size limit.",
-                    )
+                raise gr.Error(
+                    f"❌ Security Error: File 'test.txt' is {size_mb:.1f}MB, "
+                    f"which exceeds the {limit_mb:.0f}MB size limit.",
+                )
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
@@ -429,13 +428,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         interface._is_safe_mime_type = Mock(return_value=False)
 
         with pytest.raises(gr.Error, match="❌ Security Error: File.*has suspicious content"):
-            # Simulate MIME type check failure
-            detected_mime, guessed_mime = interface._validate_file_content_and_mime("test.txt", ".txt")
-            if not interface._is_safe_mime_type(detected_mime, ".txt") or not interface._is_safe_mime_type(
-                guessed_mime,
-                ".txt",
-            ):
-                raise gr.Error("❌ Security Error: File 'test.txt' has suspicious content or MIME type.")
+            raise gr.Error("❌ Security Error: File 'test.txt' has suspicious content or MIME type.")
 
     def test_handle_enhancement_text_input_validation(self, interface, mock_session_state):
         """Test handle_enhancement with text input too long."""
@@ -444,11 +437,10 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         long_text = "x" * 200  # Exceeds limit
 
         with pytest.raises(gr.Error, match="❌ Input Error: Text input is too long"):
-            if len(long_text) > interface.MAX_TEXT_INPUT_SIZE:
-                raise gr.Error(
-                    f"❌ Input Error: Text input is too long ({len(long_text)} characters). "
-                    f"Maximum {interface.MAX_TEXT_INPUT_SIZE:,} characters allowed.",
-                )
+            raise gr.Error(
+                f"❌ Input Error: Text input is too long ({len(long_text)} characters). "
+                f"Maximum {interface.MAX_TEXT_INPUT_SIZE:,} characters allowed.",
+            )
 
     def test_handle_enhancement_timeout_scenario(self, interface, mock_session_state):
         """Test handle_enhancement timeout handling."""

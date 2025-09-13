@@ -5,6 +5,7 @@ Provides utilities to detect Docker availability and choose appropriate
 database strategies for testing.
 """
 
+from importlib.util import find_spec
 import logging
 
 import docker
@@ -37,14 +38,11 @@ def is_postgresql_supported() -> bool:
     Returns:
         True if asyncpg is available for PostgreSQL support
     """
-    try:
-        import asyncpg
-
+    if find_spec("asyncpg") is not None:
         logger.info("PostgreSQL support available (asyncpg found)")
         return True
-    except ImportError:
-        logger.warning("PostgreSQL support unavailable (asyncpg not found)")
-        return False
+    logger.warning("PostgreSQL support unavailable (asyncpg not found)")
+    return False
 
 
 def should_use_postgresql() -> bool:

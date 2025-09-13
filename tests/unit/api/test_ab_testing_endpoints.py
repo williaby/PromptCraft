@@ -6,7 +6,7 @@ Following minimal mocking principles to test actual processes.
 """
 
 import contextlib
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI
@@ -208,7 +208,7 @@ class TestABTestingEndpoints:
         mock_experiment.description = "A test experiment"
         mock_experiment.experiment_type = "dynamic_loading"
         mock_experiment.status = status
-        mock_experiment.created_at = datetime.now()
+        mock_experiment.created_at = datetime.now(UTC)
         mock_experiment.start_time = None
         mock_experiment.end_time = None
         mock_experiment.target_percentage = 50.0
@@ -346,7 +346,7 @@ class TestABTestingEndpoints:
             "user_id": "user123",
             "experiment_id": "exp456",
             "variant": "control",
-            "assigned_at": datetime.now(),
+            "assigned_at": datetime.now(UTC),
         }
         mock_manager.assign_user.return_value = mock_assignment
         mock_get_manager.return_value = mock_manager

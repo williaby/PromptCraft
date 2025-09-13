@@ -7,7 +7,7 @@ startup/shutdown events, and development utilities.
 """
 
 import asyncio
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 import json
 import sys
 from unittest.mock import Mock, patch
@@ -820,7 +820,7 @@ if __name__ == "__main__":
                         # Verify uvicorn.run was called with correct parameters
                         mock_uvicorn_run.assert_called_once_with(
                             "example_usage:app",
-                            host="0.0.0.0",
+                            host="0.0.0.0",  # noqa: S104
                             port=8000,
                             reload=True,
                             log_level="info",

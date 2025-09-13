@@ -168,13 +168,15 @@ class TestStandardsDiscoverySystem:
         """Test getting a standard that triggers cache refresh."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
-                discovery_system._standards_cache = {"test-standard": mock_standard}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh
+        ):
+            discovery_system._standards_cache = {"test-standard": mock_standard}
 
-                result = discovery_system.get_standard("test-standard")
+            result = discovery_system.get_standard("test-standard")
 
-                assert result == mock_standard
+            assert result == mock_standard
                 mock_refresh.assert_called_once()
 
     def test_get_standard_content_success(self, discovery_system):
@@ -245,10 +247,12 @@ class TestStandardsDiscoverySystem:
         """Test discovering a standard from project source."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(discovery_system, "_search_project_standards", return_value=mock_standard):
-            with patch.object(discovery_system, "_search_user_standards", return_value=None):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-                    result = discovery_system.discover_standard("test-standard")
+        with (
+            patch.object(discovery_system, "_search_project_standards", return_value=mock_standard),
+            patch.object(discovery_system, "_search_user_standards", return_value=None),
+            patch.object(discovery_system, "_search_default_standards", return_value=None)
+        ):
+            result = discovery_system.discover_standard("test-standard")
 
                     assert result == mock_standard
                     assert result.source_type == "project"

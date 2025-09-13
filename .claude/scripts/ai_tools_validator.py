@@ -194,7 +194,7 @@ Install OpenAI Codex CLI:
                 return status
 
             # Run version check
-            result = subprocess.run(
+            result = subprocess.run(  # noqa: S603
                 [tool_config.command, *tool_config.check_args],
                 check=False,
                 capture_output=True,

@@ -490,9 +490,7 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_check_node_modules_package_json(self, discovery_system):
         """Test checking package.json for NPX dependencies when binary not found."""
-        import os
-
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -520,9 +518,7 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_check_node_modules_not_found(self, discovery_system):
         """Test checking node_modules when nothing is found."""
-        import os
-
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:

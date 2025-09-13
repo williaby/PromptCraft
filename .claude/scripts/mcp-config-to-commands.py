@@ -73,7 +73,7 @@ def main() -> None:
         commands = process_config_file(json_file)
         all_commands.extend(commands)
 
-        for name, cmd in commands:
+        for _name, _cmd in commands:
             pass
 
     # Write commands to file
