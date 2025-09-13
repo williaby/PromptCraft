@@ -270,7 +270,8 @@ jobs:
     if: >-
       github.event.inputs.test_suite == 'performance' ||
       github.event_name == 'schedule' ||
-      github.ref == 'refs/heads/main'
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'main'
 
     steps:
       - name: Checkout code
