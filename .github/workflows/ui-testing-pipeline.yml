@@ -288,6 +288,21 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
       - name: Start PromptCraft UI application
         run: |
           poetry run python -m src.ui.multi_journey_interface &
