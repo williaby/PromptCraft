@@ -230,7 +230,7 @@ class TestHttpExceptionHandler:
         exc = Mock(spec=StarletteHTTPException)
         exc.status_code = 500
         exc.detail = {"error": "dict detail"}  # Non-string detail
-        
+
         response = await starlette_http_exception_handler(request, exc)
 
         assert response.status_code == 500
@@ -249,10 +249,12 @@ class TestValidationExceptionHandler:
         request.url.path = "/api/test"
         request.client.host = "127.0.0.1"
 
-        exc = RequestValidationError([
-            {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
-            {"loc": ("field2", "nested"), "msg": "invalid value", "type": "value_error.invalid"},
-        ])
+        exc = RequestValidationError(
+            [
+                {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
+                {"loc": ("field2", "nested"), "msg": "invalid value", "type": "value_error.invalid"},
+            ],
+        )
 
         with patch("src.security.error_handlers.get_settings") as mock_settings:
             mock_settings.return_value.debug = True
@@ -273,12 +275,16 @@ class TestValidationExceptionHandler:
         request.url.path = "/api/test"
         request.client.host = "127.0.0.1"
 
-        exc = RequestValidationError([
-            {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
-        ])
+        exc = RequestValidationError(
+            [
+                {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
+            ],
+        )
 
-        with patch("src.security.error_handlers.get_settings") as mock_settings, \
-             patch("src.security.error_handlers.logger") as mock_logger:
+        with (
+            patch("src.security.error_handlers.get_settings") as mock_settings,
+            patch("src.security.error_handlers.logger") as mock_logger,
+        ):
             mock_settings.return_value.debug = False
             mock_settings.return_value.environment = "prod"
 
@@ -289,7 +295,7 @@ class TestValidationExceptionHandler:
             assert "Invalid request data" in content
             assert "validation_errors" not in content
             assert "Please check your request parameters" in content
-            
+
             # Verify that full validation error details are logged even in production
             mock_logger.warning.assert_called_once()
             logged_call = mock_logger.warning.call_args[0]
@@ -325,7 +331,7 @@ class TestCreateAuthAwareHttpException:
         with patch("src.security.error_handlers.AuthExceptionHandler.handle_authentication_error") as mock_handler:
             mock_handler.return_value = HTTPException(status_code=401, detail="Auth required")
 
-            result = create_auth_aware_http_exception(
+            create_auth_aware_http_exception(
                 status_code=401,
                 detail="Authentication required",
                 user_identifier="user123",
@@ -510,7 +516,7 @@ class TestCreateSecureHttpException:
         # which means custom headers would override security headers, not the other way around
         custom_headers = {
             "X-Content-Type-Options": "allow-sniffing",  # This will override security header
-            "X-Frame-Options": "ALLOW",  # This will override security header  
+            "X-Frame-Options": "ALLOW",  # This will override security header
             "X-Custom": "custom-value",  # Should be preserved
         }
 
@@ -594,10 +600,12 @@ class TestEdgeCasesAndIntegration:
         request = Mock(spec=Request)
         request.url.path = "/api/test"
         request.client.host = "127.0.0.1"
-        
+
         # Mock hasattr to return False for state.timestamp check
-        with patch("src.security.error_handlers.get_settings") as mock_settings, \
-             patch("builtins.hasattr", return_value=False):
+        with (
+            patch("src.security.error_handlers.get_settings") as mock_settings,
+            patch("builtins.hasattr", return_value=False),
+        ):
             mock_settings.return_value.debug = False
             mock_settings.return_value.environment = "prod"
 
@@ -617,11 +625,17 @@ class TestEdgeCasesAndIntegration:
         request.client.host = "127.0.0.1"
 
         # Complex validation errors with deeply nested field paths
-        exc = RequestValidationError([
-            {"loc": ("body", "user", "profile", "email"), "msg": "invalid email format", "type": "value_error.email"},
-            {"loc": ("query", "filters", 0, "value"), "msg": "field required", "type": "value_error.missing"},
-            {"loc": ("path", "id"), "msg": "not a valid integer", "type": "type_error.integer"},
-        ])
+        exc = RequestValidationError(
+            [
+                {
+                    "loc": ("body", "user", "profile", "email"),
+                    "msg": "invalid email format",
+                    "type": "value_error.email",
+                },
+                {"loc": ("query", "filters", 0, "value"), "msg": "field required", "type": "value_error.missing"},
+                {"loc": ("path", "id"), "msg": "not a valid integer", "type": "type_error.integer"},
+            ],
+        )
 
         with patch("src.security.error_handlers.get_settings") as mock_settings:
             mock_settings.return_value.debug = True
@@ -641,7 +655,7 @@ class TestEdgeCasesAndIntegration:
         with patch("src.security.error_handlers.create_secure_http_exception") as mock_fallback:
             mock_fallback.return_value = HTTPException(status_code=418, detail="I'm a teapot")
 
-            result = create_auth_aware_http_exception(
+            create_auth_aware_http_exception(
                 status_code=418,  # Unsupported status code should fallback
                 detail="I'm a teapot",
             )

@@ -1,6 +1,5 @@
 """Comprehensive tests for noxfile.py sessions and functions."""
 
-# Import the noxfile module
 import contextlib
 from pathlib import Path
 import sys
@@ -10,6 +9,7 @@ from nox import Session
 import pytest
 
 
+# Import the noxfile module
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import noxfile
 
@@ -188,7 +188,7 @@ class TestBasicSessions:
             "-f",
             "coverage-security.xml",
             "-F",
-            "security", 
+            "security",
             "-n",
             "security-tests",
             external=True,
@@ -205,7 +205,7 @@ class TestBasicSessions:
         assert len(codecov_calls) == 0
 
     def test_tests_fast_session(self, mock_session):
-        """Test tests_fast session functionality.""" 
+        """Test tests_fast session functionality."""
         noxfile.tests_fast(mock_session)
 
         # Verify poetry install
@@ -217,7 +217,7 @@ class TestBasicSessions:
             "-m",
             "not slow",
             "--cov=src",
-            "--cov-branch", 
+            "--cov-branch",
             "--cov-report=xml:coverage-fast.xml",
             "--cov-report=json:coverage-fast.json",
             "--cov-report=term-missing",
@@ -238,7 +238,7 @@ class TestBasicSessions:
             "coverage-fast.xml",
             "-F",
             "fast",
-            "-n", 
+            "-n",
             "fast-tests",
             external=True,
         )
@@ -284,7 +284,7 @@ class TestBasicSessions:
             "-m",
             "component",
             "--cov=src",
-            "--cov-branch", 
+            "--cov-branch",
             "--cov-fail-under=75",
             "-v",
         )
@@ -390,7 +390,7 @@ class TestBasicSessions:
         )
 
     def test_codecov_analysis_session(self, mock_session):
-        """Test codecov_analysis session functionality.""" 
+        """Test codecov_analysis session functionality."""
         noxfile.codecov_analysis(mock_session)
 
         # Verify poetry install
@@ -518,7 +518,7 @@ class TestDependencyManagement:
     def test_deps_session(self, mock_path, mock_session):
         """Test deps session functionality."""
         # Mock temporary directory creation with context manager
-        temp_dir = "/tmp/test"  # noqa: S108
+        temp_dir = "/tmp/test"
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock
@@ -587,11 +587,11 @@ class TestMetricsSession:
 
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
-        
+
         # Verify script execution (this covers line 156)
         mock_session.run.assert_any_call("python", "test_metrics_dashboard.py")
 
-    @patch("noxfile.Path")  
+    @patch("noxfile.Path")
     def test_metrics_session_without_script(self, mock_path, mock_session):
         """Test metrics session when test_metrics_dashboard.py does not exist."""
         # Mock Path constructor to return a mock object
@@ -604,10 +604,12 @@ class TestMetricsSession:
 
         # Verify poetry install
         mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
-        
+
         # Verify warning message is logged (with correct mock string representation)
-        mock_session.log.assert_any_call("Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.")
-        
+        mock_session.log.assert_any_call(
+            "Warning: test_metrics_dashboard.py not found. Skipping metrics dashboard generation.",
+        )
+
         # Verify script is NOT executed
         script_calls = [call for call in mock_session.run.call_args_list if "test_metrics_dashboard.py" in str(call)]
         assert len(script_calls) == 0
@@ -844,12 +846,12 @@ class TestEdgeCasesAndErrorHandling:
         """Test deps session handles Path errors gracefully."""
         # Mock Path.cwd() to raise an exception
         mock_path.cwd.side_effect = Exception("Path error")
-        mock_session.create_tmp.return_value = "/tmp/test"  # noqa: S108
+        mock_session.create_tmp.return_value = "/tmp/test"
 
         # Create a proper context manager mock for chdir
         class MockContextManager:
             def __enter__(self):
-                return "/tmp/test"  # noqa: S108
+                return "/tmp/test"
 
             def __exit__(self, *args):
                 return None
@@ -935,7 +937,7 @@ def test_all_sessions_install_dependencies(session_function, expected_installs):
     mock_session.env = {}
     mock_session.log = Mock()
     mock_session.error = Mock()
-    mock_session.create_tmp = Mock(return_value="/tmp/test")  # noqa: S108
+    mock_session.create_tmp = Mock(return_value="/tmp/test")
 
     # Handle exceptions for sessions that might fail
     with contextlib.suppress(Exception):
@@ -1079,7 +1081,7 @@ class TestComplexScenarios:
     def test_temporary_directory_usage(self, mock_mkdtemp):
         """Test sessions that use temporary directories."""
         mock_session = Mock(spec=Session)
-        temp_dir = "/tmp/nox-test-123"  # noqa: S108
+        temp_dir = "/tmp/nox-test-123"
         mock_session.create_tmp.return_value = temp_dir
 
         # Create a proper context manager mock for chdir

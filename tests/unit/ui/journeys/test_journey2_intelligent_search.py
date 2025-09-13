@@ -175,7 +175,7 @@ class TestJourney2IntelligentSearch:
         enhanced_prompt = "Test enhanced prompt"
         user_tier = "full"
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="OpenRouter connection failed"):
             await journey2_instance._execute_with_intelligent_routing(enhanced_prompt, user_tier, sample_workflow_step)
 
     @pytest.mark.asyncio
@@ -472,7 +472,7 @@ class TestJourney2IntelligentSearch:
         user_tier = "full"
 
         # Should raise exception when both zen and OpenRouter fail
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Test exception"):
             await journey2_instance._execute_with_intelligent_routing(enhanced_prompt, user_tier, sample_workflow_step)
 
         # Verify zen client disconnect was called during cleanup

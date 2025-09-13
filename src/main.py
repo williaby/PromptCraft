@@ -86,14 +86,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Store settings in app state for access in endpoints
         app.state.settings = settings
-        
+
         # Initialize hybrid infrastructure
         logger.info("Initializing hybrid infrastructure...")
-        
+
         # Initialize MCP configuration manager with discovery
         app.state.mcp_manager = MCPConfigurationManager(enable_discovery=True)
         logger.info("MCP configuration manager initialized")
-        
+
         # Initialize agent discovery and resource management
         app.state.agent_discovery = AgentDiscoverySystem()
         app.state.agent_resource_manager = AgentResourceManager()
@@ -102,10 +102,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             app.state.agent_resource_manager,
         )
         logger.info("Agent discovery system initialized")
-        
+
         # Log available agents
         available_agents = app.state.agent_discovery.get_available_agents()
-        logger.info(f"Found {len(available_agents)} available agents: {available_agents[:10]}...")
+        logger.info("Found %s available agents: %s...", len(available_agents), available_agents[:10])
 
         # Log application startup audit event
         audit_logger_instance.log_security_event(
@@ -158,10 +158,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         if hasattr(app.state, "agent_resource_manager"):
             try:
                 resource_usage = app.state.agent_resource_manager.get_resource_usage()
-                logger.info(f"Final resource usage: {resource_usage}")
+                logger.info("Final resource usage: %s", resource_usage)
             except Exception as e:
-                logger.warning(f"Failed to get resource usage during shutdown: {e}")
-        
+                logger.warning("Failed to get resource usage during shutdown: %s", e)
+
         # Log application shutdown
         audit_logger_instance.log_security_event(
             AuditEventType.ADMIN_SYSTEM_SHUTDOWN,
@@ -241,16 +241,16 @@ def create_app() -> FastAPI:
 
     # Include preserved authentication and role management API endpoints for backward compatibility
     try:
-        from src.api.auth_endpoints import audit_router, auth_router, system_router  # noqa: PLC0415
-        from src.api.role_endpoints import role_router  # noqa: PLC0415
-        from src.api.routers.create_core import router as create_router  # noqa: PLC0415
+        from src.api.auth_endpoints import audit_router, auth_router, system_router
+        from src.api.role_endpoints import role_router
+        from src.api.routers.create_core import router as create_router
 
         app.include_router(auth_router)
         app.include_router(system_router)
         app.include_router(audit_router)
         app.include_router(role_router)
         app.include_router(create_router)
-        
+
         # Register hybrid infrastructure routes
         register_hybrid_infrastructure_routes(app)
 
@@ -269,7 +269,7 @@ app = create_app()
 
 @app.get("/health", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
+async def health_check(request: Request) -> dict[str, Any]:
     """Simple health check endpoint for basic monitoring.
 
     This endpoint provides a quick health status without detailed
@@ -308,7 +308,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error with expose_error=True for detailed error
-        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
+        raise AuthExceptionHandler.handle_internal_error(
             operation_name="Health check endpoint",
             error=e,
             detail="Health check endpoint failed",
@@ -318,7 +318,7 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
 
 @app.get("/health/config", response_model=ConfigurationStatusModel)
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def configuration_health(request: Request) -> ConfigurationStatusModel:  # noqa: ARG001
+async def configuration_health(request: Request) -> ConfigurationStatusModel:
     """Detailed configuration health check endpoint.
 
     This endpoint provides comprehensive configuration status information
@@ -372,7 +372,7 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
 
 @app.get("/health/mcp", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
+async def mcp_health_check(request: Request) -> dict[str, Any]:
     """MCP configuration and parallel execution health check endpoint.
 
     This endpoint provides health status for MCP server configuration,
@@ -402,7 +402,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except ImportError:
         logger.warning("MCP integration not available")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
-        raise AuthExceptionHandler.handle_service_unavailable(  # noqa: B904
+        raise AuthExceptionHandler.handle_service_unavailable(
             service_name="mcp-integration",
             detail="MCP integration not available",
         )
@@ -412,7 +412,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except Exception as e:
         logger.error("MCP health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error for consistent error handling
-        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
+        raise AuthExceptionHandler.handle_internal_error(
             operation_name="MCP health check endpoint",
             error=e,
             detail="MCP health check endpoint failed",
@@ -422,7 +422,7 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
 
 @app.get("/health/circuit-breakers", response_model=dict[str, Any])
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
+async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:
     """Circuit breaker health check endpoint.
 
     This endpoint provides detailed status information for all registered
@@ -475,7 +475,7 @@ async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # n
 
 @app.get("/")
 @rate_limit(RateLimits.PUBLIC_READ)
-async def root(request: Request) -> dict[str, str]:  # noqa: ARG001
+async def root(request: Request) -> dict[str, str]:
     """Root endpoint providing basic application information.
 
     Returns:
@@ -502,7 +502,7 @@ async def root(request: Request) -> dict[str, str]:  # noqa: ARG001
 
 @app.get("/ping")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def ping(request: Request) -> dict[str, str]:  # noqa: ARG001
+async def ping(request: Request) -> dict[str, str]:
     """Simple ping endpoint for load balancer checks.
 
     Returns:
@@ -544,7 +544,7 @@ async def validate_input(request: Request, data: SecureTextInput) -> dict[str, A
 
 @app.get("/api/v1/search")
 @rate_limit(RateLimits.API_DEFAULT)
-async def search_endpoint(request: Request, params: SecureQueryParams = Depends()) -> dict[str, Any]:  # noqa: ARG001
+async def search_endpoint(request: Request, params: SecureQueryParams = Depends()) -> dict[str, Any]:
     """Test endpoint for query parameter validation.
 
     This endpoint demonstrates secure query parameter handling

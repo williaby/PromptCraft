@@ -325,11 +325,11 @@ class TestDemonstrateHttpEndpoints:
     async def test_demonstrate_http_endpoints_non_200_response(self, mock_console, mock_client_class):
         """Test HTTP endpoints demonstration when server responds with non-200 status (covers branch 231->exit)."""
         mock_client = AsyncMock()
-        
+
         # Mock ping response with non-200 status code (e.g., 404, 500, etc.)
         mock_ping_response = Mock()
         mock_ping_response.status_code = 404  # Not HTTP_OK (200)
-        
+
         mock_client.get.return_value = mock_ping_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
 

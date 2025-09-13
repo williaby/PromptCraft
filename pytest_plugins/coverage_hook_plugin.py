@@ -58,7 +58,7 @@ def pytest_configure(config: object) -> None:
         pass
 
 
-def pytest_sessionfinish(session: object, exitstatus: int) -> None:  # noqa: ARG001  # Pytest hook signature
+def pytest_sessionfinish(session: object, exitstatus: int) -> None:  # Pytest hook signature
     """
     Called after whole test run finished, right before returning the exit status.
     This is the perfect place to trigger coverage report generation.
@@ -89,7 +89,7 @@ def pytest_sessionfinish(session: object, exitstatus: int) -> None:  # noqa: ARG
             return
 
         # Execute the coverage hook script
-        result = subprocess.run(  # noqa: S603  # nosec B603  # Controlled Python script execution with timeout
+        result = subprocess.run(  # nosec B603  # Controlled Python script execution with timeout
             [sys.executable, str(hook_script)],
             check=False,
             cwd=str(project_root),

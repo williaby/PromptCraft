@@ -360,9 +360,9 @@ class ZenMCPStdioClient:
             raise Exception("No result in MCP response")
 
         except TimeoutError:
-            raise Exception(f"MCP request timeout after {self.connection_config.timeout}s")
+            raise Exception(f"MCP request timeout after {self.connection_config.timeout}s") from None
         except json.JSONDecodeError as e:
-            raise Exception(f"Invalid JSON in MCP response: {e}")
+            raise Exception(f"Invalid JSON in MCP response: {e}") from e
         except Exception as e:
             logger.error(f"MCP request failed: {e}")
             raise
@@ -404,7 +404,7 @@ class ZenMCPStdioClient:
                     continue
 
             except Exception as e:
-                raise Exception(f"Error reading MCP response: {e}")
+                raise Exception(f"Error reading MCP response: {e}") from e
 
     async def _test_connection(self) -> bool:
         """Test MCP connection with a simple request."""

@@ -93,8 +93,8 @@ class TestQdrantSettings:
         with patch.dict(os.environ, {"qdrant_host": "test.example.com", "QDRANT_PORT": "9999"}):
             settings = QdrantSettings()
             # Should still use case insensitive matching
-            assert settings.qdrant_host == "test.example.com" or settings.qdrant_host == "192.168.1.16"
-            assert settings.qdrant_port == 9999 or settings.qdrant_port == 6333
+            assert settings.qdrant_host in {"test.example.com", "192.168.1.16"}
+            assert settings.qdrant_port in {9999, 6333}
 
     def test_global_instance(self):
         """Test that global instance exists and is properly configured."""

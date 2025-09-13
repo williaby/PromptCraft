@@ -1,11 +1,16 @@
 import { test, expect } from '@playwright/test';
 import TestUtils from '../helpers/test-utils';
-import path from 'path';
+import { Journey1Page } from '../fixtures/Journey1Page';
+import * as path from 'path';
 
 test.describe('Journey 1: Authentication & Authorization Boundary Testing', () => {
   const testDataDir = path.join(__dirname, '../data/files');
+  let journey1Page: Journey1Page;
 
   test.beforeEach(async ({ page }) => {
+    // Initialize journey1Page
+    journey1Page = new Journey1Page(page);
+
     // Use working patterns from smoke tests
     await page.goto('http://localhost:7860', {
       waitUntil: 'load',
@@ -136,7 +141,7 @@ test.describe('Journey 1: Authentication & Authorization Boundary Testing', () =
       // Create multiple browser contexts to simulate multiple tabs/sessions
       const contexts = [];
       const pages = [];
-      const journey1Pages = [];
+      const journey1Pages: Journey1Page[] = [];
 
       for (let i = 0; i < 3; i++) {
         const context = await browser.newContext();

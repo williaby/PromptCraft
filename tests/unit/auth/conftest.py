@@ -34,7 +34,7 @@ def authenticated_user():
         email="test@example.com",
         role=UserRole.USER,
         user_id="test-user-123",
-        token_id="session-token-123",  # noqa: S106
+        token_id="session-token-123",
     )
 
 
@@ -45,7 +45,7 @@ def admin_user():
         email="admin@example.com",
         role=UserRole.ADMIN,
         user_id="admin-user-123",
-        token_id="admin-session-123",  # noqa: S106
+        token_id="admin-session-123",
     )
 
 

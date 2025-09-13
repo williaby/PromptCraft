@@ -51,7 +51,7 @@ class TestMCPProtocolBridge:
         assert mcp_call.arguments["action"] == "smart_execute"
         assert mcp_call.arguments["prompt"] == request_data["prompt"]
         assert mcp_call.arguments["channel"] == request_data["channel"]
-        assert mcp_call.arguments["cost_optimization"] == request_data["cost_optimization"]
+        assert mcp_call.arguments["cost_optimization"] == "true"
         assert mcp_call.arguments["model"] == "auto"
 
     def test_http_to_mcp_request_model_list(self, sample_model_list_request):
@@ -66,7 +66,7 @@ class TestMCPProtocolBridge:
         assert mcp_call.name == "promptcraft_mcp_bridge"
         assert mcp_call.arguments["action"] == "list_models"
         assert mcp_call.arguments["user_tier"] == request_data["user_tier"]
-        assert mcp_call.arguments["include_metadata"] == request_data["include_metadata"]
+        assert mcp_call.arguments["include_metadata"] == "true"
         assert mcp_call.arguments["format"] == request_data["format"]
         assert mcp_call.arguments["model"] == "flash"
 

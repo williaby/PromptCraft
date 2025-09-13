@@ -308,6 +308,7 @@ class TestUserTierManager:
         with patch("src.admin.user_tier_manager.ConfigLoader") as mock_loader:
             # Create a real AuthConfig object instead of a Mock
             from src.auth_simple.config import AuthConfig
+
             mock_config = AuthConfig(
                 email_whitelist=["test@example.com"],
                 admin_emails=["admin@example.com"],

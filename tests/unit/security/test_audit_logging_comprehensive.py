@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive test suite for audit logging with enhanced coverage.
 
 This module provides enhanced test coverage for src/security/audit_logging.py,
@@ -32,6 +29,7 @@ from src.security.audit_logging import (
     log_rate_limit_exceeded,
     log_validation_failure,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestAuditEventClientIPExtraction:
@@ -188,13 +186,13 @@ class TestAuditEventEdgeCases:
         )
 
         event_dict = event.to_dict()
-        
+
         # Required fields should be present
         assert event_dict["event_type"] == AuditEventType.API_REQUEST.value
         assert event_dict["severity"] == AuditEventSeverity.LOW.value
         assert event_dict["message"] == "Minimal event"
         assert "timestamp" in event_dict
-        
+
         # Optional fields should not be present
         assert "user_id" not in event_dict
         assert "resource" not in event_dict
@@ -218,12 +216,12 @@ class TestAuditEventEdgeCases:
         )
 
         event_dict = event.to_dict()
-        
+
         # Should not raise errors and None fields should not be included
         assert event_dict["event_type"] == AuditEventType.AUTH_LOGIN_FAILURE.value
         assert event_dict["severity"] == AuditEventSeverity.HIGH.value
         assert event_dict["message"] == "Login failed"
-        
+
         # None fields should not be in the output
         assert "user_id" not in event_dict
         assert "resource" not in event_dict
@@ -242,7 +240,7 @@ class TestAuditEventEdgeCases:
         )
 
         event_dict = event.to_dict()
-        
+
         # Empty dict should be included
         assert event_dict["additional_data"] == {}
 
@@ -272,7 +270,7 @@ class TestAuditEventEdgeCases:
         )
 
         event_dict = event.to_dict()
-        
+
         # Complex data should be preserved exactly
         assert event_dict["additional_data"] == complex_data
         assert event_dict["additional_data"]["error_details"]["code"] == "VALIDATION_ERROR"
@@ -287,12 +285,12 @@ class TestAuditEventEdgeCases:
         )
 
         event_dict = event.to_dict()
-        
+
         # Should be able to parse the timestamp back
         timestamp_str = event_dict["timestamp"]
         parsed_timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
         assert isinstance(parsed_timestamp, datetime)
-        
+
         # Should be recent (within last minute)
         time_diff = utc_now() - parsed_timestamp
         assert time_diff.total_seconds() < 60
@@ -316,10 +314,10 @@ class TestAuditLoggerContentVerification:
     def test_log_event_critical_severity_content(self):
         """Test that CRITICAL events are logged with correct content and level."""
         audit_logger = AuditLogger()
-        
+
         # Replace the logger with our test logger
         audit_logger.logger = self.logger
-        
+
         event = AuditEvent(
             event_type=AuditEventType.SECURITY_SUSPICIOUS_ACTIVITY,
             severity=AuditEventSeverity.CRITICAL,
@@ -332,10 +330,10 @@ class TestAuditLoggerContentVerification:
         )
 
         audit_logger.log_event(event)
-        
+
         # Capture the logged content
         log_output = self.log_stream.getvalue()
-        
+
         # Verify the log level and content
         assert "CRITICAL" in log_output
         assert "Suspicious login pattern detected" in log_output
@@ -343,7 +341,7 @@ class TestAuditLoggerContentVerification:
         assert "/api/admin" in log_output
         assert "login" in log_output
         assert "blocked" in log_output
-        
+
         # Verify JSON structure (if using JSON formatter)
         if log_output.strip().startswith("{"):
             log_data = json.loads(log_output.strip())
@@ -355,7 +353,7 @@ class TestAuditLoggerContentVerification:
         """Test that HIGH events are logged with error level."""
         audit_logger = AuditLogger()
         audit_logger.logger = self.logger
-        
+
         event = AuditEvent(
             event_type=AuditEventType.AUTH_LOGIN_FAILURE,
             severity=AuditEventSeverity.HIGH,
@@ -365,9 +363,9 @@ class TestAuditLoggerContentVerification:
         )
 
         audit_logger.log_event(event)
-        
+
         log_output = self.log_stream.getvalue()
-        
+
         # Should use ERROR level for HIGH severity
         assert "ERROR" in log_output
         assert "Authentication failed for user" in log_output
@@ -378,7 +376,7 @@ class TestAuditLoggerContentVerification:
         """Test that MEDIUM events are logged with warning level."""
         audit_logger = AuditLogger()
         audit_logger.logger = self.logger
-        
+
         event = AuditEvent(
             event_type=AuditEventType.SECURITY_VALIDATION_FAILURE,
             severity=AuditEventSeverity.MEDIUM,
@@ -388,9 +386,9 @@ class TestAuditLoggerContentVerification:
         )
 
         audit_logger.log_event(event)
-        
+
         log_output = self.log_stream.getvalue()
-        
+
         # Should use WARNING level for MEDIUM severity
         assert "WARNING" in log_output
         assert "Input validation failed" in log_output
@@ -401,7 +399,7 @@ class TestAuditLoggerContentVerification:
         """Test that LOW events are logged with info level."""
         audit_logger = AuditLogger()
         audit_logger.logger = self.logger
-        
+
         event = AuditEvent(
             event_type=AuditEventType.API_REQUEST,
             severity=AuditEventSeverity.LOW,
@@ -412,9 +410,9 @@ class TestAuditLoggerContentVerification:
         )
 
         audit_logger.log_event(event)
-        
+
         log_output = self.log_stream.getvalue()
-        
+
         # Should use INFO level for LOW severity
         assert "INFO" in log_output
         assert "API request processed" in log_output
@@ -426,7 +424,7 @@ class TestAuditLoggerContentVerification:
         """Test log_authentication_event produces correct log content."""
         audit_logger = AuditLogger()
         audit_logger.logger = self.logger
-        
+
         request = Mock(spec=Request)
         request.method = "POST"
         request.url.path = "/auth/login"
@@ -442,9 +440,9 @@ class TestAuditLoggerContentVerification:
             outcome="success",
             additional_data={"session_id": "sess_abc123"},
         )
-        
+
         log_output = self.log_stream.getvalue()
-        
+
         # Verify all components are logged
         assert "user789" in log_output
         assert "success" in log_output
@@ -467,24 +465,24 @@ class TestAuditLoggerContentVerification:
         with patch.object(audit_logger_instance, "logger", self.logger):
             # Test log_authentication_success
             log_authentication_success(request, "user_success")
-            
+
             # Test log_authentication_failure
             log_authentication_failure(request, "invalid_password")
-            
+
             # Test log_rate_limit_exceeded
             log_rate_limit_exceeded(request, "100/hour")
-            
+
             # Test log_validation_failure
             log_validation_failure(request, ["field1 required", "field2 invalid"])
-            
+
             # Test log_error_handler_triggered
             log_error_handler_triggered(request, "ValueError", "Invalid input")
-            
+
             # Test log_api_request
             log_api_request(request, 200, 0.150)
 
         log_output = self.log_stream.getvalue()
-        
+
         # Verify all convenience functions logged appropriately
         assert "user_success" in log_output
         assert "invalid_password" in log_output
@@ -494,7 +492,7 @@ class TestAuditLoggerContentVerification:
         assert "Invalid input" in log_output
         assert "203.0.113.1" in log_output  # X-Forwarded-For IP
         assert "0.15" in log_output  # Processing time
-        
+
         # Should contain multiple log entries
         log_lines = [line for line in log_output.split("\n") if line.strip()]
         assert len(log_lines) >= 6  # At least one for each convenience function
@@ -506,11 +504,11 @@ class TestAuditLoggerEnvironmentIntegration:
     def test_audit_logger_settings_integration(self):
         """Test that AuditLogger integrates properly with application settings."""
         audit_logger = AuditLogger()
-        
+
         # Should have settings and logger initialized
         assert audit_logger.settings is not None
         assert audit_logger.logger is not None
-        
+
         # Logger should be configured properly
         assert audit_logger.logger.name == "audit"
 
@@ -519,9 +517,10 @@ class TestAuditLoggerEnvironmentIntegration:
         # Should be the same instance
         assert audit_logger_instance is not None
         assert isinstance(audit_logger_instance, AuditLogger)
-        
+
         # Should have same reference when imported multiple times
         from src.security.audit_logging import audit_logger_instance as second_import
+
         assert audit_logger_instance is second_import
 
 
@@ -562,14 +561,14 @@ class TestAuditEventRequestProcessing:
         )
 
         event_dict = event.to_dict()
-        
+
         # Verify request information is captured correctly
         assert event_dict["request"]["method"] == "PUT"
         assert event_dict["request"]["path"] == "/api/users/123/profile"
         assert event_dict["request"]["query"] == "include=avatar&format=json"
         assert event_dict["request"]["user_agent"] == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         assert event_dict["request"]["client_ip"] == "203.0.113.195"  # From X-Forwarded-For
-        
+
         # Verify all other fields
         assert event_dict["user_id"] == "user_456"
         assert event_dict["resource"] == "/api/users/123/profile"
@@ -595,14 +594,14 @@ class TestAuditEventRequestProcessing:
         )
 
         event_dict = event.to_dict()
-        
+
         # Should handle missing fields gracefully
         assert event_dict["request"]["method"] == "GET"
         assert event_dict["request"]["path"] == "/api/minimal"
         assert event_dict["request"]["query"] == ""
         assert event_dict["request"]["user_agent"] == "unknown"
         assert event_dict["request"]["client_ip"] == "unknown"
-        
+
         # Should not crash with missing client info
         assert "request" in event_dict
 
@@ -631,14 +630,14 @@ class TestAuditEventTypesCoverage:
                 severity=AuditEventSeverity.LOW,
                 message=f"Test event for {event_type.value}",
             )
-            
+
             event_dict = event.to_dict()
             assert event_dict["event_type"] == event_type.value
 
     def test_all_audit_event_severities_logging(self):
         """Test that all AuditEventSeverity values are handled correctly by logger."""
         audit_logger = AuditLogger()
-        
+
         all_severities = [
             AuditEventSeverity.LOW,
             AuditEventSeverity.MEDIUM,
@@ -652,15 +651,15 @@ class TestAuditEventTypesCoverage:
             for severity in all_severities:
                 # Reset mock calls for this iteration
                 mock_logger.reset_mock()
-                
+
                 event = AuditEvent(
                     event_type=AuditEventType.API_REQUEST,
                     severity=severity,
                     message=f"Test event with {severity.value} severity",
                 )
-                
+
                 audit_logger.log_event(event)
-                
+
                 # Verify the correct logging method was called
                 if severity == AuditEventSeverity.CRITICAL:
                     mock_logger.critical.assert_called()

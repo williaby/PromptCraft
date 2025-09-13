@@ -216,10 +216,7 @@ class ANCHORQREvaluator(LoggerMixin):
             evaluation.improvement_recommendations = self._generate_improvement_recommendations(evaluation)
 
             self.logger.info(
-                "ANCHOR-QR-8 evaluation complete. "
-                "Score: %.1f, "
-                "Flags: %d, "
-                "Issues: %d",
+                "ANCHOR-QR-8 evaluation complete. Score: %.1f, Flags: %d, Issues: %d",
                 evaluation.overall_score,
                 len(evaluation.all_flags),
                 len(evaluation.critical_issues),
@@ -241,10 +238,14 @@ class ANCHORQREvaluator(LoggerMixin):
         """Execute a single ANCHOR-QR-8 evaluation step."""
         evaluation_method = getattr(self, f"_evaluate_{step.value}")
         result = evaluation_method(prompt, context, rigor_level)
-        return result if isinstance(result, EvaluationResult) else EvaluationResult(
-            step=step,
-            score=0.0, 
-            confidence=0.0,
+        return (
+            result
+            if isinstance(result, EvaluationResult)
+            else EvaluationResult(
+                step=step,
+                score=0.0,
+                confidence=0.0,
+            )
         )
 
     def _evaluate_reflection_loop(

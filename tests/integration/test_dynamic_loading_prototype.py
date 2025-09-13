@@ -22,7 +22,6 @@ and missing task detection config setup. The dynamic loading system exists but h
 initialization problems that need to be resolved.
 """
 
-# Configuration issues resolved - tests now enabled
 import time
 
 from fastapi.testclient import TestClient
@@ -30,6 +29,7 @@ import pytest
 
 from src.api.dynamic_loading_endpoints import router
 from src.core.comprehensive_prototype_demo import (
+    # Configuration issues resolved - tests now enabled
     ComprehensivePrototypeDemo,
     DemoScenarioType,
 )

@@ -30,7 +30,7 @@ out/
 # Misc
 .npm
 .eslintcache
-package-lock.json
+# package-lock.json  # Temporarily allow for CI smoke tests
 
 # Environment
 # =================================

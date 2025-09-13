@@ -5,6 +5,6 @@ from .discovery import StandardDefinition, StandardsDiscoverySystem, StandardsMa
 
 __all__ = [
     "StandardDefinition",
-    "StandardsDiscoverySystem", 
+    "StandardsDiscoverySystem",
     "StandardsManager",
 ]

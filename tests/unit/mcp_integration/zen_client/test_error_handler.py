@@ -1,9 +1,6 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive tests for error handling and fallback mechanisms."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 import time
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -16,6 +13,7 @@ from src.mcp_integration.zen_client.error_handler import (
     RetryHandler,
 )
 from src.mcp_integration.zen_client.models import BridgeMetrics, FallbackConfig
+from src.utils.datetime_compat import UTC, utc_now
 
 
 class TestCircuitBreakerState:
@@ -392,13 +390,13 @@ class TestMCPConnectionManager:
         """Test getting circuit breaker status."""
         manager = MCPConnectionManager(fallback_config)
         manager.failure_count = 2
-        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0)
+        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0, tzinfo=UTC)
 
         status = manager.get_circuit_breaker_status()
 
         assert status["state"] == "closed"
         assert status["failure_count"] == 2
-        assert status["last_failure_time"] == "2024-01-07T10:30:00"
+        assert status["last_failure_time"] == "2024-01-07T10:30:00+00:00"
         assert status["threshold"] == fallback_config.circuit_breaker_threshold
 
     @pytest.mark.asyncio
@@ -423,7 +421,7 @@ class TestMCPConnectionManager:
     async def test_close_http_client(self, fallback_config):
         """Test closing HTTP client."""
         manager = MCPConnectionManager(fallback_config)
-        
+
         # Mock the http_client's aclose method
         mock_aclose = AsyncMock()
         manager.http_client.aclose = mock_aclose
@@ -514,7 +512,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delays increase exponentially
@@ -533,7 +531,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delay is capped
@@ -552,7 +550,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Test error")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="Test error"):
             await handler.with_retry(mock_operation, "custom_operation")
 
         # The operation name should be used in logging (implicitly tested via no exceptions)

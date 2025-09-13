@@ -73,7 +73,7 @@ class TestTimeUtils:
     def test_to_timestamp_with_naive_datetime(self):
         """Test to_timestamp with naive datetime - covers line 106."""
         # Create naive datetime (no timezone) - intentionally naive for testing
-        dt = datetime(2024, 1, 1, 12, 0, 0)  # noqa: DTZ001
+        dt = datetime(2024, 1, 1, 12, 0, 0)
         assert dt.tzinfo is None
 
         timestamp = to_timestamp(dt)
@@ -99,7 +99,7 @@ class TestTimeUtils:
     def test_format_datetime_with_naive_datetime(self):
         """Test format_datetime with naive datetime - covers line 127."""
         # Create naive datetime (no timezone) - intentionally naive for testing
-        dt = datetime(2024, 1, 1, 12, 0, 0)  # noqa: DTZ001
+        dt = datetime(2024, 1, 1, 12, 0, 0)
         assert dt.tzinfo is None
 
         formatted = format_datetime(dt)
@@ -136,7 +136,7 @@ class TestTimeUtils:
 
     def test_utc_constant(self):
         """Test UTC constant."""
-        assert UTC is UTC  # noqa: PLR0124
+        assert UTC is UTC
 
     def test_all_exports(self):
         """Test that all public API functions are exported."""

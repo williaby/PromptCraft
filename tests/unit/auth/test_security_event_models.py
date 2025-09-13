@@ -28,7 +28,7 @@ class TestSecurityEventType:
         expected_types = {
             # Authentication events
             "login_success",
-            "login_failure", 
+            "login_failure",
             "login_failed",  # Alias for LOGIN_FAILURE
             "logout",
             "session_expired",

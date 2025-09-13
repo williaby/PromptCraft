@@ -202,7 +202,11 @@ class SecurePathField(str):
 
         # Check if this looks like HTML content rather than a path
         # If so, fall back to string sanitization for safety
-        if "<" in value and ">" in value and any(tag in value.lower() for tag in ["script", "img", "iframe", "object", "embed"]):
+        if (
+            "<" in value
+            and ">" in value
+            and any(tag in value.lower() for tag in ["script", "img", "iframe", "object", "embed"])
+        ):
             return SecureStringField.validate(value)
 
         # 1. Decode the value first to get the intended path
@@ -285,9 +289,7 @@ class BaseSecureModel(BaseModel):
         validate_assignment = True
         # Use enum values
         use_enum_values = True
-        # Strict validation - let individual fields control whitespace stripping
-        # str_strip_whitespace = True  # Controlled per field
-        # anystr_strip_whitespace = True  # Deprecated in Pydantic v2
+        # Strict validation - individual fields control whitespace stripping
 
 
 class SecureTextInput(BaseSecureModel):
@@ -317,13 +319,16 @@ class SecureTextInput(BaseSecureModel):
 class SecureFileUpload(BaseSecureModel):
     """Secure file upload validation model."""
 
-    filename: Annotated[str, Field(
-        ...,
-        min_length=1,
-        max_length=255,
-        description="Filename with path traversal protection",
-        str_strip_whitespace=False,
-    )]
+    filename: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=255,
+            description="Filename with path traversal protection",
+            str_strip_whitespace=False,
+        ),
+    ]
     content_type: str = Field(
         ...,
         description="MIME content type",
@@ -343,7 +348,7 @@ class SecureFileUpload(BaseSecureModel):
         # Check for leading/trailing whitespace before processing
         if value != value.strip():
             raise ValueError("Filename cannot have leading or trailing whitespace")
-        
+
         # Use path validation
         validated = SecurePathField.validate(value)
 
@@ -353,11 +358,30 @@ class SecureFileUpload(BaseSecureModel):
 
         # Check for Windows reserved names (case insensitive)
         windows_reserved_names = [
-            "CON", "PRN", "AUX", "NUL",
-            "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-            "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+            "CON",
+            "PRN",
+            "AUX",
+            "NUL",
+            "COM1",
+            "COM2",
+            "COM3",
+            "COM4",
+            "COM5",
+            "COM6",
+            "COM7",
+            "COM8",
+            "COM9",
+            "LPT1",
+            "LPT2",
+            "LPT3",
+            "LPT4",
+            "LPT5",
+            "LPT6",
+            "LPT7",
+            "LPT8",
+            "LPT9",
         ]
-        
+
         # Extract filename without extension for reserved name check
         filename_base = validated.split(".")[0].upper()
         if filename_base in windows_reserved_names:
@@ -486,12 +510,12 @@ def create_input_sanitizer() -> dict[str, Any]:
 
 def _sanitize_list(lst: list[Any], sanitizer: Any, sanitizer_type: str) -> list[Any]:
     """Recursively sanitize a list, handling nested lists and dictionaries.
-    
+
     Args:
         lst: List to sanitize
         sanitizer: Sanitizer function to apply to strings
         sanitizer_type: Type of sanitization to apply
-        
+
     Returns:
         Sanitized list
     """

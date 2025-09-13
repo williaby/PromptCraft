@@ -103,9 +103,9 @@ role_router = APIRouter(prefix="/api/v1/roles", tags=["role-management"])
 
 @role_router.post("/", response_model=RoleResponse)
 async def create_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_request: RoleCreateRequest,
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.ROLES_CREATE),
     ),  # Auth dependency
 ) -> RoleResponse:
@@ -143,9 +143,9 @@ async def create_role(
 
 @role_router.get("/", response_model=list[RoleResponse])
 async def list_roles(
-    request: Request,  # noqa: ARG001
+    request: Request,
     include_inactive: bool = Query(False, description="Include inactive roles"),
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.ROLES_READ),
     ),  # Auth dependency
 ) -> list[RoleResponse]:
@@ -170,7 +170,7 @@ async def list_roles(
 
 @role_router.post("/assignments")
 async def assign_user_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     assignment_request: UserRoleAssignmentRequest,
     current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),  # Auth dependency
 ) -> dict[str, str]:
@@ -201,7 +201,7 @@ async def assign_user_role(
 
 @role_router.delete("/assignments")
 async def revoke_user_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     user_email: str = Query(..., description="User email address"),
     role_name: str = Query(..., description="Role name to revoke"),
     current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_ASSIGN)),  # Auth dependency
@@ -238,10 +238,10 @@ async def revoke_user_role(
 
 @role_router.post("/validate-hierarchy")
 async def validate_role_hierarchy(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str = Query(..., description="Role name to modify"),
     parent_role_name: str = Query(..., description="Proposed parent role name"),
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.ROLES_READ),
     ),  # Auth dependency
 ) -> dict[str, bool | str]:
@@ -273,9 +273,9 @@ async def validate_role_hierarchy(
 
 @role_router.get("/users/{user_email}/roles", response_model=list[UserRoleResponse])
 async def get_user_roles(
-    request: Request,  # noqa: ARG001
+    request: Request,
     user_email: str,
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.USERS_READ),
     ),  # Auth dependency
 ) -> list[UserRoleResponse]:
@@ -292,9 +292,9 @@ async def get_user_roles(
 
 @role_router.get("/users/{user_email}/permissions", response_model=UserPermissionsResponse)
 async def get_user_permissions(
-    request: Request,  # noqa: ARG001
+    request: Request,
     user_email: str,
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.USERS_READ),
     ),  # Auth dependency
 ) -> UserPermissionsResponse:
@@ -321,9 +321,9 @@ async def get_user_permissions(
 
 @role_router.get("/{role_name}", response_model=RoleResponse)
 async def get_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str,
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.ROLES_READ),
     ),  # Auth dependency
 ) -> RoleResponse:
@@ -346,7 +346,7 @@ async def get_role(
 
 @role_router.delete("/{role_name}")
 async def delete_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str,
     force: bool = Query(False, description="Force deletion (removes assignments and child dependencies)"),
     current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_DELETE)),  # Auth dependency
@@ -387,9 +387,9 @@ async def delete_role(
 
 @role_router.get("/{role_name}/permissions", response_model=RolePermissionsResponse)
 async def get_role_permissions(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str,
-    current_user: AuthenticatedUserType = Depends(  # noqa: ARG001  # FastAPI dependency injection
+    current_user: AuthenticatedUserType = Depends(  # FastAPI dependency injection
         require_permission(Permissions.ROLES_READ),
     ),  # Auth dependency
 ) -> RolePermissionsResponse:
@@ -411,7 +411,7 @@ async def get_role_permissions(
 
 @role_router.post("/{role_name}/permissions")
 async def assign_permission_to_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str,
     permission_request: PermissionAssignmentRequest,
     current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),  # Auth dependency
@@ -439,7 +439,7 @@ async def assign_permission_to_role(
 
 @role_router.delete("/{role_name}/permissions/{permission_name}")
 async def revoke_permission_from_role(
-    request: Request,  # noqa: ARG001
+    request: Request,
     role_name: str,
     permission_name: str,
     current_user: AuthenticatedUserType = Depends(require_permission(Permissions.ROLES_UPDATE)),  # Auth dependency

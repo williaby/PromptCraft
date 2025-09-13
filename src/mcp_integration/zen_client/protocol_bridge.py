@@ -65,8 +65,8 @@ class MCPProtocolBridge:
                     "prompt": smart_request.prompt,
                     "user_tier": smart_request.user_tier,
                     "channel": smart_request.channel,
-                    "cost_optimization": smart_request.cost_optimization,
-                    "include_reasoning": smart_request.include_reasoning,
+                    "cost_optimization": str(smart_request.cost_optimization).lower(),
+                    "include_reasoning": str(smart_request.include_reasoning).lower(),
                     "model": "auto",  # Let the bridge decide
                 }
 
@@ -78,7 +78,7 @@ class MCPProtocolBridge:
                     "action": action,
                     "user_tier": models_request.user_tier,
                     "channel": models_request.channel,
-                    "include_metadata": models_request.include_metadata,
+                    "include_metadata": str(models_request.include_metadata).lower(),
                     "format": models_request.format,
                     "model": "flash",  # Fast model for listing
                 }

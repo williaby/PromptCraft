@@ -3,6 +3,34 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
+async function createSecurityTestFiles(testDataDir: string) {
+  // Create additional security test files that will be used across tests
+  const securityFiles = [
+    {
+      name: 'config.json',
+      content: JSON.stringify({
+        "api_key": "test-key-not-real",
+        "database_url": "postgresql://localhost:5432/test",
+        "debug": true,
+        "allowed_origins": ["localhost", "127.0.0.1"]
+      }, null, 2)
+    },
+    {
+      name: 'requirements.txt',
+      content: `requests>=2.28.0
+flask>=2.0.0
+pytest>=7.0.0
+black>=22.0.0
+`
+    }
+  ];
+
+  for (const file of securityFiles) {
+    const filePath = path.join(testDataDir, file.name);
+    fs.writeFileSync(filePath, file.content);
+  }
+}
+
 test.describe('Journey 1: Enhanced File Upload Security Testing', () => {
   const testDataDir = path.join(__dirname, 'data/upload-test-files');
 
@@ -13,7 +41,7 @@ test.describe('Journey 1: Enhanced File Upload Security Testing', () => {
     }
 
     // Create test files for comprehensive upload testing
-    await createSecurityTestFiles();
+    await createSecurityTestFiles(testDataDir);
   });
 
   test.beforeEach(async ({ page }) => {
@@ -574,7 +602,7 @@ More content to test integrity...
 
       for (const test of encodingTests) {
         const filePath = path.join(testDataDir, test.name);
-        fs.writeFileSync(filePath, test.content, test.encoding);
+        fs.writeFileSync(filePath, test.content, { encoding: test.encoding as BufferEncoding });
 
         console.log(`📁 Testing ${test.name} (${test.encoding})...`);
 
@@ -605,34 +633,6 @@ More content to test integrity...
       }
     });
   });
-
-  async function createSecurityTestFiles() {
-    // Create additional security test files that will be used across tests
-    const securityFiles = [
-      {
-        name: 'config.json',
-        content: JSON.stringify({
-          "api_key": "test-key-not-real",
-          "database_url": "postgresql://localhost:5432/test",
-          "debug": true,
-          "allowed_origins": ["localhost", "127.0.0.1"]
-        }, null, 2)
-      },
-      {
-        name: 'requirements.txt',
-        content: `requests>=2.28.0
-flask>=2.0.0
-pytest>=7.0.0
-black>=22.0.0
-`
-      }
-    ];
-
-    for (const file of securityFiles) {
-      const filePath = path.join(testDataDir, file.name);
-      fs.writeFileSync(filePath, file.content);
-    }
-  }
 
   test.afterAll(async () => {
     // Clean up test files

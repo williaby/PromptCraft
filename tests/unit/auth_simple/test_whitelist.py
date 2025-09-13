@@ -6,7 +6,7 @@ comprehensive EmailWhitelistValidator functionality.
 
 Test Coverage:
 - EmailWhitelistValidator complete functionality
-- WhitelistManager runtime operations  
+- WhitelistManager runtime operations
 - create_validator_from_env parsing
 - UserTier integration and validation
 - Edge cases and error handling
@@ -76,7 +76,7 @@ class TestWhitelistEntry:
             added_at="2023-01-01T00:00:00Z",
             description="Test user",
         )
-        
+
         assert entry.value == "test@example.com"
         assert entry.is_domain is False
         assert entry.added_at == "2023-01-01T00:00:00Z"
@@ -89,7 +89,7 @@ class TestWhitelistEntry:
             is_domain=True,
             added_at="2023-01-01T00:00:00Z",
         )
-        
+
         assert entry.value == "@company.com"
         assert entry.is_domain is True
         assert entry.description is None
@@ -102,7 +102,7 @@ class TestEmailWhitelistConfig:
     def test_default_config(self):
         """Test default configuration values."""
         config = EmailWhitelistConfig()
-        
+
         assert config.whitelist == []
         assert config.admin_emails == []
         assert config.full_users == []
@@ -117,7 +117,7 @@ class TestEmailWhitelistConfig:
             full_users="full@example.com",
             limited_users="limited@example.com",
         )
-        
+
         assert config.whitelist == ["test@example.com", "admin@company.com", "@domain.com"]
         assert config.admin_emails == ["admin1@example.com", "admin2@example.com"]
         assert config.full_users == ["full@example.com"]
@@ -129,7 +129,7 @@ class TestEmailWhitelistConfig:
             whitelist=["test@example.com", "admin@company.com"],
             admin_emails=["admin@example.com"],
         )
-        
+
         assert config.whitelist == ["test@example.com", "admin@company.com"]
         assert config.admin_emails == ["admin@example.com"]
 
@@ -140,7 +140,7 @@ class TestEmailWhitelistConfig:
             admin_emails=None,
             full_users=[],
         )
-        
+
         assert config.whitelist == []
         assert config.admin_emails == []
         assert config.full_users == []
@@ -153,7 +153,7 @@ class TestEmailWhitelistValidatorInit:
     def test_init_empty_lists(self):
         """Test initialization with empty lists."""
         validator = EmailWhitelistValidator([])
-        
+
         assert validator.individual_emails == set()
         assert validator.domain_patterns == set()
         assert validator.admin_emails == []
@@ -169,7 +169,7 @@ class TestEmailWhitelistValidatorInit:
             full_users=["test@example.com"],
             limited_users=["@company.com"],
         )
-        
+
         assert validator.individual_emails == {"test@example.com", "admin@test.org"}
         assert validator.domain_patterns == {"@company.com"}
         assert validator.admin_emails == ["admin@test.org"]
@@ -182,7 +182,7 @@ class TestEmailWhitelistValidatorInit:
             whitelist=["Test@Example.com", "@Company.Com"],
             case_sensitive=True,
         )
-        
+
         assert validator.individual_emails == {"Test@Example.com"}
         assert validator.domain_patterns == {"@Company.Com"}
         assert validator.case_sensitive is True
@@ -193,7 +193,7 @@ class TestEmailWhitelistValidatorInit:
             whitelist=["Test@Example.com", "@Company.Com"],
             case_sensitive=False,
         )
-        
+
         assert validator.individual_emails == {"test@example.com"}
         assert validator.domain_patterns == {"@company.com"}
         assert validator.case_sensitive is False
@@ -201,19 +201,19 @@ class TestEmailWhitelistValidatorInit:
     @patch("src.auth_simple.whitelist.logger")
     def test_init_logging(self, mock_logger):
         """Test initialization logging."""
-        validator = EmailWhitelistValidator(
+        EmailWhitelistValidator(
             whitelist=["test@example.com", "@company.com"],
             admin_emails=["admin@example.com"],
             full_users=["full@example.com"],
             limited_users=["limited@example.com"],
         )
-        
+
         mock_logger.info.assert_called_once()
         # Check that the log call was made with the expected format string and arguments
         call_args, call_kwargs = mock_logger.info.call_args
         log_format = call_args[0]
         log_args = call_args[1:]
-        
+
         assert "Initialized email whitelist" in log_format
         assert log_args == (1, 1, 1, 1, 1)  # individual, domain, admin, full, limited counts
 
@@ -225,34 +225,34 @@ class TestEmailWhitelistValidatorNormalization:
     def test_normalize_emails_case_sensitive(self):
         """Test _normalize_emails with case sensitivity."""
         validator = EmailWhitelistValidator([], case_sensitive=True)
-        
+
         emails = ["Test@Example.com", "ADMIN@Company.COM"]
         normalized = validator._normalize_emails(emails)
-        
+
         assert normalized == ["Test@Example.com", "ADMIN@Company.COM"]
 
     def test_normalize_emails_case_insensitive(self):
         """Test _normalize_emails with case insensitivity."""
         validator = EmailWhitelistValidator([], case_sensitive=False)
-        
+
         emails = ["Test@Example.com", "ADMIN@Company.COM"]
         normalized = validator._normalize_emails(emails)
-        
+
         assert normalized == ["test@example.com", "admin@company.com"]
 
     def test_normalize_emails_with_whitespace(self):
         """Test _normalize_emails with whitespace."""
         validator = EmailWhitelistValidator([])
-        
+
         emails = ["  test@example.com  ", "", "   ", "admin@company.com"]
         normalized = validator._normalize_emails(emails)
-        
+
         assert normalized == ["test@example.com", "admin@company.com"]
 
     def test_normalize_emails_empty_list(self):
         """Test _normalize_emails with empty list."""
         validator = EmailWhitelistValidator([])
-        
+
         assert validator._normalize_emails([]) == []
         assert validator._normalize_emails(None) == []
 
@@ -260,9 +260,9 @@ class TestEmailWhitelistValidatorNormalization:
         """Test _normalize_email with single email."""
         validator_sensitive = EmailWhitelistValidator([], case_sensitive=True)
         validator_insensitive = EmailWhitelistValidator([], case_sensitive=False)
-        
+
         email = "  Test@Example.COM  "
-        
+
         assert validator_sensitive._normalize_email(email) == "Test@Example.COM"
         assert validator_insensitive._normalize_email(email) == "test@example.com"
 
@@ -274,7 +274,7 @@ class TestEmailWhitelistValidatorAuthorization:
     def test_is_authorized_individual_email(self):
         """Test authorization with individual emails."""
         validator = EmailWhitelistValidator(["test@example.com", "admin@company.com"])
-        
+
         assert validator.is_authorized("test@example.com") is True
         assert validator.is_authorized("admin@company.com") is True
         assert validator.is_authorized("unauthorized@example.com") is False
@@ -282,19 +282,21 @@ class TestEmailWhitelistValidatorAuthorization:
     def test_is_authorized_domain_pattern(self):
         """Test authorization with domain patterns."""
         validator = EmailWhitelistValidator(["@company.com", "@trusted.org"])
-        
+
         assert validator.is_authorized("anyone@company.com") is True
         assert validator.is_authorized("user@trusted.org") is True
         assert validator.is_authorized("user@untrusted.com") is False
 
     def test_is_authorized_mixed(self):
         """Test authorization with mixed emails and domains."""
-        validator = EmailWhitelistValidator([
-            "specific@example.com",
-            "@company.com",
-            "admin@test.org",
-        ])
-        
+        validator = EmailWhitelistValidator(
+            [
+                "specific@example.com",
+                "@company.com",
+                "admin@test.org",
+            ],
+        )
+
         assert validator.is_authorized("specific@example.com") is True
         assert validator.is_authorized("anyone@company.com") is True
         assert validator.is_authorized("admin@test.org") is True
@@ -303,23 +305,25 @@ class TestEmailWhitelistValidatorAuthorization:
     def test_is_authorized_empty_email(self):
         """Test authorization with empty email."""
         validator = EmailWhitelistValidator(["test@example.com"])
-        
+
         assert validator.is_authorized("") is False
         assert validator.is_authorized(None) is False
 
     def test_is_authorized_case_sensitivity(self):
         """Test authorization with case sensitivity."""
         validator_sensitive = EmailWhitelistValidator(
-            ["Test@Example.com"], case_sensitive=True,
+            ["Test@Example.com"],
+            case_sensitive=True,
         )
         validator_insensitive = EmailWhitelistValidator(
-            ["Test@Example.com"], case_sensitive=False,
+            ["Test@Example.com"],
+            case_sensitive=False,
         )
-        
+
         # Case sensitive - exact match required
         assert validator_sensitive.is_authorized("Test@Example.com") is True
         assert validator_sensitive.is_authorized("test@example.com") is False
-        
+
         # Case insensitive - any case works
         assert validator_insensitive.is_authorized("Test@Example.com") is True
         assert validator_insensitive.is_authorized("test@example.com") is True
@@ -328,15 +332,19 @@ class TestEmailWhitelistValidatorAuthorization:
     def test_is_authorized_logging(self, mock_logger):
         """Test authorization logging."""
         validator = EmailWhitelistValidator(["test@example.com", "@company.com"])
-        
+
         # Authorized individual email
         validator.is_authorized("test@example.com")
         mock_logger.debug.assert_called_with("Email %s authorized via individual whitelist", "test@example.com")
-        
+
         # Authorized domain
         validator.is_authorized("user@company.com")
-        mock_logger.debug.assert_called_with("Email %s authorized via domain pattern %s", "user@company.com", "@company.com")
-        
+        mock_logger.debug.assert_called_with(
+            "Email %s authorized via domain pattern %s",
+            "user@company.com",
+            "@company.com",
+        )
+
         # Unauthorized
         validator.is_authorized("unauthorized@example.com")
         mock_logger.debug.assert_called_with("Email %s not authorized", "unauthorized@example.com")
@@ -352,7 +360,7 @@ class TestEmailWhitelistValidatorAdmin:
             whitelist=["admin@company.com", "@company.com"],
             admin_emails=["admin@company.com", "super@company.com"],
         )
-        
+
         assert validator.is_admin("admin@company.com") is True
         assert validator.is_admin("super@company.com") is True
         assert validator.is_admin("user@company.com") is False
@@ -360,22 +368,26 @@ class TestEmailWhitelistValidatorAdmin:
     def test_is_admin_empty_email(self):
         """Test is_admin with empty email."""
         validator = EmailWhitelistValidator([], admin_emails=["admin@company.com"])
-        
+
         assert validator.is_admin("") is False
         assert validator.is_admin(None) is False
 
     def test_is_admin_case_sensitivity(self):
         """Test is_admin with case sensitivity."""
         validator_sensitive = EmailWhitelistValidator(
-            [], admin_emails=["Admin@Company.com"], case_sensitive=True,
+            [],
+            admin_emails=["Admin@Company.com"],
+            case_sensitive=True,
         )
         validator_insensitive = EmailWhitelistValidator(
-            [], admin_emails=["Admin@Company.com"], case_sensitive=False,
+            [],
+            admin_emails=["Admin@Company.com"],
+            case_sensitive=False,
         )
-        
+
         assert validator_sensitive.is_admin("Admin@Company.com") is True
         assert validator_sensitive.is_admin("admin@company.com") is False
-        
+
         assert validator_insensitive.is_admin("Admin@Company.com") is True
         assert validator_insensitive.is_admin("admin@company.com") is True
 
@@ -383,7 +395,7 @@ class TestEmailWhitelistValidatorAdmin:
     def test_is_admin_logging(self, mock_logger):
         """Test admin privilege logging."""
         validator = EmailWhitelistValidator([], admin_emails=["admin@company.com"])
-        
+
         validator.is_admin("admin@company.com")
         mock_logger.debug.assert_called_with("Email %s has admin privileges", "admin@company.com")
 
@@ -395,7 +407,7 @@ class TestEmailWhitelistValidatorRoles:
     def test_get_user_role_unauthorized(self):
         """Test get_user_role for unauthorized user."""
         validator = EmailWhitelistValidator(["test@example.com"])
-        
+
         assert validator.get_user_role("unauthorized@example.com") == "unauthorized"
 
     def test_get_user_role_admin(self):
@@ -404,13 +416,13 @@ class TestEmailWhitelistValidatorRoles:
             whitelist=["admin@example.com"],
             admin_emails=["admin@example.com"],
         )
-        
+
         assert validator.get_user_role("admin@example.com") == "admin"
 
     def test_get_user_role_user(self):
         """Test get_user_role for regular user."""
         validator = EmailWhitelistValidator(["user@example.com"])
-        
+
         assert validator.get_user_role("user@example.com") == "user"
 
 
@@ -421,7 +433,7 @@ class TestEmailWhitelistValidatorTiers:
     def test_get_user_tier_empty_email(self):
         """Test get_user_tier with empty email."""
         validator = EmailWhitelistValidator(["test@example.com"])
-        
+
         with pytest.raises(ValueError, match="Email cannot be empty"):
             validator.get_user_tier("")
 
@@ -431,7 +443,7 @@ class TestEmailWhitelistValidatorTiers:
     def test_get_user_tier_unauthorized(self):
         """Test get_user_tier for unauthorized email."""
         validator = EmailWhitelistValidator(["test@example.com"])
-        
+
         with pytest.raises(ValueError, match="Email .* is not authorized"):
             validator.get_user_tier("unauthorized@example.com")
 
@@ -443,7 +455,7 @@ class TestEmailWhitelistValidatorTiers:
             full_users=["full@example.com"],
             limited_users=["limited@example.com"],
         )
-        
+
         assert validator.get_user_tier("admin@example.com") == UserTier.ADMIN
         assert validator.get_user_tier("full@example.com") == UserTier.FULL
         assert validator.get_user_tier("limited@example.com") == UserTier.LIMITED
@@ -456,9 +468,9 @@ class TestEmailWhitelistValidatorTiers:
             full_users=["@full.company.com"],
             limited_users=["@limited.company.com"],
         )
-        
+
         # These should fail because users aren't in whitelist
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="not authorized"):
             validator.get_user_tier("user@admin.company.com")
 
         # Add domains to whitelist
@@ -468,7 +480,7 @@ class TestEmailWhitelistValidatorTiers:
             full_users=["@full.company.com"],
             limited_users=["@limited.company.com"],
         )
-        
+
         assert validator.get_user_tier("user@admin.company.com") == UserTier.ADMIN
         assert validator.get_user_tier("user@full.company.com") == UserTier.FULL
         assert validator.get_user_tier("user@limited.company.com") == UserTier.LIMITED
@@ -482,7 +494,7 @@ class TestEmailWhitelistValidatorTiers:
             full_users=["test@example.com"],
             limited_users=["test@example.com"],
         )
-        
+
         assert validator.get_user_tier("test@example.com") == UserTier.ADMIN
 
         # Email in full and limited - should return full
@@ -491,13 +503,13 @@ class TestEmailWhitelistValidatorTiers:
             full_users=["test@example.com"],
             limited_users=["test@example.com"],
         )
-        
+
         assert validator.get_user_tier("test@example.com") == UserTier.FULL
 
     def test_get_user_tier_default_limited(self):
         """Test get_user_tier defaults to LIMITED for authorized users."""
         validator = EmailWhitelistValidator(["test@example.com"])
-        
+
         assert validator.get_user_tier("test@example.com") == UserTier.LIMITED
 
     @patch("src.auth_simple.whitelist.logger")
@@ -507,11 +519,11 @@ class TestEmailWhitelistValidatorTiers:
             whitelist=["admin@example.com", "user@example.com"],
             admin_emails=["admin@example.com"],
         )
-        
+
         # Exact match logging
         validator.get_user_tier("admin@example.com")
         mock_logger.debug.assert_called_with("Email %s has %s tier (exact match)", "admin@example.com", "admin")
-        
+
         # Default tier logging
         validator.get_user_tier("user@example.com")
         mock_logger.debug.assert_called_with("Email %s defaulted to limited tier", "user@example.com")
@@ -529,7 +541,7 @@ class TestEmailWhitelistValidatorAccessMethods:
             full_users=["full@example.com"],
             limited_users=["limited@example.com"],
         )
-        
+
         assert validator.can_access_premium_models("admin@example.com") is True
         assert validator.can_access_premium_models("full@example.com") is True
         assert validator.can_access_premium_models("limited@example.com") is False
@@ -543,7 +555,7 @@ class TestEmailWhitelistValidatorAccessMethods:
             full_users=["full@example.com"],
             limited_users=["limited@example.com"],
         )
-        
+
         assert validator.has_admin_privileges("admin@example.com") is True
         assert validator.has_admin_privileges("full@example.com") is False
         assert validator.has_admin_privileges("limited@example.com") is False
@@ -562,9 +574,9 @@ class TestEmailWhitelistValidatorStats:
             full_users=["test@example.com"],
             limited_users=["@company.com"],
         )
-        
+
         stats = validator.get_whitelist_stats()
-        
+
         assert stats["individual_emails"] == 2
         assert stats["domain_patterns"] == 2
         assert stats["admin_emails"] == 1
@@ -588,7 +600,7 @@ class TestEmailWhitelistValidatorValidation:
         """Test validation with empty whitelist."""
         validator = EmailWhitelistValidator([])
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("Whitelist is empty" in w for w in warnings)
 
     def test_validate_whitelist_config_admin_not_in_whitelist(self):
@@ -598,7 +610,7 @@ class TestEmailWhitelistValidatorValidation:
             admin_emails=["admin@example.com"],
         )
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("Admin email admin@example.com is not in whitelist" in w for w in warnings)
 
     def test_validate_whitelist_config_full_user_not_in_whitelist(self):
@@ -608,7 +620,7 @@ class TestEmailWhitelistValidatorValidation:
             full_users=["full@example.com"],
         )
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("Full user email full@example.com is not in whitelist" in w for w in warnings)
 
     def test_validate_whitelist_config_limited_user_not_in_whitelist(self):
@@ -618,7 +630,7 @@ class TestEmailWhitelistValidatorValidation:
             limited_users=["limited@example.com"],
         )
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("Limited user email limited@example.com is not in whitelist" in w for w in warnings)
 
     def test_validate_whitelist_config_tier_conflicts(self):
@@ -630,14 +642,14 @@ class TestEmailWhitelistValidatorValidation:
             limited_users=["conflict@example.com"],
         )
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("conflict@example.com is assigned to multiple tiers" in w for w in warnings)
 
     def test_validate_whitelist_config_public_domains(self):
         """Test validation with public email domains."""
         validator = EmailWhitelistValidator(["@gmail.com", "@outlook.com"])
         warnings = validator.validate_whitelist_config()
-        
+
         assert any("Public email domains" in w for w in warnings)
 
     def test_validate_whitelist_config_clean(self):
@@ -648,7 +660,7 @@ class TestEmailWhitelistValidatorValidation:
             full_users=["user@company.com"],
         )
         warnings = validator.validate_whitelist_config()
-        
+
         # Should have no warnings for clean config
         assert len(warnings) == 0
 
@@ -661,7 +673,7 @@ class TestWhitelistManager:
         """Test WhitelistManager initialization."""
         validator = EmailWhitelistValidator(["test@example.com"])
         manager = WhitelistManager(validator)
-        
+
         assert manager.validator is validator
 
     @patch("src.auth_simple.whitelist.logger")
@@ -669,9 +681,9 @@ class TestWhitelistManager:
         """Test adding individual email."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         result = manager.add_email("test@example.com")
-        
+
         assert result is True
         assert "test@example.com" in validator.individual_emails
         assert "test@example.com" not in validator.admin_emails
@@ -682,9 +694,9 @@ class TestWhitelistManager:
         """Test adding admin email."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         result = manager.add_email("admin@example.com", is_admin=True)
-        
+
         assert result is True
         assert "admin@example.com" in validator.individual_emails
         assert "admin@example.com" in validator.admin_emails
@@ -695,9 +707,9 @@ class TestWhitelistManager:
         """Test adding domain pattern."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         result = manager.add_email("@company.com")
-        
+
         assert result is True
         assert "@company.com" in validator.domain_patterns
         mock_logger.info.assert_called_with("Added email %s to whitelist (admin: %s)", "@company.com", False)
@@ -707,22 +719,26 @@ class TestWhitelistManager:
         """Test add_email error handling."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         # Mock _normalize_email to raise exception
         with patch.object(validator, "_normalize_email", side_effect=Exception("Test error")):
             result = manager.add_email("test@example.com")
-        
+
         assert result is False
-        mock_logger.error.assert_called_with("Failed to add email %s to whitelist: %s", "test@example.com", mock_logger.error.call_args[0][2])
+        mock_logger.error.assert_called_with(
+            "Failed to add email %s to whitelist: %s",
+            "test@example.com",
+            mock_logger.error.call_args[0][2],
+        )
 
     @patch("src.auth_simple.whitelist.logger")
     def test_remove_email_individual(self, mock_logger):
         """Test removing individual email."""
         validator = EmailWhitelistValidator(["test@example.com"])
         manager = WhitelistManager(validator)
-        
+
         result = manager.remove_email("test@example.com")
-        
+
         assert result is True
         assert "test@example.com" not in validator.individual_emails
         mock_logger.info.assert_called_with("Removed email %s from whitelist", "test@example.com")
@@ -732,9 +748,9 @@ class TestWhitelistManager:
         """Test removing domain pattern."""
         validator = EmailWhitelistValidator(["@company.com"])
         manager = WhitelistManager(validator)
-        
+
         result = manager.remove_email("@company.com")
-        
+
         assert result is True
         assert "@company.com" not in validator.domain_patterns
         mock_logger.info.assert_called_with("Removed email %s from whitelist", "@company.com")
@@ -747,9 +763,9 @@ class TestWhitelistManager:
             admin_emails=["admin@example.com"],
         )
         manager = WhitelistManager(validator)
-        
+
         result = manager.remove_email("admin@example.com")
-        
+
         assert result is True
         assert "admin@example.com" not in validator.individual_emails
         assert "admin@example.com" not in validator.admin_emails
@@ -759,9 +775,9 @@ class TestWhitelistManager:
         """Test removing email not in whitelist."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         result = manager.remove_email("notfound@example.com")
-        
+
         assert result is False
         mock_logger.warning.assert_called_with("Email %s not found in whitelist", "notfound@example.com")
 
@@ -770,13 +786,17 @@ class TestWhitelistManager:
         """Test remove_email error handling."""
         validator = EmailWhitelistValidator([])
         manager = WhitelistManager(validator)
-        
+
         # Mock _normalize_email to raise exception
         with patch.object(validator, "_normalize_email", side_effect=Exception("Test error")):
             result = manager.remove_email("test@example.com")
-        
+
         assert result is False
-        mock_logger.error.assert_called_with("Failed to remove email %s from whitelist: %s", "test@example.com", mock_logger.error.call_args[0][2])
+        mock_logger.error.assert_called_with(
+            "Failed to remove email %s from whitelist: %s",
+            "test@example.com",
+            mock_logger.error.call_args[0][2],
+        )
 
     def test_check_email(self):
         """Test check_email method."""
@@ -785,9 +805,9 @@ class TestWhitelistManager:
             admin_emails=["admin@example.com"],
         )
         manager = WhitelistManager(validator)
-        
+
         result = manager.check_email("admin@example.com")
-        
+
         expected = {
             "email": "admin@example.com",
             "is_authorized": True,
@@ -795,16 +815,16 @@ class TestWhitelistManager:
             "role": "admin",
             "normalized_email": "admin@example.com",
         }
-        
+
         assert result == expected
 
     def test_check_email_unauthorized(self):
         """Test check_email with unauthorized email."""
         validator = EmailWhitelistValidator(["authorized@example.com"])
         manager = WhitelistManager(validator)
-        
+
         result = manager.check_email("unauthorized@example.com")
-        
+
         expected = {
             "email": "unauthorized@example.com",
             "is_authorized": False,
@@ -812,7 +832,7 @@ class TestWhitelistManager:
             "role": "unauthorized",
             "normalized_email": "unauthorized@example.com",
         }
-        
+
         assert result == expected
 
 
@@ -828,7 +848,7 @@ class TestCreateValidatorFromEnv:
             full_users_str="full@example.com",
             limited_users_str="limited@example.com",
         )
-        
+
         assert validator.individual_emails == {"test@example.com"}
         assert validator.domain_patterns == {"@company.com"}
         assert validator.admin_emails == ["admin@example.com", "super@company.com"]
@@ -838,7 +858,7 @@ class TestCreateValidatorFromEnv:
     def test_create_validator_whitelist_only(self):
         """Test creating validator with whitelist only."""
         validator = create_validator_from_env("test@example.com,@company.com")
-        
+
         assert validator.individual_emails == {"test@example.com"}
         assert validator.domain_patterns == {"@company.com"}
         assert validator.admin_emails == []
@@ -848,7 +868,7 @@ class TestCreateValidatorFromEnv:
     def test_create_validator_empty_strings(self):
         """Test creating validator with empty strings."""
         validator = create_validator_from_env("", "", "", "")
-        
+
         assert validator.individual_emails == set()
         assert validator.domain_patterns == set()
         assert validator.admin_emails == []
@@ -861,7 +881,7 @@ class TestCreateValidatorFromEnv:
             whitelist_str="  test@example.com  , , @company.com  ",
             admin_emails_str=" admin@example.com , ",
         )
-        
+
         assert validator.individual_emails == {"test@example.com"}
         assert validator.domain_patterns == {"@company.com"}
         assert validator.admin_emails == ["admin@example.com"]
@@ -874,7 +894,7 @@ class TestCreateValidatorFromEnv:
             whitelist_str=None or "",
             admin_emails_str=None or "",
         )
-        
+
         assert validator.individual_emails == set()
         assert validator.domain_patterns == set()
         assert validator.admin_emails == []

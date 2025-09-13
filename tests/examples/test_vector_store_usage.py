@@ -600,22 +600,22 @@ class TestEdgeCasesAndErrorHandling:
         # Setup mock stores
         mock_store = AsyncMock()
         mock_error_store = AsyncMock()
-        
+
         # Make the first store fail 3 times to trigger max retries (line 327)
         mock_store.search.side_effect = [
-            Exception("Error 1"), 
-            Exception("Error 2"), 
+            Exception("Error 1"),
+            Exception("Error 2"),
             Exception("Error 3"),  # This will trigger the pass on line 327
         ]
-        
+
         # Make the error store also fail - it's used later in the circuit breaker pattern
         mock_error_store.search.side_effect = Exception("Circuit breaker test")
-        
+
         def create_store_side_effect(config):
             if config.get("error_rate") == 1.0:
                 return mock_error_store
             return mock_store
-                
+
         mock_factory.create_vector_store.side_effect = create_store_side_effect
 
         # Should handle max retries gracefully - the pass statement on line 327 should be hit
@@ -627,7 +627,10 @@ class TestEdgeCasesAndErrorHandling:
         assert mock_store.search.call_count == 3
 
     @pytest.mark.asyncio
-    @patch("examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage", side_effect=Exception("Test error"))
+    @patch(
+        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage",
+        side_effect=Exception("Test error"),
+    )
     @patch("examples.vector_store_usage.logger")
     async def test_main_function_exception_handling(self, mock_logger, mock_basic):
         """Test main function exception handling (covers lines 462-463)."""
@@ -637,7 +640,10 @@ class TestEdgeCasesAndErrorHandling:
         mock_logger.exception.assert_called_with("Example failed")
 
     @pytest.mark.asyncio
-    @patch("examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage", side_effect=Exception("Test error"))
+    @patch(
+        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage",
+        side_effect=Exception("Test error"),
+    )
     @patch("examples.vector_store_usage.logger")
     async def test_main_function_actual_exception_lines(self, mock_logger, mock_basic):
         """Test main function exception handling that covers the actual lines 462-463."""
@@ -669,7 +675,7 @@ class TestEdgeCasesAndErrorHandling:
         # insert_documents should NOT be called because vector_docs is empty
         mock_store.insert_documents.assert_not_called()
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("examples.vector_store_usage.vector_store_connection")
     @patch("examples.vector_store_usage.HydeProcessor")
     async def test_hyde_processor_clarification_needed(self, mock_hyde_processor, mock_connection):
@@ -693,7 +699,7 @@ class TestEdgeCasesAndErrorHandling:
         # search should also NOT be called
         mock_store.search.assert_not_called()
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("examples.vector_store_usage.vector_store_connection")
     @patch("examples.vector_store_usage.HydeProcessor")
     async def test_hyde_processor_mixed_strategies_exact_sequence(self, mock_hyde_processor, mock_connection):
@@ -704,30 +710,32 @@ class TestEdgeCasesAndErrorHandling:
         # Mock HydeProcessor to return different strategies for different queries
         mock_processor = Mock()
         mock_processor.enhance_embeddings = AsyncMock(return_value=[[0.1] * 512])
-        
+
         # Create specific responses that match the exact 3 queries in the function
-        # Query 1: "Python caching" - should be clarification_needed  
+        # Query 1: "Python caching" - should be clarification_needed
         clarification_query1 = Mock()
         clarification_query1.processing_strategy = "clarification_needed"
         clarification_query1.specificity_analysis = Mock()
         clarification_query1.specificity_analysis.guiding_questions = ["What type of caching?", "Which framework?"]
-        
+
         # Query 2: "How to implement Redis caching..." - should be standard_hyde
         standard_query2 = Mock()
         standard_query2.processing_strategy = "standard_hyde"
         standard_query2.hypothetical_docs = []  # Empty to skip insert
-        
+
         # Query 3: "Implement Redis connection pooling..." - should be standard_hyde
         standard_query3 = Mock()
-        standard_query3.processing_strategy = "standard_hyde"  
+        standard_query3.processing_strategy = "standard_hyde"
         standard_query3.hypothetical_docs = []  # Empty to skip insert
-        
+
         # Return the exact sequence to match the 3 hardcoded queries
-        mock_processor.three_tier_analysis = AsyncMock(side_effect=[
-            clarification_query1,  # First query gets clarification_needed - triggers 252->213
-            standard_query2,       # Second query gets standard_hyde
-            standard_query3,       # Third query gets standard_hyde
-        ])
+        mock_processor.three_tier_analysis = AsyncMock(
+            side_effect=[
+                clarification_query1,  # First query gets clarification_needed - triggers 252->213
+                standard_query2,  # Second query gets standard_hyde
+                standard_query3,  # Third query gets standard_hyde
+            ],
+        )
         mock_hyde_processor.return_value = mock_processor
 
         await VectorStoreExamples.hyde_processor_integration()
@@ -735,7 +743,7 @@ class TestEdgeCasesAndErrorHandling:
         # Verify three_tier_analysis was called exactly 3 times (matching the hardcoded queries)
         assert mock_processor.three_tier_analysis.call_count == 3
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("examples.vector_store_usage.vector_store_connection")
     @patch("examples.vector_store_usage.HydeProcessor")
     async def test_hyde_processor_elif_branch_specific(self, mock_hyde_processor, mock_connection):
@@ -745,32 +753,34 @@ class TestEdgeCasesAndErrorHandling:
 
         mock_processor = Mock()
         mock_processor.enhance_embeddings = AsyncMock(return_value=[[0.1] * 512])
-        
+
         # Create query responses where the FIRST query triggers clarification_needed
         # so that the elif branch (252) is hit and then continues to next loop iteration (213)
         first_query_clarification = Mock()
         first_query_clarification.processing_strategy = "clarification_needed"  # This should hit line 252
         first_query_clarification.specificity_analysis = Mock()
         first_query_clarification.specificity_analysis.guiding_questions = ["What exactly?"]
-        
+
         # Second and third queries are different so loop continues
-        second_query_standard = Mock() 
+        second_query_standard = Mock()
         second_query_standard.processing_strategy = "standard_hyde"
         second_query_standard.hypothetical_docs = []
-        
+
         third_query_standard = Mock()
-        third_query_standard.processing_strategy = "standard_hyde" 
+        third_query_standard.processing_strategy = "standard_hyde"
         third_query_standard.hypothetical_docs = []
-        
-        # This sequence should ensure: 
+
+        # This sequence should ensure:
         # 1. First iteration hits elif on line 252, then continues to line 213 (next iteration)
         # 2. Second iteration hits if on line 218
         # 3. Third iteration hits if on line 218
-        mock_processor.three_tier_analysis = AsyncMock(side_effect=[
-            first_query_clarification,   # Query 1: clarification_needed -> line 252, then continue to 213
-            second_query_standard,       # Query 2: standard_hyde -> line 218  
-            third_query_standard,        # Query 3: standard_hyde -> line 218
-        ])
+        mock_processor.three_tier_analysis = AsyncMock(
+            side_effect=[
+                first_query_clarification,  # Query 1: clarification_needed -> line 252, then continue to 213
+                second_query_standard,  # Query 2: standard_hyde -> line 218
+                third_query_standard,  # Query 3: standard_hyde -> line 218
+            ],
+        )
         mock_hyde_processor.return_value = mock_processor
 
         await VectorStoreExamples.hyde_processor_integration()
@@ -778,7 +788,7 @@ class TestEdgeCasesAndErrorHandling:
         # All 3 queries should have been processed
         assert mock_processor.three_tier_analysis.call_count == 3
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("examples.vector_store_usage.vector_store_connection")
     @patch("examples.vector_store_usage.HydeProcessor")
     async def test_hyde_processor_all_branch_paths(self, mock_hyde_processor, mock_connection):
@@ -788,34 +798,36 @@ class TestEdgeCasesAndErrorHandling:
 
         mock_processor = Mock()
         mock_processor.enhance_embeddings = AsyncMock(return_value=[[0.1] * 512])
-        
+
         # Try a sequence that includes an "unknown" processing strategy
         # This might trigger the missing branch path
         clarification_query = Mock()
         clarification_query.processing_strategy = "clarification_needed"
         clarification_query.specificity_analysis = Mock()
         clarification_query.specificity_analysis.guiding_questions = ["Question 1?"]
-        
+
         unknown_strategy_query = Mock()
         unknown_strategy_query.processing_strategy = "unknown_strategy"  # Neither if nor elif
-        
+
         standard_query = Mock()
         standard_query.processing_strategy = "standard_hyde"
         standard_query.hypothetical_docs = []
-        
+
         # Test sequence that might trigger the missing branch
-        mock_processor.three_tier_analysis = AsyncMock(side_effect=[
-            clarification_query,     # First: elif branch
-            unknown_strategy_query,  # Second: neither if nor elif - might be the missing branch
-            standard_query,          # Third: if branch
-        ])
+        mock_processor.three_tier_analysis = AsyncMock(
+            side_effect=[
+                clarification_query,  # First: elif branch
+                unknown_strategy_query,  # Second: neither if nor elif - might be the missing branch
+                standard_query,  # Third: if branch
+            ],
+        )
         mock_hyde_processor.return_value = mock_processor
 
         await VectorStoreExamples.hyde_processor_integration()
 
         assert mock_processor.three_tier_analysis.call_count == 3
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     @patch("examples.vector_store_usage.vector_store_connection")
     @patch("examples.vector_store_usage.HydeProcessor")
     async def test_hyde_processor_unhandled_strategy_branch(self, mock_hyde_processor, mock_connection):
@@ -825,24 +837,26 @@ class TestEdgeCasesAndErrorHandling:
 
         mock_processor = Mock()
         mock_processor.enhance_embeddings = AsyncMock(return_value=[[0.1] * 512])
-        
+
         # Create queries with unhandled processing strategies
         # This should trigger the fallthrough case where neither if nor elif matches
         unhandled_query1 = Mock()
         unhandled_query1.processing_strategy = "direct_answer"  # Neither standard_hyde nor clarification_needed
-        
+
         unhandled_query2 = Mock()
         unhandled_query2.processing_strategy = "unknown_strategy"  # Another unhandled strategy
-        
+
         unhandled_query3 = Mock()
         unhandled_query3.processing_strategy = "fallback_mode"  # Third unhandled strategy
-        
+
         # All queries have unhandled strategies - should just continue the loop
-        mock_processor.three_tier_analysis = AsyncMock(side_effect=[
-            unhandled_query1,  # Query 1: unhandled -> continue to next iteration (252->213)
-            unhandled_query2,  # Query 2: unhandled -> continue to next iteration (252->213)
-            unhandled_query3,  # Query 3: unhandled -> end loop
-        ])
+        mock_processor.three_tier_analysis = AsyncMock(
+            side_effect=[
+                unhandled_query1,  # Query 1: unhandled -> continue to next iteration (252->213)
+                unhandled_query2,  # Query 2: unhandled -> continue to next iteration (252->213)
+                unhandled_query3,  # Query 3: unhandled -> end loop
+            ],
+        )
         mock_hyde_processor.return_value = mock_processor
 
         await VectorStoreExamples.hyde_processor_integration()
@@ -870,7 +884,7 @@ class TestEdgeCasesAndErrorHandling:
         mock_store.get_collection_info.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("examples.vector_store_usage.vector_store_connection") 
+    @patch("examples.vector_store_usage.vector_store_connection")
     async def test_collection_management_missing_collections_insert(self, mock_connection):
         """Test collection management with missing collections for insert (covers branch 422->421)."""
         mock_store = AsyncMock()
@@ -900,7 +914,7 @@ class TestEdgeCasesAndErrorHandling:
         # It should NOT be called for missing collections (code_examples, documentation)
         search_call_args = [call[0][0] for call in mock_store.search.call_args_list]
         search_collections = [params.collection for params in search_call_args]
-        
+
         # Should search user_knowledge but not the missing collections
         assert "user_knowledge" in search_collections
         assert "code_examples" not in search_collections or "documentation" not in search_collections

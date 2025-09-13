@@ -20,14 +20,13 @@ from src.agents.registry import AgentRegistry
 
 
 # Coverage hook functionality integrated directly to avoid plugin conflicts
-
 # Global variable to track which test types were executed
 executed_test_types: set[str] = set()
 
 
 def pytest_runtest_protocol(item, nextitem):
     """Hook called for each test to track test types by path and markers."""
-    global executed_test_types  # noqa: PLW0602
+    global executed_test_types
 
     # Extract markers from the test item
     markers = [marker.name for marker in item.iter_markers()]
@@ -68,7 +67,7 @@ def pytest_runtest_protocol(item, nextitem):
 
 def pytest_sessionfinish(session, exitstatus):
     """Hook called after all tests are completed."""
-    global executed_test_types  # noqa: PLW0602
+    global executed_test_types
 
     # Enhanced coverage detection for VS Code integration
     coverage_enabled = (
@@ -116,7 +115,7 @@ def trigger_automatic_coverage_reports():
 
     try:
         # Execute the coverage report generator with quieter output but still show key info
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(
             [sys.executable, str(hook_script), "--quiet"],
             check=False,
             capture_output=True,
@@ -318,7 +317,7 @@ def generate_test_type_reports(test_types: set[str]):
             # Create temp directory for junit files
             Path("reports/temp").mkdir(parents=True, exist_ok=True)
 
-            subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())  # noqa: S603
+            subprocess.run(cmd, check=False, capture_output=True, text=True, cwd=Path.cwd())
 
             # Add custom header to the HTML report
             html_file = output_dir / test_type / "index.html"
@@ -372,7 +371,7 @@ def add_custom_header(html_file: Path, description: str, test_type: str, test_pa
 def extract_coverage_percentage(xml_file: Path) -> dict[str, float]:
     """Extract coverage percentage from XML report."""
     try:
-        tree = ET.parse(xml_file)  # noqa: S314
+        tree = ET.parse(xml_file)
         root = tree.getroot()
 
         return {
@@ -458,7 +457,7 @@ def generate_navigation_index(output_dir: Path, reports: list, coverage_summary:
 # Reset test types at the start of each session
 def pytest_sessionstart(session):
     """Reset tracking at the start of each test session."""
-    global executed_test_types  # noqa: PLW0602
+    global executed_test_types
     executed_test_types.clear()
 
 
@@ -575,7 +574,7 @@ def security_test_inputs():
         "\x00\x01\x02\x03",  # Binary data
         "\r\n\r\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
+        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script
         "🚀🔥💻",  # Emojis
         "\ufeff",  # BOM character
         # Empty and whitespace edge cases

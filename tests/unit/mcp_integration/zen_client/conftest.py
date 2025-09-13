@@ -3,7 +3,6 @@
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
-import httpx
 import pytest
 
 from src.mcp_integration.zen_client.models import (
@@ -42,7 +41,7 @@ def mock_subprocess():
 @pytest.fixture
 def mock_httpx_client():
     """Mock httpx.AsyncClient for HTTP fallback testing."""
-    mock_client = AsyncMock(spec=httpx.AsyncClient)
+    mock_client = AsyncMock()
 
     # Mock successful responses
     mock_response = Mock()

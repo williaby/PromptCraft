@@ -140,7 +140,7 @@ class TestQdrantCollectionManager:
         assert len(results) == 4  # Four required collections
 
         # Check that all collections are validated successfully
-        for collection_name, validation_result in results.items():
+        for _collection_name, validation_result in results.items():
             assert validation_result["exists"] is True
             assert validation_result["vector_size"] == 384
             assert validation_result["points_count"] == 100
@@ -190,7 +190,7 @@ class TestQdrantCollectionManager:
         assert isinstance(stats, dict)
         assert len(stats) == 2
 
-        for collection_name, collection_stats in stats.items():
+        for _collection_name, collection_stats in stats.items():
             assert collection_stats["points_count"] == 50
             assert collection_stats["segments_count"] == 2
             assert collection_stats["vector_size"] == 384
@@ -275,7 +275,7 @@ class TestQdrantCollectionManager:
             # This should use the default from settings
             import asyncio
 
-            result = asyncio.run(manager_with_settings.create_collection("test", None))
+            asyncio.run(manager_with_settings.create_collection("test", None))
 
             # Verify it used the settings value
             mock_client.create_collection.assert_called_once()

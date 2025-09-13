@@ -1,0 +1,87 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.1
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+
+ignore:
+  # PyTorch vulnerabilities - accepted risk for ML optional features
+  # Review scheduled for December 11, 2025
+
+  SNYK-PYTHON-TORCH-10332644:
+    - '*':
+        reason: >
+          CVE-2025-2998: Buffer overflow in pad_packed_sequence.
+          Risk accepted as PyTorch is only used in optional ML features.
+          Production deployments can avoid risk by not installing ML dependencies.
+          Attack requires local access and function state manipulation.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10332643:
+    - '*':
+        reason: >
+          CVE-2025-4287: Resource shutdown issue in torch.cuda.nccl.reduce.
+          Risk accepted as PyTorch is only used in optional ML features.
+          Fix available in master branch but not yet published.
+          Local host attack vector, DoS impact only.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10332645:
+    - '*':
+        reason: >
+          CVE-2025-2999: Buffer overflow vulnerability.
+          Risk accepted as PyTorch is only used in optional ML features.
+          No known exploit, medium severity.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10337825:
+    - '*':
+        reason: >
+          CVE-2025-3136: Mismatched memory management routines.
+          Risk accepted as PyTorch is only used in optional ML features.
+          Proof of concept available, medium severity.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10337826:
+    - '*':
+        reason: >
+          CVE-2025-3000: Out-of-bounds write vulnerability.
+          Risk accepted as PyTorch is only used in optional ML features.
+          No known exploit, medium severity.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10337828:
+    - '*':
+        reason: >
+          CVE-2025-3001: Out-of-bounds write vulnerability.
+          Risk accepted as PyTorch is only used in optional ML features.
+          Proof of concept available, medium severity.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+  SNYK-PYTHON-TORCH-10337834:
+    - '*':
+        reason: >
+          CVE-2025-3121: Out-of-bounds write vulnerability.
+          Risk accepted as PyTorch is only used in optional ML features.
+          Proof of concept available, medium severity.
+        expires: '2025-12-11T00:00:00.000Z'
+        created: '2025-09-11T00:00:00.000Z'
+
+# Security review schedule:
+# Next review: December 11, 2025
+# Review items:
+# 1. Check if PyTorch security patches have been released
+# 2. Evaluate alternative ML libraries
+# 3. Reassess risk tolerance based on deployment patterns
+# 4. Consider removing ML features if not actively used
+
+# Justification for risk acceptance:
+# - PyTorch vulnerabilities only affect optional ML features
+# - Production deployments can avoid risk by not installing ML dependencies
+# - Most vulnerabilities require local access (limited attack surface)
+# - No remote code execution vulnerabilities identified
+# - Alternative mitigation strategies documented in SECURITY.md

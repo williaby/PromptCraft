@@ -36,6 +36,9 @@ export default defineConfig({
     /* Set default timeouts */
     actionTimeout: 10000,
     navigationTimeout: 30000,
+
+    /* Force headless mode in CI */
+    headless: process.env.CI ? true : undefined,
   },
 
   /* Configure projects for cross-browser testing */

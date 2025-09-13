@@ -99,8 +99,8 @@ class AuditEventType(str, Enum):
     AUTH_LOGIN_SUCCESS = "auth.login.success"
     AUTH_LOGIN_FAILURE = "auth.login.failure"
     AUTH_LOGOUT = "auth.logout"
-    AUTH_TOKEN_CREATED = "auth.token.created"  # noqa: S105  # nosec B105  # Not a password - audit event type
-    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # noqa: S105  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_CREATED = "auth.token.created"  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # nosec B105  # Not a password - audit event type
 
     # Authorization events
     AUTHZ_ACCESS_GRANTED = "authz.access.granted"
@@ -266,7 +266,7 @@ class AuditEvent:
             "message": self.message,
             "timestamp": self.timestamp,
         }
-        
+
         # Only include outcome if it has a value
         if self.outcome is not None:
             event_data["outcome"] = self.outcome
@@ -413,7 +413,7 @@ class AuditLogger:
             if event.additional_data:
                 for key, value in event.additional_data.items():
                     structured_message += f" [{key}={value}]"
-            
+
             if event.severity == AuditEventSeverity.CRITICAL:
                 self.logger.critical(structured_message)
             elif event.severity == AuditEventSeverity.HIGH:

@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Connection Bridge system.
 
@@ -26,6 +23,7 @@ from src.mcp_integration.connection_bridge import (
     NPXProcessManager,
 )
 from src.mcp_integration.smart_discovery import ServerConnection
+from src.utils.datetime_compat import utc_now
 
 
 class TestActiveConnection:
@@ -40,7 +38,7 @@ class TestActiveConnection:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
@@ -49,7 +47,7 @@ class TestActiveConnection:
             health_status="connected",
             error_count=2,
         )
-        
+
         assert active_conn.server_name == "test-server"
         assert active_conn.connection == connection
         assert active_conn.client is not None
@@ -68,12 +66,12 @@ class TestActiveConnection:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="npx-server",
             connection=connection,
         )
-        
+
         assert active_conn.client is None
         assert active_conn.process is None
         assert active_conn.health_status == "connecting"
@@ -101,7 +99,7 @@ class TestNPXProcessManager:
 
     def test_process_config_structure(self, npx_manager):
         """Test process configuration structure."""
-        for server_name, config in npx_manager.process_config.items():
+        for _server_name, config in npx_manager.process_config.items():
             assert "package" in config
             assert "binary" in config
             assert isinstance(config["package"], str)
@@ -113,9 +111,9 @@ class TestNPXProcessManager:
         mock_process = Mock()
         mock_process.poll.return_value = None  # Still running
         mock_process.pid = 12345
-        
+
         npx_manager.processes["context7"] = mock_process
-        
+
         connection = ServerConnection(
             url="npx://@upstash/context7-mcp",
             type="npx",
@@ -123,9 +121,9 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         result = await npx_manager.spawn_npx_server("context7", connection)
-        
+
         assert result == mock_process
         mock_process.poll.assert_called_once()
 
@@ -134,9 +132,9 @@ class TestNPXProcessManager:
         """Test spawning NPX server when previous process died."""
         mock_dead_process = Mock()
         mock_dead_process.poll.return_value = 1  # Process died
-        
+
         npx_manager.processes["context7"] = mock_dead_process
-        
+
         connection = ServerConnection(
             url="npx://@upstash/context7-mcp",
             type="npx",
@@ -144,16 +142,15 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_new_process = Mock()
         mock_new_process.poll.return_value = None  # Running
         mock_new_process.pid = 54321
-        
-        with patch("subprocess.Popen", return_value=mock_new_process), \
-             patch("asyncio.sleep"):
-            
+
+        with patch("subprocess.Popen", return_value=mock_new_process), patch("asyncio.sleep"):
+
             result = await npx_manager.spawn_npx_server("context7", connection)
-            
+
             assert result == mock_new_process
             assert "context7" not in npx_manager.processes or npx_manager.processes["context7"] == mock_new_process
 
@@ -167,17 +164,16 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_process.poll.return_value = None  # Running
         mock_process.pid = 12345
         mock_process.stderr = None
-        
-        with patch("subprocess.Popen", return_value=mock_process), \
-             patch("asyncio.sleep"):
-            
+
+        with patch("subprocess.Popen", return_value=mock_process), patch("asyncio.sleep"):
+
             result = await npx_manager.spawn_npx_server("context7", connection)
-            
+
             assert result == mock_process
             assert npx_manager.processes["context7"] == mock_process
 
@@ -191,17 +187,16 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_process.poll.return_value = None
         mock_process.pid = 12345
         mock_process.stderr = None
-        
-        with patch("subprocess.Popen", return_value=mock_process) as mock_popen, \
-             patch("asyncio.sleep"):
-            
-            result = await npx_manager.spawn_npx_server("context7", connection)
-            
+
+        with patch("subprocess.Popen", return_value=mock_process) as mock_popen, patch("asyncio.sleep"):
+
+            await npx_manager.spawn_npx_server("context7", connection)
+
             # Should use package name from URL
             mock_popen.assert_called_once()
             args, kwargs = mock_popen.call_args
@@ -217,7 +212,7 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         result = await npx_manager.spawn_npx_server("unknown-server", connection)
         assert result is None
 
@@ -231,16 +226,15 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_process.poll.return_value = 1  # Process failed
         mock_stderr = Mock()
         mock_stderr.read.return_value = "NPX startup error"
         mock_process.stderr = mock_stderr
-        
-        with patch("subprocess.Popen", return_value=mock_process), \
-             patch("asyncio.sleep"):
-            
+
+        with patch("subprocess.Popen", return_value=mock_process), patch("asyncio.sleep"):
+
             result = await npx_manager.spawn_npx_server("context7", connection)
             assert result is None
 
@@ -254,7 +248,7 @@ class TestNPXProcessManager:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         with patch("subprocess.Popen", side_effect=Exception("Process error")):
             result = await npx_manager.spawn_npx_server("context7", connection)
             assert result is None
@@ -264,9 +258,9 @@ class TestNPXProcessManager:
         mock_process = Mock()
         mock_process.wait.return_value = None
         npx_manager.processes["context7"] = mock_process
-        
+
         result = npx_manager.stop_npx_server("context7")
-        
+
         assert result is True
         assert "context7" not in npx_manager.processes
         mock_process.terminate.assert_called_once()
@@ -277,9 +271,9 @@ class TestNPXProcessManager:
         mock_process = Mock()
         mock_process.wait.side_effect = [subprocess.TimeoutExpired("cmd", 5), None]
         npx_manager.processes["context7"] = mock_process
-        
+
         result = npx_manager.stop_npx_server("context7")
-        
+
         assert result is True
         assert "context7" not in npx_manager.processes
         mock_process.terminate.assert_called_once()
@@ -296,14 +290,14 @@ class TestNPXProcessManager:
         mock_process = Mock()
         mock_process.terminate.side_effect = Exception("Terminate error")
         npx_manager.processes["context7"] = mock_process
-        
+
         result = npx_manager.stop_npx_server("context7")
         assert result is False
 
     def test_get_process_status_not_running(self, npx_manager):
         """Test getting process status when not running."""
         status = npx_manager.get_process_status("nonexistent")
-        
+
         assert status["status"] == "not_running"
         assert status["pid"] is None
 
@@ -313,9 +307,9 @@ class TestNPXProcessManager:
         mock_process.poll.return_value = None  # Still running
         mock_process.pid = 12345
         npx_manager.processes["context7"] = mock_process
-        
+
         status = npx_manager.get_process_status("context7")
-        
+
         assert status["status"] == "running"
         assert status["pid"] == 12345
 
@@ -325,9 +319,9 @@ class TestNPXProcessManager:
         mock_process.poll.return_value = 1  # Terminated with code 1
         mock_process.pid = 12345
         npx_manager.processes["context7"] = mock_process
-        
+
         status = npx_manager.get_process_status("context7")
-        
+
         assert status["status"] == "terminated"
         assert status["pid"] is None
         assert status["return_code"] == 1
@@ -363,7 +357,7 @@ class TestMCPConnectionBridge:
         with patch("src.mcp_integration.connection_bridge.SmartMCPDiscovery") as mock_discovery_cls:
             mock_discovery = Mock()
             mock_discovery_cls.return_value = mock_discovery
-            
+
             bridge = MCPConnectionBridge()
             assert bridge.discovery == mock_discovery
 
@@ -378,18 +372,18 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
             health_status="connected",
         )
-        
+
         connection_bridge.active_connections["test-server"] = active_conn
-        
+
         with patch.object(connection_bridge, "_is_connection_healthy", return_value=True):
             result = await connection_bridge.connect_to_server("test-server")
-            
+
             assert result == active_conn
             # Should not call discovery since connection was reused
             connection_bridge.discovery.discover_server.assert_not_called()
@@ -405,15 +399,15 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
             health_status="unhealthy",
         )
-        
+
         connection_bridge.active_connections["test-server"] = active_conn
-        
+
         # Mock new discovery and connection
         new_connection = ServerConnection(
             url="http://localhost:8001",
@@ -422,15 +416,17 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = new_connection
-        
-        with patch.object(connection_bridge, "_is_connection_healthy", return_value=False), \
-             patch.object(connection_bridge, "_cleanup_connection") as mock_cleanup, \
-             patch.object(connection_bridge, "_connect_external_server", return_value=True):
-            
+
+        with (
+            patch.object(connection_bridge, "_is_connection_healthy", return_value=False),
+            patch.object(connection_bridge, "_cleanup_connection") as mock_cleanup,
+            patch.object(connection_bridge, "_connect_external_server", return_value=True),
+        ):
+
             result = await connection_bridge.connect_to_server("test-server")
-            
+
             mock_cleanup.assert_called_once_with("test-server")
             assert result is not None
             assert result.connection == new_connection
@@ -439,7 +435,7 @@ class TestMCPConnectionBridge:
     async def test_connect_to_server_discovery_failure(self, connection_bridge):
         """Test connecting to server when discovery fails."""
         connection_bridge.discovery.discover_server.return_value = None
-        
+
         result = await connection_bridge.connect_to_server("nonexistent-server")
         assert result is None
 
@@ -453,12 +449,12 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         with patch.object(connection_bridge, "_connect_npx_server", return_value=True):
             result = await connection_bridge.connect_to_server("context7")
-            
+
             assert result is not None
             assert result.server_name == "context7"
             assert result.connection == connection
@@ -474,12 +470,12 @@ class TestMCPConnectionBridge:
             resource_usage={"port": 8000},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         with patch.object(connection_bridge, "_connect_embedded_server", return_value=True):
             result = await connection_bridge.connect_to_server("zen-mcp")
-            
+
             assert result is not None
             assert result.connection.type == "embedded"
 
@@ -493,12 +489,12 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         with patch.object(connection_bridge, "_connect_external_server", return_value=True):
             result = await connection_bridge.connect_to_server("external-server")
-            
+
             assert result is not None
             assert result.connection.type == "external"
 
@@ -512,12 +508,12 @@ class TestMCPConnectionBridge:
             resource_usage={"container_id": "abc123"},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         with patch.object(connection_bridge, "_connect_docker_server", return_value=True):
             result = await connection_bridge.connect_to_server("docker-server")
-            
+
             assert result is not None
             assert result.connection.type == "docker"
 
@@ -531,9 +527,9 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         result = await connection_bridge.connect_to_server("unknown-server")
         assert result is None
 
@@ -547,9 +543,9 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection_bridge.discovery.discover_server.return_value = connection
-        
+
         with patch.object(connection_bridge, "_connect_external_server", return_value=False):
             result = await connection_bridge.connect_to_server("failed-server")
             assert result is None
@@ -558,7 +554,7 @@ class TestMCPConnectionBridge:
     async def test_connect_to_server_exception(self, connection_bridge):
         """Test connecting to server with exception."""
         connection_bridge.discovery.discover_server.side_effect = Exception("Discovery error")
-        
+
         result = await connection_bridge.connect_to_server("error-server")
         assert result is None
 
@@ -572,23 +568,25 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
         )
-        
+
         mock_process = Mock()
         mock_process.pid = 12345
-        
-        with patch.object(connection_bridge.npx_manager, "spawn_npx_server", return_value=mock_process), \
-             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls:
-            
+
+        with (
+            patch.object(connection_bridge.npx_manager, "spawn_npx_server", return_value=mock_process),
+            patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls,
+        ):
+
             mock_client = Mock()
             mock_client_cls.return_value = mock_client
-            
+
             result = await connection_bridge._connect_npx_server(active_conn)
-            
+
             assert result is True
             assert active_conn.process == mock_process
             assert active_conn.client == mock_client
@@ -604,12 +602,12 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
         )
-        
+
         with patch.object(connection_bridge.npx_manager, "spawn_npx_server", return_value=None):
             result = await connection_bridge._connect_npx_server(active_conn)
             assert result is False
@@ -624,12 +622,12 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
         )
-        
+
         with patch.object(connection_bridge.npx_manager, "spawn_npx_server", side_effect=Exception("Spawn error")):
             result = await connection_bridge._connect_npx_server(active_conn)
             assert result is False
@@ -644,14 +642,14 @@ class TestMCPConnectionBridge:
             resource_usage={"port": 8000},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="zen-mcp",
             connection=connection,
         )
-        
+
         result = await connection_bridge._connect_embedded_server(active_conn)
-        
+
         assert result is True
         assert active_conn.client["type"] == "http"
         assert active_conn.client["url"] == "http://localhost:8000"
@@ -667,12 +665,12 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="invalid-server",
             connection=connection,
         )
-        
+
         result = await connection_bridge._connect_embedded_server(active_conn)
         assert result is False
 
@@ -686,17 +684,17 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="zen-mcp",
             connection=connection,
         )
-        
+
         # Force an exception by creating a mock that raises when url property is accessed
         mock_connection = Mock()
         type(mock_connection).url = PropertyMock(side_effect=Exception("Connection error"))
         active_conn.connection = mock_connection
-        
+
         result = await connection_bridge._connect_embedded_server(active_conn)
         assert result is False
 
@@ -710,14 +708,14 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
         )
-        
+
         result = await connection_bridge._connect_external_server(active_conn)
-        
+
         assert result is True
         assert active_conn.client["type"] == "external"
         assert active_conn.client["url"] == "http://remote:8000"
@@ -733,14 +731,14 @@ class TestMCPConnectionBridge:
             resource_usage={"container_id": "abc123"},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="docker-server",
             connection=connection,
         )
-        
+
         result = await connection_bridge._connect_docker_server(active_conn)
-        
+
         assert result is True
         assert active_conn.client["type"] == "docker"
         assert active_conn.client["url"] == "http://localhost:8080"
@@ -756,14 +754,14 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
             health_status="connected",
             last_health_check=utc_now() - timedelta(minutes=1),  # Recent
         )
-        
+
         result = await connection_bridge._is_connection_healthy(active_conn)
         assert result is True  # Should return based on cached status
 
@@ -777,19 +775,19 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_process.poll.return_value = None  # Still running
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
             process=mock_process,
             health_status="connected",
         )
-        
+
         result = await connection_bridge._is_connection_healthy(active_conn)
-        
+
         assert result is True
         assert active_conn.health_status == "connected"
         assert active_conn.error_count == 0
@@ -804,19 +802,19 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_process.poll.return_value = 1  # Process died
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
             process=mock_process,
             health_status="connected",
         )
-        
+
         result = await connection_bridge._is_connection_healthy(active_conn)
-        
+
         assert result is False
         assert active_conn.health_status == "unhealthy"
         assert active_conn.error_count == 1
@@ -831,16 +829,16 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
             client={"type": "external"},
             health_status="connected",
         )
-        
+
         result = await connection_bridge._is_connection_healthy(active_conn)
-        
+
         assert result is True
         assert active_conn.health_status == "connected"
 
@@ -854,16 +852,16 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
             client=None,
             health_status="connected",
         )
-        
+
         result = await connection_bridge._is_connection_healthy(active_conn)
-        
+
         assert result is False
         assert active_conn.health_status == "unhealthy"
 
@@ -877,17 +875,17 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
             health_status="connected",
         )
-        
+
         # Force exception by accessing process on non-NPX connection
         with patch.object(active_conn, "process", side_effect=Exception("Health check error")):
             result = await connection_bridge._is_connection_healthy(active_conn)
-            
+
             assert result is False
             assert active_conn.health_status == "unhealthy"
             assert active_conn.error_count == 1
@@ -902,23 +900,23 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_process = Mock()
         mock_client = Mock()
         mock_client.close = AsyncMock()
-        
+
         active_conn = ActiveConnection(
             server_name="context7",
             connection=connection,
             client=mock_client,
             process=mock_process,
         )
-        
+
         connection_bridge.active_connections["context7"] = active_conn
-        
+
         with patch.object(connection_bridge.npx_manager, "stop_npx_server", return_value=True):
             await connection_bridge._cleanup_connection("context7")
-            
+
             assert "context7" not in connection_bridge.active_connections
             mock_client.close.assert_called_once()
 
@@ -932,20 +930,20 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_client = Mock(spec=["disconnect"])  # Only has disconnect method
         mock_client.disconnect = AsyncMock()
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
             client=mock_client,
         )
-        
+
         connection_bridge.active_connections["external-server"] = active_conn
-        
+
         await connection_bridge._cleanup_connection("external-server")
-        
+
         assert "external-server" not in connection_bridge.active_connections
         mock_client.disconnect.assert_called_once()
 
@@ -965,21 +963,21 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         mock_client = Mock()
         mock_client.close = AsyncMock(side_effect=Exception("Close error"))
-        
+
         active_conn = ActiveConnection(
             server_name="external-server",
             connection=connection,
             client=mock_client,
         )
-        
+
         connection_bridge.active_connections["external-server"] = active_conn
-        
+
         # Should not raise exception, just log error and clean up
         await connection_bridge._cleanup_connection("external-server")
-        
+
         assert "external-server" not in connection_bridge.active_connections
 
     @pytest.mark.asyncio
@@ -992,17 +990,17 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
         )
-        
+
         connection_bridge.active_connections["test-server"] = active_conn
-        
+
         with patch.object(connection_bridge, "_cleanup_connection") as mock_cleanup:
             result = await connection_bridge.disconnect_server("test-server")
-            
+
             assert result is True
             mock_cleanup.assert_called_once_with("test-server")
 
@@ -1022,14 +1020,14 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
         )
-        
+
         connection_bridge.active_connections["test-server"] = active_conn
-        
+
         with patch.object(connection_bridge, "_cleanup_connection", side_effect=Exception("Cleanup error")):
             result = await connection_bridge.disconnect_server("test-server")
             assert result is False
@@ -1045,7 +1043,7 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection2 = ServerConnection(
             url="npx://@upstash/context7-mcp",
             type="npx",
@@ -1053,34 +1051,40 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn1 = ActiveConnection(
             server_name="external-server",
             connection=connection1,
             health_status="connected",
             error_count=0,
         )
-        
+
         active_conn2 = ActiveConnection(
             server_name="context7",
             connection=connection2,
             health_status="connected",
             error_count=1,
         )
-        
+
         connection_bridge.active_connections["external-server"] = active_conn1
         connection_bridge.active_connections["context7"] = active_conn2
-        
-        with patch.object(connection_bridge, "_is_connection_healthy", return_value=True), \
-             patch.object(connection_bridge.npx_manager, "get_process_status", return_value={"status": "running", "pid": 12345}):
-            
+
+        with (
+            patch.object(connection_bridge, "_is_connection_healthy", return_value=True),
+            patch.object(
+                connection_bridge.npx_manager,
+                "get_process_status",
+                return_value={"status": "running", "pid": 12345},
+            ),
+        ):
+
             status = await connection_bridge.get_connection_status()
-            
+
             assert status["total_connections"] == 2
             assert "external-server" in status["connections"]
             assert "context7" in status["connections"]
             assert "context7" in status["npx_processes"]
-            
+
             ext_conn = status["connections"]["external-server"]
             assert ext_conn["type"] == "external"
             assert ext_conn["healthy"] is True
@@ -1097,25 +1101,25 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn = ActiveConnection(
             server_name="test-server",
             connection=connection,
             health_status="connected",
         )
-        
+
         connection_bridge.active_connections["test-server"] = active_conn
-        
+
         mock_status = {
             "total_connections": 1,
             "connections": {
                 "test-server": {"healthy": True},
             },
         }
-        
+
         with patch.object(connection_bridge, "get_connection_status", return_value=mock_status):
             health = await connection_bridge.health_check()
-            
+
             assert health["healthy"] is True
             assert health["total_connections"] == 1
             assert health["healthy_connections"] == 1
@@ -1129,10 +1133,10 @@ class TestMCPConnectionBridge:
             "total_connections": 0,
             "connections": {},
         }
-        
+
         with patch.object(connection_bridge, "get_connection_status", return_value=mock_status):
             health = await connection_bridge.health_check()
-            
+
             assert health["healthy"] is False  # No connections means unhealthy
 
     @pytest.mark.asyncio
@@ -1145,14 +1149,14 @@ class TestMCPConnectionBridge:
                 "unhealthy-server": {"healthy": False},
             },
         }
-        
+
         # Setup connections
         connection_bridge.active_connections["healthy-server"] = Mock()
         connection_bridge.active_connections["unhealthy-server"] = Mock()
-        
+
         with patch.object(connection_bridge, "get_connection_status", return_value=mock_status):
             health = await connection_bridge.health_check()
-            
+
             assert health["healthy"] is False  # Not all connections healthy
             assert health["total_connections"] == 2
             assert health["healthy_connections"] == 1
@@ -1162,7 +1166,7 @@ class TestMCPConnectionBridge:
         """Test health check with exception."""
         with patch.object(connection_bridge, "get_connection_status", side_effect=Exception("Status error")):
             health = await connection_bridge.health_check()
-            
+
             assert health["healthy"] is False
             assert "error" in health
             assert health["error"] == "Status error"
@@ -1178,7 +1182,7 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         connection2 = ServerConnection(
             url="npx://@upstash/context7-mcp",
             type="npx",
@@ -1186,16 +1190,16 @@ class TestMCPConnectionBridge:
             resource_usage={},
             discovered_at=utc_now(),
         )
-        
+
         active_conn1 = ActiveConnection(server_name="server1", connection=connection1)
         active_conn2 = ActiveConnection(server_name="server2", connection=connection2)
-        
+
         connection_bridge.active_connections["server1"] = active_conn1
         connection_bridge.active_connections["server2"] = active_conn2
-        
+
         with patch.object(connection_bridge, "disconnect_server", return_value=True) as mock_disconnect:
             await connection_bridge.shutdown()
-            
+
             # Should disconnect all servers
             assert mock_disconnect.call_count == 2
             calls = [call.args[0] for call in mock_disconnect.call_args_list]
@@ -1219,40 +1223,42 @@ class TestConnectionBridgeIntegration:
             discovered_at=utc_now(),
         )
         mock_discovery.discover_server = AsyncMock(return_value=connection)
-        
+
         bridge = MCPConnectionBridge(discovery=mock_discovery)
-        
+
         # Mock NPX process
         mock_process = Mock()
         mock_process.poll.return_value = None  # Running
         mock_process.pid = 12345
-        
-        with patch("subprocess.Popen", return_value=mock_process), \
-             patch("asyncio.sleep"), \
-             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls:
-            
+
+        with (
+            patch("subprocess.Popen", return_value=mock_process),
+            patch("asyncio.sleep"),
+            patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls,
+        ):
+
             mock_client = Mock()
             mock_client_cls.return_value = mock_client
-            
+
             # Connect to server
             active_conn = await bridge.connect_to_server("context7")
             assert active_conn is not None
             assert active_conn.server_name == "context7"
             assert active_conn.health_status == "connected"
-            
+
             # Check connection status
             status = await bridge.get_connection_status()
             assert status["total_connections"] == 1
             assert "context7" in status["connections"]
-            
+
             # Health check
             health = await bridge.health_check()
             assert health["healthy"] is True
-            
+
             # Disconnect
             result = await bridge.disconnect_server("context7")
             assert result is True
-            
+
             # Verify cleanup
             status = await bridge.get_connection_status()
             assert status["total_connections"] == 0
@@ -1261,23 +1267,32 @@ class TestConnectionBridgeIntegration:
     async def test_multiple_connection_types(self):
         """Test handling multiple connection types simultaneously."""
         mock_discovery = Mock()
-        
+
         # Setup different connection types
         npx_connection = ServerConnection(
-            url="npx://@upstash/context7-mcp", type="npx", health_status="on_demand",
-            resource_usage={}, discovered_at=utc_now(),
+            url="npx://@upstash/context7-mcp",
+            type="npx",
+            health_status="on_demand",
+            resource_usage={},
+            discovered_at=utc_now(),
         )
-        
+
         external_connection = ServerConnection(
-            url="http://remote:8000", type="external", health_status="healthy",
-            resource_usage={}, discovered_at=utc_now(),
+            url="http://remote:8000",
+            type="external",
+            health_status="healthy",
+            resource_usage={},
+            discovered_at=utc_now(),
         )
-        
+
         docker_connection = ServerConnection(
-            url="http://localhost:8080", type="docker", health_status="running",
-            resource_usage={"container_id": "abc123"}, discovered_at=utc_now(),
+            url="http://localhost:8080",
+            type="docker",
+            health_status="running",
+            resource_usage={"container_id": "abc123"},
+            discovered_at=utc_now(),
         )
-        
+
         def mock_discover(server_name):
             if server_name == "context7":
                 return npx_connection
@@ -1286,41 +1301,43 @@ class TestConnectionBridgeIntegration:
             if server_name == "docker-server":
                 return docker_connection
             return None
-        
+
         mock_discovery.discover_server = AsyncMock(side_effect=mock_discover)
         bridge = MCPConnectionBridge(discovery=mock_discovery)
-        
+
         # Mock NPX process for context7
         mock_process = Mock()
         mock_process.poll.return_value = None
         mock_process.pid = 12345
-        
-        with patch("subprocess.Popen", return_value=mock_process), \
-             patch("asyncio.sleep"), \
-             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"):
-            
+
+        with (
+            patch("subprocess.Popen", return_value=mock_process),
+            patch("asyncio.sleep"),
+            patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"),
+        ):
+
             # Connect to all server types
             npx_conn = await bridge.connect_to_server("context7")
             external_conn = await bridge.connect_to_server("external-server")
             docker_conn = await bridge.connect_to_server("docker-server")
-            
+
             assert npx_conn is not None
             assert external_conn is not None
             assert docker_conn is not None
-            
+
             # Verify all connections are tracked
             status = await bridge.get_connection_status()
             assert status["total_connections"] == 3
             assert "context7" in status["connections"]
             assert "external-server" in status["connections"]
             assert "docker-server" in status["connections"]
-            
+
             # NPX should have process info
             assert "context7" in status["npx_processes"]
-            
+
             # Clean shutdown
             await bridge.shutdown()
-            
+
             final_status = await bridge.get_connection_status()
             assert final_status["total_connections"] == 0
 
@@ -1329,33 +1346,38 @@ class TestConnectionBridgeIntegration:
         """Test connection resilience and recovery."""
         mock_discovery = Mock()
         connection = ServerConnection(
-            url="npx://@upstash/context7-mcp", type="npx", health_status="on_demand",
-            resource_usage={}, discovered_at=utc_now(),
+            url="npx://@upstash/context7-mcp",
+            type="npx",
+            health_status="on_demand",
+            resource_usage={},
+            discovered_at=utc_now(),
         )
         mock_discovery.discover_server = AsyncMock(return_value=connection)
-        
+
         bridge = MCPConnectionBridge(discovery=mock_discovery)
-        
+
         # Initial connection
         mock_process = Mock()
         mock_process.poll.return_value = None  # Running
         mock_process.pid = 12345
-        
-        with patch("subprocess.Popen", return_value=mock_process), \
-             patch("asyncio.sleep"), \
-             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"):
-            
+
+        with (
+            patch("subprocess.Popen", return_value=mock_process),
+            patch("asyncio.sleep"),
+            patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"),
+        ):
+
             active_conn = await bridge.connect_to_server("context7")
             assert active_conn is not None
-            
+
             # Simulate process dying
             mock_process.poll.return_value = 1  # Process died
-            
+
             # Health check should detect failure
             is_healthy = await bridge._is_connection_healthy(active_conn)
             assert is_healthy is False
             assert active_conn.health_status == "unhealthy"
-            
+
             # Reconnection attempt should clean up and create new connection
             mock_process.poll.return_value = None  # New process running
             new_active_conn = await bridge.connect_to_server("context7")
@@ -1365,11 +1387,11 @@ class TestConnectionBridgeIntegration:
 
 class TestConnectionBridgeModuleExports:
     """Test module exports and imports."""
-    
+
     def test_module_exports(self):
         """Test that the module exports the expected classes."""
         from src.mcp_integration.connection_bridge import ActiveConnection, MCPConnectionBridge, NPXProcessManager
-        
+
         assert ActiveConnection is not None
         assert NPXProcessManager is not None
         assert MCPConnectionBridge is not None

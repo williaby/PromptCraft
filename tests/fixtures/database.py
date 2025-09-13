@@ -4,7 +4,7 @@ Database fixtures for test isolation using PostgreSQL containers or SQLite fallb
 This module provides:
 - Session-scoped PostgreSQL container management (when Docker available)
 - SQLite fallback for environments without Docker
-- Function-scoped transaction isolation  
+- Function-scoped transaction isolation
 - Automatic schema migration from SQL files
 - Clean database state between tests
 """
@@ -36,20 +36,21 @@ def use_postgresql() -> bool:
 def postgres_container(use_postgresql: bool) -> Generator[object | None, None, None]:
     """
     Session-scoped PostgreSQL container fixture (only if PostgreSQL is supported).
-    
+
     Provides a clean PostgreSQL instance for the entire test session.
     Returns None if PostgreSQL is not supported.
     """
     if use_postgresql:
         try:
             from testcontainers.postgres import PostgresContainer
+
             with PostgresContainer("postgres:15-alpine") as postgres:
                 # Wait for container to be ready
                 time.sleep(2)
                 log_database_strategy(use_postgres=True)
                 yield postgres
         except Exception as e:
-            logger.warning(f"Failed to start PostgreSQL container: {e}")
+            logger.warning("Failed to start PostgreSQL container: %s", e)
             log_database_strategy(use_postgres=False)
             yield None
     else:
@@ -61,11 +62,11 @@ def postgres_container(use_postgresql: bool) -> Generator[object | None, None, N
 def database_url(postgres_container: object | None, use_postgresql: bool) -> str:
     """
     Get the database connection URL (PostgreSQL container or SQLite fallback).
-    
+
     Args:
         postgres_container: PostgreSQL container instance (None if unavailable)
         use_postgresql: Whether PostgreSQL should be used
-        
+
     Returns:
         Database connection URL
     """
@@ -77,7 +78,7 @@ def database_url(postgres_container: object | None, use_postgresql: bool) -> str
             asyncpg_url = original_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
         else:
             asyncpg_url = original_url.replace("postgresql://", "postgresql+asyncpg://")
-        logger.info(f"Converted PostgreSQL URL: {original_url} -> {asyncpg_url}")
+        logger.info("Converted PostgreSQL URL: %s -> %s", original_url, asyncpg_url)
         return asyncpg_url
     # Use SQLite fallback
     return "sqlite+aiosqlite:///:memory:"
@@ -87,10 +88,10 @@ def database_url(postgres_container: object | None, use_postgresql: bool) -> str
 async def test_engine(database_url: str):
     """
     Create SQLAlchemy async engine for the test database.
-    
+
     Args:
         database_url: Database connection URL (PostgreSQL or SQLite)
-        
+
     Returns:
         Configured SQLAlchemy async engine
     """
@@ -108,7 +109,7 @@ async def test_engine(database_url: str):
             database_url,
             echo=False,  # Set to True for SQL debugging
         )
-    
+
     yield engine
     await engine.dispose()
 
@@ -117,11 +118,11 @@ async def test_engine(database_url: str):
 async def setup_database_schema(postgres_container: object | None, test_engine, database_url: str) -> None:
     """
     Apply database schema to the test database (PostgreSQL or SQLite).
-    
+
     This fixture runs once per session and applies all schema:
     - PostgreSQL: Uses SQL schema files directly
     - SQLite: Creates SQLAlchemy tables with type compatibility fixes
-    
+
     Args:
         postgres_container: PostgreSQL container instance (None if unavailable)
         test_engine: SQLAlchemy async engine
@@ -130,13 +131,13 @@ async def setup_database_schema(postgres_container: object | None, test_engine, 
     if database_url.startswith("postgresql") and postgres_container is not None:
         # PostgreSQL container schema setup
         from tests.fixtures.schema_loader import SchemaLoader
-        
+
         # Get project root directory
         project_root = Path(__file__).parent.parent.parent
-        
+
         # Create schema loader
         schema_loader = SchemaLoader(project_root)
-        
+
         # Connect directly to PostgreSQL to apply schemas
         conn_params = {
             "host": postgres_container.get_container_host_ip(),
@@ -145,24 +146,24 @@ async def setup_database_schema(postgres_container: object | None, test_engine, 
             "user": postgres_container.username,
             "password": postgres_container.password,
         }
-        
+
         conn = await asyncpg.connect(**conn_params)
         try:
             # Apply schemas using the loader (with validation and fixes)
             applied_schemas = await schema_loader.apply_schemas(conn)
-            logger.info(f"Applied {len(applied_schemas)} PostgreSQL schema files")
-            
+            logger.info("Applied %s PostgreSQL schema files", len(applied_schemas))
+
             # Also create SQLAlchemy tables for auth models
             async with test_engine.begin() as conn_sa:
                 await conn_sa.run_sync(Base.metadata.create_all)
                 logger.info("Created SQLAlchemy auth tables in PostgreSQL")
-                
+
         finally:
             await conn.close()
     else:
         # SQLite fallback schema setup
         logger.info("Setting up SQLite schema with type compatibility fixes")
-        
+
         # Apply PostgreSQL-to-SQLite type compatibility fixes
         async with test_engine.begin() as conn:
             # Store original column types and temporarily replace with SQLite-compatible types
@@ -190,19 +191,19 @@ async def setup_database_schema(postgres_container: object | None, test_engine, 
                             column.type = original_types[key]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def test_db_session(test_engine, setup_database_schema) -> AsyncGenerator[AsyncSession, None]:
     """
     Function-scoped database session with transaction isolation.
-    
+
     Each test gets a clean database session wrapped in a transaction.
     The transaction is rolled back after the test completes, ensuring
     no data leaks between tests.
-    
+
     Args:
         test_engine: SQLAlchemy async engine
         setup_database_schema: Ensures schema is applied
-        
+
     Yields:
         Clean AsyncSession for the test
     """
@@ -212,7 +213,7 @@ async def test_db_session(test_engine, setup_database_schema) -> AsyncGenerator[
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with async_session_factory() as session:
         # Begin transaction
         trans = await session.begin()
@@ -224,58 +225,59 @@ async def test_db_session(test_engine, setup_database_schema) -> AsyncGenerator[
                 await trans.rollback()
             except Exception as e:
                 # Transaction may already be closed, log and continue
-                logger.debug(f"Transaction already closed during rollback: {e}")
+                logger.debug("Transaction already closed during rollback: %s", e)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def override_get_db(test_db_session: AsyncSession):
     """
     Override the get_db dependency to use test database session.
-    
+
     This fixture allows tests to use the same database session
     that will be rolled back after the test completes.
-    
+
     Args:
         test_db_session: Test database session
-        
+
     Returns:
         Function that yields the test database session
     """
+
     async def _get_test_db():
         yield test_db_session
-    
+
     return _get_test_db
 
 
-@pytest.fixture(scope="function")  
+@pytest.fixture
 async def test_db_with_override(test_db_session: AsyncSession, override_get_db):
     """
     Convenience fixture that provides both session and override function.
-    
+
     This is useful for tests that need both direct database access
     and dependency injection override.
-    
+
     Args:
         test_db_session: Test database session
         override_get_db: Database dependency override function
-        
+
     Returns:
         Tuple of (session, override_function)
     """
     return test_db_session, override_get_db
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def clean_database_session(test_db_session: AsyncSession) -> AsyncSession:
     """
     Alias for test_db_session with clearer naming.
-    
+
     Use this fixture when you want to emphasize that the database
     session is clean and isolated.
-    
+
     Args:
         test_db_session: Test database session
-        
+
     Returns:
         Clean, isolated database session
     """

@@ -144,8 +144,8 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
     return {
         "authenticated": True,
         "user": {
-            "email": user.get("email", "unknown"), 
-            "role": user.get("role", "user"), 
+            "email": user.get("email", "unknown"),
+            "role": user.get("role", "user"),
             "is_admin": is_admin_user(request),
         },
     }
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # Development server
     uvicorn.run(
         "example_usage:app",
-        host="0.0.0.0",  # noqa: S104  # nosec B104
+        host="0.0.0.0",  # nosec B104
         port=8000,
         reload=True,
         log_level="info",

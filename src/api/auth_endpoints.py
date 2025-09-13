@@ -92,7 +92,7 @@ auth_router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 
 @auth_router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user_info(
-    request: Request,  # noqa: ARG001
+    request: Request,
     current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
 ) -> CurrentUserResponse:
     """Get current authenticated user or service token information.
@@ -163,7 +163,7 @@ async def auth_health_check(
 
 @auth_router.post("/tokens", response_model=TokenCreationResponse, status_code=201)
 async def create_service_token(
-    request: Request,  # noqa: ARG001
+    request: Request,
     token_request: TokenCreationRequest,
     current_user: AuthenticatedUser = Depends(require_admin_role),
     manager: ServiceTokenManager = Depends(get_service_token_manager),
@@ -219,7 +219,7 @@ async def create_service_token(
 
 @auth_router.delete("/tokens/{token_identifier}")
 async def revoke_service_token(
-    request: Request,  # noqa: ARG001
+    request: Request,
     token_identifier: str,
     reason: str = Query(..., description="Reason for revocation"),
     current_user: AuthenticatedUser = Depends(require_admin_role),
@@ -253,7 +253,7 @@ async def revoke_service_token(
 
 @auth_router.post("/tokens/{token_identifier}/rotate")
 async def rotate_service_token(
-    request: Request,  # noqa: ARG001
+    request: Request,
     token_identifier: str,
     reason: str = Query("manual_rotation", description="Reason for rotation"),
     current_user: AuthenticatedUser = Depends(require_admin_role),
@@ -286,7 +286,7 @@ async def rotate_service_token(
                 )
             return TokenCreationResponse(
                 token_id=new_token_id,
-                token_name="rotated_token",  # nosec B106  # noqa: S106
+                token_name="rotated_token",  # nosec B106
                 token_value=new_token_value,
                 expires_at=None,
                 metadata={"rotated_by": current_user.email, "rotation_reason": reason},
@@ -301,8 +301,8 @@ async def rotate_service_token(
 
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
-    request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUser = Depends(require_admin_role),  # noqa: ARG001
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_admin_role),
     manager: ServiceTokenManager = Depends(get_service_token_manager),
 ) -> list[TokenInfo]:
     """List all service tokens (admin only).
@@ -349,10 +349,10 @@ async def list_service_tokens(
 
 @auth_router.get("/tokens/{token_identifier}/analytics")
 async def get_token_analytics(
-    request: Request,  # noqa: ARG001
+    request: Request,
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUser = Depends(require_admin_role),  # noqa: ARG001
+    current_user: AuthenticatedUser = Depends(require_admin_role),
     manager: ServiceTokenManager = Depends(get_service_token_manager),
 ) -> dict:
     """Get detailed analytics for a specific service token (admin only).
@@ -375,7 +375,7 @@ async def get_token_analytics(
 
 @auth_router.post("/emergency-revoke")
 async def emergency_revoke_all_tokens(
-    request: Request,  # noqa: ARG001
+    request: Request,
     reason: str = Query(..., description="Emergency revocation reason"),
     confirm: bool = Query(False, description="Confirmation required"),
     current_user: AuthenticatedUser = Depends(require_admin_role),
@@ -415,7 +415,7 @@ system_router = APIRouter(prefix="/api/v1/system", tags=["system"])
 
 @system_router.get("/status")
 async def system_status(
-    request: Request,  # noqa: ARG001
+    request: Request,
     current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
 ) -> dict[str, str]:
     """Get system status information.
@@ -452,7 +452,7 @@ audit_router = APIRouter(prefix="/api/v1/audit", tags=["audit"])
 
 @audit_router.post("/cicd-event")
 async def log_cicd_event(
-    request: Request,  # noqa: ARG001
+    request: Request,
     event_data: dict,
     current_user: AuthenticatedUser | ServiceTokenUser = Depends(require_authentication),
 ) -> dict[str, str]:

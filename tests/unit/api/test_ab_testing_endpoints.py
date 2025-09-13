@@ -20,6 +20,7 @@ from src.api.ab_testing_endpoints import (
     UserAssignmentRequest,
     router,
 )
+from src.utils.datetime_compat import UTC
 
 
 class TestCreateExperimentRequest:
@@ -85,7 +86,7 @@ class TestCreateExperimentRequest:
             CreateExperimentRequest(
                 name="Test",
                 description="Test",
-                rollout_steps=[i for i in range(1, 12)],  # 11 steps
+                rollout_steps=list(range(1, 12)),  # 11 steps
             )
 
 
@@ -208,7 +209,7 @@ class TestABTestingEndpoints:
         mock_experiment.description = "A test experiment"
         mock_experiment.experiment_type = "dynamic_loading"
         mock_experiment.status = status
-        mock_experiment.created_at = datetime.now()
+        mock_experiment.created_at = datetime.now(UTC)
         mock_experiment.start_time = None
         mock_experiment.end_time = None
         mock_experiment.target_percentage = 50.0
@@ -346,7 +347,7 @@ class TestABTestingEndpoints:
             "user_id": "user123",
             "experiment_id": "exp456",
             "variant": "control",
-            "assigned_at": datetime.now(),
+            "assigned_at": datetime.now(UTC),
         }
         mock_manager.assign_user.return_value = mock_assignment
         mock_get_manager.return_value = mock_manager
@@ -626,7 +627,7 @@ class TestEndpointPerformance:
         import time
 
         start_time = time.time()
-        response = self.client.get("/api/v1/ab-testing/experiments")
+        self.client.get("/api/v1/ab-testing/experiments")
         end_time = time.time()
 
         # Skip complex dependency mocking issue for now

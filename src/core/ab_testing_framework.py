@@ -1090,7 +1090,7 @@ class RolloutController:
         self.db_session = db_session
         self.logger = logging.getLogger(__name__)
 
-    async def execute_rollout_step(self, experiment_id: str) -> bool:  # noqa: PLR0911
+    async def execute_rollout_step(self, experiment_id: str) -> bool:
         """Execute next rollout step for an experiment."""
         try:
             experiment = self.db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
@@ -1479,7 +1479,7 @@ _experiment_manager: ExperimentManager | None = None
 
 async def get_experiment_manager() -> ExperimentManager:
     """Get or create the global experiment manager instance."""
-    global _experiment_manager  # noqa: PLW0603
+    global _experiment_manager
 
     if _experiment_manager is None:
         _experiment_manager = ExperimentManager()

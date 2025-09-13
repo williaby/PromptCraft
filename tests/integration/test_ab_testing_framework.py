@@ -19,7 +19,6 @@ NOTE: These tests are currently skipped due to incomplete database model setup
 and missing Base import. See https://github.com/your-repo/issues/XXX for tracking.
 """
 
-# Database setup is now complete with Base import added
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -30,6 +29,7 @@ from sqlalchemy.orm import sessionmaker
 
 from src.api.ab_testing_endpoints import get_experiment_manager_dependency, router
 from src.core.ab_testing_framework import (
+    # Database setup is now complete with Base import added
     ExperimentConfig,
     ExperimentManager,
     ExperimentType,

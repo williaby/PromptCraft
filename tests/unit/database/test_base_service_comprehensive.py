@@ -82,7 +82,7 @@ class TestDatabaseService:
         service._db_manager.get_session = mock_session_context
 
         with pytest.raises(DatabaseError, match="Database operation failed"):
-            async with service.get_session() as session:
+            async with service.get_session():
                 raise SQLAlchemyError("Test SQL error")
 
         # Verify rollback was called
@@ -99,7 +99,7 @@ class TestDatabaseService:
         service._db_manager.get_session = mock_session_context
 
         with pytest.raises(RuntimeError, match="Unexpected error"):
-            async with service.get_session() as session:
+            async with service.get_session():
                 raise RuntimeError("Unexpected error")
 
         # Verify rollback was called

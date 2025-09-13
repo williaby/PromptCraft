@@ -276,20 +276,20 @@ jobs:
 
       # MyPy cache disabled to prevent compression timeout
 
-      # Fast type checking with pre-cached stubs
+      # Fast type checking with pre-cached stubs (matches local configuration)
       - name: Run type checking (Fast)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🔍 Running MyPy with cached stubs"
-          poetry run mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
+          echo "🔍 Running MyPy with cached stubs (matches local configuration)"
+          poetry run mypy src --config-file=pyproject.toml --cache-dir=${{ env.MYPY_CACHE_DIR }}
 
-      # Fast linting
+      # Fast linting (matches local and pre-commit exactly)
       - name: Run linting (Fast)
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🧹 Running linting checks"
-          poetry run black . --check --fast
-          poetry run ruff check . --no-cache
+          echo "🧹 Running linting checks (matches local configuration)"
+          poetry run black . --check --config=pyproject.toml
+          poetry run ruff check . --config=pyproject.toml --no-cache
 
   # Optional security scan (runs in parallel)
   security-scan:
@@ -328,9 +328,9 @@ jobs:
       - name: Fast security checks
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          echo "🔒 Running security scans"
+          echo "🔒 Running security scans (matches local configuration)"
           poetry run safety check || echo "Safety check completed with findings"
-          poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
+          poetry run bandit -r src -c pyproject.toml || echo "Bandit scan completed with findings"
 
 
   # Success check

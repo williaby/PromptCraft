@@ -402,10 +402,10 @@ class TestIntelligentFunctionLoader:
                 mock_path_instance = Mock()
                 mock_path_instance.exists.return_value = True
                 mock_path_instance.__truediv__ = Mock(return_value=mock_path_instance)
-                
+
                 # Make rglob raise PermissionError to trigger the exception handling
                 mock_path_instance.rglob.side_effect = PermissionError("Access denied")
-                
+
                 mock_path_class.return_value = mock_path_instance
                 mock_path_class.cwd.return_value = mock_path_instance
 
@@ -740,7 +740,7 @@ class TestTaskDetectionDemo:
         # Check that loader was called for each scenario
         assert mock_loader.load_functions_for_query.call_count == 6  # 6 scenarios in the demo
 
-    @patch("examples.task_detection_integration.IntelligentFunctionLoader")  
+    @patch("examples.task_detection_integration.IntelligentFunctionLoader")
     async def test_run_demo_scenarios_empty_top_scores(self, mock_loader_class):
         """Test running demo scenarios with empty top scores."""
         # Mock the loader with empty confidence scores
@@ -1105,7 +1105,7 @@ class TestMainFunction:
         mock_config_manager_instance = Mock()
         mock_config_manager_instance.list_configs.return_value = [
             "testing",  # Different configs than expected
-            "staging", 
+            "staging",
         ]
         mock_config_manager_instance.get_config.return_value = Mock()
         mock_config_manager.return_value = mock_config_manager_instance
@@ -1117,12 +1117,12 @@ class TestMainFunction:
         mock_demo.run_demo_scenarios.assert_called_once()
         mock_validator.validate_accuracy.assert_called_once()
         mock_config_manager_instance.list_configs.assert_called_once()
-        
+
         # get_config should NOT be called for the missing configs
         # Only called if configs exist in the list
         config_calls = mock_config_manager_instance.get_config.call_args_list
         called_configs = [call[0][0] for call in config_calls]
-        
+
         # None of the expected configs should have been loaded since they're not in the list
         assert "development" not in called_configs
         assert "production" not in called_configs

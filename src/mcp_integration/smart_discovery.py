@@ -6,13 +6,17 @@ resource management, and intelligent fallback strategies.
 """
 
 import asyncio
+import contextlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import json
 import logging
 import os
 from pathlib import Path
 import socket
 import subprocess
+import tempfile
+from typing import Any
 
 from filelock import FileLock
 import psutil
@@ -22,10 +26,10 @@ from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 
-try:
+# Docker client (optional dependency)
+docker: Any = None
+with contextlib.suppress(ImportError):
     import docker
-except ImportError:
-    docker = None
 
 
 logger = logging.getLogger(__name__)
@@ -34,6 +38,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ServerConnection:
     """Represents a discovered MCP server connection."""
+
     url: str
     type: str  # 'external', 'user', 'docker', 'npx', 'embedded'
     health_status: str
@@ -44,6 +49,7 @@ class ServerConnection:
 @dataclass
 class ServerRequirements:
     """Server resource requirements."""
+
     memory: int  # MB
     cpu: float  # CPU cores
     ports: list[int]
@@ -52,18 +58,18 @@ class ServerRequirements:
 
 class ResourceMonitor:
     """Monitor system resources for agent deployment decisions."""
-    
+
     def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.ResourceMonitor")
-    
+
     def get_available_memory(self) -> int:
         """Get available memory in MB."""
-        return psutil.virtual_memory().available // (1024 * 1024)
-    
+        return int(psutil.virtual_memory().available // (1024 * 1024))
+
     def get_cpu_usage(self) -> float:
         """Get current CPU usage percentage."""
-        return psutil.cpu_percent(interval=1)
-    
+        return float(psutil.cpu_percent(interval=1))
+
     def is_port_available(self, port: int) -> bool:
         """Check if a port is available."""
         try:
@@ -74,7 +80,7 @@ class ResourceMonitor:
         except Exception as e:
             self.logger.debug(f"Port check failed for {port}: {e}")
             return False
-    
+
     def check_process_exists(self, process_name: str) -> bool:
         """Check if a process with given name is running."""
         try:
@@ -90,7 +96,7 @@ class ResourceMonitor:
 
 class SmartMCPDiscovery(LoggerMixin):
     """Smart MCP server discovery with anti-duplication and resource management."""
-    
+
     def __init__(self, config_path: Path | None = None) -> None:
         super().__init__()
         self.config_path = config_path or Path(".mcp/discovery-config.yaml")
@@ -98,7 +104,7 @@ class SmartMCPDiscovery(LoggerMixin):
         self.resource_monitor = ResourceMonitor()
         self.cache_ttl = timedelta(minutes=5)
         self.server_requirements = self._load_server_requirements()
-        
+
         # Initialize Docker client if available
         self.docker_client = None
         if docker:
@@ -108,7 +114,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 self.logger.warning(f"Docker not available: {e}")
         else:
             self.logger.warning("Docker package not installed")
-    
+
     def _load_server_requirements(self) -> dict[str, ServerRequirements]:
         """Load server resource requirements."""
         return {
@@ -137,61 +143,61 @@ class SmartMCPDiscovery(LoggerMixin):
                 dependencies=["node", "npx"],
             ),
         }
-    
+
     async def discover_server(self, server_name: str) -> ServerConnection:
         """Smart discovery with anti-duplication."""
-        
+
         # 1. Check cache first
         if cached := self.get_cached_connection(server_name):
             self.logger.debug(f"Using cached connection for {server_name}")
             return cached
-        
+
         # 2. Check for existing deployments
         if existing := await self.find_existing_deployment(server_name):
             self.logger.info(f"Found existing {server_name} at {existing.url}")
             self.deployment_cache[server_name] = existing
             return existing
-        
+
         # 3. Check resource availability
         available_memory = self.resource_monitor.get_available_memory()
         server_requirements = self.server_requirements.get(server_name)
-        
+
         if server_requirements and available_memory < server_requirements.memory:
             # Try cloud/NPX fallback
             if cloud := await self.try_cloud_deployment(server_name):
                 return cloud
             raise ResourceError(f"Insufficient resources for {server_name}")
-        
+
         # 4. Deploy with lock to prevent races
-        lock_path = f"/tmp/.mcp-{server_name}.lock"
+        lock_path = Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock"
         try:
             with FileLock(lock_path, timeout=30):
                 # Double-check after acquiring lock
                 if existing := await self.find_existing_deployment(server_name):
                     return existing
-                
+
                 return await self.deploy_server(server_name)
         except Exception as e:
             self.logger.error(f"Failed to deploy {server_name}: {e}")
             raise
-    
+
     def get_cached_connection(self, server_name: str) -> ServerConnection | None:
         """Get cached connection if still valid."""
         if server_name not in self.deployment_cache:
             return None
-        
+
         connection = self.deployment_cache[server_name]
         if utc_now() - connection.discovered_at > self.cache_ttl:
             del self.deployment_cache[server_name]
             return None
-        
+
         # Verify connection is still healthy
         if not self.verify_health(connection):
             del self.deployment_cache[server_name]
             return None
-        
+
         return connection
-    
+
     async def find_existing_deployment(self, server_name: str) -> ServerConnection | None:
         """Multi-strategy detection for existing deployments."""
         strategies = [
@@ -202,7 +208,7 @@ class SmartMCPDiscovery(LoggerMixin):
             self.check_lock_files,
             self.check_env_variables,
         ]
-        
+
         for strategy in strategies:
             try:
                 if conn := await strategy(server_name):
@@ -211,9 +217,9 @@ class SmartMCPDiscovery(LoggerMixin):
                         return conn
             except Exception as e:
                 self.logger.debug(f"Strategy {strategy.__name__} failed for {server_name}: {e}")
-        
+
         return None
-    
+
     async def check_known_ports(self, server_name: str) -> ServerConnection | None:
         """Check known ports for running servers."""
         port_map = {
@@ -222,7 +228,7 @@ class SmartMCPDiscovery(LoggerMixin):
             "perplexity": [],
             "sentry": [],
         }
-        
+
         ports = port_map.get(server_name, [])
         for port in ports:
             if not self.resource_monitor.is_port_available(port):
@@ -240,7 +246,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 except Exception:
                     pass
         return None
-    
+
     async def check_process_list(self, server_name: str) -> ServerConnection | None:
         """Check running processes for server."""
         process_patterns = {
@@ -249,7 +255,7 @@ class SmartMCPDiscovery(LoggerMixin):
             "perplexity": ["@jschuller/perplexity-mcp"],
             "sentry": ["@sentry/mcp-server"],
         }
-        
+
         patterns = process_patterns.get(server_name, [])
         for pattern in patterns:
             if self.resource_monitor.check_process_exists(pattern):
@@ -264,26 +270,26 @@ class SmartMCPDiscovery(LoggerMixin):
                         discovered_at=utc_now(),
                     )
         return None
-    
+
     async def check_node_modules(self, server_name: str) -> ServerConnection | None:
         """Check node_modules/.bin/ for installed NPX MCP servers."""
         node_modules_bin = Path("node_modules/.bin")
-        
+
         if not node_modules_bin.exists():
             self.logger.debug("node_modules/.bin not found, checking package.json")
-        
+
         # NPX package mappings to their binary names
         npx_package_map = {
             "context7": "@upstash/context7-mcp",
-            "perplexity": "@jschuller/perplexity-mcp", 
+            "perplexity": "@jschuller/perplexity-mcp",
             "sentry": "@sentry/mcp-server",
             "tavily": "tavily-mcp",
         }
-        
+
         package_name = npx_package_map.get(server_name)
         if not package_name:
             return None
-        
+
         # Check if the binary exists in node_modules/.bin/ (only if directory exists)
         if node_modules_bin.exists():
             # NPX creates symlinks in .bin/ directory
@@ -293,7 +299,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 f"{server_name}-mcp",
                 package_name.replace("/", "-").replace("@", ""),
             ]
-            
+
             for bin_name in possible_bin_names:
                 bin_path = node_modules_bin / bin_name
                 if bin_path.exists() or (bin_path.with_suffix(".cmd").exists() if os.name == "nt" else False):
@@ -305,20 +311,19 @@ class SmartMCPDiscovery(LoggerMixin):
                         resource_usage={"package": package_name, "binary": str(bin_path)},
                         discovered_at=utc_now(),
                     )
-        
+
         # Also check if package is listed in package.json dependencies
         package_json = Path("package.json")
         if package_json.exists():
             try:
-                import json
-                with open(package_json) as f:
+                with Path(package_json).open() as f:
                     pkg_data = json.load(f)
-                
+
                 # Check both dependencies and devDependencies
                 all_deps = {}
                 all_deps.update(pkg_data.get("dependencies", {}))
                 all_deps.update(pkg_data.get("devDependencies", {}))
-                
+
                 if package_name in all_deps:
                     self.logger.info(f"Found {server_name} package {package_name} in package.json")
                     return ServerConnection(
@@ -330,14 +335,14 @@ class SmartMCPDiscovery(LoggerMixin):
                     )
             except Exception as e:
                 self.logger.debug(f"Failed to parse package.json: {e}")
-        
+
         return None
-    
+
     async def check_docker_containers(self, server_name: str) -> ServerConnection | None:
         """Check Docker containers for running servers."""
         if not self.docker_client:
             return None
-        
+
         try:
             containers = self.docker_client.containers.list()
             for container in containers:
@@ -357,19 +362,19 @@ class SmartMCPDiscovery(LoggerMixin):
                                 )
         except Exception as e:
             self.logger.debug(f"Docker check failed: {e}")
-        
+
         return None
-    
+
     async def check_lock_files(self, server_name: str) -> ServerConnection | None:
         """Check for lock files indicating running servers."""
         lock_patterns = [
-            f"/tmp/.mcp-{server_name}.lock",
-            f"/tmp/.{server_name}.lock",
+            Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock",
+            Path(tempfile.gettempdir()) / f".{server_name}.lock",
             Path.home() / f".{server_name}.lock",
         ]
-        
+
         for lock_path in lock_patterns:
-            lock_file = Path(lock_path)
+            lock_file = Path(str(lock_path))
             if lock_file.exists():
                 try:
                     # Try to read connection info from lock file
@@ -384,9 +389,9 @@ class SmartMCPDiscovery(LoggerMixin):
                         )
                 except Exception:
                     pass
-        
+
         return None
-    
+
     async def check_env_variables(self, server_name: str) -> ServerConnection | None:
         """Check environment variables for server URLs."""
         env_patterns = {
@@ -395,7 +400,7 @@ class SmartMCPDiscovery(LoggerMixin):
             "perplexity": ["PERPLEXITY_URL"],
             "sentry": ["SENTRY_MCP_URL"],
         }
-        
+
         patterns = env_patterns.get(server_name, [])
         for pattern in patterns:
             if url := os.getenv(pattern):
@@ -406,16 +411,16 @@ class SmartMCPDiscovery(LoggerMixin):
                     resource_usage={},
                     discovered_at=utc_now(),
                 )
-        
+
         return None
-    
+
     async def try_cloud_deployment(self, server_name: str) -> ServerConnection | None:
         """Try cloud/NPX deployment for supported servers."""
         cloud_servers = ["context7", "perplexity", "sentry"]
-        
+
         if server_name not in cloud_servers:
             return None
-        
+
         try:
             # For NPX servers, we don't need to manage them directly
             # They're started on-demand by Claude Code
@@ -428,9 +433,9 @@ class SmartMCPDiscovery(LoggerMixin):
             )
         except Exception as e:
             self.logger.debug(f"Cloud deployment failed for {server_name}: {e}")
-        
+
         return None
-    
+
     async def deploy_server(self, server_name: str) -> ServerConnection:
         """Deploy server using appropriate strategy."""
         deployment_strategies = {
@@ -439,13 +444,13 @@ class SmartMCPDiscovery(LoggerMixin):
             "perplexity": self.deploy_npx_server,
             "sentry": self.deploy_npx_server,
         }
-        
+
         strategy = deployment_strategies.get(server_name)
         if not strategy:
             raise ValueError(f"No deployment strategy for {server_name}")
-        
+
         return await strategy(server_name)
-    
+
     async def deploy_zen_server(self, server_name: str) -> ServerConnection:
         """Deploy zen-mcp-server."""
         # Check if zen-mcp-server is available as submodule or in docker
@@ -454,7 +459,7 @@ class SmartMCPDiscovery(LoggerMixin):
             Path("../zen-mcp-server"),
             Path.home() / "dev/zen-mcp-server",
         ]
-        
+
         for zen_path in zen_paths:
             if zen_path.exists():
                 # Try to start the server
@@ -467,16 +472,16 @@ class SmartMCPDiscovery(LoggerMixin):
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                     )
-                    
+
                     # Wait a bit for startup
                     await asyncio.sleep(3)
-                    
+
                     url = f"http://localhost:{port}"
                     if self.verify_health(ServerConnection(url, "embedded", "starting", {}, utc_now())):
                         # Create lock file
-                        lock_file = Path(f"/tmp/.mcp-{server_name}.lock")
+                        lock_file = Path(tempfile.gettempdir()) / f".mcp-{server_name}.lock"
                         lock_file.write_text(url)
-                        
+
                         return ServerConnection(
                             url=url,
                             type="embedded",
@@ -486,9 +491,9 @@ class SmartMCPDiscovery(LoggerMixin):
                         )
                 except Exception as e:
                     self.logger.error(f"Failed to start zen-mcp-server: {e}")
-        
+
         raise RuntimeError(f"Could not deploy {server_name}")
-    
+
     async def deploy_npx_server(self, server_name: str) -> ServerConnection:
         """Deploy NPX-based server (context7, perplexity, sentry)."""
         # These are handled by Claude Code directly, so we just return the NPX connection
@@ -499,29 +504,29 @@ class SmartMCPDiscovery(LoggerMixin):
             resource_usage={},
             discovered_at=utc_now(),
         )
-    
+
     def find_available_port(self, start: int, end: int) -> int:
         """Find an available port in the given range."""
         for port in range(start, end):
             if self.resource_monitor.is_port_available(port):
                 return port
         raise RuntimeError(f"No available ports in range {start}-{end}")
-    
+
     def verify_health(self, connection: ServerConnection) -> bool:
         """Verify server is healthy and responding."""
         if connection.type == "npx":
             # NPX servers are always considered healthy as they start on demand
             return True
-        
+
         try:
             if connection.url.startswith("http"):
                 response = requests.get(f"{connection.url}/health", timeout=5)
                 return response.status_code == 200
         except Exception as e:
             self.logger.debug(f"Health check failed for {connection.url}: {e}")
-        
+
         return False
-    
+
     async def extract_url_from_process(self, pattern: str) -> str | None:
         """Extract URL from running process."""
         # This would need more sophisticated process inspection

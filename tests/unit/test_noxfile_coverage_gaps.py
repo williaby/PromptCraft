@@ -21,7 +21,7 @@ class TestNoxFileSessionsCoverageGaps:
         session.run = Mock()
         session.cd = Mock()
         session.chdir = Mock()
-        session.create_tmp = Mock(return_value="/tmp/test")  # noqa: S108
+        session.create_tmp = Mock(return_value="/tmp/test")
         return session
 
     def test_unit_session(self, mock_session):
@@ -392,11 +392,11 @@ class TestNoxFileSessionsCoverageGaps:
         mock_context_manager.__exit__ = Mock(return_value=False)
 
         # Mock session.create_tmp() to return a predictable path
-        mock_session.create_tmp.return_value = "/tmp/test"  # noqa: S108
+        mock_session.create_tmp.return_value = "/tmp/test"
 
         # Mock Path.cwd() to return the temp directory path
         # The noxfile uses Path.cwd().parent / "requirements.txt"
-        with patch("pathlib.Path.cwd", return_value=Path("/tmp/test")):  # noqa: S108
+        with patch("pathlib.Path.cwd", return_value=Path("/tmp/test")):
             noxfile.deps(mock_session)
 
         # Verify poetry commands
@@ -406,7 +406,7 @@ class TestNoxFileSessionsCoverageGaps:
 
         # Verify virtual environment and pip install
         mock_session.create_tmp.assert_called_once()
-        mock_session.chdir.assert_called_once_with("/tmp/test")  # noqa: S108
+        mock_session.chdir.assert_called_once_with("/tmp/test")
         mock_session.run.assert_any_call("python", "-m", "venv", "test-env")
         # The path should be str(Path('/tmp/test').parent / "requirements.txt") = "/tmp/requirements.txt"
         mock_session.run.assert_any_call(
@@ -414,7 +414,7 @@ class TestNoxFileSessionsCoverageGaps:
             "install",
             "--require-hashes",
             "-r",
-            "/tmp/requirements.txt",  # noqa: S108
+            "/tmp/requirements.txt",
             external=True,
         )
 

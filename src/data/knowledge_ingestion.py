@@ -14,10 +14,21 @@ from typing import Any
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
-from sentence_transformers import SentenceTransformer
 
-from ..config.qdrant_settings import qdrant_settings
-from ..core.vector_stores.collection_manager import QdrantCollectionManager
+from src.config.qdrant_settings import qdrant_settings
+from src.core.vector_stores.collection_manager import QdrantCollectionManager
+
+
+# SentenceTransformer (optional dependency)
+SentenceTransformer: Any = None
+SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+try:
+    from sentence_transformers import SentenceTransformer
+
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    pass
 
 
 class KnowledgeIngestionPipeline:
@@ -27,6 +38,10 @@ class KnowledgeIngestionPipeline:
         """Initialize knowledge ingestion pipeline."""
         self.client = client
         self.logger = logging.getLogger(__name__)
+
+        # Check if sentence-transformers is available
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            raise ImportError("sentence-transformers is not installed. Install with: poetry install --with ml")
 
         # Initialize embedding model
         if embedding_model is None:
@@ -87,7 +102,7 @@ class KnowledgeIngestionPipeline:
     async def _process_markdown_file(self, file_path: Path, collection_name: str) -> list[dict[str, Any]]:
         """Process a single markdown file into document chunks."""
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 content = f.read()
 
             # Split content into semantic chunks
@@ -131,12 +146,13 @@ class KnowledgeIngestionPipeline:
         sections = content.split("\n## ")
 
         for i, section in enumerate(sections):
-            if i > 0:  # Add back the header marker for non-first sections
-                section = "## " + section
+            processed_section = (
+                "## " + section if i > 0 else section
+            )  # Add back the header marker for non-first sections
 
             # If section is too long, split by paragraphs
-            if len(section) > max_chunk_size:
-                paragraphs = section.split("\n\n")
+            if len(processed_section) > max_chunk_size:
+                paragraphs = processed_section.split("\n\n")
                 current_chunk = ""
 
                 for paragraph in paragraphs:
@@ -153,8 +169,8 @@ class KnowledgeIngestionPipeline:
 
                 if current_chunk.strip():
                     chunks.append(current_chunk.strip())
-            elif section.strip():
-                chunks.append(section.strip())
+            elif processed_section.strip():
+                chunks.append(processed_section.strip())
 
         return [chunk for chunk in chunks if chunk.strip()]
 
@@ -293,8 +309,8 @@ class KnowledgeIngestionPipeline:
                     {
                         "score": search_results[0].score if search_results else None,
                         "content_preview": (
-                            search_results[0].payload.get("content", "")[:100] 
-                            if search_results and search_results[0].payload 
+                            search_results[0].payload.get("content", "")[:100]
+                            if search_results and search_results[0].payload
                             else None
                         ),
                     }

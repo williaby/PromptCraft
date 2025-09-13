@@ -1,30 +1,30 @@
 """Test fixtures package for PromptCraft testing infrastructure with dependency injection support."""
 
-# API router fixtures removed as part of auth simplification
-# Note: service_container_fixtures temporarily disabled due to missing auth.database module
-# from .service_container_fixtures import (
-#     ContainerTestHelper,
-#     MockServiceFactory,
-#     clean_container,
-#     container_config,
-#     container_lifecycle_context,
-#     container_metrics_validator,
-#     container_test_helper,
-#     custom_container_with_mocks,
-#     empty_container,
-#     error_simulating_container_factory,
-#     initialized_mock_container,
-#     initialized_test_container,
-#     integration_test_container,
-#     invalid_container_configs,
-#     mock_service_container,
-#     mock_service_factory,
-#     performance_container,
-#     request_scoped_container,
-#     service_dependency_chain,
-#     test_environment_container,
-# Integration testing fixtures (new)
 from .auth_fixtures import (
+    # API router fixtures removed as part of auth simplification
+    # Note: service_container_fixtures temporarily disabled due to missing auth.database module
+    # from .service_container_fixtures import (
+    #     ContainerTestHelper,
+    #     MockServiceFactory,
+    #     clean_container,
+    #     container_config,
+    #     container_lifecycle_context,
+    #     container_metrics_validator,
+    #     container_test_helper,
+    #     custom_container_with_mocks,
+    #     empty_container,
+    #     error_simulating_container_factory,
+    #     initialized_mock_container,
+    #     initialized_test_container,
+    #     integration_test_container,
+    #     invalid_container_configs,
+    #     mock_service_container,
+    #     mock_service_factory,
+    #     performance_container,
+    #     request_scoped_container,
+    #     service_dependency_chain,
+    #     test_environment_container,
+    # Integration testing fixtures (new)
     admin_user,
     auth_middleware_admin,
     auth_middleware_user,

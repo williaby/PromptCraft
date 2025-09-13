@@ -45,7 +45,7 @@ class TestMCPClient:
 
     def test_client_missing_config(self):
         """Test client with missing configuration file."""
-        non_existent_path = Path("/tmp/non-existent-config.json")  # noqa: S108
+        non_existent_path = Path("/tmp/non-existent-config.json")
         client = MCPClient(non_existent_path)
         assert len(client.servers) == 0
 
@@ -569,7 +569,7 @@ class TestMCPHealthIntegration:
     def test_mcp_configuration_manager_edge_cases(self):
         """Test MCPConfigurationManager edge cases."""
         # Test with non-existent config file
-        manager = MCPConfigurationManager(Path("/tmp/non-existent-mcp-config.json"))  # noqa: S108
+        manager = MCPConfigurationManager(Path("/tmp/non-existent-mcp-config.json"))
         assert manager.configuration is not None
         assert len(manager.configuration.mcp_servers) == 0
 
@@ -581,7 +581,7 @@ class TestMCPHealthIntegration:
     def test_mcp_client_edge_cases(self):
         """Test MCPClient edge cases."""
         # Test with invalid config - use a non-existent path
-        client = MCPClient(Path("/tmp/non-existent-mcp-config.json"))  # noqa: S108
+        client = MCPClient(Path("/tmp/non-existent-mcp-config.json"))
         assert len(client.servers) == 0
         assert len(client.connections) == 0
 

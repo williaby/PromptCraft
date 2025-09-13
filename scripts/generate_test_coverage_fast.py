@@ -35,12 +35,12 @@ import sys
 import time
 from typing import Any
 
-# Import our modular components
 from coverage_data_loader import CoverageDataLoader
 from html_renderer import HTMLRenderer
 from test_type_slicer import TestTypeSlicer
 
 
+# Import our modular components
 class FastCoverageReportGenerator:
     """Main orchestrator for fast coverage report generation."""
 

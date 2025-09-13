@@ -36,7 +36,7 @@ def main():
 
         # Launch on an available port
         app.launch(
-            server_name="0.0.0.0",
+            server_name="0.0.0.0",  # noqa: S104
             server_port=7861,
             share=False,
             debug=True,

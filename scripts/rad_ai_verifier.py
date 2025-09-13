@@ -13,6 +13,9 @@ import sys
 import time
 from typing import Any
 
+# Import classes from the smart verifier
+from verify_assumptions_smart import AIVerificationResult, Assumption
+
 
 @dataclass
 class VerificationPrompt:
@@ -22,21 +25,6 @@ class VerificationPrompt:
     risk_level: str
     template: str
     model_requirements: dict[str, Any]
-
-
-@dataclass
-class AIVerificationResult:
-    """Result from AI model verification"""
-
-    assumption_id: str
-    model_used: str
-    status: str  # BLOCKING, REVIEW, NOTE
-    confidence: float
-    issues_found: list[str]
-    suggested_fixes: list[str]
-    defensive_patterns: list[str]
-    verification_time: float
-    cost_estimate: float
 
 
 class PromptTemplates:
@@ -134,7 +122,7 @@ Any issue that could cause money loss must be BLOCKING status.""",
             risk_level="medium",
             template="""You are a code reviewer focused on preventing API integration bugs.
 
-## API Context  
+## API Context
 File: {file_path}:{line_number}
 Assumption: {assumption_text}
 Code Context:
@@ -144,7 +132,7 @@ Code Context:
 
 ## API Reality Check
 Production APIs frequently have:
-- Network timeouts and connection failures  
+- Network timeouts and connection failures
 - Rate limiting and throttling
 - Schema changes and versioning issues
 - Authentication token expiration
@@ -159,7 +147,7 @@ Production APIs frequently have:
 
 ## Output Format
 Return JSON with:
-- "status": "BLOCKING" | "REVIEW" | "NOTE"  
+- "status": "BLOCKING" | "REVIEW" | "NOTE"
 - "confidence": 0.0-1.0
 - "issues_found": ["api failure scenario 1", "validation gap 2"]
 - "suggested_fixes": ["add timeout parameter", "validate response schema"]
@@ -177,7 +165,7 @@ Focus on common API integration failures that cause user-facing errors.""",
             template="""You are reviewing code for performance edge cases and optimization opportunities.
 
 ## Performance Context
-File: {file_path}:{line_number}  
+File: {file_path}:{line_number}
 Assumption: {assumption_text}
 Code Context:
 ```{language}
@@ -191,7 +179,7 @@ Code Context:
 - CPU-intensive operations blocking UI
 - Cache invalidation and consistency
 
-## Analysis Required  
+## Analysis Required
 1. **Scalability**: Will this work with 100x more data?
 2. **Memory usage**: Are there potential memory leaks?
 3. **UI blocking**: Does this block the main thread?
@@ -202,7 +190,7 @@ Code Context:
 Return JSON with:
 - "status": "BLOCKING" | "REVIEW" | "NOTE"
 - "confidence": 0.0-1.0
-- "issues_found": ["performance bottleneck 1", "scalability issue 2"] 
+- "issues_found": ["performance bottleneck 1", "scalability issue 2"]
 - "suggested_fixes": ["add pagination", "implement caching"]
 - "defensive_patterns": ["async processing", "memory cleanup"]
 
@@ -516,12 +504,12 @@ def main():
     # Load assumptions from JSON
     assumptions_file = sys.argv[1]
     with open(assumptions_file) as f:
-        assumptions_data = json.load(f)
+        json.load(f)
 
     # Convert to Assumption objects (would need to import from main script)
     # For now, just demonstrate the verification flow
 
-    orchestrator = VerificationOrchestrator(strategy="tiered", budget="balanced")
+    VerificationOrchestrator(strategy="tiered", budget="balanced")
     print("AI verification system initialized successfully!")
     print("Strategy: tiered, Budget: balanced")
     print(f"Templates available: {len(PromptTemplates.__dict__)} categories")
