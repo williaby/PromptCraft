@@ -151,14 +151,16 @@ class TestScriptsDiscoverySystem:
 
     def test_get_available_scripts_empty_cache(self, discovery_system):
         """Test getting available scripts when cache is empty."""
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_scripts_cache") as mock_refresh:
-                discovery_system._scripts_cache = {}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_scripts_cache") as mock_refresh,
+        ):
+            discovery_system._scripts_cache = {}
 
-                scripts = discovery_system.get_available_scripts()
+            scripts = discovery_system.get_available_scripts()
 
-                assert scripts == []
-                mock_refresh.assert_called_once()
+            assert scripts == []
+            mock_refresh.assert_called_once()
 
     def test_get_available_scripts_with_cache(self, discovery_system):
         """Test getting available scripts when cache has scripts."""
