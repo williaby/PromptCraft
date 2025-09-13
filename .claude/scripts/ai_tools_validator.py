@@ -21,9 +21,11 @@ from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
+import tomllib
 
 
 @dataclass
@@ -166,8 +168,6 @@ Install OpenAI Codex CLI:
         # Check for common frameworks
         if (self.project_root / "pyproject.toml").exists():
             try:
-                import tomllib
-
                 with Path(self.project_root / "pyproject.toml").open("rb") as f:
                     pyproject = tomllib.load(f)
                     deps = pyproject.get("tool", {}).get("poetry", {}).get("dependencies", {})
@@ -205,8 +205,6 @@ Install OpenAI Codex CLI:
             if result.returncode == 0:
                 status.installed = True
                 # Extract version if available
-                import re
-
                 version_match = re.search(tool_config.version_regex, result.stdout + result.stderr)
                 if version_match:
                     status.version = version_match.group(1)
