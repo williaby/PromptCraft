@@ -146,8 +146,8 @@ class TestRequirePermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"  # Test token value
-        user.token_id = "token123"  # Test token value
+        user.token_name = "test-token"  # noqa: S105  # Test data
+        user.token_id = "token123"  # noqa: S105  # Test data
         user.has_permission = Mock(return_value=True)
         return user
 
@@ -225,8 +225,8 @@ class TestRequireAnyPermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"  # Test token value
-        user.token_id = "token123"  # Test token value
+        user.token_name = "test-token"  # noqa: S105  # Test data
+        user.token_id = "token123"  # noqa: S105  # Test data
         return user
 
     @pytest.mark.asyncio
@@ -332,8 +332,8 @@ class TestRequireAllPermissions:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"  # Test token value
-        user.token_id = "token123"  # Test token value
+        user.token_name = "test-token"  # noqa: S105  # Test data
+        user.token_id = "token123"  # noqa: S105  # Test data
         return user
 
     @pytest.mark.asyncio
@@ -411,8 +411,8 @@ class TestHasServiceTokenPermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"  # Test token value
-        user.token_id = "token123"  # Test token value
+        user.token_name = "test-token"  # noqa: S105  # Test data
+        user.token_id = "token123"  # noqa: S105  # Test data
         return user
 
     def test_has_service_token_permission_success(self, mock_service_token_user):
