@@ -15,7 +15,7 @@ def install_dependencies():
     """Install pact-python and other dependencies."""
     print("📦 Installing dependencies...")
     try:
-        subprocess.run(["poetry", "install"], check=True, cwd=Path(__file__).parent)
+        subprocess.run(["poetry", "install"], check=True, cwd=Path(__file__).parent)  # noqa: S607
         print("✅ Dependencies installed")
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install dependencies: {e}")
@@ -53,7 +53,7 @@ def run_contract_tests():
     try:
         # Run contract tests specifically
         result = subprocess.run(
-            [
+            [  # noqa: S607
                 "poetry",
                 "run",
                 "pytest",

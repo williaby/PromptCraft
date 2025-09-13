@@ -166,7 +166,7 @@ Install OpenAI Codex CLI:
         # Check for common frameworks
         if (self.project_root / "pyproject.toml").exists():
             try:
-                import tomllib
+                import tomllib  # noqa: PLC0415
 
                 with Path(self.project_root / "pyproject.toml").open("rb") as f:
                     pyproject = tomllib.load(f)
@@ -179,7 +179,7 @@ Install OpenAI Codex CLI:
                         project_info["frameworks"].append("flask")
                     if "gradio" in deps:
                         project_info["frameworks"].append("gradio")
-            except:
+            except:  # noqa: S110
                 pass
 
         return project_info
@@ -205,7 +205,7 @@ Install OpenAI Codex CLI:
             if result.returncode == 0:
                 status.installed = True
                 # Extract version if available
-                import re
+                import re  # noqa: PLC0415
 
                 version_match = re.search(tool_config.version_regex, result.stdout + result.stderr)
                 if version_match:

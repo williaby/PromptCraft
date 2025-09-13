@@ -1520,7 +1520,7 @@ class MultiJourneyInterface(LoggerMixin):
 
     def _create_journey2_interface(self) -> None:
         """Create Journey 2: Intelligent Search interface with zen routing."""
-        from src.ui.journeys.journey2_intelligent_search import (
+        from src.ui.journeys.journey2_intelligent_search import (  # noqa: PLC0415
             Journey2IntelligentSearch,  # Avoid circular imports
         )
 

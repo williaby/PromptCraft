@@ -142,7 +142,7 @@ def configure_migration_context(connection: Connection | None = None, url: str |
     context.configure(**context_config)
 
 
-def include_object(object: Any, name: str | None, type_: str, reflected: bool, compare_to: Any | None) -> bool:
+def include_object(_object: Any, name: str | None, type_: str, _reflected: bool, _compare_to: Any | None) -> bool:
     """Determine whether to include an object in migration autogeneration.
 
     This function allows fine-grained control over what database objects
@@ -159,11 +159,11 @@ def include_object(object: Any, name: str | None, type_: str, reflected: bool, c
         True if the object should be included in migrations
     """
     # Skip temp tables and system tables
-    if type_ == "table" and (name.startswith(("temp_", "tmp_", "alembic_"))):
+    if type_ == "table" and name and name.startswith(("temp_", "tmp_", "alembic_")):
         return False
 
     # Include all PromptCraft tables
-    if type_ == "table" and any(
+    if type_ == "table" and name and any(
         prefix in name
         for prefix in [
             "roles",

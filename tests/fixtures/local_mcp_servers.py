@@ -59,7 +59,7 @@ class LocalMCPServer:
 
             # Start the process
             self.process = subprocess.Popen(  # noqa: S603
-                ["python", str(self.server_path)],
+                ["python", str(self.server_path)],  # noqa: S607
                 env=env,
                 cwd=self.server_path.parent,
                 stdout=subprocess.PIPE,

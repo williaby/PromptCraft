@@ -1070,7 +1070,7 @@ class TestDynamicAgentLoader:
 
         with (
             patch.object(agent_loader, "load_markdown_agent", side_effect=Exception("Load error")),
-            pytest.raises(Exception, match="Load error")
+            pytest.raises(Exception, match="Load error"),
         ):
             agent_loader.load_agent("error-agent", {})
 
@@ -1185,7 +1185,7 @@ class TestDynamicAgentLoader:
 
         with (
             patch("importlib.import_module", side_effect=ImportError("Module not found")),
-            pytest.raises(ImportError, match="Failed to load Python agent")
+            pytest.raises(ImportError, match="Failed to load Python agent"),
         ):
             agent_loader.load_python_agent(agent_def, {})
 

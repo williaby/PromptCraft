@@ -243,7 +243,7 @@ class SmartMCPDiscovery(LoggerMixin):
                             resource_usage={"port": port},
                             discovered_at=utc_now(),
                         )
-                except Exception:
+                except Exception:  # noqa: S110
                     pass
         return None
 
@@ -387,7 +387,7 @@ class SmartMCPDiscovery(LoggerMixin):
                             resource_usage={},
                             discovered_at=utc_now(),
                         )
-                except Exception:
+                except Exception:  # noqa: S110
                     pass
 
         return None
