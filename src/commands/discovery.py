@@ -7,13 +7,12 @@ Project-level (.claude/commands/) -> User-level (~/.claude/commands/) fallback.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 import logging
 from pathlib import Path
 import re
 from typing import Any
 
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 

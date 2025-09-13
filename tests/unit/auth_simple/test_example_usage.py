@@ -8,7 +8,6 @@ startup/shutdown events, and development utilities.
 
 import asyncio
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 import json
 import sys
 from unittest.mock import Mock, patch
@@ -17,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 import pytest
 
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 def get_cloudflare_auth_headers(email: str = "admin@example.com") -> dict:

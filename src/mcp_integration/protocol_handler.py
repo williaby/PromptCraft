@@ -301,7 +301,7 @@ class MCPProtocolHandler(LoggerMixin):
             # Wait for response with timeout
             return await asyncio.wait_for(future, timeout=self.request_timeout)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Request timeout after {self.request_timeout}s",

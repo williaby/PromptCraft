@@ -3,13 +3,13 @@ Tests for Hybrid Infrastructure API Endpoints
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException
 import pytest
 
 from src.api.hybrid_infrastructure_endpoints import register_hybrid_infrastructure_routes
+from src.utils.datetime_compat import UTC
 
 
 class MockAppState:

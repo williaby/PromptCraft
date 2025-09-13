@@ -7,7 +7,6 @@ including database operations, event storage, querying, and cleanup functionalit
 
 import asyncio
 from datetime import datetime
-from src.utils.datetime_compat import UTC, timedelta
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -16,6 +15,7 @@ import pytest
 
 from src.metrics.events import MetricEvent, MetricEventType
 from src.metrics.storage import MetricsStorage
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class TestMetricsStorageInit:

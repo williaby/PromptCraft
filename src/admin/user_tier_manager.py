@@ -6,13 +6,13 @@ changes to the configuration.
 """
 
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 import json
 import logging
 import re
 from typing import Any
 
 from src.auth_simple.config import ConfigLoader, ConfigManager, get_config_manager
+from src.utils.datetime_compat import UTC
 
 
 logger = logging.getLogger(__name__)

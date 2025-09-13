@@ -7,12 +7,11 @@ Project-level (.claude/standards/) -> User-level (~/.claude/standards/) fallback
 
 from dataclasses import dataclass
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 import logging
 from pathlib import Path
 from typing import Any
 
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 

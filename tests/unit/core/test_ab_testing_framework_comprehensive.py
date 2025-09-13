@@ -14,7 +14,6 @@ Coverage targets:
 """
 
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -39,7 +38,7 @@ from src.core.ab_testing_framework import (
     create_dynamic_loading_experiment,
 )
 from src.core.dynamic_loading_integration import ProcessingResult
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 class TestEnumsAndModels:

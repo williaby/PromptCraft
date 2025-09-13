@@ -7,14 +7,13 @@ and compliance validation across project and user standard directories.
 """
 
 from datetime import datetime, timedelta
-from src.utils.datetime_compat import UTC
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from src.standards.discovery import StandardDefinition, StandardsDiscoverySystem, StandardsManager
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 class TestStandardDefinition:

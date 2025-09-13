@@ -4,7 +4,6 @@ Convert MCP JSON configurations to claude mcp add commands
 """
 
 import json
-import os
 from pathlib import Path
 
 

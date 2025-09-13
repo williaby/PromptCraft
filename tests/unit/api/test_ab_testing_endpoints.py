@@ -7,7 +7,6 @@ Following minimal mocking principles to test actual processes.
 
 import contextlib
 from datetime import datetime
-from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI
@@ -21,6 +20,7 @@ from src.api.ab_testing_endpoints import (
     UserAssignmentRequest,
     router,
 )
+from src.utils.datetime_compat import UTC
 
 
 class TestCreateExperimentRequest:
