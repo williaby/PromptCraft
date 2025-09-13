@@ -268,8 +268,8 @@ class TestZenStdioMCPClient:
                 result = await client.get_model_recommendations("test prompt")
 
                 assert result == mock_routing_analysis
-                MockModelRec.assert_called_once()
-                MockRoutingAnalysis.assert_called_once()
+                mock_model_rec_class.assert_called_once()
+                mock_routing_analysis_class.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_model_recommendations_no_recommendations(self, client):
@@ -363,8 +363,8 @@ class TestZenStdioMCPClient:
         """Test successful environment variable loading."""
         env_content = "API_KEY=test_key\nDATABASE_URL=test_url\n# Comment line\nDEBUG=true\n"
 
-        with patch("os.path.exists", return_value=True):
-            with patch("builtins.open", mock_open(read_data=env_content)):
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("pathlib.Path.open", mock_open(read_data=env_content)):
                 env_vars = client._get_zen_environment()
 
                 assert env_vars["API_KEY"] == "test_key"
@@ -375,7 +375,7 @@ class TestZenStdioMCPClient:
 
     def test_get_zen_environment_file_not_exists(self, client):
         """Test environment loading when file doesn't exist."""
-        with patch("os.path.exists", return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             env_vars = client._get_zen_environment()
 
             assert env_vars["LOG_LEVEL"] == "INFO"

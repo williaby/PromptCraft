@@ -8,6 +8,8 @@ focusing on areas identified in the security testing review:
 - More extensive invalid character testing for file uploads
 """
 
+from datetime import UTC, datetime
+
 from pydantic import ValidationError
 import pytest
 
@@ -436,7 +438,6 @@ class TestSanitizeDictValuesComprehensive:
 
     def test_sanitize_dict_with_special_data_types(self):
         """Test sanitization with various Python data types."""
-        from datetime import date
         from decimal import Decimal
 
         data = {
@@ -446,7 +447,7 @@ class TestSanitizeDictValuesComprehensive:
             "boolean_true": True,
             "boolean_false": False,
             "datetime": utc_now(),
-            "date": date.today(),
+            "date": datetime.now(UTC).date(),
             "decimal": Decimal("123.45"),
             "bytes": b"binary data",
             "set_data": {1, 2, 3},  # Sets are not dict/list/str

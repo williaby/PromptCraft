@@ -179,7 +179,7 @@ Install OpenAI Codex CLI:
                         project_info["frameworks"].append("flask")
                     if "gradio" in deps:
                         project_info["frameworks"].append("gradio")
-            except:  # noqa: S110
+            except Exception:  # noqa: S110
                 pass
 
         return project_info

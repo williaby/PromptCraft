@@ -593,8 +593,8 @@ class TestRequestLoggingMiddlewareComprehensive:
 
         for response in response_types:
 
-            async def mock_call_next(req):
-                return response
+            async def mock_call_next(req, resp=response):
+                return resp
 
             result = await middleware.dispatch(request, mock_call_next)
 

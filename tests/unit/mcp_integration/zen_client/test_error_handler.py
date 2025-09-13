@@ -1,6 +1,6 @@
 """Comprehensive tests for error handling and fallback mechanisms."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 from unittest.mock import AsyncMock, Mock, patch
 

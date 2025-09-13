@@ -5,7 +5,7 @@ Specialized integration for the Context7 MCP server, providing document retrieva
 semantic search, and context management capabilities for PromptCraft.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 import os
@@ -31,7 +31,7 @@ class Context7Document:
     title: str
     content: str
     url: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] | None = None
     relevance_score: float = 0.0
 
 

@@ -438,7 +438,7 @@ class TestAuthenticationIntegration:
                     assert data["user_email"] == "test@example.com"
                 else:
                     # Fallback assertion for when middleware doesn't populate user info
-                    assert data["status"] == "success"
+                    assert data["status"] == "ok"
 
             return len(responses)
 

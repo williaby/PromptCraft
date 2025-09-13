@@ -66,7 +66,7 @@ class TestSetupAuthMiddleware:
             # Verify middleware was added to app
             mock_app.add_middleware.assert_called_once()
             add_middleware_call = mock_app.add_middleware.call_args
-            assert add_middleware_call[0][0] == type(mock_middleware)
+            assert add_middleware_call[0][0] is type(mock_middleware)
 
             # Verify return value
             assert result == mock_middleware

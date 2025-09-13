@@ -163,19 +163,23 @@ def include_object(_object: Any, name: str | None, type_: str, _reflected: bool,
         return False
 
     # Include all PromptCraft tables
-    if type_ == "table" and name and any(
-        prefix in name
-        for prefix in [
-            "roles",
-            "permissions",
-            "service_tokens",
-            "user_sessions",
-            "authentication_events",
-            "security_events",
-            "blocked_entities",
-            "threat_scores",
-            "monitoring_thresholds",
-        ]
+    if (
+        type_ == "table"
+        and name
+        and any(
+            prefix in name
+            for prefix in [
+                "roles",
+                "permissions",
+                "service_tokens",
+                "user_sessions",
+                "authentication_events",
+                "security_events",
+                "blocked_entities",
+                "threat_scores",
+                "monitoring_thresholds",
+            ]
+        )
     ):
         return True
 

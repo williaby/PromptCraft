@@ -495,8 +495,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(session=mock_session):
+                    yield session
 
                 mock_get_db.return_value = mock_db_gen()
 
@@ -522,8 +522,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(session=mock_session):
+                    yield session
 
                 mock_get_db.return_value = mock_db_gen()
 
