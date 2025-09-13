@@ -400,13 +400,15 @@ class TestAuthenticationMiddleware:
         call_next = AsyncMock()
         call_next.return_value = Response(content="Success", status_code=200)
 
-        with patch.object(middleware, "_is_excluded_path", return_value=False):
-            with patch("src.auth.middleware.logger.debug") as mock_debug:
-                response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_is_excluded_path", return_value=False),
+            patch("src.auth.middleware.logger.debug") as mock_debug,
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                assert response.status_code == 200
-                call_next.assert_called_once_with(request)
-                mock_debug.assert_called_once()
+        assert response.status_code == 200
+        call_next.assert_called_once_with(request)
+        mock_debug.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_extract_auth_token_cf_access_jwt(self):
@@ -726,11 +728,13 @@ class TestAuthenticationMiddleware:
             usage_count=0,
         )  # Test token parameters
 
-        with patch.object(middleware, "_extract_auth_token", return_value=token):
-            with patch.object(middleware, "_validate_service_token", return_value=mock_service_user):
-                user = await middleware._authenticate_request(request)
+        with (
+            patch.object(middleware, "_extract_auth_token", return_value=token),
+            patch.object(middleware, "_validate_service_token", return_value=mock_service_user),
+        ):
+            user = await middleware._authenticate_request(request)
 
-                assert user == mock_service_user
+        assert user == mock_service_user
 
     @pytest.mark.asyncio
     async def test_authenticate_request_jwt_token(self, middleware):

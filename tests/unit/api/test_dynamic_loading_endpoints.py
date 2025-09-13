@@ -860,9 +860,11 @@ class TestEndpointPerformance:
         client, mock_integration = client_with_mocked_integration
 
         # Mock timing for performance measurement - provide enough values for multiple calls
-        with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150, 0.300, 0.450]):
-            with patch("src.api.dynamic_loading_endpoints.audit_logger_instance") as mock_audit:
-                response = client.post("/api/v1/dynamic-loading/optimize-query", json={"query": "test query"})
+        with (
+            patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150, 0.300, 0.450]),
+            patch("src.api.dynamic_loading_endpoints.audit_logger_instance") as mock_audit,
+        ):
+            response = client.post("/api/v1/dynamic-loading/optimize-query", json={"query": "test query"})
 
         assert response.status_code == 200
 

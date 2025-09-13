@@ -6,7 +6,8 @@ including database operations, event storage, querying, and cleanup functionalit
 """
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
+from src.utils.datetime_compat import UTC, timedelta
 from pathlib import Path
 import sqlite3
 import tempfile

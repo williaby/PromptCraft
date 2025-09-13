@@ -13,7 +13,8 @@ Coverage targets:
 - Progressive rollout and feature flag management
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.utils.datetime_compat import UTC
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
