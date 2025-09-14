@@ -82,7 +82,7 @@ class RoleManager(DatabaseService):
                 parent_role_id = None
                 if parent_role_name:
                     parent_result = await session.execute(
-                        select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),
+                        select(Role.id).where(Role.name == parent_role_name, Role.is_active),
                     )
                     parent_role = parent_result.scalar_one_or_none()
                     if not parent_role:
@@ -129,7 +129,7 @@ class RoleManager(DatabaseService):
         try:
             async with self.get_session() as session:
                 result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True),
+                    select(Role).where(Role.name == role_name, Role.is_active),
                 )
                 role = result.scalar_one_or_none()
 
@@ -170,7 +170,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 query = select(Role)
                 if not include_inactive:
-                    query = query.where(Role.is_active == True)
+                    query = query.where(Role.is_active)
 
                 result = await session.execute(query.order_by(Role.name))
                 roles = result.scalars().all()
@@ -218,7 +218,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -279,7 +279,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -334,7 +334,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -396,7 +396,7 @@ class RoleManager(DatabaseService):
 
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -462,7 +462,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -619,14 +619,14 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role IDs
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
                 parent_result = await session.execute(
-                    select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),
+                    select(Role.id).where(Role.name == parent_role_name, Role.is_active),
                 )
                 parent_id = parent_result.scalar_one_or_none()
                 if not parent_id:
@@ -682,7 +682,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role
                 role_result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True),
+                    select(Role).where(Role.name == role_name, Role.is_active),
                 )
                 role = role_result.scalar_one_or_none()
                 if not role:
@@ -692,7 +692,7 @@ class RoleManager(DatabaseService):
                 if not force:
                     # Check for child roles
                     child_result = await session.execute(
-                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active == True),
+                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active),
                     )
                     child_roles = child_result.scalars().all()
                     if child_roles:

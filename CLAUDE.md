@@ -264,6 +264,30 @@ Before committing ANY changes, ensure:
 - [ ] Commits are signed (Git signing key configured)
 - [ ] Test coverage remains at or above 80%
 - [ ] All security scans pass (Safety, Bandit)
+- [ ] **S105/S106 Rule**: Do NOT manually add `# noqa: S105/S106` in test files (globally ignored)
+- [ ] **RUF100 Rule**: Run `ruff check --select=RUF100 --fix` to remove unused noqa annotations
+
+## Troubleshooting References
+
+### S105/S106 Noqa Auto-Fix Issues
+
+> **CRITICAL REFERENCE**: `docs/planning/s105-s106-noqa-troubleshooting.md`
+
+**✅ RESOLVED**: S105/S106 hardcoded password detection is now properly configured:
+- S105/S106 rules are globally ignored in all test files (`tests/**/*.py`)
+- Legitimate constants in `src/auth/constants.py` and `src/security/audit_logging.py` are also ignored
+- Manual noqa annotations for S105/S106 in test files are no longer needed
+- If S105/S106 errors appear in test files, this indicates a configuration regression
+
+### Import Sequence & Order Conflicts
+
+> **CRITICAL REFERENCE**: `docs/planning/import-sequence-troubleshooting.md`
+
+If encountering import-related lint errors (PLC0415, F403, F401) that create tool conflicts:
+- PLC0415 errors often indicate legitimate circular import prevention patterns
+- Auto-fix tools may create circular import runtime errors when moving imports
+- See the troubleshooting guide for per-file ignore configurations and architectural solutions
+- Do NOT manually move function-level imports without checking for circular dependencies
 
 ---
 
