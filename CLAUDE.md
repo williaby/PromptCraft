@@ -265,6 +265,7 @@ Before committing ANY changes, ensure:
 - [ ] Test coverage remains at or above 80%
 - [ ] All security scans pass (Safety, Bandit)
 - [ ] **S105/S106 Rule**: Do NOT manually add `# noqa: S105/S106` in test files (globally ignored)
+- [ ] **Import Rules**: NEVER use `ruff check --fix` for PLC0415, F403, F401 (would break functionality)
 - [ ] **RUF100 Rule**: Run `ruff check --select=RUF100 --fix` to remove unused noqa annotations
 
 ## Troubleshooting References
@@ -283,11 +284,12 @@ Before committing ANY changes, ensure:
 
 > **CRITICAL REFERENCE**: `docs/planning/import-sequence-troubleshooting.md`
 
-If encountering import-related lint errors (PLC0415, F403, F401) that create tool conflicts:
-- PLC0415 errors often indicate legitimate circular import prevention patterns
-- Auto-fix tools may create circular import runtime errors when moving imports
-- See the troubleshooting guide for per-file ignore configurations and architectural solutions
-- Do NOT manually move function-level imports without checking for circular dependencies
+**✅ RESOLVED**: Import-related linting is now properly configured:
+- PLC0415 function-level imports are globally ignored for files with legitimate patterns (18 files)
+- F403 star imports accepted in tests/conftest.py for pytest fixture discovery
+- F401 accepted for import availability checking patterns
+- All function-level imports preserve circular dependency prevention and dynamic loading
+- **NEVER use `ruff check --fix` for import-related rules** - would break runtime functionality
 
 ---
 

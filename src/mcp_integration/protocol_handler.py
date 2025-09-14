@@ -193,7 +193,7 @@ class MCPProtocolHandler(LoggerMixin):
                     "params": message.params,
                     "id": message.id,
                 }
-            elif isinstance(message, (MCPResponse, MCPError)):
+            elif isinstance(message, MCPResponse | MCPError):
                 data = message.to_dict()
             elif isinstance(message, MCPNotification):
                 data = {

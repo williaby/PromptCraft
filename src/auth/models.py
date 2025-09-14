@@ -337,7 +337,7 @@ class SecurityEventBase(BaseModel):
         for key, value in v.items():
             # Filter out non-string keys and keys longer than 100 characters
             if isinstance(key, str) and len(key) <= 100:
-                if isinstance(value, (str, int, float, bool, type(None))):
+                if isinstance(value, str | int | float | bool | type(None)):
                     # For string values, truncate at 1000 characters
                     if isinstance(value, str) and len(value) > 1000:
                         sanitized[key] = value[:1000]

@@ -405,7 +405,7 @@ class TestSecurityEdgeCases:
                 # Should extract token safely without crashing
                 # Token validation happens in _validate_jwt_token, not _extract_auth_token
                 # So malicious content may be extracted but not validated
-                assert isinstance(result, (str, type(None)))  # Should not crash
+                assert isinstance(result, str | type(None))  # Should not crash
             except Exception as e:
                 # Should not throw exceptions during extraction
                 raise AssertionError(f"Token extraction should not crash: {e}")

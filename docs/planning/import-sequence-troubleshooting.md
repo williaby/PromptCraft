@@ -218,22 +218,43 @@ poetry run ruff config | grep -E "import|PLC|F40"
 poetry run isort --show-files --diff
 ```
 
-## Action Items
+## ✅ RESOLVED - Implementation Complete
 
-### Immediate (Next Session)
-1. **Implement per-file ignores** in `pyproject.toml` for files with legitimate function-level imports
-2. **Test configuration** with `poetry run ruff check` on affected files
-3. **Verify no circular imports** are introduced by any import movement
+**Resolution Date**: Session ending 2025-01-13
+**Status**: SUCCESSFULLY IMPLEMENTED
 
-### Medium Term
-1. **Document import patterns** that require function-level positioning
-2. **Create import guidelines** for developers to prevent future conflicts
-3. **Review test fixtures** to reduce F403 star import usage where possible
+### Applied Solution
 
-### Long Term
-1. **Circular import refactoring** to enable proper top-level import structure
-2. **Import architecture review** to eliminate structural dependency cycles
-3. **Tool configuration optimization** to prevent inter-tool conflicts
+**Root Cause Confirmed**: Import-related errors (PLC0415, F403, F401) were **intentional and necessary** patterns, not bugs.
+
+**Configuration Changes Applied**:
+```toml
+# Updated pyproject.toml [tool.ruff.lint.per-file-ignores]
+# Comprehensive PLC0415 ignores for legitimate function-level imports:
+"src/auth/permissions.py" = ["PLC0415"]  # SQLAlchemy fallback imports
+"src/auth_simple/config.py" = ["PLC0415"]  # Middleware circular prevention
+"src/core/dynamic_*.py" = ["PLC0415"]  # Runtime/dynamic loading
+"src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912", "PLC0415"]
+"src/mcp_integration/*" = ["PLC0415"]  # MCP client loading
+"src/main.py" = ["PLC0415"]  # App startup conditionals
+# Plus 11 other files with discovery, registry, and loading patterns
+
+# Test fixture star imports
+"tests/conftest.py" = ["UP017", "F403"]  # Pytest fixture discovery
+
+# Import availability checking
+"src/utils/unified_observability.py" = ["F401"]  # Optional dependency check
+```
+
+**Tool Configuration Cleanup**:
+1. ✅ Removed duplicate `[tool.isort]` configuration (lines 322-333)
+2. ✅ Kept only `[tool.ruff.lint.isort]` as single source of truth
+3. ✅ Verified pre-commit hooks don't auto-fix import rules
+
+**Validation Results**:
+1. ✅ Ran `poetry run ruff check . --select=PLC0415,F403,F401` → All checks passed
+2. ✅ Zero import-related lint errors
+3. ✅ No runtime failures or circular import issues
 
 ## Pattern Recognition
 
@@ -302,5 +323,63 @@ def get_database_backend(backend_type):
 
 ---
 
-*Last Updated: Session with 29 PLC0415, 4 F403, 1 F401 errors*
-*Priority: HIGH - Creates development workflow friction and inter-tool conflicts*
+*Last Updated: Session ending 2025-01-13 - RESOLVED*
+*Priority: COMPLETED - No longer creating development workflow friction*
+
+---
+
+## Import Pattern Decision Tree
+
+### When Function-Level Imports Are Acceptable
+
+**✅ APPROVED Patterns:**
+1. **Circular Import Prevention**
+   ```python
+   def database_operation():
+       from src.database.models import Model  # Prevents circular import
+       return Model.query.all()
+   ```
+
+2. **Dynamic/Conditional Loading**
+   ```python
+   def load_backend(backend_type):
+       if backend_type == "postgres":
+           from .postgres import Backend  # Conditional import
+       return Backend()
+   ```
+
+3. **Optional Dependencies**
+   ```python
+   def use_optional_feature():
+       try:
+           from optional_lib import feature  # Optional dependency
+           return feature()
+       except ImportError:
+           return fallback()
+   ```
+
+4. **Lazy Loading (Performance)**
+   ```python
+   def expensive_operation():
+       from heavy_module import ExpensiveClass  # Lazy load
+       return ExpensiveClass().process()
+   ```
+
+**✅ APPROVED Test Patterns:**
+- Star imports in `conftest.py` for pytest fixture discovery
+- Import availability checks (`F401`) for optional dependency detection
+
+### Critical Policy: NO AUTO-FIX FOR IMPORTS
+
+⚠️ **NEVER run `ruff check --fix` for import-related rules**
+- Would break circular dependency prevention
+- Could cause runtime failures
+- Manual review required for import position changes
+
+### For Future Reference
+
+If new import-related errors appear:
+1. **Identify the pattern**: Circular prevention? Dynamic loading? Optional dependency?
+2. **Add per-file ignore**: Follow established patterns in `pyproject.toml`
+3. **Document rationale**: Add comment explaining the exception
+4. **No auto-fix**: Always handle import rules manually

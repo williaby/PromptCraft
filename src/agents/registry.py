@@ -181,7 +181,7 @@ class AgentRegistry:
             AgentRegistrationError: If agent class is invalid
         """
         # Import here to avoid circular imports
-        from .base_agent import BaseAgent  # noqa: PLC0415  # Avoid circular import
+        from .base_agent import BaseAgent  # Avoid circular import
 
         # Check if class inherits from BaseAgent
         if not issubclass(agent_class, BaseAgent):

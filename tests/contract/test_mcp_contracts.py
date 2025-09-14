@@ -392,7 +392,7 @@ class TestHeimdalMCPContracts:
         assert result["status"] == "completed"
         assert "findings" in result
         assert "score" in result
-        assert isinstance(result["score"], (int, float))
+        assert isinstance(result["score"], int | float)
         assert 0 <= result["score"] <= 10
 
     async def test_code_quality_contract(self, all_test_servers):

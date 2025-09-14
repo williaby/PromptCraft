@@ -561,7 +561,7 @@ async def get_function_registry_stats(
                     if registry.get_baseline_token_cost() > 0
                     and isinstance(
                         (token_cost := tier_stats.get("tier_1", {}).get("token_cost", 0)),
-                        (int, float, str),
+                        int | float | str,
                     )
                     else 0
                 ),

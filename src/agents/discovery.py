@@ -457,7 +457,7 @@ class DynamicAgentLoader(LoggerMixin):
 
     def load_markdown_agent(self, agent_def: AgentDefinition, config: dict[str, Any]) -> BaseAgent:
         """Create agent from markdown definition."""
-        from .markdown_agent import MarkdownAgent  # noqa: PLC0415  # Avoid circular import
+        from .markdown_agent import MarkdownAgent  # Avoid circular import
 
         # Load context files
         context_content = self.load_context(agent_def.context)

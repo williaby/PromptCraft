@@ -35,14 +35,14 @@ class TestServiceTokenUser:
     def test_service_token_user_init(self):
         """Test ServiceTokenUser initialization with all parameters."""
         user = ServiceTokenUser(
-            token_id="service-123",  # noqa: S106  # Test token parameter
-            token_name="test_service_token",  # noqa: S106  # Test token parameter
+            token_id="service-123",  # Test token parameter
+            token_name="test_service_token",  # Test token parameter
             metadata={"permissions": ["read", "write"]},
             usage_count=5,
         )
 
-        assert user.token_id == "service-123"  # noqa: S105  # Test token value
-        assert user.token_name == "test_service_token"  # noqa: S105  # Test token value
+        assert user.token_id == "service-123"  # Test token value
+        assert user.token_name == "test_service_token"  # Test token value
         assert user.metadata == {"permissions": ["read", "write"]}
         assert user.usage_count == 5
         assert user.email == "test_service_token@service.local"
@@ -51,8 +51,8 @@ class TestServiceTokenUser:
     def test_service_token_user_has_permission(self):
         """Test ServiceTokenUser has_permission method."""
         user = ServiceTokenUser(
-            token_id="service-456",  # noqa: S106  # Test token parameter
-            token_name="admin_token",  # noqa: S106  # Test token parameter
+            token_id="service-456",  # Test token parameter
+            token_name="admin_token",  # Test token parameter
             metadata={"permissions": ["read", "write", "admin"]},
             usage_count=0,
         )
@@ -66,8 +66,8 @@ class TestServiceTokenUser:
     def test_service_token_user_has_permission_limited(self):
         """Test ServiceTokenUser has_permission with limited permissions."""
         user = ServiceTokenUser(
-            token_id="service-789",  # noqa: S106  # Test token parameter
-            token_name="read_only_token",  # noqa: S106  # Test token parameter
+            token_id="service-789",  # Test token parameter
+            token_name="read_only_token",  # Test token parameter
             metadata={"permissions": ["read"]},
             usage_count=0,
         )
@@ -79,11 +79,11 @@ class TestServiceTokenUser:
     def test_service_token_user_no_permissions(self):
         """Test ServiceTokenUser with no permissions."""
         user = ServiceTokenUser(
-            token_id="service-000",  # noqa: S106  # Test token parameter
-            token_name="no_perms_token",  # noqa: S106  # Test token parameter
+            token_id="service-000",  # Test token parameter
+            token_name="no_perms_token",  # Test token parameter
             metadata={},
             usage_count=0,
-        )  # noqa: S106  # Test token parameters
+        )  # Test token parameters
 
         assert user.has_permission("read") is False
         assert user.has_permission("write") is False
@@ -421,7 +421,7 @@ class TestAuthenticationMiddleware:
 
         with patch("src.auth.middleware.logger.debug") as mock_debug:
             token = middleware._extract_auth_token(request)
-            assert token == "cf-jwt-token-123"  # noqa: S105  # Test token value
+            assert token == "cf-jwt-token-123"  # Test token value
             mock_debug.assert_called_once()
 
     @pytest.mark.asyncio
@@ -433,7 +433,7 @@ class TestAuthenticationMiddleware:
         request.headers = {"Authorization": "Bearer auth-bearer-token"}
 
         token = middleware._extract_auth_token(request)
-        assert token == "auth-bearer-token"  # noqa: S105  # Test token value
+        assert token == "auth-bearer-token"  # Test token value
 
     @pytest.mark.asyncio
     async def test_extract_auth_token_service_token_bearer(self):
@@ -445,7 +445,7 @@ class TestAuthenticationMiddleware:
 
         with patch("src.auth.middleware.logger.debug") as mock_debug:
             token = middleware._extract_auth_token(request)
-            assert token == "sk_service_token_123"  # noqa: S105  # Test token value
+            assert token == "sk_service_token_123"  # Test token value
             mock_debug.assert_called_once()
 
     @pytest.mark.asyncio
@@ -457,7 +457,7 @@ class TestAuthenticationMiddleware:
         request.headers = {"X-JWT-Token": "custom-jwt-token"}
 
         token = middleware._extract_auth_token(request)
-        assert token == "custom-jwt-token"  # noqa: S105  # Test token value
+        assert token == "custom-jwt-token"  # Test token value
 
     @pytest.mark.asyncio
     async def test_extract_auth_token_service_token_header(self):
@@ -468,7 +468,7 @@ class TestAuthenticationMiddleware:
         request.headers = {"X-Service-Token": "direct-service-token"}
 
         token = middleware._extract_auth_token(request)
-        assert token == "direct-service-token"  # noqa: S105  # Test token value
+        assert token == "direct-service-token"  # Test token value
 
     @pytest.mark.asyncio
     async def test_extract_auth_token_none(self):
@@ -498,29 +498,29 @@ class TestAuthenticationMiddleware:
 
         # CF-Access-Jwt-Assertion should have highest priority
         token = middleware._extract_auth_token(request)
-        assert token == "cf-token"  # noqa: S105  # Test token value
+        assert token == "cf-token"  # Test token value
 
     def test_extract_jwt_token_legacy_method(self):
         """Test _extract_jwt_token legacy method."""
         middleware = AuthenticationMiddleware(app=Mock())
 
         request = Mock()
-        request.headers = {"CF-Access-Jwt-Assertion": "legacy-jwt-token"}  # noqa: S105  # Test token value
+        request.headers = {"CF-Access-Jwt-Assertion": "legacy-jwt-token"}  # Test token value
 
         with patch.object(
             middleware,
             "_extract_auth_token",
             return_value="legacy-jwt-token",
-        ) as mock_extract:  # noqa: S105  # Test token value
+        ) as mock_extract:  # Test token value
             token = middleware._extract_jwt_token(request)
-            assert token == "legacy-jwt-token"  # noqa: S105  # Test token value
+            assert token == "legacy-jwt-token"  # Test token value
             mock_extract.assert_called_once_with(request)
 
     @pytest.mark.asyncio
     async def test_validate_jwt_token_success(self, middleware):
         """Test _validate_jwt_token success scenario."""
         request = Mock()
-        token = "valid-jwt-token"  # noqa: S105  # Test token value
+        token = "valid-jwt-token"  # Test token value
 
         # Mock authenticated user
         mock_user = Mock()
@@ -538,7 +538,7 @@ class TestAuthenticationMiddleware:
     async def test_validate_jwt_token_with_whitelist(self, middleware):
         """Test _validate_jwt_token with email whitelist."""
         request = Mock()
-        token = "valid-jwt-token"  # noqa: S105  # Test token value
+        token = "valid-jwt-token"  # Test token value
 
         # Enable email whitelist
         middleware.config.email_whitelist_enabled = True
@@ -561,7 +561,7 @@ class TestAuthenticationMiddleware:
     async def test_validate_jwt_token_validation_error(self, middleware):
         """Test _validate_jwt_token with validation error."""
         request = Mock()
-        token = "invalid-jwt-token"  # noqa: S105  # Test token value
+        token = "invalid-jwt-token"  # Test token value
 
         # Mock JWT validation error
         jwt_error = JWTValidationError("Invalid token format")
@@ -578,14 +578,14 @@ class TestAuthenticationMiddleware:
     async def test_validate_service_token_success(self, middleware):
         """Test _validate_service_token success scenario."""
         request = Mock()
-        token = "sk_valid_service_token"  # noqa: S105  # Test token value
+        token = "sk_valid_service_token"  # Test token value
 
         # Mock database session and token record
         mock_session = AsyncMock()
         mock_result = Mock()
         mock_token_record = Mock()
         mock_token_record.id = 123
-        mock_token_record.token_name = "test_service_token"  # noqa: S105  # Test token value
+        mock_token_record.token_name = "test_service_token"  # Test token value
         mock_token_record.token_metadata = {"permissions": ["read", "write"]}
         mock_token_record.usage_count = 5
         mock_token_record.is_active = True
@@ -601,7 +601,7 @@ class TestAuthenticationMiddleware:
                 user = await middleware._validate_service_token(request, token)
 
                 assert isinstance(user, ServiceTokenUser)
-                assert user.token_name == "test_service_token"  # noqa: S105  # Test token value
+                assert user.token_name == "test_service_token"  # Test token value
                 assert user.metadata == {"permissions": ["read", "write"]}
                 assert user.usage_count == 6  # Incremented
                 mock_log.assert_called_once()
@@ -610,7 +610,7 @@ class TestAuthenticationMiddleware:
     async def test_validate_service_token_not_found(self, middleware):
         """Test _validate_service_token when token not found."""
         request = Mock()
-        token = "sk_nonexistent_token"  # noqa: S105  # Test token value
+        token = "sk_nonexistent_token"  # Test token value
 
         # Mock database session with no token found
         mock_session = AsyncMock()
@@ -633,13 +633,13 @@ class TestAuthenticationMiddleware:
     async def test_validate_service_token_inactive(self, middleware):
         """Test _validate_service_token with inactive token."""
         request = Mock()
-        token = "sk_inactive_token"  # noqa: S105  # Test token value
+        token = "sk_inactive_token"  # Test token value
 
         # Mock inactive token record
         mock_session = AsyncMock()
         mock_result = Mock()
         mock_token_record = Mock()
-        mock_token_record.token_name = "inactive_token"  # noqa: S105  # Test token value
+        mock_token_record.token_name = "inactive_token"  # Test token value
         mock_token_record.is_active = False
         mock_token_record.is_expired = False
 
@@ -660,13 +660,13 @@ class TestAuthenticationMiddleware:
     async def test_validate_service_token_expired(self, middleware):
         """Test _validate_service_token with expired token."""
         request = Mock()
-        token = "sk_expired_token"  # noqa: S105  # Test token value
+        token = "sk_expired_token"  # Test token value
 
         # Mock expired token record
         mock_session = AsyncMock()
         mock_result = Mock()
         mock_token_record = Mock()
-        mock_token_record.token_name = "expired_token"  # noqa: S105  # Test token value
+        mock_token_record.token_name = "expired_token"  # Test token value
         mock_token_record.is_active = True
         mock_token_record.is_expired = True
 
@@ -687,7 +687,7 @@ class TestAuthenticationMiddleware:
     async def test_validate_service_token_database_error(self, middleware):
         """Test _validate_service_token with database error."""
         request = Mock()
-        token = "sk_db_error_token"  # noqa: S105  # Test token value
+        token = "sk_db_error_token"  # Test token value
 
         # Mock database error
         mock_session = AsyncMock()
@@ -720,14 +720,14 @@ class TestAuthenticationMiddleware:
     async def test_authenticate_request_service_token(self, middleware):
         """Test _authenticate_request with service token."""
         request = Mock()
-        token = "sk_service_token_123"  # noqa: S105  # Test token value
+        token = "sk_service_token_123"  # Test token value
 
         mock_service_user = ServiceTokenUser(
-            token_id="123",  # noqa: S106  # Test token parameter
-            token_name="test_service",  # noqa: S106  # Test token parameter
+            token_id="123",  # Test token parameter
+            token_name="test_service",  # Test token parameter
             metadata={},
             usage_count=0,
-        )  # noqa: S106  # Test token parameters
+        )  # Test token parameters
 
         with (
             patch.object(middleware, "_extract_auth_token", return_value=token),
@@ -741,7 +741,7 @@ class TestAuthenticationMiddleware:
     async def test_authenticate_request_jwt_token(self, middleware):
         """Test _authenticate_request with JWT token."""
         request = Mock()
-        token = "jwt_token_456"  # noqa: S105  # Test token value
+        token = "jwt_token_456"  # Test token value
 
         mock_jwt_user = Mock()
         mock_jwt_user.email = "test@example.com"
@@ -796,7 +796,7 @@ class TestAuthenticationMiddleware:
 
             await middleware._log_authentication_event(
                 request,
-                service_token_name="test_service_token",  # noqa: S106  # Test token parameter
+                service_token_name="test_service_token",  # Test token parameter
                 event_type="service_token_auth",
                 success=True,
             )
@@ -805,7 +805,7 @@ class TestAuthenticationMiddleware:
             call_args = mock_session.add.call_args[0][0]
             assert call_args.user_email == "test_service_token"
             assert (
-                call_args.error_details["service_token_name"] == "test_service_token"  # noqa: S105  # Test token value
+                call_args.error_details["service_token_name"] == "test_service_token"  # Test token value
             )
 
     @pytest.mark.asyncio
@@ -1097,8 +1097,8 @@ class TestAuthenticationMiddleware:
         request.headers = {"user-agent": "ServiceClient"}
 
         mock_service_user = ServiceTokenUser(
-            token_id="service123",  # noqa: S106  # Test token parameter
-            token_name="test_service",  # noqa: S106  # Test token parameter
+            token_id="service123",  # Test token parameter
+            token_name="test_service",  # Test token parameter
             metadata={"permissions": ["read"]},
             usage_count=5,
         )

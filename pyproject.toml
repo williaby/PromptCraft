@@ -253,8 +253,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201"]  # Allow test patterns, try-except-pass
-"tests/auth/*" = ["S101", "S105", "S110", "ANN", "ARG", "PLR2004", "COM812", "UP017", "PLC0415", "RET504", "SIM117", "PT012"]  # Allow test patterns
+"tests/**/*.py" = ["S101", "S105", "S106", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201"]  # Allow test patterns including hardcoded test tokens
+"tests/auth/*" = ["S101", "S110", "ANN", "ARG", "PLR2004", "COM812", "UP017", "PLC0415", "RET504", "SIM117", "PT012"]  # Allow test patterns (S105/S106 covered by wildcard)
 # Only allow DTZ005 for specific test files that intentionally need naive datetimes
 "tests/unit/utils/test_datetime_compat.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ005"]  # Testing naive datetimes
 "tests/unit/ui/components/shared/conftest.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ005"]  # Mock datetime fixture
@@ -267,14 +267,35 @@ ignore = [
 "src/utils/time_utils.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "src/utils/observability.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "test_consensus_model_connectivity.py" = ["PLC0415", "T201"]  # Script allows local imports and print
-"tests/conftest.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
+"tests/conftest.py" = ["UP017", "F403"]  # Use timezone.utc compatibility and fixture star imports
 "tests/unit/scripts/test_coverage_automation.py" = ["E402"]  # Dynamic imports after sys.path modification
-"tests/unit/api/test_auth_endpoints_integration.py" = ["S105"]  # Allow test token names
+# Removed redundant S105 entry - now covered by tests/**/*.py wildcard pattern
+"src/auth/constants.py" = ["S105", "S106"]  # Legitimate token prefix and event type constants
+"src/security/audit_logging.py" = ["S105"]  # Event type constants, not passwords
 "src/mcp_integration/*" = ["G004"]  # Allow f-strings in logging for structured logging
 "src/auth/*" = ["G004", "PLR2004", "SIM110", "RET504"]  # Allow f-strings, magic numbers, and specific patterns
-"src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912"]  # Allow complex UI interface methods
+"src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912", "PLC0415"]  # Allow complex UI interface methods and lazy imports
 "src/core/*" = ["N805"]  # Allow cls parameter name in Pydantic validators
 "src/utils/resilience.py" = ["UP046"]  # Generic class syntax for Python 3.11 compatibility
+# Import rule exceptions for legitimate function-level imports
+"src/auth/permissions.py" = ["PLC0415"]  # SQLAlchemy fallback imports to prevent circular deps
+"src/auth_simple/config.py" = ["PLC0415"]  # Middleware circular import prevention
+"src/auth_simple/middleware.py" = ["PLC0415"]  # Config circular import prevention
+"src/core/dynamic_loading_integration.py" = ["PLC0415"]  # Runtime module loading
+"src/core/dynamic_function_loader.py" = ["PLC0415"]  # Dynamic import patterns
+"src/core/task_detection.py" = ["PLC0415"]  # Conditional task imports
+"src/ui/journeys/journey2_intelligent_search.py" = ["PLC0415"]  # Lazy journey loading
+"src/mcp_integration/zen_stdio_client.py" = ["PLC0415"]  # Dynamic client loading
+"src/mcp_integration/config_manager.py" = ["PLC0415"]  # Runtime config imports
+"src/mcp_integration/zen_client/subprocess_manager.py" = ["PLC0415"]  # Subprocess imports
+"src/main.py" = ["PLC0415"]  # App startup conditional imports
+"src/agents/discovery.py" = ["PLC0415"]  # Dynamic agent loading
+"src/agents/registry.py" = ["PLC0415"]  # Runtime registration imports
+"src/commands/discovery.py" = ["PLC0415"]  # Command discovery patterns
+"src/standards/discovery.py" = ["PLC0415"]  # Standards loading imports
+"src/utils/circuit_breaker.py" = ["PLC0415"]  # Fallback import patterns
+"src/security/rate_limiting.py" = ["PLC0415"]  # Optional backend imports
+"src/utils/unified_observability.py" = ["F401"]  # Import availability checking
 "src.utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility
 "*.yaml" = ["ALL"]
 "*.yml" = ["ALL"]
@@ -297,19 +318,7 @@ lines-after-imports = 2
 inline-quotes = "double"
 multiline-quotes = "double"
 
-# Dedicated isort configuration for import organization
-[tool.isort]
-profile = "black"
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-known_first_party = ["src"]
-known-third-party = ["pytest", "httpx", "fastapi", "gradio", "pydantic", "anthropic", "openai", "qdrant_client"]
-sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
-skip_glob = ["**/migrations/*", "**/venv/*", "**/.*"]
+# Removed duplicate isort configuration - using Ruff's integrated isort only
 
 [tool.mypy]
 python_version = "3.11"
