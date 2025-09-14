@@ -40,7 +40,14 @@ class TestAuthSimpleIntegration:
         return AuthConfig(
             auth_mode="cloudflare_simple",
             enabled=True,
-            email_whitelist=["user@example.com", "admin@example.com", "@company.com", "concurrent@example.com", "user1@example.com", "user2@example.com"],
+            email_whitelist=[
+                "user@example.com",
+                "admin@example.com",
+                "@company.com",
+                "concurrent@example.com",
+                "user1@example.com",
+                "user2@example.com",
+            ],
             admin_emails=["admin@example.com"],
             full_users=["user@example.com", "concurrent@example.com", "user1@example.com", "user2@example.com"],
             limited_users=["@company.com"],
@@ -61,7 +68,7 @@ class TestAuthSimpleIntegration:
             limited_users=auth_config.limited_users,
         )
         session_manager = SimpleSessionManager(session_timeout=auth_config.session_timeout)
-        
+
         return {
             "whitelist_validator": validator,
             "session_manager": session_manager,
@@ -73,7 +80,7 @@ class TestAuthSimpleIntegration:
     def fastapi_app(self, auth_components: dict) -> FastAPI:
         """Create FastAPI application with authentication middleware."""
         app = FastAPI()
-        
+
         # Add middleware - let FastAPI instantiate it
         app.add_middleware(
             CloudflareAccessMiddleware,
@@ -117,11 +124,11 @@ class TestAuthSimpleIntegration:
         """Test that public endpoints don't require authentication."""
         # Test all public endpoints
         public_paths = ["/health", "/public", "/docs"]
-        
+
         for path in public_paths:
             response = test_client.get(path)
             assert response.status_code == 200
-            
+
             # Handle different content types
             if path == "/docs":
                 # /docs returns HTML (Swagger UI)
@@ -160,7 +167,7 @@ class TestAuthSimpleIntegration:
 
         response = test_client.get("/protected", headers=headers)
         assert response.status_code == 200
-        
+
         response_data = response.json()
         assert response_data["user"]["email"] == "user@example.com"
         assert response_data["user"]["user_tier"] == "full"
@@ -183,7 +190,7 @@ class TestAuthSimpleIntegration:
 
         response = test_client.get("/admin", headers=headers)
         assert response.status_code == 200
-        
+
         response_data = response.json()
         assert response_data["user"]["email"] == "admin@example.com"
         assert response_data["user"]["is_admin"] is True
@@ -242,7 +249,7 @@ class TestAuthSimpleIntegration:
 
         response = test_client.get("/protected", headers=headers)
         assert response.status_code == 200
-        
+
         response_data = response.json()
         assert response_data["user"]["email"] == "newuser@company.com"
         assert response_data["user"]["user_tier"] == "limited"  # Default for domain users
@@ -265,17 +272,17 @@ class TestAuthSimpleIntegration:
         # First request - should create session
         response1 = test_client.get("/user-info", headers=headers)
         assert response1.status_code == 200
-        
+
         # Should have session cookie set
         assert "session_id" in response1.cookies
         session_id = response1.cookies["session_id"]
         assert session_id is not None
 
-        # Second request with session cookie - should reuse session  
+        # Second request with session cookie - should reuse session
         cookies = {"session_id": session_id}
         response2 = test_client.get("/user-info", headers=headers, cookies=cookies)
         assert response2.status_code == 200
-        
+
         # Should have same user info
         user_info1 = response1.json()["user"]
         user_info2 = response2.json()["user"]
@@ -286,10 +293,10 @@ class TestAuthSimpleIntegration:
         """Test that static files bypass authentication."""
         # FastAPI TestClient doesn't serve static files by default
         # but we can test that our middleware would bypass them
-        
+
         # This tests the middleware logic, not actual file serving
         static_paths = ["/static/css/style.css", "/static/js/app.js", "/static/images/logo.png"]
-        
+
         for path in static_paths:
             # These would normally return 404 since no handler exists
             # but the middleware should process them as public
@@ -317,7 +324,7 @@ class TestAuthSimpleIntegration:
         """Test tier-based access control functionality."""
         test_users = [
             ("admin@example.com", "admin", True, True),
-            ("user@example.com", "full", False, True), 
+            ("user@example.com", "full", False, True),
             ("limited@company.com", "limited", False, False),
         ]
 
@@ -333,7 +340,7 @@ class TestAuthSimpleIntegration:
 
             response = test_client.get("/user-info", headers=headers)
             assert response.status_code == 200
-            
+
             user_info = response.json()["user"]
             assert user_info["email"] == email
             assert user_info["user_tier"] == expected_tier
@@ -362,7 +369,7 @@ class TestAuthSimpleIntegration:
 
         # Make multiple concurrent requests
         responses = []
-        for i in range(3):
+        for _i in range(3):
             response = test_client.get("/user-info", headers=headers)
             responses.append(response)
 
@@ -404,16 +411,17 @@ class TestAuthSimpleIntegration:
             assert user_info["email"] == expected_email
 
 
-@pytest.mark.integration  
+@pytest.mark.integration
 class TestAuthSimpleSetupIntegration:
     """Integration tests for auth setup utilities."""
 
     def test_setup_auth_middleware_integration(self):
         """Test setup_auth_middleware utility function."""
         app = FastAPI()
-        
+
         # Mock configuration manager
         from src.auth_simple.config import AuthConfig, ConfigManager
+
         config = AuthConfig(
             enabled=True,
             email_whitelist=["test@example.com"],
@@ -421,36 +429,38 @@ class TestAuthSimpleSetupIntegration:
             public_paths={"/health"},
         )
         config_manager = ConfigManager(config)
-        
+
         # Setup middleware
         middleware_instance = setup_auth_middleware(app, config_manager)
-        
+
         assert middleware_instance is not None
         assert isinstance(middleware_instance, CloudflareAccessMiddleware)
 
     def test_setup_auth_middleware_disabled(self):
         """Test setup with disabled authentication."""
         app = FastAPI()
-        
+
         from src.auth_simple.config import AuthConfig, ConfigManager
+
         config = AuthConfig(enabled=False)
         config_manager = ConfigManager(config)
-        
+
         middleware_instance = setup_auth_middleware(app, config_manager)
-        
+
         # Should return None when auth is disabled
         assert middleware_instance is None
 
     def test_setup_auth_middleware_disabled_mode(self):
         """Test setup with disabled auth mode."""
         app = FastAPI()
-        
+
         from src.auth_simple.config import AuthConfig, ConfigManager
+
         config = AuthConfig(auth_mode="disabled")
         config_manager = ConfigManager(config)
-        
+
         middleware_instance = setup_auth_middleware(app, config_manager)
-        
+
         # Should return None when auth mode is disabled
         assert middleware_instance is None
 
@@ -463,11 +473,11 @@ class TestAuthSimpleErrorScenarios:
     def minimal_app(self) -> FastAPI:
         """Create minimal FastAPI app for error testing."""
         app = FastAPI()
-        
+
         # Minimal middleware setup
         validator = EmailWhitelistValidator(["test@example.com"])
         session_manager = SimpleSessionManager()
-        
+
         app.add_middleware(
             CloudflareAccessMiddleware,
             whitelist_validator=validator,
@@ -483,7 +493,7 @@ class TestAuthSimpleErrorScenarios:
     def test_malformed_cloudflare_headers(self, minimal_app: FastAPI):
         """Test handling of malformed Cloudflare headers."""
         client = TestClient(minimal_app)
-        
+
         # Missing required headers
         response = client.get("/test")
         assert response.status_code == 401
@@ -499,11 +509,11 @@ class TestAuthSimpleErrorScenarios:
     def test_session_cookie_security_attributes(self, minimal_app: FastAPI):
         """Test that session cookies have proper security attributes."""
         client = TestClient(minimal_app)
-        
+
         # This would require actual cookie inspection which TestClient doesn't fully support
         # But we've tested the _set_session_cookie method in unit tests
         # This is more for documentation of expected behavior
-        
+
         with patch("src.auth_simple.cloudflare_auth.CloudflareAuthHandler.extract_user_from_request") as mock_extract:
             mock_user = Mock()
             mock_user.email = "test@example.com"
@@ -511,25 +521,25 @@ class TestAuthSimpleErrorScenarios:
 
             headers = {"cf-access-authenticated-user-email": "test@example.com", "cf-ray": "test"}
             response = client.get("/test", headers=headers)
-            
+
             # Should succeed and set secure cookie
             assert response.status_code == 200
 
     def test_middleware_order_independence(self):
         """Test that auth middleware works regardless of middleware order."""
         app = FastAPI()
-        
+
         # Add some other middleware first
         @app.middleware("http")
         async def custom_middleware(request, call_next):
             response = await call_next(request)
             response.headers["X-Custom"] = "test"
             return response
-        
+
         # Then add auth middleware
         validator = EmailWhitelistValidator(["test@example.com"])
         session_manager = SimpleSessionManager()
-        
+
         app.add_middleware(
             CloudflareAccessMiddleware,
             whitelist_validator=validator,
@@ -541,7 +551,7 @@ class TestAuthSimpleErrorScenarios:
             return {"message": "test"}
 
         client = TestClient(app)
-        
+
         with patch("src.auth_simple.cloudflare_auth.CloudflareAuthHandler.extract_user_from_request") as mock_extract:
             mock_user = Mock()
             mock_user.email = "test@example.com"
@@ -549,6 +559,6 @@ class TestAuthSimpleErrorScenarios:
 
             headers = {"cf-access-authenticated-user-email": "test@example.com", "cf-ray": "test"}
             response = client.get("/test", headers=headers)
-            
+
             assert response.status_code == 200
             assert "X-Custom" in response.headers

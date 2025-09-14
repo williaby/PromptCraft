@@ -187,13 +187,13 @@ class SecurityEventType(str, Enum):
     SESSION_EXPIRED = "session_expired"
 
     # Service token events
-    SERVICE_TOKEN_AUTH = "service_token_auth"  # noqa: S105
-    SERVICE_TOKEN_CREATED = "service_token_created"  # noqa: S105
-    SERVICE_TOKEN_REVOKED = "service_token_revoked"  # noqa: S105
-    SERVICE_TOKEN_EXPIRED = "service_token_expired"  # noqa: S105
+    SERVICE_TOKEN_AUTH = "service_token_auth"
+    SERVICE_TOKEN_CREATED = "service_token_created"
+    SERVICE_TOKEN_REVOKED = "service_token_revoked"
+    SERVICE_TOKEN_EXPIRED = "service_token_expired"
 
     # Account security events
-    PASSWORD_CHANGED = "password_changed"  # noqa: S105
+    PASSWORD_CHANGED = "password_changed"
     ACCOUNT_LOCKOUT = "account_lockout"
     ACCOUNT_UNLOCK = "account_unlock"
 
@@ -256,37 +256,37 @@ class SecurityEventBase(BaseModel):
         ipv4_pattern = r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
         if re.match(ipv4_pattern, v):
             return v
-        
+
         # Validate IPv6 addresses (more comprehensive patterns)
         # This pattern covers most common IPv6 formats including compressed notation
         ipv6_pattern = r"^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))$"
-        
+
         if re.match(ipv6_pattern, v):
             return v
-        
+
         # If no IPv4/IPv6 patterns match, do more validation
         parts = v.split(".")
-        
+
         # Be permissive for security event logging - only reject a few specific cases
         # that are clearly problematic while allowing edge cases through
-        
+
         # Handle specific enhanced test invalid IPs
         enhanced_test_invalid_ips = [
-            "192.168.1",        # Incomplete IPv4 
-            "not-an-ip",        # Random string
-            "192.168.1.1.1",    # Too many octets
-            "",                 # Empty string  
-            "300.168.1.1",      # Octet too large
+            "192.168.1",  # Incomplete IPv4
+            "not-an-ip",  # Random string
+            "192.168.1.1.1",  # Too many octets
+            "",  # Empty string
+            "300.168.1.1",  # Octet too large
         ]
-        
+
         if v in enhanced_test_invalid_ips:
             raise ValueError(f"Invalid IP address: {v}")
-        
+
         # For incomplete numeric IPv4 patterns not in the specific list above
         if 2 <= len(parts) <= 3 and all(part.isdigit() for part in parts):
-            # Incomplete numeric IPv4 like "10.0.1" - reject 
+            # Incomplete numeric IPv4 like "10.0.1" - reject
             raise ValueError(f"Invalid IP address: {v}")
-        
+
         # For clearly malformed IPv4-like patterns (4 parts with invalid octets)
         if len(parts) == 4 and all(part.isdigit() for part in parts):
             # Check if any octet is > 255 (clearly invalid IPv4)
@@ -294,7 +294,7 @@ class SecurityEventBase(BaseModel):
                 # This looks like a malformed IPv4, but allow it for security event logging contexts
                 # Different validation behavior based on context is handled by test expectations
                 pass
-        
+
         # Allow all other formats through for operational security logging
         return v
 
@@ -314,15 +314,15 @@ class SecurityEventBase(BaseModel):
         sanitized = re.sub(r"<([^>/]+)>", r"\1", sanitized)
         # Remove any remaining angle brackets or malformed tags
         sanitized = re.sub(r"[<>]", "", sanitized)
-        # Remove quotes 
+        # Remove quotes
         sanitized = re.sub(r'["\']', "", sanitized)
-        
+
         # Handle length based on how long the string is
         if len(sanitized) >= 1000:  # Extremely long - raise error
             raise ValueError(f"user_agent too long: {len(sanitized)} characters (max 1000)")
         if len(sanitized) > 500:  # Moderately long - truncate
             sanitized = sanitized[:500]
-            
+
         return sanitized
 
     @field_validator("details")
@@ -337,7 +337,7 @@ class SecurityEventBase(BaseModel):
         for key, value in v.items():
             # Filter out non-string keys and keys longer than 100 characters
             if isinstance(key, str) and len(key) <= 100:
-                if isinstance(value, (str, int, float, bool, type(None))):
+                if isinstance(value, str | int | float | bool | type(None)):
                     # For string values, truncate at 1000 characters
                     if isinstance(value, str) and len(value) > 1000:
                         sanitized[key] = value[:1000]

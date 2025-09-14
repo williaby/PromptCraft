@@ -237,7 +237,7 @@ class TestStartupValidation:
 
         settings = ApplicationSettings(
             environment="staging",
-            secret_key="test-secret-key",  # noqa: S106
+            secret_key="test-secret-key",
         )
 
         # Should not raise an error
@@ -301,7 +301,7 @@ class TestLoggingIntegration:
         with caplog.at_level(logging.INFO):
             settings = ApplicationSettings(
                 api_key="secret-api-key-12345",
-                secret_key="super-secret-key",  # noqa: S106
+                secret_key="super-secret-key",
             )
             validate_configuration_on_startup(settings)
 
@@ -363,12 +363,12 @@ class TestEdgeCases:
         with caplog.at_level(logging.WARNING):
             ApplicationSettings(
                 database_url="postgresql://user:pass@host/db",
-                database_password="separate-password",  # noqa: S106
+                database_password="separate-password",
             )
             validate_configuration_on_startup(
                 ApplicationSettings(
                     database_url="postgresql://user:pass@host/db",
-                    database_password="separate-password",  # noqa: S106
+                    database_password="separate-password",
                 ),
             )
 

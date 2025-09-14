@@ -14,17 +14,16 @@ import pytest
 from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
+from tests.fixtures.auth_fixtures import *
+from tests.fixtures.database import *
+from tests.fixtures.external_service_mocks import *
+from tests.fixtures.security_service_mocks import *
+
 
 # Import auth fixtures
-from tests.fixtures.auth_fixtures import *  # noqa: F403
-
 # Import database fixtures
-from tests.fixtures.database import *  # noqa: F403
-
+# Import external service mocks
 # Import security service mocks
-from tests.fixtures.security_service_mocks import *  # noqa: F403
-
-
 def pytest_runtest_setup(item):
     """Set coverage context based on test path to match codecov flags."""
     # Use environment variable approach for coverage context
@@ -201,7 +200,7 @@ def security_test_inputs():
         "\\x00\\x01\\x02\\x03",  # Binary data
         "\\r\\n\\r\\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
+        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script
         "🚀🔥💻",  # Emojis
         "\\ufeff",  # BOM character
         # Empty and whitespace edge cases

@@ -27,7 +27,7 @@ nav:
       - File Review: planning/file-review.md
       - Development Guidelines: planning/development.md
       - Architecture: planning/ADR.md
-      - Phase 1 Issues: planning/phase-1-issues.md
+      - Phase 1 Issues: planning/backups/superseded-phase1-files/phase-1-issues.md
       - Milestones: planning/milestones.md
       - MVP Definition: planning/mvp-definition.md
   - Documentation:

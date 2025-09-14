@@ -260,7 +260,7 @@ async def optimize_query(
 @router.get("/status", response_model=SystemStatusResponse)
 @rate_limit(RateLimits.HEALTH_CHECK)
 async def get_system_status(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> SystemStatusResponse:
     """
@@ -292,7 +292,7 @@ async def get_system_status(
 @router.get("/performance-report", response_model=PerformanceReportResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_performance_report(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> PerformanceReportResponse:
     """
@@ -374,7 +374,7 @@ async def execute_user_command(
 async def run_comprehensive_demo(
     request: Request,  # Required by FastAPI
     demo_request: DemoRunRequest,
-    integration: DynamicLoadingIntegration = Depends(get_integration_dependency),  # noqa: ARG001  # FastAPI dependency
+    integration: DynamicLoadingIntegration = Depends(get_integration_dependency),  # FastAPI dependency
 ) -> JSONResponse:
     """
     Run comprehensive demonstration scenarios.
@@ -451,7 +451,7 @@ async def run_comprehensive_demo(
 @router.get("/metrics/live")
 @rate_limit(RateLimits.HEALTH_CHECK)
 async def get_live_metrics(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> JSONResponse:
     """
@@ -502,7 +502,7 @@ async def get_live_metrics(
 @router.get("/function-registry/stats")
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_function_registry_stats(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     integration: DynamicLoadingIntegration = Depends(get_integration_dependency),
 ) -> JSONResponse:
     """
@@ -561,7 +561,7 @@ async def get_function_registry_stats(
                     if registry.get_baseline_token_cost() > 0
                     and isinstance(
                         (token_cost := tier_stats.get("tier_1", {}).get("token_cost", 0)),
-                        (int, float, str),
+                        int | float | str,
                     )
                     else 0
                 ),
@@ -586,7 +586,7 @@ async def get_function_registry_stats(
 # Health check endpoint specifically for dynamic loading
 @router.get("/health")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def dynamic_loading_health_check(request: Request) -> JSONResponse:  # noqa: ARG001  # Required by FastAPI
+async def dynamic_loading_health_check(request: Request) -> JSONResponse:  # Required by FastAPI
     """
     Health check endpoint specifically for the dynamic loading system.
 

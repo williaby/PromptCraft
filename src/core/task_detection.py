@@ -96,7 +96,7 @@ class KeywordAnalyzer:
                 for keyword in patterns["direct"]:
                     if isinstance(keyword, str) and keyword in query_lower:
                         confidence_val = patterns.get("confidence", 0.5)
-                        if isinstance(confidence_val, (int, float)):
+                        if isinstance(confidence_val, int | float):
                             category_scores[category] += float(confidence_val) * 1.0
 
             # Contextual keyword matches (medium weight)
@@ -104,7 +104,7 @@ class KeywordAnalyzer:
                 for keyword in patterns["contextual"]:
                     if isinstance(keyword, str) and keyword in query_lower:
                         confidence_val = patterns.get("confidence", 0.5)
-                        if isinstance(confidence_val, (int, float)):
+                        if isinstance(confidence_val, int | float):
                             category_scores[category] += float(confidence_val) * 0.7
 
             # Action keyword matches (lower weight)
@@ -112,7 +112,7 @@ class KeywordAnalyzer:
                 for keyword in patterns["action"]:
                     if isinstance(keyword, str) and keyword in query_lower:
                         confidence_val = patterns.get("confidence", 0.5)
-                        if isinstance(confidence_val, (int, float)):
+                        if isinstance(confidence_val, int | float):
                             category_scores[category] += float(confidence_val) * 0.5
 
         # Normalize scores to prevent inflation
@@ -438,7 +438,7 @@ class FunctionLoader:
 
     def __init__(self) -> None:
         # Import here to avoid circular imports
-        from .task_detection_config import default_config  # noqa: PLC0415  # Avoid circular import
+        from .task_detection_config import default_config  # Avoid circular import
 
         config = default_config
         self.tier_definitions = {
@@ -473,7 +473,7 @@ class FunctionLoader:
         # Tier 2: Conditional loading
         tier2_cats = self.tier_definitions.get("tier2", {}).get("categories", [])
         tier2_threshold = self.tier_definitions.get("tier2", {}).get("threshold", 0.3)
-        if isinstance(tier2_cats, list) and isinstance(tier2_threshold, (int, float)):
+        if isinstance(tier2_cats, list) and isinstance(tier2_threshold, int | float):
             for category in tier2_cats:
                 score = scores.get(category, 0.0)
                 threshold = float(tier2_threshold)
@@ -489,7 +489,7 @@ class FunctionLoader:
         # Tier 3: High-confidence only
         tier3_cats = self.tier_definitions.get("tier3", {}).get("categories", [])
         tier3_threshold = self.tier_definitions.get("tier3", {}).get("threshold", 0.6)
-        if isinstance(tier3_cats, list) and isinstance(tier3_threshold, (int, float)):
+        if isinstance(tier3_cats, list) and isinstance(tier3_threshold, int | float):
             for category in tier3_cats:
                 score = scores.get(category, 0.0)
                 threshold = float(tier3_threshold)
@@ -650,7 +650,7 @@ class TaskDetectionSystem:
         self.cache_timestamps: dict[str, datetime] = {}
         self.max_cache_age = timedelta(hours=1)
 
-    @lru_cache(maxsize=1000)  # noqa: B019
+    @lru_cache(maxsize=1000)
     def _cached_keyword_analysis(self, query: str) -> dict[str, float]:
         """Cached keyword analysis for performance"""
         return self.keyword_analyzer.analyze(query)

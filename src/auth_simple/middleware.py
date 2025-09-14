@@ -111,7 +111,7 @@ class SimpleSessionManager:
 
     def _is_session_expired(self, session: dict) -> bool:
         """Check if session has expired."""
-        from datetime import timedelta  # noqa: PLC0415
+        from datetime import timedelta
 
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
         return bool(datetime.now(UTC) > expiry)
@@ -200,33 +200,29 @@ class CloudflareAccessMiddleware:
         """Compatibility method for BaseHTTPMiddleware pattern."""
         # Skip authentication for public paths
         if self._is_public_path(request.url.path):
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         # Handle authentication
         try:
             await self._authenticate_request(request)
             response = await call_next(request)
-            
+
             # Handle session cookies if enabled and new session was created
-            if (self.enable_session_cookies and 
-                hasattr(request.state, "user") and 
-                request.state.user.get("session_id")):
+            if self.enable_session_cookies and hasattr(request.state, "user") and request.state.user.get("session_id"):
                 # Check if this is a new session (not from existing cookie)
                 session_id = request.state.user.get("session_id")
                 existing_session_id = request.cookies.get("session_id")
-                
+
                 if session_id != existing_session_id:
                     # This is a new session, set the cookie and state
                     request.state.new_session_id = session_id
                     self._set_session_cookie(response, session_id)
-            
-            return response
+
+            return response  # type: ignore[no-any-return]
         except HTTPException as e:
-            from starlette.responses import JSONResponse
             return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
         except Exception as e:
             logger.error("Middleware error: %s", e)
-            from starlette.responses import JSONResponse
             return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -242,7 +238,7 @@ class CloudflareAccessMiddleware:
             return
 
         request = Request(scope, receive)
-        
+
         try:
             # Skip authentication for public paths
             if self._is_public_path(request.url.path):
@@ -253,14 +249,12 @@ class CloudflareAccessMiddleware:
             await self._authenticate_request(request)
 
             # Wrap send to intercept and modify response for session cookies
-            if (self.enable_session_cookies and 
-                hasattr(request.state, "user") and 
-                request.state.user.get("session_id")):
-                
+            if self.enable_session_cookies and hasattr(request.state, "user") and request.state.user.get("session_id"):
+
                 # Check if this is a new session
                 session_id = request.state.user.get("session_id")
                 existing_session_id = request.cookies.get("session_id")
-                
+
                 if session_id != existing_session_id:
                     # Wrap send to add session cookie
                     send = self._wrap_send_for_session_cookie(send, session_id)
@@ -304,12 +298,12 @@ class CloudflareAccessMiddleware:
 
         # Get user tier information
         user_tier = self.validator.get_user_tier(cloudflare_user.email)
-        
+
         # Check for existing session first
         session_id = None
         session_data = None
         existing_session_id = request.cookies.get("session_id")
-        
+
         if existing_session_id:
             session_data = self.session_manager.get_session(existing_session_id)
             if session_data and session_data["email"] == cloudflare_user.email:
@@ -319,7 +313,7 @@ class CloudflareAccessMiddleware:
                 session_data["user_tier"] = user_tier.value
                 session_data["is_admin"] = user_tier.has_admin_privileges
                 session_data["can_access_premium"] = user_tier.can_access_premium_models
-        
+
         if not session_id:
             # Create new session if no valid existing session
             try:
@@ -337,7 +331,7 @@ class CloudflareAccessMiddleware:
                     raise
                 logger.error("Session creation error: %s", e)
                 raise HTTPException(status_code=500, detail="Session creation failed") from e
-        
+
         # Create user context with session
         request.state.user = {
             "email": cloudflare_user.email,
@@ -375,18 +369,19 @@ class CloudflareAccessMiddleware:
 
     def _wrap_send_for_session_cookie(self, send: Send, session_id: str) -> Send:
         """Wrap the ASGI send callable to add session cookie to response.
-        
+
         Args:
             send: Original ASGI send callable
             session_id: Session ID to set in cookie
-            
+
         Returns:
             Wrapped send callable that adds session cookie
         """
+
         async def wrapped_send(message: dict[str, Any]) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
-                
+
                 # Create cookie header
                 cookie_value = (
                     f"session_id={session_id}; "
@@ -394,13 +389,13 @@ class CloudflareAccessMiddleware:
                     "HttpOnly; Secure; SameSite=Strict"
                 )
                 headers.append([b"set-cookie", cookie_value.encode()])
-                
+
                 # Update message with new headers
                 message = {**message, "headers": headers}
-            
+
             await send(message)
-        
-        return wrapped_send
+
+        return wrapped_send  # type: ignore[return-value]
 
 
 class AuthenticationDependency:
@@ -463,7 +458,7 @@ def create_auth_middleware(
     Returns:
         Configured CloudflareAccessMiddleware
     """
-    from .whitelist import create_validator_from_env  # noqa: PLC0415
+    from .whitelist import create_validator_from_env
 
     # Create whitelist validator with tier support
     validator = create_validator_from_env(whitelist_str, admin_emails_str, full_users_str, limited_users_str)
@@ -473,7 +468,7 @@ def create_auth_middleware(
 
     # Create and return middleware
     return CloudflareAccessMiddleware(
-        app=None,  # Will be set by FastAPI
+        app=None,  # type: ignore[arg-type] # Will be set by FastAPI
         whitelist_validator=validator,
         session_manager=session_manager,
         public_paths=public_paths,

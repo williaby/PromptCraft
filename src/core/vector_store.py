@@ -650,7 +650,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
         if error_prob > 0 and secure_random.random() < error_prob:
             raise RuntimeError(f"Simulated error in {operation} operation")
 
-    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:  # noqa: PLR0911
+    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:
         """Check if document matches metadata filters."""
         for key, value in filters.items():
             if key not in document.metadata:

@@ -104,13 +104,14 @@ class DatabaseIntegrationTestBase(IntegrationTestBase):
         """FastAPI app with real database connection."""
         # Unpack the test database session and override function
         test_db_session, override_get_db = test_db_with_override
-        
+
         # Apply the database dependency override to the FastAPI app
         from src.database.connection import get_db
+
         test_app.dependency_overrides[get_db] = override_get_db
-        
+
         yield test_app
-        
+
         # Clean up the override
         if get_db in test_app.dependency_overrides:
             del test_app.dependency_overrides[get_db]
@@ -138,6 +139,7 @@ class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrat
 
         # Apply all dependency overrides
         from src.database.connection import get_db
+
         test_app.dependency_overrides[get_db] = override_get_db
         test_app.dependency_overrides[require_authentication] = mock_auth
         test_app.dependency_overrides[require_role] = lambda request, role: admin_user

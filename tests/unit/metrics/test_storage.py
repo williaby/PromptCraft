@@ -6,7 +6,7 @@ including database operations, event storage, querying, and cleanup functionalit
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 import sqlite3
 import tempfile
@@ -15,6 +15,7 @@ import pytest
 
 from src.metrics.events import MetricEvent, MetricEventType
 from src.metrics.storage import MetricsStorage
+from src.utils.datetime_compat import UTC, timedelta
 
 
 class TestMetricsStorageInit:
@@ -33,7 +34,7 @@ class TestMetricsStorageInit:
         """Test storage creates parent directories if they don't exist."""
         with tempfile.TemporaryDirectory() as temp_dir:
             nested_path = Path(temp_dir) / "nested" / "deep" / "metrics.db"
-            storage = MetricsStorage(str(nested_path))
+            MetricsStorage(str(nested_path))
 
             assert nested_path.parent.exists()
             assert nested_path.exists()
@@ -42,7 +43,7 @@ class TestMetricsStorageInit:
         """Test storage creates database schema on initialization."""
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "schema_test.db"
-            storage = MetricsStorage(str(db_path))
+            MetricsStorage(str(db_path))
 
             # Check that tables were created
             conn = sqlite3.connect(str(db_path))
@@ -199,8 +200,8 @@ class TestMetricsStorageQuerying:
         # Query events for specific session
         events = await self.storage.get_events(
             session_id=session_id,
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         assert len(events) == 3
@@ -225,8 +226,8 @@ class TestMetricsStorageQuerying:
         # Query only feedback events
         events = await self.storage.get_events(
             event_types=[MetricEventType.USER_FEEDBACK],
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         assert len(events) == 1
@@ -238,7 +239,7 @@ class TestMetricsStorageQuerying:
         session_id = "time-test-session"
 
         # Store event with specific timestamp
-        old_time = datetime.utcnow() - timedelta(hours=2)
+        old_time = datetime.now(UTC) - timedelta(hours=2)
         old_event = MetricEvent(
             event_type=MetricEventType.QUERY_PROCESSED,
             session_id=session_id,
@@ -254,8 +255,8 @@ class TestMetricsStorageQuerying:
         # Query only recent events (last hour)
         events = await self.storage.get_events(
             session_id=session_id,
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         # Should only get the recent event
@@ -280,8 +281,8 @@ class TestMetricsStorageQuerying:
         # Query with limit
         events = await self.storage.get_events(
             session_id=session_id,
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
             limit=5,
         )
 
@@ -292,8 +293,8 @@ class TestMetricsStorageQuerying:
         """Test querying events with no matching results."""
         events = await self.storage.get_events(
             session_id="nonexistent-session",
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         assert len(events) == 0
@@ -371,7 +372,7 @@ class TestMetricsStorageAnalytics:
         old_event = MetricEvent(
             event_type=MetricEventType.QUERY_PROCESSED,
             session_id="old-session",
-            timestamp=datetime.utcnow() - timedelta(days=2),
+            timestamp=datetime.now(UTC) - timedelta(days=2),
             hyde_score=90,
         )
         await self.storage.store_event(old_event)
@@ -410,7 +411,7 @@ class TestMetricsStorageMaintenanceAndStats:
     async def test_cleanup_old_events(self):
         """Test cleanup of old events."""
         # Store old events
-        old_time = datetime.utcnow() - timedelta(days=35)
+        old_time = datetime.now(UTC) - timedelta(days=35)
         for i in range(3):
             old_event = MetricEvent(
                 event_type=MetricEventType.QUERY_PROCESSED,
@@ -436,8 +437,8 @@ class TestMetricsStorageMaintenanceAndStats:
 
         # Verify recent events still exist
         recent_events = await self.storage.get_events(
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
         assert len(recent_events) == 2
 
@@ -521,8 +522,8 @@ class TestMetricsStorageErrorHandling:
 
         # Verify all events were stored
         all_events = await self.storage.get_events(
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         assert len(all_events) == 15
@@ -587,8 +588,8 @@ class TestMetricsStorageErrorHandling:
         # Verify we can retrieve the large event
         events = await self.storage.get_events(
             session_id="large-data-test",
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
 
         assert len(events) == 1
@@ -647,8 +648,8 @@ class TestMetricsStorageIntegration:
         # Step 2: Query and analyze data
         all_events = await self.storage.get_events(
             session_id=session_id,
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
         assert len(all_events) == 3
 
@@ -668,8 +669,8 @@ class TestMetricsStorageIntegration:
         # Verify data still exists
         final_events = await self.storage.get_events(
             session_id=session_id,
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
         )
         assert len(final_events) == 3
 
@@ -702,8 +703,8 @@ class TestMetricsStorageIntegration:
         # Verify data integrity
         start_query_time = time.time()
         all_events = await self.storage.get_events(
-            start_time=(datetime.utcnow() - timedelta(hours=1)).isoformat(),
-            end_time=(datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            start_time=(datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+            end_time=(datetime.now(UTC) + timedelta(hours=1)).isoformat(),
             limit=1000,
         )
         query_time = time.time() - start_query_time

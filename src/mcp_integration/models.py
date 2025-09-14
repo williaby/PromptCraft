@@ -6,9 +6,11 @@ system, including workflow results, execution steps, and agent responses.
 """
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 import json
 from typing import Any
+
+from src.utils.datetime_compat import UTC
 
 
 @dataclass
@@ -296,17 +298,20 @@ class TaskType:
 
 # MCP Connection Models for Smart Discovery
 
+
 @dataclass
 class MCPConnectionConfig:
     """Configuration for MCP server connection."""
+
     server_path: str
     env_vars: dict[str, str] = field(default_factory=dict)
     timeout: float = 30.0
 
 
-@dataclass 
+@dataclass
 class MCPConnectionStatus:
     """Status of an MCP server connection."""
+
     connected: bool
     server_name: str
     url: str | None = None
@@ -317,6 +322,7 @@ class MCPConnectionStatus:
 @dataclass
 class MCPHealthCheck:
     """Health check result for MCP server."""
+
     healthy: bool
     response_time: float | None = None
     error: str | None = None
@@ -324,7 +330,7 @@ class MCPHealthCheck:
 
 
 __all__ = [
-    "ExecutionResult", 
+    "ExecutionResult",
     "MCPConnectionConfig",
     "MCPConnectionStatus",
     "MCPHealthCheck",

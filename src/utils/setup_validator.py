@@ -42,8 +42,6 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     errors = []
 
     # Python version check
-    if sys.version_info < (3, 11):  # noqa: UP036
-        errors.append(f"Python 3.11+ required, but found Python {sys.version_info[0]}.{sys.version_info[1]}")
 
     if gnupg is None:
         errors.append("python-gnupg package not available - required for encryption")

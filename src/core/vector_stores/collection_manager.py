@@ -58,7 +58,7 @@ class QdrantCollectionManager:
                 else:
                     # Handle type conversion
                     result = await self.create_collection(
-                        collection_name, 
+                        collection_name,
                         int(vector_size) if vector_size is not None else None,  # type: ignore[call-overload]
                         distance if isinstance(distance, Distance) else Distance.COSINE,
                     )
@@ -115,7 +115,7 @@ class QdrantCollectionManager:
         for collection_name in required_collections:
             try:
                 collection_info = self.client.get_collection(collection_name)
-                
+
                 # Handle different vector params structures
                 vectors = collection_info.config.params.vectors
                 if isinstance(vectors, VectorParams):
@@ -128,7 +128,7 @@ class QdrantCollectionManager:
                 else:
                     vector_size = 0
                     distance = "unknown"
-                
+
                 validation_results[collection_name] = {
                     "exists": True,
                     "vector_size": vector_size,
@@ -153,7 +153,7 @@ class QdrantCollectionManager:
             for collection in collections.collections:
                 try:
                     info = self.client.get_collection(collection.name)
-                    
+
                     # Handle different vector params structures
                     vectors = info.config.params.vectors
                     if isinstance(vectors, VectorParams):
@@ -166,14 +166,16 @@ class QdrantCollectionManager:
                     else:
                         vector_size = 0
                         distance = "unknown"
-                    
+
                     stats[collection.name] = {
                         "points_count": info.points_count,
                         "segments_count": info.segments_count,
                         "vector_size": vector_size,
                         "distance": distance,
                         "status": info.status.value,
-                        "disk_usage": vector_size * (info.points_count or 0) * 4 if vector_size > 0 else 0,  # Approximate
+                        "disk_usage": (
+                            vector_size * (info.points_count or 0) * 4 if vector_size > 0 else 0
+                        ),  # Approximate
                     }
                 except Exception as e:
                     stats[collection.name] = {"error": str(e)}

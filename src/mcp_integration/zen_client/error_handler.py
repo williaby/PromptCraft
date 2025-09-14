@@ -7,13 +7,15 @@ to ensure reliable operation even when MCP connections fail.
 
 import asyncio
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 import logging
 import time
 from typing import Any
 
 import httpx
+
+from src.utils.datetime_compat import UTC
 
 from .models import BridgeMetrics, FallbackConfig, MCPHealthCheck
 
@@ -121,7 +123,7 @@ class MCPConnectionManager:
                         logger.error(f"HTTP fallback also failed: {http_error}")
                         self.metrics.failed_requests += 1
                         self._update_metrics(start_time, success=False)
-                        raise Exception(f"Both MCP and HTTP failed: MCP={mcp_error}, HTTP={http_error}")
+                        raise Exception(f"Both MCP and HTTP failed: MCP={mcp_error}, HTTP={http_error}") from http_error
                 else:
                     # No fallback enabled, re-raise MCP error
                     self.metrics.failed_requests += 1
@@ -160,9 +162,9 @@ class MCPConnectionManager:
             return result if isinstance(result, dict) else {"content": str(result)}
 
         except httpx.RequestError as e:
-            raise Exception(f"HTTP request failed: {e}")
+            raise Exception(f"HTTP request failed: {e}") from e
         except httpx.HTTPStatusError as e:
-            raise Exception(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise Exception(f"HTTP error {e.response.status_code}: {e.response.text}") from e
 
     def _should_use_fallback(self) -> bool:
         """Check if we should use HTTP fallback based on circuit breaker state."""

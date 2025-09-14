@@ -116,7 +116,7 @@ class TestAuthenticationMiddleware:
             mock_request.url.path = path
             call_next = AsyncMock(return_value=JSONResponse({"docs": "allowed"}))
 
-            response = await middleware.dispatch(mock_request, call_next)
+            await middleware.dispatch(mock_request, call_next)
 
             call_next.assert_called_with(mock_request)
 
@@ -126,7 +126,7 @@ class TestAuthenticationMiddleware:
         mock_request.url.path = "/favicon.ico"
         call_next = AsyncMock(return_value="favicon_response")
 
-        response = await middleware.dispatch(mock_request, call_next)
+        await middleware.dispatch(mock_request, call_next)
 
         call_next.assert_called_once_with(mock_request)
 
@@ -191,7 +191,7 @@ class TestAuthenticationMiddleware:
             excluded_paths=["/health", "/docs", "/redoc", "/openapi.json", "/favicon.ico"],
             database_enabled=True,
         )
-        
+
         mock_request.url.path = "/api/test"
         mock_request.headers = {"Authorization": "Bearer valid_token"}
         call_next = AsyncMock(return_value=JSONResponse({"success": True}))
@@ -210,7 +210,7 @@ class TestAuthenticationMiddleware:
         with patch.object(middleware_with_db, "_authenticate_request", side_effect=mock_auth_request):
             with patch.object(middleware_with_db, "_log_authentication_event") as mock_log:
                 with patch.object(middleware_with_db, "_update_user_session") as mock_update_session:
-                    response = await middleware_with_db.dispatch(mock_request, call_next)
+                    await middleware_with_db.dispatch(mock_request, call_next)
 
                     # Should log authentication event for database-enabled middleware
                     mock_log.assert_called_once()
@@ -405,15 +405,15 @@ class TestSecurityEdgeCases:
                 # Should extract token safely without crashing
                 # Token validation happens in _validate_jwt_token, not _extract_auth_token
                 # So malicious content may be extracted but not validated
-                assert isinstance(result, (str, type(None)))  # Should not crash
+                assert isinstance(result, str | type(None))  # Should not crash
             except Exception as e:
                 # Should not throw exceptions during extraction
-                assert False, f"Token extraction should not crash: {e}"
+                raise AssertionError(f"Token extraction should not crash: {e}")
 
     def test_path_traversal_protection(self, middleware):
         """Test protection against path traversal in excluded paths."""
         mock_request = Mock(spec=Request)
-        call_next = AsyncMock()
+        AsyncMock()
 
         # Test path traversal attempts
         malicious_paths = [
@@ -454,14 +454,14 @@ class TestSecurityEdgeCases:
         tasks = [
             make_request("/health"),  # Should pass through (excluded)
             make_request("/api/test1"),  # Will fail auth but should return 401
-            make_request("/api/test2"),  # Will fail auth but should return 401 
+            make_request("/api/test2"),  # Will fail auth but should return 401
             make_request("/docs"),  # Should pass through (excluded)
         ]
 
         # Use asyncio.wait_for to add timeout protection
         try:
             responses = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), 
+                asyncio.gather(*tasks, return_exceptions=True),
                 timeout=5.0,
             )
         except TimeoutError:
@@ -469,7 +469,7 @@ class TestSecurityEdgeCases:
 
         # All requests should complete without issues (either success or proper error)
         assert len(responses) == 4
-        
+
         # Verify responses are valid (not exceptions)
         for i, response in enumerate(responses):
             if isinstance(response, Exception):

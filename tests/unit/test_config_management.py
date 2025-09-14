@@ -93,7 +93,7 @@ class TestApplicationSettings:
         assert settings.version == "0.1.0"
         assert settings.environment == "dev"
         assert settings.debug is True
-        assert settings.api_host == "0.0.0.0"  # noqa: S104
+        assert settings.api_host == "0.0.0.0"
         assert settings.api_port == 8000
         assert settings.mcp_server_url == "http://localhost:3000"
         assert settings.mcp_timeout == 30.0
@@ -260,7 +260,7 @@ class TestConfigurationValidation:
 
     def test_validate_general_security(self):
         """Test general security validation."""
-        settings = ApplicationSettings(environment="dev", api_host="0.0.0.0", api_port=80)  # noqa: S104
+        settings = ApplicationSettings(environment="dev", api_host="0.0.0.0", api_port=80)
 
         errors, suggestions = _validate_general_security(settings)
 
@@ -339,7 +339,7 @@ class TestConfigurationValidation:
         assert len(suggestions) == 3
         assert any("port between 1-65535" in s for s in suggestions)
         assert any("PROMPTCRAFT_ENVIRONMENT" in s for s in suggestions)
-        assert any("0.0.0.0" in s for s in suggestions)  # noqa: S104
+        assert any("0.0.0.0" in s for s in suggestions)
 
 
 class TestEnvironmentDetection:
@@ -1266,7 +1266,7 @@ PROMPTCRAFT_API_PORT=70000
             version="1.0.0",
             debug=False,
             secret_key=SecretStr("staging_secret"),
-            api_host="0.0.0.0",  # noqa: S104
+            api_host="0.0.0.0",
             api_port=8000,
         )
 

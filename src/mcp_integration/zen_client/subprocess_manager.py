@@ -192,11 +192,11 @@ class ZenMCPProcess:
             # Check if process is responsive (basic check)
             if not self.process:
                 return False, "Process is not running"
-            
+
             poll_result = self.process.poll()
             if poll_result is not None:
                 return False, f"Process terminated with code {poll_result}"
-            
+
             if not self.is_running():
                 return False, "Process is not running"
 
@@ -204,7 +204,7 @@ class ZenMCPProcess:
             if self.process and self.process.stderr and self.process.stderr.readable():
                 # Non-blocking read of stderr
                 try:
-                    import select
+                    import select  # Platform-specific import for Unix-like systems only
 
                     if self.process and self.process.stderr and select.select([self.process.stderr], [], [], 0)[0]:
                         error_output = self.process.stderr.read()

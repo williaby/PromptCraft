@@ -597,33 +597,35 @@ class TestMetricsCollectorGlobalInstance:
         """Clean up global state before test."""
         # Reset global collector to ensure clean state
         import src.metrics.collector as collector_module
+
         collector_module._global_collector = None
 
     def teardown_method(self):
         """Clean up global state."""
         # Reset global collector
         import src.metrics.collector as collector_module
+
         collector_module._global_collector = None
 
     @pytest.mark.asyncio
     async def test_get_metrics_collector_creates_instance(self):
         """Test get_metrics_collector creates global instance."""
-        with patch("src.metrics.collector.MetricsCollector") as MockCollector:
+        with patch("src.metrics.collector.MetricsCollector") as mock_collector_class:
             mock_instance = AsyncMock()
-            MockCollector.return_value = mock_instance
+            mock_collector_class.return_value = mock_instance
 
             collector = await get_metrics_collector()
 
             assert collector is mock_instance
-            MockCollector.assert_called_once()
+            mock_collector_class.assert_called_once()
             mock_instance.start.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_metrics_collector_returns_existing_instance(self):
         """Test get_metrics_collector returns existing instance."""
-        with patch("src.metrics.collector.MetricsCollector") as MockCollector:
+        with patch("src.metrics.collector.MetricsCollector") as mock_collector_class:
             mock_instance = AsyncMock()
-            MockCollector.return_value = mock_instance
+            mock_collector_class.return_value = mock_instance
 
             # Get collector twice
             collector1 = await get_metrics_collector()
@@ -632,16 +634,16 @@ class TestMetricsCollectorGlobalInstance:
             # Should return same instance
             assert collector1 is collector2
             # Constructor should only be called once
-            MockCollector.assert_called_once()
+            mock_collector_class.assert_called_once()
             # Start should only be called once
             mock_instance.start.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_shutdown_metrics_collector(self):
         """Test shutdown of global metrics collector."""
-        with patch("src.metrics.collector.MetricsCollector") as MockCollector:
+        with patch("src.metrics.collector.MetricsCollector") as mock_collector_class:
             mock_instance = AsyncMock()
-            MockCollector.return_value = mock_instance
+            mock_collector_class.return_value = mock_instance
 
             # Create global instance
             collector = await get_metrics_collector()

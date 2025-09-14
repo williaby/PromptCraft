@@ -121,22 +121,24 @@ class TestUserTierIntegration:
         mock_user.email = "full@example.com"  # Match the full_user_validator fixture
         mock_user.authenticated_at = "2023-01-01T00:00:00Z"
 
-        with patch.object(cloudflare_auth, "extract_user_from_request", return_value=mock_user):
-            with patch.object(cloudflare_auth, "create_user_context", return_value={}):
-                middleware = CloudflareAccessMiddleware(
-                    app=None,
-                    whitelist_validator=full_user_validator,
-                    session_manager=session_manager,
-                )
+        with (
+            patch.object(cloudflare_auth, "extract_user_from_request", return_value=mock_user),
+            patch.object(cloudflare_auth, "create_user_context", return_value={}),
+        ):
+            middleware = CloudflareAccessMiddleware(
+                app=None,
+                whitelist_validator=full_user_validator,
+                session_manager=session_manager,
+            )
 
-                # Simulate the authentication process
-                await middleware._authenticate_request(mock_request)
+            # Simulate the authentication process
+            await middleware._authenticate_request(mock_request)
 
-                # Check that tier information is injected
-                assert hasattr(mock_request.state, "user")
-                assert mock_request.state.user["user_tier"] == "full"
-                assert mock_request.state.user["can_access_premium"] is True
-                assert mock_request.state.user["is_admin"] is False
+            # Check that tier information is injected
+            assert hasattr(mock_request.state, "user")
+            assert mock_request.state.user["user_tier"] == "full"
+            assert mock_request.state.user["can_access_premium"] is True
+            assert mock_request.state.user["is_admin"] is False
 
     @patch("src.mcp_integration.model_registry.ModelRegistry.get_model_capabilities")
     def test_model_registry_tier_filtering(self, mock_get_capabilities):

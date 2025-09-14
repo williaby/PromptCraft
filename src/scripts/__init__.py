@@ -5,6 +5,6 @@ from .discovery import ScriptDefinition, ScriptsDiscoverySystem, ScriptsManager
 
 __all__ = [
     "ScriptDefinition",
-    "ScriptsDiscoverySystem", 
+    "ScriptsDiscoverySystem",
     "ScriptsManager",
 ]

@@ -206,10 +206,10 @@ class TestExceptionModelsIntegration:
             except ValueError as e:
                 raise JWKSError("Failed to fetch JWKS", "fetch_error") from e
         except JWKSError as jwks_error:
-            assert str(jwks_error) == "Failed to fetch JWKS"  # noqa: PT017
-            assert jwks_error.error_type == "fetch_error"  # noqa: PT017
-            assert jwks_error.__cause__ is not None  # noqa: PT017
-            assert isinstance(jwks_error.__cause__, ValueError)  # noqa: PT017
+            assert str(jwks_error) == "Failed to fetch JWKS"
+            assert jwks_error.error_type == "fetch_error"
+            assert jwks_error.__cause__ is not None
+            assert isinstance(jwks_error.__cause__, ValueError)
 
     def test_exception_chaining_auth_error(self):
         """Test exception chaining with AuthenticationError."""
@@ -220,10 +220,10 @@ class TestExceptionModelsIntegration:
             except JWKSError as e:
                 raise AuthenticationError("Authentication failed due to JWKS error", 500) from e
         except AuthenticationError as auth_error:
-            assert str(auth_error) == "Authentication failed due to JWKS error"  # noqa: PT017
-            assert auth_error.status_code == 500  # noqa: PT017
-            assert auth_error.__cause__ is not None  # noqa: PT017
-            assert isinstance(auth_error.__cause__, JWKSError)  # noqa: PT017
+            assert str(auth_error) == "Authentication failed due to JWKS error"
+            assert auth_error.status_code == 500
+            assert auth_error.__cause__ is not None
+            assert isinstance(auth_error.__cause__, JWKSError)
 
     def test_multiple_exception_types_in_context(self):
         """Test using multiple exception types in various contexts."""

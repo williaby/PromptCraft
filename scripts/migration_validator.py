@@ -194,7 +194,7 @@ class MigrationValidator:
                     # Analyze precision
                     decimal_places = []
                     for value in values:
-                        if isinstance(value, (int, float)):
+                        if isinstance(value, int | float):
                             str_val = str(float(value))
                             if "." in str_val:
                                 decimal_part = str_val.split(".")[1].rstrip("0")

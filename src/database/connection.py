@@ -433,7 +433,7 @@ _db_manager: DatabaseManager | None = None
 
 def get_database_manager() -> DatabaseManager:
     """Get the global database manager instance (synchronous version)."""
-    global _db_manager  # noqa: PLW0603
+    global _db_manager
     if _db_manager is None:
         _db_manager = DatabaseManager()
     return _db_manager
@@ -445,7 +445,7 @@ async def get_database_manager_async() -> DatabaseManager:
     Returns:
         DatabaseManager instance
     """
-    global _db_manager  # noqa: PLW0603
+    global _db_manager
     if _db_manager is None:
         _db_manager = DatabaseManager()
         await _db_manager.initialize()

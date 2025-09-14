@@ -14,6 +14,9 @@ import shutil
 import subprocess
 import sys
 
+# Import the AIVerificationResult class from the smart verifier
+from verify_assumptions_smart import AIVerificationResult
+
 
 @dataclass
 class FixApplication:
@@ -293,7 +296,7 @@ def main():
             # Load verification results (would be actual AIVerificationResult objects)
             results_data = json.load(f)
 
-        applier = FixApplier(apply_mode)
+        FixApplier(apply_mode)
         print(f"Fix applier initialized with mode: {apply_mode}")
         print(f"Ready to process {len(results_data.get('verification_results', []))} results")
 

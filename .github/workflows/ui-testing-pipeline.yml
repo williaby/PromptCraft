@@ -52,12 +52,27 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npx playwright install --with-deps ${{ matrix.browser }}
+          npx playwright install --with-deps
 
-      - name: Start PromptCraft application
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
+      - name: Start PromptCraft UI application
         run: |
-          # Start application in background
-          poetry run python -m src.main &
+          # Start Gradio UI application in background
+          poetry run python -m src.ui.multi_journey_interface &
 
           # Wait for application to be ready
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
@@ -68,9 +83,11 @@ jobs:
 
       - name: Run smoke tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=smoke-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
             --project=${{ matrix.browser }} \
-            --reporter=github,json:smoke-results-${{ matrix.browser }}.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 5
 
       - name: Upload smoke test results
@@ -89,7 +106,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: smoke-tests
-    if: github.event_name != 'schedule' && (github.event.inputs.test_suite == 'full' || github.event.inputs.test_suite == 'cross-browser' || github.ref == 'refs/heads/main')
+    if: >-
+      github.event_name != 'schedule' && (
+        github.event.inputs.test_suite == 'full' ||
+        github.event.inputs.test_suite == 'cross-browser' ||
+        github.ref == 'refs/heads/main' ||
+        github.base_ref == 'main'
+      )
 
     strategy:
       fail-fast: false
@@ -109,26 +132,45 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npx playwright install --with-deps ${{ matrix.browser }}
+          npx playwright install --with-deps
 
-      - name: Start PromptCraft application
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
+      - name: Start PromptCraft UI application
         run: |
-          poetry run python -m src.main &
+          poetry run python -m src.ui.multi_journey_interface &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
       - name: Run C.R.E.A.T.E. framework tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=create-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/journey1-create-framework-semantic.spec.ts \
             --project=${{ matrix.browser }} \
-            --reporter=github,json:create-results-${{ matrix.browser }}.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 15
 
       - name: Run authentication boundary tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=auth-results-${{ matrix.browser }}.json \
           npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
             --project=${{ matrix.browser }} \
-            --reporter=github,json:auth-results-${{ matrix.browser }}.json \
+            --reporter=github \
+            --reporter=json \
             --grep="session expiration"
         timeout-minutes: 10
 
@@ -148,7 +190,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: smoke-tests
-    if: github.ref == 'refs/heads/main' || github.event.inputs.test_suite == 'full'
+    if: github.ref == 'refs/heads/main' || github.base_ref == 'main' || github.event.inputs.test_suite == 'full'
 
     strategy:
       fail-fast: false
@@ -170,24 +212,43 @@ jobs:
           npm ci
           npx playwright install --with-deps
 
-      - name: Start PromptCraft application
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
+      - name: Start PromptCraft UI application
         run: |
-          poetry run python -m src.main &
+          poetry run python -m src.ui.multi_journey_interface &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
       - name: Run mobile smoke tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="mobile-smoke-${{ matrix.device }}.json" \
           npx playwright test tests/e2e/working-journey1-smoke.spec.ts \
             --project="${{ matrix.device }}" \
-            --reporter=github,json:mobile-smoke-${{ matrix.device }}.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 8
 
       - name: Run enhanced mobile tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="mobile-enhanced-${{ matrix.device }}.json" \
           npx playwright test tests/e2e/enhanced-mobile-journey1.spec.ts \
             --project="${{ matrix.device }}" \
-            --reporter=github,json:mobile-enhanced-${{ matrix.device }}.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 15
 
       - name: Upload mobile test results
@@ -206,7 +267,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: smoke-tests
-    if: github.event.inputs.test_suite == 'performance' || github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+    if: >-
+      github.event.inputs.test_suite == 'performance' ||
+      github.event_name == 'schedule' ||
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'main'
 
     steps:
       - name: Checkout code
@@ -223,17 +288,34 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
-      - name: Start PromptCraft application
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
+      - name: Start PromptCraft UI application
         run: |
-          poetry run python -m src.main &
+          poetry run python -m src.ui.multi_journey_interface &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
       - name: Run performance benchmarks
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=performance-results.json \
           npx playwright test tests/e2e/journey1-performance-benchmarking.spec.ts \
             --project=chromium \
-            --reporter=github,json:performance-results.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 45
 
       - name: Upload performance results
@@ -253,7 +335,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: smoke-tests
-    if: github.event.inputs.test_suite == 'security' || github.ref == 'refs/heads/main'
+    if: github.event.inputs.test_suite == 'security' || github.ref == 'refs/heads/main' || github.base_ref == 'main'
 
     steps:
       - name: Checkout code
@@ -270,26 +352,45 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
-      - name: Start PromptCraft application
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 2.1.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install Python dependencies
+        run: poetry install --sync
+
+      - name: Start PromptCraft UI application
         run: |
-          poetry run python -m src.main &
+          poetry run python -m src.ui.multi_journey_interface &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
       - name: Run file upload security tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=security-results.json \
           npx playwright test tests/e2e/journey1-file-upload-security.spec.ts \
             --project=chromium \
-            --reporter=github,json:security-results.json \
+            --reporter=github \
+            --reporter=json \
             --grep="should safely handle Python"
         timeout-minutes: 15
         continue-on-error: true  # File upload may not be enabled in CI
 
       - name: Run authentication boundary tests
         run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=auth-security-results.json \
           npx playwright test tests/e2e/journeys/test-journey1-auth-boundary.spec.ts \
             --project=chromium \
-            --reporter=github,json:auth-security-results.json
+            --reporter=github \
+            --reporter=json
         timeout-minutes: 10
 
       - name: Upload security test results

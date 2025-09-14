@@ -284,7 +284,7 @@ class TestCircuitBreakerStates:
                 for i in range(10):
 
                     def test_func():
-                        return f"worker_{worker_id}_call_{i}"  # noqa: B023
+                        return f"worker_{worker_id}_call_{i}"
 
                     result = circuit_breaker.call_sync(test_func)
                     results.append(result)

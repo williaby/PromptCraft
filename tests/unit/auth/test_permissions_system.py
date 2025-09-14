@@ -146,8 +146,8 @@ class TestRequirePermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"
-        user.token_id = "token123"
+        user.token_name = "test-token"  # Test data
+        user.token_id = "token123"  # Test data
         user.has_permission = Mock(return_value=True)
         return user
 
@@ -225,8 +225,8 @@ class TestRequireAnyPermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"
-        user.token_id = "token123"
+        user.token_name = "test-token"  # Test data
+        user.token_id = "token123"  # Test data
         return user
 
     @pytest.mark.asyncio
@@ -332,8 +332,8 @@ class TestRequireAllPermissions:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"
-        user.token_id = "token123"
+        user.token_name = "test-token"  # Test data
+        user.token_id = "token123"  # Test data
         return user
 
     @pytest.mark.asyncio
@@ -411,8 +411,8 @@ class TestHasServiceTokenPermission:
     def mock_service_token_user(self):
         """Create mock service token user."""
         user = Mock(spec=ServiceTokenUser)
-        user.token_name = "test-token"
-        user.token_id = "token123"
+        user.token_name = "test-token"  # Test data
+        user.token_id = "token123"  # Test data
         return user
 
     def test_has_service_token_permission_success(self, mock_service_token_user):
@@ -436,11 +436,11 @@ class TestHasServiceTokenPermission:
     def test_has_service_token_permission_edge_cases(self, mock_service_token_user):
         """Test edge cases for service token permission checks."""
         mock_service_token_user.has_permission = Mock(return_value=False)
-        
+
         # Test with empty permission name
         result = has_service_token_permission(mock_service_token_user, "")
         assert result is False
-        
+
         # Test with None permission name (should be handled gracefully)
         try:
             result = has_service_token_permission(mock_service_token_user, None)
@@ -453,18 +453,18 @@ class TestHasServiceTokenPermission:
     def test_has_service_token_permission_complex_names(self, mock_service_token_user):
         """Test complex permission names."""
         mock_service_token_user.has_permission = Mock(return_value=True)
-        
+
         complex_permissions = [
             "system:admin:full",
             "users:create:batch:bulk",
             "api:v2:tokens:rotate:emergency",
             "logs:audit:export:encrypted",
         ]
-        
+
         for permission in complex_permissions:
             result = has_service_token_permission(mock_service_token_user, permission)
             assert result is True
-            
+
         assert mock_service_token_user.has_permission.call_count == len(complex_permissions)
 
 
@@ -495,8 +495,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(session=mock_session):
+                    yield session
 
                 mock_get_db.return_value = mock_db_gen()
 
@@ -522,8 +522,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(session=mock_session):
+                    yield session
 
                 mock_get_db.return_value = mock_db_gen()
 

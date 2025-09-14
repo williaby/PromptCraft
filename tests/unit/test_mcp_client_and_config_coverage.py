@@ -10,9 +10,9 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-# Import to ensure coverage tracking
 from src.mcp_integration.client import MCPClient, MCPClientError
 from src.mcp_integration.config_manager import (
+    # Import to ensure coverage tracking
     MCPConfigurationBundle,
     MCPConfigurationManager,
     MCPServerConfig,

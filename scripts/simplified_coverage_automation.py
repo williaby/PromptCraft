@@ -23,8 +23,6 @@ from functools import lru_cache
 import json
 from pathlib import Path
 import re
-
-# Security: subprocess used for controlled coverage automation - no user input processed
 import subprocess
 import time
 from typing import Any, ClassVar
@@ -32,6 +30,7 @@ from typing import Any, ClassVar
 import yaml
 
 
+# Security: subprocess used for controlled coverage automation - no user input processed
 class TestType(Enum):
     """Enumeration of supported test types."""
 

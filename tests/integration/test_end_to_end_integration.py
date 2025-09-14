@@ -550,7 +550,7 @@ class TestEndToEndIntegration:
                     except Exception as e:
                         failed_queries += 1
                         # Should be controlled failures
-                        assert isinstance(e, MCPTimeoutError | RuntimeError)  # noqa: PT017
+                        assert isinstance(e, MCPTimeoutError | RuntimeError)
 
                 # Verify system resilience
                 assert successful_queries > 0, "No queries succeeded - system not resilient"
@@ -876,7 +876,7 @@ class TestEndToEndIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_end_to_end_real_world_scenario(  # noqa: PLR0915
+    async def test_end_to_end_real_world_scenario(
         self,
         full_system_settings,
         sample_knowledge_documents,

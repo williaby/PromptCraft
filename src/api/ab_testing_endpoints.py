@@ -461,7 +461,7 @@ async def stop_experiment(
 @router.get("/experiments", response_model=list[ExperimentResponse])
 @rate_limit(RateLimits.API_DEFAULT)
 async def list_experiments(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     status_filter: str | None = None,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -511,7 +511,7 @@ async def list_experiments(
 @router.get("/experiments/{experiment_id}", response_model=ExperimentResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> ExperimentResponse:
@@ -617,7 +617,7 @@ async def assign_user_to_experiment(
 @router.get("/check-dynamic-loading/{user_id}")
 @rate_limit(RateLimits.API_DEFAULT)
 async def check_dynamic_loading_assignment(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     user_id: str,
     experiment_id: str = "dynamic_loading_rollout",
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
@@ -655,7 +655,7 @@ async def check_dynamic_loading_assignment(
 @router.post("/metrics/record-event")
 @rate_limit(RateLimits.API_DEFAULT)
 async def record_metric_event(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     metric_request: MetricEventRequest,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> JSONResponse:
@@ -702,7 +702,7 @@ async def record_metric_event(
 @router.get("/dashboard/{experiment_id}", response_class=HTMLResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment_dashboard(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     experiment_id: str,
 ) -> HTMLResponse:
     """Get HTML dashboard for an experiment."""
@@ -731,7 +731,7 @@ async def get_experiment_dashboard(
 @router.get("/dashboard-data/{experiment_id}", response_model=DashboardResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_dashboard_data(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     experiment_id: str,
 ) -> DashboardResponse:
     """Get dashboard data as JSON for an experiment."""
@@ -775,7 +775,7 @@ async def get_dashboard_data(
 @router.get("/experiments/{experiment_id}/results", response_model=ExperimentResultsResponse)
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiment_results(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
     experiment_id: str,
     manager: ExperimentManager = Depends(get_experiment_manager_dependency),
 ) -> ExperimentResultsResponse:
@@ -818,7 +818,7 @@ async def get_experiment_results(
 @router.get("/overview", response_model=list[ExperimentResponse])
 @rate_limit(RateLimits.API_DEFAULT)
 async def get_experiments_overview(
-    request: Request,  # noqa: ARG001  # Required by FastAPI
+    request: Request,  # Required by FastAPI
 ) -> list[ExperimentResponse]:
     """Get overview of all experiments for main dashboard."""
     try:
@@ -866,7 +866,7 @@ async def quick_setup_dynamic_loading_experiment(
     request: Request,  # Required by FastAPI
     target_percentage: float = Query(default=50.0, ge=0.1, le=100.0),
     duration_hours: int = Query(default=168, ge=1, le=8760),
-    manager: ExperimentManager = Depends(get_experiment_manager_dependency),  # noqa: ARG001  # FastAPI dependency
+    manager: ExperimentManager = Depends(get_experiment_manager_dependency),  # FastAPI dependency
 ) -> JSONResponse:
     """Quickly set up a standard dynamic loading A/B test experiment."""
     try:
@@ -911,7 +911,7 @@ async def quick_setup_dynamic_loading_experiment(
 
 @router.get("/health")
 @rate_limit(RateLimits.HEALTH_CHECK)
-async def ab_testing_health_check(request: Request) -> JSONResponse:  # noqa: ARG001  # Required by FastAPI
+async def ab_testing_health_check(request: Request) -> JSONResponse:  # Required by FastAPI
     """Health check endpoint for A/B testing system."""
     try:
         manager = await get_experiment_manager()

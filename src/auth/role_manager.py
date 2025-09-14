@@ -82,7 +82,7 @@ class RoleManager(DatabaseService):
                 parent_role_id = None
                 if parent_role_name:
                     parent_result = await session.execute(
-                        select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),  # noqa: E712
+                        select(Role.id).where(Role.name == parent_role_name, Role.is_active),
                     )
                     parent_role = parent_result.scalar_one_or_none()
                     if not parent_role:
@@ -129,7 +129,7 @@ class RoleManager(DatabaseService):
         try:
             async with self.get_session() as session:
                 result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role).where(Role.name == role_name, Role.is_active),
                 )
                 role = result.scalar_one_or_none()
 
@@ -170,7 +170,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 query = select(Role)
                 if not include_inactive:
-                    query = query.where(Role.is_active == True)  # noqa: E712
+                    query = query.where(Role.is_active)
 
                 result = await session.execute(query.order_by(Role.name))
                 roles = result.scalars().all()
@@ -218,7 +218,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -226,7 +226,7 @@ class RoleManager(DatabaseService):
 
                 # Detect database type
                 db_engine_name = session.bind.dialect.name
-                
+
                 if db_engine_name == "postgresql":
                     # Use database function for permission resolution
                     result = await session.execute(
@@ -239,13 +239,15 @@ class RoleManager(DatabaseService):
                     # Convert UUID to string for SQLite compatibility
                     role_id_str = str(role_id)
                     result = await session.execute(
-                        text("""
+                        text(
+                            """
                             SELECT p.name
                             FROM role_permissions rp
                             INNER JOIN permissions p ON rp.permission_id = p.id
                             WHERE rp.role_id = :role_id
                             AND p.is_active = true
-                        """),
+                        """,
+                        ),
                         {"role_id": role_id_str},
                     )
                     permissions = {row[0] for row in result.fetchall()}
@@ -277,7 +279,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -332,7 +334,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -394,7 +396,7 @@ class RoleManager(DatabaseService):
 
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -402,7 +404,7 @@ class RoleManager(DatabaseService):
 
                 # Detect database type
                 db_engine_name = session.bind.dialect.name
-                
+
                 if db_engine_name == "postgresql":
                     # Use database function for PostgreSQL
                     await session.execute(
@@ -418,17 +420,17 @@ class RoleManager(DatabaseService):
                     user_id = user_result.scalar_one_or_none()
                     if not user_id:
                         raise UserNotFoundError(f"User '{user_email}' not found")
-                    
+
                     # Insert into user_roles table (with UUID string conversion for SQLite)
                     user_id_str = str(user_id)
                     role_id_str = str(role_id)
-                    
+
                     # Use INSERT OR IGNORE for idempotency (SQLite equivalent of ON CONFLICT DO NOTHING)
                     await session.execute(
                         text("INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)"),
                         {"user_id": user_id_str, "role_id": role_id_str},
                     )
-                
+
                 await session.commit()
 
                 await self.log_operation_success(
@@ -460,7 +462,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role ID
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
@@ -503,7 +505,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Detect database type
                 db_engine_name = session.bind.dialect.name
-                
+
                 if db_engine_name == "postgresql":
                     # Use database function for PostgreSQL
                     result = await session.execute(
@@ -511,7 +513,7 @@ class RoleManager(DatabaseService):
                         {"user_email": user_email},
                     )
                     rows = result.fetchall()
-                    
+
                     roles = []
                     for row in rows:
                         roles.append(
@@ -530,17 +532,18 @@ class RoleManager(DatabaseService):
                         {"user_email": user_email},
                     )
                     user_row = user_result.fetchone()
-                    
+
                     if not user_row:
                         logger.debug(f"User '{user_email}' not found in user_sessions")
                         return []
-                    
+
                     user_id = user_row.id
-                    
+
                     # Now get roles using user_id (convert UUID to string for SQLite)
                     user_id_str = str(user_id)
                     result = await session.execute(
-                        text("""
+                        text(
+                            """
                             SELECT
                                 r.id as role_id,
                                 r.name as role_name,
@@ -551,11 +554,12 @@ class RoleManager(DatabaseService):
                             WHERE ur.user_id = :user_id
                             AND r.is_active = true
                             ORDER BY r.created_at DESC
-                        """),
+                        """,
+                        ),
                         {"user_id": user_id_str},
                     )
                     rows = result.fetchall()
-                    
+
                     roles = []
                     for row in rows:
                         roles.append(
@@ -615,14 +619,14 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role IDs
                 role_result = await session.execute(
-                    select(Role.id).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == role_name, Role.is_active),
                 )
                 role_id = role_result.scalar_one_or_none()
                 if not role_id:
                     raise RoleNotFoundError(f"Role '{role_name}' not found")
 
                 parent_result = await session.execute(
-                    select(Role.id).where(Role.name == parent_role_name, Role.is_active == True),  # noqa: E712
+                    select(Role.id).where(Role.name == parent_role_name, Role.is_active),
                 )
                 parent_id = parent_result.scalar_one_or_none()
                 if not parent_id:
@@ -678,7 +682,7 @@ class RoleManager(DatabaseService):
             async with self.get_session() as session:
                 # Get role
                 role_result = await session.execute(
-                    select(Role).where(Role.name == role_name, Role.is_active == True),  # noqa: E712
+                    select(Role).where(Role.name == role_name, Role.is_active),
                 )
                 role = role_result.scalar_one_or_none()
                 if not role:
@@ -688,7 +692,7 @@ class RoleManager(DatabaseService):
                 if not force:
                     # Check for child roles
                     child_result = await session.execute(
-                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active == True),  # noqa: E712
+                        select(Role.name).where(Role.parent_role_id == role.id, Role.is_active),
                     )
                     child_roles = child_result.scalars().all()
                     if child_roles:

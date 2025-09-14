@@ -361,7 +361,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return request.client.host if request.client else "unknown"
 
 
-def setup_security_middleware(app: Any, csp_policy: str | None = None, slow_request_threshold: float | None = None) -> None:
+def setup_security_middleware(
+    app: Any,
+    csp_policy: str | None = None,
+    slow_request_threshold: float | None = None,
+) -> None:
     """Configure security middleware for the FastAPI application.
 
     This function adds all necessary security middleware in the correct order.
@@ -374,7 +378,7 @@ def setup_security_middleware(app: Any, csp_policy: str | None = None, slow_requ
     settings = get_settings(validate_on_startup=False)
 
     # Add request logging middleware (outermost layer)
-    request_logging_kwargs = {"log_body": False}
+    request_logging_kwargs: dict[str, Any] = {"log_body": False}
     if slow_request_threshold is not None:
         request_logging_kwargs["slow_request_threshold"] = slow_request_threshold
     app.add_middleware(RequestLoggingMiddleware, **request_logging_kwargs)

@@ -21,7 +21,7 @@ class MCPToolResult(BaseModel):
     """Model for MCP tool call results."""
 
     content: list[dict[str, Any]] = Field(default_factory=list, description="Tool response content")
-    isError: bool = Field(False, description="Whether the result is an error")
+    is_error: bool = Field(False, description="Whether the result is an error")
 
 
 class RouteAnalysisRequest(BaseModel):

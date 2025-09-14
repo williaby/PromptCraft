@@ -135,7 +135,7 @@ class TestUserCharacteristics:
     def test_user_characteristics_with_all_fields(self):
         """Test user characteristics with all fields populated."""
         reg_date = utc_now() - timedelta(days=45)
-        
+
         characteristics = UserCharacteristics(
             user_id="power_user_456",
             registration_date=reg_date,
@@ -160,7 +160,7 @@ class TestUserCharacteristics:
     def test_user_characteristics_to_dict(self):
         """Test serialization to dictionary."""
         reg_date = utc_now() - timedelta(days=10)
-        
+
         characteristics = UserCharacteristics(
             user_id="serialization_test",
             registration_date=reg_date,
@@ -238,7 +238,7 @@ class TestMetricEvent:
             "query_type": "optimization",
             "session_context": "premium_user",
         }
-        
+
         event = MetricEvent(
             experiment_id="exp_meta",
             user_id="meta_user",
@@ -262,7 +262,7 @@ class TestExperimentResults:
         """Test basic experiment results creation."""
         start_time = utc_now() - timedelta(hours=48)
         end_time = utc_now()
-        
+
         results = ExperimentResults(
             experiment_id="exp_results_test",
             experiment_name="Results Test Experiment",
@@ -296,7 +296,7 @@ class TestExperimentResults:
     def test_experiment_results_to_dict(self):
         """Test experiment results serialization."""
         start_time = utc_now() - timedelta(hours=24)
-        
+
         results = ExperimentResults(
             experiment_id="serialization_test",
             experiment_name="Serialization Test",
@@ -337,8 +337,8 @@ def test_db_engine():
 @pytest.fixture
 def test_db_session(test_db_engine):
     """Create database session for testing."""
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -350,7 +350,7 @@ async def experiment_manager(test_db_engine):
     """Create ExperimentManager instance for testing."""
     manager = ExperimentManager(db_url="sqlite:///:memory:")
     manager.engine = test_db_engine
-    manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    manager.session_local = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
     return manager
 
 
@@ -407,7 +407,7 @@ class TestExperimentManager:
         # Verify experiment was stored in database
         with experiment_manager.get_db_session() as session:
             experiment = session.query(ExperimentModel).filter_by(id=experiment_id).first()
-            
+
             assert experiment is not None
             assert experiment.name == sample_experiment_config.name
             assert experiment.status == "draft"
@@ -418,7 +418,7 @@ class TestExperimentManager:
     async def test_start_experiment(self, experiment_manager, sample_experiment_config):
         """Test starting an experiment."""
         experiment_id = await experiment_manager.create_experiment(sample_experiment_config)
-        
+
         # Start the experiment
         success = await experiment_manager.start_experiment(experiment_id)
         assert success is True
@@ -426,7 +426,7 @@ class TestExperimentManager:
         # Verify experiment status changed
         with experiment_manager.get_db_session() as session:
             experiment = session.query(ExperimentModel).filter_by(id=experiment_id).first()
-            
+
             assert experiment.status == "active"
             assert experiment.start_time is not None
             assert experiment.current_percentage == sample_experiment_config.initial_percentage
@@ -442,7 +442,7 @@ class TestExperimentManager:
         """Test stopping an experiment."""
         experiment_id = await experiment_manager.create_experiment(sample_experiment_config)
         await experiment_manager.start_experiment(experiment_id)
-        
+
         # Stop the experiment
         success = await experiment_manager.stop_experiment(experiment_id)
         assert success is True
@@ -450,7 +450,7 @@ class TestExperimentManager:
         # Verify experiment status changed
         with experiment_manager.get_db_session() as session:
             experiment = session.query(ExperimentModel).filter_by(id=experiment_id).first()
-            
+
             assert experiment.status == "completed"
             assert experiment.end_time is not None
 
@@ -491,27 +491,27 @@ class TestExperimentManager:
         with experiment_manager.get_db_session() as session:
             segmentation = UserSegmentation(session)
             config = ExperimentConfig(**sample_experiment_config.__dict__)
-            
+
             user_characteristics = UserCharacteristics(
                 user_id="persistence_test_user",
                 usage_frequency="high",
                 is_early_adopter=True,
             )
-            
+
             variant, segment = segmentation.assign_user_to_experiment(
                 "persistence_test_user",
                 experiment_id,
                 config,
                 user_characteristics,
             )
-            
+
             # Now check assignment in same session
             assignment = (
                 session.query(UserAssignmentModel)
                 .filter_by(user_id="persistence_test_user", experiment_id=experiment_id)
                 .first()
             )
-            
+
             assert assignment is not None
             assert assignment.variant == variant
             assert assignment.segment == segment.value
@@ -527,7 +527,7 @@ class TestExperimentManager:
             "consistent_user",
             experiment_id,
         )
-        
+
         variant2, segment2 = await experiment_manager.assign_user_to_experiment(
             "consistent_user",
             experiment_id,
@@ -558,13 +558,13 @@ class TestExperimentManager:
         with patch.object(experiment_manager, "assign_user_to_experiment") as mock_assign:
             # Test treatment assignment
             mock_assign.return_value = ("treatment", UserSegment.RANDOM)
-            
+
             should_use = await experiment_manager.should_use_dynamic_loading("test_user")
             assert should_use is True
-            
+
             # Test control assignment
             mock_assign.return_value = ("control", UserSegment.RANDOM)
-            
+
             should_use = await experiment_manager.should_use_dynamic_loading("test_user")
             assert should_use is False
 
@@ -573,7 +573,7 @@ class TestExperimentManager:
         """Test recording optimization results."""
         experiment_id = await experiment_manager.create_experiment(sample_experiment_config)
         await experiment_manager.start_experiment(experiment_id)
-        
+
         # Assign user first
         await experiment_manager.assign_user_to_experiment("result_user", experiment_id)
 
@@ -606,11 +606,15 @@ class TestExperimentManager:
 
         # Verify events were recorded
         with experiment_manager.get_db_session() as session:
-            events = session.query(MetricEventModel).filter_by(
-                experiment_id=experiment_id,
-                user_id="result_user",
-            ).all()
-            
+            events = (
+                session.query(MetricEventModel)
+                .filter_by(
+                    experiment_id=experiment_id,
+                    user_id="result_user",
+                )
+                .all()
+            )
+
             assert len(events) >= 2  # Performance and optimization events
             event_types = [event.event_type for event in events]
             assert "performance" in event_types
@@ -691,7 +695,7 @@ class TestUserSegmentation:
     def test_determine_user_segment_early_adopter(self, test_db_session):
         """Test early adopter segment determination."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         characteristics = UserCharacteristics(
             user_id="early_adopter",
             is_early_adopter=True,
@@ -704,7 +708,7 @@ class TestUserSegmentation:
     def test_determine_user_segment_new_user(self, test_db_session):
         """Test new user segment determination."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         characteristics = UserCharacteristics(
             user_id="new_user",
             registration_date=utc_now() - timedelta(days=15),
@@ -716,7 +720,7 @@ class TestUserSegmentation:
     def test_determine_user_segment_power_user(self, test_db_session):
         """Test power user segment determination."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         characteristics = UserCharacteristics(
             user_id="power_user",
             usage_frequency="high",
@@ -729,7 +733,7 @@ class TestUserSegmentation:
     def test_determine_user_segment_high_volume(self, test_db_session):
         """Test high volume user segment determination."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         characteristics = UserCharacteristics(
             user_id="high_volume",
             usage_frequency="high",
@@ -742,7 +746,7 @@ class TestUserSegmentation:
     def test_determine_user_segment_random_default(self, test_db_session):
         """Test default random segment determination."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         characteristics = UserCharacteristics(
             user_id="default_user",
         )
@@ -753,20 +757,20 @@ class TestUserSegmentation:
     def test_assign_variant_consistent_same_user(self, test_db_session):
         """Test consistent assignment for same user."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         user_id = "consistent_test"
         experiment_id = "exp_consistency"
         rollout_percentage = 50.0
 
         variant1 = segmentation._assign_variant_consistent(user_id, experiment_id, rollout_percentage)
         variant2 = segmentation._assign_variant_consistent(user_id, experiment_id, rollout_percentage)
-        
+
         assert variant1 == variant2
 
     def test_assign_variant_consistent_different_users(self, test_db_session):
         """Test that different users can get different assignments."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         experiment_id = "exp_different_users"
         rollout_percentage = 50.0
 
@@ -783,7 +787,7 @@ class TestUserSegmentation:
     def test_opt_out_user(self, test_db_session):
         """Test opting out a user from experiment."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         # First create an assignment
         assignment = UserAssignmentModel(
             id="test_assignment",
@@ -810,7 +814,7 @@ class TestUserSegmentation:
     def test_opt_out_nonexistent_user(self, test_db_session):
         """Test opting out a user with no existing assignment."""
         segmentation = UserSegmentation(test_db_session)
-        
+
         success = segmentation.opt_out_user("nonexistent_user", "nonexistent_exp")
         assert success is False
 
@@ -821,7 +825,7 @@ class TestMetricsCollector:
     def test_record_event(self, test_db_session):
         """Test recording a metric event."""
         collector = MetricsCollector(test_db_session)
-        
+
         event = MetricEvent(
             experiment_id="metrics_test_exp",
             user_id="metrics_user",
@@ -843,7 +847,7 @@ class TestMetricsCollector:
             .filter_by(experiment_id="metrics_test_exp", user_id="metrics_user")
             .first()
         )
-        
+
         assert stored_event is not None
         assert stored_event.event_type == "performance"
         assert stored_event.response_time_ms == 150.0
@@ -852,7 +856,7 @@ class TestMetricsCollector:
     def test_record_processing_result_success(self, test_db_session):
         """Test recording a successful processing result."""
         collector = MetricsCollector(test_db_session)
-        
+
         result = ProcessingResult(
             query="test query",
             session_id="session_123",
@@ -884,7 +888,7 @@ class TestMetricsCollector:
             .filter_by(experiment_id="processing_exp", user_id="processing_user")
             .all()
         )
-        
+
         assert len(events) >= 2  # Performance and optimization events
         event_types = [event.event_type for event in events]
         assert "performance" in event_types
@@ -893,7 +897,7 @@ class TestMetricsCollector:
     def test_record_processing_result_failure(self, test_db_session):
         """Test recording a failed processing result."""
         collector = MetricsCollector(test_db_session)
-        
+
         result = ProcessingResult(
             query="failed query",
             session_id="failed_session",
@@ -922,11 +926,9 @@ class TestMetricsCollector:
 
         # Verify error event was recorded
         events = (
-            test_db_session.query(MetricEventModel)
-            .filter_by(experiment_id="failure_exp", user_id="failure_user")
-            .all()
+            test_db_session.query(MetricEventModel).filter_by(experiment_id="failure_exp", user_id="failure_user").all()
         )
-        
+
         # Should have performance and error events
         event_types = [event.event_type for event in events]
         assert "performance" in event_types
@@ -999,12 +1001,14 @@ class TestGlobalExperimentManager:
     @pytest.mark.asyncio
     async def test_get_experiment_manager_starts_monitoring(self):
         """Test that get_experiment_manager starts monitoring."""
-        with patch("src.core.ab_testing_framework._experiment_manager", None):
-            with patch.object(ExperimentManager, "start_monitoring") as mock_start:
-                manager = await get_experiment_manager()
+        with (
+            patch("src.core.ab_testing_framework._experiment_manager", None),
+            patch.object(ExperimentManager, "start_monitoring") as mock_start,
+        ):
+            manager = await get_experiment_manager()
 
-                assert manager is not None
-                mock_start.assert_called_once()
+            assert manager is not None
+            mock_start.assert_called_once()
 
 
 if __name__ == "__main__":

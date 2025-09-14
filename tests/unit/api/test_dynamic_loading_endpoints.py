@@ -206,10 +206,10 @@ class TestDynamicLoadingModels:
         QueryOptimizationRequest(query="x" * 2000, user_id="u" * 100)  # Maximum
 
         # Invalid lengths
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at least 1 character"):
             QueryOptimizationRequest(query="")  # Empty query
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at most 2000 characters"):
             QueryOptimizationRequest(query="x" * 2001)  # Too long query
 
     def test_user_command_request_validation(self):
@@ -228,7 +228,7 @@ class TestDynamicLoadingModels:
         UserCommandRequest(command="/x")  # Minimum
         UserCommandRequest(command="/" + "x" * 199)  # Maximum
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="at most 200 characters"):
             UserCommandRequest(command="/x" * 201)  # Too long
 
     def test_demo_run_request_scenario_validation(self):
@@ -711,9 +711,9 @@ class TestDynamicLoadingEndpoints:
         client, _ = client_with_mocked_integration
 
         # Mock the demo system
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             mock_demo.run_comprehensive_demo.return_value = {
@@ -764,9 +764,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo with full results export."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             full_results = {
@@ -796,9 +796,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo when initialization fails."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = False  # Initialization fails
 
@@ -811,9 +811,9 @@ class TestDynamicLoadingEndpoints:
         """Test comprehensive demo with execution error."""
         client, _ = client_with_mocked_integration
 
-        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as MockDemo:
+        with patch("src.api.dynamic_loading_endpoints.ComprehensivePrototypeDemo") as mock_demo_class:
             mock_demo = AsyncMock()
-            MockDemo.return_value = mock_demo
+            mock_demo_class.return_value = mock_demo
 
             mock_demo.initialize.return_value = True
             mock_demo.run_comprehensive_demo.side_effect = Exception("Demo execution failed")
@@ -860,9 +860,11 @@ class TestEndpointPerformance:
         client, mock_integration = client_with_mocked_integration
 
         # Mock timing for performance measurement - provide enough values for multiple calls
-        with patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150, 0.300, 0.450]):
-            with patch("src.api.dynamic_loading_endpoints.audit_logger_instance") as mock_audit:
-                response = client.post("/api/v1/dynamic-loading/optimize-query", json={"query": "test query"})
+        with (
+            patch("src.api.dynamic_loading_endpoints.time.perf_counter", side_effect=[0.0, 0.150, 0.300, 0.450]),
+            patch("src.api.dynamic_loading_endpoints.audit_logger_instance") as mock_audit,
+        ):
+            response = client.post("/api/v1/dynamic-loading/optimize-query", json={"query": "test query"})
 
         assert response.status_code == 200
 

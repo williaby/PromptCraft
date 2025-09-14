@@ -451,7 +451,7 @@ class DynamicFunctionLoader:
 
         except Exception as e:
             # Add stack trace for debugging
-            import traceback  # noqa: PLC0415  # Error handler debugging
+            import traceback  # Error handler debugging
 
             logger.error("Function loading exception details for session %s:", session_id)
             logger.error("Exception: %s", e)
@@ -1062,7 +1062,7 @@ _global_loader: DynamicFunctionLoader | None = None
 
 def get_dynamic_function_loader() -> DynamicFunctionLoader:
     """Get the global dynamic function loader instance."""
-    global _global_loader  # noqa: PLW0603
+    global _global_loader
     if _global_loader is None:
         _global_loader = DynamicFunctionLoader()
     return _global_loader

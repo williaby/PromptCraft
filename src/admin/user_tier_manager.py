@@ -5,13 +5,14 @@ including adding/removing users from tiers, validating email addresses, and pers
 changes to the configuration.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 import json
 import logging
 import re
 from typing import Any
 
 from src.auth_simple.config import ConfigLoader, ConfigManager, get_config_manager
+from src.utils.datetime_compat import UTC
 
 
 logger = logging.getLogger(__name__)
@@ -106,7 +107,7 @@ class UserTierManager:
 
         except Exception as e:
             logger.error("Error getting all users: %s", e)
-            raise UserTierManagerError(f"Failed to retrieve users: {e}")
+            raise UserTierManagerError(f"Failed to retrieve users: {e}") from e
 
     def assign_user_tier(self, email: str, tier: str, admin_email: str) -> tuple[bool, str]:
         """Assign a user to a specific tier.
@@ -459,7 +460,6 @@ PROMPTCRAFT_LIMITED_USERS={','.join(self.config_manager.config.limited_users)}
 # Email whitelist (unchanged - managed via Cloudflare Access)
 # PROMPTCRAFT_EMAIL_WHITELIST={','.join(self.config_manager.config.email_whitelist)}
 """
-
 
         except Exception as e:
             logger.error("Error generating env file updates: %s", e)

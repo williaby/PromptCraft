@@ -38,7 +38,7 @@ from src.core.ab_testing_framework import (
     create_dynamic_loading_experiment,
 )
 from src.core.dynamic_loading_integration import ProcessingResult
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 class TestEnumsAndModels:
@@ -121,7 +121,7 @@ class TestEnumsAndModels:
         """Test UserCharacteristics to_dict method."""
         characteristics = UserCharacteristics(
             user_id="test_user",
-            registration_date=datetime(2024, 1, 15),
+            registration_date=datetime(2024, 1, 15, tzinfo=UTC),
             usage_frequency="high",
             feature_usage_pattern="advanced",
             error_rate=0.5,
@@ -136,7 +136,7 @@ class TestEnumsAndModels:
         result = characteristics.to_dict()
 
         assert result["user_id"] == "test_user"
-        assert result["registration_date"] == "2024-01-15T00:00:00"
+        assert result["registration_date"] == "2024-01-15T00:00:00+00:00"
         assert result["usage_frequency"] == "high"
         assert result["feature_usage_pattern"] == "advanced"
         assert result["error_rate"] == 0.5
@@ -181,8 +181,8 @@ class TestDatabaseModels:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -231,8 +231,8 @@ class TestUserSegmentation:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -295,8 +295,8 @@ class TestMetricsCollector:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 
@@ -373,8 +373,8 @@ class TestStatisticalAnalyzer:
         """Create in-memory database session for testing."""
         engine = create_engine("sqlite:///:memory:")
         BaseModel.metadata.create_all(engine)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = session_local()
 
         yield session
 

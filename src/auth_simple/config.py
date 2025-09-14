@@ -324,13 +324,16 @@ class ConfigManager:
     def create_middleware(self) -> Any:
         """Create authentication middleware from config."""
         # Lazy import to avoid circular dependencies
-        from .middleware import CloudflareAccessMiddleware, SimpleSessionManager
+        from .middleware import (  # Avoid circular import
+            CloudflareAccessMiddleware,
+            SimpleSessionManager,
+        )
 
         validator = self.create_whitelist_validator()
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)
 
         return CloudflareAccessMiddleware(
-            app=None,  # Will be set by FastAPI
+            app=None,  # type: ignore[arg-type]  # Will be set by FastAPI
             whitelist_validator=validator,
             session_manager=session_manager,
             public_paths=self.config.public_paths,
@@ -361,7 +364,7 @@ _config_manager: ConfigManager | None = None
 
 def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
-    global _config_manager  # noqa: PLW0603
+    global _config_manager
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager
@@ -374,5 +377,5 @@ def get_auth_config() -> AuthConfig:
 
 def reset_config() -> None:
     """Reset global configuration (for testing)."""
-    global _config_manager  # noqa: PLW0603
+    global _config_manager
     _config_manager = None

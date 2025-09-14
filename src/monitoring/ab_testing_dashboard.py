@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
-import pandas as pd  # type: ignore[import-untyped]
+import pandas as pd
 import plotly.graph_objects as go  # type: ignore[import-untyped]
 from jinja2 import Template
 from plotly.subplots import make_subplots  # type: ignore[import-untyped]

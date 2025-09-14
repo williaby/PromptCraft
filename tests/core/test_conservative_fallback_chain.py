@@ -838,10 +838,10 @@ class TestEdgeCases:
 
         # Make multiple concurrent requests with timeout protection
         tasks = [make_request(i) for i in range(5)]  # Reduced from 10 to 5
-        
+
         try:
             results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), 
+                asyncio.gather(*tasks, return_exceptions=True),
                 timeout=10.0,  # 10 second timeout
             )
         except TimeoutError:

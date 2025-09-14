@@ -117,7 +117,7 @@ class MetricsStorage:
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
-            """  # noqa: S608
+            """
 
             with sqlite3.connect(self.database_path) as conn:
                 conn.execute(insert_sql, values)
@@ -146,7 +146,7 @@ class MetricsStorage:
             INSERT OR REPLACE INTO metric_events
             ({', '.join(columns)})
             VALUES ({placeholders})
-            """  # noqa: S608
+            """
 
             # Prepare values for batch insert
             batch_values = []

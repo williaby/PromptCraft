@@ -91,26 +91,26 @@ class TestZenMCPContracts:
         """Set up Pact consumer and provider."""
         from tests.contract.mcp_test_client import MCPTestClient
         from tests.contract.pact_config import pact_config
-        
+
         self.consumer = Consumer("promptcraft")
         self.provider = Provider("zen-mcp-server")
-        
+
         # Use Pact mock service on different port to avoid conflict with real server
         zen_config = pact_config.get_zen_config()
         self.pact = self.consumer.has_pact_with(self.provider, port=zen_config["mock_port"])
-        
+
         # Real client for actual server testing
         self.test_client = MCPTestClient()
 
     async def test_query_processing_contract(self, all_test_servers):
         """Test contract for query processing endpoint."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_request = ContractTestHelpers.create_test_request("query_processing")
 
         expected_response = {
             "result": Like("Generated Python code"),
-            "status": "success", 
+            "status": "success",
             "metadata": {"model_used": Like("gpt-4"), "tokens_used": Like(150), "processing_time": Like(1.5)},
         }
 
@@ -131,13 +131,15 @@ class TestZenMCPContracts:
         with self.pact:
             # This would normally call the mock service, but we'll also test the real server
             pass
-        
+
         # Test against real server
         result = await self.test_client.zen_client_call("POST", "/api/v1/query/process", expected_request)
 
         # Validate response structure
         assert ContractTestHelpers.validate_response_structure(
-            result, ["result", "status"], "success",
+            result,
+            ["result", "status"],
+            "success",
         )
         assert result["status"] in ("success", "completed")
         assert "result" in result
@@ -145,7 +147,7 @@ class TestZenMCPContracts:
     async def test_agent_health_check_contract(self, all_test_servers):
         """Test contract for agent health check endpoint."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_response = {
             "status": "healthy",
             "agents": EachLike(
@@ -164,15 +166,17 @@ class TestZenMCPContracts:
         # Test against Pact mock service first
         with self.pact:
             pass
-        
+
         # Test against real server - try /health first, then /health/agents
         result = await self.test_client.zen_client_call("GET", "/health")
-        
+
         # Validate basic health response
         assert ContractTestHelpers.validate_response_structure(
-            result, ["status"], "success",
+            result,
+            ["status"],
+            "success",
         )
-        
+
         # If /health/agents exists, test that too
         agents_result = await self.test_client.zen_client_call("GET", "/health/agents")
         # Accept either success or 404 (endpoint may not exist in zen server)
@@ -181,7 +185,7 @@ class TestZenMCPContracts:
     async def test_knowledge_retrieval_contract(self, all_test_servers):
         """Test contract for knowledge retrieval endpoint."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_request = ContractTestHelpers.create_test_request("knowledge_search")
 
         expected_response = {
@@ -214,14 +218,16 @@ class TestZenMCPContracts:
         # Test against Pact mock service first
         with self.pact:
             pass
-        
+
         # Test against real server
         result = await self.test_client.zen_client_call("POST", "/api/v1/knowledge/search", expected_request)
 
         # Accept either success response or 404/501 if endpoint not implemented
         if result.get("code", 200) == 200:
             assert ContractTestHelpers.validate_response_structure(
-                result, ["results", "total", "status"], "success",
+                result,
+                ["results", "total", "status"],
+                "success",
             )
             assert result["status"] in ("success", "completed")
             assert "results" in result
@@ -233,7 +239,7 @@ class TestZenMCPContracts:
     async def test_error_handling_contract(self, all_test_servers):
         """Test contract for error responses."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_request = {"query": "", "context": "test context"}  # Invalid empty query
 
         expected_response = {
@@ -259,14 +265,16 @@ class TestZenMCPContracts:
         # Test against Pact mock service first
         with self.pact:
             pass
-        
+
         # Test against real server
         result = await self.test_client.zen_client_call("POST", "/api/v1/query/process", expected_request)
 
         # Validate error response structure
         if result.get("status") == "error":
             assert ContractTestHelpers.validate_response_structure(
-                result, ["error", "status", "code"], "error",
+                result,
+                ["error", "status", "code"],
+                "error",
             )
             assert result["status"] == "error"
             assert isinstance(result.get("code"), int)
@@ -324,21 +332,21 @@ class TestHeimdalMCPContracts:
         """Set up Pact consumer and provider."""
         from tests.contract.mcp_test_client import MCPTestClient
         from tests.contract.pact_config import pact_config
-        
+
         self.consumer = Consumer("promptcraft")
         self.provider = Provider("heimdall-mcp-server")
-        
+
         # Use Pact mock service on different port to avoid conflict with real server
         heimdall_config = pact_config.get_heimdall_config()
         self.pact = self.consumer.has_pact_with(self.provider, port=heimdall_config["mock_port"])
-        
+
         # Real client for actual server testing
         self.test_client = MCPTestClient()
 
     async def test_security_analysis_contract(self, all_test_servers):
         """Test contract for security analysis endpoint."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_request = ContractTestHelpers.create_test_request("security_analysis")
 
         expected_response = {
@@ -371,24 +379,26 @@ class TestHeimdalMCPContracts:
         # Test against Pact mock service first
         with self.pact:
             pass
-        
+
         # Test against real Heimdall stub server
         result = await self.test_client.heimdall_client_call("POST", "/api/v1/analyze/security", expected_request)
 
         # Validate response structure
         assert ContractTestHelpers.validate_response_structure(
-            result, ["findings", "score", "status"], "success",
+            result,
+            ["findings", "score", "status"],
+            "success",
         )
         assert result["status"] == "completed"
         assert "findings" in result
         assert "score" in result
-        assert isinstance(result["score"], (int, float))
+        assert isinstance(result["score"], int | float)
         assert 0 <= result["score"] <= 10
 
     async def test_code_quality_contract(self, all_test_servers):
         """Test contract for code quality analysis endpoint."""
         from tests.contract.mcp_test_client import ContractTestHelpers
-        
+
         expected_request = ContractTestHelpers.create_test_request("quality_analysis")
 
         expected_response = {
@@ -424,13 +434,15 @@ class TestHeimdalMCPContracts:
         # Test against Pact mock service first
         with self.pact:
             pass
-        
+
         # Test against real Heimdall stub server
         result = await self.test_client.heimdall_client_call("POST", "/api/v1/analyze/quality", expected_request)
 
         # Validate response structure
         assert ContractTestHelpers.validate_response_structure(
-            result, ["metrics", "suggestions", "status"], "success",
+            result,
+            ["metrics", "suggestions", "status"],
+            "success",
         )
         assert result["status"] == "completed"
         assert "metrics" in result

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class TestEventRegistry:
-    _registry: list = []  # noqa: RUF012
+    _registry: list = []
 
     @classmethod
     def get_registry(cls) -> list:
@@ -608,7 +608,7 @@ class MockSecurityMonitor:
         # Mock event tracking without database dependency
         user_id = getattr(event, "user_id", "unknown")
         event_type = str(getattr(event, "event_type", "unknown"))
-        ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104  # noqa: S104
+        ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
 
         # Increment threat scores based on event type
         if event_type in ["login_failure", "brute_force_attempt"]:
@@ -662,7 +662,7 @@ class MockSecurityMonitor:
             # Process each event using the same logic as track_event
             user_id = getattr(event, "user_id", "unknown")
             event_type = str(getattr(event, "event_type", "unknown"))
-            ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104  # noqa: S104
+            ip_address = getattr(event, "ip_address", "0.0.0.0")  # nosec B104
 
             # Increment threat scores based on event type
             if event_type in ["login_failure", "brute_force_attempt"]:
