@@ -156,7 +156,7 @@ class TestSecurityEventBaseValidators:
             "172.16.0.1",
             "127.0.0.1",
             "255.255.255.255",
-            "0.0.0.0",
+            "0.0.0.0",  # noqa: S104 # Test data for IP validation
         ]
 
         for ip in valid_ipv4_addresses:
@@ -191,7 +191,7 @@ class TestSecurityEventBaseValidators:
             "localhost",
             "127.0.0.1",
             "::1",
-            "0.0.0.0",
+            "0.0.0.0",  # noqa: S104 # Test data for IP validation
         ]
 
         for ip in localhost_addresses:
@@ -215,7 +215,7 @@ class TestSecurityEventBaseValidators:
         ]
 
         for ip in invalid_addresses:
-            with pytest.raises(ValueError, match="value is not a valid IPv4 or IPv6 address"):
+            with pytest.raises(ValueError, match="Invalid IP address:"):
                 SecurityEventBase(
                     event_type=SecurityEventType.LOGIN_FAILED,
                     severity=SecurityEventSeverity.CRITICAL,

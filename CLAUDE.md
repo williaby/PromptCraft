@@ -291,6 +291,18 @@ Before committing ANY changes, ensure:
 - All function-level imports preserve circular dependency prevention and dynamic loading
 - **NEVER use `ruff check --fix` for import-related rules** - would break runtime functionality
 
+### Datetime & Timezone Compatibility Issues
+
+> **CRITICAL REFERENCE**: `docs/planning/datetime-timezone-troubleshooting.md`
+
+**🔄 IN PROGRESS**: Datetime and timezone handling standardization:
+- **DTZ001 Errors**: 34 instances of naive datetime creation, primarily in test files
+- **UP017 Conflicts**: Python 3.10 runtime vs Python 3.11+ configuration requirements
+- **Compatibility Module**: `src/utils/datetime_compat.py` provides cross-version utilities
+- **Key Patterns**: Use `utc_now()` instead of `datetime.now()`, `MockDatetime` for tests
+- **Configuration**: Per-file DTZ ignores needed for legitimate test patterns
+- **Migration Path**: Gradual adoption of timezone-aware datetime patterns using compatibility layer
+
 ---
 
 *This streamlined configuration focuses on essential guidance. Detailed specifications available in `/docs/standards/` directory.*

@@ -509,7 +509,7 @@ class TestStandardsEndpoints:
             assert result["standard_id"] == "python"
             assert result["name"] == "Python Standards"
             assert result["content"] == "Standard content here"
-            assert result["last_updated"] == "2024-01-01T12:00:00"
+            assert result["last_updated"] == "2024-01-01T12:00:00+00:00"
 
     @pytest.mark.asyncio
     async def test_get_standard_content_not_found(self, app, mock_request):

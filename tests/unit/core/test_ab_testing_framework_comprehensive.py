@@ -136,7 +136,7 @@ class TestEnumsAndModels:
         result = characteristics.to_dict()
 
         assert result["user_id"] == "test_user"
-        assert result["registration_date"] == "2024-01-15T00:00:00"
+        assert result["registration_date"] == "2024-01-15T00:00:00+00:00"
         assert result["usage_frequency"] == "high"
         assert result["feature_usage_pattern"] == "advanced"
         assert result["error_rate"] == 0.5
@@ -440,7 +440,7 @@ class TestExperimentManager:
         """Test ExperimentManager initialization."""
         assert manager is not None
         assert manager.engine is not None
-        assert manager.session_local is not None
+        assert manager.SessionLocal is not None
         assert manager.logger is not None
         assert manager.performance_monitor is not None
 

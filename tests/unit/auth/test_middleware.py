@@ -804,9 +804,7 @@ class TestAuthenticationMiddleware:
             # Should use service_token_name as user_email
             call_args = mock_session.add.call_args[0][0]
             assert call_args.user_email == "test_service_token"
-            assert (
-                call_args.error_details["service_token_name"] == "test_service_token"  # Test token value
-            )
+            assert call_args.error_details["service_token_name"] == "test_service_token"  # Test token value
 
     @pytest.mark.asyncio
     async def test_log_authentication_event_error_handling(self, middleware):
