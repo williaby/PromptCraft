@@ -1082,7 +1082,7 @@ markupsafe==3.0.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:f3818cb119498c0678015754eba762e0d61e5b52d34c8b13d770f0719f7b1d79 \
     --hash=sha256:f8b3d067f2e40fe93e1ccdd6b2e1d16c43140e76f02fb1319a05cf2b79d99430 \
     --hash=sha256:fcabf5ff6eea076f859677f5f0b6b5c1a51e70a376b0579e0eadef8db48c6b50
-mcp==1.13.0 ; python_version >= "3.11" and python_version < "3.13" \
+mcp==1.23.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:70452f56f74662a94eb72ac5feb93997b35995e389b3a3a574e078bed2aa9ab3 \
     --hash=sha256:8b1a002ebe6e17e894ec74d1943cc09aa9d23cb931bf58d49ab2e9fa6bb17e4b
 mdurl==0.1.2 ; python_version >= "3.11" and python_version < "3.13" \
@@ -2151,7 +2151,7 @@ typing-inspection==0.4.1 ; python_version >= "3.11" and python_version < "3.13" 
 tzdata==2025.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8 \
     --hash=sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9
-urllib3==2.5.0 ; python_version >= "3.11" and python_version < "3.13" \
+urllib3==2.6.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760 \
     --hash=sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc
 uvicorn==0.35.0 ; python_version >= "3.11" and python_version < "3.13" \
