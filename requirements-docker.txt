@@ -504,7 +504,7 @@ fastapi==0.116.1 ; python_version >= "3.11" and python_version < "3.13" \
 ffmpy==0.6.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:69a37e2d7d6feb840e233d5640f3499a8b0a8657336774c86e4c52a3219222d4 \
     --hash=sha256:b5830fd05f72bace05b8fb28724d54a7a63c5119d7f74ca36a75df33f749142d
-filelock==3.12.4 ; python_version >= "3.11" and python_version < "3.13" \
+filelock==3.20.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:08c21d87ded6e2b9da6728c3dff51baf1dcecf973b768ef35bcbc3447edb9ad4 \
     --hash=sha256:2e6f249f1f3654291606e046b09f1fd5eac39b360664c27f5aad072012f8bcbd
 frozenlist==1.7.0 ; python_version >= "3.11" and python_version < "3.13" \
