@@ -211,24 +211,51 @@ you touch those code paths.
 
 > **Reference (global):** `~/.claude/docs/response-aware-development.md`
 
-## Slash Commands
+## Slash Commands and Skills
 
-Project-specific commands live under `.claude/commands/` and are invoked by
-filename without any `project:` prefix.
+Prefer global skills from `~/.claude/` for generic development tasks; fall
+back to project-specific commands under `.claude/commands/` only for
+PromptCraft-specific workflows.
+
+**Common global skills (partial list):**
+
+- `pr-review`, `ci-fix`, `testing`, `test-coverage`, `quality`, `security`
+- `rad` (Response-Aware Development)
+- `writing-plans`, `executing-plans`, `phase-gate`, `project-planning`
+- `git`, `finishing-a-development-branch`, `using-git-worktrees`
+- `brainstorming`, `systematic-debugging`, `debug-tests`
+- `verification-before-completion`, `requesting-code-review`,
+  `receiving-code-review`
+- `doc-audit`, `handoff`, `claude-md-improver`, `skill-creator`
+
+**Project-specific commands (PromptCraft-only functionality):**
 
 ```bash
-/workflow-review-cycle          # Full review cycle (read the file for args)
-/workflow-plan-validation       # Validate a plan
-/workflow-implementation        # Guided implementation
-/validation-precommit           # Pre-commit validation
-/validation-naming-conventions  # Naming standards check
-/validation-knowledge-chunk     # Knowledge file RAG validation
-/creation-knowledge-file        # Scaffold a knowledge file
-/creation-agent-skeleton        # Scaffold an agent
+/creation-agent-skeleton           # Scaffold a PromptCraft runtime agent
+/creation-knowledge-file           # Scaffold a knowledge base file
+/validation-agent-structure        # Validate agent registry structure
+/validation-knowledge-chunk        # Validate RAG chunking
+/validation-naming-conventions     # Enforce project naming rules
+/validation-frontmatter            # Validate YAML frontmatter
+/validation-standardize-planning-doc
+/quality-frontmatter-validate
+/quality-naming-conventions
+/migration-knowledge-file          # KB file migrations
+/migration-legacy-knowledge
+/migration-qdrant-schema           # Qdrant schema migration
+/function-loading-control          # Dynamic function loader
+/tools-ai-validate                 # AI tools config validation
+/workflow-resolve-issue            # Project-specific issue orchestrator
+/workflow-review-cycle             # Project-specific review orchestrator
+/notification                      # PushCut notifications
+/meta-list-commands                # List available commands
+/meta-command-help                 # Per-command help
 ```
 
-Run `ls .claude/commands/` for the full list; read the individual `.md` file
-before invoking unfamiliar commands.
+> **Migration note:** Several former generic-purpose commands were deleted
+> in favor of global skills. Many of the remaining project-specific
+> commands should eventually be converted to skills for better discovery
+> and auto-activation. Use the `skill-creator` skill when converting.
 
 ## Git and Worktrees
 
