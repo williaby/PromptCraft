@@ -38,7 +38,9 @@
    ```
 
 3. Run `poetry run basedpyright src/` and redirect to
-   `docs/planning/basedpyright-baseline.txt`. Commit the baseline.
+   `docs/architecture/basedpyright-baseline.txt`. Commit the baseline.
+   (`docs/planning/` is gitignored; use a tracked location so the baseline
+   can actually be reviewed.)
 
 ### Phase 2: Fix `standard` mode errors
 

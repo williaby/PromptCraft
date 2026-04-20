@@ -3,8 +3,10 @@
 > **Purpose:** Track unfixed CVEs surfaced by `pip-audit`, Semgrep, Bandit, or
 > upstream advisories. Every suppression or deferred fix must have an entry
 > here. Required by the global OpenSSF baseline: **no vulnerability ages past
-> 60 days without reassessment**; the release gate blocks any entry older
-> than 60 days regardless of reassessment status.
+> 60 days without reassessment**. The release gate blocks any entry whose
+> `first seen` date is more than 60 days old unless maintainers reassess
+> the entry and record a new `reassessed` date (see Release Gate Rule
+> below for the precise mechanics).
 
 ## How to Use
 
@@ -18,7 +20,7 @@
 ## Active Entries
 
 _None._ Last `pip-audit` sweep on **2026-04-20** against the Poetry venv
-(Python 3.12) reported: **No known vulnerabilities found**.
+(Python 3.11) reported: **No known vulnerabilities found**.
 
 When you add or update dependencies, re-run:
 

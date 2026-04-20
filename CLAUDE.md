@@ -40,7 +40,7 @@ tests/                   # Pytest suite; subdirs by type (unit/integration/e2e/.
 knowledge/{agent_id}/    # Agent-scoped knowledge files (RAG-ingested)
 docs/                    # Product docs, standards, architecture records
 docs/standards/          # Detailed specs referenced by this file
-.claude/                 # Project-level commands, settings, standards
+.claude/                 # Project-level commands, settings, rules
 config/                  # Application configuration
 database/                # Schema and migrations
 temp_cleanup/            # Holding area for in-flight files; not shipped
