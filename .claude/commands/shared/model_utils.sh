@@ -259,13 +259,6 @@ zen_mcp_consensus() {
     echo "🎯 Organization: $org_level, Models: $model_count, Cost: $cost_threshold"
     echo "💡 Call mcp__pal__tiered_consensus directly from your slash commands"
     return 0
-
-    # Final fallback to sequential calls
-    echo "🔄 Sequential consensus (pal tools not available)"
-    for model in "${MODELS[@]}"; do
-        echo "--- $model perspective ---"
-        pal_mcp_call "$model" --request "$request (Topic: $topic)"
-    done
 }
 
 # Dedicated layered consensus function for advanced multi-layer analysis
