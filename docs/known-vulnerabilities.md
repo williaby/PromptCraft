@@ -17,8 +17,17 @@
 
 ## Active Entries
 
-_None at time of writing (2026-04-19). First sweep should run
-`poetry run pip-audit` and populate this table if anything is flagged._
+_None._ Last `pip-audit` sweep on **2026-04-20** against the Poetry venv
+(Python 3.12) reported: **No known vulnerabilities found**.
+
+When you add or update dependencies, re-run:
+
+```bash
+PIPAPI_PYTHON_LOCATION="$(poetry env info --path)/bin/python" \
+  poetry run pip-audit --format=columns
+```
+
+If findings appear, add entries using the template below.
 
 ## Entry Template
 

@@ -27,5 +27,3 @@
 
 - `pyproject.toml` - primary configuration source.
 - `docs/standards/linting.md` - full linting spec.
-- `.claude/standards/python.md` - older reference that still cites 88 chars;
-  treat it as stale on line length.

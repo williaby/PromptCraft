@@ -1,12 +1,17 @@
 ---
 argument-hint: [--strategy=tiered] [--budget=balanced] [--scope=changed-files] [--explain] [--apply-fixes=review]
 description: Intelligent tiered verification of code assumptions using multiple AI models
-allowed-tools: Bash(git:*), Read, Grep, mcp__zen__chat, mcp__zen__dynamic_model_selector
+allowed-tools: Bash(git:*), Read, Grep, Agent, mcp__pal__chat, mcp__pal__dynamic_model_selector, mcp__pal__tiered_consensus
 ---
 
 # Verify Assumptions Smart - Tiered AI Model Verification
 
 You are implementing the **Response-Aware Development (RAD)** methodology to systematically verify code assumptions using multiple AI models based on risk levels.
+
+> **Prefer the global skill:** For most RAD verification, use the global `rad`
+> skill (auto-activates on keywords like "assumption", "verify assumptions",
+> "RAD"). This command remains for legacy workflows that need explicit
+> tiered model routing.
 
 ## Task Overview
 
@@ -61,17 +66,18 @@ Search for assumption patterns:
 - Database/Transactions → DeepSeek-R1
 
 **Standard Assumptions (Use Dynamic Free Selection):**
-Use `mcp__zen__dynamic_model_selector` with:
+Use `mcp__pal__dynamic_model_selector` with:
 
 ```
 requirements: "Analyze code assumptions for [category]. Add defensive programming patterns and error handling."
-model: "auto" 
+model: "auto"
 complexity_level: "medium"
 budget_preference: "cost-optimized"
 ```
 
 **Edge Cases (Use Fast Free Models):**
-Batch process with `mcp__zen__chat` using `gemini-2.0-flash-lite`.
+Batch process with `mcp__pal__chat` using a fast low-cost model, or dispatch
+an `Agent` with `subagent_type: "general-purpose"` and a constrained prompt.
 
 ### 4. Execute Verification Strategy
 
@@ -155,11 +161,11 @@ def select_model(assumption_text, category, budget):
     if budget == "free-only":
         return "deepseek/deepseek-r1" if "security" in category else "gemini-2.0-flash"
     elif "payment" in assumption_text.lower():
-        return "openai/o3-mini" if budget == "premium" else "gemini-2.5-pro"  
+        return "openai/o3-mini" if budget == "premium" else "gemini-2.5-pro"
     elif "security" in category or "auth" in assumption_text:
         return "gemini-2.5-pro"
     else:
-        return "dynamic" # Let Zen choose best free model
+        return "dynamic"  # Let mcp__pal__dynamic_model_selector choose
 ```
 
 ## Success Criteria

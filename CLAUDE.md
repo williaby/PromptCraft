@@ -139,9 +139,9 @@ For named workflows: `brainstorming`, `test-driven-development`,
 
 Use `TodoWrite` for any task with three or more steps or spanning multiple
 turns. Mark each item `completed` immediately on finish; do not batch. For
-plans that must survive compaction, see the `writing-plans` skill and store
-the plan file under `docs/planning/` or the session's plan path rather than
-`temp_cleanup/`.
+plans that must survive compaction, see the `writing-plans` skill. Note:
+`docs/planning/` is **gitignored** (local scratch only); use
+`docs/architecture/` for tracked plans and ADR-style decision records.
 
 ## Development Standards
 
