@@ -8,9 +8,11 @@
 - [ ] GPG key present (`gpg --list-secret-keys`) for `.env` encryption.
 - [ ] SSH signing key present (`ssh-add -l`) and
       `git config user.signingkey` set.
-- [ ] Ruff format and lint clean.
+- [ ] Configured Python hooks clean: Black, Ruff check, Ruff datetime check,
+      MyPy, Bandit. The Bandit suppressions in `pyproject.toml` (B101, B601)
+      are the only acceptable exceptions.
+- [ ] Markdown and YAML lint clean (`markdownlint`, `yamllint`).
 - [ ] Type checker (MyPy today, BasedPyright strict once migrated) passes.
-- [ ] Bandit clean except the documented project-excluded rules.
 - [ ] Test coverage at or above 80% line.
 - [ ] No em-dashes introduced in any text file.
 - [ ] No new `mcp__zen__*` tool references in project-owned files.
