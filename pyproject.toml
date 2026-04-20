@@ -123,6 +123,9 @@ pact-python = "^2.3.2"  # Re-enabled for MCP contract testing
 locust = "^2.0.0"
 pip-audit = "^2.9.0"
 types-cachetools = "^6.1.0.20250717"
+types-psutil = ">=6.0.0"
+types-requests = ">=2.32.0"
+types-docker = ">=7.1.0"
 isort = "^6.0.1"
 pytest-docker = "^3.2.3"
 testcontainers = {extras = ["postgres"], version = "^4.12.0"}
@@ -164,7 +167,7 @@ priority = "supplemental"
 [tool.black]
 line-length = 120
 target-version = ['py311', 'py312']
-include = '\.pyi?$' 
+include = '\.pyi?$'
 extend-exclude = '''
 /(
       \.eggs
@@ -258,6 +261,13 @@ ignore = [
 "scripts/*" = ["T20", "INP001", "ANN", "PLR0912", "PLR2004", "PTH123", "SIM118", "RUF013", "B007", "PLC0415", "G004", "S607", "S602", "S314", "S603", "S608", "RET504", "DTZ005", "RUF100"]
 "noxfile.py" = ["ANN", "D"]
 "src/config/validation.py" = ["PLC0415"]  # Allow local imports to avoid circular dependencies
+"src/agents/discovery.py" = ["PLC0415", "G004"]  # Lazy imports break circular deps; f-string logging follows project pattern
+"src/standards/discovery.py" = ["PLC0415"]  # Lazy yaml import inside parser to avoid optional-dep error
+"src/api/hybrid_infrastructure_endpoints.py" = ["PLR0915", "B904"]  # Large routing function; HTTPException intentionally suppresses chain
+"src/utils/datetime_compat.py" = ["PLW0603"]  # global _mock_now_time is the mock-time state store; intentional
+"src/mcp_integration/config_manager.py" = ["F823", "PLC0415"]  # F823: TYPE_CHECKING annotation not evaluated at runtime; PLC0415: lazy circular-import guard
+"src/mcp_integration/connection_bridge.py" = ["S603"]  # subprocess.Popen needed to launch MCP server processes
+"src/mcp_integration/smart_discovery.py" = ["S108", "S603", "S110", "PLC0415"]  # /tmp locks, subprocess for MCP launch, pass in discovery scan loop, lazy json import
 "src/config/health.py" = ["UP036", "UP017"]  # Version compatibility for Python 3.11
 "src/utils/time_utils.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
 "src/utils/observability.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
