@@ -32,7 +32,8 @@ PromptCraft-Hybrid is an advanced, hybrid AI platform designed to transform user
 
 The project follows a Python-based architecture with a modular structure:
 
-* `src/`: Application code by domain (`agents/`, `api/`, `auth/`, `core/`, `database/`, `ui/`, `utils/`, `config/`); entrypoint: `src/main.py`.
+* `src/`: Application code by domain (`agents/`, `api/`, `auth/`, `core/`, `database/`, `ui/`, `utils/`, `config/`).
+  Entrypoint: `src/main.py`.
 * `tests/`: Layered suites (`unit/`, `integration/`, `contract/`, `performance/`, `security/`); layout: `tests/`.
 * `docs/`: MkDocs site content; keep user-facing docs in sync with code.
 * `scripts/`: Utility scripts run via `poetry` or `make`.
