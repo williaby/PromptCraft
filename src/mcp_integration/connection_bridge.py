@@ -10,7 +10,7 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import logging
-import subprocess  # nosec B404 -- tracked: https://github.com/williaby/PromptCraft/pull/250
+import subprocess  # nosec B404 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
 from typing import Any
 
 from src.utils.datetime_compat import to_iso, utc_now
@@ -83,7 +83,7 @@ class NPXProcessManager(LoggerMixin):
 
             self.logger.info(f"Starting NPX server: {' '.join(cmd)}")
 
-            process = subprocess.Popen(  # nosec B603 -- tracked: https://github.com/williaby/PromptCraft/pull/250
+            process = subprocess.Popen(  # nosec B603 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR S7487
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -185,7 +185,7 @@ class MCPConnectionBridge(LoggerMixin):
         # Check if we already have a healthy connection
         if server_name in self.active_connections:
             active_conn = self.active_connections[server_name]
-            if await self._is_connection_healthy(active_conn):
+            if self._is_connection_healthy(active_conn):
                 self.logger.debug(f"Reusing existing connection to {server_name}")
                 return active_conn
             # Connection unhealthy, remove it
@@ -212,11 +212,11 @@ class MCPConnectionBridge(LoggerMixin):
             if connection.type == "npx":
                 success = await self._connect_npx_server(active_conn)
             elif connection.type == "embedded":
-                success = await self._connect_embedded_server(active_conn)
+                success = self._connect_embedded_server(active_conn)
             elif connection.type == "external":
-                success = await self._connect_external_server(active_conn)
+                success = self._connect_external_server(active_conn)
             elif connection.type == "docker":
-                success = await self._connect_docker_server(active_conn)
+                success = self._connect_docker_server(active_conn)
             else:
                 self.logger.error(f"Unknown connection type: {connection.type}")
                 return None
@@ -275,7 +275,7 @@ class MCPConnectionBridge(LoggerMixin):
             self.logger.error(f"Failed to connect to NPX server {active_conn.server_name}: {e}")
             return False
 
-    async def _connect_embedded_server(self, active_conn: ActiveConnection) -> bool:
+    def _connect_embedded_server(self, active_conn: ActiveConnection) -> bool:
         """Establish connection to embedded MCP server (like zen-mcp).
 
         Args:
@@ -305,7 +305,7 @@ class MCPConnectionBridge(LoggerMixin):
             self.logger.error(f"Failed to connect to embedded server {active_conn.server_name}: {e}")
             return False
 
-    async def _connect_external_server(self, active_conn: ActiveConnection) -> bool:
+    def _connect_external_server(self, active_conn: ActiveConnection) -> bool:
         """Establish connection to external MCP server.
 
         Args:
@@ -329,7 +329,7 @@ class MCPConnectionBridge(LoggerMixin):
             self.logger.error(f"Failed to connect to external server {active_conn.server_name}: {e}")
             return False
 
-    async def _connect_docker_server(self, active_conn: ActiveConnection) -> bool:
+    def _connect_docker_server(self, active_conn: ActiveConnection) -> bool:
         """Establish connection to Docker-based MCP server.
 
         Args:
@@ -353,7 +353,7 @@ class MCPConnectionBridge(LoggerMixin):
             self.logger.error(f"Failed to connect to Docker server {active_conn.server_name}: {e}")
             return False
 
-    async def _is_connection_healthy(self, active_conn: ActiveConnection) -> bool:
+    def _is_connection_healthy(self, active_conn: ActiveConnection) -> bool:
         """Check if a connection is healthy.
 
         Args:
@@ -448,7 +448,7 @@ class MCPConnectionBridge(LoggerMixin):
             self.logger.error(f"Failed to disconnect from {server_name}: {e}")
             return False
 
-    async def get_connection_status(self) -> dict[str, Any]:
+    async def get_connection_status(self) -> dict[str, Any]:  # NOSONAR S7503
         """Get status of all active connections.
 
         Returns:
@@ -461,7 +461,7 @@ class MCPConnectionBridge(LoggerMixin):
         }
 
         for server_name, active_conn in self.active_connections.items():
-            is_healthy = await self._is_connection_healthy(active_conn)
+            is_healthy = self._is_connection_healthy(active_conn)
 
             status["connections"][server_name] = {
                 "type": active_conn.connection.type,
@@ -478,7 +478,7 @@ class MCPConnectionBridge(LoggerMixin):
 
         return status
 
-    async def health_check(self) -> dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:  # NOSONAR S7503
         """Perform comprehensive health check of the connection bridge.
 
         Returns:

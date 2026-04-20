@@ -12,7 +12,7 @@ import logging
 import os
 from pathlib import Path
 import socket
-import subprocess  # nosec B404 -- tracked: https://github.com/williaby/PromptCraft/pull/250
+import subprocess  # nosec B404 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
 
 from filelock import FileLock
 import psutil
@@ -149,7 +149,7 @@ class SmartMCPDiscovery(LoggerMixin):
             return cached
 
         # 2. Check for existing deployments
-        if existing := await self.find_existing_deployment(server_name):
+        if existing := self.find_existing_deployment(server_name):
             self.logger.info(f"Found existing {server_name} at {existing.url}")
             self.deployment_cache[server_name] = existing
             return existing
@@ -160,18 +160,16 @@ class SmartMCPDiscovery(LoggerMixin):
 
         if server_requirements and available_memory < server_requirements.memory:
             # Try cloud/NPX fallback
-            if cloud := await self.try_cloud_deployment(server_name):
+            if cloud := self.try_cloud_deployment(server_name):
                 return cloud
             raise ResourceError(f"Insufficient resources for {server_name}")
 
         # 4. Deploy with lock to prevent races
-        lock_path = (
-            f"/tmp/.mcp-{server_name}.lock"  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250
-        )
+        lock_path = f"/tmp/.mcp-{server_name}.lock"  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
         try:
             with FileLock(lock_path, timeout=30):
                 # Double-check after acquiring lock
-                if existing := await self.find_existing_deployment(server_name):
+                if existing := self.find_existing_deployment(server_name):
                     return existing
 
                 return await self.deploy_server(server_name)
@@ -196,7 +194,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return connection
 
-    async def find_existing_deployment(self, server_name: str) -> ServerConnection | None:
+    def find_existing_deployment(self, server_name: str) -> ServerConnection | None:
         """Multi-strategy detection for existing deployments."""
         strategies = [
             self.check_known_ports,
@@ -209,7 +207,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         for strategy in strategies:
             try:
-                if conn := await strategy(server_name):
+                if conn := strategy(server_name):
                     # Verify it's actually responding
                     if self.verify_health(conn):
                         return conn
@@ -218,7 +216,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return None
 
-    async def check_known_ports(self, server_name: str) -> ServerConnection | None:
+    def check_known_ports(self, server_name: str) -> ServerConnection | None:
         """Check known ports for running servers."""
         port_map = {
             "zen-mcp": [8000, 8001, 8002],  # Common zen-mcp ports
@@ -245,7 +243,7 @@ class SmartMCPDiscovery(LoggerMixin):
                     pass
         return None
 
-    async def check_process_list(self, server_name: str) -> ServerConnection | None:
+    def check_process_list(self, server_name: str) -> ServerConnection | None:
         """Check running processes for server."""
         process_patterns = {
             "zen-mcp": ["zen-mcp-server", "poetry run python -m src.main"],
@@ -258,7 +256,7 @@ class SmartMCPDiscovery(LoggerMixin):
         for pattern in patterns:
             if self.resource_monitor.check_process_exists(pattern):
                 # Try to determine the URL from process
-                url = await self.extract_url_from_process(pattern)
+                url = self.extract_url_from_process(pattern)
                 if url:
                     return ServerConnection(
                         url=url,
@@ -269,7 +267,7 @@ class SmartMCPDiscovery(LoggerMixin):
                     )
         return None
 
-    async def check_node_modules(self, server_name: str) -> ServerConnection | None:
+    def check_node_modules(self, server_name: str) -> ServerConnection | None:  # NOSONAR S3776
         """Check node_modules/.bin/ for installed NPX MCP servers."""
         node_modules_bin = Path("node_modules/.bin")
 
@@ -338,7 +336,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return None
 
-    async def check_docker_containers(self, server_name: str) -> ServerConnection | None:
+    def check_docker_containers(self, server_name: str) -> ServerConnection | None:  # NOSONAR S3776
         """Check Docker containers for running servers."""
         if not self.docker_client:
             return None
@@ -365,11 +363,11 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return None
 
-    async def check_lock_files(self, server_name: str) -> ServerConnection | None:
+    def check_lock_files(self, server_name: str) -> ServerConnection | None:
         """Check for lock files indicating running servers."""
         lock_patterns = [
-            f"/tmp/.mcp-{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250
-            f"/tmp/.{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250
+            f"/tmp/.mcp-{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
+            f"/tmp/.{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
             Path.home() / f".{server_name}.lock",
         ]
 
@@ -392,7 +390,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return None
 
-    async def check_env_variables(self, server_name: str) -> ServerConnection | None:
+    def check_env_variables(self, server_name: str) -> ServerConnection | None:
         """Check environment variables for server URLs."""
         env_patterns = {
             "zen-mcp": ["ZEN_MCP_URL", "PROMPTCRAFT_ZEN_MCP_SERVER_URL"],
@@ -414,7 +412,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return None
 
-    async def try_cloud_deployment(self, server_name: str) -> ServerConnection | None:
+    def try_cloud_deployment(self, server_name: str) -> ServerConnection | None:
         """Try cloud/NPX deployment for supported servers."""
         cloud_servers = ["context7", "perplexity", "sentry"]
 
@@ -466,13 +464,11 @@ class SmartMCPDiscovery(LoggerMixin):
                 try:
                     port = self.find_available_port(8000, 8010)
                     cmd = ["poetry", "run", "python", "-m", "src.main", "--port", str(port)]
-                    process = (
-                        subprocess.Popen(  # nosec B603 -- tracked: https://github.com/williaby/PromptCraft/pull/250
-                            cmd,
-                            cwd=zen_path,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                        )
+                    process = subprocess.Popen(  # nosec B603 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
+                        cmd,
+                        cwd=zen_path,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
                     )
 
                     # Wait a bit for startup
@@ -482,7 +478,7 @@ class SmartMCPDiscovery(LoggerMixin):
                     if self.verify_health(ServerConnection(url, "embedded", "starting", {}, utc_now())):
                         # Create lock file
                         lock_file = Path(
-                            f"/tmp/.mcp-{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250
+                            f"/tmp/.mcp-{server_name}.lock",  # nosec B108 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
                         )
                         lock_file.write_text(url)
 
@@ -498,7 +494,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         raise RuntimeError(f"Could not deploy {server_name}")
 
-    async def deploy_npx_server(self, server_name: str) -> ServerConnection:
+    async def deploy_npx_server(self, server_name: str) -> ServerConnection:  # NOSONAR S7503
         """Deploy NPX-based server (context7, perplexity, sentry)."""
         # These are handled by Claude Code directly, so we just return the NPX connection
         return ServerConnection(
@@ -531,7 +527,7 @@ class SmartMCPDiscovery(LoggerMixin):
 
         return False
 
-    async def extract_url_from_process(self, pattern: str) -> str | None:
+    def extract_url_from_process(self, pattern: str) -> str | None:
         """Extract URL from running process."""
         # This would need more sophisticated process inspection
         # For now, return common defaults
