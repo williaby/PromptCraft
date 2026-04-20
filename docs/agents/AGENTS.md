@@ -3,8 +3,8 @@
 For a deeper, process-oriented guide (branching, workflow, dependency policy), see [docs/planning/development.md](docs/planning/development.md).
 
 ## Project Structure & Module Organization
-- `src/`: Application code by domain (`agents/`, `api/`, `auth/`, `core/`, `database/`, `ui/`, `utils/`, `config/`) — entrypoint: [src/main.py](src/main.py).
-- `tests/`: Layered suites (`unit/`, `integration/`, `contract/`, `performance/`, `security/`) — layout: [tests/](tests/).
+- `src/`: Application code by domain (`agents/`, `api/`, `auth/`, `core/`, `database/`, `ui/`, `utils/`, `config/`); entrypoint: [src/main.py](src/main.py).
+- `tests/`: Layered suites (`unit/`, `integration/`, `contract/`, `performance/`, `security/`); layout: [tests/](tests/).
 - `docs/`: MkDocs site content; keep user-facing docs in sync with code.
 - `scripts/`: Utility scripts run via `poetry` or `make`.
 - `examples/` and `config/`: Sample flows and environment settings.
