@@ -140,11 +140,10 @@ class TestPytestSessionFinish:
         del session.testscollected  # Simulate missing attribute
 
         with (
-            patch("subprocess.run") as mock_run,
+            patch("subprocess.run"),
             patch("pathlib.Path.cwd") as mock_cwd,
             patch.object(Path, "exists") as mock_exists,
         ):
-
             mock_cwd.return_value = Path("/test/project")
             mock_exists.side_effect = lambda: True  # pyproject.toml exists
 
@@ -297,7 +296,6 @@ class TestPytestSessionFinish:
             patch.object(Path, "exists") as mock_exists,
             patch("subprocess.run") as mock_run,
         ):
-
             # Set up basic path
             test_path = Path("/test")
             mock_cwd.return_value = test_path
@@ -703,7 +701,6 @@ class TestIntegrationScenarios:
         ]
 
         with patch("pathlib.Path.cwd") as mock_cwd, patch("subprocess.run") as mock_run:
-
             mock_cwd.return_value = Path("/project")
 
             for error in error_types:
