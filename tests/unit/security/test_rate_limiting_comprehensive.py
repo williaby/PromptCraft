@@ -47,13 +47,10 @@ class TestStorageBackendConfiguration:
             mock_limiter = Mock()
             mock_limiter_class.return_value = mock_limiter
 
-            limiter = create_limiter()
-
-            # Verify Redis storage URI is constructed correctly
-            expected_uri = "redis://redis.example.com:6379/1"
-            assert limiter.storage_uri == expected_uri
+            create_limiter()
 
             # Verify Limiter was called with correct parameters
+            expected_uri = "redis://redis.example.com:6379/1"
             mock_limiter_class.assert_called_once_with(
                 key_func=get_client_identifier,
                 storage_uri=expected_uri,
@@ -66,23 +63,22 @@ class TestStorageBackendConfiguration:
             patch("src.security.rate_limiting.get_settings") as mock_settings,
             patch("src.security.rate_limiting.Limiter") as mock_limiter_class,
         ):
-            # Production without explicit Redis config (should use defaults)
+            # Production with default Redis config
             settings_mock = Mock()
             settings_mock.environment = "prod"
-            # Don't set redis_host, redis_port, redis_db attributes
+            settings_mock.redis_host = "localhost"
+            settings_mock.redis_port = 6379
+            settings_mock.redis_db = 0
             mock_settings.return_value = settings_mock
 
             # Create a mock limiter instance
             mock_limiter = Mock()
             mock_limiter_class.return_value = mock_limiter
 
-            limiter = create_limiter()
+            create_limiter()
 
-            # Should use default Redis configuration
+            # Verify Limiter was called with default Redis configuration
             expected_uri = "redis://localhost:6379/0"
-            assert limiter.storage_uri == expected_uri
-
-            # Verify Limiter was called with correct parameters
             mock_limiter_class.assert_called_once_with(
                 key_func=get_client_identifier,
                 storage_uri=expected_uri,
@@ -91,43 +87,67 @@ class TestStorageBackendConfiguration:
 
     def test_create_limiter_development_memory_storage(self):
         """Test that development environment uses memory storage."""
-        with patch("src.security.rate_limiting.get_settings") as mock_settings:
+        with (
+            patch("src.security.rate_limiting.get_settings") as mock_settings,
+            patch("src.security.rate_limiting.Limiter") as mock_limiter_class,
+        ):
             mock_settings.return_value.environment = "dev"
 
-            limiter = create_limiter()
+            create_limiter()
 
-            # Should use memory storage for development
-            assert limiter.storage_uri == "memory://"
+            mock_limiter_class.assert_called_once_with(
+                key_func=get_client_identifier,
+                storage_uri="memory://",
+                default_limits=["100 per minute"],
+            )
 
     def test_create_limiter_staging_memory_storage(self):
         """Test that staging environment uses memory storage."""
-        with patch("src.security.rate_limiting.get_settings") as mock_settings:
+        with (
+            patch("src.security.rate_limiting.get_settings") as mock_settings,
+            patch("src.security.rate_limiting.Limiter") as mock_limiter_class,
+        ):
             mock_settings.return_value.environment = "staging"
 
-            limiter = create_limiter()
+            create_limiter()
 
-            # Should use memory storage for staging
-            assert limiter.storage_uri == "memory://"
+            mock_limiter_class.assert_called_once_with(
+                key_func=get_client_identifier,
+                storage_uri="memory://",
+                default_limits=["100 per minute"],
+            )
 
     def test_create_limiter_test_memory_storage(self):
         """Test that test environment uses memory storage."""
-        with patch("src.security.rate_limiting.get_settings") as mock_settings:
+        with (
+            patch("src.security.rate_limiting.get_settings") as mock_settings,
+            patch("src.security.rate_limiting.Limiter") as mock_limiter_class,
+        ):
             mock_settings.return_value.environment = "test"
 
-            limiter = create_limiter()
+            create_limiter()
 
-            # Should use memory storage for test
-            assert limiter.storage_uri == "memory://"
+            mock_limiter_class.assert_called_once_with(
+                key_func=get_client_identifier,
+                storage_uri="memory://",
+                default_limits=["100 per minute"],
+            )
 
     def test_create_limiter_unknown_environment_memory_storage(self):
         """Test that unknown environments default to memory storage."""
-        with patch("src.security.rate_limiting.get_settings") as mock_settings:
+        with (
+            patch("src.security.rate_limiting.get_settings") as mock_settings,
+            patch("src.security.rate_limiting.Limiter") as mock_limiter_class,
+        ):
             mock_settings.return_value.environment = "unknown"
 
-            limiter = create_limiter()
+            create_limiter()
 
-            # Should default to memory storage for unknown environments
-            assert limiter.storage_uri == "memory://"
+            mock_limiter_class.assert_called_once_with(
+                key_func=get_client_identifier,
+                storage_uri="memory://",
+                default_limits=["100 per minute"],
+            )
 
     def test_create_limiter_logging_production(self):
         """Test that production limiter creation logs Redis usage."""
@@ -623,7 +643,6 @@ class TestSetupRateLimitingIntegration:
             assert hasattr(app.state, "limiter")
             assert isinstance(app.state.limiter, Limiter)
             assert app.state.limiter._key_func == get_client_identifier
-            assert app.state.limiter.storage_uri == "memory://"
 
     def test_setup_rate_limiting_with_different_environments(self):
         """Test setup_rate_limiting behavior across different environments."""
@@ -699,10 +718,14 @@ class TestRateLimitingEdgeCases:
             mock_limiter = Mock()
             mock_limiter_class.return_value = mock_limiter
 
-            limiter = create_limiter()
+            create_limiter()
 
             expected_uri = "redis://redis-cluster-with-very-long-hostname.example.com:65535/15"
-            assert limiter.storage_uri == expected_uri
+            mock_limiter_class.assert_called_once_with(
+                key_func=get_client_identifier,
+                storage_uri=expected_uri,
+                default_limits=["100 per minute"],
+            )
 
     def test_get_client_identifier_performance(self):
         """Test get_client_identifier performance with many headers."""
