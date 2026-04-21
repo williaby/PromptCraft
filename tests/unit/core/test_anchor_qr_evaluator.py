@@ -688,7 +688,7 @@ class TestErrorHandling:
     def test_evaluation_with_logging_errors(self):
         """Test evaluation continues even with logging errors."""
         evaluator = ANCHORQREvaluator()
-        
+
         # Mock the logger to raise an exception when called
         original_logger = evaluator.logger
         mock_logger = patch.object(evaluator, "logger")

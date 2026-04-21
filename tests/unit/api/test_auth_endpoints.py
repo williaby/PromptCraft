@@ -202,7 +202,7 @@ class TestAuthEndpoints:
 
     def test_create_service_token_success(self, app, client, mock_service_token_manager, mock_jwt_user, monkeypatch):
         """Test POST /auth/tokens endpoint successful token creation."""
-        
+
         # Use proper FastAPI dependency overrides instead of problematic monkeypatch
         app.dependency_overrides[require_admin_role] = lambda: mock_jwt_user
         app.dependency_overrides[get_service_token_manager] = lambda: mock_service_token_manager
@@ -234,10 +234,10 @@ class TestAuthEndpoints:
 
     def test_create_service_token_duplicate_name(self, app, client, mock_jwt_user, monkeypatch):
         """Test POST /auth/tokens endpoint with duplicate token name."""
-        
+
         mock_manager = AsyncMock(spec=ServiceTokenManager)
         mock_manager.create_service_token.side_effect = ValueError("Token name already exists")
-        
+
         # Use proper FastAPI dependency overrides
         app.dependency_overrides[require_admin_role] = lambda: mock_jwt_user
         app.dependency_overrides[get_service_token_manager] = lambda: mock_manager

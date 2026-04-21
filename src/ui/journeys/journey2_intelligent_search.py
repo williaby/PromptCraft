@@ -114,7 +114,8 @@ class Journey2IntelligentSearch(LoggerMixin):
                         routing_metadata["routing_method"] = "zen_mcp"
                         routing_metadata["model_used"] = result["result"]["model_used"]
                         routing_metadata["cost_optimized"] = result["result"]["routing_metadata"].get(
-                            "cost_optimized", False,
+                            "cost_optimized",
+                            False,
                         )
 
                         await self.zen_client.disconnect()
@@ -574,4 +575,3 @@ class Journey2IntelligentSearch(LoggerMixin):
             ),
             "error_display": gr.HTML(""),
         }
-

@@ -144,8 +144,8 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
     return {
         "authenticated": True,
         "user": {
-            "email": user.get("email", "unknown"), 
-            "role": user.get("role", "user"), 
+            "email": user.get("email", "unknown"),
+            "role": user.get("role", "user"),
             "is_admin": is_admin_user(request),
         },
     }

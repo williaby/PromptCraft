@@ -293,8 +293,8 @@ class KnowledgeIngestionPipeline:
                     {
                         "score": search_results[0].score if search_results else None,
                         "content_preview": (
-                            search_results[0].payload.get("content", "")[:100] 
-                            if search_results and search_results[0].payload 
+                            search_results[0].payload.get("content", "")[:100]
+                            if search_results and search_results[0].payload
                             else None
                         ),
                     }

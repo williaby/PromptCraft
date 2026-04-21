@@ -320,7 +320,7 @@ class TestZenMCPProcess:
         """Test health check exception handling."""
         process = ZenMCPProcess(connection_config)
         process.process = mock_subprocess  # Set a process so it doesn't exit early
-        
+
         mock_subprocess.poll.return_value = None  # Process is running
 
         # Force exception during health check after basic checks

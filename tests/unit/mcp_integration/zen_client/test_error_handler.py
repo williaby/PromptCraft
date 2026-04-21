@@ -423,7 +423,7 @@ class TestMCPConnectionManager:
     async def test_close_http_client(self, fallback_config):
         """Test closing HTTP client."""
         manager = MCPConnectionManager(fallback_config)
-        
+
         # Mock the http_client's aclose method
         mock_aclose = AsyncMock()
         manager.http_client.aclose = mock_aclose

@@ -726,7 +726,9 @@ class VerificationReporter:
         return "\n".join(lines)
 
     def _find_ai_result(
-        self, assumption: Assumption, verification_results: list["AIVerificationResult"] | None,
+        self,
+        assumption: Assumption,
+        verification_results: list["AIVerificationResult"] | None,
     ) -> Optional["AIVerificationResult"]:
         """Find AI verification result for a specific assumption"""
         if not verification_results:

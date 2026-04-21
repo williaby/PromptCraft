@@ -329,7 +329,7 @@ class TestAuthenticationIntegration:
         """Test graceful degradation when database is unavailable."""
         app = FastAPI()
 
-        # Mock database failure  
+        # Mock database failure
         async def mock_db_generator_failure():
             raise Exception("Database connection failed")
             yield  # This line never executes but satisfies the generator requirement

@@ -49,6 +49,7 @@ class TestMCPSmartDiscovery:
 
         # Mock a server connection
         from src.utils.datetime_compat import utc_now
+
         mock_connection = ServerConnection(
             url="npx://test-server",
             type="npx",

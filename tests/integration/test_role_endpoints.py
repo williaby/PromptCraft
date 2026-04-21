@@ -39,6 +39,7 @@ def test_app():
 @pytest.fixture
 def client(test_app, mock_authenticated_user):
     """Create a test client with authentication override."""
+
     # Override authentication using the dependency injection pattern
     def mock_require_authentication():
         return mock_authenticated_user
@@ -69,9 +70,10 @@ def mock_authenticated_user():
 @pytest.fixture(autouse=True)
 def mock_user_permissions():
     """Auto-use fixture to mock user permissions globally."""
+
     async def mock_user_has_permission(user_email: str, permission_name: str) -> bool:
         return True
-    
+
     with patch("src.auth.permissions.user_has_permission", side_effect=mock_user_has_permission):
         yield
 
@@ -340,7 +342,9 @@ class TestRolePermissionEndpoints:
     @pytest.mark.timeout(30)
     def test_get_role_permissions_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful role permissions retrieval."""
         # Setup mocks
@@ -359,7 +363,9 @@ class TestRolePermissionEndpoints:
     @pytest.mark.timeout(30)
     def test_assign_permission_to_role_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful permission assignment to role."""
         # Setup mocks
@@ -385,7 +391,9 @@ class TestRolePermissionEndpoints:
     @pytest.mark.timeout(30)
     def test_revoke_permission_from_role_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful permission revocation from role."""
         # Setup mocks
@@ -409,7 +417,9 @@ class TestUserRoleAssignmentEndpoints:
     @pytest.mark.timeout(30)
     def test_assign_user_role_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful user role assignment."""
         # Setup mocks
@@ -439,7 +449,9 @@ class TestUserRoleAssignmentEndpoints:
     @pytest.mark.timeout(30)
     def test_revoke_user_role_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful user role revocation."""
         # Setup mocks
@@ -462,7 +474,9 @@ class TestUserRoleAssignmentEndpoints:
     @pytest.mark.timeout(30)
     def test_revoke_user_role_not_assigned(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test user role revocation when role wasn't assigned."""
         # Setup mocks
@@ -480,7 +494,9 @@ class TestUserRoleAssignmentEndpoints:
     @pytest.mark.timeout(30)
     def test_get_user_roles_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
         sample_user_role_data,
     ):
         """Test successful user roles retrieval."""
@@ -500,7 +516,9 @@ class TestUserRoleAssignmentEndpoints:
     @pytest.mark.timeout(30)
     def test_get_user_permissions_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
         sample_user_role_data,
     ):
         """Test successful user permissions retrieval."""
@@ -527,7 +545,9 @@ class TestRoleDeletionEndpoints:
     @pytest.mark.timeout(30)
     def test_delete_role_success(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful role deletion."""
         # Setup mocks
@@ -548,7 +568,9 @@ class TestRoleDeletionEndpoints:
     @pytest.mark.timeout(30)
     def test_delete_role_force(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test force role deletion."""
         # Setup mocks
@@ -566,7 +588,9 @@ class TestRoleDeletionEndpoints:
     @pytest.mark.timeout(30)
     def test_delete_role_not_found(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test role deletion for non-existent role."""
         # Setup mocks
@@ -588,7 +612,9 @@ class TestRoleHierarchyValidationEndpoints:
     @pytest.mark.timeout(30)
     def test_validate_role_hierarchy_valid(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test successful role hierarchy validation."""
         # Setup mocks
@@ -607,7 +633,9 @@ class TestRoleHierarchyValidationEndpoints:
     @pytest.mark.timeout(30)
     def test_validate_role_hierarchy_invalid(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test role hierarchy validation with circular dependency."""
         # Setup mocks
@@ -635,6 +663,7 @@ class TestServiceTokenAuthentication:
         sample_role_data,
     ):
         """Test role creation using service token authentication."""
+
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
@@ -674,6 +703,7 @@ class TestServiceTokenAuthentication:
         mock_role_manager,
     ):
         """Test user role assignment using service token authentication."""
+
         # Mock the authentication to return our service token user
         def mock_require_authentication():
             return mock_service_token
@@ -718,7 +748,9 @@ class TestErrorHandlingScenarios:
     @pytest.mark.timeout(30)
     def test_user_not_found_error(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test handling of UserNotFoundError."""
         # Setup mocks
@@ -742,7 +774,9 @@ class TestErrorHandlingScenarios:
     @pytest.mark.timeout(30)
     def test_permission_not_found_error(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test handling of PermissionNotFoundError."""
         # Setup mocks
@@ -768,7 +802,9 @@ class TestErrorHandlingScenarios:
     @pytest.mark.timeout(30)
     def test_general_role_manager_error(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test handling of general RoleManagerError."""
         # Setup mocks
@@ -792,7 +828,9 @@ class TestErrorHandlingScenarios:
     @pytest.mark.timeout(30)
     def test_unexpected_exception(
         self,
-        client, mock_authenticated_user, mock_role_manager,
+        client,
+        mock_authenticated_user,
+        mock_role_manager,
     ):
         """Test handling of unexpected exceptions."""
         # Setup mocks
@@ -837,6 +875,7 @@ class TestPermissionEnforcement:
 
         # Setup mocks to simulate permission denial by patching the permission check function
         from unittest.mock import patch
+
         with patch("src.auth.permissions.user_has_permission", return_value=False):
             # Create client and make request
             client = TestClient(test_app)
@@ -877,6 +916,7 @@ class TestPermissionEnforcement:
 
         # Setup mocks to simulate permission denial by patching the permission check function
         from unittest.mock import patch
+
         with patch("src.auth.permissions.user_has_permission", return_value=False):
             # Create client and make request
             client = TestClient(test_app)

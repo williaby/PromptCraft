@@ -191,7 +191,7 @@ class TestAuthenticationMiddleware:
             excluded_paths=["/health", "/docs", "/redoc", "/openapi.json", "/favicon.ico"],
             database_enabled=True,
         )
-        
+
         mock_request.url.path = "/api/test"
         mock_request.headers = {"Authorization": "Bearer valid_token"}
         call_next = AsyncMock(return_value=JSONResponse({"success": True}))
@@ -454,14 +454,14 @@ class TestSecurityEdgeCases:
         tasks = [
             make_request("/health"),  # Should pass through (excluded)
             make_request("/api/test1"),  # Will fail auth but should return 401
-            make_request("/api/test2"),  # Will fail auth but should return 401 
+            make_request("/api/test2"),  # Will fail auth but should return 401
             make_request("/docs"),  # Should pass through (excluded)
         ]
 
         # Use asyncio.wait_for to add timeout protection
         try:
             responses = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), 
+                asyncio.gather(*tasks, return_exceptions=True),
                 timeout=5.0,
             )
         except TimeoutError:
@@ -469,7 +469,7 @@ class TestSecurityEdgeCases:
 
         # All requests should complete without issues (either success or proper error)
         assert len(responses) == 4
-        
+
         # Verify responses are valid (not exceptions)
         for i, response in enumerate(responses):
             if isinstance(response, Exception):

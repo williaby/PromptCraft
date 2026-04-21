@@ -86,14 +86,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Store settings in app state for access in endpoints
         app.state.settings = settings
-        
+
         # Initialize hybrid infrastructure
         logger.info("Initializing hybrid infrastructure...")
-        
+
         # Initialize MCP configuration manager with discovery
         app.state.mcp_manager = MCPConfigurationManager(enable_discovery=True)
         logger.info("MCP configuration manager initialized")
-        
+
         # Initialize agent discovery and resource management
         app.state.agent_discovery = AgentDiscoverySystem()
         app.state.agent_resource_manager = AgentResourceManager()
@@ -102,7 +102,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             app.state.agent_resource_manager,
         )
         logger.info("Agent discovery system initialized")
-        
+
         # Log available agents
         available_agents = app.state.agent_discovery.get_available_agents()
         logger.info(f"Found {len(available_agents)} available agents: {available_agents[:10]}...")
@@ -161,7 +161,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 logger.info(f"Final resource usage: {resource_usage}")
             except Exception as e:
                 logger.warning(f"Failed to get resource usage during shutdown: {e}")
-        
+
         # Log application shutdown
         audit_logger_instance.log_security_event(
             AuditEventType.ADMIN_SYSTEM_SHUTDOWN,
@@ -250,7 +250,7 @@ def create_app() -> FastAPI:
         app.include_router(audit_router)
         app.include_router(role_router)
         app.include_router(create_router)
-        
+
         # Register hybrid infrastructure routes
         register_hybrid_infrastructure_routes(app)
 

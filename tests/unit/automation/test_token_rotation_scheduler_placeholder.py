@@ -32,10 +32,10 @@ def mock_service_token_manager():
 async def test_token_rotation_scheduler_initialization(mock_service_token_manager):
     """Test scheduler initializes correctly with dependency injection."""
     scheduler = TokenRotationScheduler(token_manager=mock_service_token_manager)
-    
+
     # Verify the injected token manager is used
     assert scheduler.token_manager is mock_service_token_manager
-    
+
     # Verify default configuration
     assert scheduler.default_rotation_age_days == 90
     assert scheduler.high_usage_threshold == 1000
@@ -43,15 +43,15 @@ async def test_token_rotation_scheduler_initialization(mock_service_token_manage
     assert scheduler.check_interval_hours == 24
 
 
-@pytest.mark.asyncio  
+@pytest.mark.asyncio
 async def test_token_rotation_scheduler_no_hanging(mock_service_token_manager):
     """Test that scheduler doesn't hang with proper dependency injection."""
     # This test should complete quickly without hanging
     scheduler = TokenRotationScheduler(token_manager=mock_service_token_manager)
-    
+
     # Test basic functionality
     assert scheduler.token_manager is not None
-    
+
     # Verify we can call methods without hanging
     tokens = await scheduler.token_manager.list_tokens()
     assert tokens == []

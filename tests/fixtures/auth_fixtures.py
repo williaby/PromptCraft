@@ -22,7 +22,7 @@ from src.utils.datetime_compat import UTC, timedelta
 async def real_service_token_manager(test_db_with_override):
     """Provide real ServiceTokenManager with test database connection."""
     from unittest.mock import AsyncMock, MagicMock, patch
-    
+
     # Unpack the tuple from test_db_with_override fixture
     test_db_session, override_get_db = test_db_with_override
 
@@ -44,12 +44,12 @@ async def test_service_token(test_db_with_override):
     """Create a real service token in test database."""
     # Unpack the tuple from test_db_with_override fixture
     test_db_session, override_get_db = test_db_with_override
-    
+
     # Create token directly in database
     token_id = uuid.uuid4()
     token_value = f"sk_{secrets.token_urlsafe(32)}"
     token_hash = ServiceTokenManager().hash_token(token_value)
-    
+
     # Generate unique token name for each test to avoid UNIQUE constraint failures
     unique_token_name = f"test_service_token_{secrets.token_hex(8)}"
 
@@ -193,7 +193,7 @@ async def multiple_service_tokens(test_db_with_override):
     """Create multiple service tokens for testing list operations."""
     # Unpack the tuple from test_db_with_override fixture
     test_db_session, override_get_db = test_db_with_override
-    
+
     tokens = []
 
     for i in range(3):

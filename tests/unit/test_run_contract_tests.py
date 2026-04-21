@@ -34,10 +34,12 @@ class TestInstallDependencies:
         run_contract_tests.install_dependencies()
 
         # Assert
-        mock_print.assert_has_calls([
-            call("📦 Installing dependencies..."),
-            call("✅ Dependencies installed"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("📦 Installing dependencies..."),
+                call("✅ Dependencies installed"),
+            ]
+        )
         mock_subprocess_run.assert_called_once_with(
             ["poetry", "install"],
             check=True,
@@ -58,10 +60,14 @@ class TestInstallDependencies:
         run_contract_tests.install_dependencies()
 
         # Assert
-        mock_print.assert_has_calls([
-            call("📦 Installing dependencies..."),
-            call("❌ Failed to install dependencies: Command '['poetry', 'install']' returned non-zero exit status 1."),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("📦 Installing dependencies..."),
+                call(
+                    "❌ Failed to install dependencies: Command '['poetry', 'install']' returned non-zero exit status 1."
+                ),
+            ]
+        )
         mock_exit.assert_called_once_with(1)
 
 
@@ -96,11 +102,13 @@ class TestCheckPactBinary:
         # Assert
         assert result is False
         mock_which.assert_called_once_with("pact-mock-service")
-        mock_print.assert_has_calls([
-            call("⚠️  pact-mock-service binary not found"),
-            call("Install with: gem install pact-mock_service"),
-            call("Or install pact-ruby-standalone"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("⚠️  pact-mock-service binary not found"),
+                call("Install with: gem install pact-mock_service"),
+                call("Or install pact-ruby-standalone"),
+            ]
+        )
 
 
 class TestRunContractTests:
@@ -124,10 +132,12 @@ class TestRunContractTests:
 
         # Assert
         assert result is True
-        mock_print.assert_has_calls([
-            call("🧪 Running contract tests..."),
-            call("✅ Contract tests passed!"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🧪 Running contract tests..."),
+                call("✅ Contract tests passed!"),
+            ]
+        )
 
         expected_env = {
             "EXISTING": "value",
@@ -136,16 +146,20 @@ class TestRunContractTests:
             "LOG_LEVEL": "INFO",
         }
 
-        mock_subprocess_run.assert_called_once_with([
-            "poetry", "run", "pytest",
-            "tests/contract/test_mcp_contracts.py",
-            "-v",
-            "-m", "contract",
-            "--tb=short",
-        ],
-        check=False,
-        env=expected_env,
-        cwd="/test/path",
+        mock_subprocess_run.assert_called_once_with(
+            [
+                "poetry",
+                "run",
+                "pytest",
+                "tests/contract/test_mcp_contracts.py",
+                "-v",
+                "-m",
+                "contract",
+                "--tb=short",
+            ],
+            check=False,
+            env=expected_env,
+            cwd="/test/path",
         )
 
     @patch("tests.contract.run_contract_tests.os.environ")
@@ -166,10 +180,12 @@ class TestRunContractTests:
 
         # Assert
         assert result is False
-        mock_print.assert_has_calls([
-            call("🧪 Running contract tests..."),
-            call("❌ Contract tests failed"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🧪 Running contract tests..."),
+                call("❌ Contract tests failed"),
+            ]
+        )
 
     @patch("tests.contract.run_contract_tests.os.environ")
     @patch("tests.contract.run_contract_tests.subprocess.run")
@@ -187,10 +203,14 @@ class TestRunContractTests:
 
         # Assert
         assert result is False
-        mock_print.assert_has_calls([
-            call("🧪 Running contract tests..."),
-            call("❌ Failed to run contract tests: Command '['poetry', 'run', 'pytest']' returned non-zero exit status 1."),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🧪 Running contract tests..."),
+                call(
+                    "❌ Failed to run contract tests: Command '['poetry', 'run', 'pytest']' returned non-zero exit status 1."
+                ),
+            ]
+        )
 
 
 class TestMain:
@@ -201,8 +221,7 @@ class TestMain:
     @patch("tests.contract.run_contract_tests.check_pact_binary")
     @patch("tests.contract.run_contract_tests.run_contract_tests")
     @patch("tests.contract.run_contract_tests.print")
-    def test_main_success_with_pact(self, mock_print, mock_run_tests, mock_check_pact,
-                                   mock_install_deps, mock_path):
+    def test_main_success_with_pact(self, mock_print, mock_run_tests, mock_check_pact, mock_install_deps, mock_path):
         """Test successful main execution with pact binary available."""
         # Arrange
         mock_path.return_value.exists.return_value = True
@@ -217,23 +236,24 @@ class TestMain:
         mock_check_pact.assert_called_once()
         mock_run_tests.assert_called_once()
 
-        mock_print.assert_has_calls([
-            call("🚀 MCP Contract Test Runner"),
-            call("=" * 40),
-            call("\n🎉 All contract tests completed successfully!"),
-            call("\nPact files generated in: ./pacts/"),
-            call("Test servers used:"),
-            call("  - zen-mcp-server on localhost:8080"),
-            call("  - heimdall-stub on localhost:8081"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🚀 MCP Contract Test Runner"),
+                call("=" * 40),
+                call("\n🎉 All contract tests completed successfully!"),
+                call("\nPact files generated in: ./pacts/"),
+                call("Test servers used:"),
+                call("  - zen-mcp-server on localhost:8080"),
+                call("  - heimdall-stub on localhost:8081"),
+            ]
+        )
 
     @patch("tests.contract.run_contract_tests.Path")
     @patch("tests.contract.run_contract_tests.install_dependencies")
     @patch("tests.contract.run_contract_tests.check_pact_binary")
     @patch("tests.contract.run_contract_tests.run_contract_tests")
     @patch("tests.contract.run_contract_tests.print")
-    def test_main_success_without_pact(self, mock_print, mock_run_tests, mock_check_pact,
-                                      mock_install_deps, mock_path):
+    def test_main_success_without_pact(self, mock_print, mock_run_tests, mock_check_pact, mock_install_deps, mock_path):
         """Test successful main execution without pact binary."""
         # Arrange
         mock_path.return_value.exists.return_value = True
@@ -268,8 +288,9 @@ class TestMain:
     @patch("tests.contract.run_contract_tests.run_contract_tests")
     @patch("tests.contract.run_contract_tests.print")
     @patch("tests.contract.run_contract_tests.sys.exit")
-    def test_main_test_failure(self, mock_exit, mock_print, mock_run_tests, mock_check_pact,
-                              mock_install_deps, mock_path):
+    def test_main_test_failure(
+        self, mock_exit, mock_print, mock_run_tests, mock_check_pact, mock_install_deps, mock_path
+    ):
         """Test main execution when tests fail."""
         # Arrange
         mock_path.return_value.exists.return_value = True
@@ -285,11 +306,13 @@ class TestMain:
         mock_run_tests.assert_called_once()
         mock_exit.assert_called_once_with(1)
 
-        mock_print.assert_has_calls([
-            call("🚀 MCP Contract Test Runner"),
-            call("=" * 40),
-            call("\n💥 Contract tests failed - check output above"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🚀 MCP Contract Test Runner"),
+                call("=" * 40),
+                call("\n💥 Contract tests failed - check output above"),
+            ]
+        )
 
     @patch("tests.contract.run_contract_tests.Path")
     @patch("tests.contract.run_contract_tests.print")
@@ -305,11 +328,13 @@ class TestMain:
             run_contract_tests.main()
 
         # Assert
-        mock_print.assert_has_calls([
-            call("🚀 MCP Contract Test Runner"),
-            call("=" * 40),
-            call("❌ Must be run from project root (where pyproject.toml exists)"),
-        ])
+        mock_print.assert_has_calls(
+            [
+                call("🚀 MCP Contract Test Runner"),
+                call("=" * 40),
+                call("❌ Must be run from project root (where pyproject.toml exists)"),
+            ]
+        )
         mock_exit.assert_called_once_with(1)
 
 
@@ -323,9 +348,11 @@ class TestEdgeCasesAndIntegration:
         original_env = {"PATH": "/usr/bin", "HOME": "/home/user"}
         mock_environ.copy.return_value = original_env.copy()
 
-        with patch("tests.contract.run_contract_tests.subprocess.run") as mock_subprocess_run, \
-             patch("tests.contract.run_contract_tests.Path") as mock_path, \
-             patch("tests.contract.run_contract_tests.print"):
+        with (
+            patch("tests.contract.run_contract_tests.subprocess.run") as mock_subprocess_run,
+            patch("tests.contract.run_contract_tests.Path") as mock_path,
+            patch("tests.contract.run_contract_tests.print"),
+        ):
 
             mock_path.return_value.parent = "/test/path"
             mock_result = Mock()
@@ -337,11 +364,13 @@ class TestEdgeCasesAndIntegration:
 
             # Assert
             expected_env = original_env.copy()
-            expected_env.update({
-                "PACT_TEST_MODE": "consumer",
-                "CONTRACT_TEST": "true",
-                "LOG_LEVEL": "INFO",
-            })
+            expected_env.update(
+                {
+                    "PACT_TEST_MODE": "consumer",
+                    "CONTRACT_TEST": "true",
+                    "LOG_LEVEL": "INFO",
+                }
+            )
 
             _, kwargs = mock_subprocess_run.call_args
             assert kwargs["env"] == expected_env
@@ -355,8 +384,10 @@ class TestEdgeCasesAndIntegration:
         mock_path_instance.parent = "/project/root"
         mock_path_instance.exists.return_value = True
 
-        with patch("tests.contract.run_contract_tests.subprocess.run") as mock_subprocess_run, \
-             patch("tests.contract.run_contract_tests.print"):
+        with (
+            patch("tests.contract.run_contract_tests.subprocess.run") as mock_subprocess_run,
+            patch("tests.contract.run_contract_tests.print"),
+        ):
 
             mock_subprocess_run.return_value = None
 
@@ -366,9 +397,9 @@ class TestEdgeCasesAndIntegration:
             # Assert - Path() receives the module's __file__; exact path varies by environment
             mock_path.assert_called_once()
             actual_arg = mock_path.call_args[0][0]
-            assert actual_arg.endswith("tests/contract/run_contract_tests.py"), (
-                f"Expected path ending with 'tests/contract/run_contract_tests.py', got: {actual_arg}"
-            )
+            assert actual_arg.endswith(
+                "tests/contract/run_contract_tests.py"
+            ), f"Expected path ending with 'tests/contract/run_contract_tests.py', got: {actual_arg}"
             mock_subprocess_run.assert_called_once_with(
                 ["poetry", "install"],
                 check=True,
@@ -396,19 +427,22 @@ class TestScriptExecution:
 class TestParametrizedScenarios:
     """Parametrized tests for various scenarios."""
 
-    @pytest.mark.parametrize(("return_code", "expected_result"), [
-        (0, True),
-        (1, False),
-        (2, False),
-        (127, False),
-    ])
+    @pytest.mark.parametrize(
+        ("return_code", "expected_result"),
+        [
+            (0, True),
+            (1, False),
+            (2, False),
+            (127, False),
+        ],
+    )
     @patch("tests.contract.run_contract_tests.os.environ")
     @patch("tests.contract.run_contract_tests.subprocess.run")
     @patch("tests.contract.run_contract_tests.print")
     @patch("tests.contract.run_contract_tests.Path")
-    def test_run_contract_tests_various_return_codes(self, mock_path, mock_print,
-                                                    mock_subprocess_run, mock_environ,
-                                                    return_code, expected_result):
+    def test_run_contract_tests_various_return_codes(
+        self, mock_path, mock_print, mock_subprocess_run, mock_environ, return_code, expected_result
+    ):
         """Test run_contract_tests with various return codes."""
         # Arrange
         mock_environ.copy.return_value = {}
@@ -423,21 +457,33 @@ class TestParametrizedScenarios:
         # Assert
         assert result is expected_result
 
-    @pytest.mark.parametrize(("pact_available", "success", "should_exit"), [
-        (True, True, False),
-        (True, False, True),
-        (False, True, False),
-        (False, False, True),
-    ])
+    @pytest.mark.parametrize(
+        ("pact_available", "success", "should_exit"),
+        [
+            (True, True, False),
+            (True, False, True),
+            (False, True, False),
+            (False, False, True),
+        ],
+    )
     @patch("tests.contract.run_contract_tests.Path")
     @patch("tests.contract.run_contract_tests.install_dependencies")
     @patch("tests.contract.run_contract_tests.check_pact_binary")
     @patch("tests.contract.run_contract_tests.run_contract_tests")
     @patch("tests.contract.run_contract_tests.print")
     @patch("tests.contract.run_contract_tests.sys.exit")
-    def test_main_various_scenarios(self, mock_exit, mock_print, mock_run_tests,
-                                   mock_check_pact, mock_install_deps, mock_path,
-                                   pact_available, success, should_exit):
+    def test_main_various_scenarios(
+        self,
+        mock_exit,
+        mock_print,
+        mock_run_tests,
+        mock_check_pact,
+        mock_install_deps,
+        mock_path,
+        pact_available,
+        success,
+        should_exit,
+    ):
         """Test main function with various combinations of conditions."""
         # Arrange
         mock_path.return_value.exists.return_value = True
