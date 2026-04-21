@@ -598,14 +598,14 @@ class TestMetricsCollectorGlobalInstance:
         # Reset global collector to ensure clean state
         import src.metrics.collector as collector_module
 
-        collector_module._global_collector = None
+        collector_module._collector_ref[0] = None
 
     def teardown_method(self):
         """Clean up global state."""
         # Reset global collector
         import src.metrics.collector as collector_module
 
-        collector_module._global_collector = None
+        collector_module._collector_ref[0] = None
 
     @pytest.mark.asyncio
     async def test_get_metrics_collector_creates_instance(self):
@@ -657,7 +657,7 @@ class TestMetricsCollectorGlobalInstance:
             # Global collector should be reset
             import src.metrics.collector as collector_module
 
-            assert collector_module._global_collector is None
+            assert collector_module._collector_ref[0] is None
 
     @pytest.mark.asyncio
     async def test_shutdown_metrics_collector_none(self):

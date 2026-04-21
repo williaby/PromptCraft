@@ -631,7 +631,7 @@ class TestCreateAuthMiddleware:
 
     def test_create_basic_middleware(self):
         """Test creating basic middleware."""
-        with patch("src.auth_simple.whitelist.create_validator_from_env") as mock_create_validator:
+        with patch("src.auth_simple.middleware.create_validator_from_env") as mock_create_validator:
             mock_validator = Mock(spec=EmailWhitelistValidator)
             mock_create_validator.return_value = mock_validator
 
@@ -643,7 +643,7 @@ class TestCreateAuthMiddleware:
 
     def test_create_middleware_with_all_params(self):
         """Test creating middleware with all parameters."""
-        with patch("src.auth_simple.whitelist.create_validator_from_env") as mock_create_validator:
+        with patch("src.auth_simple.middleware.create_validator_from_env") as mock_create_validator:
             mock_validator = Mock(spec=EmailWhitelistValidator)
             mock_create_validator.return_value = mock_validator
 

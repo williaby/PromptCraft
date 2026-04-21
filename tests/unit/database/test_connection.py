@@ -361,7 +361,7 @@ class TestGlobalDatabaseManager:
             # Clear any existing global instance
             import src.database.connection
 
-            src.database.connection._db_manager = None
+            src.database.connection._db_manager_ref[0] = None
 
             # Use the synchronous function for singleton test
             manager1 = get_database_manager()
@@ -379,7 +379,7 @@ class TestGlobalDatabaseManager:
             # Clear any existing global instance
             import src.database.connection
 
-            src.database.connection._db_manager = None
+            src.database.connection._db_manager_ref[0] = None
 
             # get_db_session returns an async generator, not a context manager
             async_gen = get_db_session()
@@ -395,7 +395,7 @@ class TestGlobalDatabaseManager:
         # Clear any existing global instance
         import src.database.connection
 
-        src.database.connection._db_manager = None
+        src.database.connection._db_manager_ref[0] = None
 
         # Use targeted mocking to simulate database initialization failure
         with (

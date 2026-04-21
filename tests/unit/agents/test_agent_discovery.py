@@ -544,10 +544,8 @@ max_remote_agents: 10
         )
 
         with (
-            (
-                patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
-                patch.object(discovery_system, "validate_dependencies", return_value=False),
-            ),
+            patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
+            patch.object(discovery_system, "validate_dependencies", return_value=False),
             pytest.raises(AgentNotFoundError),
         ):
             discovery_system.discover_agent("test-agent")

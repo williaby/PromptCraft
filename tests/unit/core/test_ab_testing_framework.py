@@ -991,7 +991,7 @@ class TestGlobalExperimentManager:
     @pytest.mark.asyncio
     async def test_get_experiment_manager_singleton(self):
         """Test that get_experiment_manager returns singleton instance."""
-        with patch("src.core.ab_testing_framework._experiment_manager", None):
+        with patch("src.core.ab_testing_framework._experiment_manager_ref", [None]):
             manager1 = await get_experiment_manager()
             manager2 = await get_experiment_manager()
 
@@ -1002,7 +1002,7 @@ class TestGlobalExperimentManager:
     async def test_get_experiment_manager_starts_monitoring(self):
         """Test that get_experiment_manager starts monitoring."""
         with (
-            patch("src.core.ab_testing_framework._experiment_manager", None),
+            patch("src.core.ab_testing_framework._experiment_manager_ref", [None]),
             patch.object(ExperimentManager, "start_monitoring") as mock_start,
         ):
             manager = await get_experiment_manager()

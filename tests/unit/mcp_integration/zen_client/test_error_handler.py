@@ -396,7 +396,7 @@ class TestMCPConnectionManager:
 
         assert status["state"] == "closed"
         assert status["failure_count"] == 2
-        assert status["last_failure_time"] == "2024-01-07T10:30:00"
+        assert status["last_failure_time"] == "2024-01-07T10:30:00+00:00"
         assert status["threshold"] == fallback_config.circuit_breaker_threshold
 
     @pytest.mark.asyncio
