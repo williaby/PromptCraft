@@ -9,9 +9,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field, field_validator
+from starlette.types import ASGIApp
 
 from .whitelist import EmailWhitelistValidator
 
@@ -330,7 +331,7 @@ class ConfigManager:
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)
 
         return CloudflareAccessMiddleware(
-            app=None,  # Will be set by FastAPI
+            app=cast(ASGIApp, None),  # Will be set by FastAPI when added via app.add_middleware()
             whitelist_validator=validator,
             session_manager=session_manager,
             public_paths=self.config.public_paths,

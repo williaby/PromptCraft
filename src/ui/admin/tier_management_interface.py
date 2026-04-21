@@ -7,7 +7,7 @@ user tier assignments, view user statistics, and monitor system configuration.
 import logging
 
 import gradio as gr
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 from src.admin.user_tier_manager import UserTierManager
 
@@ -29,7 +29,6 @@ class TierManagementInterface:
             Gradio Tab component with admin interface
         """
         with gr.Tab("👑 Admin: User Management", visible=False, elem_id="admin-tab") as admin_tab:
-
             gr.HTML(
                 """
                 <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
@@ -210,14 +209,22 @@ class TierManagementInterface:
         components["assign_button"].click(
             fn=self._assign_tier,
             inputs=[components["user_email_input"], components["tier_selection"]],
-            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
+            outputs=[
+                components["assignment_result"],
+                components["stats_display"],
+                *self._get_table_outputs(components),
+            ],
         )
 
         # Remove tier button
         components["remove_button"].click(
             fn=self._remove_tier,
             inputs=[components["user_email_input"]],
-            outputs=[components["assignment_result"], components["stats_display"], *self._get_table_outputs(components)],
+            outputs=[
+                components["assignment_result"],
+                components["stats_display"],
+                *self._get_table_outputs(components),
+            ],
         )
 
         # Bulk assign button
@@ -367,9 +374,9 @@ class TierManagementInterface:
                 <div style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px; margin: 8px 0;">
                     <h4 style="color: #0c4a6e; margin: 0 0 8px 0;">Bulk Assignment Results</h4>
                     <p style="margin: 4px 0; color: #0c4a6e;">
-                        <strong>Total:</strong> {results['total']} |
-                        <strong>Successful:</strong> {len(results['successful'])} |
-                        <strong>Failed:</strong> {len(results['failed'])}
+                        <strong>Total:</strong> {results["total"]} |
+                        <strong>Successful:</strong> {len(results["successful"])} |
+                        <strong>Failed:</strong> {len(results["failed"])}
                     </p>
             """
 
@@ -604,14 +611,14 @@ class TierManagementInterface:
                     <h4 style="margin: 0 0 12px 0; color: #374151;">📊 User Statistics</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
-                            <p style="margin: 4px 0;"><strong>👑 Admin Users:</strong> {stats.get('tier_distribution', {}).get('admin', 0)}</p>
-                            <p style="margin: 4px 0;"><strong>⭐ Full Users:</strong> {stats.get('tier_distribution', {}).get('full', 0)}</p>
-                            <p style="margin: 4px 0;"><strong>🔒 Limited Users:</strong> {stats.get('tier_distribution', {}).get('limited', 0)}</p>
+                            <p style="margin: 4px 0;"><strong>👑 Admin Users:</strong> {stats.get("tier_distribution", {}).get("admin", 0)}</p>
+                            <p style="margin: 4px 0;"><strong>⭐ Full Users:</strong> {stats.get("tier_distribution", {}).get("full", 0)}</p>
+                            <p style="margin: 4px 0;"><strong>🔒 Limited Users:</strong> {stats.get("tier_distribution", {}).get("limited", 0)}</p>
                         </div>
                         <div>
-                            <p style="margin: 4px 0;"><strong>Total Authorized:</strong> {stats.get('total_authorized_users', 0)}</p>
-                            <p style="margin: 4px 0;"><strong>Whitelist Entries:</strong> {stats.get('individual_emails', 0)}</p>
-                            <p style="margin: 4px 0;"><strong>Domain Patterns:</strong> {len(stats.get('domains', []))}</p>
+                            <p style="margin: 4px 0;"><strong>Total Authorized:</strong> {stats.get("total_authorized_users", 0)}</p>
+                            <p style="margin: 4px 0;"><strong>Whitelist Entries:</strong> {stats.get("individual_emails", 0)}</p>
+                            <p style="margin: 4px 0;"><strong>Domain Patterns:</strong> {len(stats.get("domains", []))}</p>
                         </div>
                     </div>
                 </div>
