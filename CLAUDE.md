@@ -104,8 +104,8 @@ poetry run python src/utils/encryption.py   # Validate env + keys
 ## Agent and Skill Orchestration
 
 Use the built-in **Agent** tool for specialized work and the **Skill** tool for
-the shared skill catalog. Do not route tasks through retired `mcp__zen__*` tool
-names; those are superseded by subagents and skills.
+the shared skill catalog. Do not introduce new project-owned references to
+retired `mcp__zen__*` tool names; use subagents and skills instead.
 
 **When to delegate via `Agent`:**
 

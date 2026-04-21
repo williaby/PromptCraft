@@ -4,6 +4,21 @@ All notable changes to the PromptCraft Configuration System are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Align project with global Claude Code v1.4.0 standards: rewrite `CLAUDE.md`,
+  introduce `.claude/rules/` for path-scoped overrides, remove retired Zen MCP
+  project-level configuration
+- Resolve 35+ pre-existing MyPy errors across infrastructure modules
+- Correct hookimpl signature and remove UP036 dead code in hooks
+- Restore `_request` parameter naming in API endpoints for slowapi rate-limiting
+- Resolve yamllint indentation and markdownlint blank-line errors in config files
+- Add `.claude/` to ruff exclude; fix pre-commit and yamllint configuration
+- Resolve SonarCloud S7503/S7487 async violations in MCP discovery and bridge
+- Make path handling assertions portable across CI environments
+- Remove stale `core.json` assertion from infrastructure integration test
+- Update assertions for UP036 runtime version check removal
+
 ### Added
 
 - Phase 1-5 Core Configuration System implementation
