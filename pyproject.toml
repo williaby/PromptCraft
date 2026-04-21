@@ -193,6 +193,7 @@ exclude = [
     "*.yml",
     "docker-compose*.yaml",
     "docker-compose*.yml",
+    ".claude/",
 ]
 
 [tool.ruff.lint]
@@ -251,22 +252,28 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201"]  # Allow test patterns, try-except-pass
+"tests/*" = ["S101", "S102", "S104", "S105", "S106", "S107", "S108", "S110", "S314", "S603", "S607", "ANN", "ARG", "PLR2004", "PLR0915", "PLC0415", "PT017", "T201"]  # Allow test patterns, exec/subprocess for script testing, interface literals and hardcoded test credentials in assertions
 "tests/auth/*" = ["S101", "S105", "S110", "ANN", "ARG", "PLR2004", "COM812", "UP017", "PLC0415", "RET504", "SIM117", "PT012"]  # Allow test patterns
 # Only allow DTZ005 for specific test files that intentionally need naive datetimes
-"tests/unit/utils/test_datetime_compat.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ005"]  # Testing naive datetimes
+"tests/unit/utils/test_datetime_compat.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ001", "DTZ005"]  # Testing naive datetimes
+"tests/unit/test_time_utils.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ001"]  # Testing time utilities with naive datetimes
 "tests/unit/ui/components/shared/conftest.py" = ["S101", "S110", "ANN", "ARG", "PLR2004", "PLC0415", "T201", "DTZ005"]  # Mock datetime fixture
 "tests/performance/*" = ["T201", "S311", "S110", "PLC0415", "F401", "PTH123", "S101", "ANN", "ARG", "PLR2004", "PLR0915"]
 "tests/security/test_codeql_validation.py" = ["S105", "S602", "S603", "S608", "S301", "S506", "S324", "S307", "PTH123", "T201", "S101", "ANN", "ARG", "PLR2004"]
-"scripts/*" = ["T20", "INP001", "ANN", "PLR0912", "PLR2004", "PTH123", "SIM118", "RUF013", "B007", "PLC0415", "G004", "S607", "S602", "S314", "S603", "S608", "RET504", "DTZ005", "RUF100"]
+"scripts/*" = ["T20", "INP001", "ANN", "PLR0911", "PLR0912", "PLR2004", "PTH123", "SIM118", "RUF013", "B007", "PLC0415", "G004", "S104", "S607", "S602", "S314", "S603", "S608", "RET504", "DTZ005", "RUF100"]
 "noxfile.py" = ["ANN", "D"]
 "src/config/validation.py" = ["PLC0415"]  # Allow local imports to avoid circular dependencies
 "src/agents/discovery.py" = ["PLC0415", "G004"]  # Lazy imports break circular deps; f-string logging follows project pattern
 "src/standards/discovery.py" = ["PLC0415"]  # Lazy yaml import inside parser to avoid optional-dep error
 "src/api/hybrid_infrastructure_endpoints.py" = ["PLR0915", "B904"]  # Large routing function; HTTPException intentionally suppresses chain
-"src/utils/datetime_compat.py" = ["PLW0603"]  # global _mock_now_time is the mock-time state store; intentional
+"src/utils/datetime_compat.py" = ["PLW0603", "UP017"]  # PLW0603: global _mock_now_time is the mock-time state store; UP017: timezone.utc fallback required for Python 3.10 compat
 "src/mcp_integration/config_manager.py" = ["F823", "PLC0415"]  # F823: TYPE_CHECKING annotation not evaluated at runtime; PLC0415: lazy circular-import guard
 "src/mcp_integration/connection_bridge.py" = ["S603"]  # subprocess.Popen needed to launch MCP server processes
+"src/security/audit_logging.py" = ["S105"]  # S105 false positive on audit event type strings containing "token"
+"src/api/auth_endpoints.py" = ["S106"]  # S106 false positive on token_name parameter receiving a descriptive label
+"src/automation/token_rotation_scheduler.py" = ["S106"]  # S106 false positive on mock token identifiers in test branch
+"src/mcp_integration/zen_client/subprocess_manager.py" = ["S603"]  # subprocess.Popen launches zen-mcp-server process
+"src/auth/models.py" = ["S104"]  # Validating whether an address IS "0.0.0.0", not binding to it
 "src/mcp_integration/smart_discovery.py" = ["S108", "S603", "S110", "PLC0415"]  # /tmp locks, subprocess for MCP launch, pass in discovery scan loop, lazy json import
 "src/config/health.py" = ["UP036", "UP017"]  # Version compatibility for Python 3.11
 "src/utils/time_utils.py" = ["UP017"]  # Use timezone.utc for Python 3.11 compatibility
@@ -276,11 +283,28 @@ ignore = [
 "tests/unit/scripts/test_coverage_automation.py" = ["E402"]  # Dynamic imports after sys.path modification
 "tests/unit/api/test_auth_endpoints_integration.py" = ["S105"]  # Allow test token names
 "src/mcp_integration/*" = ["G004"]  # Allow f-strings in logging for structured logging
-"src/auth/*" = ["G004", "PLR2004", "SIM110", "RET504"]  # Allow f-strings, magic numbers, and specific patterns
-"src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912"]  # Allow complex UI interface methods
-"src/core/*" = ["N805"]  # Allow cls parameter name in Pydantic validators
+"src/auth/*" = ["G004", "PLR2004", "SIM110", "RET504", "S105", "S106"]  # Allow f-strings, magic numbers; S105/S106 false positives on token-name constants and event-type strings
+"src/ui/multi_journey_interface.py" = ["PLR0915", "PLR0912", "PLC0415"]  # Allow complex UI interface methods; lazy imports for optional deps
+"src/ui/journeys/journey2_intelligent_search.py" = ["PLC0415"]  # Conditional import inside success-path block
+"src/core/*" = ["N805", "PLC0415"]  # Allow cls parameter name in Pydantic validators; lazy/circular imports in core loaders
+"src/utils/circuit_breaker.py" = ["PLC0415"]  # Circular import guard for MCP client health check
+"src/auth/permissions.py" = ["PLC0415"]  # PostgreSQL fallback imports inside except block
+"src/auth_simple/config.py" = ["PLC0415"]  # Conditional import for optional config dep
+"src/agents/registry.py" = ["PLC0415"]  # Circular import guard for BaseAgent
+"src/commands/discovery.py" = ["PLC0415"]  # Optional yaml import inside try block for frontmatter parsing
+"src/main.py" = ["PLC0415"]  # Conditional router loading inside try block for optional modules
+"src/mcp_integration/zen_stdio_client.py" = ["PLC0415"]  # Conditional model imports inside format-conversion methods
 "src/utils/resilience.py" = ["UP046"]  # Generic class syntax for Python 3.11 compatibility
 "src.utils/secure_random.py" = ["UP047"]  # Generic function syntax for Python 3.11 compatibility
+"src/core/ab_testing_framework.py" = ["PLR0911"]  # execute_rollout_step is a state-machine with 8 distinct exit conditions; consolidation would obscure meaning
+"src/mcp_integration/hybrid_router.py" = ["PLR0911"]  # Router dispatch has 11 distinct routing paths; each return is a separate protocol branch
+"src/ui/components/shared/export_utils.py" = ["PLR0911", "PLR0912"]  # Format-detection function maps 9 types; 20 branches cover all supported export formats
+"src/ui/journeys/journey1_smart_templates.py" = ["PLR0911"]  # Journey step dispatcher has 9 explicit stage returns; collapsing them would lose stage labels
+"src/config/settings.py" = ["S104"]  # Config layer validates/stores the "0.0.0.0" string; never binds to it
+"src/auth_simple/example_usage.py" = ["S104"]  # Example script demonstrating 0.0.0.0 development binding
+"src/utils/encryption.py" = ["S607"]  # ssh-add and git are well-known tools on system PATH; full path would break portability
+"src/metrics/storage.py" = ["S608"]  # Columns come from controlled internal dataclass fields, not user input
+"pytest_plugins/coverage_hook_plugin.py" = ["S603"]  # subprocess runs sys.executable with a controlled project script path
 "*.yaml" = ["ALL"]
 "*.yml" = ["ALL"]
 
