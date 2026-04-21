@@ -9,9 +9,9 @@ on:
         default: 'validate'
         type: choice
         options:
-        - validate
-        - test_api
-        - health_check
+          - validate
+          - test_api
+          - health_check
 
 jobs:
   service-token-auth:

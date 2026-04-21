@@ -87,19 +87,21 @@ poetry run pytest tests/contract/ -m "contract and requires_servers" -v
 - `test_knowledge_retrieval_contract()`: POST /api/v1/knowledge/search
 - `test_error_handling_contract()`: Error response validation
 
-### TestHeimdalMCPContracts  
+### TestHeimdalMCPContracts
 - `test_security_analysis_contract()`: POST /api/v1/analyze/security
 - `test_code_quality_contract()`: POST /api/v1/analyze/quality
 
 ## Generated Artifacts
 
 After running tests, you'll find:
+
 - `./pacts/promptcraft-zen_mcp_server.json`: Zen server contract
 - `./pacts/promptcraft-heimdall_mcp_server.json`: Heimdall server contract
 
 ## Troubleshooting
 
 ### Server Connection Issues
+
 ```bash
 # Check if servers are running
 curl http://localhost:8080/health  # zen-mcp-server
@@ -107,13 +109,17 @@ curl http://localhost:8081/health  # heimdall-stub
 ```
 
 ### Test Skipping
+
 Tests may be skipped if:
+
 - `pact-python` not installed → Install with `poetry install`
 - `zen-mcp-server` not found → Clone/install zen-mcp-server locally
 - Servers fail to start → Check server logs and ports
 
 ### Missing Pact Binary
+
 While optional, install for full Pact features:
+
 ```bash
 # macOS/Linux
 gem install pact-mock_service
@@ -138,7 +144,7 @@ gem install pact-mock_service
   run: |
     poetry install
     poetry run pytest tests/contract/ -m contract -v
-    
+
 - name: Upload Pact Files
   # Optional: Upload to Pact Broker
   run: |
