@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 import logging
 import secrets
-from typing import Any
+from typing import Any, cast
 
 from fastapi import HTTPException, Request, Response
 from starlette.responses import JSONResponse
@@ -471,7 +471,7 @@ def create_auth_middleware(
 
     # Create and return middleware
     return CloudflareAccessMiddleware(
-        app=None,  # Will be set by FastAPI
+        app=cast(ASGIApp, None),  # Will be set by FastAPI when added via app.add_middleware()
         whitelist_validator=validator,
         session_manager=session_manager,
         public_paths=public_paths,

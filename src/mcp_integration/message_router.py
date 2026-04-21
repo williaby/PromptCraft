@@ -83,7 +83,7 @@ class MCPMessageRouter(LoggerMixin):
         try:
             if connection.connection.type == "npx" and connection.process:
                 # For NPX servers, use stdio streams
-                reader, writer = await asyncio.open_connection(  # type: ignore[arg-type]
+                reader, writer = await asyncio.open_connection(
                     sock=connection.process.stdout,
                 )
 

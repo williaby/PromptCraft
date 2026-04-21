@@ -5,6 +5,7 @@ user tier assignments, view user statistics, and monitor system configuration.
 """
 
 import logging
+from typing import Any
 
 import gradio as gr
 import pandas as pd  # type: ignore[import-untyped]
@@ -22,7 +23,7 @@ class TierManagementInterface:
         """Initialize the tier management interface."""
         self.tier_manager = UserTierManager()
 
-    def create_admin_interface(self) -> gr.Tab:
+    def create_admin_interface(self) -> Any:
         """Create the admin tab for user tier management.
 
         Returns:
@@ -202,7 +203,7 @@ class TierManagementInterface:
 
         return admin_tab
 
-    def _setup_event_handlers(self, **components) -> None:
+    def _setup_event_handlers(self, **components: Any) -> None:
         """Setup event handlers for all components."""
 
         # Assign tier button
@@ -271,7 +272,7 @@ class TierManagementInterface:
         # Refresh log button
         components["refresh_log_button"].click(fn=self._refresh_changes_log, outputs=[components["changes_log"]])
 
-    def _get_table_outputs(self, components) -> list[gr.Component]:
+    def _get_table_outputs(self, components: Any) -> list[Any]:
         """Get list of table components for outputs."""
         return [
             components["admin_users_df"],
@@ -413,7 +414,7 @@ class TierManagementInterface:
             """
 
             # Organize search results by tier
-            search_results = {"admin": [], "full": [], "limited": [], "unassigned": []}
+            search_results: dict[str, list[Any]] = {"admin": [], "full": [], "limited": [], "unassigned": []}
             for user in matching_users:
                 search_results[user["current_tier"]].append(user)
 
