@@ -58,5 +58,9 @@
                 "configPath": ".gemini/config.json"
             }
         }
+    },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "williaby",
+        "projectKey": "williaby_PromptCraft"
     }
 }
