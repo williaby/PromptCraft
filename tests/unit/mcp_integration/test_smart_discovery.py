@@ -394,7 +394,7 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "check_process_list", return_value=connection),
             patch.object(discovery_system, "verify_health", return_value=True),
         ):
-            result = await discovery_system.find_existing_deployment("zen-mcp")
+            result = discovery_system.find_existing_deployment("zen-mcp")
             assert result == connection
 
     @pytest.mark.asyncio
@@ -412,7 +412,7 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "check_known_ports", return_value=connection),
             patch.object(discovery_system, "verify_health", return_value=False),
         ):
-            result = await discovery_system.find_existing_deployment("zen-mcp")
+            result = discovery_system.find_existing_deployment("zen-mcp")
             assert result is None
 
     @pytest.mark.asyncio
@@ -426,7 +426,7 @@ class TestSmartMCPDiscovery:
             mock_response.status_code = 200
             mock_get.return_value = mock_response
 
-            result = await discovery_system.check_known_ports("zen-mcp")
+            result = discovery_system.check_known_ports("zen-mcp")
             assert result is not None
             assert result.url == "http://localhost:8000"
             assert result.type == "external"
@@ -435,13 +435,13 @@ class TestSmartMCPDiscovery:
     async def test_check_known_ports_no_servers(self, discovery_system):
         """Test checking known ports when no servers are running."""
         with patch.object(discovery_system.resource_monitor, "is_port_available", return_value=True):
-            result = await discovery_system.check_known_ports("zen-mcp")
+            result = discovery_system.check_known_ports("zen-mcp")
             assert result is None
 
     @pytest.mark.asyncio
     async def test_check_known_ports_npx_server(self, discovery_system):
         """Test checking known ports for NPX-based servers."""
-        result = await discovery_system.check_known_ports("context7")
+        result = discovery_system.check_known_ports("context7")
         assert result is None  # NPX servers don't have fixed ports
 
     @pytest.mark.asyncio
@@ -451,7 +451,7 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system.resource_monitor, "check_process_exists", return_value=True),
             patch.object(discovery_system, "extract_url_from_process", return_value="http://localhost:8000"),
         ):
-            result = await discovery_system.check_process_list("zen-mcp")
+            result = discovery_system.check_process_list("zen-mcp")
             assert result is not None
             assert result.url == "http://localhost:8000"
             assert result.type == "user"
@@ -460,7 +460,7 @@ class TestSmartMCPDiscovery:
     async def test_check_process_list_not_found(self, discovery_system):
         """Test checking process list when no processes found."""
         with patch.object(discovery_system.resource_monitor, "check_process_exists", return_value=False):
-            result = await discovery_system.check_process_list("zen-mcp")
+            result = discovery_system.check_process_list("zen-mcp")
             assert result is None
 
     @pytest.mark.asyncio
@@ -475,7 +475,7 @@ class TestSmartMCPDiscovery:
             context7_bin.touch()
 
             with patch("pathlib.Path.cwd", return_value=Path(temp_dir)):
-                result = await discovery_system.check_node_modules("context7")
+                result = discovery_system.check_node_modules("context7")
                 assert result is not None
                 assert result.url == "npx://@upstash/context7-mcp"
                 assert result.type == "npx"
@@ -501,7 +501,7 @@ class TestSmartMCPDiscovery:
                 # Change to temp directory to isolate from real node_modules
                 os.chdir(temp_dir)
 
-                result = await discovery_system.check_node_modules("context7")
+                result = discovery_system.check_node_modules("context7")
                 assert result is not None
                 assert result.url == "npx://@upstash/context7-mcp"
                 assert result.type == "npx"
@@ -521,7 +521,7 @@ class TestSmartMCPDiscovery:
             try:
                 # Change to temp directory with no node_modules or package.json
                 os.chdir(temp_dir)
-                result = await discovery_system.check_node_modules("context7")
+                result = discovery_system.check_node_modules("context7")
                 assert result is None
             finally:
                 os.chdir(original_cwd)
@@ -537,7 +537,7 @@ class TestSmartMCPDiscovery:
 
         discovery_system_with_docker.docker_client.containers.list.return_value = [mock_container]
 
-        result = await discovery_system_with_docker.check_docker_containers("zen-mcp")
+        result = discovery_system_with_docker.check_docker_containers("zen-mcp")
         assert result is not None
         assert result.url == "http://localhost:8000"
         assert result.type == "docker"
@@ -546,7 +546,7 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_check_docker_containers_no_docker(self, discovery_system):
         """Test checking Docker containers when Docker is not available."""
-        result = await discovery_system.check_docker_containers("zen-mcp")
+        result = discovery_system.check_docker_containers("zen-mcp")
         assert result is None
 
     @pytest.mark.asyncio
@@ -557,7 +557,7 @@ class TestSmartMCPDiscovery:
             lock_file.write_text("http://localhost:8000")
 
             with patch("pathlib.Path.home", return_value=Path(temp_dir)):
-                result = await discovery_system.check_lock_files("zen-mcp")
+                result = discovery_system.check_lock_files("zen-mcp")
                 assert result is not None
                 assert result.url == "http://localhost:8000"
                 assert result.type == "user"
@@ -565,14 +565,14 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_check_lock_files_not_found(self, discovery_system):
         """Test checking lock files when none exist."""
-        result = await discovery_system.check_lock_files("zen-mcp")
+        result = discovery_system.check_lock_files("zen-mcp")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_check_env_variables_found(self, discovery_system):
         """Test checking environment variables for server URLs."""
         with patch.dict(os.environ, {"ZEN_MCP_URL": "http://localhost:8000"}):
-            result = await discovery_system.check_env_variables("zen-mcp")
+            result = discovery_system.check_env_variables("zen-mcp")
             assert result is not None
             assert result.url == "http://localhost:8000"
             assert result.type == "external"
@@ -591,13 +591,13 @@ class TestSmartMCPDiscovery:
             },
             clear=False,
         ):
-            result = await discovery_system.check_env_variables("zen-mcp")
+            result = discovery_system.check_env_variables("zen-mcp")
             assert result is None
 
     @pytest.mark.asyncio
     async def test_try_cloud_deployment_supported(self, discovery_system):
         """Test cloud deployment for supported servers."""
-        result = await discovery_system.try_cloud_deployment("context7")
+        result = discovery_system.try_cloud_deployment("context7")
         assert result is not None
         assert result.url == "npx://cloud"
         assert result.type == "npx"
@@ -606,7 +606,7 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_try_cloud_deployment_unsupported(self, discovery_system):
         """Test cloud deployment for unsupported servers."""
-        result = await discovery_system.try_cloud_deployment("zen-mcp")
+        result = discovery_system.try_cloud_deployment("zen-mcp")
         assert result is None
 
     @pytest.mark.asyncio
@@ -768,13 +768,13 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_extract_url_from_process_zen_mcp(self, discovery_system):
         """Test extracting URL from zen-mcp process."""
-        url = await discovery_system.extract_url_from_process("zen-mcp-server")
+        url = discovery_system.extract_url_from_process("zen-mcp-server")
         assert url == "http://localhost:8000"
 
     @pytest.mark.asyncio
     async def test_extract_url_from_process_unknown(self, discovery_system):
         """Test extracting URL from unknown process."""
-        url = await discovery_system.extract_url_from_process("unknown-process")
+        url = discovery_system.extract_url_from_process("unknown-process")
         assert url is None
 
 
@@ -859,7 +859,7 @@ class TestSmartMCPDiscoveryIntegration:
                 patch.object(discovery, "check_env_variables", return_value=env_connection),
                 patch.object(discovery, "verify_health", return_value=True),
             ):
-                result = await discovery.find_existing_deployment("zen-mcp")
+                result = discovery.find_existing_deployment("zen-mcp")
                 assert result == env_connection
 
     @pytest.mark.asyncio

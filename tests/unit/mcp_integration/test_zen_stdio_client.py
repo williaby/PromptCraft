@@ -373,7 +373,10 @@ class TestZenStdioMCPClient:
         """Test successful environment variable loading."""
         env_content = "API_KEY=test_key\nDATABASE_URL=test_url\n# Comment line\nDEBUG=true\n"
 
-        with patch("os.path.exists", return_value=True), patch("builtins.open", mock_open(read_data=env_content)):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.open", mock_open(read_data=env_content)),
+        ):
             env_vars = client._get_zen_environment()
 
             assert env_vars["API_KEY"] == "test_key"
@@ -384,7 +387,7 @@ class TestZenStdioMCPClient:
 
     def test_get_zen_environment_file_not_exists(self, client):
         """Test environment loading when file doesn't exist."""
-        with patch("os.path.exists", return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             env_vars = client._get_zen_environment()
 
             assert env_vars["LOG_LEVEL"] == "INFO"
@@ -393,7 +396,10 @@ class TestZenStdioMCPClient:
 
     def test_get_zen_environment_file_error(self, client):
         """Test environment loading with file read error."""
-        with patch("os.path.exists", return_value=True), patch("builtins.open", side_effect=OSError("File read error")):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.open", side_effect=OSError("File read error")),
+        ):
             env_vars = client._get_zen_environment()
 
             # Should return default values when file read fails

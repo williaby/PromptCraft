@@ -642,7 +642,7 @@ class TestMCPConnectionBridge:
             connection=connection,
         )
 
-        result = await connection_bridge._connect_embedded_server(active_conn)
+        result = connection_bridge._connect_embedded_server(active_conn)
 
         assert result is True
         assert active_conn.client["type"] == "http"
@@ -665,7 +665,7 @@ class TestMCPConnectionBridge:
             connection=connection,
         )
 
-        result = await connection_bridge._connect_embedded_server(active_conn)
+        result = connection_bridge._connect_embedded_server(active_conn)
         assert result is False
 
     @pytest.mark.asyncio
@@ -689,7 +689,7 @@ class TestMCPConnectionBridge:
         type(mock_connection).url = PropertyMock(side_effect=Exception("Connection error"))
         active_conn.connection = mock_connection
 
-        result = await connection_bridge._connect_embedded_server(active_conn)
+        result = connection_bridge._connect_embedded_server(active_conn)
         assert result is False
 
     @pytest.mark.asyncio
@@ -708,7 +708,7 @@ class TestMCPConnectionBridge:
             connection=connection,
         )
 
-        result = await connection_bridge._connect_external_server(active_conn)
+        result = connection_bridge._connect_external_server(active_conn)
 
         assert result is True
         assert active_conn.client["type"] == "external"
@@ -731,7 +731,7 @@ class TestMCPConnectionBridge:
             connection=connection,
         )
 
-        result = await connection_bridge._connect_docker_server(active_conn)
+        result = connection_bridge._connect_docker_server(active_conn)
 
         assert result is True
         assert active_conn.client["type"] == "docker"
@@ -756,7 +756,7 @@ class TestMCPConnectionBridge:
             last_health_check=utc_now() - timedelta(minutes=1),  # Recent
         )
 
-        result = await connection_bridge._is_connection_healthy(active_conn)
+        result = connection_bridge._is_connection_healthy(active_conn)
         assert result is True  # Should return based on cached status
 
     @pytest.mark.asyncio
@@ -780,7 +780,7 @@ class TestMCPConnectionBridge:
             health_status="connected",
         )
 
-        result = await connection_bridge._is_connection_healthy(active_conn)
+        result = connection_bridge._is_connection_healthy(active_conn)
 
         assert result is True
         assert active_conn.health_status == "connected"
@@ -807,7 +807,7 @@ class TestMCPConnectionBridge:
             health_status="connected",
         )
 
-        result = await connection_bridge._is_connection_healthy(active_conn)
+        result = connection_bridge._is_connection_healthy(active_conn)
 
         assert result is False
         assert active_conn.health_status == "unhealthy"
@@ -831,7 +831,7 @@ class TestMCPConnectionBridge:
             health_status="connected",
         )
 
-        result = await connection_bridge._is_connection_healthy(active_conn)
+        result = connection_bridge._is_connection_healthy(active_conn)
 
         assert result is True
         assert active_conn.health_status == "connected"
@@ -854,7 +854,7 @@ class TestMCPConnectionBridge:
             health_status="connected",
         )
 
-        result = await connection_bridge._is_connection_healthy(active_conn)
+        result = connection_bridge._is_connection_healthy(active_conn)
 
         assert result is False
         assert active_conn.health_status == "unhealthy"
@@ -878,7 +878,7 @@ class TestMCPConnectionBridge:
 
         # Force exception by accessing process on non-NPX connection
         with patch.object(active_conn, "process", side_effect=Exception("Health check error")):
-            result = await connection_bridge._is_connection_healthy(active_conn)
+            result = connection_bridge._is_connection_healthy(active_conn)
 
             assert result is False
             assert active_conn.health_status == "unhealthy"
@@ -1364,7 +1364,7 @@ class TestConnectionBridgeIntegration:
             mock_process.poll.return_value = 1  # Process died
 
             # Health check should detect failure
-            is_healthy = await bridge._is_connection_healthy(active_conn)
+            is_healthy = bridge._is_connection_healthy(active_conn)
             assert is_healthy is False
             assert active_conn.health_status == "unhealthy"
 

@@ -69,11 +69,11 @@ class TestMCPSmartDiscovery:
     async def test_known_ports_check(self, discovery):
         """Test checking known ports for servers."""
         # Test with a server that doesn't exist
-        connection = await discovery.check_known_ports("non-existent-server")
+        connection = discovery.check_known_ports("non-existent-server")
         assert connection is None
 
         # Test with zen-mcp (will likely return None unless server is running)
-        connection = await discovery.check_known_ports("zen-mcp")
+        connection = discovery.check_known_ports("zen-mcp")
         # This is ok to be None if no server is running
         assert connection is None or isinstance(connection, ServerConnection)
 
@@ -289,7 +289,7 @@ if __name__ == "__main__":
         print("Testing MCP Discovery...")
         try:
             # Test server discovery (will likely find no servers, which is ok)
-            connection = await discovery.find_existing_deployment("zen-mcp")
+            connection = discovery.find_existing_deployment("zen-mcp")
             print(f"Zen MCP discovery result: {connection}")
         except Exception as e:
             print(f"Discovery test completed with expected result: {e}")
