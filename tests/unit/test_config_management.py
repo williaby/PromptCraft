@@ -531,13 +531,11 @@ class TestSettingsFactory:
 
     def setUp(self):
         """Set up test environment."""
-        # Clear global settings
-        src.config.settings._settings = None
+        src.config.settings._settings_ref[0] = None
 
     def tearDown(self):
         """Clean up test environment."""
-        # Clear global settings
-        src.config.settings._settings = None
+        src.config.settings._settings_ref[0] = None
 
     def test_get_settings_singleton(self):
         """Test settings singleton behavior."""
