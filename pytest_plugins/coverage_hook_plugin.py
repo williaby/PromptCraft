@@ -58,7 +58,9 @@ def pytest_configure(config: object) -> None:
         pass
 
 
-def pytest_sessionfinish(session: object, exitstatus: int) -> None:  # noqa: ARG001
+def pytest_sessionfinish(
+    session: object, exitstatus: int,
+) -> None:  # pytest hook signature; exitstatus not used
     """
     Called after whole test run finished, right before returning the exit status.
     This is the perfect place to trigger coverage report generation.
