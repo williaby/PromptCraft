@@ -727,7 +727,9 @@ def get_token_optimization_monitor() -> TokenOptimizationMonitor:
     """Get the global token optimization monitor instance."""
     if _monitor_ref[0] is None:
         _monitor_ref[0] = TokenOptimizationMonitor()
-    return _monitor_ref[0]
+    local = _monitor_ref[0]
+    assert local is not None
+    return local
 
 
 async def initialize_monitoring() -> TokenOptimizationMonitor:

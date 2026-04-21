@@ -19,6 +19,7 @@ from src.utils.time_utils import utc_timestamp
 
 
 # Optional OpenTelemetry imports
+trace: Any = None
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter

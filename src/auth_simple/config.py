@@ -364,7 +364,9 @@ def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
     if _config_manager_ref[0] is None:
         _config_manager_ref[0] = ConfigManager()
-    return _config_manager_ref[0]
+    local = _config_manager_ref[0]
+    assert local is not None
+    return local
 
 
 def get_auth_config() -> AuthConfig:

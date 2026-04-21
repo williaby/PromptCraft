@@ -1064,7 +1064,9 @@ def get_dynamic_function_loader() -> DynamicFunctionLoader:
     """Get the global dynamic function loader instance."""
     if _loader_ref[0] is None:
         _loader_ref[0] = DynamicFunctionLoader()
-    return _loader_ref[0]
+    local = _loader_ref[0]
+    assert local is not None
+    return local
 
 
 async def initialize_dynamic_loading() -> DynamicFunctionLoader:

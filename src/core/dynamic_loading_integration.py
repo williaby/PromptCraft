@@ -962,12 +962,13 @@ async def get_integration_instance(
 ) -> DynamicLoadingIntegration:
     """Get or create the global integration instance."""
     if _integration_ref[0] is None or force_new:
-        _integration_ref[0] = DynamicLoadingIntegration(mode=mode)
-
-        if not await _integration_ref[0].initialize():
+        new_instance = DynamicLoadingIntegration(mode=mode)
+        _integration_ref[0] = new_instance
+        if not await new_instance.initialize():
             raise RuntimeError("Failed to initialize dynamic loading integration")
-
-    return _integration_ref[0]
+    local = _integration_ref[0]
+    assert local is not None
+    return local
 
 
 @asynccontextmanager

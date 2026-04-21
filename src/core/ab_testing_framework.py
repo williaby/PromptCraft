@@ -1480,10 +1480,12 @@ _experiment_manager_ref: list[ExperimentManager | None] = [None]
 async def get_experiment_manager() -> ExperimentManager:
     """Get or create the global experiment manager instance."""
     if _experiment_manager_ref[0] is None:
-        _experiment_manager_ref[0] = ExperimentManager()
-        await _experiment_manager_ref[0].start_monitoring()
-
-    return _experiment_manager_ref[0]
+        manager = ExperimentManager()
+        _experiment_manager_ref[0] = manager
+        await manager.start_monitoring()
+    local = _experiment_manager_ref[0]
+    assert local is not None
+    return local
 
 
 async def create_dynamic_loading_experiment(

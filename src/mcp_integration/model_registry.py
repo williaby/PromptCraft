@@ -772,7 +772,9 @@ def get_model_registry() -> ModelRegistry:
     """
     if _registry_ref[0] is None:
         _registry_ref[0] = ModelRegistry()
-    return _registry_ref[0]
+    local = _registry_ref[0]
+    assert local is not None
+    return local
 
 
 def reload_model_registry() -> None:
