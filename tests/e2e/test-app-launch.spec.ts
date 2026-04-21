@@ -48,10 +48,10 @@ test.describe('Application Launch Tests', () => {
     // Test switching between tabs
     for (let i = 1; i <= 4; i++) {
       await basePage.switchToJourney(i as 1 | 2 | 3 | 4);
-      
+
       // Wait for tab to activate
       await page.waitForTimeout(500);
-      
+
       // Verify tab is selected/active using Gradio v5 tab structure
       const activeTab = page.locator('button[role="tab"][aria-selected="true"]');
       await expect(activeTab).toBeVisible();
@@ -66,7 +66,7 @@ test.describe('Application Launch Tests', () => {
 
     // Get session info
     const sessionInfo = await basePage.getSessionInfo();
-    
+
     // Verify session info structure
     expect(sessionInfo.duration).toMatch(/\d+\.\d+h/);
     expect(sessionInfo.model).toBeTruthy();
@@ -96,13 +96,13 @@ test.describe('Application Launch Tests', () => {
 
   test('should handle page refresh gracefully', async ({ page }) => {
     await basePage.goto();
-    
+
     // Verify initial load
     await expect(basePage.gradioContainer).toBeVisible();
-    
+
     // Refresh the page
     await page.reload();
-    
+
     // Verify page loads again
     await basePage.waitForPageLoad();
     await expect(basePage.gradioContainer).toBeVisible();
@@ -111,21 +111,21 @@ test.describe('Application Launch Tests', () => {
 
   test('should load within acceptable time limits', async ({ page }) => {
     const startTime = Date.now();
-    
+
     await basePage.goto();
-    
+
     const loadTime = Date.now() - startTime;
-    
+
     // Verify load time is under 5 seconds
     expect(loadTime).toBeLessThan(5000);
-    
+
     // Get detailed performance metrics
     const metrics = await basePage.getPerformanceMetrics();
-    
+
     // Verify performance benchmarks
     expect(metrics.domContentLoaded).toBeLessThan(3000);
     expect(metrics.loadComplete).toBeLessThan(5000);
-    
+
     console.log('Performance metrics:', metrics);
   });
 
@@ -136,23 +136,23 @@ test.describe('Application Launch Tests', () => {
 
     // Simulate network offline
     await TestUtils.simulateNetworkConditions(page, 'offline');
-    
+
     // Try to perform an action that requires network
     await basePage.journey1Tab.click();
-    
+
     // Verify the page doesn't crash (basic functionality preserved)
     await expect(basePage.gradioContainer).toBeVisible();
-    
+
     // Restore network
     await TestUtils.simulateNetworkConditions(page, 'normal');
   });
 
   test('should have proper security headers', async ({ page }) => {
     const response = await page.goto('/');
-    
+
     // Check for important security headers
     const headers = response?.headers();
-    
+
     if (headers) {
       // These might be set by the server/proxy
       console.log('Security headers check:', {
@@ -161,7 +161,7 @@ test.describe('Application Launch Tests', () => {
         'x-content-type-options': headers['x-content-type-options'],
       });
     }
-    
+
     // Verify no obvious security issues
     const content = await page.content();
     expect(content).not.toContain('password');
@@ -171,16 +171,16 @@ test.describe('Application Launch Tests', () => {
 
   test('should maintain session state across tab switches', async ({ page }) => {
     await basePage.goto();
-    
+
     // Get initial session info
     const initialSession = await basePage.getSessionInfo();
-    
+
     // Switch between tabs multiple times
     for (let i = 1; i <= 4; i++) {
       await basePage.switchToJourney(i as 1 | 2 | 3 | 4);
       await page.waitForTimeout(200);
     }
-    
+
     // Verify session info is maintained
     const finalSession = await basePage.getSessionInfo();
     expect(finalSession.model).toBe(initialSession.model);
@@ -190,18 +190,18 @@ test.describe('Application Launch Tests', () => {
 
   test('should display admin tab conditionally', async ({ page }) => {
     await basePage.goto();
-    
+
     // Check if admin tab exists
     const adminTabExists = await basePage.adminTab.isVisible().catch(() => false);
-    
+
     if (adminTabExists) {
       await expect(basePage.adminTab).toBeVisible();
       await expect(basePage.adminTab).toContainText('Admin');
-      
+
       // Test admin tab is clickable
       await basePage.adminTab.click();
       await page.waitForTimeout(500);
-      
+
       console.log('Admin tab is available and functional');
     } else {
       console.log('Admin tab is not visible (expected for non-admin users)');

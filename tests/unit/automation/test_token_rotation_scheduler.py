@@ -294,7 +294,8 @@ class TestAnalyzeTokensForRotation:
         """Test analysis handles database errors gracefully."""
         # Mock database to raise exception
         with patch(
-            "src.automation.token_rotation_scheduler.get_db", side_effect=Exception("Database connection failed")
+            "src.automation.token_rotation_scheduler.get_db",
+            side_effect=Exception("Database connection failed"),
         ):
             plans = await self.scheduler.analyze_tokens_for_rotation()
 
@@ -676,7 +677,7 @@ class TestSchedulerWorkflowMethods:
                 "status": "no_rotations_due",
                 "timestamp": datetime.now(UTC).isoformat(),
                 "scheduled_count": 0,
-            }
+            },
         )
 
         result = await self.scheduler.run_rotation_scheduler()
@@ -822,7 +823,7 @@ class TestIntegrationScenarios:
     async def test_complete_rotation_workflow(self):
         """Test complete rotation workflow from analysis to completion."""
         # Step 1: Mock database analysis
-        with patch("src.automation.token_rotation_scheduler.get_db") as mock_get_db:
+        with patch("src.automation.token_rotation_scheduler.get_db"):
             mock_session = AsyncMock()
             mock_result = Mock()
 
@@ -843,7 +844,6 @@ class TestIntegrationScenarios:
 
             # Mock get_db function
             with patch("src.automation.token_rotation_scheduler.get_db", return_value=mock_db_generator()):
-
                 # Step 2: Analyze tokens
                 plans = await self.scheduler.analyze_tokens_for_rotation()
                 assert len(plans) == 1

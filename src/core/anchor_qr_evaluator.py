@@ -216,7 +216,7 @@ class ANCHORQREvaluator(LoggerMixin):
             evaluation.improvement_recommendations = self._generate_improvement_recommendations(evaluation)
 
             self.logger.info(
-                "ANCHOR-QR-8 evaluation complete. " "Score: %.1f, " "Flags: %d, " "Issues: %d",
+                "ANCHOR-QR-8 evaluation complete. Score: %.1f, Flags: %d, Issues: %d",
                 evaluation.overall_score,
                 len(evaluation.all_flags),
                 len(evaluation.critical_issues),

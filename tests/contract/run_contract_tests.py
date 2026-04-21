@@ -47,7 +47,7 @@ def run_contract_tests():
             "PACT_TEST_MODE": "consumer",
             "CONTRACT_TEST": "true",
             "LOG_LEVEL": "INFO",
-        }
+        },
     )
 
     try:

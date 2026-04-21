@@ -7,6 +7,7 @@ contract testing infrastructure.
 
 import asyncio
 from collections.abc import AsyncGenerator
+import contextlib
 import logging
 import os
 from pathlib import Path
@@ -149,10 +150,8 @@ async def heimdall_stub_server(contract_test_environment) -> AsyncGenerator[tupl
         logger.info("Stopping Heimdall stub server...")
         if "task" in locals():
             task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await task
-            except asyncio.CancelledError:
-                pass
 
 
 @pytest.fixture(scope="session")

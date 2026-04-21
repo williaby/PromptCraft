@@ -7,7 +7,7 @@ for any project, providing installation and setup guidance.
 
 Supported Tools:
 - Claude Code (Anthropic)
-- OpenAI Codex CLI  
+- OpenAI Codex CLI
 - Gemini CLI (Google)
 - Qwen Code CLI
 - GitHub Copilot CLI
@@ -280,7 +280,7 @@ suggestions:
 # Exclude patterns
 exclude:
   - "*.log"
-  - "*.env*" 
+  - "*.env*"
   - "**/node_modules/**"
   - "**/.venv/**"
   - "**/__pycache__/**"
@@ -487,7 +487,9 @@ def main():
     parser.add_argument("--install-missing", action="store_true", help="Attempt to install missing tools")
     parser.add_argument("--quiet", action="store_true", help="Output minimal summary only")
     parser.add_argument(
-        "--setup-project", action="store_true", help="Set up project configuration and VS Code integration"
+        "--setup-project",
+        action="store_true",
+        help="Set up project configuration and VS Code integration",
     )
 
     args = parser.parse_args()

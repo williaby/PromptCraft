@@ -6,7 +6,7 @@ replacing complex JWT validation with simple header-based authentication.
 """
 
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import secrets
 from typing import Any, cast
@@ -18,7 +18,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from src.utils.datetime_compat import UTC
 
 from .cloudflare_auth import CloudflareAuthError, CloudflareAuthHandler
-from .whitelist import EmailWhitelistValidator
+from .whitelist import EmailWhitelistValidator, create_validator_from_env
 
 
 logger = logging.getLogger(__name__)
@@ -111,8 +111,6 @@ class SimpleSessionManager:
 
     def _is_session_expired(self, session: dict) -> bool:
         """Check if session has expired."""
-        from datetime import timedelta  # noqa: PLC0415
-
         expiry = session["last_accessed"] + timedelta(seconds=self.session_timeout)
         return bool(datetime.now(UTC) > expiry)
 
@@ -220,13 +218,9 @@ class CloudflareAccessMiddleware:
 
             return response
         except HTTPException as e:
-            from starlette.responses import JSONResponse
-
             return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
         except Exception as e:
             logger.error("Middleware error: %s", e)
-            from starlette.responses import JSONResponse
-
             return JSONResponse(status_code=500, content={"detail": "Internal authentication error"})
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -461,8 +455,6 @@ def create_auth_middleware(
     Returns:
         Configured CloudflareAccessMiddleware
     """
-    from .whitelist import create_validator_from_env  # noqa: PLC0415
-
     # Create whitelist validator with tier support
     validator = create_validator_from_env(whitelist_str, admin_emails_str, full_users_str, limited_users_str)
 

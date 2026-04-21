@@ -728,7 +728,6 @@ class InteractiveHelpSystem:
                 and topic_name not in user.completed_topics
                 and self.content_generator._is_appropriate_level(topic.level, user.current_level)
             ):
-
                 opportunities.append(
                     {
                         "type": "suggested_topic",

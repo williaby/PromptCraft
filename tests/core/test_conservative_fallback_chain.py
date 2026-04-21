@@ -667,12 +667,8 @@ class TestFallbackCircuitBreaker:
 
         # Execute failures to trigger state transition with timeout protection
         for _i in range(4):  # One more than threshold
-            with contextlib.suppress(builtins.BaseException):
-                try:
-                    await asyncio.wait_for(cb.execute(mock_failure), timeout=2.0)
-                except TimeoutError:
-                    # Timeout is acceptable for failure scenarios
-                    pass
+            with contextlib.suppress(builtins.BaseException), contextlib.suppress(TimeoutError):
+                await asyncio.wait_for(cb.execute(mock_failure), timeout=2.0)
 
         assert cb.consecutive_failures == 4
         assert cb.state in [AdvancedCircuitBreakerState.OPEN, AdvancedCircuitBreakerState.DEGRADED]

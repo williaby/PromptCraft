@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 from pathlib import Path
+import select
 import subprocess
 import sys
 import time
@@ -204,8 +205,6 @@ class ZenMCPProcess:
             if self.process and self.process.stderr and self.process.stderr.readable():
                 # Non-blocking read of stderr
                 try:
-                    import select
-
                     if self.process and self.process.stderr and select.select([self.process.stderr], [], [], 0)[0]:
                         error_output = self.process.stderr.read()
                         if error_output:

@@ -628,7 +628,8 @@ class TestEdgeCasesAndErrorHandling:
 
     @pytest.mark.asyncio
     @patch(
-        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage", side_effect=Exception("Test error")
+        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage",
+        side_effect=Exception("Test error"),
     )
     @patch("examples.vector_store_usage.logger")
     async def test_main_function_exception_handling(self, mock_logger, mock_basic):
@@ -640,7 +641,8 @@ class TestEdgeCasesAndErrorHandling:
 
     @pytest.mark.asyncio
     @patch(
-        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage", side_effect=Exception("Test error")
+        "examples.vector_store_usage.VectorStoreExamples.basic_mock_store_usage",
+        side_effect=Exception("Test error"),
     )
     @patch("examples.vector_store_usage.logger")
     async def test_main_function_actual_exception_lines(self, mock_logger, mock_basic):
@@ -732,7 +734,7 @@ class TestEdgeCasesAndErrorHandling:
                 clarification_query1,  # First query gets clarification_needed - triggers 252->213
                 standard_query2,  # Second query gets standard_hyde
                 standard_query3,  # Third query gets standard_hyde
-            ]
+            ],
         )
         mock_hyde_processor.return_value = mock_processor
 
@@ -777,7 +779,7 @@ class TestEdgeCasesAndErrorHandling:
                 first_query_clarification,  # Query 1: clarification_needed -> line 252, then continue to 213
                 second_query_standard,  # Query 2: standard_hyde -> line 218
                 third_query_standard,  # Query 3: standard_hyde -> line 218
-            ]
+            ],
         )
         mock_hyde_processor.return_value = mock_processor
 
@@ -817,7 +819,7 @@ class TestEdgeCasesAndErrorHandling:
                 clarification_query,  # First: elif branch
                 unknown_strategy_query,  # Second: neither if nor elif - might be the missing branch
                 standard_query,  # Third: if branch
-            ]
+            ],
         )
         mock_hyde_processor.return_value = mock_processor
 
@@ -853,7 +855,7 @@ class TestEdgeCasesAndErrorHandling:
                 unhandled_query1,  # Query 1: unhandled -> continue to next iteration (252->213)
                 unhandled_query2,  # Query 2: unhandled -> continue to next iteration (252->213)
                 unhandled_query3,  # Query 3: unhandled -> end loop
-            ]
+            ],
         )
         mock_hyde_processor.return_value = mock_processor
 

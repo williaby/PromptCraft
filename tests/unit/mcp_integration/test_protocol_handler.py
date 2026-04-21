@@ -439,10 +439,8 @@ class TestAsyncCommunication:
         writer = AsyncMock()
         request = MCPRequest(method="test", id="123")
 
-        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError):
-            with pytest.raises(MCPProtocolError) as exc_info:
-                await handler.send_request(writer, request)
-
+        with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError), pytest.raises(MCPProtocolError) as exc_info:
+            await handler.send_request(writer, request)
         assert exc_info.value.code == MCPStandardErrors.INTERNAL_ERROR
         assert "Request timeout" in exc_info.value.message
         assert request.id not in handler.pending_requests
@@ -579,10 +577,8 @@ class TestMessageTypeDetection:
 
     def test_get_message_type_unknown(self, handler):
         """Test getting unknown message type."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match=r"Unknown message type"):
             handler.get_message_type("invalid")
-
-        assert "Unknown message type" in str(exc_info.value)
 
 
 class TestMCPMethodRegistry:

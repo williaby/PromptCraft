@@ -39,7 +39,7 @@ class PactConfiguration:
         # Ensure pacts directory exists
         self.pact_dir.mkdir(exist_ok=True)
 
-    def get_pact_config(self, provider_name: str, mock_port: int = None) -> dict[str, Any]:
+    def get_pact_config(self, provider_name: str, mock_port: int | None = None) -> dict[str, Any]:
         """Get Pact configuration for a specific provider."""
         if mock_port is None:
             mock_port = PACT_MOCK_SERVICE_PORT_START + hash(provider_name) % 1000

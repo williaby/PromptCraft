@@ -5,6 +5,7 @@ Provides utilities to detect Docker availability and choose appropriate
 database strategies for testing.
 """
 
+import importlib.util
 import logging
 
 import docker
@@ -26,7 +27,7 @@ def is_docker_available() -> bool:
         logger.info("Docker is available and responsive")
         return True
     except Exception as e:
-        logger.warning(f"Docker is not available: {e}")
+        logger.warning("Docker is not available: %s", e)
         return False
 
 
@@ -37,14 +38,11 @@ def is_postgresql_supported() -> bool:
     Returns:
         True if asyncpg is available for PostgreSQL support
     """
-    try:
-        import asyncpg
-
+    if importlib.util.find_spec("asyncpg") is not None:
         logger.info("PostgreSQL support available (asyncpg found)")
         return True
-    except ImportError:
-        logger.warning("PostgreSQL support unavailable (asyncpg not found)")
-        return False
+    logger.warning("PostgreSQL support unavailable (asyncpg not found)")
+    return False
 
 
 def should_use_postgresql() -> bool:
@@ -77,7 +75,7 @@ def should_use_postgresql() -> bool:
             reasons.append("Docker unavailable")
         if not postgres_ok:
             reasons.append("asyncpg unavailable")
-        logger.info(f"📁 Using SQLite fallback: {', '.join(reasons)}")
+        logger.info("📁 Using SQLite fallback: %s", ", ".join(reasons))
 
     return result
 
@@ -94,7 +92,7 @@ def get_docker_info() -> dict | None:
             client = docker.from_env()
             return client.info()
     except Exception as e:
-        logger.debug(f"Could not get Docker info: {e}")
+        logger.debug("Could not get Docker info: %s", e)
     return None
 
 

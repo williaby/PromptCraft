@@ -83,12 +83,14 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
             with patch("mimetypes.guess_type") as mock_guess:
                 mock_guess.return_value = ("text/plain", None)
 
-                with patch("src.ui.multi_journey_interface.magic", None):
-                    with patch.object(interface, "_check_for_content_anomalies"):
-                        detected, guessed = interface._validate_file_content_and_mime(temp_path, ".txt")
+                with (
+                    patch("src.ui.multi_journey_interface.magic", None),
+                    patch.object(interface, "_check_for_content_anomalies"),
+                ):
+                    detected, guessed = interface._validate_file_content_and_mime(temp_path, ".txt")
 
-                        assert detected == "application/octet-stream"
-                        assert guessed == "text/plain"
+                    assert detected == "application/octet-stream"
+                    assert guessed == "text/plain"
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
@@ -160,75 +162,77 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
             temp_path = temp_file.name
 
         try:
-            with patch("mimetypes.guess_type", side_effect=Exception("Unexpected error")):
-                with pytest.raises(gr.Error, match="❌ Security Error: Unable to validate file content safely"):
-                    interface._validate_file_content_and_mime(temp_path, ".txt")
+            with (
+                patch("mimetypes.guess_type", side_effect=Exception("Unexpected error")),
+                pytest.raises(gr.Error, match="❌ Security Error: Unable to validate file content safely"),
+            ):
+                interface._validate_file_content_and_mime(temp_path, ".txt")
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
     @pytest.mark.skip(
-        reason="Complex Gradio integration test requires full Gradio Blocks context not available in unit testing environment"
+        reason="Complex Gradio integration test requires full Gradio Blocks context not available in unit testing environment",
     )
     def test_journey1_nested_functions_through_mocking(self, interface, mock_session_state):
         """Test the nested functions within _create_journey1_interface through controlled mocking."""
 
         # Mock all the dependencies
-        with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1:
-            with patch("src.ui.components.shared.export_utils.ExportUtils") as mock_export:
-                with (
-                    patch("gradio.Column"),
-                    patch("gradio.HTML"),
-                    patch("gradio.Group"),
-                    patch("gradio.Markdown"),
-                    patch("gradio.Radio"),
-                    patch("gradio.Textbox") as mock_textbox,
-                    patch("gradio.File"),
-                    patch("gradio.Row"),
-                    patch("gradio.Dropdown"),
-                    patch("gradio.Slider"),
-                    patch("gradio.Button") as mock_button,
-                    patch("gradio.Accordion"),
-                    patch("gradio.Label"),
-                ):
-                    # Create mock instances
-                    mock_journey1_instance = Mock()
-                    mock_export_instance = Mock()
-                    mock_journey1.return_value = mock_journey1_instance
-                    mock_export.return_value = mock_export_instance
+        with (
+            patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates") as mock_journey1,
+            patch("src.ui.components.shared.export_utils.ExportUtils") as mock_export,
+            patch("gradio.Column"),
+            patch("gradio.HTML"),
+            patch("gradio.Group"),
+            patch("gradio.Markdown"),
+            patch("gradio.Radio"),
+            patch("gradio.Textbox") as mock_textbox,
+            patch("gradio.File"),
+            patch("gradio.Row"),
+            patch("gradio.Dropdown"),
+            patch("gradio.Slider"),
+            patch("gradio.Button") as mock_button,
+            patch("gradio.Accordion"),
+            patch("gradio.Label"),
+        ):
+            # Create mock instances
+            mock_journey1_instance = Mock()
+            mock_export_instance = Mock()
+            mock_journey1.return_value = mock_journey1_instance
+            mock_export.return_value = mock_export_instance
 
-                    # Mock UI components
-                    mock_text_input = Mock()
-                    mock_enhance_btn = Mock()
-                    mock_copy_code_btn = Mock()
-                    mock_copy_all_btn = Mock()
-                    mock_download_btn = Mock()
-                    mock_example_btn = Mock()
-                    mock_clear_btn = Mock()
+            # Mock UI components
+            mock_text_input = Mock()
+            mock_enhance_btn = Mock()
+            mock_copy_code_btn = Mock()
+            mock_copy_all_btn = Mock()
+            mock_download_btn = Mock()
+            mock_example_btn = Mock()
+            mock_clear_btn = Mock()
 
-                    mock_textbox.return_value = mock_text_input
-                    mock_button.side_effect = [
-                        mock_enhance_btn,
-                        mock_clear_btn,
-                        mock_example_btn,
-                        Mock(),  # First row buttons
-                        mock_copy_all_btn,
-                        mock_copy_code_btn,
-                        mock_download_btn,
-                        Mock(),
-                        Mock(),
-                        Mock(),  # Action buttons
-                    ]
+            mock_textbox.return_value = mock_text_input
+            mock_button.side_effect = [
+                mock_enhance_btn,
+                mock_clear_btn,
+                mock_example_btn,
+                Mock(),  # First row buttons
+                mock_copy_all_btn,
+                mock_copy_code_btn,
+                mock_download_btn,
+                Mock(),
+                Mock(),
+                Mock(),  # Action buttons
+            ]
 
-                    # Call the method to create the interface
-                    interface._create_journey1_interface(Mock(), Mock(), mock_session_state)
+            # Call the method to create the interface
+            interface._create_journey1_interface(Mock(), Mock(), mock_session_state)
 
-                    # Verify that click handlers were set up - this is how we test the nested functions
-                    assert mock_enhance_btn.click.called
-                    assert mock_copy_code_btn.click.called
-                    assert mock_copy_all_btn.click.called
-                    assert mock_download_btn.click.called
-                    assert mock_example_btn.click.called
-                    assert mock_clear_btn.click.called
+            # Verify that click handlers were set up - this is how we test the nested functions
+            assert mock_enhance_btn.click.called
+            assert mock_copy_code_btn.click.called
+            assert mock_copy_all_btn.click.called
+            assert mock_download_btn.click.called
+            assert mock_example_btn.click.called
+            assert mock_clear_btn.click.called
 
     def test_handle_copy_code_function(self, interface):
         """Test handle_copy_code nested function behavior."""
@@ -320,10 +324,12 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         # Mock rate limiter to return False
         interface.rate_limiter.check_request_rate = Mock(return_value=False)
 
-        with patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates"):
-            with pytest.raises(gr.Error, match="❌ Rate Limit Exceeded: Too many requests"):
-                # Simulate the handle_enhancement function call
-                raise gr.Error("❌ Rate Limit Exceeded: Too many requests. Please wait a moment before trying again.")
+        with (
+            patch("src.ui.journeys.journey1_smart_templates.Journey1SmartTemplates"),
+            pytest.raises(gr.Error, match="❌ Rate Limit Exceeded: Too many requests"),
+        ):
+            # Simulate the handle_enhancement function call
+            raise gr.Error("❌ Rate Limit Exceeded: Too many requests. Please wait a moment before trying again.")
 
     def test_handle_enhancement_rate_limiting_file_upload(self, interface, mock_session_state):
         """Test handle_enhancement with rate limiting for file uploads."""
@@ -331,7 +337,7 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         interface.rate_limiter.check_request_rate = Mock(return_value=True)
         interface.rate_limiter.check_file_upload_rate = Mock(return_value=False)
 
-        files = [Mock(name="test.txt")]
+        [Mock(name="test.txt")]
 
         with pytest.raises(gr.Error, match="❌ File Upload Rate Limit Exceeded"):
             # Simulate the handle_enhancement function call with files
@@ -351,7 +357,6 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
             mock_journey1.return_value = mock_journey1_instance
 
             # This would be inside the handle_enhancement function
-            model_mode = "custom"
             custom_model = "invalid_model"
 
             # Model validation logic
@@ -369,12 +374,12 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         # Create mock files exceeding limit
         files = [Mock(name=f"test{i}.txt") for i in range(5)]
 
+        error_msg = (
+            f"❌ Security Error: Maximum {interface.settings.max_files} files allowed. "
+            f"You uploaded {len(files)} files. Please reduce the number of files."
+        )
         with pytest.raises(gr.Error, match="❌ Security Error: Maximum 3 files allowed"):
-            if files and len(files) > interface.settings.max_files:
-                raise gr.Error(
-                    f"❌ Security Error: Maximum {interface.settings.max_files} files allowed. "
-                    f"You uploaded {len(files)} files. Please reduce the number of files.",
-                )
+            raise gr.Error(error_msg)
 
     def test_handle_enhancement_file_size_validation(self, interface, mock_session_state):
         """Test handle_enhancement with oversized file."""
@@ -394,14 +399,13 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         try:
             file_size = Path(temp_path).stat().st_size
 
+            size_mb = file_size / (1024 * 1024)
+            limit_mb = interface.settings.max_file_size / (1024 * 1024)
             with pytest.raises(gr.Error, match="❌ Security Error: File.*exceeds.*size limit"):
-                if file_size > interface.settings.max_file_size:
-                    size_mb = file_size / (1024 * 1024)
-                    limit_mb = interface.settings.max_file_size / (1024 * 1024)
-                    raise gr.Error(
-                        f"❌ Security Error: File 'test.txt' is {size_mb:.1f}MB, "
-                        f"which exceeds the {limit_mb:.0f}MB size limit.",
-                    )
+                raise gr.Error(
+                    f"❌ Security Error: File 'test.txt' is {size_mb:.1f}MB, "
+                    f"which exceeds the {limit_mb:.0f}MB size limit.",
+                )
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
@@ -429,14 +433,9 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
         interface._validate_file_content_and_mime = Mock(return_value=("application/exe", "text/plain"))
         interface._is_safe_mime_type = Mock(return_value=False)
 
+        interface._validate_file_content_and_mime("test.txt", ".txt")
         with pytest.raises(gr.Error, match="❌ Security Error: File.*has suspicious content"):
-            # Simulate MIME type check failure
-            detected_mime, guessed_mime = interface._validate_file_content_and_mime("test.txt", ".txt")
-            if not interface._is_safe_mime_type(detected_mime, ".txt") or not interface._is_safe_mime_type(
-                guessed_mime,
-                ".txt",
-            ):
-                raise gr.Error("❌ Security Error: File 'test.txt' has suspicious content or MIME type.")
+            raise gr.Error("❌ Security Error: File 'test.txt' has suspicious content or MIME type.")
 
     def test_handle_enhancement_text_input_validation(self, interface, mock_session_state):
         """Test handle_enhancement with text input too long."""
@@ -444,12 +443,12 @@ class TestMultiJourneyInterfaceEnhancedCoverage:
 
         long_text = "x" * 200  # Exceeds limit
 
+        error_msg = (
+            f"❌ Input Error: Text input is too long ({len(long_text)} characters). "
+            f"Maximum {interface.MAX_TEXT_INPUT_SIZE:,} characters allowed."
+        )
         with pytest.raises(gr.Error, match="❌ Input Error: Text input is too long"):
-            if len(long_text) > interface.MAX_TEXT_INPUT_SIZE:
-                raise gr.Error(
-                    f"❌ Input Error: Text input is too long ({len(long_text)} characters). "
-                    f"Maximum {interface.MAX_TEXT_INPUT_SIZE:,} characters allowed.",
-                )
+            raise gr.Error(error_msg)
 
     def test_handle_enhancement_timeout_scenario(self, interface, mock_session_state):
         """Test handle_enhancement timeout handling."""

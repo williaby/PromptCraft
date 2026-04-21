@@ -12,7 +12,7 @@ Test cases:
 3. Processing time validation
 4. Output quality assessment
 
-Special characters test: àáâãäåæçèéêë ñ ßµ €£¥ 
+Special characters test: àáâãäåæçèéêë ñ ßµ €£¥
 
 Emoji test: 🚀 💻 📝 ✅ ⚠️ 🔥
 

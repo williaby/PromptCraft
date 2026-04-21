@@ -720,15 +720,14 @@ class TokenOptimizationMonitor:
 
 
 # Global monitor instance
-_global_monitor: TokenOptimizationMonitor | None = None
+_monitor_ref: list[TokenOptimizationMonitor | None] = [None]
 
 
 def get_token_optimization_monitor() -> TokenOptimizationMonitor:
     """Get the global token optimization monitor instance."""
-    global _global_monitor  # noqa: PLW0603
-    if _global_monitor is None:
-        _global_monitor = TokenOptimizationMonitor()
-    return _global_monitor
+    if _monitor_ref[0] is None:
+        _monitor_ref[0] = TokenOptimizationMonitor()
+    return _monitor_ref[0]
 
 
 async def initialize_monitoring() -> TokenOptimizationMonitor:

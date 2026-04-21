@@ -38,7 +38,7 @@ class TestInstallDependencies:
             [
                 call("📦 Installing dependencies..."),
                 call("✅ Dependencies installed"),
-            ]
+            ],
         )
         mock_subprocess_run.assert_called_once_with(
             ["poetry", "install"],
@@ -64,9 +64,9 @@ class TestInstallDependencies:
             [
                 call("📦 Installing dependencies..."),
                 call(
-                    "❌ Failed to install dependencies: Command '['poetry', 'install']' returned non-zero exit status 1."
+                    "❌ Failed to install dependencies: Command '['poetry', 'install']' returned non-zero exit status 1.",
                 ),
-            ]
+            ],
         )
         mock_exit.assert_called_once_with(1)
 
@@ -107,7 +107,7 @@ class TestCheckPactBinary:
                 call("⚠️  pact-mock-service binary not found"),
                 call("Install with: gem install pact-mock_service"),
                 call("Or install pact-ruby-standalone"),
-            ]
+            ],
         )
 
 
@@ -136,7 +136,7 @@ class TestRunContractTests:
             [
                 call("🧪 Running contract tests..."),
                 call("✅ Contract tests passed!"),
-            ]
+            ],
         )
 
         expected_env = {
@@ -184,7 +184,7 @@ class TestRunContractTests:
             [
                 call("🧪 Running contract tests..."),
                 call("❌ Contract tests failed"),
-            ]
+            ],
         )
 
     @patch("tests.contract.run_contract_tests.os.environ")
@@ -207,9 +207,9 @@ class TestRunContractTests:
             [
                 call("🧪 Running contract tests..."),
                 call(
-                    "❌ Failed to run contract tests: Command '['poetry', 'run', 'pytest']' returned non-zero exit status 1."
+                    "❌ Failed to run contract tests: Command '['poetry', 'run', 'pytest']' returned non-zero exit status 1.",
                 ),
-            ]
+            ],
         )
 
 
@@ -245,7 +245,7 @@ class TestMain:
                 call("Test servers used:"),
                 call("  - zen-mcp-server on localhost:8080"),
                 call("  - heimdall-stub on localhost:8081"),
-            ]
+            ],
         )
 
     @patch("tests.contract.run_contract_tests.Path")
@@ -289,7 +289,13 @@ class TestMain:
     @patch("tests.contract.run_contract_tests.print")
     @patch("tests.contract.run_contract_tests.sys.exit")
     def test_main_test_failure(
-        self, mock_exit, mock_print, mock_run_tests, mock_check_pact, mock_install_deps, mock_path
+        self,
+        mock_exit,
+        mock_print,
+        mock_run_tests,
+        mock_check_pact,
+        mock_install_deps,
+        mock_path,
     ):
         """Test main execution when tests fail."""
         # Arrange
@@ -311,7 +317,7 @@ class TestMain:
                 call("🚀 MCP Contract Test Runner"),
                 call("=" * 40),
                 call("\n💥 Contract tests failed - check output above"),
-            ]
+            ],
         )
 
     @patch("tests.contract.run_contract_tests.Path")
@@ -333,7 +339,7 @@ class TestMain:
                 call("🚀 MCP Contract Test Runner"),
                 call("=" * 40),
                 call("❌ Must be run from project root (where pyproject.toml exists)"),
-            ]
+            ],
         )
         mock_exit.assert_called_once_with(1)
 
@@ -353,7 +359,6 @@ class TestEdgeCasesAndIntegration:
             patch("tests.contract.run_contract_tests.Path") as mock_path,
             patch("tests.contract.run_contract_tests.print"),
         ):
-
             mock_path.return_value.parent = "/test/path"
             mock_result = Mock()
             mock_result.returncode = 0
@@ -369,7 +374,7 @@ class TestEdgeCasesAndIntegration:
                     "PACT_TEST_MODE": "consumer",
                     "CONTRACT_TEST": "true",
                     "LOG_LEVEL": "INFO",
-                }
+                },
             )
 
             _, kwargs = mock_subprocess_run.call_args
@@ -388,7 +393,6 @@ class TestEdgeCasesAndIntegration:
             patch("tests.contract.run_contract_tests.subprocess.run") as mock_subprocess_run,
             patch("tests.contract.run_contract_tests.print"),
         ):
-
             mock_subprocess_run.return_value = None
 
             # Act
@@ -398,7 +402,7 @@ class TestEdgeCasesAndIntegration:
             mock_path.assert_called_once()
             actual_arg = mock_path.call_args[0][0]
             assert actual_arg.endswith(
-                "tests/contract/run_contract_tests.py"
+                "tests/contract/run_contract_tests.py",
             ), f"Expected path ending with 'tests/contract/run_contract_tests.py', got: {actual_arg}"
             mock_subprocess_run.assert_called_once_with(
                 ["poetry", "install"],
@@ -441,7 +445,13 @@ class TestParametrizedScenarios:
     @patch("tests.contract.run_contract_tests.print")
     @patch("tests.contract.run_contract_tests.Path")
     def test_run_contract_tests_various_return_codes(
-        self, mock_path, mock_print, mock_subprocess_run, mock_environ, return_code, expected_result
+        self,
+        mock_path,
+        mock_print,
+        mock_subprocess_run,
+        mock_environ,
+        return_code,
+        expected_result,
     ):
         """Test run_contract_tests with various return codes."""
         # Arrange

@@ -6,8 +6,8 @@ This script removes .backup files created during the datetime migration process.
 """
 
 import argparse
-from pathlib import Path
 import logging
+from pathlib import Path
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -56,11 +56,16 @@ def main() -> None:
     """Main function."""
     parser = argparse.ArgumentParser(description="Cleanup backup files created during datetime migration")
     parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be removed without actually removing files"
+        "--dry-run",
+        action="store_true",
+        help="Show what would be removed without actually removing files",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
     parser.add_argument(
-        "--path", type=Path, default=Path("."), help="Base path to search for backup files (default: current directory)"
+        "--path",
+        type=Path,
+        default=Path(),
+        help="Base path to search for backup files (default: current directory)",
     )
 
     args = parser.parse_args()

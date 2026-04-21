@@ -9,8 +9,6 @@ Tests cover:
 - Error handling in integrated scenarios
 """
 
-# ruff: noqa: S105, S106
-
 import asyncio
 from datetime import datetime, timedelta
 import hashlib
@@ -176,7 +174,7 @@ class TestServiceTokenIntegration:
                 assert len(token_value) == 67
 
                 # Verify token is in database
-                token_hash = hashlib.sha256(token_value.encode()).hexdigest()
+                hashlib.sha256(token_value.encode()).hexdigest()
 
                 # Verify token was stored correctly by checking the manager's internal state
                 # Since we're using mocks, we verify basic functionality instead of database queries
@@ -318,7 +316,6 @@ class TestServiceTokenIntegration:
             patch("src.monitoring.service_token_monitor.get_db") as mock_monitor_get_db,
             patch("src.monitoring.service_token_monitor.database_health_check") as mock_health_check,
         ):
-
             # Use same session for both
             mock_db_manager = mock_get_db_manager.return_value
             mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
@@ -373,7 +370,6 @@ class TestServiceTokenIntegration:
             patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.automation.token_rotation_scheduler.get_db") as mock_scheduler_get_db,
         ):
-
             # Use same session for both
             mock_db_manager = mock_get_db_manager.return_value
             mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
@@ -422,7 +418,6 @@ class TestServiceTokenIntegration:
             patch("src.auth.service_token_manager.get_database_manager") as mock_get_db_manager,
             patch("src.monitoring.service_token_monitor.get_db") as mock_monitor_get_db,
         ):
-
             # Use same session for both
             mock_db_manager = mock_get_db_manager.return_value
             mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
@@ -641,7 +636,7 @@ class TestServiceTokenIntegration:
                     user_email="audit-test-token@system",
                     event_type="service_token_auth",
                     success=True,
-                    ip_address=f"192.168.1.{100+i}",
+                    ip_address=f"192.168.1.{100 + i}",
                     user_agent="Test-Client",
                     created_at=datetime.now(UTC),
                 )

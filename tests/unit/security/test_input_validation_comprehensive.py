@@ -1,11 +1,8 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive test suite for input validation with enhanced coverage.
 
 This module provides enhanced test coverage for src/security/input_validation.py,
 focusing on areas identified in the security testing review:
-- Expanded SecureFileUpload testing with dangerous file extensions and content types  
+- Expanded SecureFileUpload testing with dangerous file extensions and content types
 - Enhanced sanitize_dict_values testing with complex nested structures
 - URL-encoded payload testing and edge cases
 - More extensive invalid character testing for file uploads
@@ -22,6 +19,7 @@ from src.security.input_validation import (
     create_input_sanitizer,
     sanitize_dict_values,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestSecureFileUploadComprehensive:
@@ -438,7 +436,6 @@ class TestSanitizeDictValuesComprehensive:
 
     def test_sanitize_dict_with_special_data_types(self):
         """Test sanitization with various Python data types."""
-        from datetime import date, datetime
         from decimal import Decimal
 
         data = {
@@ -448,7 +445,7 @@ class TestSanitizeDictValuesComprehensive:
             "boolean_true": True,
             "boolean_false": False,
             "datetime": utc_now(),
-            "date": date.today(),
+            "date": utc_now().date(),
             "decimal": Decimal("123.45"),
             "bytes": b"binary data",
             "set_data": {1, 2, 3},  # Sets are not dict/list/str
@@ -539,13 +536,13 @@ class TestSanitizeDictValuesComprehensive:
 
         # URL-encoded content should be preserved and then HTML-escaped
         # The current implementation may not decode URLs, which is actually safer
-        for key, value in result.items():
+        for _, value in result.items():
             if isinstance(value, str):
                 # Should contain escaped characters or preserved encoding
                 assert "%" in value or "&lt;" in value or "&gt;" in value
             elif isinstance(value, dict):
                 # Check nested
-                for nested_key, nested_value in value.items():
+                for _, nested_value in value.items():
                     if isinstance(nested_value, str):
                         assert "%" in nested_value or "&lt;" in nested_value or "&gt;" in nested_value
 
@@ -596,7 +593,7 @@ class TestInputSanitizerFactory:
                 pass
 
         # Test with None (should handle gracefully or raise appropriate error)
-        for sanitizer_name, sanitizer in sanitizers.items():
+        for _, sanitizer in sanitizers.items():
             try:
                 result = sanitizer(None)
                 # If it succeeds, should return string
@@ -634,7 +631,7 @@ class TestSecureValidationEdgeCases:
             "Москва",  # Russian characters
             "العربية",  # Arabic
             "🎉 Party time! 🎊",  # Emojis
-            "Test\u202E\u202Dreverse",  # Right-to-left override attack
+            "Test\u202e\u202dreverse",  # Right-to-left override attack
         ]
 
         for content in international_content:
@@ -652,7 +649,7 @@ class TestSecureValidationEdgeCases:
             "Valid content with <script>bad part</script>",
             "email@domain.com<script>alert(1)</script>",
             "valid/path/../../../etc/passwd",
-            "Normal text\x00\x0A\x0D with nulls and newlines",
+            "Normal text\x00\x0a\x0d with nulls and newlines",
         ]
 
         validators = [
@@ -661,7 +658,7 @@ class TestSecureValidationEdgeCases:
             ("email", SecureEmailField.validate),
         ]
 
-        for validator_name, validator in validators:
+        for _, validator in validators:
             for content in mixed_contents:
                 try:
                     result = validator(content)

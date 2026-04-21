@@ -21,7 +21,7 @@ def mock_database_settings():
     settings.db_port = 5432
     settings.db_name = "test_db"
     settings.db_user = "test_user"
-    settings.db_password = "test_password"  # noqa: S105
+    settings.db_password = "test_password"
     settings.db_pool_size = 5
     settings.db_pool_max_overflow = 10
     settings.db_pool_timeout = 30

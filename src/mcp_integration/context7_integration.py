@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Context7 MCP Server Integration
 
@@ -12,8 +9,10 @@ from dataclasses import dataclass
 from datetime import datetime
 import logging
 import os
+import time
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 from .message_router import MCPMessageRouter
@@ -70,7 +69,10 @@ class Context7Client(LoggerMixin):
         return self.server_name in self.message_router.list_connected_servers()
 
     async def search_documents(
-        self, query: str, limit: int | None = None, filters: dict[str, Any] | None = None
+        self,
+        query: str,
+        limit: int | None = None,
+        filters: dict[str, Any] | None = None,
     ) -> Context7SearchResult:
         """Search documents using Context7.
 
@@ -82,7 +84,6 @@ class Context7Client(LoggerMixin):
         Returns:
             Search results from Context7
         """
-        import time
 
         start_time = time.time()
 
@@ -137,7 +138,7 @@ class Context7Client(LoggerMixin):
             )
 
             self.logger.info(
-                f"Context7 search for '{query}': {len(documents)} results in {search_result.search_time:.2f}s"
+                f"Context7 search for '{query}': {len(documents)} results in {search_result.search_time:.2f}s",
             )
             return search_result
 
@@ -146,7 +147,7 @@ class Context7Client(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Context7 search failed: {e!s}",
-            )
+            ) from e
 
     async def get_document(self, document_id: str) -> Context7Document | None:
         """Retrieve a specific document by ID.
@@ -188,7 +189,7 @@ class Context7Client(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Failed to get document: {e!s}",
-            )
+            ) from e
 
     async def get_collections(self) -> list[dict[str, Any]]:
         """Get available document collections.
@@ -292,8 +293,6 @@ class Context7Integration(LoggerMixin):
             "search_time": 0.0,
         }
 
-        import time
-
         start_time = time.time()
 
         # Try Context7 search if available and requested
@@ -307,7 +306,7 @@ class Context7Integration(LoggerMixin):
                         "name": "Context7",
                         "count": len(context7_results),
                         "search_time": context7_search.search_time,
-                    }
+                    },
                 )
                 self.logger.info(f"Context7 returned {len(context7_results)} results")
             except Exception as e:
@@ -317,7 +316,7 @@ class Context7Integration(LoggerMixin):
                         "name": "Context7",
                         "count": 0,
                         "error": str(e),
-                    }
+                    },
                 )
 
         # Fallback to local search
@@ -348,7 +347,7 @@ class Context7Integration(LoggerMixin):
                     {
                         "name": "Local Search",
                         "count": len(local_results),
-                    }
+                    },
                 )
             except Exception as e:
                 self.logger.error(f"Local search failed: {e}")
@@ -357,7 +356,7 @@ class Context7Integration(LoggerMixin):
                         "name": "Local Search",
                         "count": 0,
                         "error": str(e),
-                    }
+                    },
                 )
 
         # Combine and format results
@@ -379,7 +378,7 @@ class Context7Integration(LoggerMixin):
         results["search_time"] = time.time() - start_time
 
         self.logger.info(
-            f"Enhanced search for '{query}': {results['total_results']} results from {len(results['sources'])} sources"
+            f"Enhanced search for '{query}': {results['total_results']} results from {len(results['sources'])} sources",
         )
         return results
 

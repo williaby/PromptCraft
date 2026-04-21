@@ -5,7 +5,7 @@ This module provides comprehensive testing for the token rotation scheduler
 using dependency injection to avoid hanging database connections.
 
 Coverage achievements:
-- 36+ comprehensive test cases 
+- 36+ comprehensive test cases
 - Covers scheduling, execution, notifications, error handling
 - Tests async operations, concurrent execution, high-volume scenarios
 - Achieves 81.17% coverage with dependency injection

@@ -9,6 +9,7 @@ import asyncio
 from dataclasses import dataclass
 import logging
 from pathlib import Path
+import time
 from typing import Any
 
 from src.utils.logging_mixin import LoggerMixin
@@ -88,10 +89,8 @@ class PromptCraftToolExecutor:
             start_line = (offset or 0) + 1
             for i, line in enumerate(lines):
                 line_num = start_line + i
-                # Truncate very long lines
-                if len(line) > 2000:
-                    line = line[:2000] + "..."
-                formatted_lines.append(f"{line_num:4d}→{line}")
+                display_line = line[:2000] + "..." if len(line) > 2000 else line
+                formatted_lines.append(f"{line_num:4d}→{display_line}")
 
             content = "\n".join(formatted_lines)
 
@@ -234,13 +233,14 @@ class PromptCraftToolExecutor:
                                             "file": str(file_path),
                                             "line": i + 1,
                                             "context": context,
-                                        }
+                                        },
                                     )
                                     break
 
                         if len(search_results) >= limit:
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("Skipping file %s during search: %s", file_path, e)
                         continue
 
                 if len(search_results) >= limit:
@@ -333,7 +333,7 @@ class MCPToolRouter(LoggerMixin):
                         "required": ["query"],
                     },
                 ),
-            }
+            },
         )
 
     def refresh_server_tools(self) -> None:
@@ -370,8 +370,6 @@ class MCPToolRouter(LoggerMixin):
         Returns:
             Tool execution result
         """
-        import time
-
         start_time = time.time()
 
         # Check if tool exists
@@ -518,7 +516,7 @@ class MCPToolRouter(LoggerMixin):
                     "description": tool_def.description,
                     "server_name": tool_def.server_name,
                     "input_schema": tool_def.input_schema,
-                }
+                },
             )
 
         return tools
@@ -540,7 +538,7 @@ class MCPToolRouter(LoggerMixin):
                         "name": tool_name,
                         "description": tool_def.description,
                         "input_schema": tool_def.input_schema,
-                    }
+                    },
                 )
 
         return tools

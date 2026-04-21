@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for commands discovery system.
 
@@ -14,7 +11,7 @@ Test Coverage for src/commands/discovery.py:
 - Built-in commands handling
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 import tempfile
 from unittest.mock import Mock, patch
@@ -22,6 +19,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from src.commands.discovery import CommandDefinition, CommandsDiscoverySystem, CommandsManager
+from src.utils.datetime_compat import utc_now
 
 
 class TestCommandDefinition:
@@ -553,7 +551,9 @@ This is a test command.
         discovery_system._cache_timestamp = utc_now()
 
         with patch.object(
-            discovery_system, "get_available_commands", return_value=["command1", "command2", "command3"]
+            discovery_system,
+            "get_available_commands",
+            return_value=["command1", "command2", "command3"],
         ):
             status = discovery_system.get_discovery_status()
 
@@ -573,7 +573,6 @@ This is a test command.
             patch.object(discovery_system, "_search_user_commands") as mock_user,
             patch.object(discovery_system, "_search_builtin_commands") as mock_builtin,
         ):
-
             mock_command = Mock()
             mock_project.return_value = mock_command
 
@@ -592,7 +591,6 @@ This is a test command.
             patch.object(discovery_system, "_search_user_commands") as mock_user,
             patch.object(discovery_system, "_search_builtin_commands") as mock_builtin,
         ):
-
             mock_project.return_value = None
             mock_command = Mock()
             mock_user.return_value = mock_command
@@ -610,7 +608,6 @@ This is a test command.
             patch.object(discovery_system, "_search_user_commands", return_value=None),
             patch.object(discovery_system, "_search_builtin_commands") as mock_builtin,
         ):
-
             mock_command = Mock()
             mock_builtin.return_value = mock_command
 
@@ -626,7 +623,6 @@ This is a test command.
             patch.object(discovery_system, "_search_user_commands", return_value=None),
             patch.object(discovery_system, "_search_builtin_commands", return_value=None),
         ):
-
             result = discovery_system.discover_command("nonexistent")
             assert result is None
 
@@ -703,7 +699,6 @@ class TestCommandsManager:
             patch.object(commands_manager.discovery_system, "get_command", return_value=None),
             patch.object(commands_manager.discovery_system, "get_available_commands", return_value=["cmd1", "cmd2"]),
         ):
-
             result = commands_manager.execute_command("nonexistent")
 
             assert result["success"] is False
@@ -738,7 +733,6 @@ class TestCommandsManager:
                 return_value="# Test Command\n\nThis is a test.",
             ),
         ):
-
             help_text = commands_manager.get_help("test-command")
             assert help_text == "# Test Command\n\nThis is a test."
 
@@ -756,7 +750,6 @@ class TestCommandsManager:
             patch.object(commands_manager.discovery_system, "get_command", return_value=mock_command),
             patch.object(commands_manager.discovery_system, "get_command_content", return_value=None),
         ):
-
             help_text = commands_manager.get_help("test-command")
             assert "No content available" in help_text
 
@@ -836,7 +829,7 @@ Runs comprehensive linting checks for code quality.
 ```
 
 - Basic usage: /quality-lint
-"""
+""",
             )
 
             test_command = commands_dir / "test-coverage.md"
@@ -848,7 +841,7 @@ Checks test coverage metrics and reports.
 ## Arguments:
 - --threshold: Set minimum coverage threshold
 - --format: Output format (html, json, text)
-"""
+""",
             )
 
             # Test discovery system
@@ -897,7 +890,6 @@ Checks test coverage metrics and reports.
             patch("pathlib.Path.glob") as mock_glob,
             patch.object(CommandsDiscoverySystem, "_create_command_definition") as mock_create,
         ):
-
             # Mock both directories exist
             mock_exists.return_value = True
 
@@ -1081,13 +1073,14 @@ class TestAdditionalCoverageScenarios:
 
     def test_discover_command_search_error_handling(self, discovery_system):
         """Test error handling during command discovery search."""
-        with patch.object(discovery_system, "_search_project_commands", side_effect=OSError("Disk error")):
-            with patch.object(discovery_system, "_search_user_commands", side_effect=ValueError("Invalid path")):
-                with patch.object(discovery_system, "_search_builtin_commands", return_value=None):
-
-                    # Should handle all search errors and return None
-                    result = discovery_system.discover_command("error-command")
-                    assert result is None
+        with (
+            patch.object(discovery_system, "_search_project_commands", side_effect=OSError("Disk error")),
+            patch.object(discovery_system, "_search_user_commands", side_effect=ValueError("Invalid path")),
+            patch.object(discovery_system, "_search_builtin_commands", return_value=None),
+        ):
+            # Should handle all search errors and return None
+            result = discovery_system.discover_command("error-command")
+            assert result is None
 
     def test_get_commands_by_category_empty_category(self, discovery_system):
         """Test getting commands by category when category has no commands."""
@@ -1120,15 +1113,16 @@ class TestAdditionalCoverageScenarios:
         mock_file = Mock(spec=Path)
         mock_file.stem = "failed-command"
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.glob", return_value=[mock_file]):
-                with patch.object(discovery_system, "discover_command", return_value=None):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.glob", return_value=[mock_file]),
+            patch.object(discovery_system, "discover_command", return_value=None),
+        ):
+            discovery_system._refresh_commands_cache()
 
-                    discovery_system._refresh_commands_cache()
-
-                    # Should not add None commands to cache
-                    assert "failed-command" not in discovery_system._commands_cache
-                    assert discovery_system._cache_timestamp is not None
+            # Should not add None commands to cache
+            assert "failed-command" not in discovery_system._commands_cache
+            assert discovery_system._cache_timestamp is not None
 
     def test_get_discovery_status_with_timestamp(self, discovery_system):
         """Test discovery status with cache timestamp set."""
@@ -1197,42 +1191,42 @@ class TestAdditionalCoverageScenarios:
 
         def exists_side_effect(self):
             path_str = str(self)
-            if path_str.endswith(".claude/commands") or path_str.endswith("existing-command.md"):
-                return True
-            return False
+            return path_str.endswith((".claude/commands", "existing-command.md"))
 
         mock_command = Mock()
 
-        with patch("pathlib.Path.exists", exists_side_effect):
-            with patch.object(discovery_system, "_create_command_definition", return_value=mock_command):
-                result = discovery_system._search_project_commands("existing-command")
-                assert result == mock_command
+        with (
+            patch("pathlib.Path.exists", exists_side_effect),
+            patch.object(discovery_system, "_create_command_definition", return_value=mock_command),
+        ):
+            result = discovery_system._search_project_commands("existing-command")
+            assert result == mock_command
 
-                # Test non-existent command
-                result = discovery_system._search_project_commands("nonexistent-command")
-                assert result is None
+            # Test non-existent command
+            result = discovery_system._search_project_commands("nonexistent-command")
+            assert result is None
 
     def test_search_user_commands_file_exists_check(self, discovery_system):
         """Test _search_user_commands file existence checking."""
 
         def exists_side_effect(self):
             path_str = str(self)
-            if (
+            return (
                 str(discovery_system.user_commands_path) in path_str and path_str.endswith(".claude/commands")
-            ) or path_str.endswith("/user-command.md"):
-                return True
-            return False
+            ) or path_str.endswith("/user-command.md")
 
         mock_command = Mock()
 
-        with patch("pathlib.Path.exists", exists_side_effect):
-            with patch.object(discovery_system, "_create_command_definition", return_value=mock_command):
-                result = discovery_system._search_user_commands("user-command")
-                assert result == mock_command
+        with (
+            patch("pathlib.Path.exists", exists_side_effect),
+            patch.object(discovery_system, "_create_command_definition", return_value=mock_command),
+        ):
+            result = discovery_system._search_user_commands("user-command")
+            assert result == mock_command
 
-                # Test non-existent command
-                result = discovery_system._search_user_commands("nonexistent-user-command")
-                assert result is None
+            # Test non-existent command
+            result = discovery_system._search_user_commands("nonexistent-user-command")
+            assert result is None
 
     def test_get_help_all_commands_with_empty_categories(self):
         """Test get_help for all commands when some categories are empty."""
@@ -1252,20 +1246,19 @@ class TestAdditionalCoverageScenarios:
                 return [mock_quality_command]
             return []  # Empty for testing and security
 
-        with patch.object(manager.discovery_system, "get_available_commands", return_value=["quality-check"]):
-            with patch.object(manager.discovery_system, "get_discovery_status", return_value=mock_status):
-                with patch.object(
-                    manager.discovery_system, "get_commands_by_category", side_effect=get_by_category_side_effect
-                ):
+        with (
+            patch.object(manager.discovery_system, "get_available_commands", return_value=["quality-check"]),
+            patch.object(manager.discovery_system, "get_discovery_status", return_value=mock_status),
+            patch.object(manager.discovery_system, "get_commands_by_category", side_effect=get_by_category_side_effect),
+        ):
+            help_text = manager.get_help()
 
-                    help_text = manager.get_help()
-
-                    # Should only show categories that have commands
-                    assert "Quality Commands:" in help_text
-                    assert "/quality-check: Quality checking" in help_text
-                    # Empty categories should not appear
-                    assert "Testing Commands:" not in help_text
-                    assert "Security Commands:" not in help_text
+            # Should only show categories that have commands
+            assert "Quality Commands:" in help_text
+            assert "/quality-check: Quality checking" in help_text
+            # Empty categories should not appear
+            assert "Testing Commands:" not in help_text
+            assert "Security Commands:" not in help_text
 
 
 class TestSimpleCoverageBoosts:
@@ -1313,8 +1306,6 @@ class TestSimpleCoverageBoosts:
         assert discovery_system._should_refresh_cache() is True
 
         # Set cache timestamp and test
-        from datetime import datetime
-
         discovery_system._cache_timestamp = utc_now()
         assert discovery_system._should_refresh_cache() is False
 

@@ -99,8 +99,8 @@ class AuditEventType(str, Enum):
     AUTH_LOGIN_SUCCESS = "auth.login.success"
     AUTH_LOGIN_FAILURE = "auth.login.failure"
     AUTH_LOGOUT = "auth.logout"
-    AUTH_TOKEN_CREATED = "auth.token.created"  # noqa: S105  # nosec B105  # Not a password - audit event type
-    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # noqa: S105  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_CREATED = "auth.token.created"  # nosec B105  # Not a password - audit event type
+    AUTH_TOKEN_REVOKED = "auth.token.revoked"  # nosec B105  # Not a password - audit event type
 
     # Authorization events
     AUTHZ_ACCESS_GRANTED = "authz.access.granted"
@@ -360,68 +360,53 @@ class AuditLogger:
         self.settings = get_settings(validate_on_startup=False)
         self.logger = audit_logger
 
-    def log_event(self, event: AuditEvent) -> None:
-        """Log an audit event.
+    def _log_at_severity(self, logger_obj: Any, severity: "AuditEventSeverity", message: str) -> None:
+        """Route message to logger at the severity-appropriate level."""
+        if severity == AuditEventSeverity.CRITICAL:
+            logger_obj.critical(message)
+        elif severity == AuditEventSeverity.HIGH:
+            logger_obj.error(message)
+        elif severity == AuditEventSeverity.MEDIUM:
+            logger_obj.warning(message)
+        else:
+            logger_obj.info(message)
 
-        Routes the event to the appropriate log level based on its severity:
-        - CRITICAL -> logger.critical()
-        - HIGH -> logger.error()
-        - MEDIUM -> logger.warning()
-        - LOW -> logger.info()
+    def _build_structured_message(self, event: "AuditEvent") -> str:
+        """Build a structured log message embedding event metadata as key=value pairs."""
+        msg = event.message
+        for attr, key in (
+            ("user_id", "user_id"),
+            ("resource", "resource"),
+            ("action", "action"),
+            ("outcome", "outcome"),
+        ):
+            value = getattr(event, attr, None)
+            if value:
+                msg += f" [{key}={value}]"
+        if event.request:
+            client_ip = event._get_client_ip(event.request)
+            if client_ip:
+                msg += f" [client_ip={client_ip}]"
+            user_agent = event.request.headers.get("user-agent")
+            if user_agent:
+                msg += f" [user_agent={user_agent}]"
+        if event.additional_data:
+            for key, value in event.additional_data.items():
+                msg += f" [{key}={value}]"
+        return msg
 
-        The event is converted to a structured dictionary and logged with
-        JSON formatting for easy parsing by log aggregation systems.
+    def log_event(self, event: "AuditEvent") -> None:
+        """Log an audit event, routing to the appropriate level based on severity.
 
         Args:
             event: The audit event to log, containing all necessary metadata
-
-        Complexity:
-            O(1) - Constant time operation for event serialization and logging
         """
         event_data = event.to_dict()
 
-        # Log based on severity - handle both standard and structured loggers
         if hasattr(self.logger, "bind"):  # Structured logger (structlog)
-            logger_with_context = self.logger.bind(**event_data)
-            if event.severity == AuditEventSeverity.CRITICAL:
-                logger_with_context.critical(event.message)
-            elif event.severity == AuditEventSeverity.HIGH:
-                logger_with_context.error(event.message)
-            elif event.severity == AuditEventSeverity.MEDIUM:
-                logger_with_context.warning(event.message)
-            else:
-                logger_with_context.info(event.message)
-        else:  # Standard logger - include structured data in message
-            # For standard logging, include key data in the message
-            structured_message = event.message
-            if event.user_id:
-                structured_message += f" [user_id={event.user_id}]"
-            if event.resource:
-                structured_message += f" [resource={event.resource}]"
-            if event.action:
-                structured_message += f" [action={event.action}]"
-            if event.outcome:
-                structured_message += f" [outcome={event.outcome}]"
-            # Add client IP and user agent if available from request
-            if event.request:
-                client_ip = event._get_client_ip(event.request)
-                if client_ip:
-                    structured_message += f" [client_ip={client_ip}]"
-                user_agent = event.request.headers.get("user-agent")
-                if user_agent:
-                    structured_message += f" [user_agent={user_agent}]"
-            if event.additional_data:
-                for key, value in event.additional_data.items():
-                    structured_message += f" [{key}={value}]"
-
-            if event.severity == AuditEventSeverity.CRITICAL:
-                self.logger.critical(structured_message)
-            elif event.severity == AuditEventSeverity.HIGH:
-                self.logger.error(structured_message)
-            elif event.severity == AuditEventSeverity.MEDIUM:
-                self.logger.warning(structured_message)
-            else:
-                self.logger.info(structured_message)
+            self._log_at_severity(self.logger.bind(**event_data), event.severity, event.message)
+        else:  # Standard logger
+            self._log_at_severity(self.logger, event.severity, self._build_structured_message(event))
 
     def log_authentication_event(
         self,

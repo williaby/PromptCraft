@@ -543,7 +543,6 @@ class TestUserRoleAssignment:
             patch.object(role_manager, "get_user_roles", new_callable=AsyncMock) as mock_get_roles,
             patch.object(role_manager, "get_role_permissions", new_callable=AsyncMock) as mock_get_perms,
         ):
-
             mock_get_roles.return_value = mock_user_roles
             mock_get_perms.return_value = {"admin:access", "users:read", "users:write"}
 

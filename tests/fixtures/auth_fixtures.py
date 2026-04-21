@@ -203,7 +203,7 @@ async def multiple_service_tokens(test_db_with_override):
 
         service_token = ServiceToken(
             id=token_id,
-            token_name=f"test_token_{i+1}",
+            token_name=f"test_token_{i + 1}",
             token_hash=token_hash,
             is_active=True,
             usage_count=i * 10,
@@ -217,7 +217,7 @@ async def multiple_service_tokens(test_db_with_override):
             {
                 "token_value": token_value,
                 "token_id": token_id,
-                "name": f"test_token_{i+1}",
+                "name": f"test_token_{i + 1}",
                 "usage_count": i * 10,
             },
         )

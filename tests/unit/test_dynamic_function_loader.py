@@ -219,7 +219,6 @@ class TestDynamicFunctionLoader:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id)
 
             # Verify decision structure
@@ -265,7 +264,6 @@ class TestDynamicFunctionLoader:
                 new_callable=AsyncMock,
                 return_value=mock_detection,
             ):
-
                 loading_decision = await loader.load_functions_for_query(session_id)
                 strategies_results[strategy] = {
                     "functions_count": len(loading_decision.functions_to_load),
@@ -306,7 +304,6 @@ class TestDynamicFunctionLoader:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id, user_overrides=user_overrides)
 
             # Verify overrides were applied
@@ -336,7 +333,6 @@ class TestDynamicFunctionLoader:
             new_callable=AsyncMock,
             side_effect=Exception("Detection failed"),
         ):
-
             # Should apply fallback
             loading_decision = await loader.load_functions_for_query(session_id)
 
@@ -507,7 +503,6 @@ class TestTokenOptimizationValidation:
                 new_callable=AsyncMock,
                 return_value=mock_detection,
             ):
-
                 loading_decision = await loader.load_functions_for_query(session_id)
                 session_summary = await loader.end_loading_session(session_id)
 
@@ -541,7 +536,7 @@ class TestTokenOptimizationValidation:
 
         # At least 75% of scenarios should achieve the target
         success_rate = scenarios_achieving_70_percent / len(reduction_results)
-        assert success_rate >= 0.75, f"Success rate {success_rate*100:.1f}% below 75% threshold"
+        assert success_rate >= 0.75, f"Success rate {success_rate * 100:.1f}% below 75% threshold"
 
     @pytest.mark.asyncio
     async def test_performance_requirements(self):
@@ -570,7 +565,6 @@ class TestTokenOptimizationValidation:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id)
 
         end_time = time.perf_counter()
@@ -607,7 +601,6 @@ class TestTokenOptimizationValidation:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id)
 
         # Verify core functions (essential for basic operations) are always loaded
@@ -667,7 +660,6 @@ class TestIntegrationScenarios:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id)
 
         # Verify git functions are loaded
@@ -715,7 +707,6 @@ class TestIntegrationScenarios:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             loading_decision = await loader.load_functions_for_query(session_id)
 
         # Verify debug and analysis functions are loaded
@@ -796,7 +787,6 @@ class TestPerformanceBenchmarks:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ):
-
             await loader.load_functions_for_query(session_id)
             return await loader.end_loading_session(session_id)
 
@@ -828,7 +818,6 @@ class TestPerformanceBenchmarks:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ) as mock_detect:
-
             await loader.load_functions_for_query(session_id1)
             first_execution_time = time.perf_counter() - start_time
             first_call_count = mock_detect.call_count
@@ -845,7 +834,6 @@ class TestPerformanceBenchmarks:
             new_callable=AsyncMock,
             return_value=mock_detection,
         ) as mock_detect2:
-
             await loader.load_functions_for_query(session_id2)
             second_execution_time = time.perf_counter() - start_time
             second_call_count = mock_detect2.call_count

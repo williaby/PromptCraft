@@ -27,6 +27,7 @@ from src.config import (
     get_settings,
 )
 
+
 # HTTP status codes
 HTTP_OK = 200
 

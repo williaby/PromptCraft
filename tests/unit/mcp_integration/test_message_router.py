@@ -1,11 +1,7 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Message Router
 """
 
-from datetime import datetime
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -23,6 +19,7 @@ from src.mcp_integration.protocol_handler import (
     MCPResponse,
     MCPStandardErrors,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestMCPServerInfo:
@@ -289,10 +286,11 @@ class TestMCPMessageRouter:
     async def test_execute_read_file_error_handling(self, router):
         """Test _execute_read_file error handling."""
         # Test with path that exists but raises exception during read
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.read_text", side_effect=PermissionError("Access denied")):
-                result = await router._execute_read_file({"file_path": "/test"})
-
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", side_effect=PermissionError("Access denied")),
+        ):
+            result = await router._execute_read_file({"file_path": "/test"})
         assert "isError" in result
         assert result["isError"] is True
         assert "Error reading file" in result["content"][0]["text"]
@@ -544,14 +542,14 @@ class TestMessageHandling:
         mock_writer.drain = AsyncMock()
 
         # Mock incoming request
-        request = MCPRequest(method="ping", id="123")
+        MCPRequest(method="ping", id="123")
         request_json = json.dumps(
             {
                 "jsonrpc": "2.0",
                 "method": "ping",
                 "params": {},
                 "id": "123",
-            }
+            },
         )
 
         # Set up reader to return the request then close
@@ -578,7 +576,7 @@ class TestMessageHandling:
                 "jsonrpc": "2.0",
                 "method": "progress",
                 "params": {"progress": 50},
-            }
+            },
         )
 
         mock_reader.readline.side_effect = [

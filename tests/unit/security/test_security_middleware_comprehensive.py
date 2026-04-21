@@ -259,7 +259,7 @@ class TestRequestLoggingMiddlewareMaskingHeaders:
 
         for key, value in masked.items():
             key_lower = key.lower()
-            is_sensitive = any(pattern.lower() in key_lower for pattern in sensitive_patterns)
+            any(pattern.lower() in key_lower for pattern in sensitive_patterns)
 
             if key in ["Authorization", "Cookie", "Set-Cookie"]:
                 assert value == "***REDACTED***", f"Expected {key} to be masked"
@@ -497,7 +497,7 @@ class TestRequestLoggingMiddlewareComprehensive:
                 "Content-Type": "application/json",
                 "X-Request-ID": "req_12345",
                 "Cookie": "session=abc123; preferences=dark_mode",
-            }
+            },
         )
         request.headers = headers
         request.client.host = "192.168.1.100"
@@ -593,8 +593,8 @@ class TestRequestLoggingMiddlewareComprehensive:
 
         for response in response_types:
 
-            async def mock_call_next(req):
-                return response
+            async def mock_call_next(req, resp=response):
+                return resp
 
             result = await middleware.dispatch(request, mock_call_next)
 

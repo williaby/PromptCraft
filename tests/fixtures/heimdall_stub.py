@@ -41,7 +41,7 @@ class HeimdallStubServer:
         async def security_analysis(request_data: dict):
             """Security analysis endpoint - returns deterministic test data."""
             code = request_data.get("code", "")
-            language = request_data.get("language", "python")
+            request_data.get("language", "python")
 
             # Return deterministic security findings for contract testing
             findings = []
@@ -55,7 +55,7 @@ class HeimdallStubServer:
                         "message": "Potential command injection vulnerability",
                         "line": 1,
                         "suggestion": "Use subprocess.run() instead of os.system()",
-                    }
+                    },
                 )
 
             if "eval(" in code:
@@ -66,7 +66,7 @@ class HeimdallStubServer:
                         "message": "Use of eval() detected - potential code injection",
                         "line": 1,
                         "suggestion": "Avoid using eval() with user input",
-                    }
+                    },
                 )
 
             if "password" in code.lower() and "=" in code:
@@ -77,7 +77,7 @@ class HeimdallStubServer:
                         "message": "Potential hardcoded password detected",
                         "line": 1,
                         "suggestion": "Use environment variables for sensitive data",
-                    }
+                    },
                 )
 
             # Calculate security score (10 = secure, 0 = very insecure)
@@ -93,7 +93,7 @@ class HeimdallStubServer:
         async def quality_analysis(request_data: dict):
             """Code quality analysis endpoint - returns deterministic test data."""
             code = request_data.get("code", "")
-            language = request_data.get("language", "python")
+            request_data.get("language", "python")
 
             # Calculate simple metrics based on code characteristics
             lines = code.split("\n")
@@ -123,7 +123,7 @@ class HeimdallStubServer:
                         "type": "improvement",
                         "message": "Consider breaking down complex functions",
                         "priority": "medium",
-                    }
+                    },
                 )
 
             if "def " not in code and line_count > 10:
@@ -132,7 +132,7 @@ class HeimdallStubServer:
                         "type": "improvement",
                         "message": "Consider organizing code into functions",
                         "priority": "low",
-                    }
+                    },
                 )
 
             if "#" not in code:
@@ -141,7 +141,7 @@ class HeimdallStubServer:
                         "type": "improvement",
                         "message": "Add comments to improve code documentation",
                         "priority": "low",
-                    }
+                    },
                 )
 
             return {
@@ -190,7 +190,7 @@ class HeimdallStubServer:
         @self.app.exception_handler(Exception)
         async def global_exception_handler(request, exc):
             """Global exception handler for consistent error responses."""
-            logger.error(f"Unhandled exception: {exc}")
+            logger.error("Unhandled exception: %s", exc)
             return JSONResponse(
                 status_code=500,
                 content={
@@ -203,7 +203,7 @@ class HeimdallStubServer:
 
     def run(self):
         """Run the stub server."""
-        logger.info(f"Starting Heimdall stub server on {self.host}:{self.port}")
+        logger.info("Starting Heimdall stub server on %s:%s", self.host, self.port)
 
         # Handle shutdown signals
         def signal_handler(signum, frame):
@@ -248,7 +248,7 @@ async def start_stub_server(port: int = 8081, host: str = "localhost") -> Heimda
 
 if __name__ == "__main__":
     # Allow running as standalone server for testing
-    port = int(os.getenv("PORT", 8081))
+    port = int(os.getenv("PORT", "8081"))
     host = os.getenv("HOST", "localhost")
 
     server = HeimdallStubServer(port=port, host=host)

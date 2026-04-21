@@ -9,6 +9,7 @@ from fastapi import HTTPException
 import pytest
 
 from src.api.hybrid_infrastructure_endpoints import register_hybrid_infrastructure_routes
+from src.utils.datetime_compat import UTC
 
 
 class MockAppState:
@@ -316,7 +317,7 @@ class TestMCPServerEndpoints:
                 "connection_bridge_available": True,
                 "total_connections": 2,
                 "connections": {"server1": "connected"},
-            }
+            },
         )
 
         handler = app._route_handlers[("GET", "/api/discovery/mcp-servers")]
@@ -347,7 +348,7 @@ class TestMCPServerEndpoints:
         mock_connection = MagicMock()
         mock_connection.connection.type = "npx"
         mock_connection.connection.url = "npx://server1"
-        mock_connection.connected_at = datetime(2024, 1, 1, 12, 0, 0)
+        mock_connection.connected_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         mock_connection.health_status = "connected"
 
         app.state.mcp_manager.connect_to_server = AsyncMock(return_value=mock_connection)
@@ -492,7 +493,7 @@ class TestStandardsEndpoints:
         mock_standard.description = "Python coding standards"
         mock_standard.source_type = "file"
         mock_standard.version = "1.0"
-        mock_standard.last_updated = datetime(2024, 1, 1, 12, 0, 0)
+        mock_standard.last_updated = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
         with patch("src.api.hybrid_infrastructure_endpoints.StandardsManager") as mock_manager_cls:
             mock_manager = MagicMock()
@@ -596,7 +597,7 @@ class TestCommandsEndpoints:
         mock_command.version = "1.0"
         mock_command.parameters = ["--verbose"]
         mock_command.examples = ["test --verbose"]
-        mock_command.last_updated = datetime(2024, 1, 1)
+        mock_command.last_updated = datetime(2024, 1, 1, tzinfo=UTC)
 
         with patch("src.api.hybrid_infrastructure_endpoints.CommandsManager") as mock_manager_cls:
             mock_manager = MagicMock()
@@ -707,7 +708,7 @@ class TestScriptsEndpoints:
         mock_script.is_executable = True
         mock_script.dependencies = ["docker"]
         mock_script.parameters = ["--env"]
-        mock_script.last_updated = datetime(2024, 1, 1)
+        mock_script.last_updated = datetime(2024, 1, 1, tzinfo=UTC)
 
         with patch("src.api.hybrid_infrastructure_endpoints.ScriptsManager") as mock_manager_cls:
             mock_manager = MagicMock()

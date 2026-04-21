@@ -231,10 +231,11 @@ class TestPromptCraftToolExecutor:
         mock_process.kill = MagicMock()
 
         # Patch wait_for in the tool_router module specifically to raise TimeoutError
-        with patch("asyncio.create_subprocess_shell", return_value=mock_process):
-            with patch("src.mcp_integration.tool_router.asyncio.wait_for", side_effect=TimeoutError()):
-                result = await executor.execute_bash("sleep 60", timeout=0.1)
-
+        with (
+            patch("asyncio.create_subprocess_shell", return_value=mock_process),
+            patch("src.mcp_integration.tool_router.asyncio.wait_for", side_effect=TimeoutError()),
+        ):
+            result = await executor.execute_bash("sleep 60", timeout=0.1)
         assert "isError" in result
         assert result["isError"] is True
         assert "Command timed out" in result["content"][0]["text"]

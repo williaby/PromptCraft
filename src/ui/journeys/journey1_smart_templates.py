@@ -61,7 +61,7 @@ class Journey1SmartTemplates(LoggerMixin):
         self.hyde_processor = HydeProcessor()
         self.query_counselor = QueryCounselor()
 
-    def extract_file_content(self, file_path: str) -> tuple[str, str]:  # noqa: PLR0911
+    def extract_file_content(self, file_path: str) -> tuple[str, str]:
         """
         Extract content from uploaded file with enhanced processing.
 
@@ -217,17 +217,17 @@ Please check file format and try again""",
                 total_size += file_size
 
                 # Add to combined content with better formatting
-                separator = f"\\n\\n{'='*60}\\n"
+                separator = f"\\n\\n{'=' * 60}\\n"
                 file_header = f"📄 FILE: {file_info['name']} ({file_info['size_mb']:.1f}MB)\\n"
-                combined_content += f"{separator}{file_header}{'='*60}\\n{content}"
+                combined_content += f"{separator}{file_header}{'=' * 60}\\n{content}"
 
             except Exception as e:
                 logger.error("Error processing file %d: %s", i + 1, e)
-                errors.append(f"File {i+1}: {e!s}")
+                errors.append(f"File {i + 1}: {e!s}")
 
                 # Add error file info
                 error_file = {
-                    "name": Path(file_path).name if file_path else f"file_{i+1}",
+                    "name": Path(file_path).name if file_path else f"file_{i + 1}",
                     "type": "error",
                     "size": 0,
                     "size_mb": 0,
@@ -469,13 +469,13 @@ Please check file format and try again""",
 {original_prompt}
 
 ## Context Analysis
-{breakdown.get('context', 'Professional analysis context')}
+{breakdown.get("context", "Professional analysis context")}
 
 ## Structured Approach
 Based on the breakdown analysis:
-- **Content Type**: {breakdown.get('content_type', 'text')}
-- **Complexity**: {breakdown.get('complexity', 'moderate')}
-- **Recommended Approach**: {breakdown.get('recommended_approach', 'systematic analysis')}
+- **Content Type**: {breakdown.get("content_type", "text")}
+- **Complexity**: {breakdown.get("complexity", "moderate")}
+- **Recommended Approach**: {breakdown.get("recommended_approach", "systematic analysis")}
 
 ## Enhanced Instructions
 Please provide a comprehensive response that addresses:
@@ -564,19 +564,17 @@ Please provide a comprehensive response that addresses:
     def _analyze_query_type(self, input_text: str) -> str:
         """Analyze input to determine the type of query for better customization."""
         text_lower = input_text.lower()
-
-        if "email" in text_lower or "message" in text_lower:
-            return "communication"
-        if "compare" in text_lower or "comparison" in text_lower:
-            return "analysis"
-        if "write" in text_lower or "create" in text_lower:
-            return "content_creation"
-        if "explain" in text_lower or "how" in text_lower:
-            return "explanation"
-        if "review" in text_lower or "analyze" in text_lower:
-            return "evaluation"
-        if "plan" in text_lower or "strategy" in text_lower:
-            return "planning"
+        type_keywords: list[tuple[str, tuple[str, ...]]] = [
+            ("communication", ("email", "message")),
+            ("analysis", ("compare", "comparison")),
+            ("content_creation", ("write", "create")),
+            ("explanation", ("explain", "how")),
+            ("evaluation", ("review", "analyze")),
+            ("planning", ("plan", "strategy")),
+        ]
+        for query_type, keywords in type_keywords:
+            if any(kw in text_lower for kw in keywords):
+                return query_type
         return "general_assistance"
 
     def _get_breakdown_examples(self, query_type: str) -> str:
@@ -852,9 +850,9 @@ Please provide a comprehensive response that addresses:
         """Create a breakdown for clarification scenarios."""
         return {
             "context": f"""**Query Clarity Assessment**
-• Original query: {input_text[:100]}{'...' if len(input_text) > 100 else ''}
-• Specificity score: {hyde_analysis['specificity_score']:.0f}/100 ({hyde_analysis['assessment']})
-• Assessment: {hyde_analysis['reasoning']}
+• Original query: {input_text[:100]}{"..." if len(input_text) > 100 else ""}
+• Specificity score: {hyde_analysis["specificity_score"]:.0f}/100 ({hyde_analysis["assessment"]})
+• Assessment: {hyde_analysis["reasoning"]}
 • Next step: Gather additional details for precise prompt generation""",
             "request": """**Clarification Requirements**
 • Primary objective: Gather specific details to improve query specificity
@@ -1039,8 +1037,8 @@ Please provide a comprehensive response that addresses:
 
 ## Original Query Analysis
 **Input**: {input_text}
-**Query Type**: {query_analysis.get('query_type', 'general')}
-**Complexity**: {query_analysis.get('complexity', 'medium')}
+**Query Type**: {query_analysis.get("query_type", "general")}
+**Complexity**: {query_analysis.get("complexity", "medium")}
 **Reasoning Depth**: {reasoning_depth}
 
 ## C.R.E.A.T.E. Framework Application
@@ -1048,7 +1046,7 @@ Please provide a comprehensive response that addresses:
 {tier_info}
 
 ### Context Enhancement
-Based on your query, I've identified this as a {query_analysis.get('query_type', 'general')} request requiring sophisticated prompt engineering.
+Based on your query, I've identified this as a {query_analysis.get("query_type", "general")} request requiring sophisticated prompt engineering.
 
 ### Request Specification
 {anchor_protocols}
@@ -1084,9 +1082,9 @@ This enhanced prompt applies the C.R.E.A.T.E. methodology with:
 
         return {
             "context": f"""**CREATE Framework Context Analysis**
-• Query Type: {query_analysis.get('query_type', 'general_query')}
-• Complexity Level: {query_analysis.get('complexity', 'medium')}
-• Required Agents: {', '.join(query_analysis.get('requires_agents', ['create_agent']))}
+• Query Type: {query_analysis.get("query_type", "general_query")}
+• Complexity Level: {query_analysis.get("complexity", "medium")}
+• Required Agents: {", ".join(query_analysis.get("requires_agents", ["create_agent"]))}
 • Context Requirements: Professional prompt engineering with C.R.E.A.T.E. methodology
 • Background: Sophisticated prompt enhancement using established framework patterns""",
             "request": """**Specific Deliverable Requirements**
@@ -1375,7 +1373,7 @@ Generate a comprehensive, professional enhanced prompt that demonstrates sophist
                     "### Request Specification",
                     "### Framework Integration",
                     "### Model Configuration",
-                )
+                ),
             ):
                 continue
             if line.startswith("---"):
@@ -1436,14 +1434,14 @@ Generate a comprehensive, professional enhanced prompt that demonstrates sophist
             <div style="margin: 4px 0; padding: 8px; background: white; border-radius: 4px; border-left: 3px solid {color};">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong>{status_icon} FILE: {file_info['name']}</strong>
-                        <span style="color: #64748b; font-size: 12px;">({size_mb:.1f}MB, {file_info.get('type', 'unknown')})</span>
+                        <strong>{status_icon} FILE: {file_info["name"]}</strong>
+                        <span style="color: #64748b; font-size: 12px;">({size_mb:.1f}MB, {file_info.get("type", "unknown")})</span>
                     </div>
                     <div style="font-size: 12px; color: {color};">
                         {status_text}
                     </div>
                 </div>
-                {f"<div style='font-size: 12px; color: #64748b; margin-top: 4px;'>{file_info.get('preview_lines', 0)} lines</div>" if file_info.get('preview_lines', 0) > 0 else ""}
+                {f"<div style='font-size: 12px; color: #64748b; margin-top: 4px;'>{file_info.get('preview_lines', 0)} lines</div>" if file_info.get("preview_lines", 0) > 0 else ""}
             </div>
             """
 
@@ -1451,9 +1449,9 @@ Generate a comprehensive, professional enhanced prompt that demonstrates sophist
         summary_stats = f"""
         <div style="margin-top: 12px; padding: 8px; background: white; border-radius: 4px; border: 1px solid #e2e8f0;">
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b;">
-                <span>📊 Total: {len(file_data['files'])} files ({total_size:.1f}MB)</span>
+                <span>📊 Total: {len(file_data["files"])} files ({total_size:.1f}MB)</span>
                 <span>✅ Ready: {supported_count} files</span>
-                <span>⚠️ Needs conversion: {len(file_data['files']) - supported_count} files</span>
+                <span>⚠️ Needs conversion: {len(file_data["files"]) - supported_count} files</span>
             </div>
         </div>
         """
@@ -1557,7 +1555,7 @@ Generate a comprehensive, professional enhanced prompt that demonstrates sophist
 CSV Data Structure Analysis
 - Total rows: {total_lines}
 - Columns: {column_count}
-- Headers: {', '.join(col.strip() for col in columns[:CSV_PREVIEW_COLUMN_LIMIT])}{"..." if column_count > CSV_PREVIEW_COLUMN_LIMIT else ""}
+- Headers: {", ".join(col.strip() for col in columns[:CSV_PREVIEW_COLUMN_LIMIT])}{"..." if column_count > CSV_PREVIEW_COLUMN_LIMIT else ""}
 - {total_lines} rows detected
 - {column_count} columns detected"""
 
@@ -1869,12 +1867,12 @@ Raw Content:
 
         # Generate C.R.E.A.T.E. framework breakdown
         context = f"""**Analysis Context**
-• Content type: {content_analysis['content_type']}
-• Language: {content_analysis['language']}
-• Complexity: {content_analysis['complexity']}
+• Content type: {content_analysis["content_type"]}
+• Language: {content_analysis["language"]}
+• Complexity: {content_analysis["complexity"]}
 • Length: {word_count} words, {char_count} characters
-• Has code: {'Yes' if content_analysis['has_code'] else 'No'}
-• Has functions: {'Yes' if content_analysis['has_functions'] else 'No'}{file_context}"""
+• Has code: {"Yes" if content_analysis["has_code"] else "No"}
+• Has functions: {"Yes" if content_analysis["has_functions"] else "No"}{file_context}"""
 
         # Determine processing approach
         if content_analysis["has_code"]:
@@ -1896,22 +1894,22 @@ Raw Content:
 
         request = f"""**Processing Request**
 • Primary objective: {approach}
-• Content focus: {input_text[:CONTENT_FOCUS_PREVIEW_LENGTH]}{'...' if len(input_text) > CONTENT_FOCUS_PREVIEW_LENGTH else ''}
+• Content focus: {input_text[:CONTENT_FOCUS_PREVIEW_LENGTH]}{"..." if len(input_text) > CONTENT_FOCUS_PREVIEW_LENGTH else ""}
 • Expected deliverable: Enhanced content with improved structure and clarity
 • Quality criteria: Professional, clear, actionable, and contextually appropriate"""
 
         examples = f"""**Reference Examples & Templates**
 • {examples_text}
-• Best practices for {content_analysis['content_type']} content
+• Best practices for {content_analysis["content_type"]} content
 • Industry standards and formatting guidelines
 • Quality assurance checkpoints and validation methods"""
 
         tone_format = f"""**Style & Formatting Guidelines**
-• Tone: Professional yet approachable, appropriate for {content_analysis['content_type']} content
+• Tone: Professional yet approachable, appropriate for {content_analysis["content_type"]} content
 • Structure: Clear organization with logical flow and scannable format
-• Language: Precise, contextually appropriate, {content_analysis['language']}-focused where applicable
+• Language: Precise, contextually appropriate, {content_analysis["language"]}-focused where applicable
 • Format: Well-structured with appropriate headings, lists, and emphasis
-• Length: Optimized for content type and complexity level ({content_analysis['complexity']})"""
+• Length: Optimized for content type and complexity level ({content_analysis["complexity"]})"""
 
         evaluation = f"""**Quality Assessment Criteria**
 • Accuracy: Content is technically correct and factually accurate
@@ -1919,7 +1917,7 @@ Raw Content:
 • Completeness: All necessary information and context included
 • Consistency: Maintains appropriate tone and formatting throughout
 • Actionability: Provides clear guidance and next steps where applicable
-• Engagement: Content is appropriately engaging for {content_analysis['content_type']} format"""
+• Engagement: Content is appropriately engaging for {content_analysis["content_type"]} format"""
 
         return {
             "context": context,

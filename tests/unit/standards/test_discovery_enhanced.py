@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Enhanced tests for Standards Discovery System to improve coverage.
 
@@ -8,13 +5,14 @@ This file contains additional tests to improve coverage of the standards
 discovery system beyond what's covered in the main test file.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from src.standards.discovery import StandardDefinition, StandardsDiscoverySystem, StandardsManager
+from src.utils.datetime_compat import utc_now
 
 
 class TestStandardsDiscoveryEnhancedCoverage:
@@ -111,28 +109,31 @@ invalid: yaml: content: [unclosed
         mock_path.read_text.return_value = "# Content"
         mock_path.stat.side_effect = PermissionError("Access denied")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r".*"):
             discovery_system._create_standard_definition("stat-error", mock_path, "project")
 
     def test_discover_standard_search_exceptions_fallback(self, discovery_system):
         """Test discover_standard handles search method exceptions and continues."""
-        with patch.object(discovery_system, "_search_project_standards", side_effect=OSError("Project search failed")):
-            with patch.object(discovery_system, "_search_user_standards", side_effect=ValueError("User search failed")):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-
-                    result = discovery_system.discover_standard("exception-test")
-                    assert result is None
+        with (
+            patch.object(discovery_system, "_search_project_standards", side_effect=OSError("Project search failed")),
+            patch.object(discovery_system, "_search_user_standards", side_effect=ValueError("User search failed")),
+            patch.object(discovery_system, "_search_default_standards", return_value=None),
+        ):
+            result = discovery_system.discover_standard("exception-test")
+            assert result is None
 
     def test_refresh_standards_cache_glob_exceptions(self, discovery_system):
         """Test cache refresh when glob operations raise exceptions."""
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.glob", side_effect=PermissionError("Glob access denied")):
-                # Should handle glob exceptions gracefully
-                discovery_system._refresh_standards_cache()
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.glob", side_effect=PermissionError("Glob access denied")),
+        ):
+            # Should handle glob exceptions gracefully
+            discovery_system._refresh_standards_cache()
 
-                # Cache should be cleared and timestamp set
-                assert discovery_system._standards_cache == {}
-                assert discovery_system._cache_timestamp is not None
+            # Cache should be cleared and timestamp set
+            assert discovery_system._standards_cache == {}
+            assert discovery_system._cache_timestamp is not None
 
     def test_get_standard_content_various_file_errors(self, discovery_system):
         """Test getting standard content with various file access errors."""
@@ -162,21 +163,23 @@ invalid: yaml: content: [unclosed
     def test_search_project_standards_directory_access_errors(self, discovery_system):
         """Test project standards search with directory access errors."""
         # Test when directory exists but file access fails
-        with patch("pathlib.Path.exists", return_value=True):
-            # Mock Path.is_file to return True, but read_text to raise exception
-            with patch("pathlib.Path.is_file", return_value=True):
-                with patch("pathlib.Path.read_text", side_effect=FileNotFoundError("No such file")):
-                    result = discovery_system._search_project_standards("missing-standard")
-                    assert result is None
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+            patch("pathlib.Path.read_text", side_effect=FileNotFoundError("No such file")),
+        ):
+            result = discovery_system._search_project_standards("missing-standard")
+            assert result is None
 
     def test_search_user_standards_directory_access_errors(self, discovery_system):
         """Test user standards search with directory access errors."""
-        with patch("pathlib.Path.exists", return_value=True):
-            # Mock Path.is_file to return True, but read_text to raise exception
-            with patch("pathlib.Path.is_file", return_value=True):
-                with patch("pathlib.Path.read_text", side_effect=FileNotFoundError("No such file")):
-                    result = discovery_system._search_user_standards("missing-user-standard")
-                    assert result is None
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+            patch("pathlib.Path.read_text", side_effect=FileNotFoundError("No such file")),
+        ):
+            result = discovery_system._search_user_standards("missing-user-standard")
+            assert result is None
 
     def test_get_discovery_status_comprehensive(self, discovery_system):
         """Test comprehensive discovery status with various conditions."""
@@ -245,10 +248,12 @@ invalid: yaml: content: [unclosed
         manager = StandardsManager()
 
         # Mock get_standard_content to raise exception
-        with patch.object(manager.discovery_system, "get_standard_content", side_effect=RuntimeError("Access error")):
+        with (
+            patch.object(manager.discovery_system, "get_standard_content", side_effect=RuntimeError("Access error")),
+            pytest.raises(RuntimeError),
+        ):
             # Methods should handle exceptions gracefully
-            with pytest.raises(RuntimeError):
-                manager.get_linting_standard()
+            manager.get_linting_standard()
 
     def test_create_standard_definition_malformed_frontmatter(self, discovery_system):
         """Test handling of malformed YAML frontmatter."""
@@ -313,17 +318,18 @@ description: Test YAML import failure
                 return None  # Discovery fails
             return Mock(spec=StandardDefinition)
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.glob", return_value=files):
-                with patch.object(discovery_system, "discover_standard", side_effect=mock_discover_standard):
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.glob", return_value=files),
+            patch.object(discovery_system, "discover_standard", side_effect=mock_discover_standard),
+        ):
+            discovery_system._refresh_standards_cache()
 
-                    discovery_system._refresh_standards_cache()
-
-                    # Should only cache successful discoveries
-                    assert len(discovery_system._standards_cache) == 2
-                    assert "good-standard" in discovery_system._standards_cache
-                    assert "another-good" in discovery_system._standards_cache
-                    assert "bad-standard" not in discovery_system._standards_cache
+            # Should only cache successful discoveries
+            assert len(discovery_system._standards_cache) == 2
+            assert "good-standard" in discovery_system._standards_cache
+            assert "another-good" in discovery_system._standards_cache
+            assert "bad-standard" not in discovery_system._standards_cache
 
     def test_standards_manager_initialization_variations(self):
         """Test StandardsManager initialization with different scenarios."""
@@ -348,12 +354,14 @@ description: Test YAML import failure
         discovery_system._standards_cache = {}
         discovery_system._cache_timestamp = None
 
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
-                result = discovery_system.get_standard("missing")
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh,
+        ):
+            result = discovery_system.get_standard("missing")
 
-                assert result is None
-                mock_refresh.assert_called_once()
+            assert result is None
+            mock_refresh.assert_called_once()
 
     def test_frontmatter_end_detection_edge_cases(self, discovery_system):
         """Test YAML frontmatter end detection with edge cases."""
@@ -365,7 +373,7 @@ description: Test YAML import failure
 
         mock_stat = Mock(st_mtime=1640995200)
 
-        for content, expected_base_name in edge_cases:
+        for content, _ in edge_cases:
             mock_path = Mock(spec=Path)
             mock_path.read_text.return_value = content
             mock_path.stat.return_value = mock_stat

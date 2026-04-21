@@ -43,7 +43,6 @@ class TestSimpleSessionManager:
             patch("src.auth_simple.middleware.secrets.token_urlsafe") as mock_token,
             patch("src.auth_simple.middleware.datetime") as mock_datetime,
         ):
-
             mock_token.return_value = "test_session_id"
             mock_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
             mock_datetime.now.return_value = mock_now
@@ -286,7 +285,7 @@ class TestCloudflareAccessMiddleware:
 
         middleware = CloudflareAccessMiddleware(app=None, whitelist_validator=mock_validator)
 
-        response = await middleware.dispatch(mock_request, call_next)
+        await middleware.dispatch(mock_request, call_next)
 
         call_next.assert_called_once_with(mock_request)
         # Validator should not be called for public paths
@@ -305,7 +304,7 @@ class TestCloudflareAccessMiddleware:
                 session_manager=mock_session_manager,
             )
 
-            response = await middleware.dispatch(mock_request, call_next)
+            await middleware.dispatch(mock_request, call_next)
 
             call_next.assert_called_once_with(mock_request)
 
@@ -421,7 +420,6 @@ class TestCloudflareAccessMiddleware:
             patch.object(middleware.cloudflare_auth, "extract_user_from_request", return_value=mock_user),
             patch.object(middleware.cloudflare_auth, "create_user_context", return_value={}),
         ):
-
             await middleware._authenticate_request(mock_request)
 
             # Verify session creation
@@ -501,7 +499,6 @@ class TestCloudflareAccessMiddleware:
             patch.object(middleware.cloudflare_auth, "extract_user_from_request", return_value=mock_user),
             patch.object(middleware.cloudflare_auth, "create_user_context", return_value={}),
         ):
-
             with pytest.raises(HTTPException) as exc_info:
                 await middleware._authenticate_request(mock_request)
 
@@ -541,7 +538,6 @@ class TestCloudflareAccessMiddleware:
             patch.object(middleware, "_authenticate_request", new_callable=AsyncMock),
             patch.object(middleware, "_set_session_cookie") as mock_set_cookie,
         ):
-
             response = await middleware.dispatch(mock_request, call_next)
 
             mock_set_cookie.assert_called_once_with(response, "new_session")
@@ -758,7 +754,7 @@ class TestCloudflareAccessMiddlewareSessionCookies:
             return response
 
         with patch.object(middleware, "_set_session_cookie") as mock_set_cookie:
-            result = await middleware.dispatch(request, mock_call_next)
+            await middleware.dispatch(request, mock_call_next)
 
             # Should have set new_session_id on request state
             assert hasattr(request.state, "new_session_id")
@@ -813,7 +809,7 @@ class TestCloudflareAccessMiddlewareSessionCookies:
             return response
 
         with patch.object(middleware, "_set_session_cookie") as mock_set_cookie:
-            result = await middleware.dispatch(request, mock_call_next)
+            await middleware.dispatch(request, mock_call_next)
 
             # Should not have called _set_session_cookie
             mock_set_cookie.assert_not_called()
@@ -862,7 +858,7 @@ class TestCloudflareAccessMiddlewareSessionCookies:
         async def mock_call_next(req):
             return response
 
-        result = await middleware.dispatch(request, mock_call_next)
+        await middleware.dispatch(request, mock_call_next)
 
         # Should have used existing session
         session_manager.get_session.assert_called_with("existing-session-123")
@@ -991,7 +987,7 @@ class TestCloudflareAccessMiddlewareEdgeCases:
         async def mock_call_next(req):
             return response
 
-        result = await middleware.dispatch(request, mock_call_next)
+        await middleware.dispatch(request, mock_call_next)
 
         # Should have updated session with new tier info
         assert existing_session["user_tier"] == "full"

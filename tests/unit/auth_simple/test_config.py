@@ -631,14 +631,16 @@ class TestConfigLoaderErrors:
 
     def test_load_from_env_invalid_config(self):
         """Test loading config with invalid values that cause validation errors."""
-        with patch.dict(
-            os.environ,
-            {
-                "PROMPTCRAFT_SESSION_TIMEOUT": "30",  # Too low, should fail validation
-            },
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "PROMPTCRAFT_SESSION_TIMEOUT": "30",  # Too low, should fail validation
+                },
+            ),
+            pytest.raises(Exception, match=r".*"),
         ):
-            with pytest.raises(Exception):  # Should raise validation error
-                ConfigLoader.load_from_env()
+            ConfigLoader.load_from_env()
 
     @patch("src.auth_simple.config.logger")
     def test_load_from_env_logs_success(self, mock_logger):
@@ -656,7 +658,7 @@ class TestConfigLoaderErrors:
         """Test that config loading errors are logged."""
         mock_auth_config.side_effect = ValueError("Invalid config")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r"Invalid config"):
             ConfigLoader.load_from_env()
 
         mock_logger.error.assert_called_with(

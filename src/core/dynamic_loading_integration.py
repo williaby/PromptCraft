@@ -691,7 +691,7 @@ class DynamicLoadingIntegration:
                 cache_age = time.time() - cache_entry["cached_at"]
                 if cache_age < self._cache_ttl_seconds:
                     # Create a copy and ensure cache_hit is set
-                    import copy  # noqa: PLC0415  # Lazy loading for cache operations
+                    import copy  # Lazy loading for cache operations
 
                     cached_result = cache_entry["result"]
                     if isinstance(cached_result, ProcessingResult):
@@ -953,7 +953,7 @@ class DynamicLoadingIntegration:
 
 
 # Global integration instance for application-wide use
-_integration_instance: DynamicLoadingIntegration | None = None
+_integration_ref: list[DynamicLoadingIntegration | None] = [None]
 
 
 async def get_integration_instance(
@@ -961,15 +961,13 @@ async def get_integration_instance(
     force_new: bool = False,
 ) -> DynamicLoadingIntegration:
     """Get or create the global integration instance."""
-    global _integration_instance  # noqa: PLW0603
+    if _integration_ref[0] is None or force_new:
+        _integration_ref[0] = DynamicLoadingIntegration(mode=mode)
 
-    if _integration_instance is None or force_new:
-        _integration_instance = DynamicLoadingIntegration(mode=mode)
-
-        if not await _integration_instance.initialize():
+        if not await _integration_ref[0].initialize():
             raise RuntimeError("Failed to initialize dynamic loading integration")
 
-    return _integration_instance
+    return _integration_ref[0]
 
 
 @asynccontextmanager

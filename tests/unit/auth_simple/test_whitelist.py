@@ -6,7 +6,7 @@ comprehensive EmailWhitelistValidator functionality.
 
 Test Coverage:
 - EmailWhitelistValidator complete functionality
-- WhitelistManager runtime operations  
+- WhitelistManager runtime operations
 - create_validator_from_env parsing
 - UserTier integration and validation
 - Edge cases and error handling
@@ -201,7 +201,7 @@ class TestEmailWhitelistValidatorInit:
     @patch("src.auth_simple.whitelist.logger")
     def test_init_logging(self, mock_logger):
         """Test initialization logging."""
-        validator = EmailWhitelistValidator(
+        EmailWhitelistValidator(
             whitelist=["test@example.com", "@company.com"],
             admin_emails=["admin@example.com"],
             full_users=["full@example.com"],
@@ -294,7 +294,7 @@ class TestEmailWhitelistValidatorAuthorization:
                 "specific@example.com",
                 "@company.com",
                 "admin@test.org",
-            ]
+            ],
         )
 
         assert validator.is_authorized("specific@example.com") is True
@@ -340,7 +340,9 @@ class TestEmailWhitelistValidatorAuthorization:
         # Authorized domain
         validator.is_authorized("user@company.com")
         mock_logger.debug.assert_called_with(
-            "Email %s authorized via domain pattern %s", "user@company.com", "@company.com"
+            "Email %s authorized via domain pattern %s",
+            "user@company.com",
+            "@company.com",
         )
 
         # Unauthorized
@@ -468,7 +470,7 @@ class TestEmailWhitelistValidatorTiers:
         )
 
         # These should fail because users aren't in whitelist
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r".*"):
             validator.get_user_tier("user@admin.company.com")
 
         # Add domains to whitelist
@@ -724,7 +726,9 @@ class TestWhitelistManager:
 
         assert result is False
         mock_logger.error.assert_called_with(
-            "Failed to add email %s to whitelist: %s", "test@example.com", mock_logger.error.call_args[0][2]
+            "Failed to add email %s to whitelist: %s",
+            "test@example.com",
+            mock_logger.error.call_args[0][2],
         )
 
     @patch("src.auth_simple.whitelist.logger")
@@ -789,7 +793,9 @@ class TestWhitelistManager:
 
         assert result is False
         mock_logger.error.assert_called_with(
-            "Failed to remove email %s from whitelist: %s", "test@example.com", mock_logger.error.call_args[0][2]
+            "Failed to remove email %s from whitelist: %s",
+            "test@example.com",
+            mock_logger.error.call_args[0][2],
         )
 
     def test_check_email(self):

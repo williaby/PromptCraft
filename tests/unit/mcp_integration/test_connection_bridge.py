@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Connection Bridge system.
 
@@ -26,6 +23,7 @@ from src.mcp_integration.connection_bridge import (
     NPXProcessManager,
 )
 from src.mcp_integration.smart_discovery import ServerConnection
+from src.utils.datetime_compat import utc_now
 
 
 class TestActiveConnection:
@@ -101,7 +99,7 @@ class TestNPXProcessManager:
 
     def test_process_config_structure(self, npx_manager):
         """Test process configuration structure."""
-        for server_name, config in npx_manager.process_config.items():
+        for _, config in npx_manager.process_config.items():
             assert "package" in config
             assert "binary" in config
             assert isinstance(config["package"], str)
@@ -150,7 +148,6 @@ class TestNPXProcessManager:
         mock_new_process.pid = 54321
 
         with patch("subprocess.Popen", return_value=mock_new_process), patch("asyncio.sleep"):
-
             result = await npx_manager.spawn_npx_server("context7", connection)
 
             assert result == mock_new_process
@@ -173,7 +170,6 @@ class TestNPXProcessManager:
         mock_process.stderr = None
 
         with patch("subprocess.Popen", return_value=mock_process), patch("asyncio.sleep"):
-
             result = await npx_manager.spawn_npx_server("context7", connection)
 
             assert result == mock_process
@@ -196,8 +192,7 @@ class TestNPXProcessManager:
         mock_process.stderr = None
 
         with patch("subprocess.Popen", return_value=mock_process) as mock_popen, patch("asyncio.sleep"):
-
-            result = await npx_manager.spawn_npx_server("context7", connection)
+            await npx_manager.spawn_npx_server("context7", connection)
 
             # Should use package name from URL
             mock_popen.assert_called_once()
@@ -236,7 +231,6 @@ class TestNPXProcessManager:
         mock_process.stderr = mock_stderr
 
         with patch("subprocess.Popen", return_value=mock_process), patch("asyncio.sleep"):
-
             result = await npx_manager.spawn_npx_server("context7", connection)
             assert result is None
 
@@ -426,7 +420,6 @@ class TestMCPConnectionBridge:
             patch.object(connection_bridge, "_cleanup_connection") as mock_cleanup,
             patch.object(connection_bridge, "_connect_external_server", return_value=True),
         ):
-
             result = await connection_bridge.connect_to_server("test-server")
 
             mock_cleanup.assert_called_once_with("test-server")
@@ -583,7 +576,6 @@ class TestMCPConnectionBridge:
             patch.object(connection_bridge.npx_manager, "spawn_npx_server", return_value=mock_process),
             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls,
         ):
-
             mock_client = Mock()
             mock_client_cls.return_value = mock_client
 
@@ -1074,10 +1066,11 @@ class TestMCPConnectionBridge:
         with (
             patch.object(connection_bridge, "_is_connection_healthy", return_value=True),
             patch.object(
-                connection_bridge.npx_manager, "get_process_status", return_value={"status": "running", "pid": 12345}
+                connection_bridge.npx_manager,
+                "get_process_status",
+                return_value={"status": "running", "pid": 12345},
             ),
         ):
-
             status = await connection_bridge.get_connection_status()
 
             assert status["total_connections"] == 2
@@ -1236,7 +1229,6 @@ class TestConnectionBridgeIntegration:
             patch("asyncio.sleep"),
             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient") as mock_client_cls,
         ):
-
             mock_client = Mock()
             mock_client_cls.return_value = mock_client
 
@@ -1315,7 +1307,6 @@ class TestConnectionBridgeIntegration:
             patch("asyncio.sleep"),
             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"),
         ):
-
             # Connect to all server types
             npx_conn = await bridge.connect_to_server("context7")
             external_conn = await bridge.connect_to_server("external-server")
@@ -1366,7 +1357,6 @@ class TestConnectionBridgeIntegration:
             patch("asyncio.sleep"),
             patch("src.mcp_integration.connection_bridge.ZenMCPStdioClient"),
         ):
-
             active_conn = await bridge.connect_to_server("context7")
             assert active_conn is not None
 

@@ -357,15 +357,14 @@ class ConfigManager:
 
 
 # Global configuration instance
-_config_manager: ConfigManager | None = None
+_config_manager_ref: list[ConfigManager | None] = [None]
 
 
 def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
-    global _config_manager  # noqa: PLW0603
-    if _config_manager is None:
-        _config_manager = ConfigManager()
-    return _config_manager
+    if _config_manager_ref[0] is None:
+        _config_manager_ref[0] = ConfigManager()
+    return _config_manager_ref[0]
 
 
 def get_auth_config() -> AuthConfig:
@@ -375,5 +374,4 @@ def get_auth_config() -> AuthConfig:
 
 def reset_config() -> None:
     """Reset global configuration (for testing)."""
-    global _config_manager  # noqa: PLW0603
-    _config_manager = None
+    _config_manager_ref[0] = None

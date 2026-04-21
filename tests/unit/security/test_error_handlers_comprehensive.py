@@ -253,7 +253,7 @@ class TestValidationExceptionHandler:
             [
                 {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
                 {"loc": ("field2", "nested"), "msg": "invalid value", "type": "value_error.invalid"},
-            ]
+            ],
         )
 
         with patch("src.security.error_handlers.get_settings") as mock_settings:
@@ -278,7 +278,7 @@ class TestValidationExceptionHandler:
         exc = RequestValidationError(
             [
                 {"loc": ("field1",), "msg": "field required", "type": "value_error.missing"},
-            ]
+            ],
         )
 
         with (
@@ -331,7 +331,7 @@ class TestCreateAuthAwareHttpException:
         with patch("src.security.error_handlers.AuthExceptionHandler.handle_authentication_error") as mock_handler:
             mock_handler.return_value = HTTPException(status_code=401, detail="Auth required")
 
-            result = create_auth_aware_http_exception(
+            create_auth_aware_http_exception(
                 status_code=401,
                 detail="Authentication required",
                 user_identifier="user123",
@@ -634,7 +634,7 @@ class TestEdgeCasesAndIntegration:
                 },
                 {"loc": ("query", "filters", 0, "value"), "msg": "field required", "type": "value_error.missing"},
                 {"loc": ("path", "id"), "msg": "not a valid integer", "type": "type_error.integer"},
-            ]
+            ],
         )
 
         with patch("src.security.error_handlers.get_settings") as mock_settings:
@@ -655,7 +655,7 @@ class TestEdgeCasesAndIntegration:
         with patch("src.security.error_handlers.create_secure_http_exception") as mock_fallback:
             mock_fallback.return_value = HTTPException(status_code=418, detail="I'm a teapot")
 
-            result = create_auth_aware_http_exception(
+            create_auth_aware_http_exception(
                 status_code=418,  # Unsupported status code should fallback
                 detail="I'm a teapot",
             )

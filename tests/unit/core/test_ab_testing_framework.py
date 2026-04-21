@@ -337,8 +337,8 @@ def test_db_engine():
 @pytest.fixture
 def test_db_session(test_db_engine):
     """Create database session for testing."""
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
-    session = SessionLocal()
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    session = session_factory()
     try:
         yield session
     finally:
@@ -350,7 +350,7 @@ async def experiment_manager(test_db_engine):
     """Create ExperimentManager instance for testing."""
     manager = ExperimentManager(db_url="sqlite:///:memory:")
     manager.engine = test_db_engine
-    manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
+    manager.session_factory = sessionmaker(autocommit=False, autoflush=False, bind=test_db_engine)
     return manager
 
 
@@ -1001,12 +1001,14 @@ class TestGlobalExperimentManager:
     @pytest.mark.asyncio
     async def test_get_experiment_manager_starts_monitoring(self):
         """Test that get_experiment_manager starts monitoring."""
-        with patch("src.core.ab_testing_framework._experiment_manager", None):
-            with patch.object(ExperimentManager, "start_monitoring") as mock_start:
-                manager = await get_experiment_manager()
+        with (
+            patch("src.core.ab_testing_framework._experiment_manager", None),
+            patch.object(ExperimentManager, "start_monitoring") as mock_start,
+        ):
+            manager = await get_experiment_manager()
 
-                assert manager is not None
-                mock_start.assert_called_once()
+            assert manager is not None
+            mock_start.assert_called_once()
 
 
 if __name__ == "__main__":

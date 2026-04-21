@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """Comprehensive tests for error handling and fallback mechanisms."""
 
 from datetime import UTC, datetime, timedelta
@@ -16,6 +13,7 @@ from src.mcp_integration.zen_client.error_handler import (
     RetryHandler,
 )
 from src.mcp_integration.zen_client.models import BridgeMetrics, FallbackConfig
+from src.utils.datetime_compat import utc_now
 
 
 class TestCircuitBreakerState:
@@ -392,7 +390,7 @@ class TestMCPConnectionManager:
         """Test getting circuit breaker status."""
         manager = MCPConnectionManager(fallback_config)
         manager.failure_count = 2
-        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0)
+        manager.last_failure_time = datetime(2024, 1, 7, 10, 30, 0, tzinfo=UTC)
 
         status = manager.get_circuit_breaker_status()
 
@@ -514,7 +512,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r"Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delays increase exponentially
@@ -533,7 +531,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Always fails")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r"Always fails"):
             await handler.with_retry(mock_operation, "test_op")
 
         # Check that delay is capped
@@ -552,7 +550,7 @@ class TestRetryHandler:
         async def mock_operation():
             raise Exception("Test error")
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r"Test error"):
             await handler.with_retry(mock_operation, "custom_operation")
 
         # The operation name should be used in logging (implicitly tested via no exceptions)

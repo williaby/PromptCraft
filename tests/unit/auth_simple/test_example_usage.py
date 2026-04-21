@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 import pytest
 
-from src.utils.datetime_compat import utc_now
+from src.utils.datetime_compat import UTC, utc_now
 
 
 def get_cloudflare_auth_headers(email: str = "admin@example.com") -> dict:
@@ -33,7 +33,7 @@ def get_cloudflare_auth_headers(email: str = "admin@example.com") -> dict:
 
 
 # We need to mock dependencies before importing the module
-@pytest.fixture(scope="function")
+@pytest.fixture
 def setup_mocks():
     """Setup required mocks before importing the module."""
     with (
@@ -45,7 +45,6 @@ def setup_mocks():
         patch("src.auth_simple.is_admin_user") as mock_is_admin,
         patch("src.auth_simple.create_test_config") as mock_create_test,
     ):
-
         # Mock config manager
         mock_config = Mock()
         mock_config.config = Mock()
@@ -111,7 +110,7 @@ def setup_mocks():
             pass
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def cleanup_app_state():
     """Cleanup FastAPI app state between tests and make all paths public."""
     middleware_patcher = None
@@ -713,7 +712,7 @@ class TestApplicationEvents:
         from src.auth_simple import example_usage
 
         # The startup event should be registered and callable
-        startup_handlers = [handler for handler in example_usage.app.router.on_startup]
+        startup_handlers = list(example_usage.app.router.on_startup)
         assert len(startup_handlers) > 0
 
         # Test calling the startup event manually
@@ -757,7 +756,7 @@ class TestApplicationEvents:
         """Test application shutdown event."""
         from src.auth_simple import example_usage
 
-        shutdown_handlers = [handler for handler in example_usage.app.router.on_shutdown]
+        shutdown_handlers = list(example_usage.app.router.on_shutdown)
         assert len(shutdown_handlers) > 0
 
         shutdown_event = example_usage.shutdown_event
@@ -968,7 +967,6 @@ class TestEdgeCasesAndErrorConditions:
         """Test handling of config manager exceptions during initialization."""
         # This test is complex because it requires module reimport to trigger fallback path
         # Skipping to focus on runtime behavior tests that are more critical
-        pass
 
     def test_empty_cf_context_handling(self, client, setup_mocks):
         """Test handling of empty Cloudflare context."""
@@ -1080,7 +1078,7 @@ class TestModuleCoverageEdgeCases:
         from src.auth_simple import example_usage
         from src.auth_simple.middleware import require_auth
 
-        test_datetime = datetime(2023, 1, 15, 10, 30, 45)
+        test_datetime = datetime(2023, 1, 15, 10, 30, 45, tzinfo=UTC)
         mock_user = {
             "email": "datetime@test.com",
             "role": "user",

@@ -1,11 +1,7 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for MCP Orchestrator
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -18,6 +14,7 @@ from src.mcp_integration.mcp_orchestrator import (
     MCPWorkflowResult,
 )
 from src.mcp_integration.tool_router import ToolExecutionResult
+from src.utils.datetime_compat import utc_now
 
 
 class TestMCPWorkflowResult:
@@ -81,16 +78,17 @@ class TestMCPOrchestratorInitialization:
 
     def test_orchestrator_initialization_default_config(self):
         """Test orchestrator initialization with default config."""
-        with patch("src.mcp_integration.mcp_orchestrator.MCPConfigurationManager") as mock_config_cls:
-            with patch("src.mcp_integration.mcp_orchestrator.SmartMCPDiscovery") as mock_discovery_cls:
-                with patch("src.mcp_integration.mcp_orchestrator.MCPConnectionBridge") as mock_bridge_cls:
-                    mock_config = MagicMock()
-                    mock_config.discovery = None
-                    mock_config.connection_bridge = None
-                    mock_config_cls.return_value = mock_config
+        with (
+            patch("src.mcp_integration.mcp_orchestrator.MCPConfigurationManager") as mock_config_cls,
+            patch("src.mcp_integration.mcp_orchestrator.SmartMCPDiscovery"),
+            patch("src.mcp_integration.mcp_orchestrator.MCPConnectionBridge"),
+        ):
+            mock_config = MagicMock()
+            mock_config.discovery = None
+            mock_config.connection_bridge = None
+            mock_config_cls.return_value = mock_config
 
-                    orchestrator = MCPOrchestrator()
-
+            orchestrator = MCPOrchestrator()
         assert orchestrator.config_manager == mock_config
         assert hasattr(orchestrator, "discovery")
         assert hasattr(orchestrator, "connection_bridge")
@@ -465,7 +463,7 @@ class TestWorkflowExecution:
 
             orchestrator.context7_integration.context7_client = MagicMock()
             orchestrator.context7_integration.context7_client.search_documents = AsyncMock(
-                return_value=mock_search_result
+                return_value=mock_search_result,
             )
 
             result = await orchestrator._execute_context7_search_workflow(parameters, workflow_steps)

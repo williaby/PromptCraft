@@ -7,6 +7,7 @@ connection, protocol communication, and tool execution into a single interface.
 
 from dataclasses import dataclass
 import logging
+import time
 from typing import Any
 
 from src.utils.datetime_compat import to_iso, utc_now
@@ -90,7 +91,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             True if connection successful
         """
-        import time
 
         start_time = time.time()
 
@@ -135,7 +135,7 @@ class MCPOrchestrator(LoggerMixin):
                     self.tool_router.refresh_server_tools()
                 else:
                     self.logger.warning(
-                        f"Protocol communication failed for {server_name}, but connection may still be usable"
+                        f"Protocol communication failed for {server_name}, but connection may still be usable",
                     )
 
             elapsed = time.time() - start_time
@@ -156,7 +156,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Workflow execution result
         """
-        import time
 
         start_time = time.time()
         workflow_steps: list[str] = []
@@ -185,7 +184,9 @@ class MCPOrchestrator(LoggerMixin):
             )
 
     async def _execute_document_search_workflow(
-        self, parameters: dict[str, Any], workflow_steps: list[str]
+        self,
+        parameters: dict[str, Any],
+        workflow_steps: list[str],
     ) -> MCPWorkflowResult:
         """Execute document search workflow with Context7 integration.
 
@@ -196,7 +197,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Search workflow result
         """
-        import time
 
         start_time = time.time()
 
@@ -246,7 +246,9 @@ class MCPOrchestrator(LoggerMixin):
             raise
 
     async def _execute_tool_execution_workflow(
-        self, parameters: dict[str, Any], workflow_steps: list[str]
+        self,
+        parameters: dict[str, Any],
+        workflow_steps: list[str],
     ) -> MCPWorkflowResult:
         """Execute tool execution workflow.
 
@@ -257,7 +259,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Tool execution workflow result
         """
-        import time
 
         start_time = time.time()
 
@@ -308,7 +309,9 @@ class MCPOrchestrator(LoggerMixin):
             raise
 
     async def _execute_context7_search_workflow(
-        self, parameters: dict[str, Any], workflow_steps: list[str]
+        self,
+        parameters: dict[str, Any],
+        workflow_steps: list[str],
     ) -> MCPWorkflowResult:
         """Execute Context7-specific search workflow.
 
@@ -319,7 +322,6 @@ class MCPOrchestrator(LoggerMixin):
         Returns:
             Context7 search workflow result
         """
-        import time
 
         start_time = time.time()
 
@@ -473,7 +475,10 @@ class MCPOrchestrator(LoggerMixin):
         )
 
     async def execute_tool(
-        self, tool_name: str, arguments: dict[str, Any], server_name: str | None = None
+        self,
+        tool_name: str,
+        arguments: dict[str, Any],
+        server_name: str | None = None,
     ) -> MCPWorkflowResult:
         """Convenience method for tool execution.
 

@@ -62,9 +62,7 @@ class SchemaLoader:
         # 3. Ensure proper semicolons at statement ends
         # Split by semicolon and rejoin with proper formatting
         statements = [stmt.strip() for stmt in content.split(";") if stmt.strip()]
-        content = ";\n".join(statements) + ";"
-
-        return content
+        return ";\n".join(statements) + ";"
 
     async def apply_schemas(self, connection: asyncpg.Connection) -> list[str]:
         """

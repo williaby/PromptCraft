@@ -167,15 +167,17 @@ class TestRequirePermission:
         """Test require_permission with JWT user lacking permission."""
         permission_checker = require_permission("tokens:create")
 
-        with patch("src.auth.permissions.user_has_permission", return_value=False):
-            with patch("src.auth.exceptions.AuthExceptionHandler.handle_permission_error") as mock_error:
-                mock_error.side_effect = HTTPException(status_code=403, detail="Permission denied")
+        with (
+            patch("src.auth.permissions.user_has_permission", return_value=False),
+            patch("src.auth.exceptions.AuthExceptionHandler.handle_permission_error") as mock_error,
+        ):
+            mock_error.side_effect = HTTPException(status_code=403, detail="Permission denied")
 
-                with pytest.raises(HTTPException) as exc_info:
-                    await permission_checker(mock_jwt_user)
+            with pytest.raises(HTTPException) as exc_info:
+                await permission_checker(mock_jwt_user)
 
-                assert exc_info.value.status_code == 403
-                mock_error.assert_called_once()
+            assert exc_info.value.status_code == 403
+            mock_error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_require_permission_service_token_success(self, mock_service_token_user):
@@ -273,15 +275,17 @@ class TestRequireAnyPermission:
         with patch("src.auth.permissions.isinstance") as mock_isinstance:
             mock_isinstance.return_value = False  # Not a ServiceTokenUser
 
-            with patch("src.auth.permissions.user_has_permission", return_value=False):
-                with patch("src.auth.exceptions.AuthExceptionHandler.handle_permission_error") as mock_error:
-                    mock_error.side_effect = HTTPException(status_code=403, detail="Insufficient permissions")
+            with (
+                patch("src.auth.permissions.user_has_permission", return_value=False),
+                patch("src.auth.exceptions.AuthExceptionHandler.handle_permission_error") as mock_error,
+            ):
+                mock_error.side_effect = HTTPException(status_code=403, detail="Insufficient permissions")
 
-                    with pytest.raises(HTTPException) as exc_info:
-                        await permission_checker(mock_jwt_user)
+                with pytest.raises(HTTPException) as exc_info:
+                    await permission_checker(mock_jwt_user)
 
-                    assert exc_info.value.status_code == 403
-                    mock_error.assert_called_once()
+                assert exc_info.value.status_code == 403
+                mock_error.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_require_any_permission_service_token_success(self, mock_service_token_user):
@@ -495,8 +499,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(s=mock_session):
+                    yield s
 
                 mock_get_db.return_value = mock_db_gen()
 
@@ -522,8 +526,8 @@ class TestPermissionSecurityEdgeCases:
                 mock_result.scalar.return_value = None
                 mock_session.execute = AsyncMock(return_value=mock_result)
 
-                async def mock_db_gen():
-                    yield mock_session
+                async def mock_db_gen(s=mock_session):
+                    yield s
 
                 mock_get_db.return_value = mock_db_gen()
 

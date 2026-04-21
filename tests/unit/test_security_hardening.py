@@ -1265,7 +1265,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = True
@@ -1298,7 +1297,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call raises validation error, second call returns production settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = False
@@ -1329,7 +1327,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call fails with validation error
             # Second call (for debug check) also fails
             mock_get_settings.side_effect = [
@@ -1879,7 +1876,7 @@ class TestMainScriptExecution:
             try:
                 main_path = Path("src/main.py")
                 with main_path.open() as f:
-                    exec(compile(f.read(), "src/main.py", "exec"))  # noqa: S102
+                    exec(compile(f.read(), "src/main.py", "exec"))
             except SystemExit:
                 pass  # Expected due to configuration error
             except Exception as e:

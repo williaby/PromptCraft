@@ -10,7 +10,6 @@ import argparse
 import logging
 from pathlib import Path
 import re
-from typing import Dict, List, Tuple
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -68,16 +67,14 @@ class TestDatetimeMigrationTool:
         # Look for existing imports and find where to insert our import
         for i in range(docstring_end_idx, len(lines)):
             line = lines[i].strip()
-            if line.startswith("from src.") or line.startswith("import src."):
+            if line.startswith(("from src.", "import src.")):
                 # Insert before src imports
                 if import_insert_idx == docstring_end_idx:
                     import_insert_idx = i
                 break
-            elif line.startswith("from ") or line.startswith("import "):
+            if line.startswith(("from ", "import ")):
                 last_import_idx = i + 1
-            elif line == "":
-                continue
-            elif line.startswith("#"):
+            elif line == "" or line.startswith("#"):
                 continue
             else:
                 # First non-import, non-blank, non-comment line
@@ -114,7 +111,7 @@ class TestDatetimeMigrationTool:
             # Add import if needed
             if self.needs_datetime_compat_import(content):
                 content = self.add_datetime_compat_import(content)
-                self.logger.debug(f"Added datetime_compat import")
+                self.logger.debug("Added datetime_compat import")
 
             if dry_run:
                 self.logger.info(f"Would migrate {file_path}: {replacements_made} replacements")
@@ -133,7 +130,7 @@ class TestDatetimeMigrationTool:
             self.logger.error(f"Failed to migrate {file_path}: {e}")
             return False
 
-    def find_test_files_with_datetime_now(self, base_path: Path) -> List[Path]:
+    def find_test_files_with_datetime_now(self, base_path: Path) -> list[Path]:
         """Find test files containing datetime.now() calls."""
         test_files = []
         for file_path in base_path.rglob("test_*.py"):
@@ -146,7 +143,7 @@ class TestDatetimeMigrationTool:
 
         return sorted(test_files)
 
-    def migrate_test_directory(self, test_dir: Path, dry_run: bool = False) -> Dict[str, int]:
+    def migrate_test_directory(self, test_dir: Path, dry_run: bool = False) -> dict[str, int]:
         """Migrate all test files in a directory."""
         results = {"migrated": 0, "skipped": 0, "failed": 0}
 
@@ -169,10 +166,14 @@ class TestDatetimeMigrationTool:
 def main():
     """Main function."""
     parser = argparse.ArgumentParser(
-        description="Migrate datetime.now() usage in test files to timezone-aware alternatives"
+        description="Migrate datetime.now() usage in test files to timezone-aware alternatives",
     )
     parser.add_argument(
-        "path", type=Path, nargs="?", default=Path("tests"), help="Path to test directory or specific test file"
+        "path",
+        type=Path,
+        nargs="?",
+        default=Path("tests"),
+        help="Path to test directory or specific test file",
     )
     parser.add_argument("--dry-run", action="store_true", help="Show what would be changed without making changes")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -192,13 +193,13 @@ def main():
     else:
         # Migrate directory
         results = tool.migrate_test_directory(args.path, args.dry_run)
-        print(f"\nMigration Results:")
+        print("\nMigration Results:")
         print(f"✅ Migrated: {results['migrated']} files")
         print(f"⏭️  Skipped: {results['skipped']} files")
         print(f"❌ Failed: {results['failed']} files")
 
         if args.dry_run:
-            print(f"\n🔍 Dry run completed. Use --dry-run=false to apply changes.")
+            print("\n🔍 Dry run completed. Use --dry-run=false to apply changes.")
 
 
 if __name__ == "__main__":

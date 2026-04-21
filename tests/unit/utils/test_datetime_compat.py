@@ -2,7 +2,7 @@
 Test datetime compatibility module for Python version consistency.
 """
 
-# ruff: noqa: DTZ001  # Tests need to create naive datetimes intentionally
+# Tests need to create naive datetimes intentionally
 
 from datetime import datetime, timedelta, timezone
 import time
@@ -722,7 +722,7 @@ class TestNewFunctionIntegration:
 
 
 @pytest.mark.parametrize(
-    "iso_string,expected_hour",
+    ("iso_string", "expected_hour"),
     [
         ("2023-01-01T12:00:00Z", 12),
         ("2023-01-01T12:00:00+00:00", 12),

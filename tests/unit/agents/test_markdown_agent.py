@@ -125,7 +125,7 @@ class TestMarkdownAgent:
         # Verify _call_model was called with additional context
         agent._call_model.assert_called_once()
         call_args = agent._call_model.call_args
-        prompt = call_args[0][0]
+        call_args[0][0]
         input_data = call_args[0][1]
 
         assert "additional_context" in input_data
@@ -606,7 +606,7 @@ class TestMarkdownAgent:
                 "Task result",
                 "Query result",
                 "Prompt result",
-            ]
+            ],
         )
 
         # Test task processing

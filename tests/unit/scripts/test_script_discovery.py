@@ -6,7 +6,7 @@ and ScriptsManager classes, testing script discovery, categorization, content lo
 and metadata parsing across project and user script directories.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -151,14 +151,16 @@ class TestScriptsDiscoverySystem:
 
     def test_get_available_scripts_empty_cache(self, discovery_system):
         """Test getting available scripts when cache is empty."""
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_scripts_cache") as mock_refresh:
-                discovery_system._scripts_cache = {}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_scripts_cache") as mock_refresh,
+        ):
+            discovery_system._scripts_cache = {}
 
-                scripts = discovery_system.get_available_scripts()
+            scripts = discovery_system.get_available_scripts()
 
-                assert scripts == []
-                mock_refresh.assert_called_once()
+            assert scripts == []
+            mock_refresh.assert_called_once()
 
     def test_get_available_scripts_with_cache(self, discovery_system):
         """Test getting available scripts when cache has scripts."""
@@ -283,14 +285,16 @@ class TestScriptsDiscoverySystem:
             script_type="python",
         )
 
-        with patch.object(discovery_system, "get_script", return_value=mock_script):
-            with patch.object(discovery_system, "_parse_script_metadata") as mock_parse:
-                content = discovery_system.get_script_content("test")
+        with (
+            patch.object(discovery_system, "get_script", return_value=mock_script),
+            patch.object(discovery_system, "_parse_script_metadata") as mock_parse,
+        ):
+            content = discovery_system.get_script_content("test")
 
-                assert content == "#!/usr/bin/env python\nprint('hello')"
-                mock_path.read_text.assert_called_once_with(encoding="utf-8")
-                mock_parse.assert_called_once_with(mock_script)
-                assert mock_script.content == "#!/usr/bin/env python\nprint('hello')"
+            assert content == "#!/usr/bin/env python\nprint('hello')"
+            mock_path.read_text.assert_called_once_with(encoding="utf-8")
+            mock_parse.assert_called_once_with(mock_script)
+            assert mock_script.content == "#!/usr/bin/env python\nprint('hello')"
 
     def test_get_script_content_cached(self, discovery_system):
         """Test getting script content that's already cached."""
@@ -342,34 +346,40 @@ class TestScriptsDiscoverySystem:
         """Test discovering a script from project source."""
         mock_script = Mock(spec=ScriptDefinition)
 
-        with patch.object(discovery_system, "_search_project_scripts", return_value=mock_script):
-            with patch.object(discovery_system, "_search_user_scripts", return_value=None):
-                with patch.object(discovery_system, "_search_builtin_scripts", return_value=None):
-                    result = discovery_system.discover_script("test-script")
+        with (
+            patch.object(discovery_system, "_search_project_scripts", return_value=mock_script),
+            patch.object(discovery_system, "_search_user_scripts", return_value=None),
+            patch.object(discovery_system, "_search_builtin_scripts", return_value=None),
+        ):
+            result = discovery_system.discover_script("test-script")
 
-                    assert result == mock_script
-                    assert result.source_type == "project"
+            assert result == mock_script
+            assert result.source_type == "project"
 
     def test_discover_script_from_user_fallback(self, discovery_system):
         """Test discovering a script from user source as fallback."""
         mock_script = Mock(spec=ScriptDefinition)
 
-        with patch.object(discovery_system, "_search_project_scripts", return_value=None):
-            with patch.object(discovery_system, "_search_user_scripts", return_value=mock_script):
-                with patch.object(discovery_system, "_search_builtin_scripts", return_value=None):
-                    result = discovery_system.discover_script("test-script")
+        with (
+            patch.object(discovery_system, "_search_project_scripts", return_value=None),
+            patch.object(discovery_system, "_search_user_scripts", return_value=mock_script),
+            patch.object(discovery_system, "_search_builtin_scripts", return_value=None),
+        ):
+            result = discovery_system.discover_script("test-script")
 
-                    assert result == mock_script
-                    assert result.source_type == "user"
+            assert result == mock_script
+            assert result.source_type == "user"
 
     def test_discover_script_not_found(self, discovery_system):
         """Test discovering a script that doesn't exist anywhere."""
-        with patch.object(discovery_system, "_search_project_scripts", return_value=None):
-            with patch.object(discovery_system, "_search_user_scripts", return_value=None):
-                with patch.object(discovery_system, "_search_builtin_scripts", return_value=None):
-                    result = discovery_system.discover_script("nonexistent")
+        with (
+            patch.object(discovery_system, "_search_project_scripts", return_value=None),
+            patch.object(discovery_system, "_search_user_scripts", return_value=None),
+            patch.object(discovery_system, "_search_builtin_scripts", return_value=None),
+        ):
+            result = discovery_system.discover_script("nonexistent")
 
-                    assert result is None
+            assert result is None
 
     def test_search_scripts(self, discovery_system):
         """Test searching scripts by query."""
@@ -422,11 +432,13 @@ class TestScriptsDiscoverySystem:
             # Allow specific script file to exist
             return path_str == str(discovery_system.project_scripts_path / "test-script.py")
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch.object(discovery_system, "_create_script_definition", return_value=mock_script):
-                result = discovery_system._search_project_scripts("test-script")
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch.object(discovery_system, "_create_script_definition", return_value=mock_script),
+        ):
+            result = discovery_system._search_project_scripts("test-script")
 
-                assert result == mock_script
+            assert result == mock_script
 
     def test_search_project_scripts_exact_filename(self, discovery_system):
         """Test searching for script with exact filename match."""
@@ -436,14 +448,16 @@ class TestScriptsDiscoverySystem:
             path_str = str(self)
             # Only the exact filename exists, no extensions
             return path_str == str(discovery_system.project_scripts_path) or path_str == str(
-                discovery_system.project_scripts_path / "test-script"
+                discovery_system.project_scripts_path / "test-script",
             )
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch.object(discovery_system, "_create_script_definition", return_value=mock_script):
-                result = discovery_system._search_project_scripts("test-script")
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch.object(discovery_system, "_create_script_definition", return_value=mock_script),
+        ):
+            result = discovery_system._search_project_scripts("test-script")
 
-                assert result == mock_script
+            assert result == mock_script
 
     def test_search_project_scripts_directory_not_exists(self, discovery_system):
         """Test searching when project directory doesn't exist."""
@@ -464,11 +478,13 @@ class TestScriptsDiscoverySystem:
             # Allow specific script file to exist
             return path_str == str(discovery_system.user_scripts_path / "test-script.py")
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch.object(discovery_system, "_create_script_definition", return_value=mock_script):
-                result = discovery_system._search_user_scripts("test-script")
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch.object(discovery_system, "_create_script_definition", return_value=mock_script),
+        ):
+            result = discovery_system._search_user_scripts("test-script")
 
-                assert result == mock_script
+            assert result == mock_script
 
     def test_search_builtin_scripts(self, discovery_system):
         """Test searching for built-in scripts (currently returns None)."""
@@ -485,17 +501,19 @@ class TestScriptsDiscoverySystem:
         mock_path.read_text.return_value = "#!/usr/bin/env python\n# Test script\nprint('hello')"
         mock_path.stat.return_value = mock_stat
 
-        with patch("os.access", return_value=True):
-            with patch.object(discovery_system, "_parse_script_metadata") as mock_parse:
-                script = discovery_system._create_script_definition("test-script", mock_path, "project")
+        with (
+            patch("os.access", return_value=True),
+            patch.object(discovery_system, "_parse_script_metadata") as mock_parse,
+        ):
+            script = discovery_system._create_script_definition("test-script", mock_path, "project")
 
-                assert script.script_id == "test-script"
-                assert script.name == "Test Script"
-                assert script.script_type == "python"
-                assert script.is_executable is True
-                assert script.source_type == "project"
-                assert script.content is not None
-                mock_parse.assert_called_once_with(script)
+            assert script.script_id == "test-script"
+            assert script.name == "Test Script"
+            assert script.script_type == "python"
+            assert script.is_executable is True
+            assert script.source_type == "project"
+            assert script.content is not None
+            mock_parse.assert_called_once_with(script)
 
     def test_create_script_definition_shell(self, discovery_system):
         """Test creating a script definition for shell script."""
@@ -507,13 +525,12 @@ class TestScriptsDiscoverySystem:
         mock_path.read_text.return_value = "#!/bin/bash\n# Deploy script\necho 'deploying'"
         mock_path.stat.return_value = mock_stat
 
-        with patch("os.access", return_value=False):
-            with patch.object(discovery_system, "_parse_script_metadata") as mock_parse:
-                script = discovery_system._create_script_definition("deploy", mock_path, "user")
+        with patch("os.access", return_value=False), patch.object(discovery_system, "_parse_script_metadata"):
+            script = discovery_system._create_script_definition("deploy", mock_path, "user")
 
-                assert script.script_type == "shell"
-                assert script.is_executable is False
-                assert script.source_type == "user"
+            assert script.script_type == "shell"
+            assert script.is_executable is False
+            assert script.source_type == "user"
 
     def test_create_script_definition_with_description_extraction(self, discovery_system):
         """Test creating script definition with description extracted from comments."""
@@ -532,12 +549,11 @@ print('test')
         mock_path.read_text.return_value = content
         mock_path.stat.return_value = mock_stat
 
-        with patch("os.access", return_value=True):
-            with patch.object(discovery_system, "_parse_script_metadata"):
-                script = discovery_system._create_script_definition("test", mock_path, "project")
+        with patch("os.access", return_value=True), patch.object(discovery_system, "_parse_script_metadata"):
+            script = discovery_system._create_script_definition("test", mock_path, "project")
 
-                assert "comprehensive testing script" in script.description
-                assert script.version == "2.1.0"
+            assert "comprehensive testing script" in script.description
+            assert script.version == "2.1.0"
 
     def test_create_script_definition_content_read_error(self, discovery_system):
         """Test creating script definition when content read fails."""
@@ -646,21 +662,23 @@ import requests
                 return [discovery_system.project_scripts_path]
             return []
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch("pathlib.Path.iterdir", mock_iterdir):
-                with patch.object(discovery_system, "_create_script_definition") as mock_create:
-                    mock_create.side_effect = [mock_script1, mock_script2]
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch("pathlib.Path.iterdir", mock_iterdir),
+            patch.object(discovery_system, "_create_script_definition") as mock_create,
+        ):
+            mock_create.side_effect = [mock_script1, mock_script2]
 
-                    # Mock the parents check
-                    project_file1.parents = [discovery_system.project_scripts_path]
-                    user_file1.parents = []
+            # Mock the parents check
+            project_file1.parents = [discovery_system.project_scripts_path]
+            user_file1.parents = []
 
-                    discovery_system._refresh_scripts_cache()
+            discovery_system._refresh_scripts_cache()
 
-                    assert len(discovery_system._scripts_cache) == 2
-                    assert discovery_system._scripts_cache["script1"] == mock_script1
-                    assert discovery_system._scripts_cache["script2"] == mock_script2
-                    assert discovery_system._cache_timestamp is not None
+            assert len(discovery_system._scripts_cache) == 2
+            assert discovery_system._scripts_cache["script1"] == mock_script1
+            assert discovery_system._scripts_cache["script2"] == mock_script2
+            assert discovery_system._cache_timestamp is not None
 
     def test_get_discovery_status(self, discovery_system):
         """Test getting discovery status information."""
@@ -683,22 +701,26 @@ import requests
         }
         discovery_system._cache_timestamp = utc_now() - timedelta(seconds=100)
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch.object(
-                discovery_system, "get_available_scripts", return_value=["project-script", "user-script"]
-            ):
-                status = discovery_system.get_discovery_status()
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(
+                discovery_system,
+                "get_available_scripts",
+                return_value=["project-script", "user-script"],
+            ),
+        ):
+            status = discovery_system.get_discovery_status()
 
-                assert status["cached_scripts_count"] == 2
-                assert status["executable_scripts_count"] == 1
-                assert status["scripts_by_source"]["project"] == 1
-                assert status["scripts_by_source"]["user"] == 1
-                assert status["scripts_by_type"]["python"] == 1
-                assert status["scripts_by_type"]["shell"] == 1
-                assert status["scripts_by_category"]["setup"] == 1
-                assert status["scripts_by_category"]["validation"] == 1
-                assert "setup" in status["supported_categories"]
-                assert "python" in status["supported_types"]
+            assert status["cached_scripts_count"] == 2
+            assert status["executable_scripts_count"] == 1
+            assert status["scripts_by_source"]["project"] == 1
+            assert status["scripts_by_source"]["user"] == 1
+            assert status["scripts_by_type"]["python"] == 1
+            assert status["scripts_by_type"]["shell"] == 1
+            assert status["scripts_by_category"]["setup"] == 1
+            assert status["scripts_by_category"]["validation"] == 1
+            assert "setup" in status["supported_categories"]
+            assert "python" in status["supported_types"]
 
 
 class TestScriptsManager:
@@ -723,15 +745,19 @@ class TestScriptsManager:
 
     def test_execute_script_not_found(self, scripts_manager):
         """Test executing a script that doesn't exist."""
-        with patch.object(scripts_manager.discovery_system, "get_script", return_value=None):
-            with patch.object(
-                scripts_manager.discovery_system, "get_available_scripts", return_value=["script1", "script2"]
-            ):
-                result = scripts_manager.execute_script("nonexistent")
+        with (
+            patch.object(scripts_manager.discovery_system, "get_script", return_value=None),
+            patch.object(
+                scripts_manager.discovery_system,
+                "get_available_scripts",
+                return_value=["script1", "script2"],
+            ),
+        ):
+            result = scripts_manager.execute_script("nonexistent")
 
-                assert result["success"] is False
-                assert "not found" in result["error"]
-                assert "available_scripts" in result
+            assert result["success"] is False
+            assert "not found" in result["error"]
+            assert "available_scripts" in result
 
     def test_execute_script_dry_run(self, scripts_manager):
         """Test executing a script in dry-run mode."""
@@ -877,42 +903,44 @@ echo "Validating configuration"
                 return validate_content
             return ""
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch("pathlib.Path.iterdir", mock_iterdir):
-                with patch("pathlib.Path.stat", mock_stat):
-                    with patch("pathlib.Path.read_text", mock_read_text):
-                        with patch("os.access", return_value=True):
-                            # Test getting available scripts
-                            scripts = manager.discovery_system.get_available_scripts()
-                            assert set(scripts) == {"setup", "validate"}
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch("pathlib.Path.iterdir", mock_iterdir),
+            patch("pathlib.Path.stat", mock_stat),
+            patch("pathlib.Path.read_text", mock_read_text),
+            patch("os.access", return_value=True),
+        ):
+            # Test getting available scripts
+            scripts = manager.discovery_system.get_available_scripts()
+            assert set(scripts) == {"setup", "validate"}
 
-                            # Test getting specific scripts
-                            setup_script = manager.discovery_system.get_script("setup")
-                            assert setup_script is not None
-                            assert setup_script.source_type == "project"
-                            assert setup_script.script_type == "python"
-                            assert setup_script.category == "setup"
-                            assert "click" in setup_script.dependencies
-                            assert "--environment" in setup_script.parameters
+            # Test getting specific scripts
+            setup_script = manager.discovery_system.get_script("setup")
+            assert setup_script is not None
+            assert setup_script.source_type == "project"
+            assert setup_script.script_type == "python"
+            assert setup_script.category == "setup"
+            assert "click" in setup_script.dependencies
+            assert "--environment" in setup_script.parameters
 
-                            validate_script = manager.discovery_system.get_script("validate")
-                            assert validate_script is not None
-                            assert validate_script.source_type == "user"
-                            assert validate_script.script_type == "shell"
+            validate_script = manager.discovery_system.get_script("validate")
+            assert validate_script is not None
+            assert validate_script.source_type == "user"
+            assert validate_script.script_type == "shell"
 
-                            # Test categorized retrieval
-                            setup_scripts = manager.get_setup_scripts()
-                            assert len(setup_scripts) == 1
-                            assert setup_scripts[0].script_id == "setup"
+            # Test categorized retrieval
+            setup_scripts = manager.get_setup_scripts()
+            assert len(setup_scripts) == 1
+            assert setup_scripts[0].script_id == "setup"
 
-                            validation_scripts = manager.get_validation_scripts()
-                            assert len(validation_scripts) == 1
-                            assert validation_scripts[0].script_id == "validate"
+            validation_scripts = manager.get_validation_scripts()
+            assert len(validation_scripts) == 1
+            assert validation_scripts[0].script_id == "validate"
 
-                            # Test script execution (dry run)
-                            result = manager.execute_script("setup", ["--environment", "dev"], dry_run=True)
-                            assert result["success"] is True
-                            assert "dry-run mode" in result["message"]
+            # Test script execution (dry run)
+            result = manager.execute_script("setup", ["--environment", "dev"], dry_run=True)
+            assert result["success"] is True
+            assert "dry-run mode" in result["message"]
 
 
 class TestScriptsModuleExports:

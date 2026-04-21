@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Scripts Discovery System
 
@@ -15,6 +12,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from src.utils.datetime_compat import utc_from_timestamp, utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 
@@ -80,7 +78,9 @@ class ScriptsDiscoverySystem(LoggerMixin):
         }
 
         self.logger.info(
-            f"Scripts discovery initialized - Project: {self.project_scripts_path}, User: {self.user_scripts_path}"
+            "Scripts discovery initialized - Project: %s, User: %s",
+            self.project_scripts_path,
+            self.user_scripts_path,
         )
 
     def get_available_scripts(self, refresh_cache: bool = False) -> list[str]:
@@ -139,7 +139,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 # Parse additional metadata from content
                 self._parse_script_metadata(script)
             except Exception as e:
-                self.logger.error(f"Failed to load content for {script_id}: {e}")
+                self.logger.error("Failed to load content for %s: %s", script_id, e)
                 return None
 
         return script.content
@@ -157,13 +157,13 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 script = search_func(script_id)
                 if script:
                     script.source_type = source_type
-                    self.logger.info(f"Found script '{script_id}' from {source_type} source")
+                    self.logger.info("Found script '%s' from %s source", script_id, source_type)
                     return script
             except Exception as e:
-                self.logger.warning(f"Error searching {source_type} scripts for {script_id}: {e}")
+                self.logger.warning("Error searching %s scripts for %s: %s", source_type, script_id, e)
                 continue
 
-        self.logger.warning(f"Script '{script_id}' not found in any source")
+        self.logger.warning("Script '%s' not found in any source", script_id)
         return None
 
     def search_scripts(self, query: str) -> list[ScriptDefinition]:
@@ -247,8 +247,8 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 lines = content.split("\n")[:20]  # Check first 20 lines
                 description_found = False
 
-                for line in lines:
-                    line = line.strip()
+                for raw_line in lines:
+                    line = raw_line.strip()
                     if line.startswith(("#", '"""', "'''")):
                         # Skip shebang lines
                         if line.startswith("#!"):
@@ -267,7 +267,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                                 version = version_match[1].strip().strip("\"'")
 
             except Exception as e:
-                self.logger.debug(f"Failed to read content for metadata extraction: {e}")
+                self.logger.debug("Failed to read content for metadata extraction: %s", e)
 
             script_def = ScriptDefinition(
                 script_id=script_id,
@@ -280,7 +280,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 content=content,
                 version=version,
                 category=category,
-                last_updated=datetime.fromtimestamp(file_path.stat().st_mtime),
+                last_updated=utc_from_timestamp(file_path.stat().st_mtime),
             )
 
             # Parse additional metadata from content
@@ -290,7 +290,7 @@ class ScriptsDiscoverySystem(LoggerMixin):
             return script_def
 
         except Exception as e:
-            self.logger.error(f"Failed to create script definition for {script_id}: {e}")
+            self.logger.error("Failed to create script definition for %s: %s", script_id, e)
             raise
 
     def _parse_script_metadata(self, script: ScriptDefinition) -> None:
@@ -312,8 +312,8 @@ class ScriptsDiscoverySystem(LoggerMixin):
 
         # Extract dependencies and parameters from comments
         in_header = True
-        for i, line in enumerate(lines[:50]):  # Check first 50 lines
-            line = line.strip()
+        for i, raw_line in enumerate(lines[:50]):  # Check first 50 lines
+            line = raw_line.strip()
 
             # Stop looking once we hit actual code
             if line and not line.startswith("#") and not line.startswith('"""') and not line.startswith("'''"):
@@ -373,10 +373,10 @@ class ScriptsDiscoverySystem(LoggerMixin):
                 script = self._create_script_definition(script_id, file_path, source_type)
                 self._scripts_cache[script_id] = script
             except Exception as e:
-                self.logger.warning(f"Failed to process script {script_id}: {e}")
+                self.logger.warning("Failed to process script %s: %s", script_id, e)
 
         self._cache_timestamp = utc_now()
-        self.logger.info(f"Refreshed scripts cache with {len(self._scripts_cache)} scripts")
+        self.logger.info("Refreshed scripts cache with %s scripts", len(self._scripts_cache))
 
     def _should_refresh_cache(self) -> bool:
         """Check if cache should be refreshed."""
@@ -432,7 +432,10 @@ class ScriptsManager(LoggerMixin):
         self.discovery_system = ScriptsDiscoverySystem(project_root)
 
     def execute_script(
-        self, script_id: str, parameters: list[str] | None = None, dry_run: bool = True
+        self,
+        script_id: str,
+        parameters: list[str] | None = None,
+        dry_run: bool = True,
     ) -> dict[str, Any]:
         """Execute a script and return results (placeholder - security considerations apply)."""
         script = self.discovery_system.get_script(script_id)

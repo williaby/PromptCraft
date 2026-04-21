@@ -66,7 +66,7 @@ class TestSetupAuthMiddleware:
             # Verify middleware was added to app
             mock_app.add_middleware.assert_called_once()
             add_middleware_call = mock_app.add_middleware.call_args
-            assert add_middleware_call[0][0] == type(mock_middleware)
+            assert add_middleware_call[0][0] is type(mock_middleware)
 
             # Verify return value
             assert result == mock_middleware
@@ -357,7 +357,7 @@ class TestPackageInitialization:
                 # This will succeed normally
                 from src.auth_simple import get_version_info
 
-                config_info = get_version_info()
+                get_version_info()
                 # Force an exception to test the except block
                 raise Exception("Simulated config error")
             except Exception as e:
@@ -366,5 +366,6 @@ class TestPackageInitialization:
 
             # Verify the warning was called
             mock_logger.warning.assert_called_once_with(
-                "Could not load configuration summary: %s", mock_logger.warning.call_args[0][1]
+                "Could not load configuration summary: %s",
+                mock_logger.warning.call_args[0][1],
             )

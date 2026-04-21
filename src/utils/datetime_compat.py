@@ -26,9 +26,9 @@ if PY_311_PLUS:
         from datetime import UTC
     except ImportError:
         # Python < 3.11 compatibility - fallback to timezone.utc
-        UTC = timezone.utc  # noqa: UP017
+        UTC = timezone.utc
 else:
-    UTC = timezone.utc  # noqa: UP017  # Python 3.10 compatibility - datetime.UTC not available
+    UTC = timezone.utc  # Python 3.10 compatibility - datetime.UTC not available
 
 # Export the UTC constant for consistent imports
 __all__ = [

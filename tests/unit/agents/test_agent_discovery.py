@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for agent discovery and loading system.
 
@@ -31,6 +28,7 @@ from src.agents.discovery import (
     RuntimeConfig,
     ToolConfig,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestDataClasses:
@@ -469,7 +467,6 @@ max_remote_agents: 10
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.read_text", return_value=config_content),
         ):
-
             config = discovery_system._load_discovery_config()
 
             assert config["cache_ttl_minutes"] == 60
@@ -482,7 +479,6 @@ max_remote_agents: 10
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.read_text", side_effect=Exception("Read error")),
         ):
-
             config = discovery_system._load_discovery_config()
 
             # Should fall back to default config
@@ -528,7 +524,6 @@ max_remote_agents: 10
             patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
             patch.object(discovery_system, "validate_dependencies", return_value=True),
         ):
-
             result = discovery_system.discover_agent("test-agent")
             assert result == agent_def
             assert "test-agent" in discovery_system.loaded_agents
@@ -549,18 +544,21 @@ max_remote_agents: 10
         )
 
         with (
-            patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
-            patch.object(discovery_system, "validate_dependencies", return_value=False),
+            (
+                patch.object(discovery_system, "_search_by_strategy", return_value=agent_def),
+                patch.object(discovery_system, "validate_dependencies", return_value=False),
+            ),
+            pytest.raises(AgentNotFoundError),
         ):
-
-            with pytest.raises(AgentNotFoundError):
-                discovery_system.discover_agent("test-agent")
+            discovery_system.discover_agent("test-agent")
 
     def test_discover_agent_not_found(self, discovery_system):
         """Test discovering agent that doesn't exist."""
-        with patch.object(discovery_system, "_search_by_strategy", return_value=None):
-            with pytest.raises(AgentNotFoundError):
-                discovery_system.discover_agent("nonexistent-agent")
+        with (
+            patch.object(discovery_system, "_search_by_strategy", return_value=None),
+            pytest.raises(AgentNotFoundError),
+        ):
+            discovery_system.discover_agent("nonexistent-agent")
 
     def test_search_by_strategy_user_override(self, discovery_system):
         """Test search by user_override strategy."""
@@ -632,20 +630,6 @@ max_remote_agents: 10
 
     def test_search_user_level_yaml(self, discovery_system):
         """Test searching user level for YAML agent."""
-        yaml_content = """metadata:
-  id: user-agent
-  version: 1.0.0
-  description: User level agent
-  category: user
-runtime:
-  model: haiku
-tools:
-  required: []
-  optional: []
-implementation:
-  type: markdown
-  source: "# User Agent"
-"""
 
         # Simple mock - just test that with no files existing, it returns None
         with patch("pathlib.Path.exists", return_value=False):
@@ -671,7 +655,6 @@ This is a legacy markdown agent.
             return str(self).endswith("legacy-agent.md")
 
         with patch("pathlib.Path.exists", mock_exists), patch("pathlib.Path.read_text", return_value=markdown_content):
-
             result = discovery_system._search_user_level("legacy-agent")
             assert result is not None
             assert result.id == "legacy-agent"
@@ -879,7 +862,6 @@ invalid: yaml: [
     def test_get_available_agents(self, discovery_system):
         """Test getting list of available agents."""
         with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.rglob") as mock_rglob:
-
             # Mock different file types
             yaml_files = [Mock(stem="agent1"), Mock(stem="agent2")]
             yml_files = [Mock(stem="agent3")]
@@ -1083,9 +1065,11 @@ class TestDynamicAgentLoader:
         mock_discovery.discover_agent.return_value = agent_def
         mock_resource_manager.can_load_agent.return_value = True
 
-        with patch.object(agent_loader, "load_markdown_agent", side_effect=Exception("Load error")):
-            with pytest.raises(Exception, match="Load error"):
-                agent_loader.load_agent("error-agent", {})
+        with (
+            patch.object(agent_loader, "load_markdown_agent", side_effect=Exception("Load error")),
+            pytest.raises(Exception, match="Load error"),
+        ):
+            agent_loader.load_agent("error-agent", {})
 
     def test_load_markdown_agent(self, agent_loader):
         """Test loading markdown agent implementation."""
@@ -1110,7 +1094,6 @@ class TestDynamicAgentLoader:
             patch.object(agent_loader, "load_context", return_value="Context content"),
             patch("src.agents.markdown_agent.MarkdownAgent") as mock_md_agent,
         ):
-
             mock_agent = Mock()
             mock_md_agent.return_value = mock_agent
 
@@ -1196,9 +1179,11 @@ class TestDynamicAgentLoader:
             implementation=impl,
         )
 
-        with patch("importlib.import_module", side_effect=ImportError("Module not found")):
-            with pytest.raises(ImportError, match="Failed to load Python agent"):
-                agent_loader.load_python_agent(agent_def, {})
+        with (
+            patch("importlib.import_module", side_effect=ImportError("Module not found")),
+            pytest.raises(ImportError, match="Failed to load Python agent"),
+        ):
+            agent_loader.load_python_agent(agent_def, {})
 
     def test_load_remote_agent(self, agent_loader):
         """Test loading remote agent (not implemented)."""
@@ -1238,7 +1223,6 @@ class TestDynamicAgentLoader:
             return ""
 
         with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.read_text", mock_read_text):
-
             result = agent_loader.load_context(context_config)
 
             expected = (
@@ -1324,7 +1308,7 @@ implementation:
   type: markdown
   source: |
     # Integration Test Agent
-    
+
     This is a test agent for integration testing.
 """
 
@@ -1334,7 +1318,6 @@ implementation:
             patch("pathlib.Path.read_text", return_value=yaml_content),
             patch("src.agents.markdown_agent.MarkdownAgent") as mock_md_agent,
         ):
-
             discovery = AgentDiscoverySystem()
             resource_manager = AgentResourceManager()
             loader = DynamicAgentLoader(discovery, resource_manager)
@@ -1349,18 +1332,15 @@ implementation:
             except Exception:
                 agent_def = None
             # TODO: Enable assertions once mocking is fixed
-            # assert agent_def.id == "integration-test-agent"
-            # assert agent_def.runtime.model == "haiku"
-            # assert agent_def.implementation.type == "markdown"
 
             # Test resource checking - skip if agent_def is None
             if agent_def:
                 assert resource_manager.can_load_agent(agent_def) is True
 
             # Test loading (mock the MarkdownAgent import)
-            with patch("src.agents.markdown_agent.MarkdownAgent") as mock_md_agent:
+            with patch("src.agents.markdown_agent.MarkdownAgent") as mock_md_agent_loader:
                 mock_agent = Mock()
-                mock_md_agent.return_value = mock_agent
+                mock_md_agent_loader.return_value = mock_agent
 
                 # Skip loading test since agent_def is None
                 if agent_def:
@@ -1426,7 +1406,6 @@ implementation:
             patch.object(discovery, "_search_remote_registry", return_value=None),
             patch.object(discovery, "validate_dependencies", return_value=True),
         ):
-
             # Only bundled defaults should find the agent
             runtime = RuntimeConfig(model="haiku")
             agent_def = AgentDefinition(

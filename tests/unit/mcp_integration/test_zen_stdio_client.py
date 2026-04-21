@@ -143,45 +143,51 @@ class TestZenStdioMCPClient:
         """Test successful connection to zen server."""
         mock_zen_client = MockZenClient(healthy=True)
 
-        with patch("src.mcp_integration.zen_stdio_client.create_client", return_value=mock_zen_client) as mock_create:
-            with patch.object(client, "_get_zen_environment", return_value={"TEST": "value"}):
-                result = await client.connect()
+        with (
+            patch("src.mcp_integration.zen_stdio_client.create_client", return_value=mock_zen_client) as mock_create,
+            patch.object(client, "_get_zen_environment", return_value={"TEST": "value"}),
+        ):
+            result = await client.connect()
 
-                assert result is True
-                assert client.connection_state == MCPConnectionState.CONNECTED
-                assert client.zen_client == mock_zen_client
-                assert client.last_successful_request is not None
+            assert result is True
+            assert client.connection_state == MCPConnectionState.CONNECTED
+            assert client.zen_client == mock_zen_client
+            assert client.last_successful_request is not None
 
-                # Verify create_client was called with correct parameters
-                mock_create.assert_called_once_with(
-                    server_path="/test/server.py",
-                    env_vars={"TEST": "value"},
-                    http_fallback_url="http://test:8000",
-                )
+            # Verify create_client was called with correct parameters
+            mock_create.assert_called_once_with(
+                server_path="/test/server.py",
+                env_vars={"TEST": "value"},
+                http_fallback_url="http://test:8000",
+            )
 
     @pytest.mark.asyncio
     async def test_connect_health_check_failure(self, client):
         """Test connection failure due to health check failure."""
         mock_zen_client = MockZenClient(healthy=False)
 
-        with patch("src.mcp_integration.zen_stdio_client.create_client", return_value=mock_zen_client):
-            with patch.object(client, "_get_zen_environment", return_value={}):
-                result = await client.connect()
+        with (
+            patch("src.mcp_integration.zen_stdio_client.create_client", return_value=mock_zen_client),
+            patch.object(client, "_get_zen_environment", return_value={}),
+        ):
+            result = await client.connect()
 
-                assert result is False
-                assert client.connection_state == MCPConnectionState.DISCONNECTED
-                assert client.error_count == 1
+            assert result is False
+            assert client.connection_state == MCPConnectionState.DISCONNECTED
+            assert client.error_count == 1
 
     @pytest.mark.asyncio
     async def test_connect_exception(self, client):
         """Test connection failure due to exception."""
-        with patch("src.mcp_integration.zen_stdio_client.create_client", side_effect=Exception("Connection failed")):
-            with patch.object(client, "_get_zen_environment", return_value={}):
-                result = await client.connect()
+        with (
+            patch("src.mcp_integration.zen_stdio_client.create_client", side_effect=Exception("Connection failed")),
+            patch.object(client, "_get_zen_environment", return_value={}),
+        ):
+            result = await client.connect()
 
-                assert result is False
-                assert client.connection_state == MCPConnectionState.DISCONNECTED
-                assert client.error_count == 1
+            assert result is False
+            assert client.connection_state == MCPConnectionState.DISCONNECTED
+            assert client.error_count == 1
 
     @pytest.mark.asyncio
     async def test_disconnect_success(self, client):
@@ -256,20 +262,22 @@ class TestZenStdioMCPClient:
         mock_zen_client = MockZenClient()
         client.zen_client = mock_zen_client
 
-        with patch("src.mcp_integration.models.ModelRecommendation") as MockModelRec:
-            with patch("src.mcp_integration.models.RoutingAnalysis") as MockRoutingAnalysis:
-                # Setup mocks
-                mock_model_rec = MagicMock()
-                MockModelRec.return_value = mock_model_rec
+        with (
+            patch("src.mcp_integration.models.ModelRecommendation") as mock_model_rec_cls,
+            patch("src.mcp_integration.models.RoutingAnalysis") as mock_routing_analysis_cls,
+        ):
+            # Setup mocks
+            mock_model_rec = MagicMock()
+            mock_model_rec_cls.return_value = mock_model_rec
 
-                mock_routing_analysis = MagicMock()
-                MockRoutingAnalysis.return_value = mock_routing_analysis
+            mock_routing_analysis = MagicMock()
+            mock_routing_analysis_cls.return_value = mock_routing_analysis
 
-                result = await client.get_model_recommendations("test prompt")
+            result = await client.get_model_recommendations("test prompt")
 
-                assert result == mock_routing_analysis
-                MockModelRec.assert_called_once()
-                MockRoutingAnalysis.assert_called_once()
+            assert result == mock_routing_analysis
+            mock_model_rec_cls.assert_called_once()
+            mock_routing_analysis_cls.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_model_recommendations_no_recommendations(self, client):
@@ -283,15 +291,17 @@ class TestZenStdioMCPClient:
 
         client.zen_client = mock_zen_client
 
-        with patch("src.mcp_integration.models.ModelRecommendation") as MockModelRec:
-            with patch("src.mcp_integration.models.RoutingAnalysis") as MockRoutingAnalysis:
-                result = await client.get_model_recommendations("test prompt")
+        with (
+            patch("src.mcp_integration.models.ModelRecommendation") as mock_model_rec_cls,
+            patch("src.mcp_integration.models.RoutingAnalysis"),
+        ):
+            await client.get_model_recommendations("test prompt")
 
-                # Should handle missing recommendations gracefully
-                MockModelRec.assert_called_once()
-                call_args = MockModelRec.call_args
-                assert call_args[1]["model_id"] == "unknown"
-                assert call_args[1]["reasoning"] == "No recommendations available"
+            # Should handle missing recommendations gracefully
+            mock_model_rec_cls.assert_called_once()
+            call_args = mock_model_rec_cls.call_args
+            assert call_args[1]["model_id"] == "unknown"
+            assert call_args[1]["reasoning"] == "No recommendations available"
 
     @pytest.mark.asyncio
     async def test_get_model_recommendations_no_client(self, client):
@@ -363,15 +373,14 @@ class TestZenStdioMCPClient:
         """Test successful environment variable loading."""
         env_content = "API_KEY=test_key\nDATABASE_URL=test_url\n# Comment line\nDEBUG=true\n"
 
-        with patch("os.path.exists", return_value=True):
-            with patch("builtins.open", mock_open(read_data=env_content)):
-                env_vars = client._get_zen_environment()
+        with patch("os.path.exists", return_value=True), patch("builtins.open", mock_open(read_data=env_content)):
+            env_vars = client._get_zen_environment()
 
-                assert env_vars["API_KEY"] == "test_key"
-                assert env_vars["DATABASE_URL"] == "test_url"
-                assert env_vars["DEBUG"] == "true"
-                assert env_vars["LOG_LEVEL"] == "INFO"
-                assert env_vars["PROMPTCRAFT_INTEGRATION"] == "true"
+            assert env_vars["API_KEY"] == "test_key"
+            assert env_vars["DATABASE_URL"] == "test_url"
+            assert env_vars["DEBUG"] == "true"
+            assert env_vars["LOG_LEVEL"] == "INFO"
+            assert env_vars["PROMPTCRAFT_INTEGRATION"] == "true"
 
     def test_get_zen_environment_file_not_exists(self, client):
         """Test environment loading when file doesn't exist."""
@@ -384,13 +393,12 @@ class TestZenStdioMCPClient:
 
     def test_get_zen_environment_file_error(self, client):
         """Test environment loading with file read error."""
-        with patch("os.path.exists", return_value=True):
-            with patch("builtins.open", side_effect=OSError("File read error")):
-                env_vars = client._get_zen_environment()
+        with patch("os.path.exists", return_value=True), patch("builtins.open", side_effect=OSError("File read error")):
+            env_vars = client._get_zen_environment()
 
-                # Should return default values when file read fails
-                assert env_vars["LOG_LEVEL"] == "INFO"
-                assert env_vars["PROMPTCRAFT_INTEGRATION"] == "true"
+            # Should return default values when file read fails
+            assert env_vars["LOG_LEVEL"] == "INFO"
+            assert env_vars["PROMPTCRAFT_INTEGRATION"] == "true"
 
     @pytest.mark.asyncio
     async def test_validate_query_not_connected(self, client):
@@ -465,17 +473,17 @@ class TestZenStdioMCPClient:
             MagicMock(step_id="step2", agent_id="agent2"),
         ]
 
-        with patch("src.mcp_integration.mcp_client.Response") as MockResponse:
+        with patch("src.mcp_integration.mcp_client.Response") as mock_response_cls:
             mock_response = MagicMock()
-            MockResponse.return_value = mock_response
+            mock_response_cls.return_value = mock_response
 
             responses = await client.orchestrate_agents(workflow_steps)
 
             assert len(responses) == 2
-            assert MockResponse.call_count == 2
+            assert mock_response_cls.call_count == 2
 
             # Verify response creation calls
-            calls = MockResponse.call_args_list
+            calls = mock_response_cls.call_args_list
             assert calls[0][1]["agent_id"] == "agent1"
             assert calls[0][1]["success"] is True
             assert calls[1][1]["agent_id"] == "agent2"
@@ -499,12 +507,12 @@ class TestZenStdioMCPClient:
                 raise Exception("Response creation failed")
             return MagicMock()  # Return mock for error response
 
-        with patch("src.mcp_integration.mcp_client.Response", side_effect=side_effect) as MockResponse:
+        with patch("src.mcp_integration.mcp_client.Response", side_effect=side_effect) as mock_response_cls:
             responses = await client.orchestrate_agents(workflow_steps)
 
             assert len(responses) == 1
             # Should create error response when Response creation fails
-            assert MockResponse.call_count == 2  # One for success, one for error handling
+            assert mock_response_cls.call_count == 2  # One for success, one for error handling
 
     @pytest.mark.asyncio
     async def test_orchestrate_agents_no_client(self, client):

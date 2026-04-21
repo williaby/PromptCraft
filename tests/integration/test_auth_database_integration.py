@@ -172,8 +172,6 @@ class TestAuthDatabaseIntegration:
                 )
 
         # Don't commit - let the transaction rollback handle cleanup
-        # await test_db_session.commit()
-
         return {
             "permissions": {p.name: p for p in permissions},
             "roles": {
@@ -232,7 +230,10 @@ class TestAuthDatabaseIntegration:
         assert result is False
 
     async def test_role_manager_get_user_permissions_integration(
-        self, test_db_session: AsyncSession, sample_roles_and_permissions, monkeypatch
+        self,
+        test_db_session: AsyncSession,
+        sample_roles_and_permissions,
+        monkeypatch,
     ):
         """Test RoleManager.get_user_permissions with real database."""
         # Override the database manager to use the test database session
@@ -273,7 +274,10 @@ class TestAuthDatabaseIntegration:
         assert expected_admin_perms.issubset(admin_permissions)
 
     async def test_role_manager_role_hierarchy_operations(
-        self, test_db_session: AsyncSession, sample_roles_and_permissions, monkeypatch
+        self,
+        test_db_session: AsyncSession,
+        sample_roles_and_permissions,
+        monkeypatch,
     ):
         """Test role hierarchy operations with real database."""
         # Override the database manager to use the test database session
@@ -302,7 +306,9 @@ class TestAuthDatabaseIntegration:
         assert "tokens:delete" in admin_permissions
 
     async def test_database_function_user_has_permission(
-        self, test_db_session: AsyncSession, sample_roles_and_permissions
+        self,
+        test_db_session: AsyncSession,
+        sample_roles_and_permissions,
     ):
         """Test the database user_has_permission function directly (PostgreSQL only)."""
         # Check if we're using PostgreSQL or SQLite
@@ -357,7 +363,10 @@ class TestAuthDatabaseIntegration:
         assert all(results), f"Some permission checks failed: {results}"
 
     async def test_role_assignment_integration(
-        self, test_db_session: AsyncSession, sample_roles_and_permissions, monkeypatch
+        self,
+        test_db_session: AsyncSession,
+        sample_roles_and_permissions,
+        monkeypatch,
     ):
         """Test role assignment and permission inheritance."""
         # Override the database manager to use the test database session
@@ -424,7 +433,7 @@ class TestAuthDatabaseIntegration:
         try:
             # Try to assign a non-existent role (should fail)
             await role_manager.assign_user_role("test@example.com", "nonexistent_role")
-            assert False, "Should have raised an exception"
+            pytest.fail("Should have raised an exception")
         except Exception:
             # Exception expected - transaction should be rolled back
             pass
@@ -441,7 +450,7 @@ class TestAuthDatabaseIntegration:
         # Test multiple permission checks in sequence
         start_time = time.time()
 
-        for i in range(10):
+        for _ in range(10):
             await user_has_permission("admin@example.com", "admin:access", session=test_db_session)
             await user_has_permission("user@example.com", "users:write", session=test_db_session)
             await user_has_permission("viewer@example.com", "users:read", session=test_db_session)
@@ -456,7 +465,7 @@ class TestAuthDatabaseIntegration:
 @pytest.mark.integration
 @pytest.mark.asyncio
 @pytest.mark.skip(
-    reason="Database integration tests deferred for production deployment - requires auth database schema setup not available in test environment"
+    reason="Database integration tests deferred for production deployment - requires auth database schema setup not available in test environment",
 )
 class TestAuthDatabaseErrorHandling:
     """Integration tests for database error handling in auth operations."""
@@ -464,11 +473,8 @@ class TestAuthDatabaseErrorHandling:
     async def test_user_has_permission_database_unavailable(self):
         """Test user_has_permission graceful degradation when database is unavailable."""
         # Mock database connection failure
-        with pytest.raises(Exception):
-            # This should handle database errors gracefully
-            result = await user_has_permission("test@example.com", "users:read")
-            # Should return False on database errors for security
-            assert result is False
+        with pytest.raises(Exception, match=r".*"):
+            await user_has_permission("test@example.com", "users:read")
 
     async def test_permission_check_with_corrupted_data(self, test_db_session: AsyncSession):
         """Test permission checks with corrupted or inconsistent database state."""
@@ -493,7 +499,6 @@ class TestAuthDatabaseErrorHandling:
             ),
         )
         # Don't commit - let the transaction rollback handle cleanup
-        # await test_db_session.commit()
 
         # Should handle this gracefully
         result = await user_has_permission("corrupt@example.com", "users:read", session=test_db_session)
@@ -509,5 +514,5 @@ if __name__ == "__main__":
             "--cov-report=term-missing",
             "-m",
             "integration",
-        ]
+        ],
     )

@@ -586,7 +586,6 @@ class TestIntentAnalysis:
             patch("src.core.query_counselor.HybridRouter") as mock_hybrid_router,
             patch("src.core.query_counselor.get_model_registry") as mock_get_registry,
         ):
-
             mock_registry = Mock()
             mock_registry.select_best_model.return_value = "test-model-id"
             mock_get_registry.return_value = mock_registry
@@ -616,7 +615,6 @@ class TestIntentAnalysis:
             patch("src.core.query_counselor.HybridRouter") as mock_hybrid_router,
             patch("src.core.query_counselor.get_model_registry") as mock_get_registry,
         ):
-
             mock_registry = Mock()
             mock_registry.select_best_model.side_effect = Exception("Model selection failed")
             mock_get_registry.return_value = mock_registry

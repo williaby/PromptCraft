@@ -369,7 +369,7 @@ class TestAuthSimpleIntegration:
 
         # Make multiple concurrent requests
         responses = []
-        for i in range(3):
+        for _ in range(3):
             response = test_client.get("/user-info", headers=headers)
             responses.append(response)
 

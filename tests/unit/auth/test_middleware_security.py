@@ -116,7 +116,7 @@ class TestAuthenticationMiddleware:
             mock_request.url.path = path
             call_next = AsyncMock(return_value=JSONResponse({"docs": "allowed"}))
 
-            response = await middleware.dispatch(mock_request, call_next)
+            await middleware.dispatch(mock_request, call_next)
 
             call_next.assert_called_with(mock_request)
 
@@ -126,7 +126,7 @@ class TestAuthenticationMiddleware:
         mock_request.url.path = "/favicon.ico"
         call_next = AsyncMock(return_value="favicon_response")
 
-        response = await middleware.dispatch(mock_request, call_next)
+        await middleware.dispatch(mock_request, call_next)
 
         call_next.assert_called_once_with(mock_request)
 
@@ -141,14 +141,15 @@ class TestAuthenticationMiddleware:
         async def mock_auth_request(request):
             raise AuthenticationError("No token provided")
 
-        with patch.object(middleware, "_authenticate_request", side_effect=mock_auth_request):
-            with patch.object(middleware, "_create_auth_error_response") as mock_error_response:
-                mock_error_response.return_value = JSONResponse(
-                    {"error": "Authentication required"},
-                    status_code=401,
-                )
-                response = await middleware.dispatch(mock_request, call_next)
-
+        with (
+            patch.object(middleware, "_authenticate_request", side_effect=mock_auth_request),
+            patch.object(middleware, "_create_auth_error_response") as mock_error_response,
+        ):
+            mock_error_response.return_value = JSONResponse(
+                {"error": "Authentication required"},
+                status_code=401,
+            )
+            response = await middleware.dispatch(mock_request, call_next)
         # Should not call next middleware
         call_next.assert_not_called()
         # Should return 401 response
@@ -207,15 +208,17 @@ class TestAuthenticationMiddleware:
         async def mock_auth_request(request):
             return mock_user
 
-        with patch.object(middleware_with_db, "_authenticate_request", side_effect=mock_auth_request):
-            with patch.object(middleware_with_db, "_log_authentication_event") as mock_log:
-                with patch.object(middleware_with_db, "_update_user_session") as mock_update_session:
-                    response = await middleware_with_db.dispatch(mock_request, call_next)
+        with (
+            patch.object(middleware_with_db, "_authenticate_request", side_effect=mock_auth_request),
+            patch.object(middleware_with_db, "_log_authentication_event") as mock_log,
+            patch.object(middleware_with_db, "_update_user_session") as mock_update_session,
+        ):
+            await middleware_with_db.dispatch(mock_request, call_next)
 
-                    # Should log authentication event for database-enabled middleware
-                    mock_log.assert_called_once()
-                    # Should also update user session
-                    mock_update_session.assert_called_once()
+            # Should log authentication event for database-enabled middleware
+            mock_log.assert_called_once()
+            # Should also update user session
+            mock_update_session.assert_called_once()
 
     def test_extract_auth_token_no_headers(self, middleware, mock_request):
         """Test token extraction with no headers."""
@@ -408,12 +411,12 @@ class TestSecurityEdgeCases:
                 assert isinstance(result, (str, type(None)))  # Should not crash
             except Exception as e:
                 # Should not throw exceptions during extraction
-                assert False, f"Token extraction should not crash: {e}"
+                pytest.fail(f"Token extraction should not crash: {e}")
 
     def test_path_traversal_protection(self, middleware):
         """Test protection against path traversal in excluded paths."""
         mock_request = Mock(spec=Request)
-        call_next = AsyncMock()
+        AsyncMock()
 
         # Test path traversal attempts
         malicious_paths = [

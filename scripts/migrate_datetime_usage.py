@@ -224,7 +224,6 @@ class DatetimeMigrationTool:
             # Analyze file context
             context = self.analyze_file_context(file_path)
             content = file_path.read_text(encoding="utf-8")
-            original_content = content
 
             # Skip files that already use datetime_compat extensively
             if context.existing_datetime_compat:

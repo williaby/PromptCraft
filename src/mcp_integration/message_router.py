@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 MCP Message Router and Dispatcher
 
@@ -13,8 +10,10 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
+from src.utils.datetime_compat import utc_now
 from src.utils.logging_mixin import LoggerMixin
 
 from .connection_bridge import ActiveConnection
@@ -55,6 +54,7 @@ class MCPMessageRouter(LoggerMixin):
         self.method_registry = MCPMethodRegistry()
         self.servers: dict[str, MCPServerInfo] = {}
         self.server_streams: dict[str, tuple[asyncio.StreamReader, asyncio.StreamWriter]] = {}
+        self._background_tasks: set[asyncio.Task[Any]] = set()
 
         # Register standard MCP methods
         self._register_standard_methods()
@@ -110,7 +110,10 @@ class MCPMessageRouter(LoggerMixin):
             return False
 
     async def _initialize_server(
-        self, server_name: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self,
+        server_name: str,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
     ) -> bool:
         """Initialize communication with an MCP server.
 
@@ -162,7 +165,9 @@ class MCPMessageRouter(LoggerMixin):
                 self.servers[server_name] = server_info_obj
 
                 # Start background message handler for this server
-                asyncio.create_task(self._handle_server_messages(server_name, reader, writer))
+                _task = asyncio.create_task(self._handle_server_messages(server_name, reader, writer))
+                self._background_tasks.add(_task)
+                _task.add_done_callback(self._background_tasks.discard)
 
                 # Query server capabilities
                 await self._query_server_capabilities(server_name, writer, reader)
@@ -177,7 +182,11 @@ class MCPMessageRouter(LoggerMixin):
             return False
 
     async def _send_request_and_wait(
-        self, writer: asyncio.StreamWriter, reader: asyncio.StreamReader, request: MCPRequest, timeout: float = 10.0
+        self,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader,
+        request: MCPRequest,
+        timeout: float = 10.0,
     ) -> Any | None:
         """Send a request and wait for response.
 
@@ -231,7 +240,10 @@ class MCPMessageRouter(LoggerMixin):
             return None
 
     async def _query_server_capabilities(
-        self, server_name: str, writer: asyncio.StreamWriter, reader: asyncio.StreamReader
+        self,
+        server_name: str,
+        writer: asyncio.StreamWriter,
+        reader: asyncio.StreamReader,
     ) -> None:
         """Query server for available tools, resources, and prompts.
 
@@ -273,7 +285,10 @@ class MCPMessageRouter(LoggerMixin):
             self.logger.error(f"Failed to query capabilities for {server_name}: {e}")
 
     async def _handle_server_messages(
-        self, server_name: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+        self,
+        server_name: str,
+        reader: asyncio.StreamReader,
+        writer: asyncio.StreamWriter,
     ) -> None:
         """Handle incoming messages from an MCP server.
 
@@ -417,7 +432,7 @@ class MCPMessageRouter(LoggerMixin):
                                 "collection": "PromptCraft Documents",
                                 "count": "dynamic",
                                 "access_methods": ["search_documents", "read_file"],
-                            }
+                            },
                         ),
                     },
                 ],
@@ -481,8 +496,6 @@ class MCPMessageRouter(LoggerMixin):
 
         try:
             # This would connect to PromptCraft's Read tool
-            from pathlib import Path
-
             path = Path(file_path)
 
             if not path.exists():

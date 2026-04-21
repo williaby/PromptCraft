@@ -451,7 +451,7 @@ class DynamicFunctionLoader:
 
         except Exception as e:
             # Add stack trace for debugging
-            import traceback  # noqa: PLC0415  # Error handler debugging
+            import traceback  # Error handler debugging
 
             logger.error("Function loading exception details for session %s:", session_id)
             logger.error("Exception: %s", e)
@@ -1057,15 +1057,14 @@ class DynamicFunctionLoader:
 
 
 # Global loader instance
-_global_loader: DynamicFunctionLoader | None = None
+_loader_ref: list[DynamicFunctionLoader | None] = [None]
 
 
 def get_dynamic_function_loader() -> DynamicFunctionLoader:
     """Get the global dynamic function loader instance."""
-    global _global_loader  # noqa: PLW0603
-    if _global_loader is None:
-        _global_loader = DynamicFunctionLoader()
-    return _global_loader
+    if _loader_ref[0] is None:
+        _loader_ref[0] = DynamicFunctionLoader()
+    return _loader_ref[0]
 
 
 async def initialize_dynamic_loading() -> DynamicFunctionLoader:
@@ -1115,7 +1114,6 @@ if __name__ == "__main__":
         session_results = []
 
         for scenario in test_scenarios:
-
             # Create session
             session_id = await loader.create_loading_session(
                 user_id=str(scenario["user_id"]),

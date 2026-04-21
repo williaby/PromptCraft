@@ -211,7 +211,7 @@ class MCPProtocolHandler(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Message serialization failed: {e!s}",
-            )
+            ) from e
 
     def deserialize_message(self, message_str: str) -> MCPRequest | MCPResponse | MCPError | MCPNotification:
         """Deserialize JSON string to MCP message object.
@@ -267,14 +267,14 @@ class MCPProtocolHandler(LoggerMixin):
             raise MCPProtocolError(
                 MCPStandardErrors.PARSE_ERROR,
                 f"JSON parsing failed: {e!s}",
-            )
+            ) from e
         except Exception as e:
             if isinstance(e, MCPProtocolError):
                 raise
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Message deserialization failed: {e!s}",
-            )
+            ) from e
 
     async def send_request(self, writer: asyncio.StreamWriter, request: MCPRequest) -> Any:
         """Send an MCP request and wait for response.
@@ -301,11 +301,11 @@ class MCPProtocolHandler(LoggerMixin):
             # Wait for response with timeout
             return await asyncio.wait_for(future, timeout=self.request_timeout)
 
-        except TimeoutError:
+        except TimeoutError as timeout_err:
             raise MCPProtocolError(
                 MCPStandardErrors.INTERNAL_ERROR,
                 f"Request timeout after {self.request_timeout}s",
-            )
+            ) from timeout_err
         except Exception as e:
             self.logger.error(f"Failed to send request {request.id}: {e}")
             raise

@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Tests for smart MCP server discovery system.
 
@@ -33,6 +30,7 @@ from src.mcp_integration.smart_discovery import (
     ServerRequirements,
     SmartMCPDiscovery,
 )
+from src.utils.datetime_compat import utc_now
 
 
 class TestServerConnection:
@@ -320,7 +318,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "get_cached_connection", return_value=None),
             patch.object(discovery_system, "find_existing_deployment", return_value=connection),
         ):
-
             result = await discovery_system.discover_server("test-server")
             assert result == connection
             assert discovery_system.deployment_cache["test-server"] == connection
@@ -333,10 +330,9 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "find_existing_deployment", return_value=None),
             patch.object(discovery_system.resource_monitor, "get_available_memory", return_value=100),
             patch.object(discovery_system, "try_cloud_deployment", return_value=None),
+            pytest.raises(ResourceError),
         ):
-
-            with pytest.raises(ResourceError):
-                await discovery_system.discover_server("zen-mcp")  # Requires 512MB
+            await discovery_system.discover_server("zen-mcp")  # Requires 512MB
 
     @pytest.mark.asyncio
     async def test_discover_server_cloud_fallback(self, discovery_system):
@@ -355,7 +351,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system.resource_monitor, "get_available_memory", return_value=100),
             patch.object(discovery_system, "try_cloud_deployment", return_value=cloud_connection),
         ):
-
             result = await discovery_system.discover_server("zen-mcp")
             assert result == cloud_connection
 
@@ -377,7 +372,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "deploy_server", return_value=new_connection),
             patch("filelock.FileLock") as mock_lock,
         ):
-
             mock_lock.return_value.__enter__.return_value = Mock()
 
             result = await discovery_system.discover_server("zen-mcp")
@@ -400,7 +394,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "check_process_list", return_value=connection),
             patch.object(discovery_system, "verify_health", return_value=True),
         ):
-
             result = await discovery_system.find_existing_deployment("zen-mcp")
             assert result == connection
 
@@ -419,7 +412,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system, "check_known_ports", return_value=connection),
             patch.object(discovery_system, "verify_health", return_value=False),
         ):
-
             result = await discovery_system.find_existing_deployment("zen-mcp")
             assert result is None
 
@@ -430,7 +422,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system.resource_monitor, "is_port_available", return_value=False),
             patch("requests.get") as mock_get,
         ):
-
             mock_response = Mock()
             mock_response.status_code = 200
             mock_get.return_value = mock_response
@@ -460,7 +451,6 @@ class TestSmartMCPDiscovery:
             patch.object(discovery_system.resource_monitor, "check_process_exists", return_value=True),
             patch.object(discovery_system, "extract_url_from_process", return_value="http://localhost:8000"),
         ):
-
             result = await discovery_system.check_process_list("zen-mcp")
             assert result is not None
             assert result.url == "http://localhost:8000"
@@ -495,7 +485,7 @@ class TestSmartMCPDiscovery:
         """Test checking package.json for NPX dependencies when binary not found."""
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -525,7 +515,7 @@ class TestSmartMCPDiscovery:
         """Test checking node_modules when nothing is found."""
         import os
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -666,7 +656,6 @@ class TestSmartMCPDiscovery:
                 patch.object(discovery_system, "verify_health", return_value=True),
                 patch("pathlib.Path.exists", return_value=True),
             ):
-
                 # Mock zen path exists
                 original_exists = Path.exists
 
@@ -686,9 +675,8 @@ class TestSmartMCPDiscovery:
     @pytest.mark.asyncio
     async def test_deploy_zen_server_no_path_found(self, discovery_system):
         """Test deploying zen-mcp server when no valid path is found."""
-        with patch("pathlib.Path.exists", return_value=False):
-            with pytest.raises(RuntimeError, match="Could not deploy"):
-                await discovery_system.deploy_zen_server("zen-mcp")
+        with patch("pathlib.Path.exists", return_value=False), pytest.raises(RuntimeError, match="Could not deploy"):
+            await discovery_system.deploy_zen_server("zen-mcp")
 
     @pytest.mark.asyncio
     async def test_deploy_npx_server(self, discovery_system):
@@ -708,9 +696,11 @@ class TestSmartMCPDiscovery:
 
     def test_find_available_port_no_ports(self, discovery_system):
         """Test finding available port when none are available."""
-        with patch.object(discovery_system.resource_monitor, "is_port_available", return_value=False):
-            with pytest.raises(RuntimeError, match="No available ports"):
-                discovery_system.find_available_port(8000, 8002)
+        with (
+            patch.object(discovery_system.resource_monitor, "is_port_available", return_value=False),
+            pytest.raises(RuntimeError, match="No available ports"),
+        ):
+            discovery_system.find_available_port(8000, 8002)
 
     def test_verify_health_http_success(self, discovery_system):
         """Test health verification for HTTP server."""
@@ -830,17 +820,17 @@ class TestSmartMCPDiscoveryIntegration:
             discovery = SmartMCPDiscovery()
 
         # Simulate low memory environment
-        with patch.object(discovery.resource_monitor, "get_available_memory", return_value=100):
+        with (
+            patch.object(discovery.resource_monitor, "get_available_memory", return_value=100),
+            patch.object(discovery, "find_existing_deployment", return_value=None),
+        ):
             # Mock find_existing_deployment to return None so we hit resource constraints
-            with patch.object(discovery, "find_existing_deployment", return_value=None):
-                # Should fall back to cloud for zen-mcp (requires 512MB)
-                with patch.object(discovery, "try_cloud_deployment", return_value=None):
-                    with pytest.raises(ResourceError):
-                        await discovery.discover_server("zen-mcp")
-
-                # Should work for context7 (requires 100MB)
-                result = await discovery.discover_server("context7")
-                assert result is not None
+            # Should fall back to cloud for zen-mcp (requires 512MB)
+            with patch.object(discovery, "try_cloud_deployment", return_value=None), pytest.raises(ResourceError):
+                await discovery.discover_server("zen-mcp")
+            # Should work for context7 (requires 100MB)
+            result = await discovery.discover_server("context7")
+            assert result is not None
 
     @pytest.mark.asyncio
     async def test_multi_strategy_discovery_fallback(self):
@@ -856,7 +846,6 @@ class TestSmartMCPDiscoveryIntegration:
             patch.object(discovery, "check_node_modules", return_value=None),
             patch.object(discovery, "check_lock_files", return_value=None),
         ):
-
             # Mock environment variables strategy to succeed
             env_connection = ServerConnection(
                 url="http://localhost:8000",
@@ -870,7 +859,6 @@ class TestSmartMCPDiscoveryIntegration:
                 patch.object(discovery, "check_env_variables", return_value=env_connection),
                 patch.object(discovery, "verify_health", return_value=True),
             ):
-
                 result = await discovery.find_existing_deployment("zen-mcp")
                 assert result == env_connection
 
@@ -888,7 +876,6 @@ class TestSmartMCPDiscoveryIntegration:
                 patch.object(discovery.resource_monitor, "get_available_memory", return_value=1024),
                 patch("filelock.FileLock") as mock_lock,
             ):
-
                 mock_lock.return_value.__enter__.return_value = Mock()
 
                 # Mock deployment to return a connection
@@ -934,7 +921,6 @@ class TestSmartMCPDiscoveryIntegration:
 
         # Test that resource monitor methods work
         with patch("psutil.virtual_memory") as mock_memory, patch("psutil.cpu_percent", return_value=50.0):
-
             mock_memory.return_value = Mock(available=1024 * 1024 * 1024)  # 1GB
 
             memory = monitor.get_available_memory()

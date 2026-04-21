@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Comprehensive tests for Standards Discovery System.
 
@@ -9,13 +6,14 @@ and StandardsManager classes, testing standards discovery, caching, content load
 and compliance validation across project and user standard directories.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from src.standards.discovery import StandardDefinition, StandardsDiscoverySystem, StandardsManager
+from src.utils.datetime_compat import utc_from_timestamp, utc_now
 
 
 class TestStandardDefinition:
@@ -111,14 +109,16 @@ class TestStandardsDiscoverySystem:
 
     def test_get_available_standards_empty_cache(self, discovery_system):
         """Test getting available standards when cache is empty."""
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
-                discovery_system._standards_cache = {}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh,
+        ):
+            discovery_system._standards_cache = {}
 
-                standards = discovery_system.get_available_standards()
+            standards = discovery_system.get_available_standards()
 
-                assert standards == []
-                mock_refresh.assert_called_once()
+            assert standards == []
+            mock_refresh.assert_called_once()
 
     def test_get_available_standards_with_cache(self, discovery_system):
         """Test getting available standards when cache has standards."""
@@ -140,7 +140,7 @@ class TestStandardsDiscoverySystem:
         with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
             discovery_system._standards_cache = {"existing": Mock()}
 
-            standards = discovery_system.get_available_standards(refresh_cache=True)
+            discovery_system.get_available_standards(refresh_cache=True)
 
             mock_refresh.assert_called_once()
 
@@ -168,14 +168,16 @@ class TestStandardsDiscoverySystem:
         """Test getting a standard that triggers cache refresh."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(discovery_system, "_should_refresh_cache", return_value=True):
-            with patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh:
-                discovery_system._standards_cache = {"test-standard": mock_standard}
+        with (
+            patch.object(discovery_system, "_should_refresh_cache", return_value=True),
+            patch.object(discovery_system, "_refresh_standards_cache") as mock_refresh,
+        ):
+            discovery_system._standards_cache = {"test-standard": mock_standard}
 
-                result = discovery_system.get_standard("test-standard")
+            result = discovery_system.get_standard("test-standard")
 
-                assert result == mock_standard
-                mock_refresh.assert_called_once()
+            assert result == mock_standard
+            mock_refresh.assert_called_once()
 
     def test_get_standard_content_success(self, discovery_system):
         """Test getting standard content successfully."""
@@ -245,58 +247,66 @@ class TestStandardsDiscoverySystem:
         """Test discovering a standard from project source."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(discovery_system, "_search_project_standards", return_value=mock_standard):
-            with patch.object(discovery_system, "_search_user_standards", return_value=None):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-                    result = discovery_system.discover_standard("test-standard")
+        with (
+            patch.object(discovery_system, "_search_project_standards", return_value=mock_standard),
+            patch.object(discovery_system, "_search_user_standards", return_value=None),
+            patch.object(discovery_system, "_search_default_standards", return_value=None),
+        ):
+            result = discovery_system.discover_standard("test-standard")
 
-                    assert result == mock_standard
-                    assert result.source_type == "project"
+            assert result == mock_standard
+            assert result.source_type == "project"
 
     def test_discover_standard_from_user_fallback(self, discovery_system):
         """Test discovering a standard from user source as fallback."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(discovery_system, "_search_project_standards", return_value=None):
-            with patch.object(discovery_system, "_search_user_standards", return_value=mock_standard):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-                    result = discovery_system.discover_standard("test-standard")
+        with (
+            patch.object(discovery_system, "_search_project_standards", return_value=None),
+            patch.object(discovery_system, "_search_user_standards", return_value=mock_standard),
+            patch.object(discovery_system, "_search_default_standards", return_value=None),
+        ):
+            result = discovery_system.discover_standard("test-standard")
 
-                    assert result == mock_standard
-                    assert result.source_type == "user"
+            assert result == mock_standard
+            assert result.source_type == "user"
 
     def test_discover_standard_not_found(self, discovery_system):
         """Test discovering a standard that doesn't exist anywhere."""
-        with patch.object(discovery_system, "_search_project_standards", return_value=None):
-            with patch.object(discovery_system, "_search_user_standards", return_value=None):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-                    result = discovery_system.discover_standard("nonexistent")
+        with (
+            patch.object(discovery_system, "_search_project_standards", return_value=None),
+            patch.object(discovery_system, "_search_user_standards", return_value=None),
+            patch.object(discovery_system, "_search_default_standards", return_value=None),
+        ):
+            result = discovery_system.discover_standard("nonexistent")
 
-                    assert result is None
+            assert result is None
 
     def test_discover_standard_with_search_error(self, discovery_system):
         """Test discovering a standard when search methods raise exceptions."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch.object(
-            discovery_system, "_search_project_standards", side_effect=Exception("Project search failed")
+        with (
+            patch.object(discovery_system, "_search_project_standards", side_effect=Exception("Project search failed")),
+            patch.object(discovery_system, "_search_user_standards", return_value=mock_standard),
+            patch.object(discovery_system, "_search_default_standards", return_value=None),
         ):
-            with patch.object(discovery_system, "_search_user_standards", return_value=mock_standard):
-                with patch.object(discovery_system, "_search_default_standards", return_value=None):
-                    result = discovery_system.discover_standard("test-standard")
+            result = discovery_system.discover_standard("test-standard")
 
-                    assert result == mock_standard
-                    assert result.source_type == "user"
+            assert result == mock_standard
+            assert result.source_type == "user"
 
     def test_search_project_standards_success(self, discovery_system):
         """Test searching for standard in project directory."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch.object(discovery_system, "_create_standard_definition", return_value=mock_standard):
-                result = discovery_system._search_project_standards("test-standard")
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(discovery_system, "_create_standard_definition", return_value=mock_standard),
+        ):
+            result = discovery_system._search_project_standards("test-standard")
 
-                assert result == mock_standard
+            assert result == mock_standard
 
     def test_search_project_standards_directory_not_exists(self, discovery_system):
         """Test searching for standard when project directory doesn't exist."""
@@ -321,11 +331,13 @@ class TestStandardsDiscoverySystem:
         """Test searching for standard in user directory."""
         mock_standard = Mock(spec=StandardDefinition)
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch.object(discovery_system, "_create_standard_definition", return_value=mock_standard):
-                result = discovery_system._search_user_standards("test-standard")
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(discovery_system, "_create_standard_definition", return_value=mock_standard),
+        ):
+            result = discovery_system._search_user_standards("test-standard")
 
-                assert result == mock_standard
+            assert result == mock_standard
 
     def test_search_user_standards_directory_not_exists(self, discovery_system):
         """Test searching for standard when user directory doesn't exist."""
@@ -357,7 +369,7 @@ class TestStandardsDiscoverySystem:
         assert standard.source_type == "project"
         assert standard.content == "# Simple Standard\nContent here"
         assert standard.version is None
-        assert standard.last_updated == datetime.fromtimestamp(1234567890.0)
+        assert standard.last_updated == utc_from_timestamp(1234567890.0)
 
     def test_create_standard_definition_with_yaml_frontmatter(self, discovery_system):
         """Test creating a standard definition with YAML frontmatter."""
@@ -411,7 +423,7 @@ invalid: yaml: content
         mock_path = Mock(spec=Path)
         mock_path.read_text.side_effect = OSError("File read error")
 
-        with pytest.raises(IOError):
+        with pytest.raises(OSError, match=r"File read error"):
             discovery_system._create_standard_definition("test-standard", mock_path, "project")
 
     def test_refresh_standards_cache(self, discovery_system):
@@ -451,16 +463,18 @@ invalid: yaml: content
                 return mock_standard3
             return None
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch("pathlib.Path.glob", mock_glob):
-                with patch.object(discovery_system, "discover_standard", side_effect=mock_discover_standard):
-                    discovery_system._refresh_standards_cache()
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch("pathlib.Path.glob", mock_glob),
+            patch.object(discovery_system, "discover_standard", side_effect=mock_discover_standard),
+        ):
+            discovery_system._refresh_standards_cache()
 
-                    assert len(discovery_system._standards_cache) == 3
-                    assert discovery_system._standards_cache["standard1"] == mock_standard1
-                    assert discovery_system._standards_cache["standard2"] == mock_standard2
-                    assert discovery_system._standards_cache["standard3"] == mock_standard3
-                    assert discovery_system._cache_timestamp is not None
+            assert len(discovery_system._standards_cache) == 3
+            assert discovery_system._standards_cache["standard1"] == mock_standard1
+            assert discovery_system._standards_cache["standard2"] == mock_standard2
+            assert discovery_system._standards_cache["standard3"] == mock_standard3
+            assert discovery_system._cache_timestamp is not None
 
     def test_refresh_standards_cache_no_directories(self, discovery_system):
         """Test refreshing cache when no directories exist."""
@@ -475,30 +489,34 @@ invalid: yaml: content
         discovery_system._standards_cache = {"standard1": Mock(), "standard2": Mock()}
         discovery_system._cache_timestamp = utc_now() - timedelta(seconds=100)
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch.object(discovery_system, "get_available_standards", return_value=["standard1", "standard2"]):
-                status = discovery_system.get_discovery_status()
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch.object(discovery_system, "get_available_standards", return_value=["standard1", "standard2"]),
+        ):
+            status = discovery_system.get_discovery_status()
 
-                expected_project_path = str(discovery_system.project_standards_path)
-                expected_user_path = str(discovery_system.user_standards_path)
+            expected_project_path = str(discovery_system.project_standards_path)
+            expected_user_path = str(discovery_system.user_standards_path)
 
-                assert status["project_standards_path"] == expected_project_path
-                assert status["user_standards_path"] == expected_user_path
-                assert status["project_standards_available"] is True
-                assert status["user_standards_available"] is True
-                assert status["cached_standards_count"] == 2
-                assert abs(status["cache_age_seconds"] - 100) < 1  # Allow small timing differences
-                assert status["available_standards"] == ["standard1", "standard2"]
+            assert status["project_standards_path"] == expected_project_path
+            assert status["user_standards_path"] == expected_user_path
+            assert status["project_standards_available"] is True
+            assert status["user_standards_available"] is True
+            assert status["cached_standards_count"] == 2
+            assert abs(status["cache_age_seconds"] - 100) < 1  # Allow small timing differences
+            assert status["available_standards"] == ["standard1", "standard2"]
 
     def test_get_discovery_status_no_cache_timestamp(self, discovery_system):
         """Test getting discovery status when no cache timestamp is set."""
         discovery_system._cache_timestamp = None
 
-        with patch("pathlib.Path.exists", return_value=False):
-            with patch.object(discovery_system, "get_available_standards", return_value=[]):
-                status = discovery_system.get_discovery_status()
+        with (
+            patch("pathlib.Path.exists", return_value=False),
+            patch.object(discovery_system, "get_available_standards", return_value=[]),
+        ):
+            status = discovery_system.get_discovery_status()
 
-                assert status["cache_age_seconds"] is None
+            assert status["cache_age_seconds"] is None
 
 
 class TestStandardsManager:
@@ -531,7 +549,9 @@ class TestStandardsManager:
     def test_get_linting_standard(self, standards_manager):
         """Test getting linting standard content."""
         with patch.object(
-            standards_manager.discovery_system, "get_standard_content", return_value="# Linting Standard"
+            standards_manager.discovery_system,
+            "get_standard_content",
+            return_value="# Linting Standard",
         ):
             content = standards_manager.get_linting_standard()
 
@@ -557,7 +577,9 @@ class TestStandardsManager:
     def test_get_security_standard(self, standards_manager):
         """Test getting security standard content."""
         with patch.object(
-            standards_manager.discovery_system, "get_standard_content", return_value="# Security Standard"
+            standards_manager.discovery_system,
+            "get_standard_content",
+            return_value="# Security Standard",
         ):
             content = standards_manager.get_security_standard()
 
@@ -658,44 +680,46 @@ Follow PEP 8 guidelines.
                 return python_content
             return ""
 
-        with patch("pathlib.Path.exists", mock_exists):
-            with patch("pathlib.Path.glob", mock_glob):
-                with patch("pathlib.Path.stat", mock_stat):
-                    with patch("pathlib.Path.read_text", mock_read_text):
-                        with patch("yaml.safe_load") as mock_yaml:
-                            mock_yaml.return_value = {
-                                "title": "Project Linting Standard",
-                                "description": "Project-specific linting rules",
-                                "version": "1.2.0",
-                            }
+        with (
+            patch("pathlib.Path.exists", mock_exists),
+            patch("pathlib.Path.glob", mock_glob),
+            patch("pathlib.Path.stat", mock_stat),
+            patch("pathlib.Path.read_text", mock_read_text),
+            patch("yaml.safe_load") as mock_yaml,
+        ):
+            mock_yaml.return_value = {
+                "title": "Project Linting Standard",
+                "description": "Project-specific linting rules",
+                "version": "1.2.0",
+            }
 
-                            # Test getting available standards
-                            standards = manager.discovery_system.get_available_standards()
-                            assert set(standards) == {"linting", "python"}
+            # Test getting available standards
+            standards = manager.discovery_system.get_available_standards()
+            assert set(standards) == {"linting", "python"}
 
-                            # Test getting specific standards
-                            linting_standard = manager.discovery_system.get_standard("linting")
-                            assert linting_standard is not None
-                            assert linting_standard.source_type == "project"
-                            assert linting_standard.name == "Project Linting Standard"
-                            assert linting_standard.version == "1.2.0"
+            # Test getting specific standards
+            linting_standard = manager.discovery_system.get_standard("linting")
+            assert linting_standard is not None
+            assert linting_standard.source_type == "project"
+            assert linting_standard.name == "Project Linting Standard"
+            assert linting_standard.version == "1.2.0"
 
-                            python_standard = manager.discovery_system.get_standard("python")
-                            assert python_standard is not None
-                            assert python_standard.source_type == "user"
+            python_standard = manager.discovery_system.get_standard("python")
+            assert python_standard is not None
+            assert python_standard.source_type == "user"
 
-                            # Test getting standard content via manager methods
-                            linting_content_result = manager.get_linting_standard()
-                            assert "# Linting Rules" in linting_content_result
+            # Test getting standard content via manager methods
+            linting_content_result = manager.get_linting_standard()
+            assert "# Linting Rules" in linting_content_result
 
-                            python_content_result = manager.get_python_standard()
-                            assert "# Python Standard" in python_content_result
+            python_content_result = manager.get_python_standard()
+            assert "# Python Standard" in python_content_result
 
-                            # Test compliance validation
-                            compliance = manager.validate_project_compliance(["linting", "python", "nonexistent"])
-                            assert compliance["linting"] is True
-                            assert compliance["python"] is True
-                            assert compliance["nonexistent"] is False
+            # Test compliance validation
+            compliance = manager.validate_project_compliance(["linting", "python", "nonexistent"])
+            assert compliance["linting"] is True
+            assert compliance["python"] is True
+            assert compliance["nonexistent"] is False
 
 
 class TestStandardsModuleExports:

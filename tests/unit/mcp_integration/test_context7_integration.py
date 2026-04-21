@@ -1,6 +1,3 @@
-from src.utils.datetime_compat import utc_now
-
-
 """
 Comprehensive tests for Context7 MCP integration functionality.
 
@@ -8,7 +5,6 @@ Tests cover Context7Client and Context7Integration classes with full
 method coverage including error handling, search operations, and tool integration.
 """
 
-from datetime import datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -22,6 +18,7 @@ from src.mcp_integration.context7_integration import (
 from src.mcp_integration.message_router import MCPMessageRouter
 from src.mcp_integration.protocol_handler import MCPProtocolError, MCPStandardErrors
 from src.mcp_integration.tool_router import MCPToolRouter, ToolExecutionResult
+from src.utils.datetime_compat import utc_now
 
 
 class TestContext7Document:

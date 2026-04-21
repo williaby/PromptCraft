@@ -16,8 +16,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 from sentence_transformers import SentenceTransformer
 
-from ..config.qdrant_settings import qdrant_settings
-from ..core.vector_stores.collection_manager import QdrantCollectionManager
+from src.config.qdrant_settings import qdrant_settings
+from src.core.vector_stores.collection_manager import QdrantCollectionManager
 
 
 class KnowledgeIngestionPipeline:
@@ -87,7 +87,7 @@ class KnowledgeIngestionPipeline:
     async def _process_markdown_file(self, file_path: Path, collection_name: str) -> list[dict[str, Any]]:
         """Process a single markdown file into document chunks."""
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 content = f.read()
 
             # Split content into semantic chunks
@@ -130,9 +130,8 @@ class KnowledgeIngestionPipeline:
         # Split by headers first
         sections = content.split("\n## ")
 
-        for i, section in enumerate(sections):
-            if i > 0:  # Add back the header marker for non-first sections
-                section = "## " + section
+        for i, raw_section in enumerate(sections):
+            section = ("## " + raw_section) if i > 0 else raw_section
 
             # If section is too long, split by paragraphs
             if len(section) > max_chunk_size:

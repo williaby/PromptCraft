@@ -248,7 +248,7 @@ class MultiJourneyInterface(LoggerMixin):
             # Create a simple development admin interface for local use
             self.admin_interface = self._create_dev_admin_interface()
 
-    def _create_dev_admin_interface(self):
+    def _create_dev_admin_interface(self) -> object:
         """Create a simple development admin interface when auth fails."""
 
         class DevAdminInterface:
@@ -338,8 +338,8 @@ class MultiJourneyInterface(LoggerMixin):
                 <span style="font-size: 14px; color: #64748b; margin-left: 10px;">Transform Ideas into Intelligence</span>
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
-                <div style="background: {tier_info['bg']}; color: {tier_info['text']}; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500;">
-                    {tier_info['icon']} {tier_display} User
+                <div style="background: {tier_info["bg"]}; color: {tier_info["text"]}; padding: 6px 12px; border-radius: 6px; font-size: 14px; font-weight: 500;">
+                    {tier_info["icon"]} {tier_display} User
                 </div>
                 <div id="model-selector" style="background: #f1f5f9; padding: 6px 12px; border-radius: 6px; font-size: 14px; border: 1px solid #cbd5e1;">
                     Model: <span id="current-model">gpt-4o-mini</span>
@@ -817,7 +817,6 @@ class MultiJourneyInterface(LoggerMixin):
         """
 
         with gr.Blocks(css=custom_css, title="PromptCraft-Hybrid", theme=gr.themes.Soft()) as interface:
-
             # Session State Management (USER ISOLATION)
             session_state = gr.State(
                 value={
@@ -1433,11 +1432,11 @@ class MultiJourneyInterface(LoggerMixin):
                 filename = f"promptcraft_export_{timestamp}.md"
 
                 # Write to temporary file
-                temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False)
-                temp_file.write(export_content)
-                temp_file.close()
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as temp_file:
+                    temp_file.write(export_content)
+                    temp_file_name = temp_file.name
 
-                return temp_file.name, f"Download ready: {filename}"
+                return temp_file_name, f"Download ready: {filename}"
 
             def load_example() -> str:
                 """Load example content."""
@@ -1678,7 +1677,7 @@ class MultiJourneyInterface(LoggerMixin):
                     # Execute through zen routing
                     import asyncio
 
-                    async def execute_async():
+                    async def execute_async() -> tuple[str, str, str]:
                         try:
                             # Get routing recommendation first
                             routing_analysis = await zen_client.get_model_recommendations(prompt)
@@ -1723,7 +1722,7 @@ class MultiJourneyInterface(LoggerMixin):
                                             <li><strong>Max Tokens:</strong> {max_tok}</li>
                                             <li><strong>Response Length:</strong> {len(response_content)} characters</li>
                                             <li><strong>Processing Time:</strong> {response_time:.2f} seconds</li>
-                                            <li><strong>Cost Optimization:</strong> {'✅ Optimized' if estimated_cost == 0.0 else '💰 Premium'}</li>
+                                            <li><strong>Cost Optimization:</strong> {"✅ Optimized" if estimated_cost == 0.0 else "💰 Premium"}</li>
                                         </ul>
                                     </div>
                                     """,
@@ -1985,7 +1984,6 @@ class MultiJourneyInterface(LoggerMixin):
             gr.Error: If content validation fails
         """
         try:
-
             # Content-based MIME detection using magic numbers
             try:
                 if magic is not None:
@@ -2168,8 +2166,8 @@ class MultiJourneyInterface(LoggerMixin):
                     # Check if total uncompressed size is too large
                     if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
-                            f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed expansion is {max_uncompressed_size / (1024*1024):.0f}MB. "
+                            f"❌ Security Error: Archive would expand to {total_uncompressed / (1024 * 1024):.1f}MB. "
+                            f"Maximum allowed expansion is {max_uncompressed_size / (1024 * 1024):.0f}MB. "
                             f"This could be an archive bomb.",
                         )
 
@@ -2227,15 +2225,15 @@ class MultiJourneyInterface(LoggerMixin):
                             if member.size > max_uncompressed_size:
                                 raise gr.Error(
                                     f"❌ Security Error: Archive contains file '{member.name}' "
-                                    f"that would expand to {member.size / (1024*1024):.1f}MB. "
+                                    f"that would expand to {member.size / (1024 * 1024):.1f}MB. "
                                     f"This could be an archive bomb.",
                                 )
 
                     # Check overall expansion
                     if total_uncompressed > max_uncompressed_size:
                         raise gr.Error(
-                            f"❌ Security Error: Archive would expand to {total_uncompressed / (1024*1024):.1f}MB. "
-                            f"Maximum allowed is {max_uncompressed_size / (1024*1024):.0f}MB.",
+                            f"❌ Security Error: Archive would expand to {total_uncompressed / (1024 * 1024):.1f}MB. "
+                            f"Maximum allowed is {max_uncompressed_size / (1024 * 1024):.0f}MB.",
                         )
 
                     # Check compression ratio
@@ -2358,7 +2356,7 @@ class MultiJourneyInterface(LoggerMixin):
         fallback_prompt = f"""
 **Enhanced Prompt (Fallback Mode)**
 
-Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_input) > self.MAX_FALLBACK_CHARS else ""}
+Your original input: {text_input[: self.MAX_FALLBACK_CHARS]}{"..." if len(text_input) > self.MAX_FALLBACK_CHARS else ""}
 
 **Note**: The advanced enhancement system is temporarily unavailable. Here's a basic structure to help you proceed:
 
@@ -2366,7 +2364,7 @@ Your original input: {text_input[:self.MAX_FALLBACK_CHARS]}{"..." if len(text_in
 Please provide more context about your specific goals and requirements.
 
 ## Request
-{text_input[:self.MAX_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_REQUEST_CHARS else ""}
+{text_input[: self.MAX_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_REQUEST_CHARS else ""}
 
 ## Suggested Next Steps
 1. Clarify your specific objectives
@@ -2382,7 +2380,7 @@ Please provide more context about your specific goals and requirements.
             fallback_prompt,  # enhanced_prompt_with_analysis
             fallback_prompt,  # clean_enhanced_prompt (same as detailed in fallback mode)
             "Basic context analysis - please specify your role and goals",  # context_analysis
-            f"Request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
+            f"Request: {text_input[: self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "Examples will be provided when system is fully available",  # examples_section
             "Advanced frameworks temporarily unavailable",  # augmentations_section
             "Please specify your preferred tone and format",  # tone_format
@@ -2396,7 +2394,7 @@ Please provide more context about your specific goals and requirements.
         timeout_prompt = f"""
 **Enhanced Prompt (Timeout Recovery)**
 
-Your request: {text_input[:self.MAX_TIMEOUT_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_CHARS else ""}
+Your request: {text_input[: self.MAX_TIMEOUT_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_CHARS else ""}
 
 **⏱️ Processing Timeout Notice**: Your request is complex and requires more processing time than currently available.
 
@@ -2407,7 +2405,7 @@ To get faster results, try:
 3. **Clear context**: Provide essential background only
 
 ## Quick Enhancement
-Your core request appears to be: {text_input[:self.MAX_TIMEOUT_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_REQUEST_CHARS else ""}
+Your core request appears to be: {text_input[: self.MAX_TIMEOUT_REQUEST_CHARS]}{"..." if len(text_input) > self.MAX_TIMEOUT_REQUEST_CHARS else ""}
 
 Consider refining this to be more specific and actionable.
 
@@ -2419,7 +2417,7 @@ Consider refining this to be more specific and actionable.
             timeout_prompt,  # enhanced_prompt_with_analysis
             timeout_prompt,  # clean_enhanced_prompt (same as detailed in timeout mode)
             "⏱️ Timeout - please provide more focused context",  # context_analysis
-            f"Simplified request needed: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
+            f"Simplified request needed: {text_input[: self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "⏱️ Examples unavailable due to timeout - try simpler request",  # examples_section
             "⏱️ Advanced processing unavailable - reduce complexity",  # augmentations_section
             "Suggest concise, direct communication style",  # tone_format
@@ -2433,12 +2431,12 @@ Consider refining this to be more specific and actionable.
         error_prompt = f"""
 **Enhanced Prompt (Error Recovery)**
 
-Your input: {text_input[:self.MAX_PREVIEW_CHARS]}{"..." if len(text_input) > self.MAX_PREVIEW_CHARS else ""}
+Your input: {text_input[: self.MAX_PREVIEW_CHARS]}{"..." if len(text_input) > self.MAX_PREVIEW_CHARS else ""}
 
 **🔧 System Recovery Mode**: An error occurred during processing, but we've created this basic enhancement to help you proceed.
 
 ## Basic Structure
-**Objective**: {text_input[:self.MAX_SUMMARY_CHARS]}{"..." if len(text_input) > self.MAX_SUMMARY_CHARS else ""}
+**Objective**: {text_input[: self.MAX_SUMMARY_CHARS]}{"..." if len(text_input) > self.MAX_SUMMARY_CHARS else ""}
 
 **Recommended approach**:
 1. Define clear, specific goals
@@ -2460,7 +2458,7 @@ If this error persists:
             error_prompt,  # enhanced_prompt_with_analysis
             error_prompt,  # clean_enhanced_prompt (same as detailed in error mode)
             "🔧 Error recovery - basic context structure provided",  # context_analysis
-            f"Core request: {text_input[:self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
+            f"Core request: {text_input[: self.MAX_SUMMARY_CHARS]}{'...' if len(text_input) > self.MAX_SUMMARY_CHARS else ''}",  # request_specification
             "🔧 Examples temporarily unavailable - error recovery mode",  # examples_section
             "🔧 Advanced features unavailable - contact support if persistent",  # augmentations_section
             "Clear, direct communication recommended",  # tone_format
