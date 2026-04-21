@@ -286,7 +286,7 @@ async def rotate_service_token(
                 )
             return TokenCreationResponse(
                 token_id=new_token_id,
-                token_name="rotated_token",  # nosec B106  # noqa: S106
+                token_name="rotated_token",  # nosec B106
                 token_value=new_token_value,
                 expires_at=None,
                 metadata={"rotated_by": current_user.email, "rotation_reason": reason},
@@ -302,7 +302,7 @@ async def rotate_service_token(
 @auth_router.get("/tokens", response_model=list[TokenInfo])
 async def list_service_tokens(
     request: Request,  # noqa: ARG001
-    current_user: AuthenticatedUser = Depends(require_admin_role),  # noqa: ARG001
+    _current_user: AuthenticatedUser = Depends(require_admin_role),
     manager: ServiceTokenManager = Depends(get_service_token_manager),
 ) -> list[TokenInfo]:
     """List all service tokens (admin only).
@@ -352,7 +352,7 @@ async def get_token_analytics(
     request: Request,  # noqa: ARG001
     token_identifier: str,
     days: int = Query(30, description="Number of days to analyze"),
-    current_user: AuthenticatedUser = Depends(require_admin_role),  # noqa: ARG001
+    _current_user: AuthenticatedUser = Depends(require_admin_role),
     manager: ServiceTokenManager = Depends(get_service_token_manager),
 ) -> dict:
     """Get detailed analytics for a specific service token (admin only).

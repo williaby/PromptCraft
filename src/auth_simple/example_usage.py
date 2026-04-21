@@ -97,7 +97,7 @@ async def get_user_profile(user: Any = Depends(require_auth)) -> dict[str, Any]:
 
 
 @app.get("/api/user/dashboard")
-async def user_dashboard(_request: Request, user: Any = Depends(require_auth)) -> dict[str, Any]:
+async def user_dashboard(request: Request, user: Any = Depends(require_auth)) -> dict[str, Any]:  # noqa: ARG001
     """User dashboard (requires authentication)."""
     cf_context = user.get("cf_context", {})
 
@@ -153,7 +153,7 @@ async def check_auth_status(request: Request) -> dict[str, Any]:
 
 # Error handlers
 @app.exception_handler(401)
-async def unauthorized_handler(_request: Request, _exc: Any) -> JSONResponse:
+async def unauthorized_handler(request: Request, _exc: Any) -> JSONResponse:  # noqa: ARG001
     """Handle unauthorized access."""
     return JSONResponse(
         status_code=401,
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # Development server
     uvicorn.run(
         "example_usage:app",
-        host="0.0.0.0",  # noqa: S104  # nosec B104
+        host="0.0.0.0",  # nosec B104
         port=8000,
         reload=True,
         log_level="info",

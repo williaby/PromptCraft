@@ -866,7 +866,7 @@ async def quick_setup_dynamic_loading_experiment(
     request: Request,  # Required by FastAPI
     target_percentage: float = Query(default=50.0, ge=0.1, le=100.0),
     duration_hours: int = Query(default=168, ge=1, le=8760),
-    manager: ExperimentManager = Depends(get_experiment_manager_dependency),  # noqa: ARG001  # FastAPI dependency
+    _manager: ExperimentManager = Depends(get_experiment_manager_dependency),  # FastAPI dependency
 ) -> JSONResponse:
     """Quickly set up a standard dynamic loading A/B test experiment."""
     try:
