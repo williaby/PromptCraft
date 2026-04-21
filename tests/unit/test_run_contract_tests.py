@@ -401,9 +401,12 @@ class TestEdgeCasesAndIntegration:
             # Assert - Path() receives the module's __file__; exact path varies by environment
             mock_path.assert_called_once()
             actual_arg = mock_path.call_args[0][0]
-            assert actual_arg.endswith(
-                "tests/contract/run_contract_tests.py",
-            ), f"Expected path ending with 'tests/contract/run_contract_tests.py', got: {actual_arg}"
+            actual_parts = Path(actual_arg).parts
+            assert actual_parts[-3:] == (
+                "tests",
+                "contract",
+                "run_contract_tests.py",
+            ), f"Expected path ending with ('tests', 'contract', 'run_contract_tests.py'), got: {actual_parts[-3:]}"
             mock_subprocess_run.assert_called_once_with(
                 ["poetry", "install"],
                 check=True,
