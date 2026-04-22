@@ -75,7 +75,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state,
         ):
-
             # Setup mocks
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -108,7 +107,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state,
         ):
-
             # Setup mocks
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -133,7 +131,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.utils.circuit_breaker.logger") as mock_logger,
         ):
-
             # Setup mock to raise exception
             mock_client_class.side_effect = Exception("Connection failed")
 
@@ -156,7 +153,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             ),
             patch("src.utils.circuit_breaker.logger") as mock_logger,
         ):
-
             # Create circuit breaker with health check
             circuit_breaker = create_openrouter_circuit_breaker(mock_settings)
 
@@ -187,7 +183,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state,
         ):
-
             # Setup mocks
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -216,7 +211,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state,
         ):
-
             # Setup mocks
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -246,7 +240,6 @@ class TestCreateOpenRouterCircuitBreakerCoverageGaps:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.utils.circuit_breaker.logger") as mock_logger,
         ):
-
             # Setup mock to raise timeout exception
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -328,7 +321,6 @@ class TestOpenRouterHealthCheckIntegration:
             patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
             patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state,
         ):
-
             # Setup mocks
             mock_client = Mock()
             mock_client_class.return_value = mock_client
@@ -403,7 +395,6 @@ async def test_openrouter_health_check_connection_states(connection_state, expec
         patch("src.mcp_integration.openrouter_client.OpenRouterClient") as mock_client_class,
         patch("src.mcp_integration.mcp_client.MCPConnectionState") as mock_connection_state_enum,
     ):
-
         # Setup mocks
         mock_client = Mock()
         mock_client_class.return_value = mock_client

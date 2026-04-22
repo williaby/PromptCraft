@@ -31,7 +31,7 @@ class TestMultiJourneyInterfaceFunctional:
             interface.settings = mock_settings_instance
             return interface
 
-    def test_validate_file_content_and_mime_comprehensive_coverage(self, interface):  # noqa: PLR0915
+    def test_validate_file_content_and_mime_comprehensive_coverage(self, interface):
         """Test _validate_file_content_and_mime with comprehensive coverage scenarios."""
 
         # Test 1: Normal file with magic available

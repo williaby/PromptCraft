@@ -85,11 +85,11 @@ if [[ -f "$MCP_LOG" ]]; then
     echo
     echo "🔗 MCP Integration Insights:"
     echo "---------------------------"
-    
+
     TODAY_MCP=$(grep "^$TODAY.*POST_TOOL" "$MCP_LOG" 2>/dev/null | wc -l || echo "0")
     echo "  MCP tool uses today: $TODAY_MCP"
     echo "  TDD checks today: $((TODAY_BLOCKS + TODAY_ALLOWS))"
-    
+
     if [[ "$TODAY_MCP" -gt 0 && $((TODAY_BLOCKS + TODAY_ALLOWS)) -gt 0 ]]; then
         TDD_TO_MCP_RATIO=$(( ((TODAY_BLOCKS + TODAY_ALLOWS) * 100) / TODAY_MCP ))
         echo "  TDD enforcement ratio: ${TDD_TO_MCP_RATIO}% of MCP usage"

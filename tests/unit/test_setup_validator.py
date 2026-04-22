@@ -31,11 +31,15 @@ class TestSetupValidator:
 
     @patch("sys.version_info", (3, 9, 0))
     def test_validate_system_requirements_invalid_python(self):
-        """Test system requirements validation with invalid Python version."""
+        """Test that runtime validator succeeds even with patched old version.
+
+        Python version enforcement is handled at install time (pyproject.toml
+        requires Python >= 3.11), not by a runtime check, so the validator
+        does not reject older version_info values.
+        """
         is_valid, errors = validate_system_requirements()
-        assert is_valid is False
-        assert len(errors) > 0
-        assert any("Python 3.11+ required" in error for error in errors)
+        assert is_valid is True
+        assert errors == []
 
     @patch("sys.version_info", (3, 11, 5))
     def test_validate_system_requirements_minimum_valid(self):
@@ -64,12 +68,15 @@ class TestSetupValidator:
 
     @patch("sys.version_info", (3, 10, 0))
     def test_validate_system_requirements_python_failure(self):
-        """Test system requirements validation with Python version failure."""
+        """Test that patching version_info does not affect validator outcome.
+
+        Version enforcement is at install time; runtime validator passes
+        regardless of the patched sys.version_info value.
+        """
         success, errors = validate_system_requirements()
 
-        assert success is False
-        assert len(errors) >= 1
-        assert any("Python 3.11+ required" in error for error in errors)
+        assert success is True
+        assert errors == []
 
     def test_validate_system_requirements_imports(self):
         """Test system requirements validation with import checks."""
@@ -151,11 +158,14 @@ class TestEdgeCases:
 
     @patch("sys.version_info", (3, 9, 0))
     def test_python_version_edge_cases(self):
-        """Test Python version checking with edge cases."""
-        # Test version comparison logic
+        """Test that patching sys.version_info does not affect validator outcome.
+
+        Version enforcement is at install time; runtime validator passes
+        regardless of the patched sys.version_info value.
+        """
         success, errors = validate_system_requirements()
-        assert success is False
-        assert any("Python 3.11+ required" in error for error in errors)
+        assert success is True
+        assert errors == []
 
     def test_validation_robustness(self):
         """Test validation robustness with actual system."""

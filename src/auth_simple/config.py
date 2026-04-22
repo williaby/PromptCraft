@@ -9,9 +9,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field, field_validator
+from starlette.types import ASGIApp
 
 from .whitelist import EmailWhitelistValidator
 
@@ -330,7 +331,7 @@ class ConfigManager:
         session_manager = SimpleSessionManager(session_timeout=self.config.session_timeout)
 
         return CloudflareAccessMiddleware(
-            app=None,  # Will be set by FastAPI
+            app=cast(ASGIApp, None),  # Will be set by FastAPI when added via app.add_middleware()
             whitelist_validator=validator,
             session_manager=session_manager,
             public_paths=self.config.public_paths,
@@ -356,15 +357,16 @@ class ConfigManager:
 
 
 # Global configuration instance
-_config_manager: ConfigManager | None = None
+_config_manager_ref: list[ConfigManager | None] = [None]
 
 
 def get_config_manager() -> ConfigManager:
     """Get or create global configuration manager."""
-    global _config_manager  # noqa: PLW0603
-    if _config_manager is None:
-        _config_manager = ConfigManager()
-    return _config_manager
+    if _config_manager_ref[0] is None:
+        _config_manager_ref[0] = ConfigManager()
+    local = _config_manager_ref[0]
+    assert local is not None
+    return local
 
 
 def get_auth_config() -> AuthConfig:
@@ -374,5 +376,4 @@ def get_auth_config() -> AuthConfig:
 
 def reset_config() -> None:
     """Reset global configuration (for testing)."""
-    global _config_manager  # noqa: PLW0603
-    _config_manager = None
+    _config_manager_ref[0] = None

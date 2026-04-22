@@ -401,7 +401,6 @@ def apply_accessibility_enhancements(_interface: gr.Blocks) -> gr.Blocks:
         head=keyboard_js,
         title="PromptCraft-Hybrid - Accessible AI Workbench",
     ) as enhanced_interface:
-
         # Add skip navigation
         gr.HTML(enhancer.create_skip_navigation())
 

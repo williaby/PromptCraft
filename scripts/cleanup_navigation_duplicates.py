@@ -48,7 +48,7 @@ def cleanup_duplicates_in_file(file_path: str) -> bool:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(cleaned_content)
 
-        print(f"✅ Cleaned {count-1} duplicates from: {Path(file_path).name}")
+        print(f"✅ Cleaned {count - 1} duplicates from: {Path(file_path).name}")
         return True
 
     except Exception as e:

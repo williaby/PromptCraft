@@ -39,7 +39,7 @@ class ServiceTokenManager:
 
     def __init__(self) -> None:
         """Initialize service token manager."""
-        self.token_prefix = "sk_"  # nosec B105  # noqa: S105
+        self.token_prefix = "sk_"  # nosec B105
         self.token_length = 32  # 32 bytes = 256 bits of entropy
         # Track state for testing scenarios
         self._emergency_revoked = False

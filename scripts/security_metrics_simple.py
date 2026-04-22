@@ -24,7 +24,7 @@ def main() -> None:
     report = f"""# Security Gate Metrics Report
 
 **Period**: Last 7 days
-**Generated**: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}
+**Generated**: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}
 **Repository**: williaby/PromptCraft
 
 ## Executive Summary

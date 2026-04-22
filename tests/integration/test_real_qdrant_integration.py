@@ -122,7 +122,6 @@ class TestRealQdrantIntegration:
             patch("src.core.vector_store.QDRANT_AVAILABLE", True),
             patch("src.core.vector_store.QdrantClient") as mock_client_class,
         ):
-
             # Make the QdrantClient constructor itself raise the exception
             mock_client_class.side_effect = Exception("Connection timeout")
 

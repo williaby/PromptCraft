@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check for dependency issues and security vulnerabilities."""
+
 import json
 from pathlib import Path
 import subprocess

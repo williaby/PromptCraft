@@ -15,11 +15,11 @@ Features:
 
 Usage:
     Basic usage with context manager:
-    
+
     ```python
     from promptcraft_mcp_client import ZenMCPStdioClient
     from promptcraft_mcp_client.models import RouteAnalysisRequest
-    
+
     async with ZenMCPStdioClient("/path/to/server.py") as client:
         request = RouteAnalysisRequest(
             prompt="Write Python code to sort a list",
@@ -28,18 +28,18 @@ Usage:
         result = await client.analyze_route(request)
         print(result.analysis)
     ```
-    
+
     Or create client directly:
-    
+
     ```python
     from promptcraft_mcp_client import create_client
-    
+
     client = await create_client(
         server_path="/path/to/zen-mcp-server/server.py",
         env_vars={"LOG_LEVEL": "INFO"},
         http_fallback_url="http://localhost:8000"
     )
-    
+
     # Use client...
     await client.disconnect()
     ```

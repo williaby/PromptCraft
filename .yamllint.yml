@@ -21,6 +21,7 @@ rules:
 ignore: |
   .eggs/
   .git/
+  .github/
   .hg/
   .mypy_cache/
   .nox/

@@ -7,16 +7,16 @@ statistical validation of the 70% token reduction goal.
 """
 
 import asyncio
-import contextlib
-import json
-import logging
-import sqlite3
-import statistics
 from collections import deque
+import contextlib
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+import json
+import logging
 from pathlib import Path
+import sqlite3
+import statistics
 from typing import Any
 
 import numpy as np
@@ -27,6 +27,7 @@ from src.core.token_optimization_monitor import (
 )
 from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
+
 
 logger = logging.getLogger(__name__)
 

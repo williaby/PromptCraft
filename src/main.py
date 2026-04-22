@@ -86,14 +86,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         # Store settings in app state for access in endpoints
         app.state.settings = settings
-        
+
         # Initialize hybrid infrastructure
         logger.info("Initializing hybrid infrastructure...")
-        
+
         # Initialize MCP configuration manager with discovery
         app.state.mcp_manager = MCPConfigurationManager(enable_discovery=True)
         logger.info("MCP configuration manager initialized")
-        
+
         # Initialize agent discovery and resource management
         app.state.agent_discovery = AgentDiscoverySystem()
         app.state.agent_resource_manager = AgentResourceManager()
@@ -102,10 +102,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             app.state.agent_resource_manager,
         )
         logger.info("Agent discovery system initialized")
-        
+
         # Log available agents
         available_agents = app.state.agent_discovery.get_available_agents()
-        logger.info(f"Found {len(available_agents)} available agents: {available_agents[:10]}...")
+        logger.info("Found %s available agents: %s...", len(available_agents), available_agents[:10])
 
         # Log application startup audit event
         audit_logger_instance.log_security_event(
@@ -158,10 +158,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         if hasattr(app.state, "agent_resource_manager"):
             try:
                 resource_usage = app.state.agent_resource_manager.get_resource_usage()
-                logger.info(f"Final resource usage: {resource_usage}")
+                logger.info("Final resource usage: %s", resource_usage)
             except Exception as e:
-                logger.warning(f"Failed to get resource usage during shutdown: {e}")
-        
+                logger.warning("Failed to get resource usage during shutdown: %s", e)
+
         # Log application shutdown
         audit_logger_instance.log_security_event(
             AuditEventType.ADMIN_SYSTEM_SHUTDOWN,
@@ -241,16 +241,16 @@ def create_app() -> FastAPI:
 
     # Include preserved authentication and role management API endpoints for backward compatibility
     try:
-        from src.api.auth_endpoints import audit_router, auth_router, system_router  # noqa: PLC0415
-        from src.api.role_endpoints import role_router  # noqa: PLC0415
-        from src.api.routers.create_core import router as create_router  # noqa: PLC0415
+        from src.api.auth_endpoints import audit_router, auth_router, system_router
+        from src.api.role_endpoints import role_router
+        from src.api.routers.create_core import router as create_router
 
         app.include_router(auth_router)
         app.include_router(system_router)
         app.include_router(audit_router)
         app.include_router(role_router)
         app.include_router(create_router)
-        
+
         # Register hybrid infrastructure routes
         register_hybrid_infrastructure_routes(app)
 
@@ -308,12 +308,12 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     except Exception as e:  # Catch-all for unhandled endpoint errors
         logger.error("Health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error with expose_error=True for detailed error
-        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
+        raise AuthExceptionHandler.handle_internal_error(
             operation_name="Health check endpoint",
             error=e,
             detail="Health check endpoint failed",
             expose_error=True,
-        )
+        ) from e
 
 
 @app.get("/health/config", response_model=ConfigurationStatusModel)
@@ -399,25 +399,25 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
         error_detail = f"MCP integration unhealthy - {mcp_health}"
         raise AuthExceptionHandler.handle_service_unavailable(service_name="mcp-integration", detail=error_detail)
-    except ImportError:
+    except ImportError as import_err:
         logger.warning("MCP integration not available")
         # Use AuthExceptionHandler.handle_service_unavailable for consistent error handling
-        raise AuthExceptionHandler.handle_service_unavailable(  # noqa: B904
+        raise AuthExceptionHandler.handle_service_unavailable(
             service_name="mcp-integration",
             detail="MCP integration not available",
-        )
+        ) from import_err
     except HTTPException:
         # Re-raise HTTPExceptions to preserve status codes
         raise
     except Exception as e:
         logger.error("MCP health check endpoint failed: %s", e)
         # Use AuthExceptionHandler.handle_internal_error for consistent error handling
-        raise AuthExceptionHandler.handle_internal_error(  # noqa: B904
+        raise AuthExceptionHandler.handle_internal_error(
             operation_name="MCP health check endpoint",
             error=e,
             detail="MCP health check endpoint failed",
             expose_error=True,
-        )
+        ) from e
 
 
 @app.get("/health/circuit-breakers", response_model=dict[str, Any])

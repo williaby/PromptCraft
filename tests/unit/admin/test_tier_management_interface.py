@@ -103,7 +103,6 @@ class TestTierManagementInterface:
                 patch("gradio.Button"),
                 patch("gradio.Dataframe"),
             ):
-
                 admin_tab = interface.create_admin_interface()
                 # Tab is called multiple times for main tab and sub-tabs
                 assert mock_tab.call_count >= 1

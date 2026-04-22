@@ -679,8 +679,8 @@ def create_openrouter_circuit_breaker(settings: Any) -> CircuitBreaker:
         """Health check function for OpenRouter API."""
         try:
             # Import here to avoid circular imports
-            from src.mcp_integration.mcp_client import MCPConnectionState  # noqa: PLC0415
-            from src.mcp_integration.openrouter_client import OpenRouterClient  # noqa: PLC0415
+            from src.mcp_integration.mcp_client import MCPConnectionState
+            from src.mcp_integration.openrouter_client import OpenRouterClient
 
             # Create a minimal client for health check
             client = OpenRouterClient(

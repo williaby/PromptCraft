@@ -15,7 +15,6 @@ def journey2_instance():
         patch("src.ui.journeys.journey2_intelligent_search.OpenRouterClient") as mock_openrouter,
         patch("src.ui.journeys.journey2_intelligent_search.ZenStdioMCPClient") as mock_zen,
     ):
-
         instance = Journey2IntelligentSearch()
         instance.openrouter_client = mock_openrouter.return_value
         instance.zen_client = mock_zen.return_value
@@ -175,7 +174,7 @@ class TestJourney2IntelligentSearch:
         enhanced_prompt = "Test enhanced prompt"
         user_tier = "full"
 
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r".*"):
             await journey2_instance._execute_with_intelligent_routing(enhanced_prompt, user_tier, sample_workflow_step)
 
     @pytest.mark.asyncio
@@ -472,7 +471,7 @@ class TestJourney2IntelligentSearch:
         user_tier = "full"
 
         # Should raise exception when both zen and OpenRouter fail
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match=r".*"):
             await journey2_instance._execute_with_intelligent_routing(enhanced_prompt, user_tier, sample_workflow_step)
 
         # Verify zen client disconnect was called during cleanup

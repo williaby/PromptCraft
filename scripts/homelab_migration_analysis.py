@@ -237,7 +237,6 @@ class HomelabMigrationAnalyzer:
                 current_memory_mb + estimated_memory > max_memory_per_phase
                 or current_duration + estimated_duration > 60
             ):  # Max 1 hour per phase
-
                 if current_phase_dbs:
                     # Create phase with current databases
                     phases.append(

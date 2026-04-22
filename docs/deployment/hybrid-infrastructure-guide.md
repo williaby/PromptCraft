@@ -20,7 +20,7 @@ The PromptCraft Hybrid Infrastructure provides intelligent discovery and deploym
 ### Discovery Priority Order
 
 1. **External Deployments** - Existing running services
-2. **User Installations** - Developer's local setup  
+2. **User Installations** - Developer's local setup
 3. **Project Configurations** - Bundled definitions
 4. **Docker Services** - Containerized fallbacks
 5. **NPX Cloud** - Cloud-based services
@@ -103,7 +103,7 @@ servers:
       1: external_deployment    # Your existing server
       2: user_installation      # ~/dev/zen-mcp-server
       3: docker_sidecar         # Docker container
-    
+
     resource_requirements:
       memory_mb: 512
       cpu_cores: 0.5
@@ -119,7 +119,7 @@ agents:
     priority_order:
       - project_specific   # Use project implementation
       - user_override      # Allow user customization
-    
+
     dependencies:
       services:
         qdrant: "192.168.1.16:6333"
@@ -189,7 +189,7 @@ servers:
   context7:
     priority_order:
       1: npx_cloud  # Always prefer cloud
-  
+
   perplexity:
     priority_order:
       1: npx_cloud  # Cloud-first

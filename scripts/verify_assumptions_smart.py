@@ -3,7 +3,7 @@
 Response-Aware Development (RAD) Verification Tool
 
 Systematically verify code assumptions using tiered AI model routing:
-- #CRITICAL: Premium models (Gemini 2.5 Pro, O3-Mini) 
+- #CRITICAL: Premium models (Gemini 2.5 Pro, O3-Mini)
 - #ASSUME: Dynamic free model selection (DeepSeek-R1, Qwen-Coder)
 - #EDGE: Fast batch processing (Gemini Flash Lite)
 """
@@ -41,6 +41,21 @@ class VerificationResult:
     status: str  # BLOCKING, REVIEW, NOTE
     issues_found: list[str]
     suggested_fixes: list[str]
+    cost_estimate: float
+
+
+@dataclass
+class AIVerificationResult:
+    """Result from AI model verification (mirrors rad_ai_verifier.AIVerificationResult)."""
+
+    assumption_id: str
+    model_used: str
+    status: str  # BLOCKING, REVIEW, NOTE
+    confidence: float
+    issues_found: list[str]
+    suggested_fixes: list[str]
+    defensive_patterns: list[str]
+    verification_time: float
     cost_estimate: float
 
 
@@ -379,7 +394,7 @@ class VerificationReporter:
         low = [a for a in assumptions if a.risk_level == "low"]
 
         # Calculate summary statistics
-        total_files = len(set(a.file_path for a in assumptions))
+        total_files = len({a.file_path for a in assumptions})
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         report_lines = []
@@ -726,7 +741,9 @@ class VerificationReporter:
         return "\n".join(lines)
 
     def _find_ai_result(
-        self, assumption: Assumption, verification_results: list["AIVerificationResult"] | None,
+        self,
+        assumption: Assumption,
+        verification_results: list["AIVerificationResult"] | None,
     ) -> Optional["AIVerificationResult"]:
         """Find AI verification result for a specific assumption"""
         if not verification_results:

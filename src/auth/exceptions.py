@@ -240,7 +240,7 @@ class AuthExceptionHandler:
         )
 
     @classmethod
-    def handle_role_manager_error(  # noqa: PLR0911  # Exception mapping requires multiple returns
+    def handle_role_manager_error(  # Exception mapping requires multiple returns
         cls,
         error: Exception,
     ) -> HTTPException:
@@ -273,13 +273,6 @@ class AuthExceptionHandler:
             error_str = str(error).lower()
             if "already exists" in error_str:
                 return cls.handle_conflict_error(str(error))
-            if (
-                "circular" in error_str
-                or "hierarchy" in error_str
-                or "dependencies" in error_str
-                or "assigned to" in error_str
-            ):
-                return cls.handle_validation_error(str(error))
             return cls.handle_validation_error(str(error))
 
         return cls.handle_internal_error("Role management operation", error)
