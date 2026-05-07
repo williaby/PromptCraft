@@ -15,7 +15,7 @@ The PromptCraft system should handle this file efficiently by:
 
 PERFORMANCE BENCHMARKS:
 - File reading: < 1 second
-- Content validation: < 2 seconds  
+- Content validation: < 2 seconds
 - Framework processing: < 25 seconds
 - Total processing: < 30 seconds
 

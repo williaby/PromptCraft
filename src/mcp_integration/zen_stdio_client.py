@@ -7,7 +7,7 @@ Provides native MCP protocol support alongside existing HTTP integration.
 """
 
 import logging
-import os
+from pathlib import Path
 import time
 from typing import Any
 
@@ -155,7 +155,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         except Exception as e:
             self.error_count += 1
             logger.error(f"MCP stdio health check failed: {e}")
-            raise MCPError(f"Health check failed: {e}")
+            raise MCPError(f"Health check failed: {e}") from e
 
     async def get_model_recommendations(self, prompt: str) -> Any:
         """
@@ -198,7 +198,7 @@ class ZenStdioMCPClient(MCPClientInterface):
                     }
                 primary_recommendation = ModelRecommendation(
                     model_id=primary_rec.get("model_id", "unknown"),
-                    model_name=primary_rec.get("model_name", "unknown"), 
+                    model_name=primary_rec.get("model_name", "unknown"),
                     tier=primary_rec.get("tier", "free"),
                     reasoning=primary_rec.get("reasoning", "No reasoning available"),
                     confidence_score=0.9,  # Zen provides high-confidence recommendations
@@ -304,12 +304,12 @@ class ZenStdioMCPClient(MCPClientInterface):
         env_vars = {}
 
         # Load from zen server .env if available
-        zen_env_file = "/home/byron/dev/zen-mcp-server/.env"
-        if os.path.exists(zen_env_file):
+        zen_env_path = Path("/home/byron/dev/zen-mcp-server/.env")
+        if zen_env_path.exists():
             try:
-                with open(zen_env_file) as f:
-                    for line in f:
-                        line = line.strip()
+                with zen_env_path.open() as f:
+                    for raw_line in f:
+                        line = raw_line.strip()
                         if line and not line.startswith("#") and "=" in line:
                             key, value = line.split("=", 1)
                             env_vars[key.strip()] = value.strip()

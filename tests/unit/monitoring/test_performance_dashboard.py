@@ -1,12 +1,12 @@
 """Comprehensive test suite for Performance Dashboard."""
 
-import json
 from datetime import datetime, timedelta
+import json
 from unittest.mock import AsyncMock, Mock, patch
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from src.monitoring.performance_dashboard import (
     AlertManager,

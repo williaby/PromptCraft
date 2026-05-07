@@ -232,16 +232,16 @@ async def discover_server(self, server_name: str) -> ServerConnection:
     # 1. Check cache (5-minute TTL)
     if cached := self.get_cached_connection(server_name):
         return cached
-    
+
     # 2. Multi-strategy detection
     for strategy in [port_check, process_check, env_vars, lock_files]:
         if connection := await strategy(server_name):
             return connection
-    
+
     # 3. Resource availability check
     if not sufficient_resources():
         return await try_cloud_fallback(server_name)
-    
+
     # 4. Deploy with anti-duplication lock
     with FileLock(f"/tmp/.mcp-{server_name}.lock"):
         return await deploy_server(server_name)
@@ -253,19 +253,19 @@ def can_load_agent(self, agent_def: AgentDefinition) -> bool:
     # Check concurrent limits
     if len(self.active_agents) >= self.limits["max_concurrent"]:
         return False
-    
+
     # Check memory availability
     required_memory = parse_memory_requirement(agent_def.memory_requirement)
     current_usage = sum(agent["memory"] for agent in self.active_agents.values())
     if current_usage + required_memory > self.limits["total_memory"]:
         return False
-    
+
     # Check model limits
-    model_count = sum(1 for agent in self.active_agents.values() 
+    model_count = sum(1 for agent in self.active_agents.values()
                      if agent["model"] == agent_def.model)
     if model_count >= self.limits["model_limits"][agent_def.model]:
         return False
-    
+
     return True
 ```
 
@@ -286,11 +286,11 @@ def can_load_agent(self, agent_def: AgentDefinition) -> bool:
 
 The hybrid infrastructure successfully addresses the original requirements:
 
-✅ **Self-contained**: Project includes all necessary configurations  
-✅ **Non-duplicating**: Intelligent discovery prevents conflicts  
-✅ **Resource efficient**: External services used when available  
-✅ **Production ready**: Full Docker deployment with monitoring  
-✅ **Backward compatible**: User-level configs still work  
+✅ **Self-contained**: Project includes all necessary configurations
+✅ **Non-duplicating**: Intelligent discovery prevents conflicts
+✅ **Resource efficient**: External services used when available
+✅ **Production ready**: Full Docker deployment with monitoring
+✅ **Backward compatible**: User-level configs still work
 ✅ **Flexible**: Multiple deployment scenarios supported
 
 The system provides a seamless transition from development to production while maintaining the flexibility to use existing infrastructure and preventing resource conflicts through intelligent discovery and management.

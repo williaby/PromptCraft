@@ -1,7 +1,7 @@
 # AI Tools Validation and Setup
 
-> **Command**: `/tools:ai-validate [options]`  
-> **Category**: Development Tools  
+> **Command**: `/tools:ai-validate [options]`
+> **Category**: Development Tools
 > **Purpose**: Validate and configure AI coding CLI tools for any development project
 
 ## Overview
@@ -165,23 +165,23 @@ from pathlib import Path
 def execute_ai_tools_validation():
     """Execute AI tools validation command."""
     script_path = Path.home() / ".claude" / "scripts" / "ai_tools_validator.py"
-    
+
     # Parse command arguments
     import shlex
     args = []
-    
+
     # Check for common argument patterns
     user_input = context.get("user_input", "").lower()
-    
+
     if "--quiet" in user_input or "quiet" in user_input:
         args.append("--quiet")
-    
+
     if "--setup" in user_input or "setup" in user_input:
         args.append("--setup-project")
-        
+
     if "--install" in user_input or "install" in user_input:
         args.append("--install-missing")
-    
+
     # Execute the validation script
     try:
         result = subprocess.run(
@@ -190,13 +190,13 @@ def execute_ai_tools_validation():
             text=True,
             cwd=Path.cwd()
         )
-        
+
         # Display results
         print(result.stdout)
-        
+
         if result.stderr:
             print("Errors:", result.stderr)
-        
+
         # Provide contextual guidance based on exit code
         if result.returncode == 0:
             print("\n✅ All AI tools are properly configured!")
@@ -204,9 +204,9 @@ def execute_ai_tools_validation():
             print("\n⚠️  Some tools need configuration. Check API keys and config files above.")
         elif result.returncode == 2:
             print("\n❌ No AI tools detected. Run with --install option to set up tools.")
-        
+
         return result.returncode
-        
+
     except Exception as e:
         print(f"Error executing AI tools validation: {e}")
         print("\nTroubleshooting:")
@@ -258,7 +258,7 @@ fi
 - Check PATH environment variable
 - Restart terminal/VS Code after installation
 
-### Configuration Issues  
+### Configuration Issues
 
 - Check API keys in environment variables
 - Verify configuration file syntax (JSON/YAML)

@@ -339,7 +339,6 @@ class TestRealMCPIntegration:
             patch("src.config.settings.get_settings", return_value=mcp_settings),
             patch("httpx.AsyncClient") as mock_client_class,
         ):
-
             mock_client = AsyncMock()
             mock_client_class.return_value = mock_client
 

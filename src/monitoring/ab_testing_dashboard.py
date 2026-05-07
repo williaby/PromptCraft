@@ -13,15 +13,15 @@ Features:
 - Risk assessment and safety monitoring
 """
 
-import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+import logging
 from typing import Any
 
+from jinja2 import Template
 import pandas as pd  # type: ignore[import-untyped]
 import plotly.graph_objects as go  # type: ignore[import-untyped]
-from jinja2 import Template
 from plotly.subplots import make_subplots  # type: ignore[import-untyped]
 
 from src.core.ab_testing_framework import (
@@ -34,6 +34,7 @@ from src.core.ab_testing_framework import (
 )
 from src.utils.datetime_compat import UTC
 from src.utils.observability import ObservabilityMixin
+
 
 logger = logging.getLogger(__name__)
 

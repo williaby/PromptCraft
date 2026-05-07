@@ -7,7 +7,7 @@ version: '3.8'
 services:
   # Main application with intelligent discovery
   promptcraft:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.hybrid
     container_name: promptcraft-hybrid
@@ -19,36 +19,36 @@ services:
       MCP_DISCOVERY_MODE: intelligent
       MCP_ZEN_PREFERENCE: external_first
       AGENT_DISCOVERY_MODE: intelligent
-      
+
       # PromptCraft configuration
       PROMPTCRAFT_HOST: "0.0.0.0"
       PROMPTCRAFT_PORT: 7860
       PROMPTCRAFT_API_PORT: 7862
-      
+
       # External services
       QDRANT_HOST: "${QDRANT_HOST:-192.168.1.16}"
       QDRANT_PORT: "${QDRANT_PORT:-6333}"
       REDIS_HOST: "${REDIS_HOST:-redis}"
       REDIS_PORT: "${REDIS_PORT:-6379}"
-      
+
       # Environment-specific settings
       ENVIRONMENT: "${ENVIRONMENT:-production}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
-      
+
       # Resource limits
       MAX_CONCURRENT_AGENTS: "${MAX_CONCURRENT_AGENTS:-10}"
       AGENT_MEMORY_LIMIT: "${AGENT_MEMORY_LIMIT:-2048}"
       MCP_RESOURCE_LIMIT: "${MCP_RESOURCE_LIMIT:-1024}"
-      
+
     volumes:
       # Mount configuration directories
       - ./.mcp:/app/.mcp:ro
       - ./.agents:/app/.agents:ro
-      
+
       # Mount logs and data for persistence
       - promptcraft-logs:/app/logs
       - promptcraft-data:/app/data
-      
+
       # Optional: Mount user-level overrides (bind mount for development)
       - type: bind
         source: ${HOME}/.claude/agents
@@ -56,17 +56,17 @@ services:
         read_only: true
         bind:
           create_host_path: true
-      
+
     depends_on:
       redis:
         condition: service_healthy
       zen-mcp:
         condition: service_healthy
         required: false  # Optional dependency
-    
+
     networks:
       - promptcraft-network
-    
+
     deploy:
       resources:
         limits:
@@ -75,7 +75,7 @@ services:
         reservations:
           memory: 1G
           cpus: '0.5'
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7860/health || http://localhost:7862/health"]
       interval: 30s
@@ -111,7 +111,7 @@ services:
 
   # Optional: Zen MCP Server (only started if external not found)
   zen-mcp:
-    build: 
+    build:
       context: ./vendors/zen-mcp-server
       dockerfile: Dockerfile
       args:
@@ -125,14 +125,14 @@ services:
       PROMPTCRAFT_INTEGRATION: "true"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       REDIS_URL: "redis://redis:6379"
-      
+
     volumes:
       - zen-logs:/app/logs
       - zen-data:/app/data
-      
+
     networks:
       - promptcraft-network
-    
+
     deploy:
       resources:
         limits:
@@ -145,14 +145,14 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-    
+
     profiles:
       - with-zen  # Only starts with --profile with-zen
 
@@ -168,14 +168,14 @@ services:
       QDRANT__SERVICE__GRPC_PORT: 6334
       QDRANT__STORAGE__STORAGE_PATH: "/qdrant/storage"
       QDRANT__LOG_LEVEL: "${QDRANT_LOG_LEVEL:-INFO}"
-      
+
     volumes:
       - qdrant-storage:/qdrant/storage
       - qdrant-config:/qdrant/config
-      
+
     networks:
       - promptcraft-network
-    
+
     deploy:
       resources:
         limits:
@@ -184,14 +184,14 @@ services:
         reservations:
           memory: 512M
           cpus: '0.2'
-    
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 45s
-    
+
     profiles:
       - with-qdrant  # Only starts with --profile with-qdrant
 
@@ -287,29 +287,29 @@ volumes:
     driver: local
   promptcraft-data:
     driver: local
-  
+
   # Redis data
   redis-data:
     driver: local
-  
+
   # MCP server data
   zen-logs:
     driver: local
   zen-data:
     driver: local
-    
+
   # Qdrant data
   qdrant-storage:
     driver: local
   qdrant-config:
     driver: local
-    
+
   # Monitoring data
   prometheus-data:
     driver: local
   grafana-data:
     driver: local
-  
+
   # Nginx logs
   nginx-logs:
     driver: local

@@ -8,7 +8,7 @@ export class TestUtils {
   static async waitForGradioLoad(page: Page, timeout = 30000) {
     // Wait for main Gradio container (Gradio v5)
     await page.waitForSelector('.gradio-container', { timeout });
-    
+
     // Wait for any Gradio loading indicators to disappear
     await page.waitForFunction(() => {
       const loadingElements = document.querySelectorAll(
@@ -16,7 +16,7 @@ export class TestUtils {
       );
       return loadingElements.length === 0;
     }, { timeout: 15000 });
-    
+
     // Additional stabilization wait
     await page.waitForTimeout(1000);
   }
@@ -25,14 +25,14 @@ export class TestUtils {
    * Upload a test file and wait for processing
    */
   static async uploadTestFile(
-    page: Page, 
-    fileSelector: string, 
+    page: Page,
+    fileSelector: string,
     filePath: string,
     expectSuccess = true
   ) {
     // Upload the file
     await page.setInputFiles(fileSelector, filePath);
-    
+
     // Wait for file processing indicators
     try {
       await page.waitForSelector('.file-processing, .uploading', { timeout: 2000 });
@@ -40,13 +40,13 @@ export class TestUtils {
     } catch {
       // Processing indicators might not appear for quick uploads
     }
-    
+
     if (expectSuccess) {
       // Verify no error messages
       const errorElements = await page.locator('.error, .alert-danger').count();
       expect(errorElements).toBe(0);
     }
-    
+
     return true;
   }
 
@@ -145,7 +145,7 @@ export class TestUtils {
         3. Applies statistical analysis and machine learning models
         4. Generates visualizations and reports
         5. Exports results in multiple formats
-        
+
         The pipeline should be scalable, maintainable, and well-documented.
         Please provide a detailed implementation with error handling and testing.`,
       longPrompt: "A".repeat(10000), // 10k characters
@@ -154,26 +154,26 @@ export class TestUtils {
     if n <= 1:
         return n
     return fibonacci(n-1) + fibonacci(n-2)`,
-      
+
       // Different content types for file testing
       markdownContent: `# Test Document
-        
+
         This is a **test** document for *PromptCraft* testing.
-        
+
         ## Features
         - Markdown formatting
         - Code blocks
         - Lists
-        
+
         \`\`\`python
         print("Hello, World!")
         \`\`\``,
-      
+
       csvContent: `Name,Age,City
         John Doe,30,New York
         Jane Smith,25,Los Angeles
         Bob Johnson,35,Chicago`,
-      
+
       jsonContent: `{
         "name": "test-data",
         "version": "1.0",
@@ -226,14 +226,14 @@ export class TestUtils {
    */
   static async testRateLimit(journey1Page: Journey1Page, requestCount = 35) {
     const results = [];
-    
+
     for (let i = 0; i < requestCount; i++) {
       const startTime = Date.now();
-      
+
       try {
         await journey1Page.enterPrompt(`Test prompt ${i}`);
         await journey1Page.enhancePrompt(5000); // Short timeout for rate limit testing
-        
+
         const isRateLimited = await journey1Page.page.isRateLimited();
         results.push({
           requestNumber: i + 1,
@@ -241,11 +241,11 @@ export class TestUtils {
           rateLimited: isRateLimited,
           responseTime: Date.now() - startTime
         });
-        
+
         if (isRateLimited) {
           break; // Stop once rate limited
         }
-        
+
       } catch (error) {
         results.push({
           requestNumber: i + 1,
@@ -254,11 +254,11 @@ export class TestUtils {
           responseTime: Date.now() - startTime
         });
       }
-      
+
       // Small delay between requests
       await journey1Page.page.waitForTimeout(100);
     }
-    
+
     return results;
   }
 
@@ -283,7 +283,7 @@ export class TestUtils {
     for (const input of inputs) {
       const id = await input.getAttribute('id');
       const ariaLabel = await input.getAttribute('aria-label');
-      
+
       if (id) {
         const label = await page.locator(`label[for="${id}"]`).count();
         if (label === 0 && !ariaLabel) {
@@ -302,7 +302,7 @@ export class TestUtils {
           backgroundColor: computedStyle.backgroundColor
         };
       });
-      
+
       // Basic contrast validation would go here
       // This is a simplified check - in real scenarios, use axe-core
     }
@@ -317,11 +317,11 @@ export class TestUtils {
    * Simulate network conditions (slow, offline, etc.)
    */
   static async simulateNetworkConditions(
-    page: Page, 
+    page: Page,
     condition: 'slow' | 'offline' | 'normal'
   ) {
     const client = await page.context().newCDPSession(page);
-    
+
     switch (condition) {
       case 'slow':
         await client.send('Network.emulateNetworkConditions', {
@@ -331,7 +331,7 @@ export class TestUtils {
           latency: 500 // 500ms
         });
         break;
-        
+
       case 'offline':
         await client.send('Network.emulateNetworkConditions', {
           offline: true,
@@ -340,7 +340,7 @@ export class TestUtils {
           latency: 0
         });
         break;
-        
+
       case 'normal':
       default:
         await client.send('Network.emulateNetworkConditions', {
@@ -358,7 +358,7 @@ export class TestUtils {
    */
   static async getConsoleLogs(page: Page) {
     const logs = [];
-    
+
     page.on('console', (msg) => {
       logs.push({
         type: msg.type(),
@@ -366,7 +366,7 @@ export class TestUtils {
         timestamp: new Date().toISOString()
       });
     });
-    
+
     return logs;
   }
 
@@ -377,7 +377,7 @@ export class TestUtils {
     const metrics = await page.evaluate(() => {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       const resources = performance.getEntriesByType('resource');
-      
+
       return {
         navigation: {
           domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
@@ -397,7 +397,7 @@ export class TestUtils {
         } : null
       };
     });
-    
+
     return metrics;
   }
 }

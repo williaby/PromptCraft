@@ -143,14 +143,11 @@ class FailureAnalyzer:
         )
         self.response_times.append(response_time)
 
-    def detect_failure_pattern(self) -> FailurePattern:  # noqa: PLR0911
+    def detect_failure_pattern(self) -> FailurePattern:
         """Detect the current failure pattern"""
-        if len(self.failure_history) < 10:
-            return FailurePattern.INTERMITTENT
-
         recent_failures = [r for r in list(self.failure_history)[-20:] if not r["success"]]
 
-        if not recent_failures:
+        if len(self.failure_history) < 10 or not recent_failures:
             return FailurePattern.INTERMITTENT
 
         # Analyze failure characteristics

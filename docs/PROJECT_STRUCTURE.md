@@ -79,7 +79,7 @@ Test files organized by type and domain
 The cleaned-up structure provides:
 
 - **Clear separation of concerns** - Configuration, source, tests, docs all organized
-- **Reduced clutter** - 60+ files moved from root to appropriate directories  
+- **Reduced clutter** - 60+ files moved from root to appropriate directories
 - **Better maintainability** - Related files grouped logically
 - **CI/CD compatibility** - All workflows continue to function
 - **Documentation clarity** - Reports and guides easy to find

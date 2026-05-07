@@ -229,6 +229,6 @@ class TestAuthConstants:
         }
 
         # Test that all error codes have meaningful messages
-        for error_code in error_mapping:
-            assert len(error_mapping[error_code]) > 10, f"Error code {error_code} should have meaningful message"
+        for error_code, message in error_mapping.items():
+            assert len(message) > 10, f"Error code {error_code} should have meaningful message"
             assert isinstance(error_code, str), f"Error code {error_code} should be string"

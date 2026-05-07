@@ -406,7 +406,6 @@ class TestComprehensiveErrorHandling:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Test QueryCounselor with failing MCP client
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
@@ -747,7 +746,6 @@ class TestComprehensiveErrorHandling:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test multiple queries with error resilience
@@ -857,7 +855,6 @@ class TestComprehensiveErrorHandling:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test full functionality
@@ -896,7 +893,6 @@ class TestComprehensiveErrorHandling:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test degraded functionality

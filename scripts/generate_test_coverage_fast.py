@@ -73,7 +73,7 @@ class FastCoverageReportGenerator:
         # Check if data is recent (within last hour)
         coverage_age = time.time() - coverage_xml.stat().st_mtime
         if coverage_age > 3600:  # 1 hour
-            self.log(f"⚠️  Coverage data is {coverage_age/60:.0f} minutes old")
+            self.log(f"⚠️  Coverage data is {coverage_age / 60:.0f} minutes old")
 
         return True
 

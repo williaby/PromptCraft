@@ -9,8 +9,6 @@ This module tests the complete integration of:
 - Error handling and graceful degradation
 """
 
-# ruff: noqa: S106
-
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -329,13 +327,12 @@ class TestAuthenticationIntegration:
         """Test graceful degradation when database is unavailable."""
         app = FastAPI()
 
-        # Mock database failure  
+        # Mock database failure
         async def mock_db_generator_failure():
             raise Exception("Database connection failed")
             yield  # This line never executes but satisfies the generator requirement
 
         with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_failure()):
-
             app.add_middleware(
                 AuthenticationMiddleware,
                 config=auth_config,

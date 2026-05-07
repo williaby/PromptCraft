@@ -498,8 +498,8 @@ class SimplifiedCoverageAutomation:
 <body>
     <div class="header">
         <h1>📊 PromptCraft Coverage Report</h1>
-        <p><strong>Overall Coverage:</strong> <span class="coverage-{'high' if total_coverage >= 80 else 'medium' if total_coverage >= 60 else 'low'}">{total_coverage:.1f}%</span></p>
-        <p><strong>Generated:</strong> {time.strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p><strong>Overall Coverage:</strong> <span class="coverage-{"high" if total_coverage >= 80 else "medium" if total_coverage >= 60 else "low"}">{total_coverage:.1f}%</span></p>
+        <p><strong>Generated:</strong> {time.strftime("%Y-%m-%d %H:%M:%S")}</p>
         <div class="test-count">
             <strong>Test Discovery:</strong> 3,225 tests detected • 90.15% total coverage from database
         </div>
@@ -684,11 +684,11 @@ class SimplifiedCoverageAutomation:
         </h2>
         <p class="text">
             <a class="nav" href="https://coverage.readthedocs.io/en/7.9.2">coverage.py v7.9.2</a>,
-            created at {time.strftime('%Y-%m-%d %H:%M %z')} • Filtered for {info["display"]}
+            created at {time.strftime("%Y-%m-%d %H:%M %z")} • Filtered for {info["display"]}
         </p>
         <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 0.9em;">
             <strong>Test Type Analysis:</strong> This report shows all source files and indicates which ones are actually tested by {info["display"]} tests.
-            {f'<br><strong>Branch Coverage:</strong> {branch_coverage_pct:.1f}% ({covered_branches}/{total_branches} branches covered)' if total_branches > 0 else ''}
+            {f"<br><strong>Branch Coverage:</strong> {branch_coverage_pct:.1f}% ({covered_branches}/{total_branches} branches covered)" if total_branches > 0 else ""}
         </div>
     </div>
 </header>
@@ -763,7 +763,7 @@ class SimplifiedCoverageAutomation:
     <div class="content">
         <p>
             <a class="nav" href="https://coverage.readthedocs.io/en/7.9.2">coverage.py v7.9.2</a>,
-            created at {time.strftime('%Y-%m-%d %H:%M %z')} • {info["display"]} specific analysis
+            created at {time.strftime("%Y-%m-%d %H:%M %z")} • {info["display"]} specific analysis
         </p>
         <p style="margin-top: 0.5em;">
             <a class="nav" href="simplified_report.html">← Return to Main Coverage Report</a>
@@ -900,14 +900,14 @@ class SimplifiedCoverageAutomation:
                 row_class = "region low-coverage"
 
             table_rows += f"""            <tr class="{row_class}">
-                <td class="name left">{item['name']}</td>
-                <td class="name left" style="font-size: 0.85em; color: #666;">{item['file']}</td>
-                <td>{item['statements']}</td>
-                <td>{item['missing']}</td>
+                <td class="name left">{item["name"]}</td>
+                <td class="name left" style="font-size: 0.85em; color: #666;">{item["file"]}</td>
+                <td>{item["statements"]}</td>
+                <td>{item["missing"]}</td>
                 <td>0</td>
-                <td>{item['branches']}</td>
-                <td>{item['partial']}</td>
-                <td class="right" data-ratio="{item['statements'] - item['missing']} {item['statements']}">{coverage:.2f}%</td>
+                <td>{item["branches"]}</td>
+                <td>{item["partial"]}</td>
+                <td class="right" data-ratio="{item["statements"] - item["missing"]} {item["statements"]}">{coverage:.2f}%</td>
             </tr>
 """
 
@@ -967,15 +967,15 @@ class SimplifiedCoverageAutomation:
         </form>
         <h2>
                 <a class="button" href="{test_type}_coverage.html">Files</a>
-                <a class="button {'current' if view_type == 'function' else ''}" href="{test_type}_function_index.html">Functions</a>
-                <a class="button {'current' if view_type == 'class' else ''}" href="{test_type}_class_index.html">Classes</a>
+                <a class="button {"current" if view_type == "function" else ""}" href="{test_type}_function_index.html">Functions</a>
+                <a class="button {"current" if view_type == "class" else ""}" href="{test_type}_class_index.html">Classes</a>
         </h2>
         <p class="text">
             <a class="nav" href="https://coverage.readthedocs.io/en/7.9.2">coverage.py v7.9.2</a>,
-            created at {time.strftime('%Y-%m-%d %H:%M %z')} • {view_type.title()} view for {info["display"]}
+            created at {time.strftime("%Y-%m-%d %H:%M %z")} • {view_type.title()} view for {info["display"]}
         </p>
         <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 0.9em;">
-            <strong>Filter Applied:</strong> This report shows {view_type}s from files matching patterns: <code>{', '.join(self._get_patterns_for_test_type(test_type))}</code>
+            <strong>Filter Applied:</strong> This report shows {view_type}s from files matching patterns: <code>{", ".join(self._get_patterns_for_test_type(test_type))}</code>
             <br><strong>Total {view_type.title()}s:</strong> {len(data)} • <strong>Branch Coverage:</strong> {branch_info}
         </div>
     </div>
@@ -1017,7 +1017,7 @@ class SimplifiedCoverageAutomation:
     <div class="content">
         <p>
             <a class="nav" href="https://coverage.readthedocs.io/en/7.9.2">coverage.py v7.9.2</a>,
-            created at {time.strftime('%Y-%m-%d %H:%M %z')} • {info["display"]} {view_type} analysis
+            created at {time.strftime("%Y-%m-%d %H:%M %z")} • {info["display"]} {view_type} analysis
         </p>
         <p style="margin-top: 0.5em;">
             <a class="nav" href="simplified_report.html">← Return to Main Coverage Report</a>
@@ -1680,19 +1680,19 @@ class SimplifiedCoverageAutomation:
 
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-value">{len([f for f, data in file_analysis.items() if data['coverage'] < 50])}</div>
+                <div class="stat-value">{len([f for f, data in file_analysis.items() if data["coverage"] < 50])}</div>
                 <div class="stat-label">Files < 50% Coverage</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">{sum(len(data['failed_tests']) for data in file_analysis.values())}</div>
+                <div class="stat-value">{sum(len(data["failed_tests"]) for data in file_analysis.values())}</div>
                 <div class="stat-label">Total Failed Tests</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">{sum(len(data['low_coverage_functions']) for data in file_analysis.values())}</div>
+                <div class="stat-value">{sum(len(data["low_coverage_functions"]) for data in file_analysis.values())}</div>
                 <div class="stat-label">Functions < 50%</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">{sum(len(data['low_coverage_classes']) for data in file_analysis.values())}</div>
+                <div class="stat-value">{sum(len(data["low_coverage_classes"]) for data in file_analysis.values())}</div>
                 <div class="stat-label">Classes < 50%</div>
             </div>
         </div>
@@ -1746,19 +1746,19 @@ class SimplifiedCoverageAutomation:
                 <h4>📊 Coverage Statistics</h4>
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-value">{data['coverage']:.1f}%</div>
+                        <div class="stat-value">{data["coverage"]:.1f}%</div>
                         <div class="stat-label">Total Coverage</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">{data['branch_coverage']:.1f}%</div>
+                        <div class="stat-value">{data["branch_coverage"]:.1f}%</div>
                         <div class="stat-label">Branch Coverage</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">{data['statements'] - data['missing']}/{data['statements']}</div>
+                        <div class="stat-value">{data["statements"] - data["missing"]}/{data["statements"]}</div>
                         <div class="stat-label">Statements Covered</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">{data['branches'] - data['partial_branches']}/{data['branches']}</div>
+                        <div class="stat-value">{data["branches"] - data["partial_branches"]}/{data["branches"]}</div>
                         <div class="stat-label">Branches Covered</div>
                     </div>
                 </div>

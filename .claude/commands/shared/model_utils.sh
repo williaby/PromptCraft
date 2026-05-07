@@ -253,19 +253,12 @@ zen_mcp_consensus() {
 
     # Note: This function is now a wrapper for documentation purposes
     # The actual MCP calls should be made directly from slash commands using:
-    # mcp__zen__layered_consensus --question "$request (Topic: $topic)" --org-level "$org_level" --model-count "$model_count" --layers "$layers" --cost-threshold "$cost_threshold" --model "google/gemini-2.5-flash"
+    # mcp__pal__tiered_consensus --prompt "$request (Topic: $topic)" --level <1|2|3> --findings "..."
 
-    echo "✨ Zen MCP layered consensus available for: $request (Topic: $topic)"
+    echo "✨ PAL tiered consensus available for: $request (Topic: $topic)"
     echo "🎯 Organization: $org_level, Models: $model_count, Cost: $cost_threshold"
-    echo "💡 Call mcp__zen__layered_consensus directly from your slash commands"
+    echo "💡 Call mcp__pal__tiered_consensus directly from your slash commands"
     return 0
-
-    # Final fallback to sequential calls
-    echo "🔄 Sequential consensus (zen tools not available)"
-    for model in "${MODELS[@]}"; do
-        echo "--- $model perspective ---"
-        zen_mcp_call "$model" --request "$request (Topic: $topic)"
-    done
 }
 
 # Dedicated layered consensus function for advanced multi-layer analysis
@@ -320,11 +313,11 @@ zen_mcp_layered_consensus() {
 
     # Note: This function is now a wrapper for documentation purposes
     # The actual MCP calls should be made directly from slash commands using:
-    # mcp__zen__layered_consensus --question "$question" --org-level "$org_level" --model-count "$model_count" --layers "$layers" --cost-threshold "$cost_threshold" --model "google/gemini-2.5-flash"
+    # mcp__pal__tiered_consensus --prompt "$question" --level <1|2|3> --findings "..."
 
-    echo "✨ Zen MCP layered consensus available for: $question"
+    echo "✨ PAL tiered consensus available for: $question"
     echo "🎯 Organization: $org_level, Models: $model_count, Layers: $layers, Cost: $cost_threshold"
-    echo "💡 Call mcp__zen__layered_consensus directly from your slash commands"
+    echo "💡 Call mcp__pal__tiered_consensus directly from your slash commands"
     return 0
 }
 

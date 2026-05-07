@@ -19,6 +19,7 @@ from src.utils.time_utils import utc_timestamp
 
 
 # Optional OpenTelemetry imports
+trace: Any = None
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter
@@ -31,7 +32,7 @@ try:
     OPENTELEMETRY_AVAILABLE = True
 except ImportError:
     OPENTELEMETRY_AVAILABLE = False
-    trace = None  # type: ignore[assignment]
+    trace = None
 
 
 class StructuredLogger:
@@ -363,24 +364,26 @@ class AgentMetrics:
 
 
 # Global instances
-_observability_instrumentor = None
-_metrics_collector = None
+_instrumentor_ref: list[OpenTelemetryInstrumentor | None] = [None]
+_metrics_ref: list[AgentMetrics | None] = [None]
 
 
 def get_instrumentor() -> "OpenTelemetryInstrumentor":
     """Get global OpenTelemetry instrumentor."""
-    global _observability_instrumentor  # noqa: PLW0603
-    if _observability_instrumentor is None:
-        _observability_instrumentor = OpenTelemetryInstrumentor()
-    return _observability_instrumentor
+    if _instrumentor_ref[0] is None:
+        _instrumentor_ref[0] = OpenTelemetryInstrumentor()
+    inst = _instrumentor_ref[0]
+    assert inst is not None
+    return inst
 
 
 def get_metrics_collector() -> "AgentMetrics":
     """Get global metrics collector."""
-    global _metrics_collector  # noqa: PLW0603
-    if _metrics_collector is None:
-        _metrics_collector = AgentMetrics()
-    return _metrics_collector
+    if _metrics_ref[0] is None:
+        _metrics_ref[0] = AgentMetrics()
+    metrics = _metrics_ref[0]
+    assert metrics is not None
+    return metrics
 
 
 def trace_agent_operation(operation_name: str) -> Callable:

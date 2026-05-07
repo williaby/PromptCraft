@@ -19,14 +19,14 @@ and comprehensive reporting to prove the viability of the dynamic loading system
 import argparse
 import asyncio
 import contextlib
-import json
-import sys
-import time
-import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+import json
 from pathlib import Path
+import sys
+import time
+import traceback
 from typing import Any
 
 from src.mcp_integration.mcp_client import WorkflowStep
@@ -551,8 +551,7 @@ class ComprehensivePrototypeDemo:
     def _analyze_performance_results(self, scenario_results: list[dict[str, Any]]) -> dict[str, Any]:
         """Analyze overall performance across all scenarios."""
         successful_results = [
-            r for r in scenario_results 
-            if r.get("processing_result", {}).get("status", {}).get("success", False)
+            r for r in scenario_results if r.get("processing_result", {}).get("status", {}).get("success", False)
         ]
 
         if not successful_results:

@@ -78,7 +78,6 @@ class TestDatabaseManager:
             patch("src.database.connection.create_async_engine", return_value=mock_async_engine),
             patch("src.database.connection.async_sessionmaker", return_value=mock_session_factory),
         ):
-
             manager = DatabaseManager()
             await manager.initialize()
 
@@ -101,7 +100,6 @@ class TestDatabaseManager:
             patch("src.database.connection.get_settings", return_value=mock_settings),
             patch("src.database.connection.create_async_engine", return_value=mock_async_engine),
         ):
-
             manager = DatabaseManager()
             manager._engine = mock_async_engine  # Already initialized
 
@@ -117,7 +115,6 @@ class TestDatabaseManager:
             patch("src.database.connection.get_settings", return_value=mock_settings),
             patch("src.database.connection.create_async_engine", side_effect=Exception("Connection failed")),
         ):
-
             manager = DatabaseManager()
 
             with pytest.raises(DatabaseConnectionError, match="Database initialization failed"):
@@ -234,7 +231,6 @@ class TestDatabaseManager:
             patch("src.database.connection.create_async_engine", return_value=mock_async_engine),
             patch("src.database.connection.async_sessionmaker", return_value=mock_session_factory),
         ):
-
             manager = DatabaseManager()
 
             async with manager.get_session() as session:
@@ -249,7 +245,6 @@ class TestDatabaseManager:
             patch("src.database.connection.get_settings", return_value=mock_settings),
             patch("src.database.connection.create_async_engine", side_effect=Exception("Init failed")),
         ):
-
             manager = DatabaseManager()
 
             with pytest.raises(DatabaseConnectionError):
@@ -363,11 +358,10 @@ class TestGlobalDatabaseManager:
             patch("src.database.connection.create_async_engine", return_value=mock_async_engine),
             patch("src.database.connection.async_sessionmaker", return_value=mock_session_factory),
         ):
-
             # Clear any existing global instance
             import src.database.connection
 
-            src.database.connection._db_manager = None
+            src.database.connection._db_manager_ref[0] = None
 
             # Use the synchronous function for singleton test
             manager1 = get_database_manager()
@@ -382,11 +376,10 @@ class TestGlobalDatabaseManager:
             patch("src.database.connection.create_async_engine", return_value=mock_async_engine),
             patch("src.database.connection.async_sessionmaker", return_value=mock_session_factory),
         ):
-
             # Clear any existing global instance
             import src.database.connection
 
-            src.database.connection._db_manager = None
+            src.database.connection._db_manager_ref[0] = None
 
             # get_db_session returns an async generator, not a context manager
             async_gen = get_db_session()
@@ -402,7 +395,7 @@ class TestGlobalDatabaseManager:
         # Clear any existing global instance
         import src.database.connection
 
-        src.database.connection._db_manager = None
+        src.database.connection._db_manager_ref[0] = None
 
         # Use targeted mocking to simulate database initialization failure
         with (

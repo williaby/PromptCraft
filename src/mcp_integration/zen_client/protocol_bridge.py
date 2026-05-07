@@ -48,7 +48,7 @@ class MCPProtocolBridge:
                 action = "analyze_route"
                 # Validate and extract parameters for route analysis
                 request = RouteAnalysisRequest(**http_request)
-                arguments = {
+                arguments: dict[str, Any] = {
                     "action": action,
                     "prompt": request.prompt,
                     "user_tier": request.user_tier,

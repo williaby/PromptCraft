@@ -29,6 +29,21 @@ class FixApplication:
     backup_path: str | None = None
 
 
+@dataclass
+class AIVerificationResult:
+    """Result from AI model verification (mirrors rad_ai_verifier.AIVerificationResult)."""
+
+    assumption_id: str
+    model_used: str
+    status: str  # BLOCKING, REVIEW, NOTE
+    confidence: float
+    issues_found: list[str]
+    suggested_fixes: list[str]
+    defensive_patterns: list[str]
+    verification_time: float
+    cost_estimate: float
+
+
 class SafeFileModifier:
     """Safely modify files with backup and rollback capabilities"""
 
@@ -293,7 +308,7 @@ def main():
             # Load verification results (would be actual AIVerificationResult objects)
             results_data = json.load(f)
 
-        applier = FixApplier(apply_mode)
+        FixApplier(apply_mode)
         print(f"Fix applier initialized with mode: {apply_mode}")
         print(f"Ready to process {len(results_data.get('verification_results', []))} results")
 

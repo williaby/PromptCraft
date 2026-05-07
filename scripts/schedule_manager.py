@@ -274,7 +274,7 @@ class ScheduleManager:
     def _generate_report(self, schedule_name: str, results: dict[str, dict[str, Any]]) -> None:
         """Generate a test execution report."""
         report_file = (
-            self.project_root / f'schedule-report-{schedule_name}-{datetime.now().strftime("%Y%m%d-%H%M%S")}.md'
+            self.project_root / f"schedule-report-{schedule_name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
         )
 
         total_components = len(results)
@@ -292,7 +292,7 @@ class ScheduleManager:
             f.write(f"- **Total Components**: {total_components}\n")
             f.write(f"- **Successful**: {successful_components} ✅\n")
             f.write(f"- **Failed**: {failed_components} ❌\n")
-            f.write(f"- **Success Rate**: {(successful_components/total_components*100):.1f}%\n\n")
+            f.write(f"- **Success Rate**: {(successful_components / total_components * 100):.1f}%\n\n")
 
             f.write("## Component Results\n\n")
             for component_name, result in results.items():

@@ -141,11 +141,11 @@ class TestInputValidation:
         # This should escape the dangerous content, not raise an exception
         result = SecureStringField.validate("<script>alert('xss')</script>")
         assert result == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;"
-        
+
         # Test other dangerous patterns are also escaped
         result2 = SecureStringField.validate('onclick="alert(1)"')
         assert "&quot;" in result2  # Double quotes should be escaped
-        
+
         # Test basic HTML escaping
         result3 = SecureStringField.validate("<div>content</div>")
         assert result3 == "&lt;div&gt;content&lt;/div&gt;"
@@ -175,7 +175,13 @@ class TestInputValidation:
         for dangerous_input in dangerous_inputs:
             result = SecureStringField.validate(dangerous_input)
             # Verify the result is different from input (either escaped or contains escaped chars)
-            assert result != dangerous_input or "&lt;" in result or "&quot;" in result or "&gt;" in result or "&#x27;" in result
+            assert (
+                result != dangerous_input
+                or "&lt;" in result
+                or "&quot;" in result
+                or "&gt;" in result
+                or "&#x27;" in result
+            )
 
     def test_secure_path_field_valid_path(self):
         """Test SecurePathField with valid path."""
@@ -376,7 +382,7 @@ class TestAuditLogging:
             # Mock the structlog behavior - bind returns a logger context
             mock_context = Mock()
             mock_logger.bind.return_value = mock_context
-            
+
             logger = AuditLogger()
 
             event = AuditEvent(
@@ -386,7 +392,7 @@ class TestAuditLogging:
             )
 
             logger.log_event(event)
-            
+
             # Verify structlog path was taken
             mock_logger.bind.assert_called_once()
             mock_context.error.assert_called_once_with("Rate limit exceeded")
@@ -498,10 +504,10 @@ class TestSecurityIntegration:
         from fastapi import FastAPI
 
         from src.security.error_handlers import setup_secure_error_handlers
-        
+
         test_app = FastAPI()
         setup_secure_error_handlers(test_app)
-        
+
         with TestClient(test_app) as client:
             # Test non-existent endpoint
             response = client.get("/non-existent")
@@ -858,10 +864,10 @@ class TestRateLimitingExtended:
             with patch("src.security.rate_limiting.Limiter") as mock_limiter_class:
                 mock_limiter = Mock()
                 mock_limiter_class.return_value = mock_limiter
-                
+
                 limiter = create_limiter()
                 assert limiter is not None
-                
+
                 # Verify Limiter was called with Redis storage URI
                 mock_limiter_class.assert_called_once()
                 call_args = mock_limiter_class.call_args
@@ -1071,10 +1077,10 @@ class TestMainEndpoints:
         from fastapi import FastAPI
 
         from src.security.error_handlers import setup_secure_error_handlers
-        
+
         test_app = FastAPI()
         setup_secure_error_handlers(test_app)
-        
+
         with TestClient(test_app) as client:
             # Test non-existent endpoint
             response = client.get("/nonexistent")
@@ -1118,10 +1124,10 @@ class TestConfigurationCoverage:
             with patch("src.security.rate_limiting.Limiter") as mock_limiter_class:
                 mock_limiter = Mock()
                 mock_limiter_class.return_value = mock_limiter
-                
+
                 limiter = create_limiter()
                 assert limiter is not None
-                
+
                 # Verify correct Redis configuration was used
                 mock_limiter_class.assert_called_once()
                 call_args = mock_limiter_class.call_args
@@ -1259,7 +1265,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call raises validation error, second call returns debug settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = True
@@ -1292,7 +1297,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call raises validation error, second call returns production settings
             mock_debug_settings = Mock()
             mock_debug_settings.debug = False
@@ -1323,7 +1327,6 @@ class TestMainErrorHandling:
         client = TestClient(app)
 
         with patch("src.main.get_settings") as mock_get_settings:
-
             # First call fails with validation error
             # Second call (for debug check) also fails
             mock_get_settings.side_effect = [
@@ -1442,7 +1445,7 @@ class TestInputValidationEdgeCases:
         test_dict = {"malicious": "<script>alert('xss')</script>"}
 
         result = sanitize_dict_values(test_dict)
-        
+
         # Dangerous content should be HTML escaped
         assert "&lt;" in result["malicious"]
         assert "&gt;" in result["malicious"]
@@ -1489,9 +1492,9 @@ class TestAuditLoggingEdgeCases:
         with patch.object(audit_logger.logger, "bind") as mock_bind:
             mock_context = Mock()
             mock_bind.return_value = mock_context
-            
+
             audit_logger.log_event(event)
-            
+
             mock_bind.assert_called_once()
             mock_context.critical.assert_called_once_with("Critical security event")
 
@@ -1509,9 +1512,9 @@ class TestAuditLoggingEdgeCases:
         with patch.object(audit_logger.logger, "bind") as mock_bind:
             mock_context = Mock()
             mock_bind.return_value = mock_context
-            
+
             audit_logger.log_event(event)
-            
+
             mock_bind.assert_called_once()
             mock_context.error.assert_called_once_with("High security event")
 
@@ -1529,9 +1532,9 @@ class TestAuditLoggingEdgeCases:
         with patch.object(audit_logger.logger, "bind") as mock_bind:
             mock_context = Mock()
             mock_bind.return_value = mock_context
-            
+
             audit_logger.log_event(event)
-            
+
             mock_bind.assert_called_once()
             mock_context.warning.assert_called_once_with("Medium event")
 
@@ -1545,9 +1548,9 @@ class TestAuditLoggingEdgeCases:
         with patch.object(audit_logger.logger, "bind") as mock_bind:
             mock_context = Mock()
             mock_bind.return_value = mock_context
-            
+
             audit_logger.log_event(event)
-            
+
             mock_bind.assert_called_once()
             mock_context.info.assert_called_once_with("Low event")
 
@@ -1873,7 +1876,7 @@ class TestMainScriptExecution:
             try:
                 main_path = Path("src/main.py")
                 with main_path.open() as f:
-                    exec(compile(f.read(), "src/main.py", "exec"))  # noqa: S102
+                    exec(compile(f.read(), "src/main.py", "exec"))
             except SystemExit:
                 pass  # Expected due to configuration error
             except Exception as e:
@@ -2216,10 +2219,10 @@ class TestAdditionalSecurityCoverage:
                     with patch("src.security.rate_limiting.Limiter") as mock_limiter_class:
                         mock_limiter = Mock()
                         mock_limiter_class.return_value = mock_limiter
-                        
+
                         limiter = create_limiter()
                         assert limiter is not None
-                        
+
                         # Verify Redis was configured for production
                         mock_limiter_class.assert_called_once()
                         call_args = mock_limiter_class.call_args

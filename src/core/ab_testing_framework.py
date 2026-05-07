@@ -1090,7 +1090,7 @@ class RolloutController:
         self.db_session = db_session
         self.logger = logging.getLogger(__name__)
 
-    async def execute_rollout_step(self, experiment_id: str) -> bool:  # noqa: PLR0911
+    async def execute_rollout_step(self, experiment_id: str) -> bool:
         """Execute next rollout step for an experiment."""
         try:
             experiment = self.db_session.query(ExperimentModel).filter_by(id=experiment_id).first()
@@ -1474,18 +1474,18 @@ class ExperimentManager(ObservabilityMixin):
 
 
 # Global experiment manager instance
-_experiment_manager: ExperimentManager | None = None
+_experiment_manager_ref: list[ExperimentManager | None] = [None]
 
 
 async def get_experiment_manager() -> ExperimentManager:
     """Get or create the global experiment manager instance."""
-    global _experiment_manager  # noqa: PLW0603
-
-    if _experiment_manager is None:
-        _experiment_manager = ExperimentManager()
-        await _experiment_manager.start_monitoring()
-
-    return _experiment_manager
+    if _experiment_manager_ref[0] is None:
+        manager = ExperimentManager()
+        _experiment_manager_ref[0] = manager
+        await manager.start_monitoring()
+    local = _experiment_manager_ref[0]
+    assert local is not None
+    return local
 
 
 async def create_dynamic_loading_experiment(
