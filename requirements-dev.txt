@@ -1447,7 +1447,7 @@ locust-cloud==1.26.3 ; python_version >= "3.11" and python_version < "3.13" \
 locust==2.38.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:34978219ee0d682a135fd4c67f287c26725e7b3fa83d34d65be70efdb42ab4d1 \
     --hash=sha256:4ad9f2f9e7d56b7747ba67cb16e47ca0466b3908f402f50660f15f37621a5218
-mako==1.3.11 ; python_version >= "3.11" and python_version < "3.13" \
+mako==1.3.12 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:99579a6f39583fa7e5630a28c3c1f440e4e97a414b80372649c0ce338da2ea28 \
     --hash=sha256:baef24a52fc4fc514a0887ac600f9f1cff3d82c61d4d700a1fa84d597b88db59
 markdown-it-py==4.0.0 ; python_version >= "3.11" and python_version < "3.13" \
@@ -2504,7 +2504,7 @@ python-gnupg==0.5.5 ; python_version >= "3.11" and python_version < "3.13" \
 python-magic==0.4.27 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b \
     --hash=sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3
-python-multipart==0.0.26 ; python_version >= "3.11" and python_version < "3.13" \
+python-multipart==0.0.27 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:7a68db60c8bfb82e460637fa4750727b45af1d5e2ed215593f917f64694d34fe \
     --hash=sha256:efe91480f485f6a361427a541db4796f9e1591afc0fb8e7a4ba06bfbc6708996
 python-socketio==5.14.0 ; python_version >= "3.11" and python_version < "3.13" \
