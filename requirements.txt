@@ -1100,7 +1100,7 @@ markupsafe==3.0.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:f3818cb119498c0678015754eba762e0d61e5b52d34c8b13d770f0719f7b1d79 \
     --hash=sha256:f8b3d067f2e40fe93e1ccdd6b2e1d16c43140e76f02fb1319a05cf2b79d99430 \
     --hash=sha256:fcabf5ff6eea076f859677f5f0b6b5c1a51e70a376b0579e0eadef8db48c6b50
-mcp==1.13.0 ; python_version >= "3.11" and python_version < "3.13" \
+mcp==1.23.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:70452f56f74662a94eb72ac5feb93997b35995e389b3a3a574e078bed2aa9ab3 \
     --hash=sha256:8b1a002ebe6e17e894ec74d1943cc09aa9d23cb931bf58d49ab2e9fa6bb17e4b
 mdurl==0.1.2 ; python_version >= "3.11" and python_version < "3.13" \
