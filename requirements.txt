@@ -1706,7 +1706,7 @@ propcache==0.3.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:fad3b2a085ec259ad2c2842666b2a0a49dea8463579c606426128925af1ed725 \
     --hash=sha256:fb075ad271405dcad8e2a7ffc9a750a3bf70e533bd86e89f0603e607b93aa64c \
     --hash=sha256:fd3e6019dc1261cd0291ee8919dd91fbab7b169bb76aeef6c716833a3f65d206
-protobuf==6.32.0 ; python_version >= "3.11" and python_version < "3.13" \
+protobuf==6.33.5 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:15eba1b86f193a407607112ceb9ea0ba9569aed24f93333fe9a497cf2fda37d3 \
     --hash=sha256:501fe6372fd1c8ea2a30b4d9be8f87955a64d6be9c88a973996cef5ef6f0abf1 \
     --hash=sha256:75a2aab2bd1aeb1f5dc7c5f33bcb11d82ea8c055c9becbb41c26a8c43fd7092c \
