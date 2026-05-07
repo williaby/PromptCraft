@@ -1361,7 +1361,7 @@ openai==1.99.9 ; python_version >= "3.11" and python_version < "3.13" \
 opentelemetry-api==1.36.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:02f20bcacf666e1333b6b1f04e647dc1d5111f86b8e510238fcc56d7762cda8c \
     --hash=sha256:9a72572b9c416d004d492cbc6e61962c0501eaf945ece9b5a0f56597d8348aa0
-orjson==3.11.2 ; python_version >= "3.11" and python_version < "3.13" \
+orjson==3.11.6 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:07349e88025b9b5c783077bf7a9f401ffbfb07fd20e86ec6fc5b7432c28c2c5e \
     --hash=sha256:0afb89f16f07220183fd00f5f297328ed0a68d8722ad1b0c8dcd95b12bc82804 \
     --hash=sha256:0b84455e60c4bc12c1e4cbaa5cfc1acdc7775a9da9cec040e17232f4b05458bd \
