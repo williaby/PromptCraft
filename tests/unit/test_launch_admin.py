@@ -1,12 +1,13 @@
 """Tests for launch_admin.py."""
 
 import os
+from pathlib import Path
 import sys
 from unittest import mock
 
 
 # Add the project root to sys.path so we can import launch_admin
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import launch_admin
 
 
@@ -42,48 +43,48 @@ class TestLaunchAdmin:
 
     def test_main_handles_import_error(self):
         """Test that main() handles import errors gracefully."""
-        with mock.patch(
-            "src.ui.multi_journey_interface.MultiJourneyInterface",
-            side_effect=ImportError("Test import error"),
+        with (
+            mock.patch(
+                "src.ui.multi_journey_interface.MultiJourneyInterface",
+                side_effect=ImportError("Test import error"),
+            ),
+            mock.patch("builtins.print") as mock_print,
         ):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_handles_general_exception(self):
         """Test that main() handles general exceptions gracefully."""
-        with mock.patch(
-            "src.ui.multi_journey_interface.MultiJourneyInterface",
-            side_effect=RuntimeError("Test runtime error"),
+        with (
+            mock.patch(
+                "src.ui.multi_journey_interface.MultiJourneyInterface",
+                side_effect=RuntimeError("Test runtime error"),
+            ),
+            mock.patch("builtins.print") as mock_print,
         ):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_interface_creation_error(self):
         """Test that main() handles interface creation errors."""
         mock_interface = mock.MagicMock()
         mock_interface.create_interface.side_effect = Exception("Interface creation failed")
 
-        with mock.patch("src.ui.multi_journey_interface.MultiJourneyInterface", return_value=mock_interface):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+        with (
+            mock.patch("src.ui.multi_journey_interface.MultiJourneyInterface", return_value=mock_interface),
+            mock.patch("builtins.print") as mock_print,
+        ):
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_app_launch_error(self):
         """Test that main() handles app launch errors."""
@@ -92,15 +93,15 @@ class TestLaunchAdmin:
         mock_app.launch.side_effect = Exception("Launch failed")
         mock_interface.create_interface.return_value = mock_app
 
-        with mock.patch("src.ui.multi_journey_interface.MultiJourneyInterface", return_value=mock_interface):
-            with mock.patch("builtins.print") as mock_print:
-                launch_admin.main()
+        with (
+            mock.patch("src.ui.multi_journey_interface.MultiJourneyInterface", return_value=mock_interface),
+            mock.patch("builtins.print") as mock_print,
+        ):
+            launch_admin.main()
 
-                # Verify error was printed
-                error_calls = [
-                    call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)
-                ]
-                assert len(error_calls) > 0
+            # Verify error was printed
+            error_calls = [call for call in mock_print.call_args_list if "❌ Error launching interface" in str(call)]
+            assert len(error_calls) > 0
 
     def test_main_as_script(self):
         """Test that script can be run as main module."""
@@ -109,10 +110,8 @@ class TestLaunchAdmin:
         try:
             launch_admin.__name__ = "__main__"
 
-            with mock.patch("launch_admin.main") as mock_main:
-                # Simulate running the script
-                exec(compile(open("scripts/launch_admin.py").read(), "scripts/launch_admin.py", "exec"))
-
+            with mock.patch("launch_admin.main"), Path("scripts/launch_admin.py").open() as _f:
+                exec(compile(_f.read(), "scripts/launch_admin.py", "exec"))
                 # Note: This won't actually call main() in our test environment
                 # but we can verify the structure is correct
 

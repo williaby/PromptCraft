@@ -26,6 +26,7 @@ from src.core.fallback_integration import IntegrationMode, create_enhanced_task_
 from src.core.task_detection import DetectionResult
 from src.core.task_detection_config import DetectionMode, TaskDetectionConfig
 
+
 # Configure logging for demo
 logging.basicConfig(
     level=logging.INFO,

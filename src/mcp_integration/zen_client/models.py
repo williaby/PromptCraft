@@ -7,7 +7,7 @@ Defines request/response models for MCP stdio communication with zen-mcp-server.
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MCPToolCall(BaseModel):
@@ -20,8 +20,10 @@ class MCPToolCall(BaseModel):
 class MCPToolResult(BaseModel):
     """Model for MCP tool call results."""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     content: list[dict[str, Any]] = Field(default_factory=list, description="Tool response content")
-    isError: bool = Field(False, description="Whether the result is an error")
+    is_error: bool = Field(False, alias="isError", description="Whether the result is an error")
 
 
 class RouteAnalysisRequest(BaseModel):

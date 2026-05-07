@@ -498,7 +498,6 @@ class TaskDetectionDemo:
         ]
 
         for _i, scenario in enumerate(scenarios, 1):
-
             # Load functions for this scenario
             result = await self.loader.load_functions_for_query(
                 scenario["query"],

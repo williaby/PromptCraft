@@ -28,11 +28,11 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: "/src" if opt == "--cov" else None
         config.invocation_params.args = ["--cov=/src"]
-        
+
         pytest_configure(config)
-        
+
         config.addinivalue_line.assert_called_once_with(
-            "markers", 
+            "markers",
             "coverage_hook: Mark tests that should trigger coverage report generation",
         )
         assert config._coverage_enabled is True
@@ -42,9 +42,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: "html" if opt == "--cov-report" else None
         config.invocation_params.args = ["--cov-report=html"]
-        
+
         pytest_configure(config)
-        
+
         assert config._coverage_enabled is True
 
     def test_pytest_configure_with_cov_in_args(self):
@@ -52,9 +52,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: None
         config.invocation_params.args = ["--cov=src", "--verbose"]
-        
+
         pytest_configure(config)
-        
+
         assert config._coverage_enabled is True
 
     def test_pytest_configure_without_coverage(self):
@@ -62,9 +62,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: None
         config.invocation_params.args = ["--verbose", "-s"]
-        
+
         pytest_configure(config)
-        
+
         assert config._coverage_enabled is False
 
     def test_pytest_configure_with_getoption_valueerror(self):
@@ -72,9 +72,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = ValueError("Option not found")
         config.invocation_params.args = ["--cov=src", "--verbose"]
-        
+
         pytest_configure(config)
-        
+
         # Should fallback to checking args directly
         assert config._coverage_enabled is True
 
@@ -83,9 +83,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = ValueError("Option not found")
         config.invocation_params.args = ["--verbose", "-s"]
-        
+
         pytest_configure(config)
-        
+
         assert config._coverage_enabled is False
 
     def test_pytest_configure_marker_registration(self):
@@ -93,9 +93,9 @@ class TestPytestConfigure:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: None
         config.invocation_params.args = []
-        
+
         pytest_configure(config)
-        
+
         config.addinivalue_line.assert_called_once_with(
             "markers",
             "coverage_hook: Mark tests that should trigger coverage report generation",
@@ -109,7 +109,7 @@ class TestPytestSessionFinish:
         """Test pytest_sessionfinish when coverage is not enabled."""
         session = MagicMock()
         session.config._coverage_enabled = False
-        
+
         with patch("subprocess.run") as mock_run:
             pytest_sessionfinish(session, 0)
             mock_run.assert_not_called()
@@ -118,7 +118,7 @@ class TestPytestSessionFinish:
         """Test pytest_sessionfinish when _coverage_enabled attribute doesn't exist."""
         session = MagicMock()
         del session.config._coverage_enabled  # Simulate missing attribute
-        
+
         with patch("subprocess.run") as mock_run:
             pytest_sessionfinish(session, 0)
             mock_run.assert_not_called()
@@ -128,7 +128,7 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 0
-        
+
         with patch("subprocess.run") as mock_run:
             pytest_sessionfinish(session, 0)
             mock_run.assert_not_called()
@@ -138,14 +138,15 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         del session.testscollected  # Simulate missing attribute
-        
-        with patch("subprocess.run") as mock_run, \
-             patch("pathlib.Path.cwd") as mock_cwd, \
-             patch.object(Path, "exists") as mock_exists:
-            
+
+        with (
+            patch("subprocess.run"),
+            patch("pathlib.Path.cwd") as mock_cwd,
+            patch.object(Path, "exists") as mock_exists,
+        ):
             mock_cwd.return_value = Path("/test/project")
             mock_exists.side_effect = lambda: True  # pyproject.toml exists
-            
+
             pytest_sessionfinish(session, 0)
             # Should proceed since no testscollected attribute means tests ran
 
@@ -156,24 +157,24 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         # Setup path mocking
         project_root = Path("/test/project")
         mock_cwd.return_value = project_root
-        
+
         # Mock the exists method to return True for both pyproject.toml and hook script
         with patch.object(Path, "exists") as mock_exists:
             mock_exists.return_value = True
-            
+
             # Setup successful subprocess
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = "✅ Coverage reports updated successfully"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             pytest_sessionfinish(session, 0)
-            
+
             mock_run.assert_called_once_with(
                 [sys.executable, str(project_root / "scripts" / "vscode_coverage_hook.py")],
                 check=False,
@@ -190,19 +191,19 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         # Setup path mocking
         project_root = Path("/test/project")
         mock_cwd.return_value = project_root
-        
+
         # Mock exists to return True for pyproject.toml but False for script
         def exists_side_effect(path_obj):
             path_str = str(path_obj)
             return path_str.endswith("pyproject.toml")
-        
+
         with patch.object(Path, "exists", side_effect=exists_side_effect):
             pytest_sessionfinish(session, 0)
-            
+
             mock_run.assert_not_called()
 
     @patch("pathlib.Path.cwd")
@@ -212,19 +213,19 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         # Simulate finding project root in current directory
         current_dir = Path("/project")
         mock_cwd.return_value = current_dir
-        
+
         with patch.object(Path, "exists", return_value=True):
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = ""
             mock_run.return_value = mock_result
-            
+
             pytest_sessionfinish(session, 0)
-            
+
             # Should find script in current directory structure
             mock_run.assert_called_once()
             args, kwargs = mock_run.call_args
@@ -239,19 +240,19 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         current_dir = Path("/some/directory")
         mock_cwd.return_value = current_dir
-        
+
         # Mock to simulate script exists in current directory
         with patch.object(Path, "exists", return_value=True):
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_run.return_value = mock_result
-            
+
             pytest_sessionfinish(session, 0)
-            
-            # Should execute script 
+
+            # Should execute script
             mock_run.assert_called_once()
             args, kwargs = mock_run.call_args
             assert sys.executable in args[0]
@@ -259,15 +260,15 @@ class TestPytestSessionFinish:
             assert kwargs["cwd"] == str(current_dir)
 
     @patch("pathlib.Path.cwd")
-    @patch("subprocess.run")  
+    @patch("subprocess.run")
     def test_pytest_sessionfinish_no_script_exists(self, mock_run, mock_cwd):
         """Test early return when hook script doesn't exist (line 89 coverage)."""
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
-        
+
         # Mock exists to return True for pyproject.toml but False for script
         def exists_side_effect(path_obj):
             path_str = str(path_obj)
@@ -276,10 +277,10 @@ class TestPytestSessionFinish:
             if "vscode_coverage_hook.py" in path_str:
                 return False  # Don't find script
             return False
-        
+
         with patch.object(Path, "exists", side_effect=exists_side_effect):
             pytest_sessionfinish(session, 0)
-            
+
             # Should not call subprocess.run because script doesn't exist
             mock_run.assert_not_called()
 
@@ -288,16 +289,17 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         # Test to cover additional branches and edge cases
-        with patch("pathlib.Path.cwd") as mock_cwd, \
-             patch.object(Path, "exists") as mock_exists, \
-             patch("subprocess.run") as mock_run:
-            
+        with (
+            patch("pathlib.Path.cwd") as mock_cwd,
+            patch.object(Path, "exists") as mock_exists,
+            patch("subprocess.run") as mock_run,
+        ):
             # Set up basic path
             test_path = Path("/test")
             mock_cwd.return_value = test_path
-            
+
             # Mock exists to return specific results for coverage
             def exists_side_effect(path_obj):
                 path_str = str(path_obj)
@@ -308,11 +310,11 @@ class TestPytestSessionFinish:
                 if "vscode_coverage_hook.py" in path_str:
                     return False
                 return False
-            
+
             mock_exists.side_effect = exists_side_effect
-            
+
             pytest_sessionfinish(session, 0)
-            
+
             # Should not call subprocess.run because script doesn't exist (line 89)
             mock_run.assert_not_called()
 
@@ -323,15 +325,15 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
-        
+
         mock_result = MagicMock()
         mock_result.returncode = 1
         mock_result.stderr = "Error: Failed to generate coverage report"
         mock_result.stdout = ""
         mock_run.return_value = mock_result
-        
+
         with patch.object(Path, "exists", return_value=True):
             # Should handle gracefully without raising (line 105-106 coverage)
             pytest_sessionfinish(session, 0)
@@ -343,10 +345,10 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
         mock_run.side_effect = subprocess.CalledProcessError(1, "cmd")
-        
+
         with patch.object(Path, "exists", return_value=True):
             # Should not raise exception due to contextlib.suppress
             pytest_sessionfinish(session, 0)
@@ -358,10 +360,10 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
         mock_run.side_effect = subprocess.TimeoutExpired("cmd", 60)
-        
+
         with patch.object(Path, "exists", return_value=True):
             # Should not raise exception due to contextlib.suppress
             pytest_sessionfinish(session, 0)
@@ -373,15 +375,15 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
-        
+
         mock_result = MagicMock()
         mock_result.returncode = 1
         mock_result.stderr = "Script failed to execute"
         mock_result.stdout = ""
         mock_run.return_value = mock_result
-        
+
         with patch.object(Path, "exists", return_value=True):
             # Should handle gracefully without raising
             pytest_sessionfinish(session, 0)
@@ -393,18 +395,18 @@ class TestPytestSessionFinish:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         mock_cwd.return_value = Path("/test/project")
-        
+
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "✅ Coverage reports updated successfully\nOther output"
         mock_result.stderr = ""
         mock_run.return_value = mock_result
-        
+
         with patch.object(Path, "exists", return_value=True):
             pytest_sessionfinish(session, 0)
-            
+
             mock_run.assert_called_once()
 
 
@@ -417,7 +419,7 @@ class TestPytestRuntestMakereport:
         item.config._coverage_enabled = False
         call = MagicMock()
         call.when = "call"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert "COVERAGE_CONTEXT" not in os.environ
@@ -429,7 +431,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "setup"
         item.fspath = "/test/path/tests/unit/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert "COVERAGE_CONTEXT" not in os.environ
@@ -441,7 +443,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "teardown"
         item.fspath = "/test/path/tests/unit/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert "COVERAGE_CONTEXT" not in os.environ
@@ -452,7 +454,7 @@ class TestPytestRuntestMakereport:
         del item.config._coverage_enabled  # Simulate missing attribute
         call = MagicMock()
         call.when = "call"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert "COVERAGE_CONTEXT" not in os.environ
@@ -464,7 +466,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/unit/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "unit"
@@ -476,7 +478,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/auth/test_middleware.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "auth"
@@ -488,7 +490,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/integration/test_api.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "integration"
@@ -500,7 +502,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/security/test_auth.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "security"
@@ -512,7 +514,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/performance/test_load.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "performance"
@@ -524,7 +526,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/stress/test_memory.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "stress"
@@ -536,7 +538,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/contract/test_api_contract.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "contract"
@@ -548,7 +550,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/examples/test_demo.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "examples"
@@ -560,7 +562,7 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/misc/test_utility.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "other"
@@ -572,10 +574,10 @@ class TestPytestRuntestMakereport:
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/unit/core/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
-            
+
             # Should set context based on path matching
             assert os.environ["COVERAGE_CONTEXT"] == "unit"
 
@@ -585,10 +587,10 @@ class TestPytestRuntestMakereport:
         item.config._coverage_enabled = True
         call = MagicMock()
         call.when = "call"
-        
+
         # Test that /tests/unit/ takes precedence
         item.fspath = "/project/deep/tests/unit/auth/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "unit"
@@ -602,7 +604,7 @@ class TestModuleLevel:
         # This is mainly for coverage - the block just contains 'pass'
         # We can't easily test it directly, but we can verify it exists
         import pytest_plugins.coverage_hook_plugin as module
-        
+
         # Check that the module can be imported and the main block is present
         assert hasattr(module, "__name__")
         assert module.__name__ == "pytest_plugins.coverage_hook_plugin"
@@ -610,12 +612,12 @@ class TestModuleLevel:
     def test_imports_are_available(self):
         """Test that all required imports are available."""
         import pytest_plugins.coverage_hook_plugin as module
-        
+
         # Verify all required functions are available
         assert hasattr(module, "pytest_configure")
         assert hasattr(module, "pytest_sessionfinish")
         assert hasattr(module, "pytest_runtest_makereport")
-        
+
         # Verify imports work
         assert module.contextlib is not None
         assert module.os is not None
@@ -635,35 +637,35 @@ class TestIntegrationScenarios:
         config = MagicMock()
         config.getoption.side_effect = lambda opt: "/src" if opt == "--cov" else None
         config.invocation_params.args = ["--cov=/src"]
-        
+
         pytest_configure(config)
         assert config._coverage_enabled is True
-        
+
         # Step 2: Run test with makereport
         item = MagicMock()
         item.config = config
         call = MagicMock()
         call.when = "call"
         item.fspath = "/project/tests/unit/test_module.py"
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "unit"
-        
+
         # Step 3: Session finish with successful hook execution
         session = MagicMock()
         session.config = config
         session.testscollected = 5
-        
+
         mock_cwd.return_value = Path("/project")
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "✅ Coverage reports updated"
         mock_run.return_value = mock_result
-        
+
         with patch.object(Path, "exists", return_value=True):
             pytest_sessionfinish(session, 0)
-            
+
             # Verify hook script was called
             mock_run.assert_called_once()
             args, kwargs = mock_run.call_args
@@ -676,10 +678,10 @@ class TestIntegrationScenarios:
         item.config._coverage_enabled = True
         call = MagicMock()
         call.when = "call"
-        
+
         # Test with Path object instead of string
         item.fspath = Path("/project/tests/unit/test_module.py")
-        
+
         with patch.dict(os.environ, {}, clear=True):
             pytest_runtest_makereport(item, call)
             assert os.environ["COVERAGE_CONTEXT"] == "unit"
@@ -689,7 +691,7 @@ class TestIntegrationScenarios:
         session = MagicMock()
         session.config._coverage_enabled = True
         session.testscollected = 10
-        
+
         error_types = [
             subprocess.TimeoutExpired("cmd", 60),
             subprocess.CalledProcessError(1, "cmd"),
@@ -697,12 +699,10 @@ class TestIntegrationScenarios:
             PermissionError("Access denied"),
             Exception("Generic error"),
         ]
-        
-        with patch("pathlib.Path.cwd") as mock_cwd, \
-             patch("subprocess.run") as mock_run:
-            
+
+        with patch("pathlib.Path.cwd") as mock_cwd, patch("subprocess.run") as mock_run:
             mock_cwd.return_value = Path("/project")
-            
+
             for error in error_types:
                 mock_run.side_effect = error
                 with patch.object(Path, "exists", return_value=True):

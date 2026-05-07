@@ -1,270 +1,295 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Claude Code Supervisor Role (CRITICAL)
-
-**Claude Code acts as the SUPERVISOR for all development tasks and MUST:**
-
-1. **Always Use TodoWrite Tool**: Create and maintain TODO lists for ALL tasks to track progress
-2. **Assign Tasks to Agents**: Each TODO item should be assigned to a specialized agent via Zen MCP Server
-3. **Review Agent Work**: Validate all agent outputs before proceeding to next steps
-4. **Use Temporary Reference Files**: Create `.tmp-` prefixed files in `tmp_cleanup/` folder to store detailed context that might be lost during compaction
-5. **Maintain Continuity**: Use reference files to preserve TODO details across conversation compactions
-
-### Agent Assignment Patterns
-
-```bash
-# Always assign TODO items to appropriate agents:
-- Security tasks → Security Agent (via mcp__zen__secaudit)
-- Code reviews → Code Review Agent (via mcp__zen__codereview)
-- Testing → Test Engineer Agent (via mcp__zen__testgen)
-- Documentation → Documentation Agent (via mcp__zen__docgen)
-- Debugging → Debug Agent (via mcp__zen__debug)
-- Analysis → Analysis Agent (via mcp__zen__analyze)
-- Refactoring → Refactor Agent (via mcp__zen__refactor)
-```
-
-### Temporary Reference Files (Anti-Compaction Strategy)
-
-**ALWAYS create temporary reference files when:**
-- TODO list contains >5 items
-- Complex implementation details need preservation
-- Multi-step workflows span multiple conversation turns
-- Agent assignments and progress need tracking
-
-**Naming Convention**: `tmp_cleanup/.tmp-{task-type}-{timestamp}.md` (e.g., `tmp_cleanup/.tmp-auth4-implementation-20250125.md`)
+Project-scoped guidance for Claude Code working in PromptCraft-Hybrid. This file
+layers on top of the global standards at `~/.claude/CLAUDE.md` (v1.4.0); where a
+rule here conflicts with global, project wins per the scoped-context rule.
 
 ## Project Overview
 
-PromptCraft-Hybrid is a Zen-powered AI workbench that transforms queries into accurate, context-aware outputs through intelligent orchestration and multi-agent collaboration. It implements a hybrid architecture with on-premise compute, external Qdrant vector database on Unraid, and Ubuntu VM deployment.
+PromptCraft-Hybrid is an AI workbench that transforms queries into accurate,
+context-aware outputs through intelligent orchestration and multi-agent
+collaboration. Hybrid architecture: on-premise compute plus an external Qdrant
+vector database on Unraid, deployed to an Ubuntu VM.
 
-**Key Architecture Concepts:**
+**Key architecture concepts:**
 
-- **Dual-Orchestration Model**: Zen MCP Server for real-time user interactions, Prefect for background workflows
-- **Four Progressive Journeys**: From simple prompt enhancement to full multi-agent automation
-- **HyDE Query Enhancement**: Three-tier query analysis system for improved retrieval accuracy
-- **Agent-First Design**: Specialized AI agents with dedicated knowledge bases
-- **C.R.E.A.T.E. Framework**: Core prompt engineering methodology (Context, Request, Examples, Augmentations, Tone & Format, Evaluation)
+- **Dual orchestration**: real-time agent flows for user interaction; Prefect
+  for background workflows.
+- **Four progressive journeys**: prompt enhancement through full multi-agent
+  automation.
+- **HyDE query enhancement**: three-tier query analysis for retrieval accuracy.
+- **Agent-first design**: specialized agents with dedicated knowledge bases
+  under `knowledge/{agent_id}/`.
+- **C.R.E.A.T.E. framework**: prompt engineering methodology (Context, Request,
+  Examples, Augmentations, Tone and Format, Evaluation).
 
-**Tech Stack:**
+**Tech stack:**
 
-- Python 3.11+ (Poetry dependency management)
-- Gradio UI + FastAPI backend
-- External Qdrant vector database (192.168.1.16:6333) for semantic search
-- Azure AI integration for LLM services
-- Docker containerization with multi-stage builds
-- Zen MCP Server for agent orchestration
+- Python 3.11+ with Poetry
+- Gradio UI, FastAPI backend
+- External Qdrant at 192.168.1.16:6333 for semantic search
+- Azure AI for LLM services
+- Docker multi-stage builds
 - Prefect for background orchestration
 
-## Essential Development Commands
+## Repository Layout
 
-### Quick Setup
+```text
+src/                     # Application code (see module map below)
+tests/                   # Pytest suite; subdirs by type (unit/integration/e2e/...)
+knowledge/{agent_id}/    # Agent-scoped knowledge files (RAG-ingested)
+docs/                    # Product docs, standards, architecture records
+docs/standards/          # Detailed specs referenced by this file
+.claude/                 # Project-level commands, settings, rules
+config/                  # Application configuration
+database/                # Schema and migrations
+temp_cleanup/            # Holding area for in-flight files; not shipped
+```
+
+`src/` module purpose (one-liner each):
+
+| Module | Purpose |
+| --- | --- |
+| `agents/` | Agent registry, base classes, discovery |
+| `api/` | FastAPI endpoints (dynamic loading, A/B testing, core API) |
+| `auth/`, `auth_simple/` | Auth and authorization frameworks |
+| `config/` | Pydantic-validated settings per environment |
+| `core/` | Query counseling, HyDE processor, user control system |
+| `database/` | Models and connection management |
+| `mcp_integration/` | Model Context Protocol bridging |
+| `ui/` | Gradio journey interface |
+| `utils/` | Encryption, logging, circuit breakers, resilience |
+| `monitoring/`, `metrics/` | Observability |
+| `security/`, `standards/` | Security utilities and validation standards |
+
+## Quick Start
+
 ```bash
 # Complete development setup
 make setup
 
-# Install dependencies and validate keys
+# Dependencies and pre-commit install
 poetry install --sync
 poetry run pre-commit install
 
-# REQUIRED: Validate GPG and SSH keys are present
-gpg --list-secret-keys  # Must show GPG key for .env encryption
-ssh-add -l              # Must show SSH key for signed commits
-git config --get user.signingkey  # Must be configured for signed commits
+# Validate GPG and SSH keys are present (required)
+gpg --list-secret-keys              # GPG key for .env encryption
+ssh-add -l                          # SSH key for signed commits
+git config --get user.signingkey    # Signing key for git
 ```
 
-### Testing (Tiered Approach)
+## Commands
+
+### Testing (tiered)
+
 ```bash
-# Fast Development Loop (< 1 minute)
-make test-fast
-
-# Pre-commit Validation (< 2 minutes)
-make test-pre-commit
-
-# PR Validation (< 5 minutes)
-make test-pr
-
-# Full Test Suite
-make test
+make test-fast          # < 1 min, inner dev loop
+make test-pre-commit    # < 2 min, pre-commit gate
+make test-pr            # < 5 min, PR gate
+make test               # full suite
 ```
 
-### Code Quality
+### Quality and security
+
 ```bash
-# Format code
-make format
-
-# Run linting checks
-make lint
-
-# Run all pre-commit hooks manually
-make pre-commit
+make format             # Ruff format (project uses 120 char line length)
+make lint               # Ruff + pre-commit-equivalent linters
+make pre-commit         # Run all pre-commit hooks manually
+make security           # Bandit, pip-audit, Semgrep
+poetry run python src/utils/encryption.py   # Validate env + keys
 ```
 
-### Security & Environment
-```bash
-# Run security scans
-make security
+> **Reference:** `docs/standards/development-commands.md`
 
-# Validate environment and encryption keys
-poetry run python src/utils/encryption.py
-```
+## Agent and Skill Orchestration
 
-> **Detailed Commands**: See `docs/standards/development-commands.md` for comprehensive command reference
+Use the built-in **Agent** tool for specialized work and the **Skill** tool for
+the shared skill catalog. Do not introduce new project-owned references to
+retired `mcp__zen__*` tool names; use subagents and skills instead.
 
-## Core Development Standards
+**When to delegate via `Agent`:**
 
-> **Complete Standards**: See `/docs/standards/` directory for detailed specifications
+| Task type | Subagent |
+| --- | --- |
+| Broad codebase exploration (read-only) | `Explore` |
+| Implementation planning | `Plan` |
+| Security review | `security-auditor` or relevant `owasp-*` agent |
+| Code review | `code-reviewer` |
+| Test authoring | `test-engineer` or `test-writer` |
+| Documentation | `documentation-writer` |
+| Database work | `database-operations-agent` |
+| Debugging | start with the `systematic-debugging` skill |
 
-### File-Specific Linting (MANDATORY COMPLIANCE)
+**When to use `Skill`:**
 
-- **Python**: `pyproject.toml` (Black 120 chars, Ruff, MyPy, Bandit B101/B601 excluded)
-- **Markdown**: `.markdownlint.json` (120 char line length, consistent list style)
-- **YAML**: `.yamllint.yml` (aligned with pyproject.toml excludes, 120 chars)
-- **MUST RUN** file-specific linters before committing changes
+For named workflows: `brainstorming`, `test-driven-development`,
+`writing-plans`, `executing-plans`, `verification-before-completion`,
+`requesting-code-review`, `systematic-debugging`, `ci-fix`, `pr-review`,
+`handoff`. Prefer the skill over ad-hoc improvisation when one applies.
 
-### Naming Conventions (MANDATORY COMPLIANCE)
+**Model selection** (per global guidance; project overrides none):
 
-**Core Components:**
-- **Agent ID**: snake_case (e.g., `security_agent`, `create_agent`)
-- **Agent Classes**: PascalCase + "Agent" suffix (e.g., `SecurityAgent`)
-- **Knowledge Files**: kebab-case.md (e.g., `auth-best-practices.md`)
+| Task type | Model |
+| --- | --- |
+| Complex reasoning, architecture, ADRs | Opus 4.7 |
+| Standard development | Sonnet 4.6 (default) |
+| Read-only exploration | Haiku 4.5 |
 
-**Code & Files:**
-- **Python Files**: snake_case.py
-- **Python Classes**: PascalCase
-- **Python Functions**: snake_case()
-- **Git Branches**: kebab-case with prefixes (e.g., `feature/add-claude-md-generator`)
+### Task tracking
 
-### Knowledge Base Standards (MANDATORY)
+Use `TodoWrite` for any task with three or more steps or spanning multiple
+turns. Mark each item `completed` immediately on finish; do not batch. For
+plans that must survive compaction, see the `writing-plans` skill. Note:
+`docs/planning/` is **gitignored** (local scratch only); use
+`docs/architecture/` for tracked plans and ADR-style decision records.
 
-**File Structure**: `/knowledge/{agent_id}/{kebab-case-filename}.md`
+## Development Standards
 
-**YAML Front Matter**:
+### Linting and formatting (MANDATORY)
+
+- **Python**: `pyproject.toml` with Ruff format + lint; line length **120**
+  (project override of global 88). Type checking currently uses MyPy; migration
+  to BasedPyright strict is a tracked improvement.
+- **Markdown**: `.markdownlint.json`, 120-char lines.
+- **YAML**: `.yamllint.yml`, aligned with Python excludes.
+- File-specific linters must pass before commit.
+
+> **Reference:** `docs/standards/linting.md`, `docs/standards/python.md` (if present)
+
+### Naming conventions (MANDATORY)
+
+- **Agent ID**: `snake_case` (e.g. `security_agent`)
+- **Agent class**: `PascalCase` + `Agent` suffix (e.g. `SecurityAgent`)
+- **Knowledge files**: `kebab-case.md` under `knowledge/{agent_id}/`
+- **Python**: `snake_case` files and functions, `PascalCase` classes
+- **Git branches**: `kebab-case` with prefix, e.g. `feature/add-hyde-variants`
+
+### Knowledge base (MANDATORY)
+
+Files at `knowledge/{agent_id}/{kebab-case-file}.md` with YAML front matter:
+
 ```yaml
 ---
 title: [Human-readable title]
 version: [X.Y or X.Y.Z]
 status: [draft|in-review|published]
-agent_id: [snake_case - MUST match folder name]
+agent_id: [snake_case, must match folder]
 tags: ['lowercase', 'underscore_separated']
-purpose: [Single sentence ending with period]
+purpose: [Single sentence ending with period.]
 ---
 ```
 
-**Content Rules:**
-- Each H3 section MUST be completely self-contained
-- No H4 or deeper headings (breaks RAG chunking)
-- Only `status: published` files are ingested by RAG pipeline
+Each H3 section must be self-contained. No H4 or deeper (breaks RAG chunking).
+Only `status: published` files are ingested.
 
-> **Complete Knowledge Standards**: See `docs/standards/knowledge-base-standards.md`
+> **Reference:** `docs/standards/knowledge-base-standards.md`
 
-## Development Philosophy (MANDATORY)
+### Development philosophy
 
-1. **Reuse First**: Check ledgerbase, FISProject, and .github repositories for existing solutions
-2. **Configure, Don't Build**: Use Zen MCP Server, Heimdall MCP Server, and AssuredOSS packages
-3. **Focus on Unique Value**: Build only what's truly unique to PromptCraft
+1. **Reuse first**: search existing modules before building new ones.
+2. **Configure, do not build**: prefer MCP-driven integrations and established
+   packages over custom scaffolding.
+3. **Focus on unique value**: build only what is truly PromptCraft-specific.
 
-### Security Requirements (MANDATORY)
+## Security
 
-- **GPG Key**: MUST be present for .env encryption/decryption
-- **SSH Key**: MUST be present for signed commits to GitHub
-- **Key Validation**: Environment MUST validate both keys are available
-- **AssuredOSS**: Service account at `.gcp/service-account.json`
+- GPG key required for `.env` encryption and decryption.
+- SSH key required for signed commits; `git config user.signingkey` must be set.
+- Environment validation runs via `poetry run python src/utils/encryption.py`.
+- No unfixed CVEs age past 60 days. Document any suppressions in
+  `docs/known-vulnerabilities.md` (OpenSSF release gate).
 
-> **Complete Security Standards**: See `docs/standards/security-requirements.md`
+> **Reference:** `docs/standards/security-requirements.md`
 
-## Supervisor Workflow Patterns (MANDATORY)
+### Response-Aware Development (RAD)
 
-### Task Decomposition and Agent Assignment
+Tag assumptions that could cause production failures using `#CRITICAL`,
+`#ASSUME`, `#EDGE` markers paired with `#VERIFY` instructions. Mandatory
+categories: timing, external resources, data integrity, concurrency, security,
+payment or financial. Current tag count in `src/` is low; expand coverage as
+you touch those code paths.
 
-**Every development task MUST follow this pattern:**
+> **Reference (global):** `~/.claude/docs/response-aware-development.md`
 
-1. **Create TODO List**: Use TodoWrite tool to break down the task into specific, actionable items
-2. **Agent Assignment**: Assign each TODO item to the most appropriate specialized agent
-3. **Progress Tracking**: Mark items as in_progress when assigned, completed when validated
-4. **Reference File Creation**: For complex tasks, create `.tmp-` reference files in `tmp_cleanup/` folder immediately
-5. **Agent Output Validation**: Review all agent work before marking items complete
+## Slash Commands and Skills
 
-### Multi-Agent Coordination
+Prefer global skills from `~/.claude/` for generic development tasks; fall
+back to project-specific commands under `.claude/commands/` only for
+PromptCraft-specific workflows.
 
-**For complex tasks requiring multiple agents:**
+**Common global skills (partial list):**
 
-1. **Sequential Dependencies**: Use TodoWrite to show dependencies between tasks
-2. **Parallel Execution**: Assign independent tasks to multiple agents simultaneously
-3. **Integration Points**: Create specific TODO items for integrating agent outputs
-4. **Quality Gates**: Assign review tasks to appropriate agents after implementation
+- `pr-review`, `ci-fix`, `testing`, `test-coverage`, `quality`, `security`
+- `rad` (Response-Aware Development)
+- `writing-plans`, `executing-plans`, `phase-gate`, `project-planning`
+- `git`, `finishing-a-development-branch`, `using-git-worktrees`
+- `brainstorming`, `systematic-debugging`, `debug-tests`
+- `verification-before-completion`, `requesting-code-review`,
+  `receiving-code-review`
+- `doc-audit`, `handoff`, `claude-md-improver`, `skill-creator`
 
-> **Complete Workflow Patterns**: See `docs/standards/supervisor-workflows.md`
+**Project-specific commands (PromptCraft-only functionality):**
 
-## Claude Code Slash Commands
-
-**Project-specific slash commands for complete development workflow automation:**
-
-### Core Workflow Commands
 ```bash
-# Complete implementation and validation cycle with multi-agent review
-/project:workflow-review-cycle phase X issue Y        # Full review with O3/Gemini
-/project:workflow-review-cycle consensus phase X issue Y  # Multi-model consensus
-
-# Comprehensive planning and scope analysis
-/project:workflow-plan-validation        # Validate project plans
-/project:workflow-implementation        # Guided implementation workflow
+/creation-agent-skeleton           # Scaffold a PromptCraft runtime agent
+/creation-knowledge-file           # Scaffold a knowledge base file
+/validation-agent-structure        # Validate agent registry structure
+/validation-knowledge-chunk        # Validate RAG chunking
+/validation-naming-conventions     # Enforce project naming rules
+/validation-frontmatter            # Validate YAML frontmatter
+/validation-standardize-planning-doc
+/quality-frontmatter-validate
+/quality-naming-conventions
+/migration-knowledge-file          # KB file migrations
+/migration-legacy-knowledge
+/migration-qdrant-schema           # Qdrant schema migration
+/function-loading-control          # Dynamic function loader
+/tools-ai-validate                 # AI tools config validation
+/workflow-resolve-issue            # Project-specific issue orchestrator
+/workflow-review-cycle             # Project-specific review orchestrator
+/notification                      # PushCut notifications
+/meta-list-commands                # List available commands
+/meta-command-help                 # Per-command help
 ```
 
-### Validation & Quality Commands
-```bash
-# Pre-commit validation with comprehensive quality gates
-/project:validation-precommit                              # Full pre-commit validation
-/project:validation-naming-conventions                     # Naming standards compliance
-/project:validation-knowledge-chunk                        # Knowledge file validation
-```
+> **Migration note:** Several former generic-purpose commands were deleted
+> in favor of global skills. Many of the remaining project-specific
+> commands should eventually be converted to skills for better discovery
+> and auto-activation. Use the `skill-creator` skill when converting.
 
-### Creation Commands
-```bash
-# Generate properly structured files following project standards
-/project:creation-knowledge-file security authentication best practices  # Knowledge files
-/project:creation-agent-skeleton                                        # Agent scaffolding
-```
+## Git and Worktrees
 
-> **Complete Command Reference**: See `docs/standards/slash-commands.md`
+- Always run `pre-commit run --all-files` before committing.
+- Commits must be signed.
+- Conventional commit prefixes: `feat`, `fix`, `docs`, `test`, `chore`,
+  `style`, `refactor`, `security`, `build`, `ci`.
+- Worktrees live at `.worktrees/<branch-slug>` inside the project; never at
+  `~/.config/...` or global paths.
 
-## Important Development Notes
+> **Reference:** `docs/standards/git-workflow.md`
 
-### Mandatory Practices
+## OpenSSF Baseline
 
-- **ALWAYS** use TodoWrite tool for task tracking and agent coordination
-- **ASSIGN** each TODO item to appropriate specialized agents via Zen MCP Server
-- **CREATE** temporary reference files in `tmp_cleanup/` folder for complex multi-step tasks
-- **VALIDATE** all agent outputs before marking TODO items as completed
-- **ALWAYS** run file-specific linters before committing changes
-- **FOLLOW** all naming conventions exactly as specified
-- **USE** Poetry for dependency management - avoid pip directly
+Required root files: `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`,
+`CHANGELOG.md`, `README.md`. Release gate blocks any vulnerability aged 60+
+days; document each in `docs/known-vulnerabilities.md`.
 
-### Code Review Checklist
+## Scope and Folder-Level CLAUDE.md
 
-- [ ] **TODO Management**: Was TodoWrite used for task tracking?
-- [ ] **Agent Assignment**: Were tasks assigned to appropriate specialized agents?
-- [ ] **Reference Files**: Were temporary reference files created for complex tasks?
-- [ ] **Agent Validation**: Was all agent work reviewed and validated?
-- [ ] **Reuse Check**: Could this use existing code from ledgerbase/FISProject?
-- [ ] **Security**: Are secrets in encrypted .env? GPG/SSH keys validated?
-- [ ] **Naming**: Do all components follow naming conventions?
-- [ ] **Knowledge Files**: Do they follow the style guide?
+This repo has distinct subdomains (`src/api/`, `src/agents/`, `src/auth/`,
+`src/mcp_integration/`, `src/ui/`). When a subfolder accrues conventions that
+differ from this file, add a focused `src/<area>/CLAUDE.md` with one or two
+overrides rather than restating global rules.
 
-### Pre-Commit Linting Checklist
+## Writing Style
 
-Before committing ANY changes, ensure:
+- **No em-dashes** anywhere (docs, commits, ADRs, comments). Use a comma,
+  semicolon, colon, or restructured sentence.
+- Favor imperatives over narrative prose in standards files.
 
-- [ ] Environment validation passes (GPG and SSH keys present)
-- [ ] File-specific linter has been run and passes
-- [ ] Pre-commit hooks execute successfully
-- [ ] No linting warnings or errors remain
-- [ ] Code formatting is consistent with project standards
-- [ ] Commits are signed (Git signing key configured)
-- [ ] Test coverage remains at or above 80%
-- [ ] All security scans pass (Safety, Bandit)
+> **Reference (global):** `~/.claude/.claude/rules/writing.md`
 
 ---
 
-*This streamlined configuration focuses on essential guidance. Detailed specifications available in `/docs/standards/` directory.*
+*Detailed specifications live in `docs/standards/` and in the global standards
+under `~/.claude/`. This file is the entry point; follow the links for depth.*

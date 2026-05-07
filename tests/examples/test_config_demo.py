@@ -121,7 +121,7 @@ class TestConfigDemo:
         mock_settings.version = "1.0.0"
         mock_settings.environment = "prod"
         mock_settings.debug = False
-        mock_settings.api_host = "0.0.0.0"  # noqa: S104
+        mock_settings.api_host = "0.0.0.0"
         mock_settings.api_port = 80
         mock_get_settings.return_value = mock_settings
 

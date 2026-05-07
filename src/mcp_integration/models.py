@@ -296,17 +296,20 @@ class TaskType:
 
 # MCP Connection Models for Smart Discovery
 
+
 @dataclass
 class MCPConnectionConfig:
     """Configuration for MCP server connection."""
+
     server_path: str
     env_vars: dict[str, str] = field(default_factory=dict)
     timeout: float = 30.0
 
 
-@dataclass 
+@dataclass
 class MCPConnectionStatus:
     """Status of an MCP server connection."""
+
     connected: bool
     server_name: str
     url: str | None = None
@@ -317,6 +320,7 @@ class MCPConnectionStatus:
 @dataclass
 class MCPHealthCheck:
     """Health check result for MCP server."""
+
     healthy: bool
     response_time: float | None = None
     error: str | None = None
@@ -324,7 +328,7 @@ class MCPHealthCheck:
 
 
 __all__ = [
-    "ExecutionResult", 
+    "ExecutionResult",
     "MCPConnectionConfig",
     "MCPConnectionStatus",
     "MCPHealthCheck",

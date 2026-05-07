@@ -63,10 +63,10 @@ class TestMetricsCollectorImports:
         """Test that required dependencies can be imported."""
         # Test standard library imports
         import asyncio
-        import logging
-        import time
         from collections import defaultdict, deque
         from datetime import datetime, timedelta
+        import logging
+        import time
 
         assert asyncio is not None
         assert logging is not None

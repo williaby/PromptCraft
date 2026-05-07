@@ -27,7 +27,6 @@ class TestStructuredLoggerCoverageGaps:
             patch.object(obs_module, "OPENTELEMETRY_AVAILABLE", True),
             patch.object(obs_module, "trace", Mock(), create=True) as mock_trace,
         ):
-
             # Mock span with recording capability
             mock_span = Mock()
             mock_span.is_recording.return_value = True
@@ -95,7 +94,6 @@ class TestOpenTelemetryInstrumentorCoverageGaps:
             patch.object(obs_module, "BatchSpanProcessor", mock_processor, create=True),
             patch.object(obs_module, "LoggingInstrumentor", mock_logging_inst, create=True),
         ):
-
             # Setup mocks
             mock_resource.create.return_value = Mock()
             mock_tracer_provider_instance = Mock()
@@ -131,7 +129,6 @@ class TestOpenTelemetryInstrumentorCoverageGaps:
             patch.object(obs_module, "LoggingInstrumentor", mock_logging_inst, create=True),
             patch("logging.getLogger") as mock_get_logger,
         ):
-
             # Setup mocks
             mock_resource.create.return_value = Mock()
             mock_tracer_provider_instance = Mock()
@@ -165,7 +162,6 @@ class TestOpenTelemetryInstrumentorCoverageGaps:
             patch.object(obs_module, "trace", mock_trace, create=True),
             patch.object(obs_module, "LoggingInstrumentor", Mock(), create=True),
         ):
-
             # Setup the resource creation mock
             mock_resource.create.return_value = Mock()
             mock_tracer_provider_instance = Mock()
@@ -214,7 +210,6 @@ class TestOpenTelemetryInstrumentorCoverageGaps:
             patch.object(obs_module, "trace", mock_trace, create=True),
             patch.object(obs_module, "LoggingInstrumentor", Mock(), create=True),
         ):
-
             # Setup the resource creation mock
             mock_resource.create.return_value = Mock()
             mock_tracer_provider_instance = Mock()
@@ -257,7 +252,6 @@ class TestOpenTelemetryInstrumentorCoverageGaps:
             patch.object(obs_module, "Status", mock_status, create=True),
             patch.object(obs_module, "StatusCode", mock_status_code, create=True),
         ):
-
             # Setup the resource creation mock
             mock_resource.create.return_value = Mock()
             mock_tracer_provider_instance = Mock()
@@ -425,7 +419,6 @@ class TestEdgeCasesAndErrorHandling:
             patch.object(obs_module, "OPENTELEMETRY_AVAILABLE", True),
             patch.object(obs_module, "trace", Mock(), create=True) as mock_trace,
         ):
-
             # Mock span that is not recording
             mock_span = Mock()
             mock_span.is_recording.return_value = False

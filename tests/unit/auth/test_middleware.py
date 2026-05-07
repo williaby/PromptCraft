@@ -6,6 +6,7 @@ ServiceTokenUser, security logging components, and all helper functions to achie
 >90% code coverage.
 """
 
+import json
 import logging
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -395,13 +396,15 @@ class TestAuthenticationMiddleware:
         call_next = AsyncMock()
         call_next.return_value = Response(content="Success", status_code=200)
 
-        with patch.object(middleware, "_is_excluded_path", return_value=False):
-            with patch("src.auth.middleware.logger.debug") as mock_debug:
-                response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_is_excluded_path", return_value=False),
+            patch("src.auth.middleware.logger.debug") as mock_debug,
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                assert response.status_code == 200
-                call_next.assert_called_once_with(request)
-                mock_debug.assert_called_once()
+            assert response.status_code == 200
+            call_next.assert_called_once_with(request)
+            mock_debug.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_extract_auth_token_cf_access_jwt(self):
@@ -712,11 +715,13 @@ class TestAuthenticationMiddleware:
 
         mock_service_user = ServiceTokenUser(token_id="123", token_name="test_service", metadata={}, usage_count=0)
 
-        with patch.object(middleware, "_extract_auth_token", return_value=token):
-            with patch.object(middleware, "_validate_service_token", return_value=mock_service_user):
-                user = await middleware._authenticate_request(request)
+        with (
+            patch.object(middleware, "_extract_auth_token", return_value=token),
+            patch.object(middleware, "_validate_service_token", return_value=mock_service_user),
+        ):
+            user = await middleware._authenticate_request(request)
 
-                assert user == mock_service_user
+            assert user == mock_service_user
 
     @pytest.mark.asyncio
     async def test_authenticate_request_jwt_token(self, middleware):
@@ -727,11 +732,13 @@ class TestAuthenticationMiddleware:
         mock_jwt_user = Mock()
         mock_jwt_user.email = "test@example.com"
 
-        with patch.object(middleware, "_extract_auth_token", return_value=token):
-            with patch.object(middleware, "_validate_jwt_token", return_value=mock_jwt_user):
-                user = await middleware._authenticate_request(request)
+        with (
+            patch.object(middleware, "_extract_auth_token", return_value=token),
+            patch.object(middleware, "_validate_jwt_token", return_value=mock_jwt_user),
+        ):
+            user = await middleware._authenticate_request(request)
 
-                assert user == mock_jwt_user
+            assert user == mock_jwt_user
 
     @pytest.mark.asyncio
     async def test_log_authentication_event_success(self, middleware):
@@ -797,17 +804,19 @@ class TestAuthenticationMiddleware:
             raise Exception("Database error")
             yield  # unreachable but needed for generator syntax
 
-        with patch("src.auth.middleware.get_db", return_value=failing_get_db()):
-            with patch("src.auth.middleware.logger.warning") as mock_warning:
-                # Should not raise exception
-                await middleware._log_authentication_event(
-                    request,
-                    user_email="test@example.com",
-                    event_type="auth_test",
-                    success=True,
-                )
+        with (
+            patch("src.auth.middleware.get_db", return_value=failing_get_db()),
+            patch("src.auth.middleware.logger.warning") as mock_warning,
+        ):
+            # Should not raise exception
+            await middleware._log_authentication_event(
+                request,
+                user_email="test@example.com",
+                event_type="auth_test",
+                success=True,
+            )
 
-                mock_warning.assert_called_once()
+            mock_warning.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_log_authentication_event_no_client(self, middleware):
@@ -841,7 +850,7 @@ class TestAuthenticationMiddleware:
 
         # Check response content
         response_content = response.body.decode()
-        response_json = eval(response_content)
+        response_json = json.loads(response_content)
         assert response_json["error"] == "Authentication failed"
         assert response_json["message"] == "Test authentication error"
 
@@ -853,7 +862,7 @@ class TestAuthenticationMiddleware:
         response = middleware._create_auth_error_response(error)
 
         response_content = response.body.decode()
-        response_json = eval(response_content)
+        response_json = json.loads(response_content)
         assert response_json["message"] == "Authentication required"
 
     @pytest.mark.asyncio
@@ -942,12 +951,14 @@ class TestAuthenticationMiddleware:
         async def mock_get_db():
             raise Exception("Database connection failed")
 
-        with patch("src.auth.middleware.get_db", return_value=mock_get_db()):
-            with patch("src.auth.middleware.logger.warning") as mock_warning:
-                # Should not raise exception
-                await middleware._update_user_session(authenticated_user, request)
+        with (
+            patch("src.auth.middleware.get_db", return_value=mock_get_db()),
+            patch("src.auth.middleware.logger.warning") as mock_warning,
+        ):
+            # Should not raise exception
+            await middleware._update_user_session(authenticated_user, request)
 
-                mock_warning.assert_called_once()
+            mock_warning.assert_called_once()
 
     def test_get_client_ip_cloudflare_header(self, middleware):
         """Test _get_client_ip with Cloudflare header."""
@@ -1046,18 +1057,20 @@ class TestAuthenticationMiddleware:
         call_next = AsyncMock()
         call_next.return_value = Response(content="Success", status_code=200)
 
-        with patch.object(middleware, "_authenticate_request", return_value=mock_user):
-            with patch.object(middleware, "_update_user_session", new_callable=AsyncMock) as mock_update:
-                with patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log:
-                    response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_authenticate_request", return_value=mock_user),
+            patch.object(middleware, "_update_user_session", new_callable=AsyncMock) as mock_update,
+            patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log,
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                    assert response.status_code == 200
-                    assert request.state.authenticated_user == mock_user
-                    assert request.state.user_email == "test@example.com"
-                    assert request.state.user_role == UserRole.USER
+            assert response.status_code == 200
+            assert request.state.authenticated_user == mock_user
+            assert request.state.user_email == "test@example.com"
+            assert request.state.user_role == UserRole.USER
 
-                    mock_update.assert_called_once_with(mock_user, request)
-                    mock_log.assert_called_once()
+            mock_update.assert_called_once_with(mock_user, request)
+            mock_log.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_dispatch_full_success_flow_service_token(self, middleware):
@@ -1077,16 +1090,18 @@ class TestAuthenticationMiddleware:
         call_next = AsyncMock()
         call_next.return_value = Response(content="Service Success", status_code=200)
 
-        with patch.object(middleware, "_authenticate_request", return_value=mock_service_user):
-            with patch.object(middleware, "_update_user_session", new_callable=AsyncMock):
-                with patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock):
-                    response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_authenticate_request", return_value=mock_service_user),
+            patch.object(middleware, "_update_user_session", new_callable=AsyncMock),
+            patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock),
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                    assert response.status_code == 200
-                    assert request.state.authenticated_user == mock_service_user
-                    assert request.state.user_email is None  # Service tokens don't have email
-                    assert request.state.user_role is None  # Service tokens don't have roles
-                    assert request.state.token_metadata == {"permissions": ["read"]}
+            assert response.status_code == 200
+            assert request.state.authenticated_user == mock_service_user
+            assert request.state.user_email is None  # Service tokens don't have email
+            assert request.state.user_role is None  # Service tokens don't have roles
+            assert request.state.token_metadata == {"permissions": ["read"]}
 
     @pytest.mark.asyncio
     async def test_dispatch_authentication_error(self, middleware):
@@ -1100,13 +1115,15 @@ class TestAuthenticationMiddleware:
 
         call_next = AsyncMock()
 
-        with patch.object(middleware, "_authenticate_request", side_effect=auth_error):
-            with patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log:
-                response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_authenticate_request", side_effect=auth_error),
+            patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log,
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                assert response.status_code == 401
-                call_next.assert_not_called()
-                mock_log.assert_called_once()
+            assert response.status_code == 401
+            call_next.assert_not_called()
+            mock_log.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_dispatch_unexpected_exception(self, middleware):
@@ -1118,15 +1135,17 @@ class TestAuthenticationMiddleware:
 
         call_next = AsyncMock()
 
-        with patch.object(middleware, "_authenticate_request", side_effect=Exception("Unexpected error")):
-            with patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log:
-                with patch("src.auth.middleware.logger.error") as mock_error:
-                    response = await middleware.dispatch(request, call_next)
+        with (
+            patch.object(middleware, "_authenticate_request", side_effect=Exception("Unexpected error")),
+            patch.object(middleware, "_log_authentication_event", new_callable=AsyncMock) as mock_log,
+            patch("src.auth.middleware.logger.error") as mock_error,
+        ):
+            response = await middleware.dispatch(request, call_next)
 
-                    assert response.status_code == 500
-                    assert isinstance(response, JSONResponse)
-                    mock_error.assert_called_once()
-                    mock_log.assert_called_once()
+            assert response.status_code == 500
+            assert isinstance(response, JSONResponse)
+            mock_error.assert_called_once()
+            mock_log.assert_called_once()
 
 
 class TestRateLimiterFunctions:
@@ -1173,7 +1192,7 @@ class TestRateLimiterFunctions:
         mock_limiter = Mock()
         mock_limiter_class.return_value = mock_limiter
 
-        limiter = create_rate_limiter(mock_config)
+        create_rate_limiter(mock_config)
 
         # Test key function with authenticated user
         call_args = mock_limiter_class.call_args
@@ -1350,10 +1369,8 @@ class TestHelperFunctions:
         request = Mock()
         request.state = Mock(spec=[])
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match=r"Authentication required"):
             require_authentication(request)
-
-        assert "Authentication required" in str(exc_info.value)
 
     def test_require_role_success(self):
         """Test require_role with correct role."""
@@ -1372,20 +1389,16 @@ class TestHelperFunctions:
         mock_user.role.value = "user"
         request.state.authenticated_user = mock_user
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match=r"Role 'admin' required"):
             require_role(request, "admin")
-
-        assert "Role 'admin' required" in str(exc_info.value)
 
     def test_require_role_no_user(self):
         """Test require_role without authenticated user."""
         request = Mock()
         request.state = Mock(spec=[])
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(Exception, match=r"Authentication required"):
             require_role(request, "admin")
-
-        assert "Authentication required" in str(exc_info.value)
 
 
 class TestAuthenticationIntegration:

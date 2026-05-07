@@ -43,7 +43,7 @@ def validate_environment_keys() -> None:
     # Validate SSH key
     try:
         result = subprocess.run(  # nosec B603, B607, S607
-            ["ssh-add", "-l"],  # noqa: S607
+            ["ssh-add", "-l"],
             capture_output=True,
             text=True,
             check=False,
@@ -58,7 +58,7 @@ def validate_environment_keys() -> None:
     # Validate Git signing configuration
     try:
         result = subprocess.run(  # nosec B603, B607, S607
-            ["git", "config", "--get", "user.signingkey"],  # noqa: S607
+            ["git", "config", "--get", "user.signingkey"],
             capture_output=True,
             text=True,
             check=False,

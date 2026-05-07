@@ -9,8 +9,8 @@ This module provides monitoring capabilities for service tokens including:
 """
 
 import asyncio
-import logging
 from datetime import datetime, timedelta
+import logging
 from typing import Any
 
 from sqlalchemy import text
@@ -19,6 +19,7 @@ from src.auth.service_token_manager import ServiceTokenManager
 from src.config.settings import ApplicationSettings
 from src.database.connection import database_health_check, get_db
 from src.utils.datetime_compat import UTC
+
 
 logger = logging.getLogger(__name__)
 

@@ -267,7 +267,7 @@ class ApplicationSettings(BaseSettings):
     )
 
     api_host: str = Field(
-        default="0.0.0.0",  # nosec B104 # Intentional bind to all interfaces for development  # noqa: S104
+        default="0.0.0.0",  # nosec B104 # Intentional bind to all interfaces for development
         description="Host address for the API server",
     )
 
@@ -779,7 +779,7 @@ class ApplicationSettings(BaseSettings):
 
         # Allow common special cases
         if v in (
-            "0.0.0.0",  # nosec B104 # Valid development host binding  # noqa: S104
+            "0.0.0.0",  # nosec B104 # Valid development host binding
             "localhost",
             "127.0.0.1",
         ):
@@ -1096,7 +1096,7 @@ class ApplicationSettings(BaseSettings):
 
 
 # Global settings instance for singleton pattern
-_settings: ApplicationSettings | None = None
+_settings_ref: list[ApplicationSettings | None] = [None]
 
 # Configure logging for this module
 logging.basicConfig(
@@ -1317,7 +1317,7 @@ def _validate_general_security(
 
     # Validate host/port combination makes sense
     if (
-        settings.api_host == "0.0.0.0"  # nosec B104 # Intentional bind to all interfaces  # noqa: S104
+        settings.api_host == "0.0.0.0"  # nosec B104 # Intentional bind to all interfaces
         and settings.environment == "dev"
         and settings.api_port < PRIVILEGED_PORT_THRESHOLD
     ):
@@ -1451,10 +1451,9 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
         >>> if settings.database_password:
         ...     print("Database password is configured (value hidden)")
     """
-    global _settings  # Singleton pattern requires global state  # noqa: PLW0603
     logger = logging.getLogger(__name__)
 
-    if _settings is None:
+    if _settings_ref[0] is None:
         logger.info("Initializing application configuration...")
 
         # Check encryption availability
@@ -1470,14 +1469,14 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
         try:
             # Load settings with enhanced error handling
             logger.debug("Loading configuration from environment and files...")
-            _settings = ApplicationSettings()
+            _settings_ref[0] = ApplicationSettings()
 
             # Perform startup validation if requested
             if validate_on_startup:
-                validate_configuration_on_startup(_settings)
+                validate_configuration_on_startup(_settings_ref[0])
             else:
                 # Still log basic configuration info
-                _log_configuration_status(_settings)
+                _log_configuration_status(_settings_ref[0])
 
         except ValidationError as e:
             # Convert Pydantic validation errors to our enhanced format
@@ -1501,7 +1500,9 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
 
         logger.info("Configuration initialization completed successfully")
 
-    return _settings
+    settings = _settings_ref[0]
+    assert settings is not None  # guaranteed by initialization above
+    return settings
 
 
 def reload_settings(validate_on_startup: bool = True) -> ApplicationSettings:
@@ -1519,8 +1520,7 @@ def reload_settings(validate_on_startup: bool = True) -> ApplicationSettings:
     Raises:
         ConfigurationValidationError: If configuration validation fails
     """
-    global _settings  # Singleton pattern requires global state  # noqa: PLW0603
     logger = logging.getLogger(__name__)
     logger.info("Reloading configuration...")
-    _settings = None
+    _settings_ref[0] = None
     return get_settings(validate_on_startup=validate_on_startup)

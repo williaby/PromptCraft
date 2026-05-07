@@ -405,7 +405,7 @@ class TestInsightGenerator:
                 frequency=0.8,
                 confidence=0.9,
                 associated_categories=[],
-                typical_sequence=[f"cmd{i}", f"cmd{i+1}"],
+                typical_sequence=[f"cmd{i}", f"cmd{i + 1}"],
                 performance_impact={"token_savings": 300},
                 suggested_optimizations=[],
             )
