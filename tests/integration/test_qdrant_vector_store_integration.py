@@ -232,7 +232,7 @@ class TestQdrantVectorStoreIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_qdrant_vector_store_mocked_operations(  # noqa: PLR0915
+    async def test_qdrant_vector_store_mocked_operations(
         self,
         qdrant_config,
         sample_documents,
@@ -245,7 +245,6 @@ class TestQdrantVectorStoreIntegration:
             patch("src.core.vector_store.QDRANT_AVAILABLE", True),
             patch("src.core.vector_store.QdrantClient") as mock_client_class,
         ):
-
             store = QdrantVectorStore(qdrant_config)
             mock_client = MagicMock()  # QdrantClient is synchronous but some methods are awaited in the code
             mock_client_class.return_value = mock_client

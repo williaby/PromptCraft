@@ -6,9 +6,9 @@ and health checks.
 """
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
+import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,15 +24,15 @@ class TestTokenExpirationAlert:
     def test_init_basic(self):
         """Test basic TokenExpirationAlert initialization."""
         alert = TokenExpirationAlert(
-            token_name="test-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="test-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=10,
         )
 
-        assert alert.token_name == "test-token"  # noqa: S105  # Test constant
-        assert alert.token_id == "123"  # noqa: S105  # Test constant
+        assert alert.token_name == "test-token"  # Test constant
+        assert alert.token_id == "123"  # Test constant
         assert alert.days_until_expiration == 5
         assert alert.usage_count == 10
         assert alert.last_used is None
@@ -44,8 +44,8 @@ class TestTokenExpirationAlert:
         metadata = {"environment": "production", "service": "api"}
 
         alert = TokenExpirationAlert(
-            token_name="prod-token",  # noqa: S106  # Test token name
-            token_id="456",  # noqa: S106  # Test token ID
+            token_name="prod-token",  # Test token name
+            token_id="456",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=2),
             days_until_expiration=2,
             usage_count=50,
@@ -61,8 +61,8 @@ class TestTokenExpirationAlert:
     def test_severity_critical(self):
         """Test severity property for critical alerts (≤1 day)."""
         alert = TokenExpirationAlert(
-            token_name="critical-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="critical-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(hours=12),
             days_until_expiration=0,
             usage_count=10,
@@ -77,8 +77,8 @@ class TestTokenExpirationAlert:
     def test_severity_high(self):
         """Test severity property for high alerts (2-7 days)."""
         alert = TokenExpirationAlert(
-            token_name="high-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="high-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=3),
             days_until_expiration=3,
             usage_count=10,
@@ -93,8 +93,8 @@ class TestTokenExpirationAlert:
     def test_severity_medium(self):
         """Test severity property for medium alerts (8-30 days)."""
         alert = TokenExpirationAlert(
-            token_name="medium-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="medium-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=15),
             days_until_expiration=15,
             usage_count=10,
@@ -109,8 +109,8 @@ class TestTokenExpirationAlert:
     def test_severity_low(self):
         """Test severity property for low alerts (>30 days)."""
         alert = TokenExpirationAlert(
-            token_name="low-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="low-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=45),
             days_until_expiration=45,
             usage_count=10,
@@ -121,8 +121,8 @@ class TestTokenExpirationAlert:
     def test_is_active_token_no_last_used(self):
         """Test is_active_token property when last_used is None."""
         alert = TokenExpirationAlert(
-            token_name="unused-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="unused-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=0,
@@ -137,8 +137,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=10)
 
         alert = TokenExpirationAlert(
-            token_name="active-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="active-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=25,
@@ -153,8 +153,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=35)
 
         alert = TokenExpirationAlert(
-            token_name="inactive-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="inactive-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=5,
@@ -169,8 +169,8 @@ class TestTokenExpirationAlert:
         last_used = datetime.now(UTC) - timedelta(days=30, seconds=1)
 
         alert = TokenExpirationAlert(
-            token_name="edge-token",  # noqa: S106  # Test token name
-            token_id="123",  # noqa: S106  # Test token ID
+            token_name="edge-token",  # Test token name
+            token_id="123",  # Test token ID
             expires_at=datetime.now(UTC) + timedelta(days=5),
             days_until_expiration=5,
             usage_count=10,
@@ -226,7 +226,7 @@ class TestServiceTokenMonitor:
         mock_rows = [
             MagicMock(
                 id=1,
-                token_name="token-1",  # noqa: S106  # Test token name
+                token_name="token-1",  # Test token name
                 expires_at=datetime.now(UTC) + timedelta(days=5),
                 usage_count=10,
                 last_used=datetime.now(UTC) - timedelta(days=2),
@@ -235,7 +235,7 @@ class TestServiceTokenMonitor:
             ),
             MagicMock(
                 id=2,
-                token_name="token-2",  # noqa: S106  # Test token name
+                token_name="token-2",  # Test token name
                 expires_at=datetime.now(UTC) + timedelta(days=1),
                 usage_count=25,
                 last_used=datetime.now(UTC) - timedelta(days=1),
@@ -259,8 +259,8 @@ class TestServiceTokenMonitor:
 
         # Verify first alert
         alert1 = alerts[0]
-        assert alert1.token_name == "token-1"  # noqa: S105  # Test constant
-        assert alert1.token_id == "1"  # noqa: S105  # Test constant
+        assert alert1.token_name == "token-1"  # Test constant
+        assert alert1.token_id == "1"  # Test constant
         assert alert1.days_until_expiration == 5
         assert alert1.usage_count == 10
         assert alert1.metadata == {"env": "prod"}
@@ -268,8 +268,8 @@ class TestServiceTokenMonitor:
 
         # Verify second alert
         alert2 = alerts[1]
-        assert alert2.token_name == "token-2"  # noqa: S105  # Test constant
-        assert alert2.token_id == "2"  # noqa: S105  # Test constant
+        assert alert2.token_name == "token-2"  # Test constant
+        assert alert2.token_id == "2"  # Test constant
         assert alert2.days_until_expiration == 1
         assert alert2.usage_count == 25
         assert alert2.metadata == {}
@@ -335,8 +335,8 @@ class TestServiceTokenMonitor:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="expiring-token",  # noqa: S106  # Test token name
-                token_id="123",  # noqa: S106  # Test token ID
+                token_name="expiring-token",  # Test token name
+                token_id="123",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -386,7 +386,7 @@ class TestServiceTokenMonitor:
         # Verify security alerts
         assert len(metrics["security_alerts"]) == 1
         alert = metrics["security_alerts"][0]
-        assert alert["token_name"] == "expiring-token"  # noqa: S105  # nosec S105 - Test token name
+        assert alert["token_name"] == "expiring-token"  # nosec S105 - Test token name
 
         # Verify performance metrics
         perf = metrics["performance_metrics"]
@@ -468,22 +468,22 @@ class TestServiceTokenMonitor:
         """Test sending alerts via log method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="critical-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="critical-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(hours=12),
                 days_until_expiration=0,
                 usage_count=50,
             ),
             TokenExpirationAlert(
-                token_name="high-token",  # noqa: S106  # Test token name
-                token_id="2",  # noqa: S106  # Test token ID
+                token_name="high-token",  # Test token name
+                token_id="2",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=3),
                 days_until_expiration=3,
                 usage_count=25,
             ),
             TokenExpirationAlert(
-                token_name="medium-token",  # noqa: S106  # Test token name
-                token_id="3",  # noqa: S106  # Test token ID
+                token_name="medium-token",  # Test token name
+                token_id="3",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=15),
                 days_until_expiration=15,
                 usage_count=10,
@@ -508,8 +508,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts via email method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="test-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -528,8 +528,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts via webhook method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="test-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -548,8 +548,8 @@ class TestServiceTokenMonitor:
         """Test sending alerts with unknown notification method."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="test-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -569,8 +569,8 @@ class TestServiceTokenMonitor:
         """Test error handling during alert sending."""
         alerts = [
             TokenExpirationAlert(
-                token_name="test-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="test-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -591,8 +591,8 @@ class TestServiceTokenMonitor:
         alerts_by_severity = {
             "critical": [
                 TokenExpirationAlert(
-                    token_name="critical-token",  # noqa: S106  # Test token name
-                    token_id="1",  # noqa: S106  # Test token ID
+                    token_name="critical-token",  # Test token name
+                    token_id="1",  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(hours=12),
                     days_until_expiration=0,
                     usage_count=50,
@@ -600,15 +600,15 @@ class TestServiceTokenMonitor:
             ],
             "high": [
                 TokenExpirationAlert(
-                    token_name="high-token-1",  # noqa: S106  # Test token name
-                    token_id="2",  # noqa: S106  # Test token ID
+                    token_name="high-token-1",  # Test token name
+                    token_id="2",  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=3),
                     days_until_expiration=3,
                     usage_count=25,
                 ),
                 TokenExpirationAlert(
-                    token_name="high-token-2",  # noqa: S106  # Test token name
-                    token_id="3",  # noqa: S106  # Test token ID
+                    token_name="high-token-2",  # Test token name
+                    token_id="3",  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=5),
                     days_until_expiration=5,
                     usage_count=15,
@@ -636,8 +636,8 @@ class TestServiceTokenMonitor:
         alerts_by_severity = {
             "medium": [
                 TokenExpirationAlert(
-                    token_name="medium-token",  # noqa: S106  # Test token name
-                    token_id="1",  # noqa: S106  # Test token ID
+                    token_name="medium-token",  # Test token name
+                    token_id="1",  # Test token ID
                     expires_at=datetime.now(UTC) + timedelta(days=15),
                     days_until_expiration=15,
                     usage_count=20,
@@ -663,8 +663,8 @@ class TestServiceTokenMonitor:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="expiring-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="expiring-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=2),
                 days_until_expiration=2,
                 usage_count=10,
@@ -970,8 +970,8 @@ class TestServiceTokenMonitorIntegration:
         # Mock expiring tokens
         mock_alerts = [
             TokenExpirationAlert(
-                token_name="critical-prod-token",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="critical-prod-token",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(hours=6),
                 days_until_expiration=0,
                 usage_count=500,
@@ -979,8 +979,8 @@ class TestServiceTokenMonitorIntegration:
                 metadata={"environment": "production", "service": "api"},
             ),
             TokenExpirationAlert(
-                token_name="warning-dev-token",  # noqa: S106  # Test token name
-                token_id="2",  # noqa: S106  # Test token ID
+                token_name="warning-dev-token",  # Test token name
+                token_id="2",  # Test token ID
                 expires_at=datetime.now(UTC) + timedelta(days=5),
                 days_until_expiration=5,
                 usage_count=50,
@@ -1208,24 +1208,24 @@ class TestServiceTokenMonitorEdgeCases:
         edge_case_alerts = [
             # Token expiring in exactly 1 second (should be 0 days)
             TokenExpirationAlert(
-                token_name="immediate-expiry",  # noqa: S106  # Test token name
-                token_id="1",  # noqa: S106  # Test token ID
+                token_name="immediate-expiry",  # Test token name
+                token_id="1",  # Test token ID
                 expires_at=now + timedelta(seconds=1),
                 days_until_expiration=0,
                 usage_count=10,
             ),
             # Token expiring in exactly 24 hours (should be 1 day)
             TokenExpirationAlert(
-                token_name="one-day-expiry",  # noqa: S106  # Test token name
-                token_id="2",  # noqa: S106  # Test token ID
+                token_name="one-day-expiry",  # Test token name
+                token_id="2",  # Test token ID
                 expires_at=now + timedelta(hours=24),
                 days_until_expiration=1,
                 usage_count=20,
             ),
             # Token that expired 1 hour ago (negative days)
             TokenExpirationAlert(
-                token_name="already-expired",  # noqa: S106  # Test token name
-                token_id="3",  # noqa: S106  # Test token ID
+                token_name="already-expired",  # Test token name
+                token_id="3",  # Test token ID
                 expires_at=now - timedelta(hours=1),
                 days_until_expiration=-1,
                 usage_count=5,

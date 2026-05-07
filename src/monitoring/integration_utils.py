@@ -6,10 +6,10 @@ system with external platforms like Prometheus, Grafana, DataDog, CloudWatch,
 and other monitoring infrastructure.
 """
 
-import json
-import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,7 @@ import aiohttp
 
 from src.utils.datetime_compat import UTC
 from src.utils.observability import create_structured_logger
+
 
 logger = logging.getLogger(__name__)
 

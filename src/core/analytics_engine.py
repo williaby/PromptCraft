@@ -477,7 +477,7 @@ class PatternDetector:
                         performance_impact={"preload_benefit": len(categories) * 100},
                         suggested_optimizations=[
                             f"Preload {', '.join(top_categories)} categories at {hour}:00",
-                            f"Create time-based profile for {hour}:00-{(hour+2)%24}:00",
+                            f"Create time-based profile for {hour}:00-{(hour + 2) % 24}:00",
                         ],
                     ),
                 )

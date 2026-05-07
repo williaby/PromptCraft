@@ -159,7 +159,6 @@ class VectorStoreExamples:
             ]
 
             for strategy, _description in strategies:
-
                 search_params = SearchParameters(
                     embeddings=[query_embedding],
                     collection="ml_docs",
@@ -211,12 +210,10 @@ class VectorStoreExamples:
         ]
 
         for query in test_queries:
-
             # Analyze query specificity
             enhanced_query = await hyde_processor.three_tier_analysis(query)
 
             if enhanced_query.processing_strategy == "standard_hyde":
-
                 # Store hypothetical documents in enhanced vector store
                 vector_docs = []
                 for i, hyde_doc in enumerate(enhanced_query.hypothetical_docs):

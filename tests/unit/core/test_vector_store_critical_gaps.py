@@ -492,7 +492,7 @@ class TestErrorHandlingAndEdgeCases:
             assert True
         except Exception as e:
             # Or raise appropriate connection error
-            assert "connect" in str(e).lower() or "connection" in str(e).lower()  # noqa: PT017
+            assert "connect" in str(e).lower() or "connection" in str(e).lower()
 
     async def test_circuit_breaker_integration(self, mock_store):
         """Test circuit breaker integration."""
@@ -514,9 +514,7 @@ class TestErrorHandlingAndEdgeCases:
             await mock_store.insert_documents([invalid_doc])
         except Exception as e:
             # May raise dimension error or handle gracefully
-            assert (  # noqa: PT017
-                "dimension" in str(e).lower() or "embedding" in str(e).lower() or "validation" in str(e).lower()
-            )
+            assert "dimension" in str(e).lower() or "embedding" in str(e).lower() or "validation" in str(e).lower()
 
     async def test_empty_search_results(self):
         """Test handling of empty search results."""

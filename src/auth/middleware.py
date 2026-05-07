@@ -42,10 +42,10 @@ except ImportError:
     class JWTValidator:
         """Compatibility placeholder for JWTValidator."""
 
-        def __init__(self, *args, **kwargs) -> None:
+        def __init__(self, *args: object, **kwargs: object) -> None:
             """Initialize placeholder JWTValidator."""
 
-        def validate_token(self, token, **kwargs) -> None:
+        def validate_token(self, token: str, **kwargs: object) -> None:
             """Placeholder token validation that returns None."""
             return
 
@@ -860,21 +860,14 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         # Fallback to client host
         if hasattr(request, "client") and request.client:
-            # Ensure we get a string, not a MagicMock object
             host = getattr(request.client, "host", None)
-            if host and isinstance(host, str):
-                # Validate it looks like a reasonable IP address (max 39 chars for IPv6)
-                if len(host) <= 39:
-                    return host
-                return None
-            try:
-                host_str = str(host)
-                # Validate it looks like an IP address (max 39 chars for IPv6)
-                if len(host_str) <= 39:
-                    return host_str
-            except Exception:  # nosec B110  # noqa: S110
-                # Silently ignore IP parsing errors - acceptable for IP extraction
-                pass
+            if host:
+                try:
+                    host_str = host if isinstance(host, str) else str(host)
+                    if len(host_str) <= 39:
+                        return host_str
+                except Exception as e:
+                    logger.debug("Failed to convert client host to string: %s", e)
 
         return None
 

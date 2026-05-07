@@ -114,7 +114,8 @@ class Journey2IntelligentSearch(LoggerMixin):
                         routing_metadata["routing_method"] = "zen_mcp"
                         routing_metadata["model_used"] = result["result"]["model_used"]
                         routing_metadata["cost_optimized"] = result["result"]["routing_metadata"].get(
-                            "cost_optimized", False,
+                            "cost_optimized",
+                            False,
                         )
 
                         await self.zen_client.disconnect()
@@ -259,8 +260,8 @@ class Journey2IntelligentSearch(LoggerMixin):
                         # Create model attribution with routing info
                         model_attribution = f"""
                         <div class="model-attribution">
-                            <strong>🤖 Model Used:</strong> {actual_model} | 
-                            <strong>⏱️ Response Time:</strong> {response_time:.2f}s | 
+                            <strong>🤖 Model Used:</strong> {actual_model} |
+                            <strong>⏱️ Response Time:</strong> {response_time:.2f}s |
                             <strong>💰 Cost:</strong> ${estimated_cost:.4f} |
                             <strong>🎯 Confidence:</strong> {response.confidence:.1%} |
                             <span style="color: {routing_color};"><strong>{routing_icon} Routed via:</strong> {routing_method}</span>
@@ -274,13 +275,13 @@ class Journey2IntelligentSearch(LoggerMixin):
                                 <li><strong>🚀 zen MCP Routing:</strong> Successful</li>
                                 <li><strong>Task Type:</strong> {routing_metadata.get("task_type", "N/A")}</li>
                                 <li><strong>Complexity:</strong> {routing_metadata.get("complexity_level", "N/A")}</li>
-                                <li><strong>Cost Optimized:</strong> {'Yes' if routing_metadata.get("cost_optimized") else 'No'}</li>
+                                <li><strong>Cost Optimized:</strong> {"Yes" if routing_metadata.get("cost_optimized") else "No"}</li>
                                 <li><strong>Routing Time:</strong> {routing_metadata.get("routing_time_ms", 0):.1f}ms</li>
                             """
                         elif routing_metadata.get("fallback_used"):
                             routing_stats = f"""
                                 <li><strong>🔄 Fallback Mode:</strong> OpenRouter (zen unavailable)</li>
-                                <li><strong>zen Attempted:</strong> {'Yes' if routing_metadata.get("zen_attempted") else 'No'}</li>
+                                <li><strong>zen Attempted:</strong> {"Yes" if routing_metadata.get("zen_attempted") else "No"}</li>
                                 <li><strong>Routing Time:</strong> {routing_metadata.get("routing_time_ms", 0):.1f}ms</li>
                             """
 
@@ -574,4 +575,3 @@ class Journey2IntelligentSearch(LoggerMixin):
             ),
             "error_display": gr.HTML(""),
         }
-

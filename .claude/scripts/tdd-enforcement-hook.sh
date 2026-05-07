@@ -45,7 +45,7 @@ debug_log "Parsed tool: $TOOL_NAME"
 case "$TOOL_NAME" in
     "Write"|"Edit"|"MultiEdit")
         debug_log "Code modification tool detected: $TOOL_NAME"
-        
+
         # Extract file path from tool arguments
         FILE_PATH=""
         if [[ "$TOOL_ARGS" =~ \"file_path\":\"([^\"]+)\" ]]; then
@@ -53,9 +53,9 @@ case "$TOOL_NAME" in
         elif [[ "$TOOL_ARGS" =~ \"path\":\"([^\"]+)\" ]]; then
             FILE_PATH="${BASH_REMATCH[1]}"
         fi
-        
+
         debug_log "File path: $FILE_PATH"
-        
+
         # Only enforce TDD for implementation files (not tests, docs, configs)
         if [[ -n "$FILE_PATH" ]]; then
             case "$FILE_PATH" in
@@ -71,16 +71,16 @@ case "$TOOL_NAME" in
                     ;;
                 *.py|*.js|*.ts|*.go|*.rs|*.php)
                     debug_log "Implementation file detected: $FILE_PATH"
-                    
+
                     # Check if corresponding test files exist and have content
                     TEST_EXISTS=false
                     TEST_FILES=()
-                    
+
                     # Generate possible test file paths
                     BASE_NAME=$(basename "$FILE_PATH" | cut -d'.' -f1)
                     DIR_NAME=$(dirname "$FILE_PATH")
                     EXT="${FILE_PATH##*.}"
-                    
+
                     case "$EXT" in
                         "py")
                             TEST_FILES=(
@@ -99,7 +99,7 @@ case "$TOOL_NAME" in
                             )
                             ;;
                     esac
-                    
+
                     # Check if any test files exist and have content
                     for test_file in "${TEST_FILES[@]}"; do
                         if [[ -f "$test_file" && -s "$test_file" ]]; then
@@ -108,7 +108,7 @@ case "$TOOL_NAME" in
                             break
                         fi
                     done
-                    
+
                     if [[ "$TEST_EXISTS" == true ]]; then
                         log_tdd "ALLOW" "HAS_TESTS" "$FILE_PATH"
                         debug_log "Implementation allowed - tests exist: $FILE_PATH"
@@ -116,7 +116,7 @@ case "$TOOL_NAME" in
                     else
                         log_tdd "BLOCK" "NO_TESTS" "$FILE_PATH"
                         debug_log "BLOCKING - no tests found for: $FILE_PATH"
-                        
+
                         # Return error to block the tool execution
                         echo "TDD Enforcement: Cannot modify implementation file without corresponding tests."
                         echo "Please create tests first for: $FILE_PATH"

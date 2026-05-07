@@ -151,10 +151,11 @@ class TestZenMCPProcess:
         mock_subprocess.stdin.closed = False
         mock_subprocess.poll.return_value = None  # Still running
 
-        with patch("asyncio.wait_for", side_effect=mock_wait_timeout):
-            with patch.object(process, "_wait_for_process_termination", new_callable=AsyncMock):
-                result = await process.stop_server()
-
+        with (
+            patch("asyncio.wait_for", side_effect=mock_wait_timeout),
+            patch.object(process, "_wait_for_process_termination", new_callable=AsyncMock),
+        ):
+            result = await process.stop_server()
         mock_subprocess.terminate.assert_called_once()
         assert result is True
 
@@ -171,10 +172,11 @@ class TestZenMCPProcess:
         mock_subprocess.stdin.closed = False
         mock_subprocess.poll.return_value = None  # Still running
 
-        with patch("asyncio.wait_for", side_effect=mock_wait_timeout):
-            with patch.object(process, "_wait_for_process_termination", new_callable=AsyncMock):
-                result = await process.stop_server()
-
+        with (
+            patch("asyncio.wait_for", side_effect=mock_wait_timeout),
+            patch.object(process, "_wait_for_process_termination", new_callable=AsyncMock),
+        ):
+            result = await process.stop_server()
         mock_subprocess.terminate.assert_called_once()
         mock_subprocess.kill.assert_called_once()
         assert result is True
@@ -320,7 +322,7 @@ class TestZenMCPProcess:
         """Test health check exception handling."""
         process = ZenMCPProcess(connection_config)
         process.process = mock_subprocess  # Set a process so it doesn't exit early
-        
+
         mock_subprocess.poll.return_value = None  # Process is running
 
         # Force exception during health check after basic checks
@@ -595,7 +597,6 @@ class TestSubprocessManagerIntegration:
             patch.object(ZenMCPProcess, "stop_server", new_callable=AsyncMock) as mock_stop,
             patch.object(ZenMCPProcess, "is_running") as mock_is_running,
         ):
-
             mock_start.return_value = True
             mock_stop.return_value = True
             mock_is_running.return_value = True
@@ -624,7 +625,6 @@ class TestSubprocessManagerIntegration:
             patch.object(ZenMCPProcess, "start_server", new_callable=AsyncMock) as mock_start,
             patch.object(ZenMCPProcess, "restart_server", new_callable=AsyncMock) as mock_restart,
         ):
-
             mock_start.return_value = True
             mock_restart.return_value = True
 
@@ -672,8 +672,8 @@ class TestSubprocessManagerIntegration:
 
         # Pools should be independent
         with patch.object(ZenMCPProcess, "start_server", new_callable=AsyncMock, return_value=True):
-            process1 = await pool1.get_process("test")
-            process2 = await pool2.get_process("test")
+            await pool1.get_process("test")
+            await pool2.get_process("test")
 
         assert len(pool1.processes) == 1
         assert len(pool2.processes) == 1

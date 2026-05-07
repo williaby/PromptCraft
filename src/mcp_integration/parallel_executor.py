@@ -246,9 +246,9 @@ class ParallelSubagentExecutor(LoggerMixin):
 
             if result.success:
                 current_input = result.result
-                self.logger.debug(f"Pipeline step {i+1} completed successfully")
+                self.logger.debug(f"Pipeline step {i + 1} completed successfully")
             else:
-                self.logger.error(f"Pipeline step {i+1} failed, stopping pipeline")
+                self.logger.error(f"Pipeline step {i + 1} failed, stopping pipeline")
                 break
 
         success_count = sum(1 for r in results if r["success"])

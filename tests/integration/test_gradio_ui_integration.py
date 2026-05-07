@@ -368,7 +368,7 @@ class TestGradioUIIntegration:
 
             except Exception as e:
                 # Security errors should be handled gracefully
-                assert "Security Error" in str(e) or "Invalid input" in str(e)  # noqa: PT017
+                assert "Security Error" in str(e) or "Invalid input" in str(e)
 
     @pytest.mark.integration
     def test_performance_requirements_validation(self, multi_journey_interface):

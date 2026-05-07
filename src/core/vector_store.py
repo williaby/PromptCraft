@@ -650,7 +650,7 @@ class EnhancedMockVectorStore(AbstractVectorStore):
         if error_prob > 0 and secure_random.random() < error_prob:
             raise RuntimeError(f"Simulated error in {operation} operation")
 
-    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:  # noqa: PLR0911
+    def _matches_filters(self, document: VectorDocument, filters: SearchFilter) -> bool:
         """Check if document matches metadata filters."""
         for key, value in filters.items():
             if key not in document.metadata:
@@ -661,11 +661,11 @@ class EnhancedMockVectorStore(AbstractVectorStore):
             # Support different filter types
             if isinstance(value, dict):
                 # Range filters: {"difficulty": {"gte": "intermediate"}}
-                if "gte" in value and doc_value < value["gte"]:
-                    return False
-                if "lte" in value and doc_value > value["lte"]:
-                    return False
-                if "eq" in value and doc_value != value["eq"]:
+                if (
+                    ("gte" in value and doc_value < value["gte"])
+                    or ("lte" in value and doc_value > value["lte"])
+                    or ("eq" in value and doc_value != value["eq"])
+                ):
                     return False
             elif isinstance(value, list):
                 # List filters: {"category": ["performance", "api_design"]}

@@ -33,6 +33,7 @@ repos:
         language: system
         types: [python]
         args: [--fix, --line-length=120]
+        exclude: ^\.claude/
       - id: ruff-datetime-check
         name: ruff-datetime-check
         entry: poetry run ruff check
