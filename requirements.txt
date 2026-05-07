@@ -1491,7 +1491,7 @@ pandas==2.3.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:fe37e757f462d31a9cd7580236a82f353f5713a80e059a29753cf938c6775d96 \
     --hash=sha256:fe67dc676818c186d5a3d5425250e40f179c2a89145df477dd82945eaea89e97 \
     --hash=sha256:fe7317f578c6a153912bd2292f02e40c1d8f253e93c599e82620c7f69755c74f
-pillow==11.3.0 ; python_version >= "3.11" and python_version < "3.13" \
+pillow==12.2.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:023f6d2d11784a465f09fd09a34b150ea4672e85fb3d05931d89f373ab14abb2 \
     --hash=sha256:02a723e6bf909e7cea0dac1b0e0310be9d7650cd66222a5f1c571455c0a45214 \
     --hash=sha256:040a5b691b0713e1f6cbe222e0f4f74cd233421e105850ae3b3c0ceda520f42e \
