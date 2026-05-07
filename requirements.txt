@@ -165,7 +165,7 @@ asyncpg==0.30.0 ; python_version >= "3.11" and python_version < "3.13" \
 attrs==25.3.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3 \
     --hash=sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b
-brotli==1.1.0 ; python_version >= "3.11" and python_version < "3.13" \
+brotli==1.2.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:03d20af184290887bdea3f0f78c4f737d126c74dc2f3ccadf07e54ceca3bf208 \
     --hash=sha256:0541e747cce78e24ea12d69176f6a7ddb690e62c425e01d31cc065e69ce55b48 \
     --hash=sha256:069a121ac97412d1fe506da790b3e69f52254b9df4eb665cd42460c837193354 \
