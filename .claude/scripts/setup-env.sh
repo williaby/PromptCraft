@@ -22,7 +22,7 @@ if [ -f "$ENV_FILE" ]; then
     echo "3. Exit"
     echo ""
     read -p "Choose option [1-3]: " choice
-    
+
     case $choice in
         1)
             echo "✅ Keeping existing .env file"

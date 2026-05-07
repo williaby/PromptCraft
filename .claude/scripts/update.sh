@@ -49,16 +49,16 @@ if [ "$LOCAL" = "$REMOTE" ]; then
     echo "✅ Already up to date ($(git rev-parse --short HEAD))"
 else
     echo "📥 Updates available, pulling changes..."
-    
+
     # Show what's being updated
     echo ""
     echo "📋 Changes since last update:"
     git log --oneline --graph "$LOCAL..$REMOTE"
     echo ""
-    
+
     # Pull changes
     git pull origin main
-    
+
     echo "✅ Update complete!"
     echo "📌 Now on commit: $(git rev-parse --short HEAD)"
     echo "📄 Latest commit: $(git log -1 --pretty=format:'%s')"

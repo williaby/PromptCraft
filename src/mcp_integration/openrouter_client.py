@@ -679,10 +679,9 @@ class OpenRouterClient(MCPClientInterface):
                         )
                         # Get a tier-appropriate fallback
                         free_models = self.model_registry.list_models(category="free_general")
-                        if free_models:
-                            model_id = free_models[0].model_id
-                        else:
-                            model_id = "deepseek/deepseek-chat-v3-0324:free"  # Ultimate fallback
+                        model_id = (
+                            free_models[0].model_id if free_models else "deepseek/deepseek-chat-v3-0324:free"
+                        )  # Ultimate fallback
 
             # Final validation: ensure the selected model is accessible to the user tier
             logger.info(f"Selected model {model_id} for user tier {user_tier} and task type {task_type}")

@@ -374,7 +374,7 @@ async def execute_user_command(
 async def run_comprehensive_demo(
     request: Request,  # Required by FastAPI
     demo_request: DemoRunRequest,
-    integration: DynamicLoadingIntegration = Depends(get_integration_dependency),  # noqa: ARG001  # FastAPI dependency
+    _integration: DynamicLoadingIntegration = Depends(get_integration_dependency),  # FastAPI dependency
 ) -> JSONResponse:
     """
     Run comprehensive demonstration scenarios.

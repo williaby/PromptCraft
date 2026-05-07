@@ -2,15 +2,39 @@
   "project": {
     "name": "PromptCraft",
     "type": "python",
-    "languages": [
-      "python",
-      "javascript"
-    ]
+    "languages": ["python", "javascript"]
   },
   "tools": {
-    "enabled": [
-      "basic_commands"
-    ],
+    "enabled": ["basic_commands"],
     "disabled": []
+  },
+  "subagentModels": {
+    "Explore": "haiku",
+    "Plan": "inherit",
+    "general-purpose": "sonnet",
+    "code-reviewer": "sonnet",
+    "security-auditor": "sonnet",
+    "documentation-writer": "sonnet",
+    "test-engineer": "sonnet",
+    "_comment": "Preference for built-in and common subagents per global standards. Opus is used only for complex reasoning, planning, and architecture decisions."
+  },
+  "permissions": {
+    "allow": [
+      "Bash(make test*:*)",
+      "Bash(make lint)",
+      "Bash(make format)",
+      "Bash(make pre-commit)",
+      "Bash(make security)",
+      "Bash(poetry run pytest*:*)",
+      "Bash(poetry run ruff*:*)",
+      "Bash(poetry run mypy*:*)",
+      "Bash(poetry run pre-commit*:*)",
+      "Bash(poetry show*:*)",
+      "Bash(git status*:*)",
+      "Bash(git diff*:*)",
+      "Bash(git log*:*)",
+      "Bash(git branch*:*)",
+      "Bash(git worktree list)"
+    ]
   }
 }

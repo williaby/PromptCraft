@@ -16,8 +16,6 @@ Tests verify:
 - Graceful degradation scenarios
 """
 
-# ruff: noqa: S105
-
 # Performance tests for authentication systems - database mocking handled via pytest fixtures
 
 import asyncio
@@ -239,7 +237,7 @@ class TestAuthenticationPerformance:
         }
 
         async def mock_db_generator():
-            yield mock_session
+            yield mock_database_session
 
         with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator()):
             yield mock_manager
@@ -351,9 +349,9 @@ class TestAuthenticationPerformance:
                 assert data["user_email"] == "perf-test@example.com"
 
                 # Log comprehensive performance metrics
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print("SINGLE REQUEST PERFORMANCE METRICS")
-                print(f"{'='*60}")
+                print(f"{'=' * 60}")
                 print(f"Request Time: {request_time_ms:.2f}ms")
                 print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
                 print(
@@ -365,7 +363,7 @@ class TestAuthenticationPerformance:
                 print(
                     f"Load Average: 1min={metrics['load_average']['1min']:.2f}, 5min={metrics['load_average']['5min']:.2f}, 15min={metrics['load_average']['15min']:.2f}",
                 )
-                print(f"{'='*60}\n")
+                print(f"{'=' * 60}\n")
 
                 # Verify performance requirement (CI-aware threshold)
                 is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
@@ -473,9 +471,9 @@ class TestAuthenticationPerformance:
             max_response_time = max(response_times)
 
             # Log comprehensive performance metrics
-            print(f"\n{'='*80}")
+            print(f"\n{'=' * 80}")
             print("CONCURRENT REQUEST PERFORMANCE METRICS")
-            print(f"{'='*80}")
+            print(f"{'=' * 80}")
             print(f"Concurrent Requests: {num_requests}")
             print(f"Total Test Duration: {metrics['duration_ms']:.2f}ms")
             print(f"Request Processing Time: {total_time_ms:.2f}ms")
@@ -498,7 +496,7 @@ class TestAuthenticationPerformance:
             print("PERFORMANCE DISTRIBUTION:")
             print(f"Min: {min(response_times):.2f}ms, Max: {max(response_times):.2f}ms")
             print(f"Std Dev: {statistics.stdev(response_times):.2f}ms")
-            print(f"{'='*80}\n")
+            print(f"{'=' * 80}\n")
 
             # Performance requirements (CI-aware thresholds)
             is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
@@ -559,7 +557,6 @@ class TestAuthenticationPerformance:
             yield mock_session
 
         with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_fast()):
-
             app_with_db.add_middleware(
                 AuthenticationMiddleware,
                 config=auth_config,
@@ -683,7 +680,6 @@ class TestAuthenticationPerformance:
             yield  # This line never executes but satisfies the generator requirement
 
         with patch("src.auth.middleware.get_db", side_effect=lambda: mock_db_generator_failure()):
-
             app.add_middleware(
                 AuthenticationMiddleware,
                 config=auth_config,

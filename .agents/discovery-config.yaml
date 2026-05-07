@@ -24,12 +24,12 @@ agents:
       - user_override
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "256MB"
       model: "sonnet"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: []
@@ -39,12 +39,12 @@ agents:
       - user_override
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "512MB"
       model: "opus"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: ["pytest", "coverage"]
@@ -54,12 +54,12 @@ agents:
       - user_override
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "256MB"
       model: "opus"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: ["bandit", "safety"]
@@ -69,12 +69,12 @@ agents:
       - project_specific   # Project-specific implementation preferred
       - user_override
       - bundled_default
-    
+
     resource_requirements:
       memory: "512MB"
       model: "opus"
       execution_mode: "async"
-    
+
     dependencies:
       services:
         qdrant: "192.168.1.16:6333"
@@ -88,12 +88,12 @@ agents:
       - user_override
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "256MB"
       model: "opus"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: []
@@ -103,12 +103,12 @@ agents:
       - user_override
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "128MB"
       model: "sonnet"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: []
@@ -118,12 +118,12 @@ agents:
       - project_specific
       - user_override
       - bundled_default
-    
+
     resource_requirements:
       memory: "256MB"
       model: "sonnet"
       execution_mode: "async"
-    
+
     dependencies:
       services:
         qdrant: "192.168.1.16:6333"
@@ -134,12 +134,12 @@ agents:
     priority_order:
       - project_specific
       - bundled_default
-    
+
     resource_requirements:
       memory: "256MB"
       model: "sonnet"
       execution_mode: "async"
-    
+
     dependencies:
       services: {}
       packages: []

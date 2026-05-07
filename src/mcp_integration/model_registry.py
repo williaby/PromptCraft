@@ -60,7 +60,7 @@ from dataclasses import dataclass, field
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 import yaml
@@ -83,7 +83,7 @@ class UserTierFilter:
     """
 
     # Define which categories are available to each tier
-    TIER_CATEGORY_ACCESS = {
+    TIER_CATEGORY_ACCESS: ClassVar[dict[str, list[str]]] = {
         "admin": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
         "full": ["free_general", "premium_reasoning", "premium_analysis", "large_context"],
         "limited": ["free_general"],
@@ -747,7 +747,6 @@ class ModelRegistry:
         # Filter the chain by user tier permissions
         return UserTierFilter.filter_models_by_tier(chain, user_tier, self)
 
-
     def can_user_access_model(self, user_tier: str, model_id: str) -> bool:
         """Check if a user tier can access a specific model.
 
@@ -762,7 +761,7 @@ class ModelRegistry:
 
 
 # Global registry instance for convenient access
-_global_registry: ModelRegistry | None = None
+_registry_ref: list[ModelRegistry | None] = [None]
 
 
 def get_model_registry() -> ModelRegistry:
@@ -771,22 +770,21 @@ def get_model_registry() -> ModelRegistry:
     Returns:
         Singleton ModelRegistry instance
     """
-    global _global_registry  # noqa: PLW0603
-    if _global_registry is None:
-        _global_registry = ModelRegistry()
-    return _global_registry
+    if _registry_ref[0] is None:
+        _registry_ref[0] = ModelRegistry()
+    local = _registry_ref[0]
+    assert local is not None
+    return local
 
 
 def reload_model_registry() -> None:
     """Reload global ModelRegistry configuration."""
-    global _global_registry  # noqa: PLW0603
-    if _global_registry is not None:
-        _global_registry.reload_config()
+    if _registry_ref[0] is not None:
+        _registry_ref[0].reload_config()
     else:
-        _global_registry = ModelRegistry()
+        _registry_ref[0] = ModelRegistry()
 
 
 def clear_model_registry() -> None:
     """Clear global ModelRegistry (for testing)."""
-    global _global_registry  # noqa: PLW0603
-    _global_registry = None
+    _registry_ref[0] = None

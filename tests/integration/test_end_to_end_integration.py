@@ -262,7 +262,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked hyde_processor
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
@@ -392,7 +391,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test performance with multiple queries
@@ -495,7 +493,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test error recovery across multiple queries
@@ -550,7 +547,7 @@ class TestEndToEndIntegration:
                     except Exception as e:
                         failed_queries += 1
                         # Should be controlled failures
-                        assert isinstance(e, MCPTimeoutError | RuntimeError)  # noqa: PT017
+                        assert isinstance(e, MCPTimeoutError | RuntimeError)
 
                 # Verify system resilience
                 assert successful_queries > 0, "No queries succeeded - system not resilient"
@@ -614,7 +611,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test concurrent query processing
@@ -739,7 +735,6 @@ class TestEndToEndIntegration:
                     },
                 ),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test health monitoring integration
@@ -847,7 +842,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test configuration-driven workflow
@@ -876,7 +870,7 @@ class TestEndToEndIntegration:
 
     @pytest.mark.integration
     @pytest.mark.asyncio
-    async def test_end_to_end_real_world_scenario(  # noqa: PLR0915
+    async def test_end_to_end_real_world_scenario(
         self,
         full_system_settings,
         sample_knowledge_documents,
@@ -1007,7 +1001,6 @@ class TestEndToEndIntegration:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 
                 # Test realistic user scenarios

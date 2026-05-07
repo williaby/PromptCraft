@@ -29,11 +29,11 @@ RATE_LIMIT_KEY_EMAIL: Final[str] = "email"
 RATE_LIMIT_KEY_USER: Final[str] = "user"
 
 # Service Token Prefix
-SERVICE_TOKEN_PREFIX: Final[str] = "sk_"  # noqa: S105  # Legitimate token prefix constant
+SERVICE_TOKEN_PREFIX: Final[str] = "sk_"  # Legitimate token prefix constant
 
 # Authentication Event Types
 AUTH_EVENT_JWT: Final[str] = "jwt_auth"
-AUTH_EVENT_SERVICE_TOKEN: Final[str] = "service_token_auth"  # noqa: S105  # Legitimate event type constant
+AUTH_EVENT_SERVICE_TOKEN: Final[str] = "service_token_auth"  # Legitimate event type constant
 AUTH_EVENT_GENERAL: Final[str] = "auth"
 
 # JWT Claim Names
@@ -48,13 +48,13 @@ PERMISSION_NAME_EMAIL_AUTHORIZATION: Final[str] = "email_authorization"
 PERMISSION_NAME_ACCESS: Final[str] = "access"
 
 # Error Codes
-ERROR_CODE_TOKEN_NOT_FOUND: Final[str] = "token_not_found"  # noqa: S105  # Legitimate error code constant
-ERROR_CODE_TOKEN_INACTIVE: Final[str] = "token_inactive"  # noqa: S105  # Legitimate error code constant
-ERROR_CODE_TOKEN_EXPIRED: Final[str] = "token_expired"  # noqa: S105  # Legitimate error code constant
+ERROR_CODE_TOKEN_NOT_FOUND: Final[str] = "token_not_found"  # Legitimate error code constant
+ERROR_CODE_TOKEN_INACTIVE: Final[str] = "token_inactive"  # Legitimate error code constant
+ERROR_CODE_TOKEN_EXPIRED: Final[str] = "token_expired"  # Legitimate error code constant
 ERROR_CODE_VALIDATION_EXCEPTION: Final[str] = "validation_exception"
 
 # User Types
-USER_TYPE_SERVICE_TOKEN: Final[str] = "service_token"  # noqa: S105  # Legitimate user type constant
+USER_TYPE_SERVICE_TOKEN: Final[str] = "service_token"  # Legitimate user type constant
 USER_TYPE_JWT: Final[str] = "jwt"
 USER_TYPE_JWT_USER: Final[str] = "jwt_user"
 

@@ -5,6 +5,6 @@ from .discovery import CommandDefinition, CommandsDiscoverySystem, CommandsManag
 
 __all__ = [
     "CommandDefinition",
-    "CommandsDiscoverySystem", 
+    "CommandsDiscoverySystem",
     "CommandsManager",
 ]

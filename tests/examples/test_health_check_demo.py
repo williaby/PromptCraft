@@ -9,8 +9,8 @@ import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
-import pytest
 from pydantic import SecretStr
+import pytest
 from rich.console import Console
 
 from examples.health_check_demo import (
@@ -86,7 +86,7 @@ class TestDemonstrateConfigurationStatus:
         mock_status.config_source = "encrypted"
         mock_status.validation_status = "errors"
         mock_status.secrets_configured = 5
-        mock_status.api_host = "0.0.0.0"  # noqa: S104
+        mock_status.api_host = "0.0.0.0"
         mock_status.api_port = 80
         mock_status.config_healthy = False
         mock_status.validation_errors = ["Missing secret key", "Invalid database URL"]
@@ -325,11 +325,11 @@ class TestDemonstrateHttpEndpoints:
     async def test_demonstrate_http_endpoints_non_200_response(self, mock_console, mock_client_class):
         """Test HTTP endpoints demonstration when server responds with non-200 status (covers branch 231->exit)."""
         mock_client = AsyncMock()
-        
+
         # Mock ping response with non-200 status code (e.g., 404, 500, etc.)
         mock_ping_response = Mock()
         mock_ping_response.status_code = 404  # Not HTTP_OK (200)
-        
+
         mock_client.get.return_value = mock_ping_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
 

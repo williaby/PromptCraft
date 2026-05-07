@@ -116,16 +116,9 @@ def create_limiter() -> Limiter:
     if settings.environment == "prod":
         # Production: Use Redis for distributed rate limiting
         # Handle both real settings and mock objects properly
-        try:
-            from unittest.mock import Mock
-            redis_host = settings.redis_host if not isinstance(getattr(settings, "redis_host", None), Mock) else "localhost"
-            redis_port = settings.redis_port if not isinstance(getattr(settings, "redis_port", None), Mock) else 6379
-            redis_db = settings.redis_db if not isinstance(getattr(settings, "redis_db", None), Mock) else 0
-        except (AttributeError, ImportError):
-            # Fallback for cases without unittest.mock or other edge cases
-            redis_host = getattr(settings, "redis_host", "localhost")
-            redis_port = getattr(settings, "redis_port", 6379)
-            redis_db = getattr(settings, "redis_db", 0)
+        redis_host = getattr(settings, "redis_host", "localhost")
+        redis_port = getattr(settings, "redis_port", 6379)
+        redis_db = getattr(settings, "redis_db", 0)
         storage_uri = f"redis://{redis_host}:{redis_port}/{redis_db}"
         logger.info("Using Redis storage for production rate limiting: %s", storage_uri)
     else:
@@ -139,9 +132,6 @@ def create_limiter() -> Limiter:
         storage_uri=storage_uri,
         default_limits=["100 per minute"],  # Default fallback limit for unspecified endpoints
     )
-
-    # Store storage_uri for testing/debugging purposes
-    limiter.storage_uri = storage_uri
 
     logger.info(
         "Rate limiter configured with storage: %s (Environment: %s)",

@@ -1,53 +1,69 @@
-# .github/workflows/codeql.yml
-# This workflow uses GitHub's CodeQL to find security vulnerabilities in the codebase.
-
-name: "CodeQL Analysis"
+# CodeQL Security Analysis
+# Performs static application security testing (SAST) using GitHub CodeQL.
+#
+# Features:
+#   - Python language analysis with security-extended + security-and-quality queries
+#   - Triggered on push to main, pull_request, and weekly schedule
+#   - SARIF results uploaded to GitHub Security tab (public repo; GHAS included)
+#   - Supply chain hardened with pinned SHA refs
+#
+# IMPORTANT: GitHub's CodeQL "default setup" must remain DISABLED for this repo.
+# Default setup and custom advanced configuration cannot both upload SARIF to the
+# Security tab -- GitHub rejects the custom upload with "analyses from advanced
+# configurations cannot be processed when the default setup is enabled."
+# To verify or disable: Settings > Code security > Code scanning > Default setup.
+name: CodeQL Analysis
 
 on:
+  push:
+    branches:
+      - main
+      - master
   pull_request:
     branches:
-      - "main"
-      - "feature/phase-1-development"
-      - "feature/**"  # Include PRs to any feature branch
-    paths:
-      - '**/*.py'
-      - '.github/workflows/codeql.yml'
+      - main
+      - master
   schedule:
-    - cron: '39 16 * * 1' # Runs every Monday at 16:39 UTC
+    # Weekly scan on Mondays at 07:00 UTC
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   analyze:
-    name: CodeQL Analysis
+    name: CodeQL Analyze (Python)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
-      security-events: write
       actions: read
       contents: read
-
-    # No matrix needed for single language analysis
+      security-events: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install --only main
+          egress-policy: audit
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
         with:
           languages: python
-          queries: security-extended
+          build-mode: none
+          queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@48ab28a6f5dbc2a99bf1e0131198dd8f1df78169 # v3.28.0
         with:
           category: "/language:python"
-          # Force fresh analysis to resolve stalled required check

@@ -18,7 +18,7 @@ servers:
       2: user_installation      # Check user's dev environment
       3: docker_sidecar         # Use docker-compose service
       4: embedded_submodule     # Last resort: bundled version
-    
+
     discovery_strategies:
       external:
         - type: port_check
@@ -28,22 +28,22 @@ servers:
           variables: ["ZEN_MCP_URL", "PROMPTCRAFT_ZEN_MCP_SERVER_URL"]
         - type: process_check
           patterns: ["zen-mcp-server", "poetry run python -m src.main"]
-      
+
       user:
         - type: path_check
-          paths: 
+          paths:
             - "~/dev/zen-mcp-server"
             - "~/.claude/servers/zen-mcp"
             - "../zen-mcp-server"
         - type: lock_file
           patterns: ["/tmp/.zen-mcp.lock", "~/.zen-mcp.lock"]
-    
+
     resource_requirements:
       memory_mb: 512
       cpu_cores: 0.5
       ports: [8000]
       dependencies: ["python", "poetry"]
-    
+
     deployment_config:
       prevent_duplicate: true
       auto_restart: true
@@ -53,7 +53,7 @@ servers:
     priority_order:
       1: npx_cloud            # Always prefer NPX for cloud servers
       2: external_deployment  # User's deployment
-    
+
     discovery_strategies:
       npx:
         - type: npx_available
@@ -61,12 +61,12 @@ servers:
       external:
         - type: env_variable
           variables: ["CONTEXT7_URL", "UPSTASH_CONTEXT7_URL"]
-    
+
     resource_requirements:
       memory_mb: 100
       cpu_cores: 0.1
       dependencies: ["node", "npx"]
-    
+
     deployment_config:
       type: "npx"
       on_demand: true
@@ -75,7 +75,7 @@ servers:
     priority_order:
       1: npx_cloud
       2: external_deployment
-    
+
     discovery_strategies:
       npx:
         - type: npx_available
@@ -83,12 +83,12 @@ servers:
       external:
         - type: env_variable
           variables: ["PERPLEXITY_MCP_URL"]
-    
+
     resource_requirements:
       memory_mb: 50
       cpu_cores: 0.1
       dependencies: ["node", "npx"]
-    
+
     deployment_config:
       type: "npx"
       on_demand: true
@@ -98,7 +98,7 @@ servers:
     priority_order:
       1: npx_cloud
       2: external_deployment
-    
+
     discovery_strategies:
       npx:
         - type: npx_available
@@ -106,12 +106,12 @@ servers:
       external:
         - type: env_variable
           variables: ["SENTRY_MCP_URL"]
-    
+
     resource_requirements:
       memory_mb: 75
       cpu_cores: 0.1
       dependencies: ["node", "npx"]
-    
+
     deployment_config:
       type: "npx"
       on_demand: true

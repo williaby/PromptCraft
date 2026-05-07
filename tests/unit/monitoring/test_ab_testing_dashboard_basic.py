@@ -64,9 +64,9 @@ class TestABTestingDashboardImports:
         """Test that required dependencies can be imported."""
         # Test standard library imports
         import asyncio
+        from datetime import datetime, timedelta
         import json
         import logging
-        from datetime import datetime, timedelta
 
         assert asyncio is not None
         assert logging is not None

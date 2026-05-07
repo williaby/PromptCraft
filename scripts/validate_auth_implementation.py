@@ -131,7 +131,7 @@ class ComprehensiveAuthValidator:
                 if all(enhancements):
                     self.log_result("AUTH-1 AC1", True, "Authentication middleware enhanced with database capabilities")
                 else:
-                    missing = [f"Enhancement {i+1}" for i, e in enumerate(enhancements) if not e]
+                    missing = [f"Enhancement {i + 1}" for i, e in enumerate(enhancements) if not e]
                     self.log_result("AUTH-1 AC1", False, f"Missing middleware enhancements: {missing}")
             else:
                 self.log_result("AUTH-1 AC1", False, "middleware.py file not found")
