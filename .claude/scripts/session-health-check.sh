@@ -40,7 +40,7 @@ fi
 # Check critical directories exist
 CRITICAL_DIRS=(
     "/home/byron/.claude"
-    "/home/byron/.claude/agents" 
+    "/home/byron/.claude/agents"
     "/home/byron/.claude/docs"
     "/home/byron/.claude/scripts"
     "/home/byron/.claude/logs"
@@ -86,7 +86,7 @@ fi
 # Summary log entry
 WARNINGS=$(grep "$TIMESTAMP.*WARNING" "$HEALTH_LOG" 2>/dev/null | wc -l || echo "0")
 WARNINGS=$(echo "$WARNINGS" | tr -d '\n\r' | grep -o '[0-9]*' || echo "0")
-ERRORS=$(grep "$TIMESTAMP.*ERROR" "$HEALTH_LOG" 2>/dev/null | wc -l || echo "0") 
+ERRORS=$(grep "$TIMESTAMP.*ERROR" "$HEALTH_LOG" 2>/dev/null | wc -l || echo "0")
 ERRORS=$(echo "$ERRORS" | tr -d '\n\r' | grep -o '[0-9]*' || echo "0")
 
 if [[ "$ERRORS" -gt 0 ]]; then

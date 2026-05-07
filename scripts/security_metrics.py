@@ -360,17 +360,17 @@ class SecurityMetricsCollector:
 
         report = f"""# Security Gate Metrics Report
 
-**Period**: {metrics['period']}
-**Generated**: {datetime.fromisoformat(metrics['collection_date']).strftime('%Y-%m-%d %H:%M:%S')}
-**Repository**: {metrics['repository']}
+**Period**: {metrics["period"]}
+**Generated**: {datetime.fromisoformat(metrics["collection_date"]).strftime("%Y-%m-%d %H:%M:%S")}
+**Repository**: {metrics["repository"]}
 
 ## Executive Summary
 
-- **Total Pull Requests**: {metrics['total_prs']}
+- **Total Pull Requests**: {metrics["total_prs"]}
 - **Security Scan Pass Rate**: {pass_rate:.1f}%
-- **PRs Blocked by Security Gates**: {metrics['blocked_prs']} ({block_rate:.1f}%)
-- **Security Exceptions Used**: {metrics['exceptions_used']}
-- **Admin Overrides**: {metrics['admin_overrides']}
+- **PRs Blocked by Security Gates**: {metrics["blocked_prs"]} ({block_rate:.1f}%)
+- **Security Exceptions Used**: {metrics["exceptions_used"]}
+- **Admin Overrides**: {metrics["admin_overrides"]}
 
 ## Security Scan Results
 
@@ -379,9 +379,9 @@ class SecurityMetricsCollector:
 | Metric | Count | Percentage |
 |--------|-------|------------|
 | Total Security Scans | {total_scans} | 100.0% |
-| Passed | {success_count} | {(success_count/total_scans*100) if total_scans > 0 else 0:.1f}% |
-| Failed | {failure_count} | {(failure_count/total_scans*100) if total_scans > 0 else 0:.1f}% |
-| Pending | {pending_count} | {(pending_count/total_scans*100) if total_scans > 0 else 0:.1f}% |
+| Passed | {success_count} | {(success_count / total_scans * 100) if total_scans > 0 else 0:.1f}% |
+| Failed | {failure_count} | {(failure_count / total_scans * 100) if total_scans > 0 else 0:.1f}% |
+| Pending | {pending_count} | {(pending_count / total_scans * 100) if total_scans > 0 else 0:.1f}% |
 
 ### Results by Security Tool
 
@@ -399,15 +399,15 @@ class SecurityMetricsCollector:
         report += f"""
 ## Security Gate Effectiveness
 
-- **PRs Reviewed**: {metrics['total_prs']}
-- **PRs Blocked**: {metrics['blocked_prs']} ({block_rate:.1f}%)
-- **Average Scans per PR**: {total_scans / metrics['total_prs'] if metrics['total_prs'] > 0 else 0:.1f}
+- **PRs Reviewed**: {metrics["total_prs"]}
+- **PRs Blocked**: {metrics["blocked_prs"]} ({block_rate:.1f}%)
+- **Average Scans per PR**: {total_scans / metrics["total_prs"] if metrics["total_prs"] > 0 else 0:.1f}
 
 ## Exception and Override Usage
 
-- **Security Exceptions Applied**: {metrics['exceptions_used']}
-- **Admin Overrides Used**: {metrics['admin_overrides']}
-- **Total Bypasses**: {metrics['exceptions_used'] + metrics['admin_overrides']}
+- **Security Exceptions Applied**: {metrics["exceptions_used"]}
+- **Admin Overrides Used**: {metrics["admin_overrides"]}
+- **Total Bypasses**: {metrics["exceptions_used"] + metrics["admin_overrides"]}
 
 ## Recommendations
 
@@ -459,8 +459,8 @@ class SecurityMetricsCollector:
 ## False Positive Analysis
 
 ### Summary
-- **Total False Positives**: {fp_metrics.get('total_false_positives', 0)}
-- **False Positive Rate**: {(fp_metrics.get('total_false_positives', 0) / max(metrics.get('total_prs', 1), 1) * 100):.1f}% of PRs affected
+- **Total False Positives**: {fp_metrics.get("total_false_positives", 0)}
+- **False Positive Rate**: {(fp_metrics.get("total_false_positives", 0) / max(metrics.get("total_prs", 1), 1) * 100):.1f}% of PRs affected
 
 ### By Security Tool
 """
@@ -491,9 +491,9 @@ class SecurityMetricsCollector:
 ## Developer Workflow Impact
 
 ### PR Processing Times
-- **Average PR Duration**: {impact.get('average_pr_duration', 0):.1f} hours
-- **Security-Blocked PR Duration**: {impact.get('blocked_pr_duration', 0):.1f} hours
-- **Developer Friction Score**: {impact.get('developer_friction_score', 0):.1f}%
+- **Average PR Duration**: {impact.get("average_pr_duration", 0):.1f} hours
+- **Security-Blocked PR Duration**: {impact.get("blocked_pr_duration", 0):.1f} hours
+- **Developer Friction Score**: {impact.get("developer_friction_score", 0):.1f}%
 
 ### Workflow Disruption Analysis
 """
@@ -502,9 +502,9 @@ class SecurityMetricsCollector:
         total_disruptions = sum(disruption.values())
 
         if total_disruptions > 0:
-            section += f"- **Minor Disruptions** (<2h): {disruption.get('minor', 0)} ({disruption.get('minor', 0)/total_disruptions*100:.1f}%)\n"
-            section += f"- **Moderate Disruptions** (2-24h): {disruption.get('moderate', 0)} ({disruption.get('moderate', 0)/total_disruptions*100:.1f}%)\n"
-            section += f"- **Severe Disruptions** (>24h): {disruption.get('severe', 0)} ({disruption.get('severe', 0)/total_disruptions*100:.1f}%)\n"
+            section += f"- **Minor Disruptions** (<2h): {disruption.get('minor', 0)} ({disruption.get('minor', 0) / total_disruptions * 100:.1f}%)\n"
+            section += f"- **Moderate Disruptions** (2-24h): {disruption.get('moderate', 0)} ({disruption.get('moderate', 0) / total_disruptions * 100:.1f}%)\n"
+            section += f"- **Severe Disruptions** (>24h): {disruption.get('severe', 0)} ({disruption.get('severe', 0) / total_disruptions * 100:.1f}%)\n"
         else:
             section += "- No significant workflow disruptions detected\n"
 
@@ -529,9 +529,9 @@ class SecurityMetricsCollector:
 ## Trend Analysis & Strategic Recommendations
 
 ### Trend Summary
-- **False Positive Trend**: {trends.get('false_positive_trend', 'unknown').title()}
-- **Override Usage Trend**: {trends.get('override_trend', 'unknown').title()}
-- **Developer Impact Trend**: {trends.get('developer_impact_trend', 'unknown').title()}
+- **False Positive Trend**: {trends.get("false_positive_trend", "unknown").title()}
+- **Override Usage Trend**: {trends.get("override_trend", "unknown").title()}
+- **Developer Impact Trend**: {trends.get("developer_impact_trend", "unknown").title()}
 
 ### Strategic Recommendations
 """

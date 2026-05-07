@@ -8,6 +8,7 @@ monitoring and business intelligence.
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 from typing import Any
 
@@ -45,6 +46,7 @@ class MetricsCollector:
         # Start background flush task
         self._flush_task: asyncio.Task[None] | None = None
         self._shutdown = False
+        self._pending_tasks: set[asyncio.Task[None]] = set()
 
     async def start(self) -> None:
         """Start the metrics collector with background processing."""
@@ -161,8 +163,6 @@ class MetricsCollector:
 
             # Add query analysis if text provided
             if query_text:
-                import hashlib
-
                 event.query_text_hash = hashlib.sha256(query_text.encode()).hexdigest()[:16]
                 event.query_length = len(query_text.split())
 
@@ -308,7 +308,9 @@ class MetricsCollector:
                 self._event_buffer.clear()
 
                 # Flush without holding lock
-                asyncio.create_task(self._flush_events_batch(events_to_flush))
+                _task = asyncio.create_task(self._flush_events_batch(events_to_flush))
+                self._pending_tasks.add(_task)
+                _task.add_done_callback(self._pending_tasks.discard)
 
     async def _flush_events_batch(self, events: list[MetricEvent]) -> None:
         """Flush a batch of events to storage."""
@@ -346,25 +348,23 @@ class MetricsCollector:
             self._flush_task.cancel()
 
 
-# Global metrics collector instance
-_global_collector: MetricsCollector | None = None
+# Global metrics collector instance held in a mutable container to avoid global statements
+_collector_ref: list[MetricsCollector | None] = [None]
 
 
 async def get_metrics_collector() -> MetricsCollector:
     """Get or create the global metrics collector instance."""
-    global _global_collector
-
-    if _global_collector is None:
-        _global_collector = MetricsCollector()
-        await _global_collector.start()
-
-    return _global_collector
+    instance = _collector_ref[0]
+    if instance is None:
+        instance = MetricsCollector()
+        _collector_ref[0] = instance
+        await instance.start()
+    return instance
 
 
 async def shutdown_metrics_collector() -> None:
     """Shutdown the global metrics collector."""
-    global _global_collector
-
-    if _global_collector is not None:
-        await _global_collector.stop()
-        _global_collector = None
+    instance = _collector_ref[0]
+    if instance is not None:
+        await instance.stop()
+        _collector_ref[0] = None

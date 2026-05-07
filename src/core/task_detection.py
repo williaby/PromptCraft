@@ -10,7 +10,6 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from functools import lru_cache
 import logging
 import time
 from typing import Any
@@ -438,7 +437,7 @@ class FunctionLoader:
 
     def __init__(self) -> None:
         # Import here to avoid circular imports
-        from .task_detection_config import default_config  # noqa: PLC0415  # Avoid circular import
+        from .task_detection_config import default_config  # Avoid circular import
 
         config = default_config
         self.tier_definitions = {
@@ -649,11 +648,13 @@ class TaskDetectionSystem:
         self.cache: dict[str, DetectionResult] = {}
         self.cache_timestamps: dict[str, datetime] = {}
         self.max_cache_age = timedelta(hours=1)
+        self._keyword_cache: dict[str, dict[str, float]] = {}
 
-    @lru_cache(maxsize=1000)  # noqa: B019
     def _cached_keyword_analysis(self, query: str) -> dict[str, float]:
-        """Cached keyword analysis for performance"""
-        return self.keyword_analyzer.analyze(query)
+        """Cached keyword analysis for performance."""
+        if query not in self._keyword_cache:
+            self._keyword_cache[query] = self.keyword_analyzer.analyze(query)
+        return self._keyword_cache[query]
 
     async def detect_categories(self, query: str, context: dict[str, Any] | None = None) -> DetectionResult:
         """Main entry point for task detection"""
@@ -846,7 +847,6 @@ if __name__ == "__main__":
         ]
 
         for _i, test_case in enumerate(test_cases):
-
             query = test_case["query"]
             context = test_case["context"]
             if isinstance(query, str) and isinstance(context, dict):

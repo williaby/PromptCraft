@@ -15,14 +15,13 @@ from src.agents.base_agent import BaseAgent
 from src.agents.models import AgentConfig, AgentInput, AgentOutput
 from src.agents.registry import AgentRegistry
 
-# Import auth fixtures
-from tests.fixtures.auth_fixtures import *  # noqa: F403
 
-# Import database fixtures
-from tests.fixtures.database import *  # noqa: F403
-
-# Import security service mocks
-from tests.fixtures.security_service_mocks import *  # noqa: F403
+pytest_plugins = [
+    "tests.fixtures.auth_fixtures",
+    "tests.fixtures.database",
+    "tests.fixtures.security_service_mocks",
+    "pytest_plugins.coverage_hook_plugin",
+]
 
 
 def pytest_runtest_setup(item):
@@ -51,10 +50,6 @@ def pytest_runtest_setup(item):
 
     # Set environment variable for coverage context
     os.environ["COVERAGE_CONTEXT"] = context
-
-
-# Pytest markers that match codecov flags
-pytest_plugins = ["pytest_plugins.coverage_hook_plugin"]
 
 
 def pytest_configure(config):
@@ -201,7 +196,7 @@ def security_test_inputs():
         "\\x00\\x01\\x02\\x03",  # Binary data
         "\\r\\n\\r\\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "𝓤𝓷𝓲𝓬𝓸𝓭𝓮",  # Unicode mathematical script  # noqa: RUF001
+        "\U0001D4E4\U0001D4F7\U0001D4F2\U0001D4EC\U0001D4F8\U0001D4ED\U0001D4EE",  # Unicode mathematical script
         "🚀🔥💻",  # Emojis
         "\\ufeff",  # BOM character
         # Empty and whitespace edge cases

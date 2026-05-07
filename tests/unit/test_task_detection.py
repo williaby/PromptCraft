@@ -442,7 +442,6 @@ class TestTaskDetectionSystem:
         """Test error handling and fallback"""
         # Mock the scorer to raise an exception to trigger actual error fallback
         with patch.object(self.system.scorer, "calculate_category_scores", side_effect=Exception("Test error")):
-
             query = "test error handling"
             result = await self.system.detect_categories(query)
 

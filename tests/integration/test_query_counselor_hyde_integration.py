@@ -627,7 +627,6 @@ class TestQueryCounselorHydeIntegration:
             patch("src.mcp_integration.mcp_client.MCPClientFactory.create_from_settings", return_value=mock_mcp_client),
             patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
         ):
-
             # Initialize QueryCounselor with explicit dependency injection
             counselor = QueryCounselor(mcp_client=mock_mcp_client, hyde_processor=mock_hyde_processor)
 

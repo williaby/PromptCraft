@@ -150,7 +150,6 @@ class TestProductionReadiness:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked dependencies
                 counselor = QueryCounselor(
                     mcp_client=mock_mcp_client,
@@ -304,7 +303,6 @@ class TestProductionReadiness:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked dependencies
                 counselor = QueryCounselor(
                     mcp_client=mock_mcp_client,
@@ -468,7 +466,6 @@ class TestProductionReadiness:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked dependencies
                 counselor = QueryCounselor(
                     mcp_client=mock_mcp_client,
@@ -677,7 +674,6 @@ class TestProductionReadiness:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked dependencies
                 counselor = QueryCounselor(
                     mcp_client=mock_mcp_client,
@@ -815,7 +811,6 @@ class TestProductionReadiness:
                 ),
                 patch("src.core.hyde_processor.HydeProcessor", return_value=mock_hyde_processor),
             ):
-
                 # Initialize QueryCounselor with mocked dependencies
                 counselor = QueryCounselor(
                     mcp_client=mock_mcp_client,
@@ -943,7 +938,7 @@ class TestProductionReadiness:
                     improvement_threshold = -0.05  # Allow up to 5% degradation in CI due to variable timing
                     assert (
                         recovery_improvement > improvement_threshold
-                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (CI allows timing variation)"
+                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (CI allows timing variation)"
 
                     # Additional CI-specific check: recovery should be reasonable compared to light load
                     # CI environments have highly variable timing, so be very lenient
@@ -963,4 +958,4 @@ class TestProductionReadiness:
                     )  # Allow up to 30% degradation in mock environment (was 50%, now more meaningful)
                     assert (
                         recovery_improvement > improvement_threshold
-                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold*100:.0f}% (mock env allows major variation)"
+                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (mock env allows major variation)"

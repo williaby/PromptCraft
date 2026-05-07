@@ -428,15 +428,14 @@ class DatabaseManager:
 
 
 # Global database manager instance
-_db_manager: DatabaseManager | None = None
+_db_manager_ref: list[DatabaseManager | None] = [None]
 
 
 def get_database_manager() -> DatabaseManager:
     """Get the global database manager instance (synchronous version)."""
-    global _db_manager  # noqa: PLW0603
-    if _db_manager is None:
-        _db_manager = DatabaseManager()
-    return _db_manager
+    if _db_manager_ref[0] is None:
+        _db_manager_ref[0] = DatabaseManager()
+    return _db_manager_ref[0]
 
 
 async def get_database_manager_async() -> DatabaseManager:
@@ -445,11 +444,10 @@ async def get_database_manager_async() -> DatabaseManager:
     Returns:
         DatabaseManager instance
     """
-    global _db_manager  # noqa: PLW0603
-    if _db_manager is None:
-        _db_manager = DatabaseManager()
-        await _db_manager.initialize()
-    return _db_manager
+    if _db_manager_ref[0] is None:
+        _db_manager_ref[0] = DatabaseManager()
+        await _db_manager_ref[0].initialize()
+    return _db_manager_ref[0]
 
 
 # Legacy compatibility functions

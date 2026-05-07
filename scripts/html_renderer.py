@@ -49,7 +49,7 @@ class HTMLRenderer:
         <div class="summary">
             <h2>Summary</h2>
             <p><strong>Total Files:</strong> {total_files}</p>
-            <p><strong>Overall Coverage:</strong> <span class="{'coverage-high' if overall_coverage >= 80 else 'coverage-medium' if overall_coverage >= 60 else 'coverage-low'}">{overall_coverage:.1f}%</span></p>
+            <p><strong>Overall Coverage:</strong> <span class="{"coverage-high" if overall_coverage >= 80 else "coverage-medium" if overall_coverage >= 60 else "coverage-low"}">{overall_coverage:.1f}%</span></p>
             <p><strong>Generated:</strong> {self.timestamp}</p>
         </div>
     </div>
@@ -100,7 +100,7 @@ class HTMLRenderer:
     <div class="container">
         <h1>{test_type.title()} Test Coverage</h1>
         <p><strong>Test Count:</strong> {count}</p>
-        <p><strong>Coverage:</strong> <span class="{'coverage-high' if coverage_percent >= 80 else 'coverage-medium' if coverage_percent >= 60 else 'coverage-low'}">{coverage_percent:.1f}%</span></p>
+        <p><strong>Coverage:</strong> <span class="{"coverage-high" if coverage_percent >= 80 else "coverage-medium" if coverage_percent >= 60 else "coverage-low"}">{coverage_percent:.1f}%</span></p>
         <p><strong>Generated:</strong> {self.timestamp}</p>
     </div>
 </body>

@@ -136,8 +136,8 @@ class CoverageRenderer:
 <body>
     <div class="header">
         <h1>📊 PromptCraft Coverage Report</h1>
-        <p><strong>Overall Coverage:</strong> <span class="coverage-{'high' if total_coverage >= 80 else 'medium' if total_coverage >= 60 else 'low'}">{total_coverage:.1f}%</span></p>
-        <p><strong>Generated:</strong> {time.strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <p><strong>Overall Coverage:</strong> <span class="coverage-{"high" if total_coverage >= 80 else "medium" if total_coverage >= 60 else "low"}">{total_coverage:.1f}%</span></p>
+        <p><strong>Generated:</strong> {time.strftime("%Y-%m-%d %H:%M:%S")}</p>
         <div class="test-count">
             <strong>Test Discovery:</strong> Coverage analysis complete
         </div>

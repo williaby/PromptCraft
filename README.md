@@ -108,7 +108,7 @@ discovery = SmartMCPDiscovery()
 context7 = await discovery.discover_server("context7")
 # Returns: ServerConnection(url="npx://@upstash/context7-mcp", type="npx", ...)
 
-# Auto-discover zen-mcp server (local deployment)  
+# Auto-discover zen-mcp server (local deployment)
 zen_mcp = await discovery.discover_server("zen-mcp")
 # Returns: ServerConnection(url="http://localhost:8000", type="embedded", ...)
 ```

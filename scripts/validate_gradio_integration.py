@@ -249,7 +249,7 @@ def main():
         if result:
             passed += 1
 
-    print(f"\nOverall: {passed}/{total} validations passed ({passed/total*100:.1f}%)")
+    print(f"\nOverall: {passed}/{total} validations passed ({passed / total * 100:.1f}%)")
 
     if passed == total:
         print("\n🎉 All validations passed! Implementation is ready for integration testing.")
