@@ -2486,7 +2486,7 @@ pytest-timeout==2.4.0 ; python_version >= "3.11" and python_version < "3.13" \
 pytest-xdist==3.8.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:202ca578cfeb7370784a8c33d6d05bc6e13b4f25b5053c30a152269fd10f0b88 \
     --hash=sha256:7e578125ec9bc6050861aa93f2d59f1d8d085595d6551c2c90b6f4fad8d3a9f1
-pytest==8.4.1 ; python_version >= "3.11" and python_version < "3.13" \
+pytest==9.0.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:539c70ba6fcead8e78eebbf1115e8b589e7565830d7d006a8723f19ac8a0afb7 \
     --hash=sha256:7c67fd69174877359ed9371ec3af8a3d2b04741818c51e5e99cc1742251fa93c
 python-dateutil==2.9.0.post0 ; python_version >= "3.11" and python_version < "3.13" \
