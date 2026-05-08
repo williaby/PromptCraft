@@ -921,7 +921,7 @@ httptools==0.6.4 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:f8787367fbdfccae38e35abf7641dafc5310310a5987b689f4c32cc8cc3ee975 \
     --hash=sha256:f9eb89ecf8b290f2e293325c646a211ff1c2493222798bb80a530c5e7502494f \
     --hash=sha256:fc411e1c0a7dcd2f902c7c48cf079947a7e65b5485dea9decb82b9105ca71a43
-httpx-sse==0.4.1 ; python_version >= "3.11" and python_version < "3.13" \
+httpx-sse==0.4.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:8f44d34414bc7b21bf3602713005c5df4917884f76072479b21f68befa4ea26e \
     --hash=sha256:cba42174344c3a5b06f255ce65b350880f962d99ead85e776f23c6618a377a37
 httpx==0.27.2 ; python_version >= "3.11" and python_version < "3.13" \
