@@ -8,29 +8,13 @@
         "docker:pinDigests"
     ],
     "pip_requirements": {
-        "fileMatch": [
-            "(^|/)requirements.*\\.txt$"
+        "managerFilePatterns": [
+            "/(^|/)requirements.*\\.txt$/"
         ]
     },
     "packageRules": [
         {
             "description": "Security-critical packages - immediate individual PRs (ADR-009)",
-            "matchPackagePatterns": [
-                "^cryptography",
-                "^pyjwt",
-                "^passlib",
-                "^bcrypt",
-                "^pyotp",
-                "^fastapi",
-                "^uvicorn",
-                "^gradio",
-                "^pydantic",
-                "^httpx",
-                "^azure-",
-                "^anthropic",
-                "^openai",
-                "^qdrant-client"
-            ],
             "matchUpdateTypes": [
                 "patch",
                 "minor",
@@ -47,11 +31,29 @@
             "schedule": [
                 "at any time"
             ],
-            "minimumReleaseAge": "0 days"
+            "minimumReleaseAge": "0 days",
+            "matchPackageNames": [
+                "/^cryptography/",
+                "/^pyjwt/",
+                "/^passlib/",
+                "/^bcrypt/",
+                "/^pyotp/",
+                "/^fastapi/",
+                "/^uvicorn/",
+                "/^gradio/",
+                "/^pydantic/",
+                "/^httpx/",
+                "/^azure-/",
+                "/^anthropic/",
+                "/^openai/",
+                "/^qdrant-client/"
+            ]
         },
         {
             "description": "CVE and vulnerability updates - immediate individual PRs (ADR-009)",
-            "vulnerabilityAlerts": true,
+            "vulnerabilityAlerts": {
+                "enabled": true
+            },
             "osvVulnerabilityAlerts": true,
             "groupName": null,
             "automerge": false,
@@ -75,22 +77,6 @@
                 "patch",
                 "minor"
             ],
-            "excludePackagePatterns": [
-                "^cryptography",
-                "^pyjwt",
-                "^passlib",
-                "^bcrypt",
-                "^pyotp",
-                "^fastapi",
-                "^uvicorn",
-                "^gradio",
-                "^pydantic",
-                "^httpx",
-                "^azure-",
-                "^anthropic",
-                "^openai",
-                "^qdrant-client"
-            ],
             "groupName": "routine-updates",
             "automerge": false,
             "labels": [
@@ -100,28 +86,28 @@
             "prPriority": 3,
             "schedule": [
                 "on the first day of the month"
+            ],
+            "matchPackageNames": [
+                "!/^cryptography/",
+                "!/^pyjwt/",
+                "!/^passlib/",
+                "!/^bcrypt/",
+                "!/^pyotp/",
+                "!/^fastapi/",
+                "!/^uvicorn/",
+                "!/^gradio/",
+                "!/^pydantic/",
+                "!/^httpx/",
+                "!/^azure-/",
+                "!/^anthropic/",
+                "!/^openai/",
+                "!/^qdrant-client/"
             ]
         },
         {
             "description": "Major version updates always require manual review",
             "matchUpdateTypes": [
                 "major"
-            ],
-            "excludePackagePatterns": [
-                "^cryptography",
-                "^pyjwt",
-                "^passlib",
-                "^bcrypt",
-                "^pyotp",
-                "^fastapi",
-                "^uvicorn",
-                "^gradio",
-                "^pydantic",
-                "^httpx",
-                "^azure-",
-                "^anthropic",
-                "^openai",
-                "^qdrant-client"
             ],
             "groupName": "major-updates",
             "automerge": false,
@@ -135,6 +121,22 @@
             "prPriority": 1,
             "schedule": [
                 "on the first day of the month"
+            ],
+            "matchPackageNames": [
+                "!/^cryptography/",
+                "!/^pyjwt/",
+                "!/^passlib/",
+                "!/^bcrypt/",
+                "!/^pyotp/",
+                "!/^fastapi/",
+                "!/^uvicorn/",
+                "!/^gradio/",
+                "!/^pydantic/",
+                "!/^httpx/",
+                "!/^azure-/",
+                "!/^anthropic/",
+                "!/^openai/",
+                "!/^qdrant-client/"
             ]
         },
         {
