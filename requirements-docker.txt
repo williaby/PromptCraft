@@ -4,7 +4,7 @@ aiofiles==24.1.0 ; python_version >= "3.11" and python_version < "3.13" \
 aiohappyeyeballs==2.6.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558 \
     --hash=sha256:f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8
-aiohttp==3.12.15 ; python_version >= "3.11" and python_version < "3.13" \
+aiohttp==3.13.4 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:010cc9bbd06db80fe234d9003f67e97a10fe003bfbedb40da7d71c1008eda0fe \
     --hash=sha256:049ec0360f939cd164ecbfd2873eaa432613d5e77d6b04535e3d1fbae5a9e645 \
     --hash=sha256:098e92835b8119b54c693f2f88a1dec690e20798ca5f5fe5f0520245253ee0af \
