@@ -4,7 +4,7 @@ aiofiles==24.1.0 ; python_version >= "3.11" and python_version < "3.13" \
 aiohappyeyeballs==2.6.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:c3f9d0113123803ccadfdf3f0faa505bc78e6a72d1cc4806cbd719826e943558 \
     --hash=sha256:f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8
-aiohttp==3.13.4 ; python_version >= "3.11" and python_version < "3.13" \
+aiohttp==3.12.15 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:010cc9bbd06db80fe234d9003f67e97a10fe003bfbedb40da7d71c1008eda0fe \
     --hash=sha256:049ec0360f939cd164ecbfd2873eaa432613d5e77d6b04535e3d1fbae5a9e645 \
     --hash=sha256:098e92835b8119b54c693f2f88a1dec690e20798ca5f5fe5f0520245253ee0af \
@@ -1361,7 +1361,7 @@ openai==1.99.9 ; python_version >= "3.11" and python_version < "3.13" \
 opentelemetry-api==1.36.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:02f20bcacf666e1333b6b1f04e647dc1d5111f86b8e510238fcc56d7762cda8c \
     --hash=sha256:9a72572b9c416d004d492cbc6e61962c0501eaf945ece9b5a0f56597d8348aa0
-orjson==3.11.6 ; python_version >= "3.11" and python_version < "3.13" \
+orjson==3.11.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:07349e88025b9b5c783077bf7a9f401ffbfb07fd20e86ec6fc5b7432c28c2c5e \
     --hash=sha256:0afb89f16f07220183fd00f5f297328ed0a68d8722ad1b0c8dcd95b12bc82804 \
     --hash=sha256:0b84455e60c4bc12c1e4cbaa5cfc1acdc7775a9da9cec040e17232f4b05458bd \
