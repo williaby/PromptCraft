@@ -26,7 +26,6 @@ from src.utils.encryption import (
 # Import constants after other imports to avoid circular dependency
 from .constants import SECRET_FIELD_NAMES
 
-
 # Constants
 MAX_HOSTNAME_LENGTH = 253
 MAX_APP_NAME_LENGTH = 100
@@ -278,7 +277,7 @@ class ApplicationSettings(BaseSettings):
 
     # Database Configuration
     database_host: str = Field(
-        default="192.168.1.16",
+        default="localhost",
         description="Database host address",
     )
 
@@ -315,7 +314,7 @@ class ApplicationSettings(BaseSettings):
 
     # PostgreSQL Database Configuration for AUTH-1
     db_host: str = Field(
-        default="192.168.1.16",
+        default="localhost",
         description="PostgreSQL database host address",
     )
 
@@ -464,7 +463,7 @@ class ApplicationSettings(BaseSettings):
 
     # Qdrant Vector Database Configuration
     qdrant_host: str = Field(
-        default="192.168.1.16",
+        default="localhost",
         description="Qdrant vector database host address",
     )
 

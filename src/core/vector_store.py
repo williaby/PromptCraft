@@ -71,7 +71,6 @@ from src.core.performance_optimizer import (
 )
 from src.utils.secure_random import secure_random
 
-
 # Optional imports for Qdrant - only available if qdrant-client is installed
 try:
     from qdrant_client import QdrantClient
@@ -734,7 +733,7 @@ class QdrantVectorStore(AbstractVectorStore):
             default_timeout = settings.qdrant_timeout
         except Exception:
             # Fallback for tests or when settings are not available
-            default_host = "192.168.1.16"
+            default_host = "localhost"
             default_port = 6333
             default_api_key = None
             default_timeout = DEFAULT_TIMEOUT

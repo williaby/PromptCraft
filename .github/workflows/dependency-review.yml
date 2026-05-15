@@ -13,11 +13,17 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate.
+        uses: actions/dependency-review-action@v4  # zizmor: ignore[unpinned-uses]
         with:
           # Fail the job if any vulnerable dependencies are found
           fail-on-severity: moderate
