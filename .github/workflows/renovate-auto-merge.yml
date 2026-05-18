@@ -254,8 +254,6 @@ jobs:
           fi
 
       - name: Run enhanced security scans
-        env:
-          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
         run: |
           # Install security scanners
           pip install pip-audit osv-scanner
@@ -271,19 +269,6 @@ jobs:
           osv-scanner --format=json --output=osv-report.json .
           echo "::endgroup::"
 
-          # Run existing security tools with fallback
-          echo "::group::Running Safety"
-          if [ -n "$SAFETY_API_KEY" ]; then
-            echo "🔑 Using Safety CLI with API key for enhanced scanning"
-            echo "$SAFETY_API_KEY" > safety_api_key.txt
-            poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
-            rm safety_api_key.txt  # Clean up credential file
-          else
-            echo "⚠️  SAFETY_API_KEY not set - using rate-limited scanning"
-            echo "To enable enhanced scanning, add SAFETY_API_KEY secret to repository"
-            poetry run safety scan --output safety-report.json || true
-          fi
-          echo "::endgroup::"
 
           echo "::group::Running Bandit"
           poetry run bandit -r src -f json -o bandit-report.json || true
@@ -298,7 +283,6 @@ jobs:
             vulnerability-report.json
             sbom.json
             osv-report.json
-            safety-report.json
             bandit-report.json
           retention-days: 30
 
