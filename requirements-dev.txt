@@ -1278,7 +1278,7 @@ hypothesis==6.138.2 ; python_version >= "3.11" and python_version < "3.13" \
 identify==2.6.13 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:60381139b3ae39447482ecc406944190f690d4a2997f2584062089848361b33b \
     --hash=sha256:da8d6c828e773620e13bfa86ea601c5a5310ba4bcd65edf378198b56a1f9fb32
-idna==3.10 ; python_version >= "3.11" and python_version < "3.13" \
+idna==3.15 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
 importlib-metadata==8.7.0 ; python_version >= "3.11" and python_version < "3.13" \
