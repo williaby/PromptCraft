@@ -2440,7 +2440,7 @@ toml==0.10.2 ; python_version >= "3.11" and python_version < "3.13" \
 tomlkit==0.13.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:430cf247ee57df2b94ee3fbe588e71d362a941ebb545dec29b53961d61add2a1 \
     --hash=sha256:c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0
-torch==2.8.0 ; python_version >= "3.11" and python_version < "3.13" \
+torch==2.11.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:06fcee8000e5c62a9f3e52a688b9c5abb7c6228d0e56e3452983416025c41381 \
     --hash=sha256:0be92c08b44009d4131d1ff7a8060d10bafdb7ddcb7359ef8d8c5169007ea905 \
     --hash=sha256:1a62a1ec4b0498930e2543535cf70b1bef8c777713de7ceb84cd79115f553767 \
