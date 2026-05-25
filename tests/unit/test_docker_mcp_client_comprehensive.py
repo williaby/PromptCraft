@@ -258,9 +258,9 @@ class TestDockerMCPClientComprehensive:
     async def test_health_check_comprehensive(self, docker_client):
         """Test comprehensive health_check method."""
         # Ensure clean state for this test - fresh instance should be clean
-        assert (
-            len(docker_client.authenticated_services) == 0
-        ), f"Expected clean state, but got: {docker_client.authenticated_services}"
+        assert len(docker_client.authenticated_services) == 0, (
+            f"Expected clean state, but got: {docker_client.authenticated_services}"
+        )
 
         # Test health check without authentication
         health = await docker_client.health_check()

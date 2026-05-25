@@ -397,9 +397,9 @@ class TestAuthenticationIntegration:
 
         # Verify request completed in reasonable time (increased tolerance for integration tests)
         request_time_ms = (end_time - start_time) * 1000
-        assert (
-            request_time_ms < 500.0
-        ), f"Request took {request_time_ms:.2f}ms, exceeds 500ms limit for integration test"
+        assert request_time_ms < 500.0, (
+            f"Request took {request_time_ms:.2f}ms, exceeds 500ms limit for integration test"
+        )
 
     def test_multiple_concurrent_requests(
         self,

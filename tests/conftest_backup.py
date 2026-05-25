@@ -573,7 +573,7 @@ def security_test_inputs():
         "\x00\x01\x02\x03",  # Binary data
         "\r\n\r\n",  # CRLF injection
         # Unicode and encoding edge cases
-        "\U0001D4E4\U0001D4F7\U0001D4F2\U0001D4EC\U0001D4F8\U0001D4ED\U0001D4EE",  # Unicode mathematical script
+        "\U0001d4e4\U0001d4f7\U0001d4f2\U0001d4ec\U0001d4f8\U0001d4ed\U0001d4ee",  # Unicode mathematical script
         "🚀🔥💻",  # Emojis
         "\ufeff",  # BOM character
         # Empty and whitespace edge cases

@@ -201,7 +201,9 @@ class HomelabPerformanceTester:
             hw_tier = (
                 "budget_homelab"
                 if self.specs.cpu_cores < 4
-                else "standard_homelab" if self.specs.cpu_cores < 8 else "high_end_homelab"
+                else "standard_homelab"
+                if self.specs.cpu_cores < 8
+                else "high_end_homelab"
             )
 
             base = base_latency[hw_tier]
@@ -209,8 +211,7 @@ class HomelabPerformanceTester:
                 {
                     "connection_successful": True,
                     "connection_latency_ms": base + random.uniform(-10, 20),  # noqa: S311 - performance simulation
-                    "simple_query_latency_ms": base * 0.3
-                    + random.uniform(-5, 10),  # noqa: S311 - performance simulation
+                    "simple_query_latency_ms": base * 0.3 + random.uniform(-5, 10),  # noqa: S311 - performance simulation
                     "postgres_version": "PostgreSQL 15.3 (Simulated Homelab Instance)",
                     "simulation_mode": True,
                 },

@@ -324,9 +324,9 @@ class TestQueryCounselorHydeIntegration:
         # Validate SLA compliance
         assert p95_time < 2.0, f"P95 response time ({p95_time:.3f}s) exceeds 2s SLA"
         assert avg_time < 1.0, f"Average response time ({avg_time:.3f}s) too high"
-        assert (
-            successful_count >= len(test_queries) * 0.95
-        ), f"Success rate too low: {successful_count}/{len(test_queries)}"
+        assert successful_count >= len(test_queries) * 0.95, (
+            f"Success rate too low: {successful_count}/{len(test_queries)}"
+        )
 
         # Log performance summary
         logger.info("SLA Compliance Test Results:")

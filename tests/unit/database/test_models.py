@@ -936,7 +936,9 @@ class TestModelConstraints:
 
         # Check non-nullable columns
         non_nullable_columns = [
-            col.name for col in table.columns if not col.nullable and col.name != "id"  # id has default
+            col.name
+            for col in table.columns
+            if not col.nullable and col.name != "id"  # id has default
         ]
 
         expected_required = [
@@ -957,7 +959,9 @@ class TestModelConstraints:
 
         # Check non-nullable columns
         non_nullable_columns = [
-            col.name for col in table.columns if not col.nullable and col.name != "id"  # id has default
+            col.name
+            for col in table.columns
+            if not col.nullable and col.name != "id"  # id has default
         ]
 
         expected_required = ["user_email", "event_type", "success", "created_at"]

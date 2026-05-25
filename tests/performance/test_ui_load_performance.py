@@ -227,15 +227,15 @@ class TestUILoadPerformance:
 
         # Validate basic performance requirements
         assert metrics["success_rate"] >= 90.0, f"Success rate {metrics['success_rate']:.1f}% below 90%"
-        assert (
-            metrics["response_time_p95"] <= UI_RESPONSE_TIME_LIMIT
-        ), f"P95 response time {metrics['response_time_p95']:.2f}s exceeds {UI_RESPONSE_TIME_LIMIT}s limit"
+        assert metrics["response_time_p95"] <= UI_RESPONSE_TIME_LIMIT, (
+            f"P95 response time {metrics['response_time_p95']:.2f}s exceeds {UI_RESPONSE_TIME_LIMIT}s limit"
+        )
 
         # Memory usage should be reasonable
         if metrics.get("memory_max_mb"):
-            assert (
-                metrics["memory_max_mb"] <= MEMORY_LIMIT_MB
-            ), f"Peak memory {metrics['memory_max_mb']:.1f}MB exceeds {MEMORY_LIMIT_MB}MB limit"
+            assert metrics["memory_max_mb"] <= MEMORY_LIMIT_MB, (
+                f"Peak memory {metrics['memory_max_mb']:.1f}MB exceeds {MEMORY_LIMIT_MB}MB limit"
+            )
 
         # Log performance summary
         logger.info("Basic Load Test Results:")
@@ -256,15 +256,15 @@ class TestUILoadPerformance:
 
         # More lenient requirements for maximum load
         min_success_rate = 80.0 if IS_CI else 85.0
-        assert (
-            metrics["success_rate"] >= min_success_rate
-        ), f"Success rate {metrics['success_rate']:.1f}% below {min_success_rate}%"
+        assert metrics["success_rate"] >= min_success_rate, (
+            f"Success rate {metrics['success_rate']:.1f}% below {min_success_rate}%"
+        )
 
         # Response time may be higher under maximum load
         max_p95_time = UI_RESPONSE_TIME_LIMIT * 1.5  # 50% tolerance for max load
-        assert (
-            metrics["response_time_p95"] <= max_p95_time
-        ), f"P95 response time {metrics['response_time_p95']:.2f}s exceeds {max_p95_time}s limit"
+        assert metrics["response_time_p95"] <= max_p95_time, (
+            f"P95 response time {metrics['response_time_p95']:.2f}s exceeds {max_p95_time}s limit"
+        )
 
         # Log performance summary
         logger.info("Maximum Load Test Results:")
@@ -295,17 +295,17 @@ class TestUILoadPerformance:
         # - This catches complete system failures while accounting for CI environment limitations
         # - Still validates core UI functionality without false negatives from environment constraints
         min_success_rate = 45.0 if IS_CI else 23.5  # Empirically-based threshold reflecting actual CI behavior
-        assert (
-            metrics["success_rate"] >= min_success_rate
-        ), f"Sustained success rate {metrics['success_rate']:.1f}% below {min_success_rate}%"
+        assert metrics["success_rate"] >= min_success_rate, (
+            f"Sustained success rate {metrics['success_rate']:.1f}% below {min_success_rate}%"
+        )
         assert metrics["response_time_p95"] <= UI_RESPONSE_TIME_LIMIT * 1.2, "Sustained P95 response time too high"
 
         # Memory should remain stable over time
         if metrics.get("memory_growth_mb"):
             max_growth = 100.0 if IS_CI else 50.0  # More lenient in CI
-            assert (
-                metrics["memory_growth_mb"] <= max_growth
-            ), f"Memory growth {metrics['memory_growth_mb']:.1f}MB indicates potential leak"
+            assert metrics["memory_growth_mb"] <= max_growth, (
+                f"Memory growth {metrics['memory_growth_mb']:.1f}MB indicates potential leak"
+            )
 
         # Log sustained performance summary
         logger.info("Sustained Load Test Results:")
@@ -352,9 +352,9 @@ class TestUILoadPerformance:
 
         # System should remain stable even with rate limiting
         min_success_rate = 30.0 if IS_CI else 50.0  # More lenient in CI
-        assert (
-            metrics["success_rate"] >= min_success_rate
-        ), f"Success rate {metrics['success_rate']:.1f}% too low even with rate limiting"
+        assert metrics["success_rate"] >= min_success_rate, (
+            f"Success rate {metrics['success_rate']:.1f}% too low even with rate limiting"
+        )
 
         # Log rate limiting results
         logger.info("Rate Limiting Test Results:")
@@ -425,9 +425,9 @@ class TestUILoadPerformance:
             results[scenario_name] = metrics
 
             # Validate response time requirements for each scenario
-            assert (
-                metrics["response_time_p95"] <= UI_RESPONSE_TIME_LIMIT
-            ), f"P95 response time too high for {scenario_name}"
+            assert metrics["response_time_p95"] <= UI_RESPONSE_TIME_LIMIT, (
+                f"P95 response time too high for {scenario_name}"
+            )
 
             # Log scenario results
             logger.info("Response Time Analysis - %s:", scenario_name)
@@ -441,9 +441,9 @@ class TestUILoadPerformance:
         complex_p95 = results[f"{MIN_CONCURRENT_USERS}users_complex"]["response_time_p95"]
 
         # Complex requests should not be more than 3x slower than simple ones
-        assert (
-            complex_p95 <= simple_p95 * 3.0
-        ), f"Complex requests too much slower than simple: {complex_p95:.2f}s vs {simple_p95:.2f}s"
+        assert complex_p95 <= simple_p95 * 3.0, (
+            f"Complex requests too much slower than simple: {complex_p95:.2f}s vs {simple_p95:.2f}s"
+        )
 
     @pytest.mark.performance
     def test_ui_scalability_limits(self, ui_interface_for_load_testing):
@@ -479,9 +479,9 @@ class TestUILoadPerformance:
                 break
 
         # Verify minimum scalability requirement
-        assert (
-            max_stable_users >= MIN_CONCURRENT_USERS
-        ), f"UI cannot handle minimum {MIN_CONCURRENT_USERS} concurrent users stably"
+        assert max_stable_users >= MIN_CONCURRENT_USERS, (
+            f"UI cannot handle minimum {MIN_CONCURRENT_USERS} concurrent users stably"
+        )
 
         logger.info("Maximum Stable Concurrent Users: %d", max_stable_users)
 

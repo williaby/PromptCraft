@@ -380,7 +380,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 connection_state=(
                     MCPConnectionState.CONNECTED
                     if status == "healthy"
-                    else MCPConnectionState.DEGRADED if status == "degraded" else MCPConnectionState.FAILED
+                    else MCPConnectionState.DEGRADED
+                    if status == "degraded"
+                    else MCPConnectionState.FAILED
                 ),
                 response_time_ms=response_time * 1000,  # Convert to milliseconds
                 error_count=self.error_count,

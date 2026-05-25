@@ -335,15 +335,15 @@ class TestPerformanceRequirements:
         p95_threshold = 4.0 if is_ci else 2.0  # Higher threshold for CI
         max_threshold = 6.0 if is_ci else 3.0  # Higher threshold for CI
 
-        assert (
-            avg_response_time < avg_threshold
-        ), f"Average response time under load {avg_response_time:.3f}s exceeds {avg_threshold}s"
-        assert (
-            p95_response_time < p95_threshold
-        ), f"95th percentile response time {p95_response_time:.3f}s exceeds {p95_threshold}s"
-        assert (
-            max_response_time < max_threshold
-        ), f"Max response time under load {max_response_time:.3f}s exceeds {max_threshold}s"
+        assert avg_response_time < avg_threshold, (
+            f"Average response time under load {avg_response_time:.3f}s exceeds {avg_threshold}s"
+        )
+        assert p95_response_time < p95_threshold, (
+            f"95th percentile response time {p95_response_time:.3f}s exceeds {p95_threshold}s"
+        )
+        assert max_response_time < max_threshold, (
+            f"Max response time under load {max_response_time:.3f}s exceeds {max_threshold}s"
+        )
 
         print(f"Load testing: avg={avg_response_time:.3f}s, p95={p95_response_time:.3f}s, max={max_response_time:.3f}s")
 
