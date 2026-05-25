@@ -442,8 +442,9 @@ class TestNoxFileSessionsCoverageGaps:
             external=True,
         )
 
-        # Verify linting commands
-        mock_session.run.assert_any_call("black", "--check", *noxfile.SRC_LOCATIONS)
+        # Verify linting commands (Black removed per ADR-0001; ruff format
+        # replaces it).
+        mock_session.run.assert_any_call("ruff", "format", "--check", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("ruff", "check", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("markdownlint", "**/*.md", external=True)
         mock_session.run.assert_any_call("yamllint", ".", external=True)
@@ -454,8 +455,9 @@ class TestNoxFileSessionsCoverageGaps:
 
         noxfile.lint(mock_session)
 
-        # Verify custom args are used instead of defaults
-        mock_session.run.assert_any_call("black", "--check", "src/specific/")
+        # Verify custom args are used instead of defaults (Black removed
+        # per ADR-0001; ruff format replaces it).
+        mock_session.run.assert_any_call("ruff", "format", "--check", "src/specific/")
         mock_session.run.assert_any_call("ruff", "check", "src/specific/")
 
     def test_type_check_session(self, mock_session):
@@ -511,8 +513,9 @@ class TestNoxFileSessionsCoverageGaps:
             external=True,
         )
 
-        # Verify formatting commands
-        mock_session.run.assert_any_call("black", *noxfile.SRC_LOCATIONS)
+        # Verify formatting commands (Black removed per ADR-0001; ruff format
+        # replaces it).
+        mock_session.run.assert_any_call("ruff", "format", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("ruff", "check", "--fix", *noxfile.SRC_LOCATIONS)
 
     def test_docs_session(self, mock_session):
@@ -569,13 +572,15 @@ class TestNoxFileSessionsCoverageGaps:
         # Verify virtual environment and pip install
         mock_session.create_tmp.assert_called_once()
         mock_session.run.assert_any_call("python", "-m", "venv", "test-env")
-        # The path should be str(Path('/tmp/test').parent / "requirements.txt") = "/tmp/requirements.txt"
+        # noxfile.deps writes the hashed export to uv-export-hashed.txt in
+        # the tmp CWD (relative path); the pip install then references the
+        # same relative name.
         mock_session.run.assert_any_call(
             "./test-env/bin/pip",
             "install",
             "--require-hashes",
             "-r",
-            "/tmp/requirements.txt",
+            "uv-export-hashed.txt",
             external=True,
         )
 
@@ -838,12 +843,15 @@ def test_noxfile_sessions_parametrized(session_name, session_func):
         external=True,
     )
 
-    # Verify at least one more command was executed (except metrics which is conditional)
+    # Verify the session also executed at least one downstream command
+    # (e.g., pytest). Under poetry the install step incremented run; under
+    # uv it goes through run_install instead, so we only require >= 1 on
+    # run for the non-metrics sessions. The metrics session may early-out
+    # before any run call if test_metrics_dashboard.py is absent.
     if session_name == "metrics":
-        # metrics session may only run poetry install if test_metrics_dashboard.py doesn't exist
-        assert mock_session.run.call_count >= 1
+        assert mock_session.run.call_count >= 0
     else:
-        assert mock_session.run.call_count >= 2
+        assert mock_session.run.call_count >= 1
 
 
 class TestNoxFileConstants:
