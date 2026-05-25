@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          poetry install --no-interaction --no-root
+          poetry install --sync --no-interaction --no-root
 
       - name: Run FIPS compatibility check
         id: fips-check
