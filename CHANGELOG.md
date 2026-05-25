@@ -4,6 +4,34 @@ All notable changes to the PromptCraft Configuration System are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Build system migration: Poetry to uv** (ADR-0001). Build backend swapped
+  from `poetry-core` to `hatchling`. `poetry.lock` plus three tracked
+  `requirements*.txt` files (10,540 lines) replaced by a single `uv.lock`.
+  Dev loop, CI workflows, devcontainer, and production Dockerfile all moved
+  to `uv sync --frozen` / `uv export`. Rollback anchor: signed tag
+  `legacy/pre-uv-migration` at `6533dbc` (retention 90 days).
+- **Major version bumps across direct + dev dependencies** to clear ~92
+  transitive CVEs the stale `requirements*.txt` exports had been hiding.
+  Includes pytest 9, mypy 2, qdrant-client 1.10+, and 22 other majors.
+  Breakage footprint: 5 small code fixes across 4 files (see ADR-0001 §
+  Breakage triage).
+- **Black removed entirely.** `ruff format` is now the sole formatter
+  (project line length 120). `[tool.black]` config block, `black>=26.0.0`
+  dev dependency, and Black calls in `Makefile` + `noxfile.py` all deleted.
+- **`fips-compatibility.yml` and `setup-assured-oss.yml` workflows deleted.**
+  Repo has no FIPS components; assured-oss reusable workflow was unused.
+
+### Known migration regressions (follow-up required)
+
+- **`[tool.pytest.benchmark]` config block dropped.** The block was a
+  non-standard nested table that pytest-benchmark did not actually read
+  (the correct location is `[pytest-benchmark]` in `pytest.ini`), so the
+  previously-claimed regression thresholds (`compare_fail`, `min_rounds`,
+  etc.) were never enforced. Restoring them via a proper pytest-benchmark
+  config file is tracked separately.
+
 ### Fixed
 
 - Align project with global Claude Code v1.4.0 standards: rewrite `CLAUDE.md`,
