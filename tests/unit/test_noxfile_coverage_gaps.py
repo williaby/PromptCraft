@@ -30,7 +30,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.unit(mock_session)
 
         # Verify poetry install was called
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest was called with correct markers and coverage
         expected_pytest_call = (
@@ -69,7 +77,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.component(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with component marker
         expected_pytest_call = ("pytest", "-m", "component", "--cov=src", "--cov-branch", "--cov-fail-under=75", "-v")
@@ -80,7 +96,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.integration(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with integration marker
         expected_pytest_call = ("pytest", "-m", "integration", "--cov=src", "--cov-branch", "-v")
@@ -91,7 +115,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.e2e(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with e2e marker
         expected_pytest_call = ("pytest", "-m", "e2e", "-v", "--tb=short")
@@ -102,7 +134,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.perf(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with perf markers
         expected_pytest_call = ("pytest", "-m", "perf or performance", "-v", "--tb=short", "--durations=10")
@@ -113,7 +153,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.security_tests(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with security marker
         expected_pytest_call = ("pytest", "-m", "security", "-v")
@@ -124,7 +172,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.chaos_tests(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with chaos marker
         expected_pytest_call = ("pytest", "-m", "chaos", "-v", "--tb=short")
@@ -135,7 +191,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.fast(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest excluding slow tests
         expected_pytest_call = (
@@ -155,7 +219,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.metrics(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify warning log when test_metrics_dashboard.py doesn't exist
         mock_session.log.assert_any_call(
@@ -167,7 +239,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.tests_unit(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with unit marker and coverage reports
         expected_pytest_call = (
@@ -210,7 +290,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.tests_integration(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with integration marker
         expected_pytest_call = (
@@ -243,7 +331,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.tests_security(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with security marker
         expected_pytest_call = (
@@ -276,7 +372,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.tests_fast(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest excluding slow tests
         expected_pytest_call = (
@@ -310,7 +414,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.codecov_analysis(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify codecov analysis script execution
         mock_session.run.assert_any_call("python", "codecov_analysis.py")
@@ -320,7 +432,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.lint(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify linting commands
         mock_session.run.assert_any_call("black", "--check", *noxfile.SRC_LOCATIONS)
@@ -343,7 +463,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.type_check(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify mypy execution
         mock_session.run.assert_any_call("mypy", "src")
@@ -353,7 +481,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.security(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify security tools
         mock_session.run.assert_any_call("safety", "check", "--json")
@@ -365,7 +501,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.format_code(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify formatting commands
         mock_session.run.assert_any_call("black", *noxfile.SRC_LOCATIONS)
@@ -376,7 +520,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.docs(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify directory change and mkdocs build
         mock_session.cd.assert_called_once_with("docs")
@@ -399,14 +551,23 @@ class TestNoxFileSessionsCoverageGaps:
         with patch("pathlib.Path.cwd", return_value=Path("/tmp/test")):
             noxfile.deps(mock_session)
 
-        # Verify poetry commands
-        mock_session.run.assert_any_call("poetry", "install", external=True)
-        mock_session.run.assert_any_call("poetry", "show", "--outdated")
-        mock_session.run.assert_any_call("./scripts/generate_requirements.sh", external=True)
+        # Verify uv-equivalent commands (see ADR-0001 for the poetry -> uv
+        # swap). The deps session syncs all groups, runs `uv lock --check`,
+        # then lists outdated packages via `uv pip list --outdated`.
+        # scripts/generate_requirements.sh was deleted in the migration.
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--all-groups",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
+        mock_session.run.assert_any_call("uv", "lock", "--check", external=True)
+        mock_session.run.assert_any_call("uv", "pip", "list", "--outdated", external=True)
 
         # Verify virtual environment and pip install
         mock_session.create_tmp.assert_called_once()
-        mock_session.chdir.assert_called_once_with("/tmp/test")
         mock_session.run.assert_any_call("python", "-m", "venv", "test-env")
         # The path should be str(Path('/tmp/test').parent / "requirements.txt") = "/tmp/requirements.txt"
         mock_session.run.assert_any_call(
@@ -423,7 +584,15 @@ class TestNoxFileSessionsCoverageGaps:
         noxfile.pre_commit(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pre-commit execution
         mock_session.run.assert_any_call("pre-commit", "run", "--all-files")
@@ -448,7 +617,15 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         noxfile.mutation_testing(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify cache cleanup
         mock_session.run.assert_any_call("rm", "-rf", ".mutmut-cache", external=True, success_codes=[0, 1])
@@ -498,7 +675,15 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         noxfile.contract_testing(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify contract tests execution
         mock_session.run.assert_any_call("pytest", "tests/contract/", "-v")
@@ -587,7 +772,15 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         noxfile.performance_testing(mock_session)
 
         # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify Locust execution
         expected_locust_call = (
@@ -634,8 +827,16 @@ def test_noxfile_sessions_parametrized(session_name, session_func):
     # Execute the session function
     session_func(mock_session)
 
-    # Verify poetry install was called for all sessions
-    mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+    # Verify uv sync was called for all sessions (poetry replaced; see ADR-0001).
+    mock_session.run_install.assert_any_call(
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
+        env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+        external=True,
+    )
 
     # Verify at least one more command was executed (except metrics which is conditional)
     if session_name == "metrics":
