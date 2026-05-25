@@ -40,7 +40,16 @@ def check_security() -> bool:
         ["uv", "run", "--frozen", "pip-audit", "--format=json"],
     )
 
-    # Parse JSON output from pip-audit
+    # Parse JSON output from pip-audit. #CRITICAL: a non-zero exit with empty
+    # or malformed JSON must be treated as a scan failure, not a clean result.
+    # The earlier version silently fell through to "No known vulnerabilities"
+    # whenever stdout was empty even when pip-audit had crashed.
+    # #VERIFY by forcing a non-zero exit (unreachable index) and confirming
+    # this function returns False.
+    if not stdout.strip() and code != 0:
+        print(f"  ❌ pip-audit scan failed with code {code}: {stderr.strip() or 'no stderr'}")
+        return False
+
     vulnerability_details: list[dict[str, str]] = []
     try:
         if stdout.strip():
@@ -60,7 +69,7 @@ def check_security() -> bool:
             return False
     except (json.JSONDecodeError, KeyError):
         if code != 0:
-            print(f"  ❌ pip-audit scan failed with code {code}: {stderr}")
+            print(f"  ❌ pip-audit scan failed with code {code}: {stderr.strip() or 'no stderr'}")
             return False
 
     print("  ✅ No known vulnerabilities")

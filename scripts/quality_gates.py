@@ -225,20 +225,34 @@ class QualityGateValidator:
                 cwd=self.project_root,
             )
 
+            # #CRITICAL: pip-audit non-zero exit or non-JSON stdout must NOT
+            # silently pass the security gate. A network blip or resolver
+            # failure previously decoded as 0 vulnerabilities and let
+            # vulnerable builds through. #VERIFY by inducing a forced
+            # non-zero exit (e.g. unreachable index) and confirming the
+            # gate records a scan-failure violation.
             if audit_result.stdout:
                 try:
                     audit_data = json.loads(audit_result.stdout)
                     # pip-audit JSON shape: {"dependencies": [{"name": ..., "vulns": [...]}, ...]}
-                    vulnerability_count = sum(
-                        len(dep.get("vulns", [])) for dep in audit_data.get("dependencies", [])
-                    )
+                    vulnerability_count = sum(len(dep.get("vulns", [])) for dep in audit_data.get("dependencies", []))
                     self.results.security_results["vulnerabilities"] = vulnerability_count
 
                     if vulnerability_count > 0:
                         self.results.violations.append(f"Security vulnerabilities detected: {vulnerability_count}")
                 except json.JSONDecodeError:
-                    # pip-audit may emit non-JSON output on error paths
+                    if audit_result.returncode != 0:
+                        self.results.violations.append(
+                            f"pip-audit scan failed (exit {audit_result.returncode}): "
+                            f"{audit_result.stderr.strip() or 'no stderr'}",
+                        )
                     self.results.security_results["vulnerabilities"] = 0
+            elif audit_result.returncode != 0:
+                self.results.violations.append(
+                    f"pip-audit scan failed (exit {audit_result.returncode}, empty stdout): "
+                    f"{audit_result.stderr.strip() or 'no stderr'}",
+                )
+                self.results.security_results["vulnerabilities"] = 0
 
             print("✅ Security validation completed")
             return len([v for v in self.results.violations if "security" in v.lower()]) == 0
