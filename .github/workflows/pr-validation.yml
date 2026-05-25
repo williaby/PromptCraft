@@ -31,6 +31,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: 'uv.lock'
 
+      - name: Set up Python (pinned for deterministic resolver)
+        # Without this the ubuntu-latest default Python is used, which has
+        # changed across runner releases and can produce flaky behavior.
+        run: uv python install 3.12
+
       - name: Verify uv.lock is in sync with pyproject.toml
         run: uv lock --check
 

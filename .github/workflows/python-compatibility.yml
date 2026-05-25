@@ -37,7 +37,10 @@ jobs:
     name: Python Compatibility Matrix
     uses: ByronWilliamsCPA/.github/.github/workflows/python-compatibility.yml@ecf5f0679fce9c3432b153fa3eb1fc709457e7c7  # main as of 2026-05-25
     with:
-      python-versions: '["3.10", "3.11", "3.12", "3.13"]'
+      # pyproject.toml declares requires-python = ">=3.11,<3.13" so the matrix
+      # is constrained to the supported range. Widen this alongside
+      # requires-python if 3.10 or 3.13 support is reintroduced.
+      python-versions: '["3.11", "3.12"]'
       operating-systems: '["ubuntu-latest"]'
       include-macos: true
       include-windows: true
