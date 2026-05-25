@@ -6,6 +6,7 @@ embeddings and their insertion into Qdrant collections. It provides batch
 processing, progress tracking, and error handling for large knowledge bases.
 """
 
+import asyncio
 import hashlib
 import logging
 from pathlib import Path
@@ -270,20 +271,31 @@ class KnowledgeIngestionPipeline:
     async def validate_ingestion(self, collection_name: str) -> dict[str, Any]:
         """Validate the ingestion process by checking collection status."""
         try:
-            collection_info = self.client.get_collection(collection_name)
+            # #ASSUME: self.client is the synchronous QdrantClient (not the
+            # async variant), so direct calls block the event loop. Wrapping
+            # in asyncio.to_thread keeps the event loop free for other
+            # coroutines during validation.
+            # #VERIFY: if a future refactor swaps in AsyncQdrantClient, the
+            # to_thread wrappers become double-async and must be unwrapped.
+            collection_info = await asyncio.to_thread(self.client.get_collection, collection_name)
 
             # Perform a test search
             test_query = "CREATE framework prompt engineering"
             test_embedding = self.embedding_model.encode(test_query)
 
-            # qdrant-client 1.10+ deprecated .search() in favor of .query_points()
-            # which returns a QueryResponse with a .points attribute containing
-            # the same list[ScoredPoint] the old API returned directly.
-            search_results = self.client.query_points(
+            # #ASSUME: qdrant-client 1.10+ query_points() returns a
+            # QueryResponse with a .points field (list[ScoredPoint]),
+            # matching the legacy .search() return shape we previously
+            # consumed directly.
+            # #VERIFY: confirm against the installed qdrant-client 1.10.x
+            # Query Points models when bumping qdrant-client.
+            query_response = await asyncio.to_thread(
+                self.client.query_points,
                 collection_name=collection_name,
                 query=test_embedding.tolist(),
                 limit=5,
-            ).points
+            )
+            search_results = query_response.points
 
             return {
                 "collection_name": collection_name,
