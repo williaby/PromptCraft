@@ -312,7 +312,9 @@ class ClaudeCommandIntegration:
 
             # Execute command
             handler = command_info["handler"]
-            result = await handler(arguments, context or {})
+            # mypy 2 sees handler as Any (untyped dict access); cast to the
+            # registry contract that every handler returns CommandResult.
+            result = cast(CommandResult, await handler(arguments, context or {}))
 
             # Track completion
             self._track_command_end(command_line, result)
