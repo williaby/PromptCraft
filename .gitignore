@@ -183,6 +183,12 @@ monitoring/
 # Serena MCP Server (local development data)
 .serena/
 
+# Git worktrees (project convention: .worktrees/<branch-slug>/)
+.worktrees/
+
+# Generated API artifacts (FastAPI openapi.yaml exports)
+api/
+
 # OS-specific / Editor
 # =================================
 # macOS
