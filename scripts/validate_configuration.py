@@ -235,9 +235,11 @@ class ConfigurationValidator:
                 data = tomllib.load(f)
 
             # PEP 735: dev group is a list of PEP 508 requirement strings.
+            # Black was removed from the project per ADR-0001; only ruff and
+            # mypy are validated. Reintroducing Black here would also need a
+            # matching entry in _get_precommit_tool_versions().
             dev_deps: list[str] = data.get("dependency-groups", {}).get("dev", [])
             return {
-                "black": self._find_dep_spec(dev_deps, "black"),
                 "ruff": self._find_dep_spec(dev_deps, "ruff"),
                 "mypy": self._find_dep_spec(dev_deps, "mypy"),
             }
@@ -256,7 +258,7 @@ class ConfigurationValidator:
         for entry in dep_list:
             # Strip extras and environment markers before name comparison.
             head = entry.split(";", 1)[0].strip()
-            name_part = re.split(r"[\[<>=!~ ]", head, 1)[0].strip()
+            name_part = re.split(r"[\[<>=!~ ]", head, maxsplit=1)[0].strip()
             if name_part.lower() == package.lower():
                 # Return everything after the package name (the version spec).
                 spec = head[len(name_part) :].strip()
@@ -272,14 +274,19 @@ class ConfigurationValidator:
             with precommit_path.open() as f:
                 data = yaml.safe_load(f)
 
+            # The project moved its Python hooks to `language: system` with
+            # `uv run --frozen ...` (see .pre-commit-config.yaml local block),
+            # so neither ruff nor mypy have a `rev:` URL here anymore. Only
+            # external hook repos (e.g. uv-pre-commit) still yield versions.
+            # psf/black is gone entirely (ADR-0001).
             versions = {}
             for repo in data.get("repos", []):
-                if "psf/black" in repo.get("repo", ""):
-                    versions["black"] = repo.get("rev", "")
-                elif "ruff-pre-commit" in repo.get("repo", ""):
-                    versions["ruff"] = repo.get("rev", "")
-                elif "mirrors-mypy" in repo.get("repo", ""):
-                    versions["mypy"] = repo.get("rev", "")
+                if "astral-sh/uv-pre-commit" in repo.get("repo", ""):
+                    versions["uv"] = repo.get("rev", "")
+                elif "markdownlint-cli" in repo.get("repo", ""):
+                    versions["markdownlint"] = repo.get("rev", "")
+                elif "yamllint" in repo.get("repo", ""):
+                    versions["yamllint"] = repo.get("rev", "")
 
             return versions
         except Exception as e:
