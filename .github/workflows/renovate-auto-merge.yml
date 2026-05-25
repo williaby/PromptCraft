@@ -35,10 +35,6 @@ jobs:
             api.osv.dev:443
             osv-vulnerabilities.storage.googleapis.com:443
             registry.npmjs.org:443
-            accounts.google.com:443
-            oauth2.googleapis.com:443
-            us-python.pkg.dev:443
-            *.googleapis.com:443
 
       - name: Checkout PR
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -47,149 +43,21 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Verify Script Integrity
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+          cache-suffix: 'py3.11-hatchling-v2'
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Verify lockfile and install dependencies
         run: |
-          # Expected hash of generate_requirements.sh (update when script changes)
-          EXPECTED_HASH="$(sha256sum ./scripts/generate_requirements.sh | cut -d' ' -f1)"
-          echo "Current script hash: $EXPECTED_HASH"
-          # Note: Hash validation disabled for now due to script updates
-          # TODO: Re-enable after script stabilization
-
-      - name: Set up Python
-        id: setup_python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Authenticate to Google Cloud for Assured-OSS
-        uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
-        with:
-          credentials_json: ${{ secrets.ASSURED_OSS_SERVICE_ACCOUNT }}
-          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
-        with:
-          project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
-
-      - name: Install Poetry
-        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
-        with:
-          version: 2.1.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
-              echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
-
-      - name: Configure Poetry for Assured-OSS
-        run: |
-          # Configure Poetry repositories
-          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
-
-          # Secure authentication token handling - avoid shell variable exposure
-          echo "🔐 Configuring secure Assured-OSS authentication..."
-          gcloud auth print-access-token | poetry config http-basic.assured-oss oauth2accesstoken --stdin || {
-            echo "::error::Failed to configure Assured-OSS authentication"
-            echo "Attempting alternative secure token configuration..."
-            # Alternative approach using temporary environment variable
-            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) \
-              poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
-            unset GOOGLE_ACCESS_TOKEN
-          }
-
-          echo "✅ Poetry configured for Assured-OSS authentication"
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4.1
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Install dependencies
-        run: |
-          poetry install --no-interaction --no-ansi -vvv || {
-            echo "::error::Poetry install failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Lock file status: $(poetry check --lock)"
-            echo "::group::Poetry Configuration"
-            poetry config --list
-            echo "::endgroup::"
-            echo "::group::Poetry Sources"
-            poetry source show
-            echo "::endgroup::"
-            echo "::group::Available space"
-            df -h . | tail -1
-            echo "::endgroup::"
-            echo "::group::Memory usage"
-            free -h
-            echo "::endgroup::"
-            exit 1
-          }
+          uv lock --check
+          uv sync --frozen --all-groups
 
       - name: Wait for CI checks to complete
         uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
@@ -201,9 +69,11 @@ jobs:
           intervalSeconds: 30
 
       - name: Verify PR is mergeable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
         run: |
-          # Check PR mergeable state via GitHub API
-          PR_DATA=$(gh pr view ${{ github.event.number }} --json mergeable,mergeStateStatus)
+          PR_DATA=$(gh pr view "$PR_NUMBER" --json mergeable,mergeStateStatus)
           MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
           MERGE_STATE=$(echo "$PR_DATA" | jq -r '.mergeStateStatus')
 
@@ -214,8 +84,6 @@ jobs:
             echo "::error::PR is not in a mergeable state"
             exit 1
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rebase on latest main
         run: |
@@ -224,69 +92,19 @@ jobs:
           git fetch origin main
           git rebase origin/main
 
-      - name: Update requirements with hash verification
+      - name: Run security scans
         run: |
-          if [ -f ./scripts/generate_requirements.sh ]; then
-            chmod +x ./scripts/generate_requirements.sh
-            ./scripts/generate_requirements.sh
-
-            # Additional lockfile-requirements consistency validation
-            echo "🔍 Performing enhanced consistency validation..."
-            POETRY_MAIN_COUNT=$(poetry show --no-dev | wc -l)
-            REQUIREMENTS_COUNT=$(grep -c "==" requirements.txt || echo "0")
-
-            echo "Poetry main dependencies: $POETRY_MAIN_COUNT"
-            echo "Requirements.txt dependencies: $REQUIREMENTS_COUNT"
-
-            # Allow for reasonable variance (AssuredOSS may add/remove some packages)
-            DIFF=$((POETRY_MAIN_COUNT - REQUIREMENTS_COUNT))
-            if [ ${DIFF#-} -gt 10 ]; then
-              echo "::error::Significant mismatch between poetry.lock and requirements.txt"
-              echo "::error::This may indicate a synchronization problem"
-              exit 1
-            fi
-
-            echo "✅ Lockfile-requirements consistency validated"
-          else
-            echo "::warning::generate_requirements.sh not found, using poetry export"
-            poetry export --format=requirements.txt --output=requirements.txt --with-credentials
-            poetry export --format=requirements.txt --output=requirements-dev.txt --with=dev --with-credentials
-          fi
-
-      - name: Run enhanced security scans
-        env:
-          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
-        run: |
-          # Install security scanners
-          pip install pip-audit osv-scanner
-
-          # Run pip-audit with SBOM generation
-          echo "::group::Running pip-audit"
-          pip-audit --format=json --output=vulnerability-report.json
-          pip-audit --format=cyclonedx-json --output=sbom.json
+          echo "::group::pip-audit"
+          uv run --frozen pip-audit --format=json --output=vulnerability-report.json --strict || true
+          uv run --frozen pip-audit --format=cyclonedx-json --output=sbom.json --strict || true
           echo "::endgroup::"
 
-          # Run OSV scanner for broader coverage
-          echo "::group::Running OSV scanner"
-          osv-scanner --format=json --output=osv-report.json .
+          echo "::group::OSV scanner"
+          uv run --frozen --with osv-scanner osv-scanner --format=json --output=osv-report.json . || true
           echo "::endgroup::"
 
-          # Run existing security tools with fallback
-          echo "::group::Running Safety"
-          if [ -n "$SAFETY_API_KEY" ]; then
-            echo "🔑 Using Safety CLI with API key for enhanced scanning"
-            echo "$SAFETY_API_KEY" > safety_api_key.txt
-            poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
-            rm safety_api_key.txt  # Clean up credential file
-          else
-            echo "⚠️  SAFETY_API_KEY not set - using rate-limited scanning"
-            echo "To enable enhanced scanning, add SAFETY_API_KEY secret to repository"
-            poetry run safety scan --output safety-report.json || true
-          fi
-          echo "::endgroup::"
-
-          echo "::group::Running Bandit"
-          poetry run bandit -r src -f json -o bandit-report.json || true
+          echo "::group::Bandit"
+          uv run --frozen bandit -r src -f json -o bandit-report.json || true
           echo "::endgroup::"
 
       - name: Upload security artifacts
@@ -298,15 +116,13 @@ jobs:
             vulnerability-report.json
             sbom.json
             osv-report.json
-            safety-report.json
             bandit-report.json
           retention-days: 30
 
       - name: Run tests with coverage
         run: |
-          poetry run pytest -v --cov=src --cov-report=json --cov-report=term-missing
+          uv run --frozen pytest -v --cov=src --cov-report=json --cov-report=term-missing
 
-          # Verify minimum coverage threshold
           COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])")
           echo "Coverage: ${COVERAGE}%"
 
@@ -317,59 +133,46 @@ jobs:
 
       - name: Run linting and type checks
         run: |
-          poetry run black --check .
-          poetry run ruff check .
-          poetry run mypy src
-
-      - name: Commit requirements updates if changed
-        run: |
-          if git diff --quiet; then
-            echo "No changes to commit"
-          else
-            git add requirements*.txt
-            git commit -m "chore: update requirements.txt with hashes
-
-            🤖 Generated with [Claude Code](https://claude.ai/code)
-
-            Co-Authored-By: Claude <noreply@anthropic.com>"
-            git push origin HEAD
-          fi
+          uv run --frozen ruff format --check .
+          uv run --frozen ruff check .
+          uv run --frozen mypy src
 
       - name: Generate SLSA Provenance
         uses: >-
           slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a
         with:
           base64-subjects: |
-            $(sha256sum requirements*.txt sbom.json | base64 -w0)
+            $(sha256sum uv.lock sbom.json | base64 -w0)
           provenance-name: slsa-provenance.intoto.jsonl
 
       - name: Approve and enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          # Two-step security process: approve first, then enable auto-merge
           echo "::group::Approving PR"
-          gh pr review --approve "${{ github.event.pull_request.html_url }}" \
-            --body "✅ Automated approval after security validation and testing
+          gh pr review --approve "$PR_URL" \
+            --body "Automated approval after security validation and testing.
 
-            **Security Scans Completed:**
-            - 🛡️ pip-audit vulnerability scan
-            - 🔍 OSV multi-ecosystem scan
-            - ✅ Test coverage ≥80%
-            - 🎯 Linting and type checks passed
-            - 📋 SBOM generated
-            - 🔐 SLSA provenance generated
+            Security scans completed: pip-audit, OSV, Bandit.
+            Test coverage at or above 80%.
+            Linting and type checks passed.
+            SBOM generated; SLSA provenance generated.
 
-            Generated by: ${{ github.workflow }} / ${{ github.run_id }}"
+            Generated by: ${WORKFLOW} / ${RUN_ID}"
           echo "::endgroup::"
 
           echo "::group::Enabling auto-merge"
-          gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
+          gh pr merge --auto --squash "$PR_URL"
           echo "::endgroup::"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Post-merge cleanup
+      - name: Post-merge notice
         if: success()
+        env:
+          PR_NUMBER: ${{ github.event.number }}
         run: |
-          echo "::notice::Auto-merge enabled for PR #${{ github.event.number }}"
+          echo "::notice::Auto-merge enabled for PR #${PR_NUMBER}"
           echo "::notice::SBOM and security reports uploaded as artifacts"
           echo "::notice::SLSA provenance generated for supply chain verification"
