@@ -757,15 +757,15 @@ class TestPerformanceBenchmarks:
 
         # Verify all sessions completed successfully
         successful_results = [r for r in results if not isinstance(r, Exception)]
-        assert (
-            len(successful_results) == concurrent_sessions
-        ), f"Only {len(successful_results)}/{concurrent_sessions} sessions succeeded"
+        assert len(successful_results) == concurrent_sessions, (
+            f"Only {len(successful_results)}/{concurrent_sessions} sessions succeeded"
+        )
 
         # Performance should scale reasonably
         expected_max_time = 5.0  # 5 seconds for 5 concurrent sessions
-        assert (
-            concurrent_time < expected_max_time
-        ), f"Concurrent execution took {concurrent_time:.1f}s, expected < {expected_max_time}s"
+        assert concurrent_time < expected_max_time, (
+            f"Concurrent execution took {concurrent_time:.1f}s, expected < {expected_max_time}s"
+        )
 
         print(f"Concurrent sessions: {concurrent_sessions} completed in {concurrent_time:.2f}s")
 

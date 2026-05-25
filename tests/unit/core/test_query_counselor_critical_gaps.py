@@ -341,9 +341,9 @@ class TestQueryAnalysisAndRouting:
         expected_keywords = ["implement", "authentication", "fastapi", "redis", "caching"]
         for keyword in expected_keywords:
             # Keywords are extracted by basic word splitting in the actual implementation
-            assert any(
-                keyword.lower() == k.lower() for k in intent.keywords
-            ), f"Expected keyword '{keyword}' not found in {intent.keywords}"
+            assert any(keyword.lower() == k.lower() for k in intent.keywords), (
+                f"Expected keyword '{keyword}' not found in {intent.keywords}"
+            )
 
     async def test_calculate_complexity_score(self, counselor):
         """Test query complexity scoring via analyze_intent."""

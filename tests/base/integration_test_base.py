@@ -157,9 +157,9 @@ class FullIntegrationTestBase(DatabaseIntegrationTestBase, AuthenticatedIntegrat
 # Utility functions for common test patterns
 def assert_successful_response(response, expected_status: int = 200):
     """Assert response is successful and return JSON data."""
-    assert (
-        response.status_code == expected_status
-    ), f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    assert response.status_code == expected_status, (
+        f"Expected {expected_status}, got {response.status_code}: {response.text}"
+    )
     return response.json()
 
 

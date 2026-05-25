@@ -221,15 +221,15 @@ class TestProductionReadiness:
                 max_threshold = 5.0 if IS_CI else 2.0
                 p95_threshold = 5.0 if IS_CI else 2.0
 
-                assert (
-                    avg_response_time < avg_threshold
-                ), f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s target"
-                assert (
-                    max_response_time < max_threshold
-                ), f"Maximum response time {max_response_time:.2f}s exceeds {max_threshold}s requirement"
-                assert (
-                    p95_response_time < p95_threshold
-                ), f"95th percentile response time {p95_response_time:.2f}s exceeds {p95_threshold}s requirement"
+                assert avg_response_time < avg_threshold, (
+                    f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s target"
+                )
+                assert max_response_time < max_threshold, (
+                    f"Maximum response time {max_response_time:.2f}s exceeds {max_threshold}s requirement"
+                )
+                assert p95_response_time < p95_threshold, (
+                    f"95th percentile response time {p95_response_time:.2f}s exceeds {p95_threshold}s requirement"
+                )
 
                 # Verify performance metrics (CI-adapted)
                 performance_monitor.get_all_metrics()
@@ -244,9 +244,9 @@ class TestProductionReadiness:
                 response_quality = performance_monitor.get_gauge("response_quality")
                 min_response_length = 20 if IS_CI else 50  # More lenient thresholds
                 if response_quality > 0:  # Only check if we have responses
-                    assert (
-                        response_quality > min_response_length
-                    ), f"Response quality {response_quality} below {min_response_length} threshold"
+                    assert response_quality > min_response_length, (
+                        f"Response quality {response_quality} below {min_response_length} threshold"
+                    )
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -354,9 +354,9 @@ class TestProductionReadiness:
 
                     # Verify concurrent performance
                     success_rate = len(successful_results) / len(queries)
-                    assert (
-                        success_rate >= 0.95
-                    ), f"Success rate {success_rate:.2%} below 95% for {concurrent_queries} concurrent queries"
+                    assert success_rate >= 0.95, (
+                        f"Success rate {success_rate:.2%} below 95% for {concurrent_queries} concurrent queries"
+                    )
 
                     # Verify individual query performance under load
                     response_times = [r["processing_time"] for r in successful_results]
@@ -374,22 +374,22 @@ class TestProductionReadiness:
                         max_threshold = 8.0 if IS_CI else 3.0
                         p95_threshold = 6.0 if IS_CI else 2.5
 
-                        assert (
-                            avg_response_time < avg_threshold
-                        ), f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s under {concurrent_queries} concurrent load"
-                        assert (
-                            max_response_time < max_threshold
-                        ), f"Maximum response time {max_response_time:.2f}s exceeds {max_threshold}s under {concurrent_queries} concurrent load"
-                        assert (
-                            p95_response_time < p95_threshold
-                        ), f"95th percentile {p95_response_time:.2f}s exceeds {p95_threshold}s under {concurrent_queries} concurrent load"
+                        assert avg_response_time < avg_threshold, (
+                            f"Average response time {avg_response_time:.2f}s exceeds {avg_threshold}s under {concurrent_queries} concurrent load"
+                        )
+                        assert max_response_time < max_threshold, (
+                            f"Maximum response time {max_response_time:.2f}s exceeds {max_threshold}s under {concurrent_queries} concurrent load"
+                        )
+                        assert p95_response_time < p95_threshold, (
+                            f"95th percentile {p95_response_time:.2f}s exceeds {p95_threshold}s under {concurrent_queries} concurrent load"
+                        )
 
                     # Verify overall throughput
                     throughput = len(successful_results) / total_time
                     expected_min_throughput = concurrent_queries / 5  # Should complete within 5 seconds
-                    assert (
-                        throughput >= expected_min_throughput
-                    ), f"Throughput {throughput:.2f} queries/sec below expected {expected_min_throughput:.2f}"
+                    assert throughput >= expected_min_throughput, (
+                        f"Throughput {throughput:.2f} queries/sec below expected {expected_min_throughput:.2f}"
+                    )
 
                     # Record performance metrics using MetricData
                     from src.utils.performance_monitor import MetricData, MetricType
@@ -722,18 +722,18 @@ class TestProductionReadiness:
                 peak_memory_limit = 200 if IS_CI else 100  # MB - more lenient in CI
                 memory_trend_limit = 1.0 if IS_CI else 0.5  # MB per measurement
 
-                assert (
-                    memory_increase < memory_increase_limit
-                ), f"Memory increase {memory_increase:.1f}MB exceeds {memory_increase_limit}MB limit"
-                assert (
-                    peak_memory < baseline_memory + peak_memory_limit
-                ), f"Peak memory {peak_memory:.1f}MB exceeds baseline + {peak_memory_limit}MB"
+                assert memory_increase < memory_increase_limit, (
+                    f"Memory increase {memory_increase:.1f}MB exceeds {memory_increase_limit}MB limit"
+                )
+                assert peak_memory < baseline_memory + peak_memory_limit, (
+                    f"Peak memory {peak_memory:.1f}MB exceeds baseline + {peak_memory_limit}MB"
+                )
 
                 # Check for memory leaks
                 memory_trend = (memory_measurements[-1] - memory_measurements[0]) / len(memory_measurements)
-                assert (
-                    memory_trend < memory_trend_limit
-                ), f"Memory trend {memory_trend:.2f}MB per measurement indicates potential leak"
+                assert memory_trend < memory_trend_limit, (
+                    f"Memory trend {memory_trend:.2f}MB per measurement indicates potential leak"
+                )
 
     @pytest.mark.performance
     @pytest.mark.asyncio
@@ -906,22 +906,22 @@ class TestProductionReadiness:
                     phase_type = ["Light", "Medium", "Heavy", "Recovery"][result["phase"] - 1]
 
                     # Success rate should remain high
-                    assert (
-                        result["success_rate"] >= 0.90
-                    ), f"Success rate {result['success_rate']:.2%} below 90% in {phase_type} phase"
+                    assert result["success_rate"] >= 0.90, (
+                        f"Success rate {result['success_rate']:.2%} below 90% in {phase_type} phase"
+                    )
 
                     # Response times should be reasonable (CI-adapted)
                     if result["phase"] <= 3:  # Stress phases
                         base_time = 6.0 if IS_CI else 3.0
                         max_allowed_time = base_time + (result["phase"] - 1) * 0.5  # Allow degradation
-                        assert (
-                            result["avg_response_time"] < max_allowed_time
-                        ), f"Average response time {result['avg_response_time']:.2f}s exceeds {max_allowed_time:.1f}s in {phase_type} phase"
+                        assert result["avg_response_time"] < max_allowed_time, (
+                            f"Average response time {result['avg_response_time']:.2f}s exceeds {max_allowed_time:.1f}s in {phase_type} phase"
+                        )
                     else:  # Recovery phase
                         recovery_threshold = 5.0 if IS_CI else 2.0
-                        assert (
-                            result["avg_response_time"] < recovery_threshold
-                        ), f"Recovery phase response time {result['avg_response_time']:.2f}s should be under {recovery_threshold}s"
+                        assert result["avg_response_time"] < recovery_threshold, (
+                            f"Recovery phase response time {result['avg_response_time']:.2f}s should be under {recovery_threshold}s"
+                        )
 
                 # Verify recovery
                 recovery_result = phase_results[-1]
@@ -936,9 +936,9 @@ class TestProductionReadiness:
                     # In CI, timing is highly variable - focus on ensuring recovery doesn't degrade significantly
                     # Allow minimal negative improvement in CI, but still expect some recovery
                     improvement_threshold = -0.05  # Allow up to 5% degradation in CI due to variable timing
-                    assert (
-                        recovery_improvement > improvement_threshold
-                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (CI allows timing variation)"
+                    assert recovery_improvement > improvement_threshold, (
+                        f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (CI allows timing variation)"
+                    )
 
                     # Additional CI-specific check: recovery should be reasonable compared to light load
                     # CI environments have highly variable timing, so be very lenient
@@ -947,15 +947,15 @@ class TestProductionReadiness:
                         abs(recovery_result["avg_response_time"] - light_load_result["avg_response_time"])
                         / light_load_result["avg_response_time"]
                     )
-                    assert (
-                        recovery_vs_light < 2.0
-                    ), f"Recovery time should be within 200% of light load baseline (was {recovery_vs_light:.2%}) - CI timing is highly variable"
+                    assert recovery_vs_light < 2.0, (
+                        f"Recovery time should be within 200% of light load baseline (was {recovery_vs_light:.2%}) - CI timing is highly variable"
+                    )
                 else:
                     # Local environment with mocked services - timing is unpredictable but should still show improvement
                     # Use balanced threshold: stricter than before (50%->30%) but accounts for mock unpredictability
                     improvement_threshold = (
                         -0.30
                     )  # Allow up to 30% degradation in mock environment (was 50%, now more meaningful)
-                    assert (
-                        recovery_improvement > improvement_threshold
-                    ), f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (mock env allows major variation)"
+                    assert recovery_improvement > improvement_threshold, (
+                        f"Recovery improvement {recovery_improvement:.2%} should be > {improvement_threshold * 100:.0f}% (mock env allows major variation)"
+                    )

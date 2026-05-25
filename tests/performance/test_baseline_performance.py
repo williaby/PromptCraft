@@ -719,17 +719,17 @@ async def test_query_counselor_baseline_performance(performance_test_suite):
     agent_threshold = 2.0 if IS_CI else 0.5  # More lenient for CI
     orchestration_threshold = BASELINE_SLA_RESPONSE_TIME
 
-    assert (
-        results["metrics"]["intent_analysis"]["p95"] < intent_threshold
-    ), f"Intent analysis P95 ({results['metrics']['intent_analysis']['p95']:.3f}s) exceeds SLA ({intent_threshold}s)"
+    assert results["metrics"]["intent_analysis"]["p95"] < intent_threshold, (
+        f"Intent analysis P95 ({results['metrics']['intent_analysis']['p95']:.3f}s) exceeds SLA ({intent_threshold}s)"
+    )
 
-    assert (
-        results["metrics"]["agent_selection"]["p95"] < agent_threshold
-    ), f"Agent selection P95 ({results['metrics']['agent_selection']['p95']:.3f}s) too slow (threshold: {agent_threshold}s)"
+    assert results["metrics"]["agent_selection"]["p95"] < agent_threshold, (
+        f"Agent selection P95 ({results['metrics']['agent_selection']['p95']:.3f}s) too slow (threshold: {agent_threshold}s)"
+    )
 
-    assert (
-        results["metrics"]["workflow_orchestration"]["p95"] < orchestration_threshold
-    ), f"Workflow orchestration P95 ({results['metrics']['workflow_orchestration']['p95']:.3f}s) exceeds SLA ({orchestration_threshold}s)"
+    assert results["metrics"]["workflow_orchestration"]["p95"] < orchestration_threshold, (
+        f"Workflow orchestration P95 ({results['metrics']['workflow_orchestration']['p95']:.3f}s) exceeds SLA ({orchestration_threshold}s)"
+    )
 
     # Log performance summary
     logger.info("QueryCounselor Performance Summary:")
@@ -745,13 +745,13 @@ async def test_hyde_processor_baseline_performance(performance_test_suite):
     results = await performance_test_suite.test_hyde_processor_baseline_performance()
 
     # Validate critical performance metrics
-    assert (
-        results["metrics"]["three_tier_analysis"]["p95"] < BASELINE_SLA_RESPONSE_TIME
-    ), f"Three-tier analysis P95 ({results['metrics']['three_tier_analysis']['p95']:.3f}s) exceeds SLA"
+    assert results["metrics"]["three_tier_analysis"]["p95"] < BASELINE_SLA_RESPONSE_TIME, (
+        f"Three-tier analysis P95 ({results['metrics']['three_tier_analysis']['p95']:.3f}s) exceeds SLA"
+    )
 
-    assert (
-        results["metrics"]["full_pipeline"]["p95"] < BASELINE_SLA_RESPONSE_TIME
-    ), f"Full pipeline P95 ({results['metrics']['full_pipeline']['p95']:.3f}s) exceeds SLA"
+    assert results["metrics"]["full_pipeline"]["p95"] < BASELINE_SLA_RESPONSE_TIME, (
+        f"Full pipeline P95 ({results['metrics']['full_pipeline']['p95']:.3f}s) exceeds SLA"
+    )
 
     # Validate specificity distribution is reasonable
     specificity = results["specificity_analysis"]
@@ -773,15 +773,15 @@ async def test_integrated_workflow_baseline_performance(performance_test_suite):
     results = await performance_test_suite.test_integrated_workflow_performance()
 
     # Validate end-to-end performance meets SLA
-    assert (
-        results["metrics"]["end_to_end_workflow"]["p95"] < BASELINE_SLA_RESPONSE_TIME
-    ), f"End-to-end workflow P95 ({results['metrics']['end_to_end_workflow']['p95']:.3f}s) exceeds SLA"
+    assert results["metrics"]["end_to_end_workflow"]["p95"] < BASELINE_SLA_RESPONSE_TIME, (
+        f"End-to-end workflow P95 ({results['metrics']['end_to_end_workflow']['p95']:.3f}s) exceeds SLA"
+    )
 
     # Validate workflow success rate with CI-friendly threshold
     success_threshold = 85.0 if IS_CI else 95.0  # More lenient for CI
-    assert (
-        results["workflow_analysis"]["workflow_success_rate"] >= success_threshold
-    ), f"Workflow success rate ({results['workflow_analysis']['workflow_success_rate']:.1f}%) below threshold ({success_threshold}%)"
+    assert results["workflow_analysis"]["workflow_success_rate"] >= success_threshold, (
+        f"Workflow success rate ({results['workflow_analysis']['workflow_success_rate']:.1f}%) below threshold ({success_threshold}%)"
+    )
 
     # Log integration performance summary
     logger.info("Integrated Workflow Performance Summary:")
@@ -798,20 +798,20 @@ async def test_concurrent_processing_performance(performance_test_suite):
 
     # Validate minimum concurrent processing capability
     max_capacity = results["scalability_analysis"]["max_concurrent_capacity"]
-    assert (
-        max_capacity >= MIN_CONCURRENT_REQUESTS
-    ), f"Max concurrent capacity ({max_capacity}) below minimum requirement ({MIN_CONCURRENT_REQUESTS})"
+    assert max_capacity >= MIN_CONCURRENT_REQUESTS, (
+        f"Max concurrent capacity ({max_capacity}) below minimum requirement ({MIN_CONCURRENT_REQUESTS})"
+    )
 
     # Validate performance at minimum concurrency level
     min_concurrency_data = results["metrics"][MIN_CONCURRENT_REQUESTS]
-    assert (
-        min_concurrency_data["p95_processing_time"] < BASELINE_SLA_RESPONSE_TIME
-    ), f"P95 processing time at {MIN_CONCURRENT_REQUESTS} concurrent requests exceeds SLA"
+    assert min_concurrency_data["p95_processing_time"] < BASELINE_SLA_RESPONSE_TIME, (
+        f"P95 processing time at {MIN_CONCURRENT_REQUESTS} concurrent requests exceeds SLA"
+    )
 
     concurrent_success_threshold = 85.0 if IS_CI else 95.0  # More lenient for CI
-    assert (
-        min_concurrency_data["success_rate"] >= concurrent_success_threshold
-    ), f"Success rate at {MIN_CONCURRENT_REQUESTS} concurrent requests below threshold ({concurrent_success_threshold}%)"
+    assert min_concurrency_data["success_rate"] >= concurrent_success_threshold, (
+        f"Success rate at {MIN_CONCURRENT_REQUESTS} concurrent requests below threshold ({concurrent_success_threshold}%)"
+    )
 
     # Log concurrent processing summary
     logger.info("Concurrent Processing Performance Summary:")
@@ -835,21 +835,21 @@ async def test_memory_usage_performance(performance_test_suite):
     results = await performance_test_suite.test_memory_usage_performance()
 
     # Validate memory usage within limits
-    assert (
-        results["metrics"]["peak_memory_mb"] <= MAX_MEMORY_USAGE_MB
-    ), f"Peak memory usage ({results['metrics']['peak_memory_mb']:.1f} MB) exceeds limit ({MAX_MEMORY_USAGE_MB} MB)"
+    assert results["metrics"]["peak_memory_mb"] <= MAX_MEMORY_USAGE_MB, (
+        f"Peak memory usage ({results['metrics']['peak_memory_mb']:.1f} MB) exceeds limit ({MAX_MEMORY_USAGE_MB} MB)"
+    )
 
     # Validate memory stability (no significant leaks)
-    assert results["memory_analysis"][
-        "memory_stable"
-    ], f"Memory growth ({results['metrics']['total_memory_growth_mb']:.1f} MB) indicates potential memory leak"
+    assert results["memory_analysis"]["memory_stable"], (
+        f"Memory growth ({results['metrics']['total_memory_growth_mb']:.1f} MB) indicates potential memory leak"
+    )
 
     # Validate memory efficiency with CI-friendly thresholds
     efficiency = results["memory_analysis"]["memory_efficiency"]
     memory_per_request_threshold = 2.0 if IS_CI else 1.0  # More lenient for CI
-    assert (
-        efficiency["mb_per_request"] < memory_per_request_threshold
-    ), f"Memory usage per request ({efficiency['mb_per_request']:.3f} MB) too high (threshold: {memory_per_request_threshold} MB)"
+    assert efficiency["mb_per_request"] < memory_per_request_threshold, (
+        f"Memory usage per request ({efficiency['mb_per_request']:.3f} MB) too high (threshold: {memory_per_request_threshold} MB)"
+    )
 
     # Log memory usage summary
     logger.info("Memory Usage Performance Summary:")
@@ -936,9 +936,9 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
         # Verify QueryCounselor and HydeProcessor integration - more lenient for CI
         success_threshold = 85.0 if IS_CI else 95.0
         assert integrated_results["workflow_analysis"]["hyde_usage_rate"] >= 0, "HyDE integration check failed"
-        assert (
-            integrated_results["workflow_analysis"]["workflow_success_rate"] >= success_threshold
-        ), f"Integration success rate {integrated_results['workflow_analysis']['workflow_success_rate']:.1f}% below threshold {success_threshold}%"
+        assert integrated_results["workflow_analysis"]["workflow_success_rate"] >= success_threshold, (
+            f"Integration success rate {integrated_results['workflow_analysis']['workflow_success_rate']:.1f}% below threshold {success_threshold}%"
+        )
         validation_results["integration_coordination"] = {
             "status": "PASS",
             "details": f"QueryCounselor + HydeProcessor integration functional ({integrated_results['workflow_analysis']['workflow_success_rate']:.1f}% success rate)",
@@ -965,9 +965,9 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
     try:
         # Verify minimum concurrent processing capability
         max_capacity = concurrent_results["scalability_analysis"]["max_concurrent_capacity"]
-        assert (
-            max_capacity >= MIN_CONCURRENT_REQUESTS
-        ), f"Concurrent capacity {max_capacity} below minimum {MIN_CONCURRENT_REQUESTS}"
+        assert max_capacity >= MIN_CONCURRENT_REQUESTS, (
+            f"Concurrent capacity {max_capacity} below minimum {MIN_CONCURRENT_REQUESTS}"
+        )
         validation_results["concurrent_processing"] = {
             "status": "PASS",
             "details": f"Concurrent processing capability: {max_capacity} requests",
@@ -980,9 +980,9 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
     try:
         # Verify memory usage within limits
         peak_memory = memory_results["metrics"]["peak_memory_mb"]
-        assert (
-            peak_memory <= MAX_MEMORY_USAGE_MB
-        ), f"Peak memory {peak_memory} MB exceeds limit {MAX_MEMORY_USAGE_MB} MB"
+        assert peak_memory <= MAX_MEMORY_USAGE_MB, (
+            f"Peak memory {peak_memory} MB exceeds limit {MAX_MEMORY_USAGE_MB} MB"
+        )
         assert memory_results["memory_analysis"]["memory_stable"], "Memory usage not stable"
         validation_results["memory_constraints"] = {
             "status": "PASS",
@@ -1002,7 +1002,9 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
                 hyde_results["metrics"]["full_pipeline"]["count"] > 0,
                 integrated_results["workflow_analysis"]["workflow_success_rate"] >= success_threshold,
             ],
-        ), f"Component integration incomplete - success rate {integrated_results['workflow_analysis']['workflow_success_rate']:.1f}% below threshold {success_threshold}%"
+        ), (
+            f"Component integration incomplete - success rate {integrated_results['workflow_analysis']['workflow_success_rate']:.1f}% below threshold {success_threshold}%"
+        )
         validation_results["component_integration"] = {
             "status": "PASS",
             "details": "All components integrated and functional",
@@ -1029,9 +1031,9 @@ async def test_week1_acceptance_criteria_validation(performance_test_suite):
     logger.info("=" * 80)
 
     # Assert overall success
-    assert (
-        all_criteria_met
-    ), f"Week 1 acceptance criteria not fully met. Failed criteria: {[k for k, v in acceptance_criteria.items() if not v]}"
+    assert all_criteria_met, (
+        f"Week 1 acceptance criteria not fully met. Failed criteria: {[k for k, v in acceptance_criteria.items() if not v]}"
+    )
 
     logger.info("Week 1 acceptance criteria validation completed successfully")
 

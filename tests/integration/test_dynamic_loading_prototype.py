@@ -261,9 +261,9 @@ class TestDynamicLoadingIntegration:
         # If we got here via exception, validate it was meaningful
         if exception_caught is not None:
             error_message = str(exception_caught).lower()
-            assert (
-                "query" in error_message or "empty" in error_message
-            ), f"Exception message not meaningful: {exception_caught}"
+            assert "query" in error_message or "empty" in error_message, (
+                f"Exception message not meaningful: {exception_caught}"
+            )
 
         # Test with very long query
         long_query = "analyze " * 1000  # Very long query
@@ -336,9 +336,7 @@ class TestComprehensivePrototypeDemo:
             scenario
             for scenario in demo.demo_scenarios
             if scenario.scenario_type == DemoScenarioType.BASIC_OPTIMIZATION
-        ][
-            :3
-        ]  # Test with first 3 basic scenarios
+        ][:3]  # Test with first 3 basic scenarios
 
         scenario_results = []
         for scenario in basic_scenarios:
@@ -838,9 +836,9 @@ class TestProductionReadiness:
                 )
 
                 assert result.success, f"Query '{query}' should succeed"
-                assert (
-                    result.reduction_percentage >= expected_min_reduction
-                ), f"Query '{query}' reduction {result.reduction_percentage:.1f}% below {expected_min_reduction}%"
+                assert result.reduction_percentage >= expected_min_reduction, (
+                    f"Query '{query}' reduction {result.reduction_percentage:.1f}% below {expected_min_reduction}%"
+                )
 
                 # Verify resource efficiency
                 assert result.optimized_tokens < result.baseline_tokens, "Optimization should reduce tokens"

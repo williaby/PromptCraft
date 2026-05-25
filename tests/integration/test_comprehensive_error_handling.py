@@ -376,9 +376,9 @@ class TestComprehensiveErrorHandling:
                 await store.connect()
 
             # Check connection status after the exception
-            assert (
-                store.get_connection_status() == ConnectionStatus.UNHEALTHY
-            ), "Connection status should be UNHEALTHY after connection failure"
+            assert store.get_connection_status() == ConnectionStatus.UNHEALTHY, (
+                "Connection status should be UNHEALTHY after connection failure"
+            )
 
     @pytest.mark.integration
     @pytest.mark.asyncio

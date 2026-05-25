@@ -379,9 +379,9 @@ class TestAuthenticationPerformance:
                     )
                     pytest.fail(failure_msg)
 
-                assert (
-                    request_time_ms < threshold_ms
-                ), f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement"
+                assert request_time_ms < threshold_ms, (
+                    f"Request took {request_time_ms:.2f}ms, exceeds {threshold_ms}ms requirement"
+                )
 
                 # Note: Database operations may not be called in all test scenarios
                 # This is acceptable for performance testing focused on response times
@@ -524,12 +524,12 @@ class TestAuthenticationPerformance:
                 )
                 pytest.fail(failure_msg)
 
-            assert (
-                avg_response_time < avg_threshold
-            ), f"Average response time {avg_response_time:.2f}ms exceeds requirement ({avg_threshold}ms)"
-            assert (
-                p95_response_time < p95_threshold
-            ), f"95th percentile {p95_response_time:.2f}ms exceeds tolerance ({p95_threshold}ms)"
+            assert avg_response_time < avg_threshold, (
+                f"Average response time {avg_response_time:.2f}ms exceeds requirement ({avg_threshold}ms)"
+            )
+            assert p95_response_time < p95_threshold, (
+                f"95th percentile {p95_response_time:.2f}ms exceeds tolerance ({p95_threshold}ms)"
+            )
 
             # Note: Database operations count varies based on middleware behavior
             # This is acceptable for performance testing focused on throughput
@@ -611,9 +611,9 @@ class TestAuthenticationPerformance:
             is_ci = os.getenv("CI_ENVIRONMENT", "false").lower() == "true"
             overhead_threshold = 20000.0 if is_ci else 400.0  # Much higher threshold for CI due to mocking overhead
 
-            assert (
-                db_overhead_ms < overhead_threshold
-            ), f"Database overhead {db_overhead_ms:.2f}ms is too high (threshold: {overhead_threshold}ms)"
+            assert db_overhead_ms < overhead_threshold, (
+                f"Database overhead {db_overhead_ms:.2f}ms is too high (threshold: {overhead_threshold}ms)"
+            )
 
     @pytest.mark.asyncio
     async def test_memory_usage_under_load(
@@ -1055,9 +1055,9 @@ class TestRoleBasedPermissionPerformance:
             assert len(permissions) > 0
 
             # Verify performance requirement
-            assert (
-                resolution_time_ms < 20.0
-            ), f"Permission resolution took {resolution_time_ms:.2f}ms, exceeds 20ms target"
+            assert resolution_time_ms < 20.0, (
+                f"Permission resolution took {resolution_time_ms:.2f}ms, exceeds 20ms target"
+            )
 
         avg_time = statistics.mean(total_times)
         print(f"User permission resolution performance: {avg_time:.2f}ms average")
@@ -1093,9 +1093,9 @@ class TestRoleBasedPermissionPerformance:
             assert isinstance(is_valid, bool)
 
             # Verify performance requirement
-            assert (
-                validation_time_ms < 10.0
-            ), f"Hierarchy validation took {validation_time_ms:.2f}ms, exceeds 10ms target"
+            assert validation_time_ms < 10.0, (
+                f"Hierarchy validation took {validation_time_ms:.2f}ms, exceeds 10ms target"
+            )
 
         avg_time = statistics.mean(total_times)
         print(f"Role hierarchy validation performance: {avg_time:.2f}ms average")
@@ -1180,12 +1180,12 @@ class TestRoleBasedPermissionPerformance:
         avg_threshold = 30.0 if is_ci else 15.0  # Double threshold for CI
         p95_threshold = 60.0 if is_ci else 30.0  # Double threshold for CI
 
-        assert (
-            avg_check_time < avg_threshold
-        ), f"Average check time {avg_check_time:.2f}ms exceeds requirement ({avg_threshold}ms)"
-        assert (
-            p95_check_time < p95_threshold
-        ), f"95th percentile {p95_check_time:.2f}ms exceeds tolerance ({p95_threshold}ms)"
+        assert avg_check_time < avg_threshold, (
+            f"Average check time {avg_check_time:.2f}ms exceeds requirement ({avg_threshold}ms)"
+        )
+        assert p95_check_time < p95_threshold, (
+            f"95th percentile {p95_check_time:.2f}ms exceeds tolerance ({p95_threshold}ms)"
+        )
 
     @pytest.mark.asyncio
     async def test_role_assignment_performance(
@@ -1283,9 +1283,9 @@ class TestRoleBasedPermissionPerformance:
             assert isinstance(permissions, set)
 
             # Verify performance for deep inheritance
-            assert (
-                resolution_time_ms < 15.0
-            ), f"Complex inheritance resolution took {resolution_time_ms:.2f}ms, exceeds 15ms target"
+            assert resolution_time_ms < 15.0, (
+                f"Complex inheritance resolution took {resolution_time_ms:.2f}ms, exceeds 15ms target"
+            )
 
         avg_time = statistics.mean(total_times)
         max_time = max(total_times)
@@ -1330,9 +1330,9 @@ class TestRoleBasedPermissionPerformance:
         print(f"Cache speedup: {cache_speedup:.1f}x")
 
         # Warm cache should be significantly faster
-        assert (
-            warm_time_ms < cold_time_ms / 2
-        ), f"Cache not effective: warm {warm_time_ms:.2f}ms vs cold {cold_time_ms:.2f}ms"
+        assert warm_time_ms < cold_time_ms / 2, (
+            f"Cache not effective: warm {warm_time_ms:.2f}ms vs cold {cold_time_ms:.2f}ms"
+        )
 
     @pytest.mark.asyncio
     async def test_role_system_memory_usage(self):
