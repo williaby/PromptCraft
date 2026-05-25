@@ -85,6 +85,7 @@ sqlalchemy = { extras = ["asyncio"], version = "^2.0.36" }
 asyncpg = "^0.30.0"
 alembic = "^1.14.0"
 aiohttp = "^3.13.4"  # security: ^3.12.15 has 8 advisories (zip bomb, multiple DoS, SSRF)
+brotli = "^1.2.0"  # security: ^1.1.0 has GHSA-2qfp-q593-8484 (HIGH, DoS via decompression)
 plotly = "^6.3.0"
 pandas = "^2.3.1"
 jinja2 = "^3.1.6"
