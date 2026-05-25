@@ -537,8 +537,9 @@ class TestLintingAndFormatting:
             external=True,
         )
 
-        # Verify all linting tools are called
-        mock_session.run.assert_any_call("black", "--check", *noxfile.SRC_LOCATIONS)
+        # Verify all linting tools are called (Black removed per ADR-0001;
+        # ruff format replaces it).
+        mock_session.run.assert_any_call("ruff", "format", "--check", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("ruff", "check", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("markdownlint", "**/*.md", external=True)
         mock_session.run.assert_any_call("yamllint", ".", external=True)
@@ -550,8 +551,9 @@ class TestLintingAndFormatting:
 
         noxfile.lint(mock_session)
 
-        # Verify linting tools are called with custom args
-        mock_session.run.assert_any_call("black", "--check", *custom_args)
+        # Verify linting tools are called with custom args (Black removed
+        # per ADR-0001; ruff format replaces it).
+        mock_session.run.assert_any_call("ruff", "format", "--check", *custom_args)
         mock_session.run.assert_any_call("ruff", "check", *custom_args)
 
     def test_type_check_session(self, mock_session):
@@ -585,8 +587,9 @@ class TestLintingAndFormatting:
             external=True,
         )
 
-        # Verify formatting tools are called
-        mock_session.run.assert_any_call("black", *noxfile.SRC_LOCATIONS)
+        # Verify formatting tools are called (Black removed per ADR-0001;
+        # ruff format replaces it).
+        mock_session.run.assert_any_call("ruff", "format", *noxfile.SRC_LOCATIONS)
         mock_session.run.assert_any_call("ruff", "check", "--fix", *noxfile.SRC_LOCATIONS)
 
     def test_format_code_session_custom_args(self, mock_session):
@@ -596,8 +599,9 @@ class TestLintingAndFormatting:
 
         noxfile.format_code(mock_session)
 
-        # Verify formatting tools are called with custom args
-        mock_session.run.assert_any_call("black", *custom_args)
+        # Verify formatting tools are called with custom args (Black removed
+        # per ADR-0001; ruff format replaces it).
+        mock_session.run.assert_any_call("ruff", "format", *custom_args)
         mock_session.run.assert_any_call("ruff", "check", "--fix", *custom_args)
 
 
@@ -690,19 +694,20 @@ class TestDependencyManagement:
 
         noxfile.deps(mock_session)
 
-        # Verify uv-equivalent commands (see ADR-0001 for the poetry -> uv swap).
+        # Verify uv-equivalent commands (see ADR-0001 for the poetry -> uv
+        # swap). The deps session syncs ALL groups (not just dev) because it
+        # needs every optional dep present to validate the hashed export
+        # against the lockfile.
         mock_session.run_install.assert_any_call(
             "uv",
             "sync",
             "--frozen",
-            "--group",
-            "dev",
+            "--all-groups",
             env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
             external=True,
         )
         mock_session.run.assert_any_call("uv", "lock", "--check", external=True)
         mock_session.run.assert_any_call("uv", "pip", "list", "--outdated", external=True)
-        mock_session.run.assert_any_call("./scripts/generate_requirements.sh", external=True)
 
         # Verify temporary environment creation and testing
         mock_session.create_tmp.assert_called_once()
@@ -1031,6 +1036,9 @@ class TestEdgeCasesAndErrorHandling:
         session.log = Mock()
         session.error = Mock()
         session.env = {}
+        # Explicit posargs prevents `args = session.posargs or [...]` from
+        # binding to a Mock and breaking later `*args` unpacks with TypeError.
+        session.posargs = []
         return session
 
     def test_session_with_run_exceptions(self, mock_session):
@@ -1121,9 +1129,9 @@ class TestSessionIntegration:
         # Run security checks
         noxfile.security(mock_session)
 
-        # Verify all quality tools were executed
+        # Verify all quality tools were executed (Black removed per ADR-0001;
+        # ruff format + ruff check now cover the lint pass).
         run_args = [str(call) for call in mock_session.run.call_args_list]
-        assert any("black" in arg for arg in run_args)
         assert any("ruff" in arg for arg in run_args)
         assert any("mypy" in arg for arg in run_args)
         assert any("safety" in arg for arg in run_args)
