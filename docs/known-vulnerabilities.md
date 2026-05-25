@@ -57,6 +57,30 @@ Any active entry with `first seen` older than 60 days (regardless of
 - The entry is explicitly accepted by project maintainers with a new
   `reassessed` date and documented mitigation.
 
+## CI / Dependency-Resolution Conflicts
+
+These entries track dependency-resolution conflicts that affect CI tooling but
+are not CVEs. They follow the same 60-day reassessment rule as active CVE
+entries above.
+
+### cffi-cryptography-pip-compile-conflict
+
+- **Package / component:** `cffi==1.17.1` (poetry.lock pin) vs.
+  `cryptography==46.0.7` (requires `cffi>=2.0.0`)
+- **Severity:** low (CI-only; no runtime vulnerability)
+- **First seen:** 2026-05-23
+- **Reassessed:** 2026-05-25
+- **Planned fix by:** 2026-07-25 (or when a SBOM consumer is identified)
+- **Why deferred:** The conflict only affects GitHub's Automatic Dependency
+  Submission (`submit-pypi`) workflow. That feature has been disabled because no
+  consumer of the submitted SBOMs has been identified. Runtime behaviour is
+  unaffected; Poetry resolves `cffi` and `cryptography` correctly at install
+  time.
+- **Mitigation in place:** GitHub Automatic Dependency Submission disabled via
+  repo settings. SLSA SBOM generation via `pip-audit` in
+  `renovate-auto-merge.yml` is unaffected and continues to run.
+- **Tracking issue:** docs/architecture/disable-automatic-dependency-submission.md
+
 ## References
 
 - Global standard: `~/.claude/CLAUDE.md` section "Unfixed CVEs".
