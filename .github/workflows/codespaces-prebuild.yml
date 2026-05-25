@@ -8,11 +8,10 @@ on:
       - 'feature/phase-1-development'
     paths:
       - 'pyproject.toml'
-      - 'poetry.lock'
+      - 'uv.lock'
       - '.devcontainer/**'
       - '.github/codespaces/**'
       - 'Dockerfile'
-      - 'requirements*.txt'
 
   # Manual trigger for testing
   workflow_dispatch:
@@ -52,7 +51,7 @@ jobs:
           configFile: .devcontainer/devcontainer.json
           runCmd: |
             echo "🔍 Verifying prebuild environment..."
-            poetry --version
+            uv --version
             python --version
             echo "✅ Environment verification complete"
 
@@ -64,7 +63,7 @@ jobs:
       - name: Log prebuild completion
         run: |
           echo "📊 Prebuild Summary for ${{ matrix.branch }}:"
-          echo "- Poetry dependencies: ✅ Cached"
+          echo "- uv dependencies: ✅ Cached"
           echo "- Development tools: ✅ Installed"
           echo "- Pre-commit hooks: ✅ Ready"
           echo "- Environment: ✅ Configured"
