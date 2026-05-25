@@ -276,11 +276,14 @@ class KnowledgeIngestionPipeline:
             test_query = "CREATE framework prompt engineering"
             test_embedding = self.embedding_model.encode(test_query)
 
-            search_results = self.client.search(
+            # qdrant-client 1.10+ deprecated .search() in favor of .query_points()
+            # which returns a QueryResponse with a .points attribute containing
+            # the same list[ScoredPoint] the old API returned directly.
+            search_results = self.client.query_points(
                 collection_name=collection_name,
-                query_vector=test_embedding.tolist(),
+                query=test_embedding.tolist(),
                 limit=5,
-            )
+            ).points
 
             return {
                 "collection_name": collection_name,
