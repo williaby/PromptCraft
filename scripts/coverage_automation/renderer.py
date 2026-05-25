@@ -51,7 +51,7 @@ class CoverageRenderer:
         try:
             # First, combine coverage data files if needed
             subprocess.run(
-                ["poetry", "run", "coverage", "combine"],
+                ["uv", "run", "--frozen", "coverage", "combine"],
                 cwd=self.project_root,
                 check=False,
             )
@@ -59,7 +59,7 @@ class CoverageRenderer:
             # Generate standard HTML report
             try:
                 subprocess.run(
-                    ["poetry", "run", "coverage", "html", "--directory", "htmlcov"],
+                    ["uv", "run", "--frozen", "coverage", "html", "--directory", "htmlcov"],
                     cwd=self.project_root,
                     check=True,
                 )
@@ -72,7 +72,7 @@ class CoverageRenderer:
 
             # Generate JSON data for filtering
             try:
-                subprocess.run(["poetry", "run", "coverage", "json"], cwd=self.project_root, check=True)
+                subprocess.run(["uv", "run", "--frozen", "coverage", "json"], cwd=self.project_root, check=True)
             except subprocess.CalledProcessError as e:
                 coverage_json_path = self.project_root / "coverage.json"
                 if not coverage_json_path.exists():

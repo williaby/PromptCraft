@@ -131,7 +131,7 @@ class QualityGateValidator:
             # Run radon for complexity analysis
             # Security: Using hardcoded command with fixed args, cwd controlled
             complexity_result = subprocess.run(  # noqa: S603
-                ["poetry", "run", "radon", "cc", "src", "--json"],
+                ["uv", "run", "--frozen", "radon", "cc", "src", "--json"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -158,7 +158,7 @@ class QualityGateValidator:
             # Run maintainability index
             # Security: Using hardcoded command with fixed args, cwd controlled
             mi_result = subprocess.run(  # noqa: S603
-                ["poetry", "run", "radon", "mi", "src", "--json"],
+                ["uv", "run", "--frozen", "radon", "mi", "src", "--json"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -189,7 +189,7 @@ class QualityGateValidator:
             # Run bandit security scan
             # Security: Using hardcoded command with fixed args, cwd controlled
             bandit_result = subprocess.run(  # noqa: S603
-                ["poetry", "run", "bandit", "-r", "src", "-f", "json"],
+                ["uv", "run", "--frozen", "bandit", "-r", "src", "-f", "json"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -215,26 +215,29 @@ class QualityGateValidator:
                         f"Medium security issues ({medium_issues}) exceed threshold ({self.thresholds.max_medium_security_issues})",
                     )
 
-            # Run safety check for vulnerabilities
+            # Run pip-audit for dependency vulnerabilities
             # Security: Using hardcoded command with fixed args, cwd controlled
-            safety_result = subprocess.run(  # noqa: S603
-                ["poetry", "run", "safety", "check", "--json"],
+            audit_result = subprocess.run(  # noqa: S603
+                ["uv", "run", "--frozen", "pip-audit", "--format=json"],
                 check=False,
                 capture_output=True,
                 text=True,
                 cwd=self.project_root,
             )
 
-            if safety_result.stdout:
+            if audit_result.stdout:
                 try:
-                    safety_data = json.loads(safety_result.stdout)
-                    vulnerability_count = len(safety_data.get("vulnerabilities", []))
+                    audit_data = json.loads(audit_result.stdout)
+                    # pip-audit JSON shape: {"dependencies": [{"name": ..., "vulns": [...]}, ...]}
+                    vulnerability_count = sum(
+                        len(dep.get("vulns", [])) for dep in audit_data.get("dependencies", [])
+                    )
                     self.results.security_results["vulnerabilities"] = vulnerability_count
 
                     if vulnerability_count > 0:
                         self.results.violations.append(f"Security vulnerabilities detected: {vulnerability_count}")
                 except json.JSONDecodeError:
-                    # safety outputs plain text when no vulnerabilities
+                    # pip-audit may emit non-JSON output on error paths
                     self.results.security_results["vulnerabilities"] = 0
 
             print("✅ Security validation completed")
@@ -293,7 +296,7 @@ class QualityGateValidator:
             # Check docstring coverage
             # Security: Using hardcoded command with fixed args, cwd controlled
             docstring_result = subprocess.run(  # noqa: S603
-                ["poetry", "run", "interrogate", "src", "--generate-badge", ".", "--badge-format", "svg"],
+                ["uv", "run", "--frozen", "interrogate", "src", "--generate-badge", ".", "--badge-format", "svg"],
                 check=False,
                 capture_output=True,
                 text=True,

@@ -42,29 +42,54 @@ class ClaudeContext7Integration:
         self.context7_mappings = self._load_context7_mappings()
 
     def _load_pyproject_dependencies(self) -> dict[str, str]:
-        """Load dependencies from pyproject.toml."""
+        """Load dependencies from pyproject.toml.
+
+        Reads PEP 621 ``[project].dependencies`` for runtime deps and PEP 735
+        ``[dependency-groups].dev`` for dev deps. Each entry is a PEP 508
+        requirement string (e.g. ``ruff>=0.5.0``, ``uvicorn[standard]``); the
+        spec portion after the package name is stored as the value so the
+        downstream key-name handling stays unchanged.
+        """
         try:
             with open(self.pyproject_file, "rb") as f:
                 data = tomllib.load(f)
-                deps = {}
+                deps: dict[str, str] = {}
 
-                # Main dependencies
-                main_deps = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
-                for dep, version in main_deps.items():
-                    if dep != "python":  # Skip Python version
-                        deps[dep] = version
+                # Main dependencies (PEP 621, list of strings).
+                main_deps = data.get("project", {}).get("dependencies", [])
+                for spec in main_deps:
+                    name, version = self._split_requirement(spec)
+                    if name and name.lower() != "python":
+                        deps[name] = version
 
-                # Dev dependencies
-                dev_deps = (
-                    data.get("tool", {}).get("poetry", {}).get("group", {}).get("dev", {}).get("dependencies", {})
-                )
-                for dep, version in dev_deps.items():
-                    deps[f"{dep} (dev)"] = version
+                # Dev dependencies (PEP 735, list of strings).
+                dev_deps = data.get("dependency-groups", {}).get("dev", [])
+                for spec in dev_deps:
+                    name, version = self._split_requirement(spec)
+                    if name:
+                        deps[f"{name} (dev)"] = version
 
                 return deps
         except Exception as e:
             print(f"Error loading pyproject.toml: {e}")
             return {}
+
+    @staticmethod
+    def _split_requirement(spec: str) -> tuple[str, str]:
+        """Split a PEP 508 requirement string into (name, version_spec).
+
+        Examples:
+            'ruff>=0.5.0' -> ('ruff', '>=0.5.0')
+            'uvicorn[standard]>=0.30' -> ('uvicorn[standard]', '>=0.30')
+            'black' -> ('black', '')
+        """
+        import re
+
+        head = spec.split(";", 1)[0].strip()
+        match = re.match(r"^([A-Za-z0-9_.\-]+(?:\[[^\]]*\])?)\s*(.*)$", head)
+        if not match:
+            return "", ""
+        return match.group(1).strip(), match.group(2).strip()
 
     def _load_context7_mappings(self) -> dict[str, Any]:
         """Load Context7 package mappings."""

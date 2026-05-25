@@ -26,15 +26,15 @@ class CoverageAutomationCLI:
     def validate_environment(self) -> bool:
         """Validate that the environment is properly configured."""
         try:
-            # Check if we're in a Poetry project
+            # Check if we're in a uv-managed project
             pyproject_file = self.project_root / "pyproject.toml"
             if not pyproject_file.exists():
-                print("⚠️  No pyproject.toml found - Poetry may not be configured")
+                print("⚠️  No pyproject.toml found - uv may not be configured")
                 return False
 
-            # Check if Poetry is available
+            # Check if uv is available
             result = subprocess.run(
-                ["poetry", "--version"],
+                ["uv", "--version"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -42,7 +42,7 @@ class CoverageAutomationCLI:
             )
 
             if result.returncode != 0:
-                print("⚠️  Poetry not found - please install Poetry")
+                print("⚠️  uv not found - please install uv")
                 return False
 
             print("✅ Environment validation passed")
