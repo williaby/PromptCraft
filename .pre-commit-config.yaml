@@ -23,43 +23,45 @@ repos:
     hooks:
       - id: black
         name: black
-        entry: poetry run black
+        entry: uv run --frozen black
         language: system
         types: [python]
         args: [--line-length=120]
       - id: ruff
         name: ruff
-        entry: poetry run ruff check
+        entry: uv run --frozen ruff check
         language: system
         types: [python]
         args: [--fix, --line-length=120]
         exclude: ^\.claude/
       - id: ruff-datetime-check
         name: ruff-datetime-check
-        entry: poetry run ruff check
+        entry: uv run --frozen ruff check
         language: system
         types: [python]
         files: ^src/
         args: [--select=DTZ005, --line-length=120]
       - id: mypy
         name: mypy
-        entry: poetry run mypy
+        entry: uv run --frozen mypy
         language: system
         types: [python]
         args: [--config-file=pyproject.toml]
         exclude: ^(tests/|scripts/|examples/|noxfile\.py)
       - id: bandit
         name: bandit
-        entry: poetry run bandit
+        entry: uv run --frozen bandit
         language: system
         types: [python]
         args: ['-c', 'pyproject.toml']
 
-  - repo: https://github.com/python-poetry/poetry
-    rev: '2.1.2'
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.26
     hooks:
-      - id: poetry-check
-      - id: poetry-lock
+      - id: uv-lock
+        # Verifies uv.lock is in sync with pyproject.toml. The legacy
+        # poetry-check hook is unnecessary: uv lock --check covers both
+        # lockfile freshness and pyproject validity.
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.39.0
@@ -77,4 +79,4 @@ ci:
   autofix_prs: true
   autofix_commit_msg: '[pre-commit.ci] auto fixes'
   autoupdate_schedule: weekly
-  skip: [poetry-lock]
+  skip: [uv-lock]
