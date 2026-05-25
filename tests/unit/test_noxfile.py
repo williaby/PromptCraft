@@ -49,8 +49,16 @@ class TestBasicSessions:
         """Test tests session with default arguments."""
         noxfile.tests(mock_session)
 
-        # Verify poetry install was called
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest was called with default coverage args (updated implementation)
         mock_session.run.assert_any_call(
@@ -74,8 +82,16 @@ class TestBasicSessions:
         """Test tests_unit session functionality."""
         noxfile.tests_unit(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with unit test args (updated implementation)
         mock_session.run.assert_any_call(
@@ -122,8 +138,16 @@ class TestBasicSessions:
         """Test tests_integration session functionality."""
         noxfile.tests_integration(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with integration test args (updated implementation)
         mock_session.run.assert_any_call(
@@ -160,8 +184,16 @@ class TestBasicSessions:
         """Test tests_security session functionality."""
         noxfile.tests_security(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with security test args
         mock_session.run.assert_any_call(
@@ -208,8 +240,16 @@ class TestBasicSessions:
         """Test tests_fast session functionality."""
         noxfile.tests_fast(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with fast test args
         mock_session.run.assert_any_call(
@@ -257,8 +297,16 @@ class TestBasicSessions:
         """Test unit session functionality."""
         noxfile.unit(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with unit test markers
         mock_session.run.assert_any_call(
@@ -275,8 +323,16 @@ class TestBasicSessions:
         """Test component session functionality."""
         noxfile.component(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with component test markers
         mock_session.run.assert_any_call(
@@ -293,8 +349,16 @@ class TestBasicSessions:
         """Test integration session functionality."""
         noxfile.integration(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with integration test markers
         mock_session.run.assert_any_call(
@@ -310,8 +374,16 @@ class TestBasicSessions:
         """Test e2e session functionality."""
         noxfile.e2e(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with e2e test markers
         mock_session.run.assert_any_call(
@@ -326,8 +398,16 @@ class TestBasicSessions:
         """Test perf session functionality."""
         noxfile.perf(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with performance test markers
         mock_session.run.assert_any_call(
@@ -343,8 +423,16 @@ class TestBasicSessions:
         """Test security_tests session functionality."""
         noxfile.security_tests(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with security test markers
         mock_session.run.assert_any_call(
@@ -358,8 +446,16 @@ class TestBasicSessions:
         """Test chaos_tests session functionality."""
         noxfile.chaos_tests(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with chaos test markers
         mock_session.run.assert_any_call(
@@ -374,8 +470,16 @@ class TestBasicSessions:
         """Test fast session functionality."""
         noxfile.fast(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify pytest with fast test markers
         mock_session.run.assert_any_call(
@@ -393,8 +497,16 @@ class TestBasicSessions:
         """Test codecov_analysis session functionality."""
         noxfile.codecov_analysis(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify codecov analysis script execution
         mock_session.run.assert_any_call("python", "codecov_analysis.py")
@@ -414,8 +526,16 @@ class TestLintingAndFormatting:
         """Test lint session with default arguments."""
         noxfile.lint(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify all linting tools are called
         mock_session.run.assert_any_call("black", "--check", *noxfile.SRC_LOCATIONS)
@@ -438,16 +558,32 @@ class TestLintingAndFormatting:
         """Test type_check session functionality."""
         noxfile.type_check(mock_session)
 
-        # Verify poetry install and mypy execution
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync and mypy execution
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
         mock_session.run.assert_any_call("mypy", "src")
 
     def test_format_code_session_default_args(self, mock_session):
         """Test format_code session with default arguments."""
         noxfile.format_code(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify formatting tools are called
         mock_session.run.assert_any_call("black", *noxfile.SRC_LOCATIONS)
@@ -477,8 +613,16 @@ class TestSecuritySessions:
         """Test security session functionality."""
         noxfile.security(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify all security tools are called
         mock_session.run.assert_any_call("safety", "check", "--json")
@@ -498,8 +642,16 @@ class TestDocumentationSessions:
         """Test docs session functionality."""
         noxfile.docs(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify directory change and mkdocs build
         mock_session.cd.assert_called_once_with("docs")
@@ -538,9 +690,18 @@ class TestDependencyManagement:
 
         noxfile.deps(mock_session)
 
-        # Verify poetry commands
-        mock_session.run.assert_any_call("poetry", "install", external=True)
-        mock_session.run.assert_any_call("poetry", "show", "--outdated")
+        # Verify uv-equivalent commands (see ADR-0001 for the poetry -> uv swap).
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
+        mock_session.run.assert_any_call("uv", "lock", "--check", external=True)
+        mock_session.run.assert_any_call("uv", "pip", "list", "--outdated", external=True)
         mock_session.run.assert_any_call("./scripts/generate_requirements.sh", external=True)
 
         # Verify temporary environment creation and testing
@@ -560,8 +721,16 @@ class TestPreCommitSession:
         """Test pre_commit session functionality."""
         noxfile.pre_commit(mock_session)
 
-        # Verify poetry install and pre-commit execution
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync and pre-commit execution
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
         mock_session.run.assert_any_call("pre-commit", "run", "--all-files")
 
 
@@ -585,8 +754,16 @@ class TestMetricsSession:
 
         noxfile.metrics(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify script execution (this covers line 156)
         mock_session.run.assert_any_call("python", "test_metrics_dashboard.py")
@@ -602,8 +779,16 @@ class TestMetricsSession:
 
         noxfile.metrics(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify warning message is logged (with correct mock string representation)
         mock_session.log.assert_any_call(
@@ -630,8 +815,16 @@ class TestAdvancedTestingSessions:
         """Test mutation_testing session successful execution."""
         noxfile.mutation_testing(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify cache cleanup
         mock_session.run.assert_any_call("rm", "-rf", ".mutmut-cache", external=True, success_codes=[0, 1])
@@ -674,8 +867,16 @@ class TestAdvancedTestingSessions:
         """Test contract_testing session functionality."""
         noxfile.contract_testing(mock_session)
 
-        # Verify poetry install and pytest execution
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync and pytest execution
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
         mock_session.run.assert_any_call("pytest", "tests/contract/", "-v")
 
 
@@ -695,8 +896,16 @@ class TestDASTScanning:
         """Test dast_scanning session successful execution."""
         noxfile.dast_scanning(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify Docker version check
         mock_session.run.assert_any_call("docker", "--version", external=True, silent=True)
@@ -782,8 +991,16 @@ class TestPerformanceTesting:
         """Test performance_testing session functionality."""
         noxfile.performance_testing(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called (poetry has been replaced; see ADR-0001)
+        mock_session.run_install.assert_any_call(
+            "uv",
+            "sync",
+            "--frozen",
+            "--group",
+            "dev",
+            env={"UV_PROJECT_ENVIRONMENT": mock_session.virtualenv.location},
+            external=True,
+        )
 
         # Verify locust execution with correct parameters
         mock_session.run.assert_any_call(
@@ -886,9 +1103,10 @@ class TestSessionIntegration:
         # Run integration tests
         noxfile.tests_integration(mock_session)
 
-        # Verify poetry install was called multiple times
+        # Verify uv sync was called multiple times (poetry replaced; see ADR-0001).
+        # noxfile now uses session.run_install for the uv sync step.
         install_calls = [
-            call for call in mock_session.run.call_args_list if "poetry" in call[0] and "install" in call[0]
+            call for call in mock_session.run_install.call_args_list if "uv" in call[0] and "sync" in call[0]
         ]
         assert len(install_calls) >= 3
 
@@ -943,8 +1161,8 @@ def test_all_sessions_install_dependencies(session_function, expected_installs):
     with contextlib.suppress(Exception):
         session_function(mock_session)
 
-    # Verify poetry install was called
-    install_calls = [call for call in mock_session.run.call_args_list if "poetry" in call[0] and "install" in call[0]]
+    # Verify uv sync was called (poetry replaced; see ADR-0001).
+    install_calls = [call for call in mock_session.run_install.call_args_list if "uv" in call[0] and "sync" in call[0]]
     assert len(install_calls) >= expected_installs
 
 

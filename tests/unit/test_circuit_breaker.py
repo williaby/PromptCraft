@@ -228,12 +228,23 @@ class TestCircuitBreakerStates:
         # because scheduling jitter could leave fewer than the expected
         # headroom seconds between force_open() setting next_retry_time and
         # the recovery call running.
-        deadline = asyncio.get_event_loop().time() + 5.0
-        while asyncio.get_event_loop().time() < deadline:
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + 5.0
+        while loop.time() < deadline:
             retry_at = circuit_breaker.metrics.next_retry_time
             if retry_at is None or datetime.now(UTC) >= retry_at + timedelta(milliseconds=50):
                 break
             await asyncio.sleep(0.05)
+        else:
+            # `else` fires only when the while condition exits via timeout
+            # (no `break`). Surface the failure explicitly rather than
+            # letting call_async() race a still-OPEN breaker and raise a
+            # confusing CircuitBreakerOpenError downstream.
+            retry_at = circuit_breaker.metrics.next_retry_time
+            pytest.fail(
+                f"Circuit breaker did not become ready within 5s; "
+                f"next_retry_time={retry_at!r}, now={datetime.now(UTC)!r}",
+            )
 
         async def success_func():
             return "recovery_success"
