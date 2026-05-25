@@ -188,7 +188,7 @@ class ScheduleManager:
         """Start the application in the background."""
         try:
             process = subprocess.Popen(
-                ["poetry", "run", "python", "-m", "src.main"],
+                ["uv", "run", "--frozen", "python", "-m", "src.main"],
                 cwd=self.project_root,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

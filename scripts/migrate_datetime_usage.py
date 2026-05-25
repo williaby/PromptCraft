@@ -339,8 +339,8 @@ class DatetimeMigrationTool:
 
         if not dry_run and self.files_modified > 0:
             print("\n🔧 Next steps:")
-            print("   1. Run tests: poetry run pytest")
-            print("   2. Check linting: poetry run ruff check --select DTZ005")
+            print("   1. Run tests: uv run --frozen pytest")
+            print("   2. Check linting: uv run --frozen ruff check --select DTZ005")
             print("   3. Review changes: git diff")
             print("   4. Remove backups when satisfied: find . -name '*.py.backup' -delete")
 

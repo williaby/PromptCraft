@@ -228,21 +228,42 @@ class ConfigurationValidator:
         return configs
 
     def _get_pyproject_tool_versions(self) -> dict[str, str]:
-        """Extract tool versions from pyproject.toml."""
+        """Extract tool versions from pyproject.toml (PEP 735 dependency-groups)."""
         try:
             pyproject_path = self.project_root / "pyproject.toml"
             with pyproject_path.open("rb") as f:
                 data = tomllib.load(f)
 
-            dev_deps = data.get("tool", {}).get("poetry", {}).get("group", {}).get("dev", {}).get("dependencies", {})
+            # PEP 735: dev group is a list of PEP 508 requirement strings.
+            dev_deps: list[str] = data.get("dependency-groups", {}).get("dev", [])
             return {
-                "black": dev_deps.get("black", ""),
-                "ruff": dev_deps.get("ruff", ""),
-                "mypy": dev_deps.get("mypy", ""),
+                "black": self._find_dep_spec(dev_deps, "black"),
+                "ruff": self._find_dep_spec(dev_deps, "ruff"),
+                "mypy": self._find_dep_spec(dev_deps, "mypy"),
             }
         except Exception as e:
             self.warnings.append(f"Could not read pyproject.toml tool versions: {e}")
             return {}
+
+    @staticmethod
+    def _find_dep_spec(dep_list: list[str], package: str) -> str:
+        """Find a package's full requirement spec in a PEP 735 dependency list.
+
+        Each entry looks like 'ruff>=0.5.0', 'mypy==1.10', or 'black'. Returns
+        the version constraint portion (e.g. '>=0.5.0') or an empty string if
+        the package is not present or has no version constraint.
+        """
+        for entry in dep_list:
+            # Strip extras and environment markers before name comparison.
+            head = entry.split(";", 1)[0].strip()
+            name_part = re.split(r"[\[<>=!~ ]", head, 1)[0].strip()
+            if name_part.lower() == package.lower():
+                # Return everything after the package name (the version spec).
+                spec = head[len(name_part) :].strip()
+                # Drop extras like '[toml]' if present.
+                spec = re.sub(r"^\[[^\]]*\]", "", spec).strip()
+                return spec
+        return ""
 
     def _get_precommit_tool_versions(self) -> dict[str, str]:
         """Extract tool versions from .pre-commit-config.yaml."""
