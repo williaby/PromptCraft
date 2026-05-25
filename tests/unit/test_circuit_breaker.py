@@ -223,8 +223,17 @@ class TestCircuitBreakerStates:
         # Force circuit to open
         circuit_breaker.force_open()
 
-        # Wait for recovery timeout - use longer timeout to ensure recovery
-        await asyncio.sleep(2.0)  # Well beyond recovery timeout (recovery_timeout=1)
+        # Poll until the breaker's next_retry_time has elapsed rather than
+        # sleeping a fixed duration. The fixed sleep was flaky under load
+        # because scheduling jitter could leave fewer than the expected
+        # headroom seconds between force_open() setting next_retry_time and
+        # the recovery call running.
+        deadline = asyncio.get_event_loop().time() + 5.0
+        while asyncio.get_event_loop().time() < deadline:
+            retry_at = circuit_breaker.metrics.next_retry_time
+            if retry_at is None or datetime.now(UTC) >= retry_at + timedelta(milliseconds=50):
+                break
+            await asyncio.sleep(0.05)
 
         async def success_func():
             return "recovery_success"

@@ -460,7 +460,11 @@ class TestValidationScriptEdgeCases:
         from scripts.validate_gradio_integration import project_root
 
         assert isinstance(project_root, Path)
-        assert project_root.name == "PromptCraft"
+        # Identify the repo root by marker files rather than the directory name,
+        # so the test passes from both a primary checkout and a git worktree
+        # (e.g. .worktrees/<branch-slug>/).
+        assert (project_root / "pyproject.toml").is_file()
+        assert (project_root / "src").is_dir()
 
     @patch("scripts.validate_gradio_integration.importlib.util.spec_from_file_location")
     def test_importlib_util_unavailable(self, mock_spec_from_file):
