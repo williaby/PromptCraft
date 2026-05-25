@@ -54,10 +54,20 @@ jobs:
           npm ci
           npx playwright install --with-deps ${{ matrix.browser }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups
+
       - name: Start PromptCraft application
         run: |
           # Start application in background
-          poetry run python -m src.main &
+          uv run --frozen python -m src.main &
 
           # Wait for application to be ready
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
@@ -111,9 +121,19 @@ jobs:
           npm ci
           npx playwright install --with-deps ${{ matrix.browser }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups
+
       - name: Start PromptCraft application
         run: |
-          poetry run python -m src.main &
+          uv run --frozen python -m src.main &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
@@ -170,9 +190,19 @@ jobs:
           npm ci
           npx playwright install --with-deps
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups
+
       - name: Start PromptCraft application
         run: |
-          poetry run python -m src.main &
+          uv run --frozen python -m src.main &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
@@ -223,9 +253,19 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups
+
       - name: Start PromptCraft application
         run: |
-          poetry run python -m src.main &
+          uv run --frozen python -m src.main &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
@@ -270,9 +310,19 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-groups
+
       - name: Start PromptCraft application
         run: |
-          poetry run python -m src.main &
+          uv run --frozen python -m src.main &
           timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
         timeout-minutes: 3
 
