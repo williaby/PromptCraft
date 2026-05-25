@@ -70,6 +70,9 @@ dependencies = [
     "asyncpg>=0.30.0,<0.31",
     "alembic>=1.14.0,<2",
     "aiohttp>=3.13.4,<4",
+    # Security floor (not a strict pin): caret range allows minor + patch
+    # upgrades. uv.lock resolves to the highest compatible release; bump
+    # the floor when a higher minimum is required for CVE remediation.
     "urllib3>=2.6.3,<3",
     "brotli>=1.2.0,<2",
     "plotly>=6.3.0,<7",
@@ -101,7 +104,6 @@ dev = [
     "pytest-rerunfailures>=16.3",
     "hypothesis>=6.98.9",
     "faker>=40.0.0",
-    "black>=26.0.0",
     "ruff==0.12.3",
     "mypy>=2.1.0",
     "types-pyyaml>=6.0.12.12",
@@ -144,6 +146,7 @@ docs = [
     "mkdocs>=1.6.0,<2",
     "mkdocs-material>=9.5.32,<10",
     "mkdocstrings[python]>=1.0.4,<2",
+    "mkdocs-include-markdown-plugin>=7.0.0,<8",
 ]
 test = [
     "pytest-benchmark>=5.2.3",
@@ -158,26 +161,6 @@ default-groups = "all"
 [[tool.uv.index]]
 name = "safety"
 url = "https://pkgs.safetycli.com/repository/williams-consulting/project/promptcraft/pypi/simple/"
-
-[tool.black]
-line-length = 120
-target-version = ['py311', 'py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.nox
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-)/
-'''
 
 [tool.ruff]
 line-length = 120
@@ -228,7 +211,7 @@ select = [
     "RUF", # ruff-specific
 ]
 ignore = [
-    "E501",    # line too long (handled by black)
+    "E501",    # line too long (handled by ruff format)
     "B008",    # do not perform function calls in argument defaults
     "C901",    # too complex
     "ANN401",  # dynamically typed expressions (Any)

@@ -21,7 +21,11 @@ def tests(session):
     """Run the full test suite (all layers)."""
     args = session.posargs or ["--cov", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=80"]
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -37,7 +41,11 @@ def tests(session):
 def unit(session):
     """Run unit tests only (fast development cycle)."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -57,7 +65,11 @@ def unit(session):
 def component(session):
     """Run component tests (with mocks)."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -77,7 +89,11 @@ def component(session):
 def integration(session):
     """Run integration tests (slower, real services)."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -96,7 +112,11 @@ def integration(session):
 def e2e(session):
     """Run end-to-end tests (full user journeys)."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -114,7 +134,11 @@ def e2e(session):
 def perf(session):
     """Run performance and load tests."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -133,7 +157,11 @@ def perf(session):
 def security_tests(session):
     """Run security assertion tests."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -150,7 +178,11 @@ def security_tests(session):
 def chaos_tests(session):
     """Run chaos engineering tests."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -168,7 +200,11 @@ def chaos_tests(session):
 def fast(session):
     """Fast development loop - exclude slow tests."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -189,7 +225,11 @@ def fast(session):
 def metrics(session):
     """Generate test quality metrics dashboard."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -206,7 +246,11 @@ def metrics(session):
 def tests_unit(session):
     """Run unit tests with coverage flags for Codecov."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -230,7 +274,11 @@ def tests_unit(session):
 def tests_integration(session):
     """Run integration tests with coverage flags for Codecov."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -263,7 +311,11 @@ def tests_integration(session):
 def tests_security(session):
     """Run security tests with coverage flags for Codecov."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -287,7 +339,11 @@ def tests_security(session):
 def tests_fast(session):
     """Run fast development cycle tests with coverage flags for Codecov."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -312,7 +368,11 @@ def tests_fast(session):
 def codecov_analysis(session):
     """Run comprehensive Codecov-enhanced test analysis."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -324,11 +384,15 @@ def lint(session):
     """Run linters."""
     args = session.posargs or SRC_LOCATIONS
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
-    session.run("black", "--check", *args)
+    session.run("ruff", "format", "--check", *args)
     session.run("ruff", "check", *args)
 
     # Markdown linting
@@ -342,7 +406,11 @@ def lint(session):
 def type_check(session):
     """Run type checking with mypy."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -353,7 +421,11 @@ def type_check(session):
 def security(session):
     """Run security checks."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -373,11 +445,15 @@ def format_code(session):
     """Format code."""
     args = session.posargs or SRC_LOCATIONS
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
-    session.run("black", *args)
+    session.run("ruff", "format", *args)
     session.run("ruff", "check", "--fix", *args)
 
 
@@ -385,7 +461,11 @@ def format_code(session):
 def docs(session):
     """Build documentation."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -397,7 +477,10 @@ def docs(session):
 def deps(session):
     """Check and update dependencies."""
     session.run_install(
-        "uv", "sync", "--frozen", "--all-groups",
+        "uv",
+        "sync",
+        "--frozen",
+        "--all-groups",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -412,12 +495,23 @@ def deps(session):
     # uv export produces a hashed requirements file on demand, which we
     # then install into a throwaway venv with --require-hashes to confirm
     # the lock is installable in an air-gapped reproducible way.
+    # Capture the project root before the chdir so `uv export` can find
+    # pyproject.toml and uv.lock; without --project it resolves from CWD,
+    # which is the empty tmp dir and would abort with "no project found".
+    project_root = str(Path.cwd().resolve())
     with session.chdir(session.create_tmp()):
         reqs_path = "uv-export-hashed.txt"
         session.run(
-            "uv", "export", "--frozen", "--no-dev",
-            "--format", "requirements-txt",
-            "--output-file", reqs_path,
+            "uv",
+            "export",
+            "--project",
+            project_root,
+            "--frozen",
+            "--no-dev",
+            "--format",
+            "requirements-txt",
+            "--output-file",
+            reqs_path,
             external=True,
         )
         session.run("python", "-m", "venv", "test-env")
@@ -435,7 +529,11 @@ def deps(session):
 def pre_commit(session):
     """Run pre-commit on all files."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -449,7 +547,11 @@ def pre_commit(session):
 def mutation_testing(session):
     """Run comprehensive mutation testing to validate test quality."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -500,7 +602,11 @@ def mutation_testing(session):
 def contract_testing(session):
     """Run contract tests for MCP integrations."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -511,7 +617,11 @@ def contract_testing(session):
 def dast_scanning(session):
     """Run comprehensive DAST security scanning with OWASP ZAP."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )
@@ -628,7 +738,11 @@ if __name__ == '__main__':
 def performance_testing(session):
     """Run performance tests with Locust."""
     session.run_install(
-        "uv", "sync", "--frozen", "--group", "dev",
+        "uv",
+        "sync",
+        "--frozen",
+        "--group",
+        "dev",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
     )

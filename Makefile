@@ -43,15 +43,15 @@ test-with-timing: ## Run tests with detailed timing analysis
 	$(UV) run pytest --durations=20 --tb=short
 
 lint: ## Run linting checks
-	$(UV) run black --check .
-	$(UV) run ruff check .
-	$(UV) run mypy src
+	$(UV) run --frozen ruff format --check .
+	$(UV) run --frozen ruff check .
+	$(UV) run --frozen mypy src
 	markdownlint **/*.md
 	yamllint .
 
 format: ## Format code
-	$(UV) run black .
-	$(UV) run ruff check --fix .
+	$(UV) run --frozen ruff format .
+	$(UV) run --frozen ruff check --fix .
 
 security: ## Run security checks
 	$(UV) run safety check
