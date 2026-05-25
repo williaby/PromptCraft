@@ -33,7 +33,7 @@ Before you begin, ensure you have the following tools installed on your system:
 
 - **Git**: For version control
 - **Python 3.11+**: Core development language
-- **Poetry**: Python dependency management (not Node.js/npm)
+- **uv**: Python dependency management (pinned at 0.9.26, not Node.js/npm)
 - **Docker & Docker Compose**: For containerized services
 - **Nox**: Task automation and testing across Python versions
 - **Pre-commit**: Automated code quality checks before commits
@@ -52,14 +52,14 @@ cd PromptCraft-Hybrid
 
 #### Install Dependencies
 
-This project uses Python with Poetry for dependency management:
+This project uses Python with uv for dependency management:
 
 ```bash
-# Install dependencies with Poetry
-poetry install --sync
+# Install dependencies with uv (frozen lockfile, all dependency groups)
+uv sync --frozen --all-groups
 
 # Install pre-commit hooks
-poetry run pre-commit install
+uv run --frozen pre-commit install
 
 # Verify installation
 nox -s tests
@@ -92,12 +92,12 @@ make lint
 
 All contributions must meet these quality standards (identical to CI pipeline):
 
-- **Code Formatting**: Black (line length 120) and Ruff linting with exact CI versions
+- **Code Formatting**: Ruff format (line length 120) and Ruff lint with exact CI versions
 - **Type Checking**: MyPy with strict configuration targeting Python 3.11+
 - **Test Coverage**: Minimum 80% coverage required
 - **Security**: Bandit security scanning must pass
 - **Documentation**: All public APIs must have docstrings
-- **Tool Versions**: Pre-commit hooks use identical versions as CI via Poetry
+- **Tool Versions**: Pre-commit hooks use identical versions as CI via uv
 
 #### Naming Conventions
 
@@ -165,9 +165,8 @@ git checkout -b feature/123-add-new-agent
 
 ```bash
 # Verify tool versions match CI exactly
-poetry run black --version
-poetry run ruff --version
-poetry run mypy --version
+uv run --frozen ruff --version
+uv run --frozen mypy --version
 
 # Run quality checks that match CI pipeline
 make lint      # Run all linting checks with exact CI tool versions
@@ -224,7 +223,7 @@ git push origin feature/123-add-new-agent
 
 All pull requests must pass these automated checks:
 
-- [ ] **Black & Ruff**: Python formatting and linting
+- [ ] **Ruff format & Ruff lint**: Python formatting and linting
 - [ ] **MyPy**: Type checking with strict configuration
 - [ ] **Pytest**: Test suite with >80% coverage
 - [ ] **Bandit**: Security vulnerability scanning
@@ -300,57 +299,65 @@ PromptCraft follows a secure dependency management strategy (ADR-009) that all c
 
 When adding any new package dependency, follow this exact process:
 
-##### 1. Check AssuredOSS Availability
+##### 1. Add the Dependency to pyproject.toml
 
-Always check if the package is available in Google's AssuredOSS repository first:
+Edit `pyproject.toml` directly. Production dependencies live under
+`[project].dependencies`; development and tooling dependencies live under
+`[dependency-groups]` (PEP 735):
 
-```bash
-# Search for the package in AssuredOSS
-poetry search package-name --source assured-oss
+```toml
+# Production dependency in [project].dependencies
+dependencies = [
+    "package-name>=1.0.0,<2.0.0",
+]
 
-# Check for alternatives if not found
-poetry search alternative-package --source assured-oss
+# Development dependency in [dependency-groups]
+[dependency-groups]
+dev = [
+    "dev-package>=1.0.0",
+]
 ```
 
-##### 2. Add the Dependency
+##### 2. Regenerate the Lockfile
 
-Use Poetry to add dependencies with appropriate version constraints:
+Run `uv lock` to refresh `uv.lock`:
 
 ```bash
-# Production dependency
-poetry add "package-name>=1.0.0,<2.0.0"
+# Resolve and update uv.lock
+uv lock
 
-# Development dependency
-poetry add --group dev "dev-package>=1.0.0"
-
-# Optional dependency
-poetry add --optional "optional-package>=1.0.0"
+# To upgrade a specific package to the latest matching constraints
+uv lock --upgrade-package package-name
 ```
 
-##### 3. Update Requirements Files
+##### 3. Sync Your Environment
 
-**CRITICAL**: Always regenerate requirements files after any dependency change:
+Apply the updated lockfile to your local environment:
 
 ```bash
-# Regenerate with hash verification (default/secure mode)
-./scripts/generate_requirements.sh
-
-# For development/testing only (without hashes)
-./scripts/generate_requirements.sh --without-hashes
+uv sync --frozen --all-groups
 ```
 
-##### 4. Commit All Changes
+##### 4. Commit pyproject.toml and uv.lock Together
 
-Always commit poetry files AND requirements files together:
+The lockfile is authoritative. Commit `pyproject.toml` and `uv.lock` in the
+same commit; do not split them and do not commit any `requirements*.txt` (the
+project no longer tracks generated requirements files):
 
 ```bash
-git add pyproject.toml poetry.lock requirements*.txt
+git add pyproject.toml uv.lock
 git commit -m "feat(deps): add package-name for specific functionality
 
 - Add package-name for [specific use case]
-- Updated requirements files with hash verification
-- Verified AssuredOSS compatibility
+- Updated uv.lock via uv lock
 - Closes #issue-number"
+```
+
+If a downstream consumer needs a `requirements.txt` snapshot (for a Docker
+build or external scanner), generate it on demand and do not commit it:
+
+```bash
+uv export --frozen --format requirements-txt -o requirements.txt
 ```
 
 #### Security Classification
@@ -366,71 +373,74 @@ Understanding package security classification is critical:
 
 **Routine Packages** (monthly batched PRs from Renovate):
 
-- Development tools: `pytest`, `black`, `ruff`, `mypy`
+- Development tools: `pytest`, `ruff`, `mypy`
 - Utilities: `python-dateutil`, `tenacity`, `rich`, `structlog`
 - Data processing: `pandas`, `numpy` (unless CVE)
 
 #### Version Constraints Guidelines
 
-**Production Dependencies** (pyproject.toml):
+**Production Dependencies** (in `[project].dependencies`):
 
 ```toml
-# Use caret ranges for automatic security updates
-fastapi = "^0.110.0"        # Allows 0.110.x and 0.x.y
-cryptography = "^42.0.2"    # Critical security package
-
-# Use explicit ranges for tighter control
-requests = ">=2.31.0,<3.0.0"  # Block major version bumps
+dependencies = [
+    # Use compatible-release for automatic security updates
+    "fastapi~=0.110.0",          # Allows 0.110.x
+    "cryptography~=42.0.2",      # Critical security package
+    # Use explicit ranges to block major version bumps
+    "requests>=2.31.0,<3.0.0",
+]
 ```
 
-**Development Dependencies**:
+**Development Dependencies** (in `[dependency-groups]`):
 
 ```toml
-# More flexible for dev tools
-pytest = "^8.0.0"          # Can update more freely
-black = "^24.0.0"          # Formatting tools
-ruff = "^0.2.0"            # Linting tools
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0,<9.0.0",      # Can update more freely
+    "ruff>=0.2.0,<1.0.0",        # Linting and formatting
+]
 ```
 
 #### Troubleshooting Common Issues
 
-**Hash Verification Failures**:
+**Lockfile Out of Sync**:
 
 ```bash
-# Regenerate requirements files
-./scripts/generate_requirements.sh
+# Refresh the lockfile against current pyproject.toml
+uv lock
 
-# Check which source provided the package
-poetry show --source package-name
+# Verify the lockfile matches pyproject.toml (CI runs this via pre-commit)
+uv lock --check
 ```
 
 **Dependency Conflicts**:
 
 ```bash
-# Check dependency tree
-poetry show --tree
+# Inspect the resolved dependency tree
+uv tree
 
-# Update conflicting constraints
-poetry add "conflicting-package>=compatible-version"
+# Update a conflicting constraint in pyproject.toml, then re-lock
+uv lock --upgrade-package conflicting-package
 ```
 
 **CI Pipeline Failures**:
 
 ```bash
-# Verify requirements synchronization
-poetry export --format=requirements.txt --output=test-check.txt
-diff requirements.txt test-check.txt
-rm test-check.txt
+# Verify your environment matches the lockfile exactly
+uv sync --frozen --all-groups
+
+# Export a snapshot for external tooling without committing it
+uv export --frozen --format requirements-txt -o /tmp/snapshot.txt
 ```
 
 #### Pull Request Checklist for Dependencies
 
 When submitting a PR that adds or updates dependencies:
 
-- [ ] **AssuredOSS checked**: Verified package availability in secure repository
 - [ ] **Version constraints**: Used appropriate ranges (not exact pins)
-- [ ] **Requirements updated**: Ran `./scripts/generate_requirements.sh`
-- [ ] **All files committed**: pyproject.toml, poetry.lock, requirements*.txt
+- [ ] **Lockfile refreshed**: Ran `uv lock` after editing `pyproject.toml`
+- [ ] **Environment synced**: Ran `uv sync --frozen --all-groups` and tested locally
+- [ ] **Files committed**: `pyproject.toml` and `uv.lock` together (no `requirements*.txt`)
 - [ ] **Security classification**: Documented if package is security-critical
 - [ ] **Testing**: Verified application works with new dependencies
 - [ ] **Justification**: Clear explanation of why dependency is needed
@@ -450,7 +460,7 @@ When submitting a PR that adds or updates dependencies:
 - **SQL Injection Prevention**: Use parameterized queries
 - **XSS Protection**: Sanitize outputs appropriately
 - **Authentication**: Follow OAuth2 and JWT best practices
-- **Dependencies**: Prefer AssuredOSS packages for security-critical components
+- **Dependencies**: Run `uv run --frozen pip-audit` regularly and address findings within the OpenSSF 60-day window
 
 ## Troubleshooting CI Alignment Issues
 
@@ -459,12 +469,11 @@ When submitting a PR that adds or updates dependencies:
 **Tool Version Mismatches**:
 ```bash
 # Verify your local tools match CI exactly
-poetry run black --version    # Should match CI
-poetry run ruff --version     # Should match CI
-poetry run mypy --version     # Should match CI
+uv run --frozen ruff --version     # Should match CI
+uv run --frozen mypy --version     # Should match CI
 
-# If versions don't match, reinstall dependencies
-poetry install --sync
+# If versions don't match, re-sync against the frozen lockfile
+uv sync --frozen --all-groups
 ```
 
 **Service Mocking Issues**:
@@ -484,10 +493,10 @@ redis-cli ping  # Should return PONG
 **Coverage Reporting Differences**:
 ```bash
 # Run tests exactly as CI does
-poetry run pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
+uv run --frozen pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
 
 # Check for differences in test discovery
-poetry run pytest --collect-only | grep "test session starts"
+uv run --frozen pytest --collect-only | grep "test session starts"
 ```
 
 **Pre-commit Hook Failures**:

@@ -161,7 +161,7 @@ available commands.
 ### Prerequisites
 
 * Docker & Docker Compose
-* Poetry for Python dependency management
+* uv for Python dependency management (pinned at 0.9.26)
 * Nox for task automation
 * External Qdrant instance running on Unraid at 192.168.1.16:6333
 * Ubuntu VM at 192.168.1.205 for application deployment
@@ -181,10 +181,10 @@ available commands.
    * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
 
 3. **Install Dependencies**:
-   * Use Poetry to install all required Python packages from the `pyproject.toml` file.
+   * Use uv to install all required Python packages from the `pyproject.toml` and `uv.lock` files.
 
    ```bash
-   poetry install
+   uv sync --frozen --all-groups
    ```
 
 4. **Deploy to Ubuntu VM**:

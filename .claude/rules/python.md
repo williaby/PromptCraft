@@ -6,8 +6,9 @@
 
 - **Line length: 120** (global default is 88). The project sets 120 in
   `pyproject.toml`; `.markdownlint.json` and `.yamllint.yml` mirror this.
-- **Formatter:** Ruff format (replacing Black over time). Do not revert files
-  to Black output when Ruff has already formatted them.
+- **Formatter:** Ruff format is the formatter (Black has been removed from the
+  project). Do not reintroduce Black configuration or revert files to legacy
+  Black output.
 - **Type checker:** MyPy is currently wired into pre-commit. Migration to
   BasedPyright strict is planned per
   `docs/architecture/basedpyright-migration.md`; write new code in a way

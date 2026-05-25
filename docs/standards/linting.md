@@ -6,20 +6,21 @@
 
 ### Primary Configuration Source
 
-**IMPORTANT**: `pyproject.toml` is the PRIMARY configuration source. All other linting configurations must align with these settings:
+**IMPORTANT**: `pyproject.toml` is the PRIMARY configuration source. All other linting configurations
+must align with these settings:
 
-- **Python line length**: 120 characters (Black/Ruff)
+- **Python line length**: 120 characters (Ruff format and lint)
 - **Python target versions**: 3.11, 3.12
-- **Exclude patterns**: Must match Black's extend-exclude patterns
+- **Exclude patterns**: Must match Ruff's `extend-exclude` patterns
 - **Bandit exclusions**: B101, B601 (as configured in pyproject.toml)
 
 ### Configuration File Alignment
 
 All linting configurations must maintain consistency:
 
-- `.editorconfig` ↔ `pyproject.toml` (indentation, line length)
-- `.yamllint.yml` ↔ `pyproject.toml` (exclude patterns, line length)
-- `.markdownlint.json` ↔ project standards (line length, style)
+- `.editorconfig` matches `pyproject.toml` (indentation, line length)
+- `.yamllint.yml` matches `pyproject.toml` (exclude patterns, line length)
+- `.markdownlint.json` matches project standards (line length, style)
 
 ## File-Type Specific Linting
 
@@ -27,23 +28,10 @@ All linting configurations must maintain consistency:
 
 **Configuration**: `pyproject.toml` (PRIMARY - DO NOT OVERRIDE)
 
-```toml
-[tool.black]
-line-length = 120
-target-version = ["py311", "py312"]
-extend-exclude = '''
-/(
-    \.git
-  | \.mypy_cache
-  | \.pytest_cache
-  | \.venv
-  | venv
-  | build
-  | dist
-  | node_modules
-)/
-'''
+Ruff is the formatter and linter. Black is no longer used; do not reintroduce a
+`[tool.black]` block.
 
+```toml
 [tool.ruff]
 line-length = 120
 target-version = "py311"
@@ -57,6 +45,13 @@ extend-exclude = [
     "dist",
     "node_modules"
 ]
+
+[tool.ruff.format]
+# Ruff format provides the formatting previously delegated to Black.
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
 select = [
     "E", "W", "F", "I", "C", "B", "UP", "N", "YTT",
     "ANN", "S", "BLE", "COM", "DTZ", "EM", "ICN",
@@ -88,12 +83,12 @@ skips = ["B101", "B601"]  # Skip assert_used and shell_injection_process
 
 ```bash
 # MUST RUN before committing Python changes
-poetry run black --check .          # Code formatting check
-poetry run black .                  # Apply formatting
-poetry run ruff check .             # Comprehensive linting
-poetry run ruff check --fix .       # Auto-fix issues
-poetry run mypy src                  # Type checking
-poetry run bandit -r src            # Security scanning
+uv run --frozen ruff format --check .   # Code formatting check
+uv run --frozen ruff format .           # Apply formatting
+uv run --frozen ruff check .            # Comprehensive linting
+uv run --frozen ruff check --fix .      # Auto-fix issues
+uv run --frozen mypy src                # Type checking
+uv run --frozen bandit -r src           # Security scanning
 ```
 
 ### Markdown Files (.md)
@@ -203,34 +198,41 @@ repos:
       - id: check-json
       - id: check-toml
 
-  - repo: https://github.com/psf/black
-    rev: 22.12.0
+  - repo: local
     hooks:
-      - id: black
-        language_version: python3
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run --frozen ruff format
+        language: system
+        types: [python]
         args: [--line-length=120]
-
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.246
-    hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.991
-    hooks:
+        name: ruff
+        entry: uv run --frozen ruff check
+        language: system
+        types: [python]
+        args: [--fix, --line-length=120]
       - id: mypy
-        additional_dependencies: [types-all]
+        name: mypy
+        entry: uv run --frozen mypy
+        language: system
+        types: [python]
         args: [--config-file=pyproject.toml]
 
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.26
+    hooks:
+      - id: uv-lock
+        # Verifies uv.lock is in sync with pyproject.toml.
+
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.33.0
+    rev: v0.39.0
     hooks:
       - id: markdownlint
         args: [--config=.markdownlint.json]
 
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.29.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
         args: [-c=.yamllint.yml]
@@ -240,16 +242,16 @@ repos:
 
 ```bash
 # Install pre-commit hooks (MANDATORY)
-poetry run pre-commit install
+uv run --frozen pre-commit install
 
 # Run manually on all files
-poetry run pre-commit run --all-files
+uv run --frozen pre-commit run --all-files
 
 # Run on staged files only
-poetry run pre-commit run
+uv run --frozen pre-commit run
 
 # Update hook versions
-poetry run pre-commit autoupdate
+uv run --frozen pre-commit autoupdate
 ```
 
 ### Manual Verification Commands
@@ -258,12 +260,12 @@ poetry run pre-commit autoupdate
 # Complete linting check (run before major commits)
 make lint  # If Makefile exists
 # or
-poetry run black --check .
-poetry run ruff check .
-poetry run mypy src
+uv run --frozen ruff format --check .
+uv run --frozen ruff check .
+uv run --frozen mypy src
 markdownlint **/*.md
 yamllint **/*.{yml,yaml}
-poetry run bandit -r src
+uv run --frozen bandit -r src
 ```
 
 ### CI/CD Integration
@@ -285,20 +287,24 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: '0.9.26'
+          enable-cache: true
+          cache-dependency-glob: 'uv.lock'
 
       - name: Install dependencies
-        run: poetry install --sync
+        run: uv sync --frozen --all-groups
 
-      - name: Run Black
-        run: poetry run black --check .
+      - name: Run Ruff format check
+        run: uv run --frozen ruff format --check .
 
-      - name: Run Ruff
-        run: poetry run ruff check .
+      - name: Run Ruff lint
+        run: uv run --frozen ruff check .
 
       - name: Run MyPy
-        run: poetry run mypy src
+        run: uv run --frozen mypy src
 
       - name: Run Markdownlint
         run: markdownlint **/*.md
@@ -307,7 +313,7 @@ jobs:
         run: yamllint **/*.{yml,yaml}
 
       - name: Run Bandit
-        run: poetry run bandit -r src
+        run: uv run --frozen bandit -r src
 ```
 
 ## Common Linting Issues and Solutions
@@ -331,7 +337,7 @@ import requests
 from typing import Dict
 ```
 
-#### Line Length (Black/Ruff E501)
+#### Line Length (Ruff E501)
 
 ```python
 # Wrong
@@ -433,8 +439,10 @@ description: >
 ```json
 // .vscode/settings.json
 {
-  "python.formatting.provider": "black",
-  "python.formatting.blackArgs": ["--line-length", "120"],
+  "python.formatting.provider": "none",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
   "python.linting.enabled": true,
   "python.linting.ruffEnabled": true,
   "python.linting.mypyEnabled": true,
@@ -477,28 +485,28 @@ description: >
 
 ```bash
 # Pre-commit hook failures
-poetry run pre-commit run --all-files --show-diff-on-failure
+uv run --frozen pre-commit run --all-files --show-diff-on-failure
 
 # Update outdated hooks
-poetry run pre-commit autoupdate
+uv run --frozen pre-commit autoupdate
 
 # Skip hooks temporarily (NOT RECOMMENDED)
 git commit --no-verify -m "emergency fix"
 
 # Fix specific hook failures
-poetry run pre-commit run black --all-files
-poetry run pre-commit run ruff --all-files
+uv run --frozen pre-commit run ruff-format --all-files
+uv run --frozen pre-commit run ruff --all-files
 ```
 
 ### Performance Optimization
 
 ```bash
 # Speed up MyPy
-poetry run mypy --install-types --non-interactive
-poetry run mypy --cache-fine-grained src
+uv run --frozen mypy --install-types --non-interactive
+uv run --frozen mypy --cache-fine-grained src
 
 # Parallel linting
-poetry run ruff check . --jobs 4
+uv run --frozen ruff check . --jobs 4
 markdownlint **/*.md --parallel
 
 # Cache optimization
@@ -510,8 +518,8 @@ export PRE_COMMIT_USE_CACHE=1
 
 ```bash
 # Detect configuration inconsistencies
-poetry run black --check --diff .
-poetry run ruff check --show-source .
+uv run --frozen ruff format --check --diff .
+uv run --frozen ruff check --show-source .
 
 # Validate YAML configuration
 yamllint -c .yamllint.yml .yamllint.yml
@@ -523,7 +531,7 @@ markdownlint --config .markdownlint.json README.md
 ## Critical Configuration Alignment Rules
 
 1. **NEVER override** Python settings from `pyproject.toml`
-2. **Ensure exclude patterns** in all configs match Black's extend-exclude
+2. **Ensure exclude patterns** in all configs match Ruff's `extend-exclude`
 3. **Maintain consistency** between `.editorconfig`, `.yamllint.yml`, and `pyproject.toml`
 4. **Respect existing** line length (120 chars), indentation (2/4 spaces), and target versions
 5. **Test configuration changes** against existing codebase before committing
