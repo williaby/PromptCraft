@@ -497,21 +497,3 @@ skips = ["B101", "B601"]
 [tool.bandit.assert_used]
 skips = ["*/test_*.py", "*_test.py"]
 
-[tool.pytest.benchmark]
-# Benchmark configuration
-min_rounds = 5
-max_time = 1.0
-min_time = 0.000005
-calibration_precision = 10
-warmup = false
-warmup_iterations = 100000
-disable_gc = false
-timer = "time.perf_counter"
-sort = "mean"
-columns = "min, max, mean, stddev, median, iqr, outliers, ops, rounds"
-histogram = true
-save_data = true
-autosave = true
-save = ".benchmarks"
-compare = "0001"
-compare_fail = ["min:5%", "max:5%", "mean:5%", "median:5%", "stddev:5%"]
