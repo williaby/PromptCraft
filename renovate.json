@@ -207,8 +207,7 @@
         ],
         "assignees": [
             "@williaby"
-        ],
-        "prPriority": 10
+        ]
     },
     "osvVulnerabilityAlerts": true,
     "platformAutomerge": false,
