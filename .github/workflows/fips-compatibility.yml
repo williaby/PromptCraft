@@ -49,29 +49,34 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
         with:
-          enable-cache: true
+          python-version: '3.12'
 
-      - name: Set up Python
-        run: uv python install 3.12
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
-        run: uv sync --frozen
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry install --no-interaction --no-root
 
       - name: Run FIPS compatibility check
         id: fips-check
         env:
           STRICT_MODE: ${{ github.event.inputs.strict_mode }}
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           STRICT_FLAG=""
           if [ "$STRICT_MODE" = "true" ]; then
             STRICT_FLAG="--strict"
           fi
 
           set +e
-          uv run python scripts/check_fips_compatibility.py \
+          poetry run python scripts/check_fips_compatibility.py \
             --fix-hints \
             --include-tests \
             $STRICT_FLAG \
@@ -79,7 +84,7 @@ jobs:
           EXIT_CODE=${PIPESTATUS[0]}
           set -e
 
-          uv run python scripts/check_fips_compatibility.py \
+          poetry run python scripts/check_fips_compatibility.py \
             --json \
             --include-tests \
             > fips-report.json 2>/dev/null || true
