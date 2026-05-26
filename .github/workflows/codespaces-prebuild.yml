@@ -41,12 +41,12 @@ jobs:
 
     steps:
       - name: Checkout ${{ matrix.branch }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           ref: ${{ matrix.branch }}
 
       - name: Prebuild dev container
-        uses: devcontainers/ci@v0.3
+        uses: devcontainers/ci@b63b30de439b47a52267f241112c5b453b673db5  # v0.3.1900000449
         with:
           subFolder: .devcontainer
           configFile: .devcontainer/devcontainer.json
