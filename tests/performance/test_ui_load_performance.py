@@ -558,7 +558,7 @@ class TestUILoadPerformance:
                     future.result()
                     # Results are already processed in simulate_user_session
                 except Exception as e:
-                    logger.error("User %d session failed: %s", user_id, e)
+                    logger.exception("User %d session failed: %s", user_id, e)
                     metrics.add_failure()
 
         metrics.end_time = time.time()
@@ -625,7 +625,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error("Sustained user load failed: %s", e)
+                    logger.exception("Sustained user load failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()
@@ -690,7 +690,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error("Aggressive user session failed: %s", e)
+                    logger.exception("Aggressive user session failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()
@@ -758,7 +758,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error("Memory test component failed: %s", e)
+                    logger.exception("Memory test component failed: %s", e)
 
         # Force garbage collection and final memory measurement
         gc.collect()
@@ -809,7 +809,7 @@ class TestUILoadPerformance:
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error("Response time user failed: %s", e)
+                    logger.exception("Response time user failed: %s", e)
 
         metrics.end_time = time.time()
         return metrics.calculate_metrics()

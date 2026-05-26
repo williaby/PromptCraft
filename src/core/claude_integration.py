@@ -322,7 +322,7 @@ class ClaudeCommandIntegration:
             return result
 
         except Exception as e:
-            logger.error("Command execution failed: %s", e)
+            logger.exception("Command execution failed: %s", e)
             error_result = CommandResult(
                 success=False,
                 message=f"Command execution error: {e!s}",
@@ -781,7 +781,7 @@ class ClaudeCommandIntegration:
             return health_status
 
         except Exception as e:
-            logger.error("Health check failed: %s", e)
+            logger.exception("Health check failed: %s", e)
             return {
                 "overall": "error",
                 "error": str(e),

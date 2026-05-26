@@ -242,7 +242,7 @@ class HomelabPerformanceTester:
                 await conn.commit()
 
         except Exception as e:
-            logger.error(f"Connectivity test failed: {e}")
+            logger.exception("Connectivity test failed: %s", e)
             results["connection_errors"].append(str(e))
             raise RuntimeError(f"Database connectivity test failed: {e}") from e
 
@@ -394,7 +394,7 @@ class HomelabPerformanceTester:
                 await conn.commit()
 
         except Exception as e:
-            logger.error(f"Schema performance test failed: {e}")
+            logger.exception("Schema performance test failed: %s", e)
             results["errors"].append(str(e))
             raise RuntimeError(f"Schema performance test failed: {e}") from e
 
@@ -517,7 +517,7 @@ class HomelabPerformanceTester:
             )
 
         except Exception as e:
-            logger.error(f"Concurrent load test failed: {e}")
+            logger.exception("Concurrent load test failed: %s", e)
             results["errors"].append(str(e))
             raise RuntimeError(f"Concurrent load test failed: {e}") from e
 
@@ -590,7 +590,7 @@ class HomelabPerformanceTester:
             results["overall_assessment"] = self._assess_overall_performance(results)
 
         except Exception as e:
-            logger.error(f"Comprehensive test failed: {e}")
+            logger.exception("Comprehensive test failed: %s", e)
             results["overall_assessment"] = {
                 "status": "FAILED",
                 "recommendation": "NO-GO",
@@ -795,7 +795,7 @@ async def main():
         return results
 
     except Exception as e:
-        logger.error(f"Performance validation failed: {e}")
+        logger.exception("Performance validation failed: %s", e)
         print(f"\nERROR: Performance validation failed: {e}")
         # Return None for graceful handling in main execution
         return None

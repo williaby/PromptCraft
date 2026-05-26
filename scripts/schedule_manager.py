@@ -39,7 +39,7 @@ class ScheduleManager:
             logger.error(f"Configuration file not found: {self.config_path}")
             sys.exit(1)
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in configuration file: {e}")
+            logger.exception("Invalid JSON in configuration file: %s", e)
             sys.exit(1)
 
     def list_schedules(self) -> None:
@@ -195,7 +195,7 @@ class ScheduleManager:
             )
             return process
         except Exception as e:
-            logger.error(f"Failed to start application: {e}")
+            logger.exception("Failed to start application: %s", e)
             return None
 
     def _run_component(self, component_name: str, component_config: dict[str, Any], dry_run: bool) -> dict[str, Any]:
@@ -259,7 +259,7 @@ class ScheduleManager:
                         "attempts": attempt + 1,
                     }
             except Exception as e:
-                logger.error(f"Component '{component_name}' failed with exception: {e}")
+                logger.exception("Component '%s' failed with exception: %s", component_name, e)
                 if attempt == retry_count:  # Last attempt
                     return {
                         "success": False,
