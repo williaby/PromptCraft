@@ -743,9 +743,10 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
 
     def test_dast_scanning_session_docker_unavailable(self, mock_session):
         """Test dast_scanning() session when Docker is unavailable."""
-        # Mock Docker check to raise exception
+        # Mock Docker check to raise exception. Under uv the dependency
+        # install runs through session.run_install (a separate mock), so
+        # the side_effect list on session.run starts with the docker check.
         mock_session.run.side_effect = [
-            None,  # poetry install
             Exception("Docker not found"),  # docker --version
         ]
 
@@ -756,9 +757,10 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
 
     def test_dast_scanning_session_app_not_running(self, mock_session):
         """Test dast_scanning() session when application is not running."""
-        # Mock curl to fail but continue with scan
+        # Mock curl to fail but continue with scan. Under uv the dependency
+        # install runs through session.run_install (a separate mock), so
+        # the side_effect list on session.run starts with the docker check.
         mock_session.run.side_effect = [
-            None,  # poetry install
             None,  # docker --version
             Exception("Connection refused"),  # curl health check
             None,  # mkdir -p dast-reports
