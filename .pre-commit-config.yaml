@@ -75,8 +75,9 @@ repos:
       - id: yamllint
         args: ['-c', '.yamllint.yml']
 
-ci:
-  autofix_prs: true
-  autofix_commit_msg: '[pre-commit.ci] auto fixes'
-  autoupdate_schedule: weekly
-  skip: [uv-lock]
+# pre-commit.ci is not connected to this repository.
+# Enforcement layers: local pre-commit (developer workstation) and the
+# GitHub Actions Quality Checks workflow (CI gate).
+# If pre-commit.ci is ever enabled, note that the language: system hooks
+# above require uv on the runner; add a bootstrap step or migrate those
+# hooks to language: python with explicit additional_dependencies.
