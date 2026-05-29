@@ -19,19 +19,19 @@ def run_command(cmd: list[str]) -> tuple[int, str, str]:
     return result.returncode, result.stdout, result.stderr
 
 
-def check_poetry_lock() -> bool:
-    """Verify poetry.lock is up to date."""
-    print("Checking poetry.lock consistency...")
-    code, _, stderr = run_command(["poetry", "check", "--lock"])
+def check_uv_lock() -> bool:
+    """Verify uv.lock is up to date."""
+    print("Checking uv.lock consistency...")
+    code, _, stderr = run_command(["uv", "lock", "--locked"])
     if code != 0:
-        print(f"❌ poetry.lock is out of date: {stderr}")
+        print(f"❌ uv.lock is out of date: {stderr}")
         return False
-    print("✅ poetry.lock is up to date")
+    print("✅ uv.lock is up to date")
     return True
 
 
 def check_requirements_sync() -> bool:
-    """Verify requirements.txt is in sync with poetry.lock."""
+    """Verify requirements.txt is in sync with uv.lock."""
     print("\nChecking requirements.txt sync...")
 
     # Generate fresh requirements
@@ -55,7 +55,7 @@ def check_security() -> bool:
     # Safety check using new scan command
     print("  Running safety scan...")
     code, stdout, stderr = run_command(
-        ["poetry", "run", "safety", "scan", "--output", "json"],
+        ["uv", "run", "safety", "scan", "--output", "json"],
     )
 
     # Parse JSON output (safety outputs to stdout for JSON format)
@@ -86,7 +86,7 @@ def check_security() -> bool:
 
     # Bandit check
     print("  Running bandit check...")
-    code, _, _ = run_command(["poetry", "run", "bandit", "-r", "src", "-ll", "-q"])
+    code, _, _ = run_command(["uv", "run", "bandit", "-r", "src", "-ll", "-q"])
     if code != 0:
         print("  ❌ Bandit found security issues")
         return False
@@ -152,7 +152,7 @@ def main() -> int:
     print("🔍 PromptCraft Dependency Security Check\n")
 
     checks = [
-        check_poetry_lock(),
+        check_uv_lock(),
         check_requirements_sync(),
         check_security(),
         check_pip_hash_install(),

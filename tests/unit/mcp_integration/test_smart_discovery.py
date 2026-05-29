@@ -78,13 +78,13 @@ class TestServerRequirements:
             memory=512,
             cpu=0.5,
             ports=[8000, 8001],
-            dependencies=["python", "poetry"],
+            dependencies=["python", "uv"],
         )
 
         assert requirements.memory == 512
         assert requirements.cpu == 0.5
         assert requirements.ports == [8000, 8001]
-        assert requirements.dependencies == ["python", "poetry"]
+        assert requirements.dependencies == ["python", "uv"]
 
     def test_server_requirements_minimal(self):
         """Test ServerRequirements with minimal configuration."""

@@ -16,7 +16,7 @@ SRC_LOCATIONS = ["src", "tests", "noxfile.py", "scripts"]
 def tests(session):
     """Run the full test suite (all layers)."""
     args = session.posargs or ["--cov", "--cov-branch", "--cov-report=term-missing", "--cov-fail-under=80"]
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("pytest", *args)
 
 
@@ -28,7 +28,7 @@ def tests(session):
 @nox.session(python=PYTHON_VERSIONS)
 def unit(session):
     """Run unit tests only (fast development cycle)."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -44,7 +44,7 @@ def unit(session):
 @nox.session
 def component(session):
     """Run component tests (with mocks)."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -60,7 +60,7 @@ def component(session):
 @nox.session
 def integration(session):
     """Run integration tests (slower, real services)."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -75,7 +75,7 @@ def integration(session):
 @nox.session
 def e2e(session):
     """Run end-to-end tests (full user journeys)."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -89,7 +89,7 @@ def e2e(session):
 @nox.session
 def perf(session):
     """Run performance and load tests."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -104,7 +104,7 @@ def perf(session):
 @nox.session
 def security_tests(session):
     """Run security assertion tests."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -117,7 +117,7 @@ def security_tests(session):
 @nox.session
 def chaos_tests(session):
     """Run chaos engineering tests."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -131,7 +131,7 @@ def chaos_tests(session):
 @nox.session
 def fast(session):
     """Fast development loop - exclude slow tests."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -148,7 +148,7 @@ def fast(session):
 @nox.session
 def metrics(session):
     """Generate test quality metrics dashboard."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Check if metrics dashboard script exists before running
     script_path = Path("test_metrics_dashboard.py")
@@ -161,7 +161,7 @@ def metrics(session):
 @nox.session(python=["3.11"])
 def tests_unit(session):
     """Run unit tests with coverage flags for Codecov."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -181,7 +181,7 @@ def tests_unit(session):
 @nox.session(python=["3.11"])
 def tests_integration(session):
     """Run integration tests with coverage flags for Codecov."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -210,7 +210,7 @@ def tests_integration(session):
 @nox.session(python=["3.11"])
 def tests_security(session):
     """Run security tests with coverage flags for Codecov."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -230,7 +230,7 @@ def tests_security(session):
 @nox.session(python=["3.11"])
 def tests_fast(session):
     """Run fast development cycle tests with coverage flags for Codecov."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run(
         "pytest",
         "-m",
@@ -251,7 +251,7 @@ def tests_fast(session):
 @nox.session(python=["3.11"])
 def codecov_analysis(session):
     """Run comprehensive Codecov-enhanced test analysis."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("python", "codecov_analysis.py")
 
 
@@ -259,7 +259,7 @@ def codecov_analysis(session):
 def lint(session):
     """Run linters."""
     args = session.posargs or SRC_LOCATIONS
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("black", "--check", *args)
     session.run("ruff", "check", *args)
 
@@ -273,14 +273,14 @@ def lint(session):
 @nox.session(python="3.11")
 def type_check(session):
     """Run type checking with mypy."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("mypy", "src")
 
 
 @nox.session(python="3.11")
 def security(session):
     """Run security checks."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Check for known vulnerabilities
     session.run("safety", "check", "--json")
@@ -296,7 +296,7 @@ def security(session):
 def format_code(session):
     """Format code."""
     args = session.posargs or SRC_LOCATIONS
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("black", *args)
     session.run("ruff", "check", "--fix", *args)
 
@@ -304,7 +304,7 @@ def format_code(session):
 @nox.session(python="3.11")
 def docs(session):
     """Build documentation."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.cd("docs")
     session.run("mkdocs", "build")
 
@@ -312,10 +312,10 @@ def docs(session):
 @nox.session(python="3.11")
 def deps(session):
     """Check and update dependencies."""
-    session.run("poetry", "install", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Check for outdated packages
-    session.run("poetry", "show", "--outdated")
+    session.run("uv", "pip", "list", "--outdated", external=True)
 
     # Export requirements with hashes
     session.run("./scripts/generate_requirements.sh", external=True)
@@ -336,7 +336,7 @@ def deps(session):
 @nox.session(python="3.11")
 def pre_commit(session):
     """Run pre-commit on all files."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("pre-commit", "run", "--all-files")
 
 
@@ -346,7 +346,7 @@ def pre_commit(session):
 @nox.session(python="3.11")
 def mutation_testing(session):
     """Run comprehensive mutation testing to validate test quality."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Clear previous mutation cache
     session.run("rm", "-rf", ".mutmut-cache", external=True, success_codes=[0, 1])
@@ -393,14 +393,14 @@ def mutation_testing(session):
 @nox.session(python="3.11")
 def contract_testing(session):
     """Run contract tests for MCP integrations."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
     session.run("pytest", "tests/contract/", "-v")
 
 
 @nox.session(python="3.11")
 def dast_scanning(session):
     """Run comprehensive DAST security scanning with OWASP ZAP."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Application URL to scan
     app_url = "http://host.docker.internal:7860"
@@ -513,7 +513,7 @@ if __name__ == '__main__':
 @nox.session(python="3.11")
 def performance_testing(session):
     """Run performance tests with Locust."""
-    session.run("poetry", "install", "--with", "dev", external=True)
+    session.run("uv", "sync", "--frozen", external=True)
 
     # Run load tests
     session.log("Starting performance testing - ensure application is running")

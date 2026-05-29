@@ -79,7 +79,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests - commented out since server is already running */
   // webServer: {
-  //   command: 'poetry run python -m src.main',
+  //   command: 'uv run python -m src.main',
   //   url: 'http://localhost:7860',
   //   reuseExistingServer: !process.env.CI,
   //   timeout: 120 * 1000,

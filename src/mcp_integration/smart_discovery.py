@@ -118,7 +118,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 memory=512,
                 cpu=0.5,
                 ports=[8000],
-                dependencies=["python", "poetry"],
+                dependencies=["python", "uv"],
             ),
             "context7": ServerRequirements(
                 memory=100,
@@ -246,7 +246,7 @@ class SmartMCPDiscovery(LoggerMixin):
     def check_process_list(self, server_name: str) -> ServerConnection | None:
         """Check running processes for server."""
         process_patterns = {
-            "zen-mcp": ["zen-mcp-server", "poetry run python -m src.main"],
+            "zen-mcp": ["zen-mcp-server", "uv run python -m src.main"],
             "context7": ["@upstash/context7-mcp"],
             "perplexity": ["@jschuller/perplexity-mcp"],
             "sentry": ["@sentry/mcp-server"],
@@ -463,7 +463,7 @@ class SmartMCPDiscovery(LoggerMixin):
                 # Try to start the server
                 try:
                     port = self.find_available_port(8000, 8010)
-                    cmd = ["poetry", "run", "python", "-m", "src.main", "--port", str(port)]
+                    cmd = ["uv", "run", "python", "-m", "src.main", "--port", str(port)]
                     process = subprocess.Popen(  # nosec B603 -- tracked: https://github.com/williaby/PromptCraft/pull/250  # NOSONAR
                         cmd,
                         cwd=zen_path,

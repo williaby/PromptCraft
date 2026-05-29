@@ -38,7 +38,7 @@
     "deployment": "docker-compose",
     "primary_language": "python",
     "version": "3.11+",
-    "package_manager": "poetry",
+    "package_manager": "uv",
     "testing": "pytest",
     "linting": ["black", "ruff", "mypy"],
     "databases": ["qdrant"],

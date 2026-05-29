@@ -100,20 +100,20 @@ if os.path.commonpath([safe_path, "/data"]) == "/data":
 
 ```bash
 # Check which packages have updates
-poetry show --outdated
+uv tree --outdated
 
 # Update a specific package
-poetry add package-name@latest
+uv add package-name@latest
 
 # Update all dependencies
-poetry update
+uv lock --upgrade
 ```
 
 #### Lock File Sync
 
 ```bash
 # Regenerate lock file
-poetry lock --no-update
+uv lock
 
 # Sync requirements files
 ./scripts/generate_requirements.sh
@@ -125,18 +125,18 @@ poetry lock --no-update
 
 - Ensure test coverage remains above 80%
 - Add tests for new functionality
-- Run tests locally: `poetry run pytest`
+- Run tests locally: `uv run pytest`
 
 #### Code Formatting
 
 ```bash
 # Format Python code
-poetry run black .
-poetry run ruff check --fix .
+uv run black .
+uv run ruff check --fix .
 
 # Check formatting
-poetry run black --check .
-poetry run ruff check .
+uv run black --check .
+uv run ruff check .
 ```
 
 ## Handling False Positives
@@ -219,8 +219,8 @@ codeql database analyze my-db --format=sarif-latest --output=results.sarif
 
 ```bash
 # Weekly dependency check
-poetry show --outdated
-poetry update --dry-run
+uv tree --outdated
+uv lock --upgrade --dry-run
 ```
 
 ### 4. Write Secure Code by Default

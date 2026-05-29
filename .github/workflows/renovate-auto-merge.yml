@@ -55,11 +55,15 @@ jobs:
           # Note: Hash validation disabled for now due to script updates
           # TODO: Re-enable after script stabilization
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: 0.8.17
+          enable-cache: true
+
       - name: Set up Python
         id: setup_python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
+        run: uv python install 3.11
 
       - name: Authenticate to Google Cloud for Assured-OSS
         uses: google-github-actions/auth@62cf5bd3a4a3282316048584a6d2b150b918e83a # v2.1.7
@@ -72,115 +76,28 @@ jobs:
         with:
           project_id: ${{ secrets.ASSURED_OSS_PROJECT_ID }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
-        with:
-          version: 2.1.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install Poetry Export Plugin with retry logic
+      - name: Configure uv for Assured-OSS
         run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
-              echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
-
-      - name: Configure Poetry for Assured-OSS
-        run: |
-          # Configure Poetry repositories
-          poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
-
-          # Secure authentication token handling - avoid shell variable exposure
-          echo "🔐 Configuring secure Assured-OSS authentication..."
-          gcloud auth print-access-token | poetry config http-basic.assured-oss oauth2accesstoken --stdin || {
-            echo "::error::Failed to configure Assured-OSS authentication"
-            echo "Attempting alternative secure token configuration..."
-            # Alternative approach using temporary environment variable
-            GOOGLE_ACCESS_TOKEN=$(gcloud auth print-access-token) \
-              poetry config http-basic.assured-oss oauth2accesstoken "$GOOGLE_ACCESS_TOKEN"
-            unset GOOGLE_ACCESS_TOKEN
-          }
-
-          echo "✅ Poetry configured for Assured-OSS authentication"
-
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4.1
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          # uv reads extra-index credentials from UV_INDEX_<NAME>_USERNAME/PASSWORD.
+          # The index name "assured-oss" canonicalizes to ASSURED_OSS.
+          echo "🔐 Configuring secure Assured-OSS authentication for uv..."
+          ASSURED_OSS_TOKEN=$(gcloud auth print-access-token)
+          {
+            echo "UV_INDEX_ASSURED_OSS_USERNAME=oauth2accesstoken"
+            echo "UV_INDEX_ASSURED_OSS_PASSWORD=${ASSURED_OSS_TOKEN}"
+            echo "UV_EXTRA_INDEX_URL=https://us-python.pkg.dev/assured-oss/python-packages/simple/"
+          } >> "$GITHUB_ENV"
+          unset ASSURED_OSS_TOKEN
+          echo "✅ uv configured for Assured-OSS authentication"
 
       - name: Install dependencies
         run: |
-          poetry install --no-interaction --no-ansi -vvv || {
-            echo "::error::Poetry install failed. Debug info:"
-            echo "Poetry version: $(poetry --version)"
+          uv sync --frozen --no-ansi || {
+            echo "::error::uv sync failed. Debug info:"
+            echo "uv version: $(uv --version)"
             echo "Python version: $(python --version)"
-            echo "Lock file status: $(poetry check --lock)"
-            echo "::group::Poetry Configuration"
-            poetry config --list
-            echo "::endgroup::"
-            echo "::group::Poetry Sources"
-            poetry source show
+            echo "::group::Lockfile status"
+            uv lock --locked || echo "Lockfile out of date"
             echo "::endgroup::"
             echo "::group::Available space"
             df -h . | tail -1
@@ -232,25 +149,25 @@ jobs:
 
             # Additional lockfile-requirements consistency validation
             echo "🔍 Performing enhanced consistency validation..."
-            POETRY_MAIN_COUNT=$(poetry show --no-dev | wc -l)
+            LOCK_MAIN_COUNT=$(uv export --frozen --no-emit-project --no-default-groups --format requirements-txt --no-hashes | grep -c "==" || echo "0")
             REQUIREMENTS_COUNT=$(grep -c "==" requirements.txt || echo "0")
 
-            echo "Poetry main dependencies: $POETRY_MAIN_COUNT"
+            echo "uv.lock main dependencies: $LOCK_MAIN_COUNT"
             echo "Requirements.txt dependencies: $REQUIREMENTS_COUNT"
 
             # Allow for reasonable variance (AssuredOSS may add/remove some packages)
-            DIFF=$((POETRY_MAIN_COUNT - REQUIREMENTS_COUNT))
+            DIFF=$((LOCK_MAIN_COUNT - REQUIREMENTS_COUNT))
             if [ ${DIFF#-} -gt 10 ]; then
-              echo "::error::Significant mismatch between poetry.lock and requirements.txt"
+              echo "::error::Significant mismatch between uv.lock and requirements.txt"
               echo "::error::This may indicate a synchronization problem"
               exit 1
             fi
 
             echo "✅ Lockfile-requirements consistency validated"
           else
-            echo "::warning::generate_requirements.sh not found, using poetry export"
-            poetry export --format=requirements.txt --output=requirements.txt --with-credentials
-            poetry export --format=requirements.txt --output=requirements-dev.txt --with=dev --with-credentials
+            echo "::warning::generate_requirements.sh not found, using uv export"
+            uv export --frozen --no-emit-project --no-default-groups --format requirements-txt --output-file requirements.txt
+            uv export --frozen --no-emit-project --group dev --format requirements-txt --output-file requirements-dev.txt
           fi
 
       - name: Run enhanced security scans
@@ -276,17 +193,17 @@ jobs:
           if [ -n "$SAFETY_API_KEY" ]; then
             echo "🔑 Using Safety CLI with API key for enhanced scanning"
             echo "$SAFETY_API_KEY" > safety_api_key.txt
-            poetry run safety scan --auth-file safety_api_key.txt --output safety-report.json || true
+            uv run --frozen safety scan --auth-file safety_api_key.txt --output safety-report.json || true
             rm safety_api_key.txt  # Clean up credential file
           else
             echo "⚠️  SAFETY_API_KEY not set - using rate-limited scanning"
             echo "To enable enhanced scanning, add SAFETY_API_KEY secret to repository"
-            poetry run safety scan --output safety-report.json || true
+            uv run --frozen safety scan --output safety-report.json || true
           fi
           echo "::endgroup::"
 
           echo "::group::Running Bandit"
-          poetry run bandit -r src -f json -o bandit-report.json || true
+          uv run --frozen bandit -r src -f json -o bandit-report.json || true
           echo "::endgroup::"
 
       - name: Upload security artifacts
@@ -304,7 +221,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          poetry run pytest -v --cov=src --cov-report=json --cov-report=term-missing
+          uv run --frozen pytest -v --cov=src --cov-report=json --cov-report=term-missing
 
           # Verify minimum coverage threshold
           COVERAGE=$(python -c "import json; print(json.load(open('coverage.json'))['totals']['percent_covered'])")
@@ -317,9 +234,9 @@ jobs:
 
       - name: Run linting and type checks
         run: |
-          poetry run black --check .
-          poetry run ruff check .
-          poetry run mypy src
+          uv run --frozen black --check .
+          uv run --frozen ruff check .
+          uv run --frozen mypy src
 
       - name: Commit requirements updates if changed
         run: |

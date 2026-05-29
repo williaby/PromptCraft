@@ -20,9 +20,9 @@ gh pr checks [PR-NUMBER]
 
 ```bash
 # Address the security finding
-# Update dependencies: poetry update
+# Update dependencies: uv lock --upgrade
 # Fix code issues: Follow CodeQL suggestions
-# Run tests: poetry run pytest
+# Run tests: uv run pytest
 ```
 
 #### Option B: Request Exception (False Positives)
@@ -75,9 +75,9 @@ JUSTIFICATION: [DETAILED_REASON]"
 
 | Issue | Quick Fix |
 |-------|-----------|
-| Vulnerable Package | `poetry update [package]` |
+| Vulnerable Package | `uv lock --upgrade-package [package]` |
 | High-Risk CVE | Check for security patches |
-| Outdated Dependencies | `poetry update` |
+| Outdated Dependencies | `uv lock --upgrade` |
 
 ### Example Fixes
 

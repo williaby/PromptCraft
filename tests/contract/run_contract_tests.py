@@ -15,7 +15,7 @@ def install_dependencies():
     """Install pact-python and other dependencies."""
     print("📦 Installing dependencies...")
     try:
-        subprocess.run(["poetry", "install"], check=True, cwd=Path(__file__).parent)
+        subprocess.run(["uv", "sync", "--frozen"], check=True, cwd=Path(__file__).parent)
         print("✅ Dependencies installed")
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to install dependencies: {e}")
@@ -54,7 +54,7 @@ def run_contract_tests():
         # Run contract tests specifically
         result = subprocess.run(
             [
-                "poetry",
+                "uv",
                 "run",
                 "pytest",
                 "tests/contract/test_mcp_contracts.py",

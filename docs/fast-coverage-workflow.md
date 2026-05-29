@@ -29,7 +29,7 @@ The original enhanced coverage reports used Coverage.py's `--cov-context=test` f
 
 ```bash
 # Standard coverage collection (no --cov-context overhead)
-poetry run pytest --cov=src --cov-report=html --cov-report=xml
+uv run pytest --cov=src --cov-report=html --cov-report=xml
 ```
 
 ### 2. Intelligent Post-Processing
@@ -105,7 +105,7 @@ python scripts/fast_coverage_workflow.py --tests-only
 
 ```bash
 # Run tests with standard coverage
-make test  # or poetry run pytest --cov=src
+make test  # or uv run pytest --cov=src
 
 # Generate path-based analysis
 python scripts/path_based_coverage_analyzer.py \
@@ -209,7 +209,7 @@ self.test_types = {
 ls reports/coverage/standard/index.html
 
 # If missing, run tests with coverage first
-poetry run pytest --cov=src --cov-report=html:reports/coverage/standard
+uv run pytest --cov=src --cov-report=html:reports/coverage/standard
 ```
 
 ### Classification Issues

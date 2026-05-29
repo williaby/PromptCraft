@@ -234,7 +234,13 @@ class ConfigurationValidator:
             with pyproject_path.open("rb") as f:
                 data = tomllib.load(f)
 
-            dev_deps = data.get("tool", {}).get("poetry", {}).get("group", {}).get("dev", {}).get("dependencies", {})
+            # PEP 735 dependency group: list of PEP 508 requirement strings.
+            dev_deps: dict[str, str] = {}
+            for requirement in data.get("dependency-groups", {}).get("dev", []):
+                match = re.match(r"^\s*([A-Za-z0-9._-]+)", requirement)
+                if match:
+                    name = match.group(1)
+                    dev_deps[name] = requirement[len(match.group(0)) :].strip()
             return {
                 "black": dev_deps.get("black", ""),
                 "ruff": dev_deps.get("ruff", ""),

@@ -14,10 +14,10 @@
 
 ## Testing
 <!-- Describe the tests that you ran to verify your changes -->
-- [ ] Tests pass locally with `poetry run pytest`
-- [ ] Code follows the style guidelines (`poetry run black .` and `poetry run ruff check .`)
-- [ ] Type checking passes (`poetry run mypy src`)
-- [ ] Security scans pass (`poetry run safety check` and `poetry run bandit -r src`)
+- [ ] Tests pass locally with `uv run pytest`
+- [ ] Code follows the style guidelines (`uv run black .` and `uv run ruff check .`)
+- [ ] Type checking passes (`uv run mypy src`)
+- [ ] Security scans pass (`uv run safety check` and `uv run bandit -r src`)
 
 ## Dependency Updates (if applicable)
 <!-- For Renovate bot PRs, this section is auto-populated -->

@@ -13,6 +13,7 @@ Usage:
 
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 
@@ -41,25 +42,33 @@ class ClaudeContext7Integration:
         self.pyproject_deps = self._load_pyproject_dependencies()
         self.context7_mappings = self._load_context7_mappings()
 
+    @staticmethod
+    def _split_requirement(requirement: str) -> tuple[str, str]:
+        """Split a PEP 508 requirement string into (name, version spec)."""
+        # Name ends at the first extras bracket, version operator, marker, or space.
+        match = re.match(r"^\s*([A-Za-z0-9._-]+)", requirement)
+        name = match.group(1) if match else requirement.strip()
+        version = requirement[len(match.group(0)) :].strip() if match else ""
+        return name, version
+
     def _load_pyproject_dependencies(self) -> dict[str, str]:
-        """Load dependencies from pyproject.toml."""
+        """Load dependencies from pyproject.toml (PEP 621 project + dependency-groups)."""
         try:
             with open(self.pyproject_file, "rb") as f:
                 data = tomllib.load(f)
                 deps = {}
 
-                # Main dependencies
-                main_deps = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
-                for dep, version in main_deps.items():
-                    if dep != "python":  # Skip Python version
-                        deps[dep] = version
+                # Main dependencies (PEP 621 list of requirement strings)
+                for requirement in data.get("project", {}).get("dependencies", []):
+                    name, version = self._split_requirement(requirement)
+                    if name and name != "python":
+                        deps[name] = version
 
-                # Dev dependencies
-                dev_deps = (
-                    data.get("tool", {}).get("poetry", {}).get("group", {}).get("dev", {}).get("dependencies", {})
-                )
-                for dep, version in dev_deps.items():
-                    deps[f"{dep} (dev)"] = version
+                # Dev dependencies (PEP 735 dependency group)
+                for requirement in data.get("dependency-groups", {}).get("dev", []):
+                    name, version = self._split_requirement(requirement)
+                    if name:
+                        deps[f"{name} (dev)"] = version
 
                 return deps
         except Exception as e:

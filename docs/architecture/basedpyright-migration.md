@@ -26,7 +26,7 @@
 
 ### Phase 1: Install and baseline (no enforcement)
 
-1. `poetry add --group dev basedpyright`
+1. `uv add --group dev basedpyright`
 2. Add `[tool.basedpyright]` section to `pyproject.toml`:
 
    ```toml
@@ -37,7 +37,7 @@
    reportMissingTypeStubs = false
    ```
 
-3. Run `poetry run basedpyright src/` and redirect to
+3. Run `uv run basedpyright src/` and redirect to
    `docs/architecture/basedpyright-baseline.txt`. Commit the baseline.
    (`docs/planning/` is gitignored; use a tracked location so the baseline
    can actually be reviewed.)
@@ -68,7 +68,7 @@
    ```yaml
    - id: basedpyright
      name: basedpyright
-     entry: poetry run basedpyright
+     entry: uv run basedpyright
      language: system
      types: [python]
      files: ^src/

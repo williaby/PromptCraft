@@ -163,17 +163,17 @@ synchronize_branches
 
        # 1. Dependency validation and auto-update
        echo "📦 Validating dependencies..."
-       if ! poetry check; then
-           echo "🔄 Auto-fixing poetry.lock..."
-           poetry lock
+       if ! uv lock --locked; then
+           echo "🔄 Auto-fixing uv.lock..."
+           uv lock
            ./scripts/generate_requirements.sh
-           git add poetry.lock requirements*.txt
+           git add uv.lock requirements*.txt
            git commit -m "chore(deps): auto-update dependencies for review"
        fi
 
        # 2. Code formatting auto-fix
        echo "🎨 Auto-formatting code..."
-       poetry run black .
+       uv run black .
        git add -A
        if ! git diff --cached --quiet; then
            git commit -m "style: auto-format code for review"
@@ -181,7 +181,7 @@ synchronize_branches
 
        # 3. Run all pre-commit hooks
        echo "🪝 Running pre-commit hooks..."
-       if ! poetry run pre-commit run --all-files; then
+       if ! uv run pre-commit run --all-files; then
            echo "❌ Pre-commit hooks failed - manual fixes required"
            exit 1
        fi
@@ -190,8 +190,8 @@ synchronize_branches
        echo "✅ Running final quality checks..."
        markdownlint **/*.md || echo "⚠️  Markdown issues need manual review"
        yamllint **/*.{yml,yaml} || echo "⚠️  YAML issues need manual review"
-       poetry run ruff check . || exit 1
-       poetry run mypy src || exit 1
+       uv run ruff check . || exit 1
+       uv run mypy src || exit 1
 
        echo "✅ All pre-commit validation passed"
    }
@@ -206,7 +206,7 @@ synchronize_branches
    enforce_test_coverage() {
        echo "📊 Enforcing test coverage requirements..."
 
-       COVERAGE=$(poetry run pytest --cov=src --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+       COVERAGE=$(uv run pytest --cov=src --cov-report=term-missing | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
 
        if [[ $COVERAGE -lt 80 ]]; then
            echo "❌ Test coverage below 80%: ${COVERAGE}%"
@@ -240,10 +240,10 @@ synchronize_branches
    - Verify complete requirement satisfaction
 
 2. **Follow Testing Requirements** from ts-{X}-testing.md:
-   - Run unit tests: `poetry run pytest tests/unit/ -v`
-   - Run integration tests: `poetry run pytest tests/integration/ -v`
-   - Run security scans: `poetry run bandit -r src`
-   - Run dependency checks: `poetry run safety check`
+   - Run unit tests: `uv run pytest tests/unit/ -v`
+   - Run integration tests: `uv run pytest tests/integration/ -v`
+   - Run security scans: `uv run bandit -r src`
+   - Run dependency checks: `uv run safety check`
 
 3. **Perform Integration Testing**:
    - Test with external dependencies (Qdrant, Azure AI)
@@ -307,7 +307,8 @@ synchronize_branches
        "strategic"|"layered"|"consensus"|"technical")
            # Use enhanced layered consensus
            claude mcp zen layered_consensus \
-               --question "Comprehensive evaluation: Is this implementation ready for production deployment? Consider code quality, security, performance, maintainability, and business value." \
+               --question "Comprehensive evaluation: Is this implementation ready for production deployment? \
+               Consider code quality, security, performance, maintainability, and business value." \
                --layers "$CONSENSUS_LAYERS" \
                --model_count "$LAYERED_CONSENSUS_MODELS" \
                --cost_threshold "$COST_PREFERENCE" \

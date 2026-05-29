@@ -27,7 +27,7 @@ servers:
         - type: env_variable
           variables: ["ZEN_MCP_URL", "PROMPTCRAFT_ZEN_MCP_SERVER_URL"]
         - type: process_check
-          patterns: ["zen-mcp-server", "poetry run python -m src.main"]
+          patterns: ["zen-mcp-server", "uv run python -m src.main"]
 
       user:
         - type: path_check
@@ -42,7 +42,7 @@ servers:
       memory_mb: 512
       cpu_cores: 0.5
       ports: [8000]
-      dependencies: ["python", "poetry"]
+      dependencies: ["python", "uv"]
 
     deployment_config:
       prevent_duplicate: true

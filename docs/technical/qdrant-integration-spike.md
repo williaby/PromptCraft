@@ -141,10 +141,12 @@ If Qdrant integration exceeds 6.75 days, automatically trigger "Fallback 3B: Can
 
 ```toml
 # Additional dependencies needed
-[tool.poetry.dependencies]
-qdrant-client = "^1.6.0"
-sentence-transformers = "^2.2.2"
-numpy = "^1.24.0"
+[project]
+dependencies = [
+    "qdrant-client>=1.6.0,<2.0.0",
+    "sentence-transformers>=2.2.2,<3.0.0",
+    "numpy>=1.24.0,<2.0.0",
+]
 ```
 
 ### Infrastructure
@@ -256,6 +258,7 @@ def test_qdrant_integration():
 **Critical Path**: Qdrant setup → Data migration → Performance testing → Production deployment
 **Primary Risk**: Performance optimization may require additional tuning time
 
-**Recommendation**: Proceed with Qdrant integration as Sprint 1 priority with confidence in technical approach and timeline estimates.
+**Recommendation**: Proceed with Qdrant integration as Sprint 1 priority with confidence in technical approach
+and timeline estimates.
 
 **Next Steps**: Begin Sprint 1 implementation with QdrantVectorStore development as highest priority task.

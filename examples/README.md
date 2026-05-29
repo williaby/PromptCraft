@@ -12,7 +12,7 @@ Demonstrates the core configuration system features:
 
 **Run:**
 ```bash
-poetry run python examples/config_demo.py
+uv run python examples/config_demo.py
 ```
 
 ### 2. `encryption_usage.py` - Encryption Integration
@@ -24,7 +24,7 @@ Shows how to work with encrypted configuration files:
 
 **Run:**
 ```bash
-poetry run python examples/encryption_usage.py
+uv run python examples/encryption_usage.py
 ```
 
 ### 3. `health_check_demo.py` - Health Monitoring
@@ -36,7 +36,7 @@ Demonstrates the health check features:
 
 **Run:**
 ```bash
-poetry run python examples/health_check_demo.py
+uv run python examples/health_check_demo.py
 ```
 
 ## Running with Different Environments
@@ -45,13 +45,13 @@ You can test different environments by setting the `PROMPTCRAFT_ENVIRONMENT` var
 
 ```bash
 # Development environment (default)
-poetry run python examples/config_demo.py
+uv run python examples/config_demo.py
 
 # Staging environment
-PROMPTCRAFT_ENVIRONMENT=staging poetry run python examples/config_demo.py
+PROMPTCRAFT_ENVIRONMENT=staging uv run python examples/config_demo.py
 
 # Production environment
-PROMPTCRAFT_ENVIRONMENT=prod poetry run python examples/config_demo.py
+PROMPTCRAFT_ENVIRONMENT=prod uv run python examples/config_demo.py
 ```
 
 ## Testing with Custom Settings
@@ -60,10 +60,10 @@ Override specific settings using environment variables:
 
 ```bash
 # Custom API port
-PROMPTCRAFT_API_PORT=9000 poetry run python examples/config_demo.py
+PROMPTCRAFT_API_PORT=9000 uv run python examples/config_demo.py
 
 # Debug mode off
-PROMPTCRAFT_DEBUG=false poetry run python examples/config_demo.py
+PROMPTCRAFT_DEBUG=false uv run python examples/config_demo.py
 ```
 
 ## Live Server Testing
@@ -72,12 +72,12 @@ To test health endpoints with a running server:
 
 1. Start the server:
 ```bash
-poetry run python src/main.py
+uv run python src/main.py
 ```
 
 2. In another terminal, run the health check demo:
 ```bash
-poetry run python examples/health_check_demo.py
+uv run python examples/health_check_demo.py
 ```
 
 The demo will detect the live server and show actual endpoint responses.
@@ -94,7 +94,7 @@ The demo will detect the live server and show actual endpoint responses.
 Ensure you have the project dependencies installed:
 
 ```bash
-poetry install
+uv sync
 ```
 
 For encryption examples, you'll need GPG installed:

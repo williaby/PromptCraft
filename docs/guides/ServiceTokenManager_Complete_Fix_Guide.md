@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `TokenRotationScheduler` tests hang because `ServiceTokenManager()` initialization creates blocking database connections. The solution is **dependency injection** to allow mock injection in tests while preserving production functionality.
+The `TokenRotationScheduler` tests hang because `ServiceTokenManager()` initialization creates
+blocking database connections. The solution is **dependency injection** to allow mock injection in
+tests while preserving production functionality.
 
 ## Current Problem
 
@@ -72,6 +74,7 @@ Update **ALL** these test class setup methods in the original test file:
 5. `TestTokenRotationSchedulerIntegration` - Line ~827
 
 **Find Pattern:**
+
 ```python
 def setup_method(self):
     """Set up test fixtures."""
@@ -79,6 +82,7 @@ def setup_method(self):
 ```
 
 **Replace With:**
+
 ```python
 def setup_method(self):
     """Set up test fixtures with dependency injection."""
@@ -91,6 +95,7 @@ def setup_method(self):
 ## Implementation Steps
 
 ### Step 1: ✅ COMPLETED - Update TokenRotationScheduler
+
 - Added optional `token_manager` parameter to constructor
 - Maintains backwards compatibility
 
@@ -178,13 +183,16 @@ After applying fixes:
 
 ```bash
 # Test a simple test first
-poetry run pytest tests/unit/automation/test_token_rotation_scheduler.py::TestTokenRotationPlan::test_token_rotation_plan_creation -v
+uv run pytest \
+  tests/unit/automation/test_token_rotation_scheduler.py::TestTokenRotationPlan::test_token_rotation_plan_creation -v
 
 # Test a scheduler method
-poetry run pytest tests/unit/automation/test_token_rotation_scheduler.py::TestTokenRotationSchedulerMethods::test_execute_rotation_plan_success -v
+uv run pytest \
+  tests/unit/automation/test_token_rotation_scheduler.py::TestTokenRotationSchedulerMethods::\
+test_execute_rotation_plan_success -v
 
 # Run all tests
-poetry run pytest tests/unit/automation/test_token_rotation_scheduler.py -v
+uv run pytest tests/unit/automation/test_token_rotation_scheduler.py -v
 ```
 
 ## Expected Results
@@ -207,4 +215,5 @@ After implementing this fix:
 5. **Easier Testing**: Each test can customize mock behavior
 6. **Faster Execution**: Tests run immediately without blocking I/O
 
-This fix transforms the hanging tests into a fully functional, comprehensive test suite that achieves 81.17% coverage on the token rotation scheduler module.
+This fix transforms the hanging tests into a fully functional, comprehensive test suite that achieves
+81.17% coverage on the token rotation scheduler module.

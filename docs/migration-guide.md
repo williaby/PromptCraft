@@ -19,14 +19,16 @@ The new configuration system provides:
 Add the required dependencies to your `pyproject.toml`:
 
 ```toml
-[tool.poetry.dependencies]
-pydantic = "^2.5.0"
-pydantic-settings = "^2.1.0"
-python-dotenv = "^1.0.0"
-cryptography = "^41.0.0"  # For encryption support
+[project]
+dependencies = [
+    "pydantic>=2.5.0,<3.0.0",
+    "pydantic-settings>=2.1.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "cryptography>=41.0.0,<42.0.0",  # For encryption support
+]
 ```
 
-Run `poetry install` to install dependencies.
+Run `uv sync` to install dependencies.
 
 ### 2. Replace Old Configuration
 
@@ -214,14 +216,14 @@ secret_key: SecretStr = Field(default=None)
 1. **Verify Configuration Loading**
 
 ```bash
-poetry run python examples/config_demo.py
+uv run python examples/config_demo.py
 ```
 
 1. **Check Health Endpoints**
 
 ```bash
 # Start the application
-poetry run python src/main.py
+uv run python src/main.py
 
 # Test health endpoint
 curl http://localhost:8000/health
@@ -231,7 +233,7 @@ curl http://localhost:8000/health
 
 ```bash
 # Test different environments
-PROMPTCRAFT_ENVIRONMENT=staging poetry run python examples/config_demo.py
+PROMPTCRAFT_ENVIRONMENT=staging uv run python examples/config_demo.py
 ```
 
 ## Rollback Plan

@@ -2,22 +2,27 @@
 
 ## **Project Overview**
 
-**Task**: Implement comprehensive API integration testing infrastructure for PromptCraft-Hybrid to validate frontend-backend coordination, data flow, and error handling across the complete user workflow.
+**Task**: Implement comprehensive API integration testing infrastructure for PromptCraft-Hybrid to validate
+frontend-backend coordination, data flow, and error handling across the complete user workflow.
 
-**Context**: A comprehensive Journey 1 UI testing framework is already complete and operational. This task extends testing coverage to validate the integration between the frontend Gradio interface and the backend Python API services.
+**Context**: A comprehensive Journey 1 UI testing framework is already complete and operational. This task extends
+testing coverage to validate the integration between the frontend Gradio interface and the backend Python API services.
 
 ---
 
 ## **📋 TASK SPECIFICATIONS**
 
 ### **Objective**
+
 Create a robust API integration testing framework that validates:
+
 - Frontend UI interactions → Backend API calls → Frontend response handling
 - Data consistency between UI and API layers
 - Error propagation and handling across the stack
 - Performance characteristics of the integrated system
 
 ### **Success Criteria**
+
 - ✅ Complete request-response cycle validation for all core user workflows
 - ✅ Real API call testing with actual backend services (no mocking)
 - ✅ Error propagation testing from backend to frontend
@@ -30,13 +35,15 @@ Create a robust API integration testing framework that validates:
 ## **🏗️ TECHNICAL ARCHITECTURE**
 
 ### **Current System Architecture**
-```
+
+```text
 Frontend (Gradio) ←→ Backend (Python/FastAPI) ←→ Database (SQLite/PostgreSQL)
      ↓                      ↓                        ↓
   Port 7860            Internal APIs              Data Storage
 ```
 
 ### **Integration Points to Test**
+
 1. **Journey 1 Enhancement Workflow**: `/api/enhance` endpoint
 2. **File Upload Processing**: `/api/upload` endpoint
 3. **Authentication & Session**: `/api/auth` endpoints
@@ -48,7 +55,8 @@ Frontend (Gradio) ←→ Backend (Python/FastAPI) ←→ Database (SQLite/Postgr
 ## **📁 PROJECT STRUCTURE**
 
 ### **Required Directory Structure**
-```
+
+```text
 tests/integration/
 ├── fixtures/
 │   ├── api-client.ts               # API client helper
@@ -63,7 +71,8 @@ tests/integration/
 ```
 
 ### **Configuration Files**
-```
+
+```text
 playwright.config.integration.ts    # Integration-specific config
 package.json                        # Updated with new scripts
 .env.integration                    # Integration test environment
@@ -74,6 +83,7 @@ package.json                        # Updated with new scripts
 ## **🔧 IMPLEMENTATION REQUIREMENTS**
 
 ### **1. Technology Stack**
+
 - **Testing Framework**: Playwright (already established)
 - **API Client**: Axios or Fetch for direct API calls
 - **Assertion Library**: Playwright's built-in expect
@@ -81,7 +91,9 @@ package.json                        # Updated with new scripts
 - **Backend**: Python FastAPI (already running)
 
 ### **2. Required Dependencies**
+
 Add to `package.json`:
+
 ```json
 {
   "devDependencies": {
@@ -110,6 +122,7 @@ Add to `package.json`:
 **File**: `tests/integration/api-ui-coordination.spec.ts`
 
 **Requirements**:
+
 ```typescript
 import { test, expect } from '@playwright/test';
 import { APIClient } from './fixtures/api-client';
@@ -199,6 +212,7 @@ test.describe('API-UI Coordination Tests', () => {
 **File**: `tests/integration/data-flow-validation.spec.ts`
 
 **Requirements**:
+
 ```typescript
 test.describe('Data Flow Validation', () => {
   test('should maintain data integrity through complete workflow', async ({ page }) => {
@@ -255,6 +269,7 @@ test.describe('Data Flow Validation', () => {
 **File**: `tests/integration/error-propagation.spec.ts`
 
 **Requirements**:
+
 ```typescript
 test.describe('Error Propagation Tests', () => {
   test('should handle API errors gracefully in UI', async ({ page }) => {
@@ -387,7 +402,7 @@ export class BackendSetup {
     console.log('Starting backend services...');
 
     // Start the Python backend
-    this.backendProcess = exec('poetry run python -m src.main', {
+    this.backendProcess = exec('uv run python -m src.main', {
       env: { ...process.env, PROMPTCRAFT_API_PORT: '7860' }
     });
 
@@ -501,6 +516,7 @@ OPENROUTER_API_KEY=test_key_for_integration
 ## **🧪 TESTING SCENARIOS TO IMPLEMENT**
 
 ### **Priority 1: Core Workflows**
+
 1. **Complete Enhancement Workflow**
    - UI input → API processing → UI display
    - Parameter passing and validation
@@ -517,6 +533,7 @@ OPENROUTER_API_KEY=test_key_for_integration
    - Permission validation
 
 ### **Priority 2: Error Handling**
+
 1. **Network Errors**
    - Connection timeouts
    - Service unavailable scenarios
@@ -533,6 +550,7 @@ OPENROUTER_API_KEY=test_key_for_integration
    - Type conversion errors
 
 ### **Priority 3: Performance Integration**
+
 1. **Response Time Validation**
    - End-to-end workflow timing
    - API response time vs UI update timing
@@ -548,18 +566,21 @@ OPENROUTER_API_KEY=test_key_for_integration
 ## **📊 SUCCESS METRICS & VALIDATION**
 
 ### **Test Coverage Requirements**
+
 - ✅ 100% of core user workflows covered
 - ✅ All major API endpoints tested with UI integration
 - ✅ Error scenarios covered for all integration points
 - ✅ Performance benchmarks established for integrated flows
 
 ### **Quality Gates**
+
 - All integration tests pass consistently (95%+ success rate)
 - Response times within acceptable thresholds (<10s for standard workflows)
 - Error handling provides clear user feedback
 - No data loss or corruption in any workflow
 
 ### **Documentation Requirements**
+
 - Test execution instructions and troubleshooting guide
 - API endpoint documentation for testing team reference
 - Error scenario catalog with expected behaviors
@@ -570,6 +591,7 @@ OPENROUTER_API_KEY=test_key_for_integration
 ## **🔄 CI/CD INTEGRATION**
 
 ### **Pipeline Integration**
+
 Add to existing `.github/workflows/ui-testing-pipeline.yml`:
 
 ```yaml
@@ -594,7 +616,7 @@ integration-tests:
 
     - name: Start backend services
       run: |
-        poetry run python -m src.main &
+        uv run python -m src.main &
         timeout 120 bash -c 'until curl -s http://localhost:7860; do sleep 2; done'
 
     - name: Run integration tests
@@ -619,18 +641,21 @@ integration-tests:
 ## **📋 DELIVERABLES CHECKLIST**
 
 ### **Code Deliverables**
+
 - [ ] Complete integration test suite (6+ test files)
 - [ ] Helper utilities (API client, backend setup, test data)
 - [ ] Configuration files (Playwright config, environment)
 - [ ] NPM scripts for test execution
 
 ### **Documentation Deliverables**
+
 - [ ] Implementation documentation with examples
 - [ ] Troubleshooting guide for common issues
 - [ ] API endpoint reference for testing
 - [ ] Performance benchmark baseline documentation
 
 ### **Quality Assurance**
+
 - [ ] All tests pass locally and in CI
 - [ ] Test coverage report generated
 - [ ] Performance benchmarks established
@@ -641,6 +666,7 @@ integration-tests:
 ## **🚀 GETTING STARTED**
 
 ### **Initial Setup Steps**
+
 1. **Clone repository** and switch to integration testing branch
 2. **Install dependencies** and configure environment
 3. **Start backend services** and validate connectivity
@@ -649,6 +675,7 @@ integration-tests:
 6. **Iteratively add complexity** and additional test scenarios
 
 ### **Development Approach**
+
 - Start with the simplest integration scenario (basic enhancement workflow)
 - Build helper utilities as you encounter repeated patterns
 - Use the existing Journey 1 UI patterns as a foundation
@@ -656,6 +683,7 @@ integration-tests:
 - Add comprehensive error handling as scenarios are identified
 
 ### **Questions & Support**
+
 - Existing Journey 1 UI test files provide excellent patterns to follow
 - Backend API documentation should be available in `docs/` folder
 - Use the established browser automation patterns from Journey 1 tests

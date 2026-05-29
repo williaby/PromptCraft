@@ -263,7 +263,7 @@ class PerformanceTestRunner:
         try:
             import locust
         except ImportError:
-            issues.append("Locust not installed - run 'poetry install' to install dependencies")
+            issues.append("Locust not installed - run 'uv sync' to install dependencies")
 
         return len(issues) == 0, issues
 

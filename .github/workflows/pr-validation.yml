@@ -24,105 +24,36 @@ jobs:
           # Fetch full history to ensure we can compare with base branch
           fetch-depth: 0
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: 0.8.17
+          enable-cache: true
+
       - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.1.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install Poetry Export Plugin with retry logic
-        run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
-              echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
+        run: uv python install 3.11
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync --frozen
 
-      - name: Check if poetry.lock changed
-        id: poetry-changed
+      - name: Check if uv.lock changed
+        id: lock-changed
         run: |
           git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | \
-            grep -q "poetry.lock" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+            grep -q "uv.lock" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
 
       - name: Validate requirements.txt sync
-        if: steps.poetry-changed.outputs.changed == 'true'
+        if: steps.lock-changed.outputs.changed == 'true'
         run: |
-          echo "🔍 Poetry.lock has changed, validating requirements.txt sync..."
+          echo "🔍 uv.lock has changed, validating requirements.txt sync..."
 
-          # Generate requirements from current poetry.lock
+          # Generate requirements from current uv.lock
           ./scripts/generate_requirements.sh
 
           # Check if generated files match committed files
           if ! git diff --exit-code requirements*.txt; then
-            echo "::error::Requirements files are out of sync with poetry.lock"
-            echo "::error::This PR modifies poetry.lock but the requirements files don't match."
+            echo "::error::Requirements files are out of sync with uv.lock"
+            echo "::error::This PR modifies uv.lock but the requirements files don't match."
             echo "::error::Please run './scripts/generate_requirements.sh' and commit the updated requirements files."
             echo ""
             echo "📋 Files that need to be updated:"
@@ -134,11 +65,11 @@ jobs:
             echo "3. Push the changes to this PR branch"
             exit 1
           else
-            echo "✅ Requirements files are properly synchronized with poetry.lock"
+            echo "✅ Requirements files are properly synchronized with uv.lock"
           fi
 
-      - name: Skip validation (no poetry.lock changes)
-        if: steps.poetry-changed.outputs.changed == 'false'
+      - name: Skip validation (no uv.lock changes)
+        if: steps.lock-changed.outputs.changed == 'false'
         run: |
-          echo "✅ Poetry.lock unchanged - requirements validation skipped"
+          echo "✅ uv.lock unchanged - requirements validation skipped"
           echo "No dependency changes detected in this PR."

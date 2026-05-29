@@ -9,7 +9,7 @@ Before you begin, ensure you have the following prerequisites installed:
 * Docker
 * Docker Compose
 * Python 3.11+
-* Poetry
+* uv
 
 ## 2. Configuration
 
@@ -24,7 +24,7 @@ Before you begin, ensure you have the following prerequisites installed:
 
     Create a `.env` file in the root of the project and add the following environment variables:
 
-    ```
+    ```text
     QDRANT_URL=<your_qdrant_url>
     QDRANT_API_KEY=<your_qdrant_api_key>
     ```

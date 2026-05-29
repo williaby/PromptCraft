@@ -23,21 +23,21 @@ Validation implementation (Phase 1 Issue 5). The tests are designed to verify th
 ### Prerequisites
 
 1. **Development Environment**: PromptCraft-Hybrid development environment with all dependencies installed
-2. **Poetry Environment**: Active poetry virtual environment with all packages installed
+2. **uv Environment**: Active uv-managed virtual environment with all packages installed
 3. **Test Data**: Sample files and test queries for validation
 4. **Network Access**: Access to external services (if testing MCP integration)
 
 ### Setup Commands
 
 ```bash
-# Activate poetry environment
-poetry shell
+# Install all dependencies and create the virtual environment
+uv sync
 
-# Install all dependencies
-poetry install --sync
+# Activate the uv-managed virtual environment
+source .venv/bin/activate
 
 # Validate environment
-poetry run python scripts/validate_gradio_integration.py
+uv run python scripts/validate_gradio_integration.py
 
 # Ensure GPG and SSH keys are available
 gpg --list-secret-keys
@@ -413,7 +413,7 @@ ssh-add -l
 ### Pre-Test Setup
 
 - [ ] Development environment configured
-- [ ] Poetry dependencies installed
+- [ ] uv dependencies installed
 - [ ] Test data prepared
 - [ ] Mock services configured (if needed)
 - [ ] Validation script runs successfully
@@ -479,23 +479,23 @@ ssh-add -l
 
 ```bash
 # Run UI integration tests
-poetry run pytest tests/integration/test_gradio_ui_integration.py -v
+uv run pytest tests/integration/test_gradio_ui_integration.py -v
 
 # Run performance tests
-poetry run pytest tests/performance/test_ui_load_performance.py -v
+uv run pytest tests/performance/test_ui_load_performance.py -v
 
 # Run MCP connectivity tests
-poetry run pytest tests/integration/test_mcp_connectivity.py -v
+uv run pytest tests/integration/test_mcp_connectivity.py -v
 ```
 
 ### Running Validation Script
 
 ```bash
 # Comprehensive validation
-poetry run python scripts/validate_gradio_integration.py
+uv run python scripts/validate_gradio_integration.py
 
 # Quick validation
-poetry run python -c "from scripts.validate_gradio_integration import main; exit(main())"
+uv run python -c "from scripts.validate_gradio_integration import main; exit(main())"
 ```
 
 ### Accessibility Testing

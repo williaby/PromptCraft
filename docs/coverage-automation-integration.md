@@ -173,7 +173,7 @@ python scripts/vscode_coverage_hook.py
 1. **Run full test suite** with coverage to get comprehensive data:
 
    ```bash
-   poetry run pytest -v --cov=src --cov-report=html --cov-report=xml --junitxml=reports/junit.xml
+   uv run pytest -v --cov=src --cov-report=html --cov-report=xml --junitxml=reports/junit.xml
    ```
 
 2. **Choose automation approach:**

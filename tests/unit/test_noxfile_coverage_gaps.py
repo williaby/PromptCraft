@@ -29,8 +29,8 @@ class TestNoxFileSessionsCoverageGaps:
         # Test with default posargs
         noxfile.unit(mock_session)
 
-        # Verify poetry install was called
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync was called
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest was called with correct markers and coverage
         expected_pytest_call = (
@@ -68,8 +68,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test component() session with 0% coverage."""
         noxfile.component(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with component marker
         expected_pytest_call = ("pytest", "-m", "component", "--cov=src", "--cov-branch", "--cov-fail-under=75", "-v")
@@ -79,8 +79,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test integration() session with 0% coverage."""
         noxfile.integration(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with integration marker
         expected_pytest_call = ("pytest", "-m", "integration", "--cov=src", "--cov-branch", "-v")
@@ -90,8 +90,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test e2e() session with 0% coverage."""
         noxfile.e2e(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with e2e marker
         expected_pytest_call = ("pytest", "-m", "e2e", "-v", "--tb=short")
@@ -101,8 +101,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test perf() session with 0% coverage."""
         noxfile.perf(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with perf markers
         expected_pytest_call = ("pytest", "-m", "perf or performance", "-v", "--tb=short", "--durations=10")
@@ -112,8 +112,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test security_tests() session with 0% coverage."""
         noxfile.security_tests(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with security marker
         expected_pytest_call = ("pytest", "-m", "security", "-v")
@@ -123,8 +123,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test chaos_tests() session with 0% coverage."""
         noxfile.chaos_tests(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with chaos marker
         expected_pytest_call = ("pytest", "-m", "chaos", "-v", "--tb=short")
@@ -134,8 +134,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test fast() session with 0% coverage."""
         noxfile.fast(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest excluding slow tests
         expected_pytest_call = (
@@ -154,8 +154,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test metrics() session with 0% coverage."""
         noxfile.metrics(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify warning log when test_metrics_dashboard.py doesn't exist
         mock_session.log.assert_any_call(
@@ -166,8 +166,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test tests_unit() session with 0% coverage."""
         noxfile.tests_unit(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with unit marker and coverage reports
         expected_pytest_call = (
@@ -209,8 +209,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test tests_integration() session with 0% coverage."""
         noxfile.tests_integration(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with integration marker
         expected_pytest_call = (
@@ -242,8 +242,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test tests_security() session with 0% coverage."""
         noxfile.tests_security(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest with security marker
         expected_pytest_call = (
@@ -275,8 +275,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test tests_fast() session with 0% coverage."""
         noxfile.tests_fast(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pytest excluding slow tests
         expected_pytest_call = (
@@ -309,8 +309,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test codecov_analysis() session with 0% coverage."""
         noxfile.codecov_analysis(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify codecov analysis script execution
         mock_session.run.assert_any_call("python", "codecov_analysis.py")
@@ -319,8 +319,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test lint() session with 0% coverage."""
         noxfile.lint(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify linting commands
         mock_session.run.assert_any_call("black", "--check", *noxfile.SRC_LOCATIONS)
@@ -342,8 +342,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test type_check() session with 0% coverage."""
         noxfile.type_check(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify mypy execution
         mock_session.run.assert_any_call("mypy", "src")
@@ -352,8 +352,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test security() session with 0% coverage."""
         noxfile.security(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify security tools
         mock_session.run.assert_any_call("safety", "check", "--json")
@@ -364,8 +364,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test format_code() session with 0% coverage."""
         noxfile.format_code(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify formatting commands
         mock_session.run.assert_any_call("black", *noxfile.SRC_LOCATIONS)
@@ -375,8 +375,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test docs() session with 0% coverage."""
         noxfile.docs(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify directory change and mkdocs build
         mock_session.cd.assert_called_once_with("docs")
@@ -399,9 +399,9 @@ class TestNoxFileSessionsCoverageGaps:
         with patch("pathlib.Path.cwd", return_value=Path("/tmp/test")):
             noxfile.deps(mock_session)
 
-        # Verify poetry commands
-        mock_session.run.assert_any_call("poetry", "install", external=True)
-        mock_session.run.assert_any_call("poetry", "show", "--outdated")
+        # Verify uv commands
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
+        mock_session.run.assert_any_call("uv", "pip", "list", "--outdated", external=True)
         mock_session.run.assert_any_call("./scripts/generate_requirements.sh", external=True)
 
         # Verify virtual environment and pip install
@@ -422,8 +422,8 @@ class TestNoxFileSessionsCoverageGaps:
         """Test pre_commit() session with 0% coverage."""
         noxfile.pre_commit(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify pre-commit execution
         mock_session.run.assert_any_call("pre-commit", "run", "--all-files")
@@ -447,8 +447,8 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test mutation_testing() session successful execution."""
         noxfile.mutation_testing(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify cache cleanup
         mock_session.run.assert_any_call("rm", "-rf", ".mutmut-cache", external=True, success_codes=[0, 1])
@@ -477,7 +477,7 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test mutation_testing() session error handling."""
         # Make mutmut run raise an exception
         mock_session.run.side_effect = [
-            None,  # poetry install
+            None,  # uv sync
             None,  # rm cache
             None,  # mutmut log
             Exception("Mutation testing failed"),  # mutmut run
@@ -497,8 +497,8 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test contract_testing() session with 0% coverage."""
         noxfile.contract_testing(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify contract tests execution
         mock_session.run.assert_any_call("pytest", "tests/contract/", "-v")
@@ -507,7 +507,7 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test dast_scanning() session successful execution."""
         # Mock successful Docker and curl checks
         mock_session.run.side_effect = [
-            None,  # poetry install
+            None,  # uv sync
             None,  # docker --version
             None,  # curl health check
             None,  # mkdir -p dast-reports
@@ -555,7 +555,7 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test dast_scanning() session when Docker is unavailable."""
         # Mock Docker check to raise exception
         mock_session.run.side_effect = [
-            None,  # poetry install
+            None,  # uv sync
             Exception("Docker not found"),  # docker --version
         ]
 
@@ -568,7 +568,7 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test dast_scanning() session when application is not running."""
         # Mock curl to fail but continue with scan
         mock_session.run.side_effect = [
-            None,  # poetry install
+            None,  # uv sync
             None,  # docker --version
             Exception("Connection refused"),  # curl health check
             None,  # mkdir -p dast-reports
@@ -586,8 +586,8 @@ class TestNoxFileAdvancedSessionsCoverageGaps:
         """Test performance_testing() session with 0% coverage."""
         noxfile.performance_testing(mock_session)
 
-        # Verify poetry install
-        mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+        # Verify uv sync
+        mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
         # Verify Locust execution
         expected_locust_call = (
@@ -634,12 +634,12 @@ def test_noxfile_sessions_parametrized(session_name, session_func):
     # Execute the session function
     session_func(mock_session)
 
-    # Verify poetry install was called for all sessions
-    mock_session.run.assert_any_call("poetry", "install", "--with", "dev", external=True)
+    # Verify uv sync was called for all sessions
+    mock_session.run.assert_any_call("uv", "sync", "--frozen", external=True)
 
     # Verify at least one more command was executed (except metrics which is conditional)
     if session_name == "metrics":
-        # metrics session may only run poetry install if test_metrics_dashboard.py doesn't exist
+        # metrics session may only run uv sync if test_metrics_dashboard.py doesn't exist
         assert mock_session.run.call_count >= 1
     else:
         assert mock_session.run.call_count >= 2

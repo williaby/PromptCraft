@@ -41,7 +41,7 @@ through intelligent orchestration and multi-agent collaboration.
 
 ### Tech Stack
 
-- Python 3.11+ (Poetry dependency management)
+- Python 3.11+ (uv dependency management)
 - Gradio UI + FastAPI backend
 - External Qdrant vector database for semantic search
 - Azure AI integration for LLM services

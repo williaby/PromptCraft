@@ -19,14 +19,14 @@
 
 ## Active Entries
 
-_None._ Last `pip-audit` sweep on **2026-04-20** against the Poetry venv
+_None._ Last `pip-audit` sweep on **2026-04-20** against the uv venv
 (Python 3.11) reported: **No known vulnerabilities found**.
 
 When you add or update dependencies, re-run:
 
 ```bash
-PIPAPI_PYTHON_LOCATION="$(poetry env info --path)/bin/python" \
-  poetry run pip-audit --format=columns
+PIPAPI_PYTHON_LOCATION=".venv/bin/python" \
+  uv run pip-audit --format=columns
 ```
 
 If findings appear, add entries using the template below.

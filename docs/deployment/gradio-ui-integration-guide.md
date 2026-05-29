@@ -21,7 +21,7 @@ with Zen MCP Server, external services, and comprehensive validation procedures.
 ### System Requirements
 
 - **Operating System**: Ubuntu 20.04+ or compatible Linux distribution
-- **Python**: 3.11+ (managed via Poetry)
+- **Python**: 3.11+ (managed via uv)
 - **Node.js**: 18.x LTS (for Zen MCP Server)
 - **Docker**: 25.x+ (for containerized services)
 - **Memory**: Minimum 8GB RAM, recommended 16GB+
@@ -101,10 +101,10 @@ cd PromptCraft
 git checkout feature/phase-1-issue-5-gradio-integration-revision
 
 # Install dependencies
-poetry install --sync
+uv sync
 
 # Install pre-commit hooks
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 #### 1.2 Environment Configuration
@@ -162,7 +162,7 @@ PROMPTCRAFT_RATE_LIMIT_UPLOADS_PER_HOUR="50"
 
 ```bash
 # Encrypt environment variables for security
-poetry run python src/utils/encryption.py encrypt .env.dev
+uv run python src/utils/encryption.py encrypt .env.dev
 
 # Verify encrypted file created
 ls -la .env.dev.gpg
@@ -402,7 +402,7 @@ sudo systemctl start promptcraft-ui.service
 
 ```bash
 # Run comprehensive validation
-poetry run python scripts/validate_gradio_integration.py
+uv run python scripts/validate_gradio_integration.py
 
 # Expected output: All validations should pass (100%)
 ```
@@ -411,13 +411,13 @@ poetry run python scripts/validate_gradio_integration.py
 
 ```bash
 # Run integration test suite
-poetry run pytest tests/integration/test_gradio_ui_integration.py -v
+uv run pytest tests/integration/test_gradio_ui_integration.py -v
 
 # Run performance tests
-poetry run pytest tests/performance/test_ui_load_performance.py -v --tb=short
+uv run pytest tests/performance/test_ui_load_performance.py -v --tb=short
 
 # Run MCP connectivity tests
-poetry run pytest tests/integration/test_mcp_connectivity.py -v
+uv run pytest tests/integration/test_mcp_connectivity.py -v
 ```
 
 #### 4.3 User Acceptance Testing
@@ -597,7 +597,7 @@ sudo lsof -i :7860
 journalctl -u promptcraft-ui.service --no-pager -l
 
 # Verify configuration
-poetry run python -c "from src.config.settings import ApplicationSettings; print(ApplicationSettings())"
+uv run python -c "from src.config.settings import ApplicationSettings; print(ApplicationSettings())"
 ```
 
 **Solutions**:
@@ -647,7 +647,7 @@ free -m
 time curl -X POST http://localhost:7860/api/v1/query -d '{"query":"test"}'
 
 # Profile application
-poetry run python -m cProfile scripts/deploy_gradio_ui.py
+uv run python -m cProfile scripts/deploy_gradio_ui.py
 ```
 
 **Solutions**:

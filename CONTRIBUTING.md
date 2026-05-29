@@ -33,7 +33,7 @@ Before you begin, ensure you have the following tools installed on your system:
 
 - **Git**: For version control
 - **Python 3.11+**: Core development language
-- **Poetry**: Python dependency management (not Node.js/npm)
+- **uv**: Python dependency management (not Node.js/npm)
 - **Docker & Docker Compose**: For containerized services
 - **Nox**: Task automation and testing across Python versions
 - **Pre-commit**: Automated code quality checks before commits
@@ -52,17 +52,17 @@ cd PromptCraft-Hybrid
 
 #### Install Dependencies
 
-This project uses Python with Poetry for dependency management:
+This project uses Python with uv for dependency management:
 
 ```bash
-# Install dependencies with Poetry
-poetry install --sync
+# Install dependencies with uv
+uv sync
 
 # Install pre-commit hooks
-poetry run pre-commit install
+uv run pre-commit install
 
 # Verify installation
-nox -s tests
+uv run nox -s tests
 ```
 
 #### Set Up Development Environment
@@ -84,7 +84,9 @@ make test
 make lint
 ```
 
-**Environment Alignment**: The local development environment is configured to exactly match the CI pipeline, eliminating "works on my machine" issues. The `.env` file configures service mocking and debugging options for local development.
+**Environment Alignment**: The local development environment is configured to exactly match the CI
+pipeline, eliminating "works on my machine" issues. The `.env` file configures service mocking and
+debugging options for local development.
 
 ### Development Standards
 
@@ -97,7 +99,7 @@ All contributions must meet these quality standards (identical to CI pipeline):
 - **Test Coverage**: Minimum 80% coverage required
 - **Security**: Bandit security scanning must pass
 - **Documentation**: All public APIs must have docstrings
-- **Tool Versions**: Pre-commit hooks use identical versions as CI via Poetry
+- **Tool Versions**: Pre-commit hooks use identical versions as CI via uv
 
 #### Naming Conventions
 
@@ -165,9 +167,9 @@ git checkout -b feature/123-add-new-agent
 
 ```bash
 # Verify tool versions match CI exactly
-poetry run black --version
-poetry run ruff --version
-poetry run mypy --version
+uv run black --version
+uv run ruff --version
+uv run mypy --version
 
 # Run quality checks that match CI pipeline
 make lint      # Run all linting checks with exact CI tool versions
@@ -305,26 +307,23 @@ When adding any new package dependency, follow this exact process:
 Always check if the package is available in Google's AssuredOSS repository first:
 
 ```bash
-# Search for the package in AssuredOSS
-poetry search package-name --source assured-oss
-
-# Check for alternatives if not found
-poetry search alternative-package --source assured-oss
+# Search for the package on the AssuredOSS index
+uv pip index versions package-name --index https://us-python.pkg.dev/assured-oss/python-packages/simple/
 ```
 
 ##### 2. Add the Dependency
 
-Use Poetry to add dependencies with appropriate version constraints:
+Use uv to add dependencies with appropriate version constraints:
 
 ```bash
 # Production dependency
-poetry add "package-name>=1.0.0,<2.0.0"
+uv add "package-name>=1.0.0,<2.0.0"
 
-# Development dependency
-poetry add --group dev "dev-package>=1.0.0"
+# Development dependency (PEP 735 dependency group)
+uv add --group dev "dev-package>=1.0.0"
 
-# Optional dependency
-poetry add --optional "optional-package>=1.0.0"
+# Optional dependency (extra)
+uv add --optional ml "optional-package>=1.0.0"
 ```
 
 ##### 3. Update Requirements Files
@@ -341,10 +340,10 @@ poetry add --optional "optional-package>=1.0.0"
 
 ##### 4. Commit All Changes
 
-Always commit poetry files AND requirements files together:
+Always commit the project files AND requirements files together:
 
 ```bash
-git add pyproject.toml poetry.lock requirements*.txt
+git add pyproject.toml uv.lock requirements*.txt
 git commit -m "feat(deps): add package-name for specific functionality
 
 - Add package-name for [specific use case]
@@ -375,21 +374,21 @@ Understanding package security classification is critical:
 **Production Dependencies** (pyproject.toml):
 
 ```toml
-# Use caret ranges for automatic security updates
-fastapi = "^0.110.0"        # Allows 0.110.x and 0.x.y
-cryptography = "^42.0.2"    # Critical security package
+# Use PEP 508 ranges for automatic security updates
+"fastapi>=0.110.0,<0.111.0"    # Allows 0.110.x
+"cryptography>=42.0.2,<43.0.0" # Critical security package
 
 # Use explicit ranges for tighter control
-requests = ">=2.31.0,<3.0.0"  # Block major version bumps
+"requests>=2.31.0,<3.0.0"      # Block major version bumps
 ```
 
-**Development Dependencies**:
+**Development Dependencies** (`[dependency-groups]`):
 
 ```toml
 # More flexible for dev tools
-pytest = "^8.0.0"          # Can update more freely
-black = "^24.0.0"          # Formatting tools
-ruff = "^0.2.0"            # Linting tools
+"pytest>=8.0.0"            # Can update more freely
+"black>=24.0.0"            # Formatting tools
+"ruff>=0.2.0"              # Linting tools
 ```
 
 #### Troubleshooting Common Issues
@@ -400,25 +399,25 @@ ruff = "^0.2.0"            # Linting tools
 # Regenerate requirements files
 ./scripts/generate_requirements.sh
 
-# Check which source provided the package
-poetry show --source package-name
+# Inspect a package and its source
+uv pip show package-name
 ```
 
 **Dependency Conflicts**:
 
 ```bash
 # Check dependency tree
-poetry show --tree
+uv tree
 
 # Update conflicting constraints
-poetry add "conflicting-package>=compatible-version"
+uv add "conflicting-package>=compatible-version"
 ```
 
 **CI Pipeline Failures**:
 
 ```bash
 # Verify requirements synchronization
-poetry export --format=requirements.txt --output=test-check.txt
+uv export --frozen --no-emit-project --no-default-groups --format requirements-txt --output-file test-check.txt
 diff requirements.txt test-check.txt
 rm test-check.txt
 ```
@@ -430,7 +429,7 @@ When submitting a PR that adds or updates dependencies:
 - [ ] **AssuredOSS checked**: Verified package availability in secure repository
 - [ ] **Version constraints**: Used appropriate ranges (not exact pins)
 - [ ] **Requirements updated**: Ran `./scripts/generate_requirements.sh`
-- [ ] **All files committed**: pyproject.toml, poetry.lock, requirements*.txt
+- [ ] **All files committed**: pyproject.toml, uv.lock, requirements*.txt
 - [ ] **Security classification**: Documented if package is security-critical
 - [ ] **Testing**: Verified application works with new dependencies
 - [ ] **Justification**: Clear explanation of why dependency is needed
@@ -457,17 +456,19 @@ When submitting a PR that adds or updates dependencies:
 ### Local vs CI Environment Differences
 
 **Tool Version Mismatches**:
+
 ```bash
 # Verify your local tools match CI exactly
-poetry run black --version    # Should match CI
-poetry run ruff --version     # Should match CI
-poetry run mypy --version     # Should match CI
+uv run black --version    # Should match CI
+uv run ruff --version     # Should match CI
+uv run mypy --version     # Should match CI
 
 # If versions don't match, reinstall dependencies
-poetry install --sync
+uv sync
 ```
 
 **Service Mocking Issues**:
+
 ```bash
 # Ensure environment variables are set correctly
 cat .env | grep PROMPTCRAFT_ENABLE_SERVICE_MOCKING
@@ -482,15 +483,17 @@ redis-cli ping  # Should return PONG
 ```
 
 **Coverage Reporting Differences**:
+
 ```bash
 # Run tests exactly as CI does
-poetry run pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
+uv run pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
 
 # Check for differences in test discovery
-poetry run pytest --collect-only | grep "test session starts"
+uv run pytest --collect-only | grep "test session starts"
 ```
 
 **Pre-commit Hook Failures**:
+
 ```bash
 # Reinstall pre-commit hooks with new configuration
 pre-commit uninstall
@@ -503,6 +506,7 @@ pre-commit run --all-files
 ### Docker Environment Issues
 
 **Container Build Failures**:
+
 ```bash
 # Rebuild containers with fresh dependencies
 docker-compose build --no-cache
@@ -512,6 +516,7 @@ docker ps  # Verify no conflicts on ports 8000, 6379
 ```
 
 **Volume Mount Issues**:
+
 ```bash
 # Verify file permissions
 ls -la .env

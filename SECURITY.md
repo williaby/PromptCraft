@@ -30,7 +30,7 @@ Please include the following in your report:
 
 ### Dependencies
 
-- All dependencies are locked with specific versions in `poetry.lock`
+- All dependencies are locked with specific versions in `uv.lock`
 - Requirements are exported with cryptographic hashes for pip verification
 - Automated dependency updates via Renovate bot
 - Daily security scanning in CI/CD pipeline

@@ -1,6 +1,7 @@
 # Test Isolation Guidelines for PromptCraft
 
-This document provides comprehensive guidelines for maintaining proper test isolation in the PromptCraft test suite, preventing state leakage between tests and ensuring consistent, reliable test results.
+This document provides comprehensive guidelines for maintaining proper test isolation in the PromptCraft test suite,
+preventing state leakage between tests and ensuring consistent, reliable test results.
 
 ## Overview
 
@@ -335,11 +336,11 @@ If tests fail inconsistently or only when run in certain orders:
 
 1. **Use strict validation:**
 
-```python
-def test_suspicious():
-    assert_no_state_leakage(strict=True)  # Fails if state detected
-    # Your test logic...
-```
+   ```python
+   def test_suspicious():
+       assert_no_state_leakage(strict=True)  # Fails if state detected
+       # Your test logic...
+   ```
 
 2. **Check for common leakage patterns:**
    - Shared mock objects
@@ -349,13 +350,13 @@ def test_suspicious():
 
 3. **Run tests in isolation:**
 
-```bash
-# Run single test to verify it passes alone
-poetry run pytest tests/test_module.py::test_function -v
+   ```bash
+   # Run single test to verify it passes alone
+   uv run pytest tests/test_module.py::test_function -v
 
-# Run tests in different orders
-poetry run pytest --random-order tests/test_module.py
-```
+   # Run tests in different orders
+   uv run pytest --random-order tests/test_module.py
+   ```
 
 ### Performance Monitoring
 
@@ -428,7 +429,8 @@ class TestAuthenticationNew:
 
 ## Conclusion
 
-Proper test isolation is essential for maintaining a reliable test suite. By following these guidelines and using the provided isolation tools, you can ensure that:
+Proper test isolation is essential for maintaining a reliable test suite. By following these guidelines and using
+the provided isolation tools, you can ensure that:
 
 - Tests run consistently regardless of execution order
 - State doesn't leak between tests

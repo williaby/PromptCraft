@@ -71,11 +71,13 @@ This project is built on several key concepts and a unique hybrid architecture.
 
 ### 🚀 Hybrid Infrastructure Discovery
 
-PromptCraft features an intelligent **Hybrid Infrastructure Discovery System** that seamlessly migrates user-level configurations to project-level deployment while preventing resource conflicts and duplication.
+PromptCraft features an intelligent **Hybrid Infrastructure Discovery System** that seamlessly migrates user-level
+configurations to project-level deployment while preventing resource conflicts and duplication.
 
 **Key Capabilities:**
 
-* **Smart Service Detection**: Automatically discovers existing MCP servers from multiple sources (user-level ~/.claude, Docker containers, NPX services, environment variables)
+* **Smart Service Detection**: Automatically discovers existing MCP servers from multiple sources
+  (user-level ~/.claude, Docker containers, NPX services, environment variables)
 * **Anti-Duplication**: File locks and resource monitoring prevent duplicate service deployment
 * **Cascade Loading**: Intelligent fallback strategy (External → User → Project → Docker → NPX)
 * **Agent Discovery**: 24+ YAML-defined AI agents automatically detected and available for dynamic loading
@@ -125,7 +127,7 @@ curl http://localhost:7862/api/discovery/agents          # Available agents
 ```
 
 > _For detailed technical implementation, see [ADR-014: Hybrid Infrastructure Discovery](./docs/planning/ADR.md#17-adr-014-hybrid-infrastructure-discovery-and-integration)._
-
+>
 > _For a complete breakdown of the architecture and the rationale behind these choices, please see our
 [**Architecture Decision Record (ADR)**](./docs/planning/ADR.md)._
 
@@ -161,7 +163,7 @@ available commands.
 ### Prerequisites
 
 * Docker & Docker Compose
-* Poetry for Python dependency management
+* uv for Python dependency management
 * Nox for task automation
 * External Qdrant instance running on Unraid at 192.168.1.16:6333
 * Ubuntu VM at 192.168.1.205 for application deployment
@@ -181,10 +183,10 @@ available commands.
    * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
 
 3. **Install Dependencies**:
-   * Use Poetry to install all required Python packages from the `pyproject.toml` file.
+   * Use uv to install all required Python packages from the `pyproject.toml` file.
 
    ```bash
-   poetry install
+   uv sync
    ```
 
 4. **Deploy to Ubuntu VM**:

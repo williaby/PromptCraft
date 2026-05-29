@@ -5,53 +5,53 @@
 ### Setup
 
 ```bash
-poetry install --with dev
-poetry run pre-commit install
+uv sync
+uv run pre-commit install
 ```
 
 ### Basic Testing
 
 ```bash
 # Run all tests
-poetry run nox
+uv run nox
 
 # Unit tests only
-poetry run nox -s tests_unit
+uv run nox -s tests_unit
 
 # With coverage
-poetry run pytest tests/unit/ --cov=src --cov-report=html
+uv run pytest tests/unit/ --cov=src --cov-report=html
 ```
 
 ### Code Quality
 
 ```bash
 # Linting and formatting
-poetry run nox -s lint
+uv run nox -s lint
 
 # Type checking
-poetry run nox -s type_check
+uv run nox -s type_check
 
 # Pre-commit hooks
-poetry run nox -s pre_commit
+uv run nox -s pre_commit
 ```
 
 ### Security
 
 ```bash
 # Security scans
-poetry run nox -s security
+uv run nox -s security
 
 # Individual tools
-poetry run bandit -r src
-poetry run safety check
+uv run bandit -r src
+uv run safety check
 ```
 
 ### Performance
 
 ```bash
 # Start app and run performance tests
-poetry run python -m src.main &
-poetry run nox -s performance_testing
+uv run python -m src.main &
+uv run nox -s performance_testing
 ```
 
 ### Quality Gates
@@ -67,10 +67,10 @@ python scripts/quality-gates.py --config quality-gate-config.json
 ## Test Markers
 
 ```bash
-poetry run pytest -m "not slow"    # Skip slow tests
-poetry run pytest -m integration   # Integration tests only
-poetry run pytest -m unit         # Unit tests only
-poetry run pytest -m security     # Security tests only
+uv run pytest -m "not slow"    # Skip slow tests
+uv run pytest -m integration   # Integration tests only
+uv run pytest -m unit         # Unit tests only
+uv run pytest -m security     # Security tests only
 ```
 
 ## Coverage Thresholds

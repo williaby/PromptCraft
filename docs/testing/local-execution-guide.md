@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for running the PromptCraft testi
 ### System Requirements
 
 - Python 3.11 or 3.12
-- Poetry 1.7.1 or higher
+- uv 0.4 or higher
 - Node.js (for markdownlint)
 - Git (for version control)
 - Docker (optional, for container testing)
@@ -15,8 +15,8 @@ This guide provides comprehensive instructions for running the PromptCraft testi
 ### Environment Setup
 
 ```bash
-# Install Poetry if not already installed
-curl -sSL https://install.python-poetry.org | python3 -
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install Node.js dependencies for linting
 npm install -g markdownlint-cli
@@ -24,10 +24,10 @@ npm install -g markdownlint-cli
 # Clone the repository and install dependencies
 git clone <repository-url>
 cd PromptCraft
-poetry install --with dev
+uv sync
 
 # Install pre-commit hooks
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ### Encryption Key Validation
@@ -41,7 +41,7 @@ ssh-add -l              # Must show SSH key for signed commits
 git config --get user.signingkey  # Must be configured for signed commits
 
 # Run environment validation
-poetry run python src/utils/encryption.py
+uv run python src/utils/encryption.py
 ```
 
 ## Testing Framework Overview
@@ -59,53 +59,53 @@ The testing infrastructure uses Nox for session management and supports multiple
 
 ```bash
 # Run all test sessions
-poetry run nox
+uv run nox
 
 # Run specific test types
-poetry run nox -s tests_unit
-poetry run nox -s tests_integration
-poetry run nox -s tests_edge_cases
+uv run nox -s tests_unit
+uv run nox -s tests_integration
+uv run nox -s tests_edge_cases
 
 # Run with specific Python version
-poetry run nox -s tests_unit -p 3.12
+uv run nox -s tests_unit -p 3.12
 
 # Run linting and type checking
-poetry run nox -s lint
-poetry run nox -s type_check
+uv run nox -s lint
+uv run nox -s type_check
 
 # Run security scans
-poetry run nox -s security
+uv run nox -s security
 
 # Run pre-commit hooks
-poetry run nox -s pre_commit
+uv run nox -s pre_commit
 ```
 
 ### Using Pytest Directly
 
 ```bash
 # Basic unit tests
-poetry run pytest tests/unit/ -v
+uv run pytest tests/unit/ -v
 
 # Integration tests
-poetry run pytest tests/integration/ -v
+uv run pytest tests/integration/ -v
 
 # Contract tests
-poetry run pytest tests/contract/ -v
+uv run pytest tests/contract/ -v
 
 # Edge case tests
-poetry run pytest tests/unit/test_edge_cases_parametrized.py -v
+uv run pytest tests/unit/test_edge_cases_parametrized.py -v
 
 # With coverage reporting
-poetry run pytest tests/unit/ -v --cov=src --cov-report=html --cov-report=term-missing
+uv run pytest tests/unit/ -v --cov=src --cov-report=html --cov-report=term-missing
 
 # Run specific test file
-poetry run pytest tests/unit/test_query_counselor.py -v
+uv run pytest tests/unit/test_query_counselor.py -v
 
 # Run tests matching pattern
-poetry run pytest -k "test_security" -v
+uv run pytest -k "test_security" -v
 
 # Run with markers
-poetry run pytest -m "not slow" -v
+uv run pytest -m "not slow" -v
 ```
 
 ## Advanced Testing
@@ -114,60 +114,60 @@ poetry run pytest -m "not slow" -v
 
 ```bash
 # Run contract tests (with Pact when available)
-poetry run nox -s contract_testing
+uv run nox -s contract_testing
 
 # Run with mock fallback
-poetry run pytest tests/contract/ -v
+uv run pytest tests/contract/ -v
 ```
 
 ### Performance Testing
 
 ```bash
 # Start application in background
-poetry run python -m src.main &
+uv run python -m src.main &
 
 # Run performance tests with Locust
-poetry run nox -s performance_testing
+uv run nox -s performance_testing
 
 # Or run Locust directly
-poetry run locust -f tests/performance/locustfile.py --host=http://localhost:7860
+uv run locust -f tests/performance/locustfile.py --host=http://localhost:7860
 ```
 
 ### Mutation Testing
 
 ```bash
 # Run mutation testing (comprehensive)
-poetry run nox -s mutation_testing
+uv run nox -s mutation_testing
 
 # Run mutmut directly
-poetry run mutmut run
-poetry run mutmut show
-poetry run mutmut html
+uv run mutmut run
+uv run mutmut show
+uv run mutmut html
 ```
 
 ### Security Testing
 
 ```bash
 # Run comprehensive security scans
-poetry run nox -s security
+uv run nox -s security
 
 # Individual security tools
-poetry run bandit -r src
-poetry run safety check
-poetry run detect-secrets scan --all-files
+uv run bandit -r src
+uv run safety check
+uv run detect-secrets scan --all-files
 ```
 
 ### DAST Security Scanning
 
 ```bash
 # Start application
-poetry run python -m src.main &
+uv run python -m src.main &
 
 # Wait for startup
 sleep 15
 
 # Run DAST scanning
-poetry run nox -s dast_scanning
+uv run nox -s dast_scanning
 
 # Or run OWASP ZAP directly
 docker run -t owasp/zap2docker-stable zap-baseline.py -t http://localhost:7860
@@ -209,17 +209,17 @@ Create `quality-gate-config.json`:
 
 ```bash
 # HTML coverage report
-poetry run pytest tests/unit/ --cov=src --cov-report=html
+uv run pytest tests/unit/ --cov=src --cov-report=html
 open htmlcov/index.html
 
 # Terminal coverage report
-poetry run pytest tests/unit/ --cov=src --cov-report=term-missing
+uv run pytest tests/unit/ --cov=src --cov-report=term-missing
 
 # XML coverage for CI/CD
-poetry run pytest tests/unit/ --cov=src --cov-report=xml
+uv run pytest tests/unit/ --cov=src --cov-report=xml
 
 # Combined coverage from multiple test types
-poetry run pytest tests/unit/ tests/integration/ --cov=src --cov-report=html
+uv run pytest tests/unit/ tests/integration/ --cov=src --cov-report=html
 ```
 
 ### Coverage Thresholds
@@ -236,45 +236,45 @@ The project enforces minimum coverage thresholds:
 
 ```bash
 # Maximum verbosity
-poetry run pytest -vvv
+uv run pytest -vvv
 
 # Show all output (including print statements)
-poetry run pytest -s
+uv run pytest -s
 
 # Stop on first failure
-poetry run pytest -x
+uv run pytest -x
 
 # Drop into debugger on failure
-poetry run pytest --pdb
+uv run pytest --pdb
 ```
 
 ### Log Analysis
 
 ```bash
 # Show full traceback
-poetry run pytest --tb=long
+uv run pytest --tb=long
 
 # Show only short traceback
-poetry run pytest --tb=short
+uv run pytest --tb=short
 
 # Show no traceback
-poetry run pytest --tb=no
+uv run pytest --tb=no
 ```
 
 ### Test Markers
 
 ```bash
 # Run only fast tests
-poetry run pytest -m "not slow"
+uv run pytest -m "not slow"
 
 # Run only integration tests
-poetry run pytest -m integration
+uv run pytest -m integration
 
 # Run only unit tests
-poetry run pytest -m unit
+uv run pytest -m unit
 
 # Run security-related tests
-poetry run pytest -m security
+uv run pytest -m security
 ```
 
 ## Performance Optimization
@@ -283,24 +283,24 @@ poetry run pytest -m security
 
 ```bash
 # Install pytest-xdist
-poetry add --group dev pytest-xdist
+uv add --group dev pytest-xdist
 
 # Run tests in parallel
-poetry run pytest -n auto
+uv run pytest -n auto
 
 # Run with specific number of workers
-poetry run pytest -n 4
+uv run pytest -n 4
 ```
 
 ### Test Selection
 
 ```bash
 # Run only changed tests (requires pytest-testmon)
-poetry run pytest --testmon
+uv run pytest --testmon
 
 # Run based on Git changes
-poetry run pytest --lf  # Last failed
-poetry run pytest --ff  # Failed first
+uv run pytest --lf  # Last failed
+uv run pytest --ff  # Failed first
 ```
 
 ## Environment-Specific Testing
@@ -312,10 +312,10 @@ poetry run pytest --ff  # Failed first
 docker build -t promptcraft-test .
 
 # Run tests in container
-docker run --rm promptcraft-test poetry run nox
+docker run --rm promptcraft-test uv run nox
 
 # Run with volume mount for development
-docker run --rm -v $(pwd):/app promptcraft-test poetry run pytest tests/unit/
+docker run --rm -v $(pwd):/app promptcraft-test uv run pytest tests/unit/
 ```
 
 ### External Dependencies
@@ -330,7 +330,7 @@ docker run -p 6333:6333 qdrant/qdrant
 docker run -p 6379:6379 redis:alpine
 
 # Run tests with external dependencies
-QDRANT_HOST=localhost REDIS_HOST=localhost poetry run pytest tests/integration/
+QDRANT_HOST=localhost REDIS_HOST=localhost uv run pytest tests/integration/
 ```
 
 ## Continuous Integration Locally
@@ -339,31 +339,31 @@ QDRANT_HOST=localhost REDIS_HOST=localhost poetry run pytest tests/integration/
 
 ```bash
 # Run the same checks as CI
-poetry run nox -s lint type_check tests_unit tests_integration security
+uv run nox -s lint type_check tests_unit tests_integration security
 
 # Generate artifacts like CI
 mkdir -p artifacts
-poetry run pytest tests/unit/ --cov=src --cov-report=xml:artifacts/coverage.xml
-poetry run bandit -r src -f json -o artifacts/bandit-report.json
+uv run pytest tests/unit/ --cov=src --cov-report=xml:artifacts/coverage.xml
+uv run bandit -r src -f json -o artifacts/bandit-report.json
 ```
 
 ### Pre-commit Validation
 
 ```bash
 # Run all pre-commit hooks
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 
 # Run specific hooks
-poetry run pre-commit run black
-poetry run pre-commit run ruff
-poetry run pre-commit run mypy
+uv run pre-commit run black
+uv run pre-commit run ruff
+uv run pre-commit run mypy
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Import Errors**: Ensure `poetry install --with dev` has been run
+1. **Import Errors**: Ensure `uv sync` has been run
 2. **Permission Errors**: Check file permissions and encryption keys
 3. **Coverage Issues**: Verify all source files are included in coverage configuration
 4. **Performance Test Failures**: Ensure application is running and accessible
@@ -371,12 +371,12 @@ poetry run pre-commit run mypy
 ### Environment Reset
 
 ```bash
-# Clean Poetry cache
-poetry cache clear --all pypi
+# Clean uv cache
+uv cache clean
 
 # Reset virtual environment
-poetry env remove python
-poetry install --with dev
+rm -rf .venv
+uv sync
 
 # Clean test artifacts
 rm -rf .coverage htmlcov/ .pytest_cache/ .nox/
@@ -390,7 +390,7 @@ export PYTHONPATH="${PWD}/src"
 export LOG_LEVEL=DEBUG
 
 # Run tests with debug output
-poetry run pytest tests/unit/ -s --log-cli-level=DEBUG
+uv run pytest tests/unit/ -s --log-cli-level=DEBUG
 ```
 
 ## Integration with IDEs
@@ -414,7 +414,7 @@ Create `.vscode/settings.json`:
 
 ### PyCharm Configuration
 
-1. Set interpreter to Poetry virtual environment
+1. Set interpreter to the uv-managed virtual environment (.venv)
 2. Configure test runner to use pytest
 3. Set working directory to project root
 4. Enable coverage analysis

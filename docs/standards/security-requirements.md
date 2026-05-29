@@ -31,7 +31,7 @@ ssh-add -l                           # Must show SSH keys
 git config --get user.signingkey     # Must show signing key
 
 # Environment validation
-poetry run python src/utils/encryption.py
+uv run python src/utils/encryption.py
 ```
 
 ### Implementation Pattern
@@ -129,9 +129,9 @@ GOOGLE_APPLICATION_CREDENTIALS=".gcp/service-account.json"
 
 ```bash
 # Required security scans before commits
-poetry run safety check              # Dependency vulnerabilities
-poetry run bandit -r src            # Python security issues
-poetry run pip-audit                # Additional dependency scanning
+uv run safety check              # Dependency vulnerabilities
+uv run bandit -r src            # Python security issues
+uv run pip-audit                # Additional dependency scanning
 
 # Automated CI/CD scanning
 # - GitGuardian (secrets detection)
@@ -143,14 +143,14 @@ poetry run pip-audit                # Additional dependency scanning
 
 ```bash
 # Secure dependency installation
-poetry install --sync               # Use lock file exclusively
-poetry update --lock               # Update with lock file regeneration
+uv sync               # Use lock file exclusively
+uv lock --upgrade                  # Update with lock file regeneration
 
 # Hash verification (Docker builds)
 ./scripts/generate_requirements.sh  # Generate requirements-docker.txt with hashes
 
 # Audit dependencies
-poetry show --outdated             # Check for updates
+uv tree --outdated                 # Check for updates
 nox -s security                    # Comprehensive security analysis
 ```
 
@@ -377,9 +377,9 @@ def log_security_event(event_type: str, details: dict):
 
 ```bash
 # Regular security audits
-poetry run bandit -r src --format json > security-report.json
-poetry run safety check --json > vulnerability-report.json
-poetry run semgrep --config=auto src --json > semgrep-report.json
+uv run bandit -r src --format json > security-report.json
+uv run safety check --json > vulnerability-report.json
+uv run semgrep --config=auto src --json > semgrep-report.json
 ```
 
 ### Documentation Requirements

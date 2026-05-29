@@ -4,6 +4,22 @@ All notable changes to the PromptCraft Configuration System are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Migrate dependency management from Poetry to uv with PEP 621 metadata.
+  `pyproject.toml` now uses a `[project]` table, `[project.optional-dependencies]`
+  for the azure and ml extras, and PEP 735 `[dependency-groups]` for dev, docs,
+  and test. The build is configured as a uv-managed application (`[tool.uv]`
+  `package = false`), preserving the prior `package-mode = false` behavior.
+- Replace `poetry.lock` with `uv.lock`; switch CI, Makefile, Docker, devcontainer,
+  pre-commit, and developer docs to `uv sync` / `uv run` (with `--frozen` in CI so
+  the lockfile is never mutated during a build).
+- Switch the Renovate manager from `poetry` to `pep621`; lockfile maintenance and
+  the requirements-sync postUpgradeTask now target `uv.lock`.
+- Cap `pytest` (`<9`), `tenacity` (`<9.1.3`), and `qdrant-client` (`<1.16`) to the
+  versions the prior lock resolved, so the package-manager migration does not
+  silently change runtime or type-check behavior.
+
 ### Fixed
 
 - Align project with global Claude Code v1.4.0 standards: rewrite `CLAUDE.md`,

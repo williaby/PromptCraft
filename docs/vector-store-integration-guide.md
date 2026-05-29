@@ -430,7 +430,7 @@ For production deployment with external Qdrant at 192.168.1.16:6333:
 1. **Install Qdrant Client**:
 
    ```bash
-   poetry add qdrant-client
+   uv add qdrant-client
    ```
 
 2. **Configuration**:

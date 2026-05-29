@@ -183,7 +183,7 @@
             "pinDigests": true
         }
     ],
-    "poetry": {
+    "pep621": {
         "enabled": true
     },
     "postUpdateOptions": [
@@ -207,20 +207,19 @@
         ],
         "assignees": [
             "@williaby"
-        ],
-        "prPriority": 10
+        ]
     },
     "osvVulnerabilityAlerts": true,
     "platformAutomerge": false,
     "postUpgradeTasks": {
         "commands": [
-            "poetry lock --no-update",
+            "uv lock",
             "chmod +x scripts/generate_requirements.sh",
             "./scripts/generate_requirements.sh || echo 'Requirements generation failed'"
         ],
         "fileFilters": [
             "requirements*.txt",
-            "poetry.lock"
+            "uv.lock"
         ],
         "executionMode": "update"
     }

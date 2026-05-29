@@ -299,7 +299,7 @@ def generate_test_type_reports(test_types: set[str]):
 
             # Generate coverage report for this specific test type with organized output
             cmd = [
-                "poetry",
+                "uv",
                 "run",
                 "pytest",
                 "--cov=src",

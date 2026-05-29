@@ -345,7 +345,7 @@ class SimplifiedCoverageAutomation:
         try:
             # First, combine coverage data files if needed
             subprocess.run(
-                ["poetry", "run", "coverage", "combine"],
+                ["uv", "run", "coverage", "combine"],
                 cwd=self.project_root,
                 check=False,
             )  # Don't fail if no files to combine
@@ -353,7 +353,7 @@ class SimplifiedCoverageAutomation:
             # Generate standard HTML report
             try:
                 subprocess.run(
-                    ["poetry", "run", "coverage", "html", "--directory", "htmlcov"],
+                    ["uv", "run", "coverage", "html", "--directory", "htmlcov"],
                     cwd=self.project_root,
                     check=True,
                 )
@@ -369,7 +369,7 @@ class SimplifiedCoverageAutomation:
 
             # Generate JSON data for client-side filtering
             try:
-                subprocess.run(["poetry", "run", "coverage", "json"], cwd=self.project_root, check=True)
+                subprocess.run(["uv", "run", "coverage", "json"], cwd=self.project_root, check=True)
             except subprocess.CalledProcessError as e:
                 # Check if JSON was still generated despite the error
                 coverage_json_path = self.project_root / "coverage.json"

@@ -24,6 +24,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from typing import Any
 
 
 @dataclass
@@ -132,9 +133,9 @@ Install OpenAI Codex CLI:
             ),
         }
 
-    def _detect_project_type(self) -> dict[str, any]:
+    def _detect_project_type(self) -> dict[str, Any]:
         """Detect project type and characteristics."""
-        project_info = {
+        project_info: dict[str, Any] = {
             "type": "unknown",
             "languages": [],
             "frameworks": [],
@@ -145,8 +146,8 @@ Install OpenAI Codex CLI:
         if (self.project_root / "pyproject.toml").exists() or (self.project_root / "setup.py").exists():
             project_info["type"] = "python"
             project_info["languages"].append("python")
-            if (self.project_root / "poetry.lock").exists():
-                project_info["package_managers"].append("poetry")
+            if (self.project_root / "uv.lock").exists():
+                project_info["package_managers"].append("uv")
             elif (self.project_root / "requirements.txt").exists():
                 project_info["package_managers"].append("pip")
 
@@ -170,15 +171,17 @@ Install OpenAI Codex CLI:
 
                 with open(self.project_root / "pyproject.toml", "rb") as f:
                     pyproject = tomllib.load(f)
-                    deps = pyproject.get("tool", {}).get("poetry", {}).get("dependencies", {})
-                    if "fastapi" in deps:
-                        project_info["frameworks"].append("fastapi")
-                    if "django" in deps:
-                        project_info["frameworks"].append("django")
-                    if "flask" in deps:
-                        project_info["frameworks"].append("flask")
-                    if "gradio" in deps:
-                        project_info["frameworks"].append("gradio")
+                    # PEP 621: project.dependencies is a list of requirement strings.
+                    import re as _re
+
+                    dep_names = set()
+                    for req in pyproject.get("project", {}).get("dependencies", []):
+                        match = _re.match(r"^\s*([A-Za-z0-9._-]+)", req)
+                        if match:
+                            dep_names.add(match.group(1).lower())
+                    for framework in ("fastapi", "django", "flask", "gradio"):
+                        if framework in dep_names:
+                            project_info["frameworks"].append(framework)
             except:
                 pass
 
@@ -269,7 +272,9 @@ Install OpenAI Codex CLI:
         copilot_config = github_dir / "copilot.yml"
         if not copilot_config.exists():
             languages = self.project_type["languages"]
-            lang_config = dict.fromkeys(languages, True) if languages else {"python": True, "javascript": True}
+            lang_config: dict[str, bool] = (
+                dict.fromkeys(languages, True) if languages else {"python": True, "javascript": True}
+            )
 
             copilot_template = f"""# GitHub Copilot Configuration
 suggestions:
@@ -320,7 +325,7 @@ exclude:
         self._create_qwen_config()
         self._create_openai_config()
 
-    def _create_qwen_config(self):
+    def _create_qwen_config(self) -> None:
         """Create Qwen configuration."""
         qwen_dir = self.project_root / ".qwen"
         if not qwen_dir.exists():
@@ -342,7 +347,7 @@ exclude:
             with open(qwen_config, "w") as f:
                 json.dump(template, f, indent=2)
 
-    def _create_openai_config(self):
+    def _create_openai_config(self) -> None:
         """Create OpenAI configuration."""
         openai_dir = self.project_root / ".openai"
         if not openai_dir.exists():
@@ -397,7 +402,7 @@ exclude:
 
         # Update tasks.json
         tasks_file = vscode_dir / "tasks.json"
-        tasks = {"version": "2.0.0", "tasks": []}
+        tasks: dict[str, Any] = {"version": "2.0.0", "tasks": []}
 
         if tasks_file.exists():
             try:
@@ -481,7 +486,7 @@ exclude:
         return "\n".join(report)
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Universal AI coding tools validator")
     parser.add_argument("--install-missing", action="store_true", help="Attempt to install missing tools")

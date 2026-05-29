@@ -133,7 +133,7 @@ curl -X POST "$WEBHOOK_URL" \
 
 ```bash
 # Notify when tests complete
-/notification "Test suite completed" "high" && poetry run pytest
+/notification "Test suite completed" "high" && uv run pytest
 
 # Notify after code generation
 /notification "Code generation finished - review required" "normal"
@@ -146,7 +146,7 @@ curl -X POST "$WEBHOOK_URL" \
 
 ```bash
 # Only notify on failures
-if ! poetry run pytest; then
+if ! uv run pytest; then
   /notification "Tests failed - attention required" "critical"
 fi
 

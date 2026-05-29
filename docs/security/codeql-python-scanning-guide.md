@@ -68,8 +68,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
-          poetry install --only main
+          pip install uv
+          uv sync --no-default-groups
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -102,8 +102,8 @@ language: [ 'python' ]  # Scans Python files only
 - name: Install dependencies
   run: |
     python -m pip install --upgrade pip
-    pip install poetry
-    poetry install --only main  # Install main dependencies for analysis
+    pip install uv
+    uv sync --no-default-groups  # Install main dependencies for analysis
 ```
 
 #### 3. Security Query Configuration
@@ -366,8 +366,8 @@ Error: CodeQL database creation failed
   run: |
     python --version
     pip --version
-    poetry --version
-    poetry check
+    uv --version
+    uv lock --locked
 
 # Increase timeout
 - name: Initialize CodeQL
@@ -380,7 +380,7 @@ Error: CodeQL database creation failed
 
 #### 2. Dependency Resolution Issues
 
-**Issue**: Poetry installation fails during analysis
+**Issue**: uv installation fails during analysis
 
 ```text
 Error: Could not install dependencies
@@ -389,18 +389,17 @@ Error: Could not install dependencies
 **Solutions**:
 
 ```yaml
-# Use specific Poetry version
-- name: Install Poetry
+# Use specific uv version
+- name: Install uv
   run: |
-    pip install poetry==1.7.1
-    poetry config virtualenvs.create false
+    pip install uv==0.4.0
 
 # Cache dependencies
-- name: Cache Poetry dependencies
+- name: Cache uv dependencies
   uses: actions/cache@v3
   with:
-    path: ~/.cache/pypoetry
-    key: poetry-${{ hashFiles('**/poetry.lock') }}
+    path: ~/.cache/uv
+    key: uv-${{ hashFiles('**/uv.lock') }}
 ```
 
 #### 3. Database Rebuild Issues

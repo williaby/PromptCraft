@@ -1334,7 +1334,7 @@ def _validate_general_security(
             [
                 "Ensure GPG keys are properly configured",
                 "Verify SSH keys are loaded for signed commits",
-                "Run: poetry run python src/utils/encryption.py",
+                "Run: uv run python src/utils/encryption.py",
             ],
         )
 

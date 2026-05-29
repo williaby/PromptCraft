@@ -6,7 +6,8 @@
 
 ### Primary Configuration Source
 
-**IMPORTANT**: `pyproject.toml` is the PRIMARY configuration source. All other linting configurations must align with these settings:
+**IMPORTANT**: `pyproject.toml` is the PRIMARY configuration source.
+All other linting configurations must align with these settings:
 
 - **Python line length**: 120 characters (Black/Ruff)
 - **Python target versions**: 3.11, 3.12
@@ -88,12 +89,12 @@ skips = ["B101", "B601"]  # Skip assert_used and shell_injection_process
 
 ```bash
 # MUST RUN before committing Python changes
-poetry run black --check .          # Code formatting check
-poetry run black .                  # Apply formatting
-poetry run ruff check .             # Comprehensive linting
-poetry run ruff check --fix .       # Auto-fix issues
-poetry run mypy src                  # Type checking
-poetry run bandit -r src            # Security scanning
+uv run black --check .          # Code formatting check
+uv run black .                  # Apply formatting
+uv run ruff check .             # Comprehensive linting
+uv run ruff check --fix .       # Auto-fix issues
+uv run mypy src                  # Type checking
+uv run bandit -r src            # Security scanning
 ```
 
 ### Markdown Files (.md)
@@ -240,16 +241,16 @@ repos:
 
 ```bash
 # Install pre-commit hooks (MANDATORY)
-poetry run pre-commit install
+uv run pre-commit install
 
 # Run manually on all files
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 
 # Run on staged files only
-poetry run pre-commit run
+uv run pre-commit run
 
 # Update hook versions
-poetry run pre-commit autoupdate
+uv run pre-commit autoupdate
 ```
 
 ### Manual Verification Commands
@@ -258,12 +259,12 @@ poetry run pre-commit autoupdate
 # Complete linting check (run before major commits)
 make lint  # If Makefile exists
 # or
-poetry run black --check .
-poetry run ruff check .
-poetry run mypy src
+uv run black --check .
+uv run ruff check .
+uv run mypy src
 markdownlint **/*.md
 yamllint **/*.{yml,yaml}
-poetry run bandit -r src
+uv run bandit -r src
 ```
 
 ### CI/CD Integration
@@ -285,20 +286,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: poetry install --sync
+        run: uv sync
 
       - name: Run Black
-        run: poetry run black --check .
+        run: uv run black --check .
 
       - name: Run Ruff
-        run: poetry run ruff check .
+        run: uv run ruff check .
 
       - name: Run MyPy
-        run: poetry run mypy src
+        run: uv run mypy src
 
       - name: Run Markdownlint
         run: markdownlint **/*.md
@@ -307,7 +308,7 @@ jobs:
         run: yamllint **/*.{yml,yaml}
 
       - name: Run Bandit
-        run: poetry run bandit -r src
+        run: uv run bandit -r src
 ```
 
 ## Common Linting Issues and Solutions
@@ -477,28 +478,28 @@ description: >
 
 ```bash
 # Pre-commit hook failures
-poetry run pre-commit run --all-files --show-diff-on-failure
+uv run pre-commit run --all-files --show-diff-on-failure
 
 # Update outdated hooks
-poetry run pre-commit autoupdate
+uv run pre-commit autoupdate
 
 # Skip hooks temporarily (NOT RECOMMENDED)
 git commit --no-verify -m "emergency fix"
 
 # Fix specific hook failures
-poetry run pre-commit run black --all-files
-poetry run pre-commit run ruff --all-files
+uv run pre-commit run black --all-files
+uv run pre-commit run ruff --all-files
 ```
 
 ### Performance Optimization
 
 ```bash
 # Speed up MyPy
-poetry run mypy --install-types --non-interactive
-poetry run mypy --cache-fine-grained src
+uv run mypy --install-types --non-interactive
+uv run mypy --cache-fine-grained src
 
 # Parallel linting
-poetry run ruff check . --jobs 4
+uv run ruff check . --jobs 4
 markdownlint **/*.md --parallel
 
 # Cache optimization
@@ -510,8 +511,8 @@ export PRE_COMMIT_USE_CACHE=1
 
 ```bash
 # Detect configuration inconsistencies
-poetry run black --check --diff .
-poetry run ruff check --show-source .
+uv run black --check --diff .
+uv run ruff check --show-source .
 
 # Validate YAML configuration
 yamllint -c .yamllint.yml .yamllint.yml

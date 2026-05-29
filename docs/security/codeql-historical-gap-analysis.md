@@ -155,7 +155,7 @@ queries: security-extended
 1. **Path-Based Triggers**: Optimize CodeQL triggers for Python files only
 2. **Query Customization**: Fine-tune security-extended queries for PromptCraft
 3. **Performance**: Monitor CodeQL scan duration with Python configuration
-4. **Integration**: Ensure CodeQL works with Poetry dependency management
+4. **Integration**: Ensure CodeQL works with uv dependency management
 
 ## Conclusion
 

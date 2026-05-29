@@ -121,7 +121,7 @@ derived from `ANCHOR-QR-2a`).
 | API-Walkthrough         | 800-1200 words                        | Integration tutorial with code blocks + sample JSON | Create an API walkthrough for integrating with the new payment gateway, including code examples and sample JSON responses. |
 | Design-Doc              | 2000-3000 words                       | RFC-style architecture decision record (ADR)   | Write a design document outlining the architecture decisions for the new microservices platform. |
 
-### [](#25-specific-guidance-and-best-practices-for-depth-and-length)2.5. Specific Guidance and Best Practices for Depth and Length
+### 2.5. Specific Guidance and Best Practices for Depth and Length
 
 * **Prioritize Depth:** Place your depth/length selection *early* in the prompt, often right after the
   role or core task, to ensure it takes precedence over potentially conflicting style cues.
@@ -170,11 +170,11 @@ specificity narrow the AI's focus, leading to more targeted and relevant outputs
 **Example 2:**
 
 * **Before (Vague/Bad):** Give me a Python script.
-* **After (Specific/Good):** Generate a Python 3.11 script using Poetry. It should take a CSV file
+* **After (Specific/Good):** Generate a Python 3.11 script using uv. It should take a CSV file
   path as input, read the 'Revenue' column, calculate the total and average revenue, and output the
   results as a JSON object, following PEP 8 style with full type hints.
 
-### [](#35-specific-guidance-and-best-practices-for-action-verbs-and-specificity)3.5. Specific Guidance and Best Practices for Action Verbs and Specificity
+### 3.5. Specific Guidance and Best Practices for Action Verbs and Specificity
 
 * **Avoid Ambiguity:** Reread your request. Could any word be interpreted in multiple ways? If so,
   clarify or define it.

@@ -182,7 +182,7 @@ GITHUB_TOKEN=your_github_token_here
 Each tool is configured with PromptCraft-specific context:
 
 - **Architecture**: Hybrid AI workbench with agent-based design
-- **Primary Language**: Python 3.11+ with Poetry
+- **Primary Language**: Python 3.11+ with uv
 - **Frameworks**: FastAPI, Gradio, Prefect
 - **AI Integration**: Zen MCP Server, Heimdall MCP Server
 - **Code Standards**: Black (88 chars), Ruff, MyPy
@@ -222,7 +222,7 @@ The validator returns specific exit codes:
 
 ## File Structure
 
-```
+```text
 .claude/
 ├── CLAUDE.md              # Project instructions (existing)
 └── settings.json          # Claude Code configuration

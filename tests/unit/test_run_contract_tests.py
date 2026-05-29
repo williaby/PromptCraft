@@ -41,7 +41,7 @@ class TestInstallDependencies:
             ],
         )
         mock_subprocess_run.assert_called_once_with(
-            ["poetry", "install"],
+            ["uv", "sync", "--frozen"],
             check=True,
             cwd="/test/path",
         )
@@ -54,7 +54,7 @@ class TestInstallDependencies:
         """Test dependency installation failure."""
         # Arrange
         mock_path.return_value.parent = "/test/path"
-        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, ["poetry", "install"])
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, ["uv", "sync", "--frozen"])
 
         # Act
         run_contract_tests.install_dependencies()
@@ -64,7 +64,7 @@ class TestInstallDependencies:
             [
                 call("📦 Installing dependencies..."),
                 call(
-                    "❌ Failed to install dependencies: Command '['poetry', 'install']' returned non-zero exit status 1.",
+                    "❌ Failed to install dependencies: Command '['uv', 'sync', '--frozen']' returned non-zero exit status 1.",
                 ),
             ],
         )
@@ -148,7 +148,7 @@ class TestRunContractTests:
 
         mock_subprocess_run.assert_called_once_with(
             [
-                "poetry",
+                "uv",
                 "run",
                 "pytest",
                 "tests/contract/test_mcp_contracts.py",
@@ -196,7 +196,7 @@ class TestRunContractTests:
         # Arrange
         mock_environ.copy.return_value = {"EXISTING": "value"}
         mock_path.return_value.parent = "/test/path"
-        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, ["poetry", "run", "pytest"])
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(1, ["uv", "run", "pytest"])
 
         # Act
         result = run_contract_tests.run_contract_tests()
@@ -207,7 +207,7 @@ class TestRunContractTests:
             [
                 call("🧪 Running contract tests..."),
                 call(
-                    "❌ Failed to run contract tests: Command '['poetry', 'run', 'pytest']' returned non-zero exit status 1.",
+                    "❌ Failed to run contract tests: Command '['uv', 'run', 'pytest']' returned non-zero exit status 1.",
                 ),
             ],
         )
@@ -408,7 +408,7 @@ class TestEdgeCasesAndIntegration:
                 "run_contract_tests.py",
             ), f"Expected path ending with ('tests', 'contract', 'run_contract_tests.py'), got: {actual_parts[-3:]}"
             mock_subprocess_run.assert_called_once_with(
-                ["poetry", "install"],
+                ["uv", "sync", "--frozen"],
                 check=True,
                 cwd="/project/root",
             )

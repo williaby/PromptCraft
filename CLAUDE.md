@@ -25,7 +25,7 @@ vector database on Unraid, deployed to an Ubuntu VM.
 
 **Tech stack:**
 
-- Python 3.11+ with Poetry
+- Python 3.11+ with uv
 - Gradio UI, FastAPI backend
 - External Qdrant at 192.168.1.16:6333 for semantic search
 - Azure AI for LLM services
@@ -69,8 +69,8 @@ temp_cleanup/            # Holding area for in-flight files; not shipped
 make setup
 
 # Dependencies and pre-commit install
-poetry install --sync
-poetry run pre-commit install
+uv sync
+uv run pre-commit install
 
 # Validate GPG and SSH keys are present (required)
 gpg --list-secret-keys              # GPG key for .env encryption
@@ -96,7 +96,7 @@ make format             # Ruff format (project uses 120 char line length)
 make lint               # Ruff + pre-commit-equivalent linters
 make pre-commit         # Run all pre-commit hooks manually
 make security           # Bandit, pip-audit, Semgrep
-poetry run python src/utils/encryption.py   # Validate env + keys
+uv run python src/utils/encryption.py   # Validate env + keys
 ```
 
 > **Reference:** `docs/standards/development-commands.md`
@@ -195,7 +195,7 @@ Only `status: published` files are ingested.
 
 - GPG key required for `.env` encryption and decryption.
 - SSH key required for signed commits; `git config user.signingkey` must be set.
-- Environment validation runs via `poetry run python src/utils/encryption.py`.
+- Environment validation runs via `uv run python src/utils/encryption.py`.
 - No unfixed CVEs age past 60 days. Document any suppressions in
   `docs/known-vulnerabilities.md` (OpenSSF release gate).
 

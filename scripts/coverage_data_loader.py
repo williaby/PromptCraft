@@ -56,7 +56,7 @@ class CoverageDataLoader:
                     # Security: Using hardcoded command with controlled arguments
                     # No user input in command args, cwd restricted to project_root
                     subprocess.run(  # noqa: S603
-                        ["poetry", "run", "coverage", "xml"],
+                        ["uv", "run", "coverage", "xml"],
                         cwd=self.project_root,
                         check=True,
                         capture_output=True,

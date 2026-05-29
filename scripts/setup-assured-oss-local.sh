@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup script for local Assured-OSS authentication
-# This script configures Poetry to use Assured-OSS package repository
+# This script configures uv to use the Assured-OSS package repository
 
 set -euo pipefail
 
@@ -20,10 +20,10 @@ if ! command -v gcloud &> /dev/null; then
     exit 1
 fi
 
-# Check if Poetry is installed
-if ! command -v poetry &> /dev/null; then
-    echo -e "${RED}❌ Poetry not found${NC}"
-    echo "Please install Poetry: https://python-poetry.org/docs/#installation"
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    echo -e "${RED}❌ uv not found${NC}"
+    echo "Please install uv: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
 
@@ -86,18 +86,22 @@ echo -e "${GREEN}✅ Service account activated for project: $PROJECT_ID${NC}"
 
 echo -e "${GREEN}✅ Prerequisites check passed${NC}"
 
-# Configure Poetry repositories
-echo -e "${GREEN}🔧 Configuring Poetry repositories...${NC}"
-poetry config repositories.assured-oss https://us-python.pkg.dev/assured-oss/python-packages/simple/
-
-# Get access token and configure authentication
-echo -e "${GREEN}🔐 Setting up authentication...${NC}"
+# Configure uv index authentication
+# uv reads extra-index credentials from UV_INDEX_<NAME>_USERNAME/PASSWORD env vars.
+# The index name "assured-oss" canonicalizes to ASSURED_OSS.
+echo -e "${GREEN}🔧 Configuring uv index authentication...${NC}"
 ACCESS_TOKEN=$(gcloud auth print-access-token)
-poetry config http-basic.assured-oss oauth2accesstoken "$ACCESS_TOKEN"
+ENV_FILE="$(pwd)/.assured-oss.env"
+cat > "$ENV_FILE" <<EOF
+export UV_EXTRA_INDEX_URL="https://us-python.pkg.dev/assured-oss/python-packages/simple/"
+export UV_INDEX_ASSURED_OSS_USERNAME="oauth2accesstoken"
+export UV_INDEX_ASSURED_OSS_PASSWORD="${ACCESS_TOKEN}"
+EOF
+chmod 600 "$ENV_FILE"
 
 # Verify configuration
 echo -e "${GREEN}🔍 Verifying configuration...${NC}"
-poetry config --list | grep -E "(assured-oss|http-basic)"
+echo "Credentials written to $ENV_FILE (source it before running uv)"
 
 # Test access to Assured-OSS
 echo -e "${GREEN}🧪 Testing Assured-OSS access...${NC}"
@@ -114,7 +118,7 @@ fi
 echo -e "${GREEN}🎉 Assured-OSS setup completed successfully!${NC}"
 echo ""
 echo -e "${YELLOW}📝 Next steps:${NC}"
-echo "1. Run 'poetry install' to install dependencies from assured-oss"
+echo "1. Run 'source .assured-oss.env' then 'uv sync' to install dependencies from assured-oss"
 echo "2. Access tokens expire after 1 hour - re-run this script if you get auth errors"
 echo "3. Keep your service account file secure and never commit it to git"
 echo ""

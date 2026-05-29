@@ -71,8 +71,8 @@ print_info "  - Max tools per context: ${ZEN_HUB_MAX_TOOLS} (60-80% reduction)"
 # Start PromptCraft
 print_info "Starting PromptCraft application..."
 
-if command -v poetry &> /dev/null; then
-    poetry run python src/main.py
+if command -v uv &> /dev/null; then
+    uv run python src/main.py
 else
     python src/main.py
 fi

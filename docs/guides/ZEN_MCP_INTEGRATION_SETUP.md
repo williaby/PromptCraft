@@ -4,7 +4,8 @@ This document outlines the configuration changes made to enable PromptCraft to c
 
 ## Issues Identified
 
-1. **Wrong Connection Type**: PromptCraft was configured to connect to the Zen server via HTTP (`http://localhost:3000`), but Zen MCP Server uses stdio (standard input/output) protocol for MCP communication.
+1. **Wrong Connection Type**: PromptCraft was configured to connect to the Zen server via HTTP
+   (`http://localhost:3000`), but Zen MCP Server uses stdio (standard input/output) protocol for MCP communication.
 
 2. **Empty MCP Configuration**: The `.mcp.json` file had no MCP servers configured (`mcpServers: {}`).
 
@@ -61,6 +62,7 @@ PROMPTCRAFT_MCP_HEALTH_CHECK_INTERVAL=60.0
 ### 3. Created Startup Script (`start-with-zen-mcp.sh`)
 
 Created a convenience script that:
+
 - Validates the Zen MCP Server is available
 - Sets the correct environment variables
 - Starts PromptCraft with proper configuration
@@ -69,7 +71,7 @@ Created a convenience script that:
 
 ### Architecture Overview
 
-```
+```text
 PromptCraft Application
     ↓
 MCPConfigurationManager (.mcp.json)
@@ -108,7 +110,7 @@ export PROMPTCRAFT_ENVIRONMENT=dev
 export PROMPTCRAFT_MCP_ENABLED=false
 
 # Start PromptCraft
-poetry run python src/main.py
+uv run python src/main.py
 ```
 
 ### Verification
@@ -183,13 +185,15 @@ ls -la /home/byron/dev/zen-mcp-server/server.py
 ## Success Criteria
 
 ✅ **Configuration Status:**
+
 - MCP configuration loads successfully
 - Zen server is enabled and configured correctly
 - HTTP MCP client is disabled
 - File paths are valid and accessible
 
 ✅ **Expected Output:**
-```
+
+```text
 Enabled servers: ['zen']
 Configuration valid: True
 Server count: 2

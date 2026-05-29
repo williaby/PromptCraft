@@ -2,16 +2,25 @@
 
 ## Project Overview
 
-PromptCraft-Hybrid is an advanced, hybrid AI platform designed to transform user queries into highly accurate, context-aware, and structured outputs. It integrates on-premise hardware with specialized cloud services to deliver a powerful, cost-effective, and extensible AI development workbench.
+PromptCraft-Hybrid is an advanced, hybrid AI platform designed to transform user queries into highly
+accurate, context-aware, and structured outputs. It integrates on-premise hardware with specialized
+cloud services to deliver a powerful, cost-effective, and extensible AI development workbench.
 
 ### Core Features
 
-* **Four Progressive Journeys**: A unique user model that guides users from simple prompt enhancement to full, multi-agent workflow automation.
-* **Dual-Orchestration Model**: Uses Zen MCP Server for real-time, user-facing agent orchestration, and Prefect for background, scheduled data workflows like knowledge ingestion and quality assurance.
-* **HyDE Query Enhancement**: A sophisticated pipeline that analyzes user queries for intent and ambiguity, generating hypothetical documents to improve retrieval accuracy.
-* **Agent-First Design**: The system's expertise comes from specialized, independent AI agents with their own dedicated knowledge bases, allowing for scalable, domain-specific intelligence.
-* **Hybrid Infrastructure**: A cost-effective model that leverages external Qdrant on Unraid (192.168.1.16) for vector search and Ubuntu VM deployment (192.168.1.205) for application services with minimal cloud dependencies.
-* **Cost Control with Free Mode**: New toggle to use only free models (1000 requests/day) in Journey 4, perfect for development, testing, and cost-conscious usage.
+* **Four Progressive Journeys**: A unique user model that guides users from simple prompt enhancement
+  to full, multi-agent workflow automation.
+* **Dual-Orchestration Model**: Uses Zen MCP Server for real-time, user-facing agent orchestration,
+  and Prefect for background, scheduled data workflows like knowledge ingestion and quality assurance.
+* **HyDE Query Enhancement**: A sophisticated pipeline that analyzes user queries for intent and
+  ambiguity, generating hypothetical documents to improve retrieval accuracy.
+* **Agent-First Design**: The system's expertise comes from specialized, independent AI agents with
+  their own dedicated knowledge bases, allowing for scalable, domain-specific intelligence.
+* **Hybrid Infrastructure**: A cost-effective model that leverages external Qdrant on Unraid
+  (192.168.1.16) for vector search and Ubuntu VM deployment (192.168.1.205) for application services
+  with minimal cloud dependencies.
+* **Cost Control with Free Mode**: New toggle to use only free models (1000 requests/day) in Journey 4,
+  perfect for development, testing, and cost-conscious usage.
 * **Transparent Pricing**: See exactly which model is being used and its cost in real-time.
 * **Smart Routing**: Automatically selects the best available free model when in Free Mode.
 
@@ -36,7 +45,7 @@ The project follows a Python-based architecture with a modular structure:
   Entrypoint: `src/main.py`.
 * `tests/`: Layered suites (`unit/`, `integration/`, `contract/`, `performance/`, `security/`); layout: `tests/`.
 * `docs/`: MkDocs site content; keep user-facing docs in sync with code.
-* `scripts/`: Utility scripts run via `poetry` or `make`.
+* `scripts/`: Utility scripts run via `uv` or `make`.
 * `examples/` and `config/`: Sample flows and environment settings.
 * Key files: `src/agents/registry.py`, `src/agents/base_agent.py`, `Makefile`, `pyproject.toml`, `noxfile.py`, `mkdocs.yml`.
 
@@ -45,7 +54,7 @@ The project follows a Python-based architecture with a modular structure:
 ### Prerequisites
 
 * Docker & Docker Compose
-* Poetry for Python dependency management
+* uv for Python dependency management
 * Nox for task automation
 * External Qdrant instance running on Unraid at 192.168.1.16:6333
 * Ubuntu VM at 192.168.1.205 for application deployment
@@ -53,6 +62,7 @@ The project follows a Python-based architecture with a modular structure:
 ### Installation and Setup
 
 1. **Clone the Repository**:
+
    ```bash
    git clone https://github.com/williaby/PromptCraft.git
    cd PromptCraft-Hybrid
@@ -64,13 +74,15 @@ The project follows a Python-based architecture with a modular structure:
    * Configure external Qdrant connection (192.168.1.16:6333) and Ubuntu VM deployment target (192.168.1.205).
 
 3. **Install Dependencies**:
-   * Use Poetry to install all required Python packages from the `pyproject.toml` file.
+   * Use uv to install all required Python packages from the `pyproject.toml` file.
+
    ```bash
-   poetry install
+   uv sync
    ```
 
 4. **Deploy to Ubuntu VM**:
    * Deploy application services to Ubuntu VM (excludes Qdrant which runs externally on Unraid).
+
    ```bash
    # On Ubuntu VM (192.168.1.205)
    make dev
@@ -83,6 +95,7 @@ The project follows a Python-based architecture with a modular structure:
 
 6. **Run Tests**:
    * Use Nox to run the test suite and ensure your environment is set up correctly.
+
    ```bash
    nox -s tests
    ```
@@ -96,7 +109,7 @@ The project follows a Python-based architecture with a modular structure:
 * `make test-fast`: Quick unit/auth subset for local loops.
 * `make lint` / `make format`: Check/auto-fix with Black, Ruff; run mypy, markdownlint, yamllint.
 * `make dev`: Start Dockerized dev stack (FastAPI, Gradio, MCP, Qdrant).
-* Run API locally: `poetry run uvicorn src.main:app --reload`.
+* Run API locally: `uv run uvicorn src.main:app --reload`.
 
 ### Nox Test Sessions
 
@@ -113,13 +126,18 @@ The project follows a Python-based architecture with a modular structure:
 
 ### Base Agent Framework
 
-All agents in PromptCraft must inherit from `BaseAgent` (defined in `src/agents/base_agent.py`) and implement the `execute()` method. The system uses dependency injection for configuration and supports runtime configuration overrides through `AgentInput`.
+All agents in PromptCraft must inherit from `BaseAgent` (defined in `src/agents/base_agent.py`) and
+implement the `execute()` method. The system uses dependency injection for configuration and supports
+runtime configuration overrides through `AgentInput`.
 
 ### Agent Registry
 
-The `AgentRegistry` (in `src/agents/registry.py`) provides a centralized system for discovering and managing agent classes. It uses a decorator-based registration pattern that enables automatic agent discovery and type-safe agent instantiation.
+The `AgentRegistry` (in `src/agents/registry.py`) provides a centralized system for discovering and
+managing agent classes. It uses a decorator-based registration pattern that enables automatic agent
+discovery and type-safe agent instantiation.
 
 To register a new agent:
+
 ```python
 from src.agents.registry import agent_registry
 from src.agents.base_agent import BaseAgent
@@ -153,7 +171,8 @@ class MyAgent(BaseAgent):
 
 ### Testing Guidelines
 
-* Framework: `pytest` (+ `pytest-cov`). Default markers exclude slow; notable markers: `unit`, `integration`, `contract`, `perf`, `security`, `smoke` (configured in `pyproject.toml`).
+* Framework: `pytest` (+ `pytest-cov`). Default markers exclude slow; notable markers: `unit`,
+  `integration`, `contract`, `perf`, `security`, `smoke` (configured in `pyproject.toml`).
 * Naming: files `test_*.py`, functions `test_*`. Put narrow tests near their domain (e.g., `tests/unit/api/`).
 * Coverage: target ≥ 80% on full runs. Commands: `make test`, quick: `make test-fast`.
 
@@ -165,5 +184,6 @@ class MyAgent(BaseAgent):
 
 ### Security & Configuration
 
-* Copy `.env.template` → `.env`; never commit secrets. Use environment-specific files (`.env.dev`, `.env.staging`, `.env.prod`). See `SECURITY.md` for guidance.
+* Copy `.env.template` → `.env`; never commit secrets. Use environment-specific files (`.env.dev`,
+  `.env.staging`, `.env.prod`). See `SECURITY.md` for guidance.
 * Validate security: `make security` (Safety, Bandit). Pre-commit hooks (see `.pre-commit-config.yaml`) enforce lint/format.

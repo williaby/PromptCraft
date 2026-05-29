@@ -21,7 +21,7 @@
         "--ignore=agents-backup"
     ],
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
-    "python.testing.pytest.path": ["poetry", "run", "pytest"],
+    "python.testing.pytest.path": ["uv", "run", "pytest"],
     "python.defaultInterpreterPath": ".venv/bin/python",
     "python.testing.cwd": "${workspaceFolder}",
     "python.envFile": "${workspaceFolder}/.env",

@@ -1,10 +1,12 @@
 # PromptCraft-Hybrid E2E Testing Suite
 
-Comprehensive end-to-end testing for PromptCraft-Hybrid using Playwright to validate UI functionality, user journeys, security, and performance.
+Comprehensive end-to-end testing for PromptCraft-Hybrid using Playwright to validate UI functionality, user
+journeys, security, and performance.
 
 ## 🎯 Overview
 
 This testing suite provides comprehensive validation of:
+
 - **Core UI functionality** across all four user journeys
 - **Security measures** including file upload validation and input sanitization
 - **Performance benchmarks** for load times and API responses
@@ -14,7 +16,7 @@ This testing suite provides comprehensive validation of:
 
 ## 📁 Project Structure
 
-```
+```text
 tests/e2e/
 ├── fixtures/           # Page Object Models
 │   ├── BasePage.ts     # Common page interactions
@@ -76,12 +78,14 @@ npm run test:e2e:report
 ## 🧪 Test Categories
 
 ### 1. Application Launch Tests (`test-app-launch.spec.ts`)
+
 - Application loading and startup
 - Tab navigation functionality
 - Responsive design validation
 - Session state management
 
 ### 2. Journey 1: Smart Templates (`journeys/test-journey1-smart-templates.spec.ts`)
+
 - Basic prompt enhancement with C.R.E.A.T.E. framework
 - File upload functionality (TXT, MD, CSV, JSON)
 - Model selection and cost tracking
@@ -89,6 +93,7 @@ npm run test:e2e:report
 - Error handling and edge cases
 
 ### 3. Security Tests (`test-security.spec.ts`)
+
 - File upload security (size limits, type validation)
 - Malicious content detection
 - XSS and injection prevention
@@ -96,6 +101,7 @@ npm run test:e2e:report
 - CORS validation
 
 ### 4. Performance Tests (`test-performance.spec.ts`)
+
 - Page load performance benchmarks
 - API response time validation
 - Memory usage monitoring
@@ -103,6 +109,7 @@ npm run test:e2e:report
 - Network condition testing
 
 ### 5. API Integration (`test-api-integration.spec.ts`)
+
 - Health check endpoints
 - Error handling and recovery
 - Authentication flow validation
@@ -111,6 +118,7 @@ npm run test:e2e:report
 ## 📊 Test Data
 
 ### Sample Files (`data/files/`)
+
 - `simple-text.txt` - Basic text file for upload testing
 - `test-document.md` - Markdown with formatting and code blocks
 - `sample-data.csv` - Employee data for CSV processing tests
@@ -118,6 +126,7 @@ npm run test:e2e:report
 - `large-content.txt` - Large file for performance testing
 
 ### Security Test Files (`data/malicious/`)
+
 - `fake-text-with-script.txt` - Contains XSS attempts and malicious patterns
 - `oversized-file.txt` - 15MB file to test size limits
 
@@ -126,6 +135,7 @@ npm run test:e2e:report
 ### Playwright Configuration (`playwright.config.ts`)
 
 Key settings:
+
 - **Base URL**: `http://localhost:7860`
 - **Browsers**: Chrome, Firefox, Safari, Edge, Mobile Chrome/Safari
 - **Timeouts**: 60s global, 30s navigation, 10s actions
@@ -148,12 +158,14 @@ DEBUG=pw:*
 ## 📈 Success Metrics
 
 ### Performance Benchmarks
+
 - **Page Load**: < 5 seconds total, < 3 seconds DOM ready
 - **API Response**: < 30 seconds for complex prompts, < 10 seconds for simple
 - **File Processing**: < 15 seconds for typical files
 - **Memory**: < 50% growth during extended sessions
 
 ### Quality Standards
+
 - **Test Coverage**: > 80% of UI interactions
 - **Reliability**: < 2% test flakiness
 - **Browser Support**: Chrome, Firefox, Safari, Edge
@@ -161,6 +173,7 @@ DEBUG=pw:*
 - **Security**: Zero critical vulnerabilities
 
 ### Rate Limiting
+
 - **Requests**: 30 per minute, 200 per hour
 - **File Uploads**: 50 per hour
 - **Concurrent Users**: 5+ simultaneous users supported
@@ -203,9 +216,10 @@ npm run test:e2e:trace
 ### Common Issues
 
 1. **Application not running**
+
    ```bash
    # Start PromptCraft application
-   poetry run python -m src.main
+   uv run python -m src.main
    ```
 
 2. **Port conflicts**
@@ -213,6 +227,7 @@ npm run test:e2e:trace
    - Check for other services using these ports
 
 3. **Browser installation**
+
    ```bash
    # Reinstall browsers
    npm run test:e2e:install
@@ -252,7 +267,7 @@ jobs:
         run: npx playwright install --with-deps
       - name: Start application
         run: |
-          poetry run python -m src.main &
+          uv run python -m src.main &
           sleep 30  # Wait for startup
       - name: Run E2E tests
         run: npm run test:e2e
@@ -273,6 +288,7 @@ jobs:
 ## 📞 Support
 
 For issues with the testing suite:
+
 - Check existing issues in the repository
 - Review test output and screenshots
 - Ensure application is running correctly
@@ -280,4 +296,5 @@ For issues with the testing suite:
 
 ---
 
-*This comprehensive testing suite ensures PromptCraft-Hybrid meets high standards for functionality, security, and performance across all supported platforms and browsers.*
+*This comprehensive testing suite ensures PromptCraft-Hybrid meets high standards for functionality, security,
+and performance across all supported platforms and browsers.*

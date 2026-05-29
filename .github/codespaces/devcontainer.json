@@ -6,10 +6,10 @@
   },
   "postCreateCommand": {
     "setup": "make setup && echo '🚀 Codespaces environment ready!'",
-    "verify": "poetry --version && python --version && git --version",
+    "verify": "uv --version && python --version && git --version",
     "info": "echo '📋 Available services: Gradio (7860), FastAPI (8000), Zen MCP (3000)'"
   },
-  "updateContentCommand": "poetry install --sync",
+  "updateContentCommand": "uv sync",
   "forwardPorts": [7860, 8000, 3000, 8080],
   "portsAttributes": {
     "7860": {"label": "Gradio UI", "onAutoForward": "notify"},

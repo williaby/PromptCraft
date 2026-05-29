@@ -538,5 +538,5 @@ if not status.config_healthy:
 
 - Review [Security Best Practices](./security-best-practices.md)
 - Explore [Configuration System Guide](./configuration-system-guide.md)
-- Run examples: `poetry run python examples/config_demo.py`
-- Test health checks: `poetry run python examples/health_check_demo.py`
+- Run examples: `uv run python examples/config_demo.py`
+- Test health checks: `uv run python examples/health_check_demo.py`

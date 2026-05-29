@@ -12,7 +12,7 @@ node_modules/* linguist-vendored=true
 # Lock files and dependencies
 *.lock linguist-vendored=true
 package-lock.json linguist-vendored=true
-poetry.lock linguist-vendored=true
+uv.lock linguist-vendored=true
 requirements*.txt linguist-generated=true
 
 # Python cache and generated files

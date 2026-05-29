@@ -4,9 +4,9 @@
 #
 # Key features:
 # 1. Sequential test execution for reliable Codecov reporting
-# 2. Enhanced Poetry installation and dependency caching
+# 2. uv-based dependency management with built-in lockfile caching
 # 3. Single coverage upload eliminates race conditions
-# 4. Matches working configuration from PR 198
+# 4. Lockfile is never mutated during CI (uv sync --frozen / uv run --frozen)
 
 name: CI
 
@@ -32,85 +32,15 @@ env:
   PROMPTCRAFT_REDIS_HOST: localhost
   PROMPTCRAFT_QDRANT_HOST: localhost
   PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
-  POETRY_VERSION: 2.1.2
-  POETRY_CACHE_DIR: ~/.cache/pypoetry
-  POETRY_VENV_IN_PROJECT: true
+  UV_VERSION: 0.8.17
   MYPY_CACHE_DIR: ~/.cache/mypy
 
 jobs:
-  # Enhanced setup with MyPy stub pre-installation
-  setup-optimized:
-    name: Enhanced Setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 8  # Reduced from 15
-    outputs:
-      poetry-hash: ${{ steps.cache-key.outputs.poetry-hash }}
-      requirements-hash: ${{ steps.cache-key.outputs.requirements-hash }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Generate cache keys
-        id: cache-key
-        run: |
-          echo "poetry-hash=${{ hashFiles('**/poetry.lock') }}" >> $GITHUB_OUTPUT
-          echo "requirements-hash=${{ hashFiles('requirements*.txt') }}" >> $GITHUB_OUTPUT
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      # Fast Poetry installation with explicit PATH handling
-      - name: Install Poetry and Configure (Single Step)
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          # Verify Poetry is available
-          which poetry || echo "Poetry not found in PATH"
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry self add poetry-plugin-export
-
-      # Optimized caching strategy - cache only .venv to prevent disk space exhaustion
-      - name: Cache Poetry and dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            .venv
-          key: poetry-deps-${{ runner.os }}-${{ steps.cache-key.outputs.poetry-hash }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
-
-      - name: Install dependencies (Fast)
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry install --sync --no-interaction
-
-      # Clean up disk space before cache compression to prevent "No space left on device"
-      - name: Clean up disk space
-        run: |
-          echo "🧹 Cleaning up disk space before cache compression..."
-          # Clean pip cache
-          pip cache purge 2>/dev/null || true
-          # Clean Poetry cache
-          poetry cache clear --all . -n 2>/dev/null || true
-          # Clean apt cache
-          sudo apt-get clean 2>/dev/null || true
-          # Remove large unnecessary directories to free up space
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc 2>/dev/null || true
-          # Clean temporary files
-          find /tmp -type f -name "*.tmp" -delete 2>/dev/null || true
-          find ~/.cache -type f -name "*.tmp" -delete 2>/dev/null || true
-          echo "✅ Disk cleanup completed"
-
-
   # Consolidated test job (sequential execution for Codecov compatibility)
   test:
     name: Test and Coverage (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 30  # Increased due to sequential test execution
-    needs: setup-optimized
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
@@ -118,35 +48,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
-      # Always install Poetry fresh (fast and reliable)
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry config virtualenvs.in-project true
-          poetry --version
-
-      # Restore dependency cache (optional - helps with speed)
-      - name: Restore dependency cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            .venv
-          key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
-
-      # Install dependencies (fast if cached)
       - name: Install dependencies
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry install --sync --no-interaction
+        run: uv sync --frozen --python ${{ matrix.python-version }}
 
       - name: Install system dependencies (minimal)
         run: |
@@ -157,9 +69,8 @@ jobs:
       # Run core tests with coverage (excluding complex performance tests for MVP)
       - name: Run core tests with coverage
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           echo "🧪 Running core functional tests for MVP (excluding performance tests)"
-          poetry run pytest -v \
+          uv run --frozen pytest -v \
             --cov=src \
             --cov-report=xml:coverage.xml \
             --cov-report=term-missing \
@@ -204,153 +115,79 @@ jobs:
   quality-checks:
     name: Quality Checks
     runs-on: ubuntu-latest
-    timeout-minutes: 8  # Increased to account for retry logic
-    needs: setup-optimized
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
+        run: uv python install 3.11
 
-      # Always install Poetry fresh (fast and reliable)
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry config virtualenvs.in-project true
-          poetry --version
-
-      # Restore dependency cache (optional - helps with speed)
-      - name: Restore dependency cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            .venv
-          key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
-
-      # Install dependencies with retry on NVIDIA package failures
       - name: Install dependencies
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-
-          # Function to clear corrupted poetry cache
-          clear_poetry_cache() {
-            echo "🧹 Clearing potentially corrupted Poetry cache..."
-            poetry cache clear --all pypi -n 2>/dev/null || true
-            rm -rf .venv 2>/dev/null || true
-            poetry env remove python3 2>/dev/null || true
-          }
-
-          # First attempt with existing cache
-          echo "📦 Installing dependencies (attempt 1 with cache)..."
-          if ! poetry install --sync --no-interaction; then
-            echo "❌ Installation failed, clearing cache and retrying..."
-            clear_poetry_cache
-
-            echo "📦 Installing dependencies (attempt 2 without cache)..."
-            if ! poetry install --sync --no-interaction; then
-              echo "❌ Installation failed again, this may be a persistent issue"
-              echo "🔍 Analyzing failure..."
-
-              # Try to identify if it's NVIDIA-related
-              if poetry install --sync --no-interaction 2>&1 | grep -q "nvidia-cuda"; then
-                echo "🚨 NVIDIA CUDA package installation issue detected"
-                echo "This is a known transient CI issue, not a code problem"
-                echo "The issue affects PyTorch dependencies pulled in by sentence-transformers"
-                exit 1
-              else
-                echo "🤔 Unknown installation issue, failing job"
-                exit 1
-              fi
-            else
-              echo "✅ Installation successful on attempt 2"
-            fi
-          else
-            echo "✅ Installation successful on attempt 1"
-          fi
-
-      # MyPy cache disabled to prevent compression timeout
+        run: uv sync --frozen
 
       # Fast type checking with pre-cached stubs
       - name: Run type checking (Fast)
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           echo "🔍 Running MyPy with cached stubs"
-          poetry run mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
+          uv run --frozen mypy src --cache-dir=${{ env.MYPY_CACHE_DIR }}
 
       # Fast linting
       - name: Run linting (Fast)
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           echo "🧹 Running linting checks"
-          poetry run black . --check --fast
-          poetry run ruff check . --no-cache
+          uv run --frozen black . --check --fast
+          uv run --frozen ruff check . --no-cache
 
   # Optional security scan (runs in parallel)
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 6
-    needs: setup-optimized
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
+        run: uv python install 3.11
 
-      # Always install Poetry fresh (fast and reliable)
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry config virtualenvs.in-project true
-          poetry --version
-
-      # Restore dependency cache (optional - helps with speed)
-      - name: Restore dependency cache
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            .venv
-          key: poetry-deps-${{ runner.os }}-${{ needs.setup-optimized.outputs.poetry-hash }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
+      - name: Install dependencies
+        run: uv sync --frozen
 
       - name: Fast security checks
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
           echo "🔒 Running security scans"
-          poetry run safety check || echo "Safety check completed with findings"
-          poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
+          uv run --frozen safety check || echo "Safety check completed with findings"
+          uv run --frozen bandit -r src -ll || echo "Bandit scan completed with findings"
 
 
   # Success check
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [setup-optimized, test, quality-checks]
+    needs: [test, quality-checks]
     if: always()
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.setup-optimized.result }}" == "success" && \
-                "${{ needs.test.result }}" == "success" && \
+          if [[ "${{ needs.test.result }}" == "success" && \
                 "${{ needs.quality-checks.result }}" == "success" ]]; then
             echo "✅ Sequential CI passed with comprehensive coverage"
             echo "📊 Codecov reporting restored to working configuration"
             echo "🎯 Single coverage upload eliminates race conditions"
           else
             echo "❌ Sequential CI failed"
-            echo "setup-optimized: ${{ needs.setup-optimized.result }}"
             echo "test: ${{ needs.test.result }}"
             echo "quality-checks: ${{ needs.quality-checks.result }}"
             exit 1
@@ -360,13 +197,12 @@ jobs:
   ci-test:
     name: CI / Test
     runs-on: ubuntu-latest
-    needs: [setup-optimized, test, quality-checks, security-scan]
+    needs: [test, quality-checks, security-scan]
     if: always()
     steps:
       - name: Validate all test jobs
         run: |
-          if [[ "${{ needs.setup-optimized.result }}" == "success" && \
-                "${{ needs.test.result }}" == "success" && \
+          if [[ "${{ needs.test.result }}" == "success" && \
                 "${{ needs.quality-checks.result }}" == "success" && \
                 "${{ needs.security-scan.result }}" == "success" ]]; then
             echo "✅ All CI test jobs passed successfully"
@@ -374,7 +210,6 @@ jobs:
             echo "🎯 Database timeout issue resolved - unified testing process restored"
           else
             echo "❌ One or more CI test jobs failed"
-            echo "setup-optimized: ${{ needs.setup-optimized.result }}"
             echo "test: ${{ needs.test.result }}"
             echo "quality-checks: ${{ needs.quality-checks.result }}"
             echo "security-scan: ${{ needs.security-scan.result }}"

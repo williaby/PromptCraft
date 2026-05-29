@@ -45,7 +45,7 @@ exclude:
   - "**/venv/**"
   - "**/__pycache__/**"
   - "**/.pytest_cache/**"
-  - "**/poetry.lock"
+  - "**/uv.lock"
 
   # Generated files
   - "**/dist/**"

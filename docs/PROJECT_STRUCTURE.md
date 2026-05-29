@@ -7,8 +7,9 @@ This document describes the organized structure of the PromptCraft project after
 The project root now contains only essential configuration and core project files:
 
 ### Configuration Files
+
 - `pyproject.toml` - Python project configuration and dependencies
-- `poetry.lock` - Python dependency lock file
+- `uv.lock` - Python dependency lock file
 - `package.json` / `package-lock.json` - Node.js tools and dependencies
 - `Dockerfile` - Container build configuration
 - `docker-compose*.yml` - Container orchestration
@@ -16,6 +17,7 @@ The project root now contains only essential configuration and core project file
 - Various dotfiles (`.gitignore`, `.pre-commit-config.yaml`, etc.)
 
 ### Core Documentation
+
 - `README.md` - Project overview and getting started
 - `CONTRIBUTING.md` - Contribution guidelines
 - `SECURITY.md` - Security policies
@@ -25,6 +27,7 @@ The project root now contains only essential configuration and core project file
 ## Directory Structure
 
 ### `/docs/`
+
 Organized documentation with clear separation of concerns:
 
 - `docs/agents/` - AI agent documentation (AGENTS.md, GEMINI.md, QWEN.md)
@@ -38,11 +41,13 @@ Organized documentation with clear separation of concerns:
 - `docs/architecture/` - Architecture decisions and recommendations
 
 ### `/database/`
+
 Database-related files:
 
 - `database/schemas/` - PostgreSQL schema definitions
 
 ### `/scripts/`
+
 All executable scripts:
 
 - Shell scripts for common operations
@@ -50,14 +55,17 @@ All executable scripts:
 - Development automation tools
 
 ### `/src/`
+
 Source code organized by domain
 
 ### `/tests/`
+
 Test files organized by type and domain
 
 ## Cleanup Summary
 
 ### Files Removed
+
 - Local database files (`*.db`) - 4MB+ freed
 - Build artifacts (`coverage.json`, `junit.xml`, etc.)
 - Analysis reports (`*_analysis.json`, `*_results.json`)
@@ -65,11 +73,13 @@ Test files organized by type and domain
 - Redundant requirements files (`requirements.txt`, `requirements-dev.txt`)
 
 ### Files Moved
+
 - 35+ documentation files organized into logical directories
 - 4 database schema files to `database/schemas/`
 - 6 shell scripts and utilities to `scripts/`
 
 ### Files Updated
+
 - `.gitignore` - Enhanced with patterns for generated files
 - `pyproject.toml` - Fixed Black configuration regex
 - Created symbolic link `requirements.txt` -> `requirements-docker.txt` for CI compatibility

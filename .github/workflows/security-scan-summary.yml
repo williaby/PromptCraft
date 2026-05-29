@@ -48,7 +48,7 @@ jobs:
             ### Common Solutions
 
             - **CodeQL failures**: Check for SQL injection, XSS, or other security vulnerabilities
-            - **Dependency review failures**: Update vulnerable dependencies using \`poetry update\`
+            - **Dependency review failures**: Update vulnerable dependencies using \`uv lock --upgrade-package <name>\`
             - **Test failures**: Ensure all security-related tests are passing
 
             ### Need Help?

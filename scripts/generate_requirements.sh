@@ -1,37 +1,28 @@
 #!/bin/bash
 
 ##: name = generate_requirements.sh
-##: description = Generates requirements.txt and requirements-dev.txt from poetry.lock with hash verification for security.
+##: description = Generates requirements.txt and requirements-dev.txt from uv.lock with hash verification for security.
 ##: usage = ./scripts/generate_requirements.sh [--without-hashes]
-##: behavior = Uses poetry export to regenerate requirements files with cryptographic hashes by default.
+##: behavior = Uses uv export to regenerate requirements files with cryptographic hashes by default.
 
 set -e
 
 # Debug information for CI environments
 echo "🔍 Environment Debug Info:"
 echo "  Working directory: $(pwd)"
-echo "  Poetry version: $(poetry --version)"
+echo "  uv version: $(uv --version)"
 echo "  Python version: $(python --version)"
 echo "  Virtual environment: ${VIRTUAL_ENV:-Not activated}"
-echo "  Poetry environment: $(poetry env info --path 2>/dev/null || echo 'No poetry env')"
-echo "  Lock file exists: $(test -f poetry.lock && echo 'Yes' || echo 'No')"
-echo "  Packages count: $(poetry show 2>/dev/null | wc -l || echo '0')"
-echo "  Poetry config: $(poetry config --list | head -5)"
+echo "  Lock file exists: $(test -f uv.lock && echo 'Yes' || echo 'No')"
 echo ""
 
-# Test basic poetry commands before proceeding
-echo "🧪 Testing Poetry commands..."
-if ! poetry check --lock; then
-    echo "❌ Poetry lock check failed!"
+# Test that the lockfile is consistent before proceeding
+echo "🧪 Verifying uv lockfile..."
+if ! uv lock --locked; then
+    echo "❌ uv lockfile is out of date! Run 'uv lock' and commit uv.lock."
     exit 1
 fi
-
-if ! poetry show --quiet > /dev/null 2>&1; then
-    echo "❌ Poetry show failed - dependencies not properly installed"
-    echo "   Running poetry install..."
-    poetry install
-fi
-echo "✅ Poetry environment validated"
+echo "✅ uv lockfile validated"
 echo ""
 
 # Parse command line arguments
@@ -196,11 +187,20 @@ rollback_on_failure() {
 # Trap to handle failures
 trap rollback_on_failure ERR
 
-echo "📦 Exporting requirements.txt using poetry export..."
-poetry export \
-    --format=requirements.txt \
-    --output=requirements.txt \
-    $WITHOUT_HASHES
+# uv export emits hashes by default; --no-hashes disables them
+HASH_FLAG=""
+if [[ "$WITHOUT_HASHES" == "--without-hashes" ]]; then
+    HASH_FLAG="--no-hashes"
+fi
+
+echo "📦 Exporting requirements.txt using uv export..."
+uv export \
+    --frozen \
+    --no-emit-project \
+    --no-default-groups \
+    --format requirements-txt \
+    --output-file requirements.txt \
+    $HASH_FLAG
 
 # Normalize platform markers for consistent ordering
 normalize_platform_markers "requirements.txt" "main requirements"
@@ -210,12 +210,14 @@ validate_requirements "requirements.txt" "main requirements"
 
 echo "✅ requirements.txt updated and validated."
 
-echo "📦 Exporting requirements-dev.txt using poetry export..."
-poetry export \
-    --format=requirements.txt \
-    --output=requirements-dev.txt \
-    --with=dev \
-    $WITHOUT_HASHES
+echo "📦 Exporting requirements-dev.txt using uv export..."
+uv export \
+    --frozen \
+    --no-emit-project \
+    --group dev \
+    --format requirements-txt \
+    --output-file requirements-dev.txt \
+    $HASH_FLAG
 
 # Normalize platform markers for consistent ordering
 normalize_platform_markers "requirements-dev.txt" "dev requirements"
@@ -225,12 +227,15 @@ validate_requirements "requirements-dev.txt" "dev requirements"
 
 echo "✅ requirements-dev.txt updated and validated."
 
-# Generate Docker requirements (minimal, always with hashes for security)
+# Generate Docker requirements (production runtime only)
 echo "📦 Generating requirements-docker.txt (production only)..."
-poetry export \
-    --format=requirements.txt \
-    --output=requirements-docker.txt \
-    --without=dev
+uv export \
+    --frozen \
+    --no-emit-project \
+    --no-default-groups \
+    --format requirements-txt \
+    --output-file requirements-docker.txt \
+    $HASH_FLAG
 
 # Normalize platform markers for consistent ordering
 normalize_platform_markers "requirements-docker.txt" "Docker requirements"
@@ -242,15 +247,8 @@ echo "✅ requirements-docker.txt updated and validated."
 
 # Lockfile consistency check
 echo "🔍 Verifying lockfile consistency..."
-LOCK_DEPS=$(poetry show --without=dev | wc -l)
 REQ_DEPS=$(grep -c "==" requirements.txt || echo "0")
-
-if [[ $((LOCK_DEPS - REQ_DEPS)) -gt 5 ]] || [[ $((REQ_DEPS - LOCK_DEPS)) -gt 5 ]]; then
-    echo "⚠️  Warning: Significant difference between poetry.lock ($LOCK_DEPS) and requirements.txt ($REQ_DEPS) dependencies"
-    echo "   This might indicate a synchronization issue"
-else
-    echo "✅ Lockfile and requirements.txt are reasonably consistent"
-fi
+echo "✅ requirements.txt pins $REQ_DEPS packages from uv.lock"
 
 # Clean up backup files on success
 rm -f requirements.txt.backup requirements-dev.txt.backup

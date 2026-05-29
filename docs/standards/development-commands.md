@@ -10,15 +10,15 @@
 # Format code
 make format
 # or
-poetry run black .
-poetry run ruff check --fix .
+uv run black .
+uv run ruff check --fix .
 
 # Run linting checks
 make lint
 # or
-poetry run black --check .
-poetry run ruff check .
-poetry run mypy src
+uv run black --check .
+uv run ruff check .
+uv run mypy src
 
 # Markdown linting (MANDATORY for all .md files)
 markdownlint **/*.md
@@ -31,56 +31,56 @@ yamllint -c .yamllint.yml **/*.{yml,yaml}
 # Run all pre-commit hooks manually
 make pre-commit
 # or
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Testing Commands
 
 ### Test Performance Tiers
 
-**Fast Development Loop (< 1 minute)**
+#### Fast Development Loop (< 1 minute)
 
 ```bash
 # Core unit tests only - fastest feedback
 make test-fast
 # or
-poetry run pytest tests/unit/ tests/auth/ -m "not slow and not performance and not stress" --maxfail=3 --tb=short
+uv run pytest tests/unit/ tests/auth/ -m "not slow and not performance and not stress" --maxfail=3 --tb=short
 ```
 
-**Pre-commit Validation (< 2 minutes)**
+#### Pre-commit Validation (< 2 minutes)
 
 ```bash
 # Unit + auth + essential integration tests
 make test-pre-commit
 # or
-poetry run pytest tests/unit/ tests/auth/ tests/integration/ -m "not performance and not stress and not contract" --maxfail=5
+uv run pytest tests/unit/ tests/auth/ tests/integration/ -m "not performance and not stress and not contract" --maxfail=5
 ```
 
-**PR Validation (< 5 minutes)**
+#### PR Validation (< 5 minutes)
 
 ```bash
 # All tests except performance/stress (CI default for PRs)
 make test-pr
 # or
-poetry run pytest -m "not performance and not stress" --maxfail=10
+uv run pytest -m "not performance and not stress" --maxfail=10
 ```
 
-**Full Test Suite**
+#### Full Test Suite
 
 ```bash
 # Complete test suite including performance tests (main branch/scheduled)
 make test
 # or
-poetry run pytest -v --cov=src --cov-report=html --cov-report=term-missing
+uv run pytest -v --cov=src --cov-report=html --cov-report=term-missing
 ```
 
-**Performance Tests Only**
+#### Performance Tests Only
 
 ```bash
 # Run only performance and stress tests
 make test-performance
 # or
-poetry run pytest tests/performance/ -m "performance or stress" --tb=line
+uv run pytest tests/performance/ -m "performance or stress" --tb=line
 ```
 
 ### Test Markers Reference
@@ -105,8 +105,8 @@ pytest -m "not performance and not stress"
 # Run security scans
 make security
 # or
-poetry run safety check
-poetry run bandit -r src
+uv run safety check
+uv run bandit -r src
 
 # Using nox for comprehensive security checks
 nox -s security
@@ -171,10 +171,10 @@ make setup
 ./scripts/setup-assured-oss-local.sh
 
 # Install dependencies only
-poetry install --sync
+uv sync
 
 # Install pre-commit hooks
-poetry run pre-commit install
+uv run pre-commit install
 ```
 
 ## Additional Utilities
@@ -184,10 +184,10 @@ poetry run pre-commit install
 make clean
 
 # Validate environment and encryption keys
-poetry run python src/utils/encryption.py
+uv run python src/utils/encryption.py
 
 # Check for outdated dependencies
-poetry show --outdated
+uv tree --outdated
 
 # Update dependencies with hash verification
 nox -s deps
@@ -203,10 +203,10 @@ python scripts/claude-context7-integration.py check-all-deps
 
 ```bash
 # If pre-commit hooks fail
-poetry run pre-commit run --all-files --show-diff-on-failure
+uv run pre-commit run --all-files --show-diff-on-failure
 
 # If dependencies are corrupted
-poetry install --sync --no-cache
+uv sync --no-cache
 
 # If Docker build fails
 docker system prune -f
@@ -214,5 +214,5 @@ docker build --no-cache -t promptcraft-hybrid .
 
 # If tests hang
 pkill -f pytest
-poetry run pytest --lf  # Run only last failed tests
+uv run pytest --lf  # Run only last failed tests
 ```

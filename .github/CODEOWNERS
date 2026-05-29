@@ -12,7 +12,7 @@
 # Critical configuration files require extra attention
 /.github/ @williaby
 /pyproject.toml @williaby
-/poetry.lock @williaby
+/uv.lock @williaby
 /docker-compose*.yml @williaby
 /Dockerfile @williaby
 /.env* @williaby

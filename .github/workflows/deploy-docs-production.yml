@@ -28,30 +28,20 @@ jobs:
         with:
           fetch-depth: 0  # Full history for git-based features
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: 0.8.17
+          enable-cache: true
+
       - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.1.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: docs-production-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            docs-production-${{ runner.os }}-
+        run: uv python install 3.11
 
       - name: Install documentation dependencies
         run: |
-          # Install MkDocs and theme
-          pip install mkdocs-material mkdocs-include-markdown-plugin
+          # Install MkDocs, theme, and docs group from the lockfile
+          uv sync --frozen --group docs
+          uv pip install mkdocs-include-markdown-plugin
           echo "✅ Documentation dependencies installed"
 
       - name: Verify or create MkDocs configuration
@@ -91,7 +81,7 @@ jobs:
           # Remove any conflicting index.html files
           find docs -name "index.html" -delete 2>/dev/null || true
           # Build with strict mode for production
-          mkdocs build --strict --verbose
+          uv run --frozen mkdocs build --strict --verbose
           echo "✅ Production documentation built successfully"
 
       - name: Upload artifact

@@ -147,7 +147,7 @@ Based on linting output, high-impact files include:
 ### Phase 1: Quick Wins (Auto-fixable - 10 issues)
 
 ```bash
-poetry run ruff check --fix .  # Fixes RUF100 unused-noqa
+uv run ruff check --fix .  # Fixes RUF100 unused-noqa
 ```
 
 ### Phase 2: Security Review (27 issues)
@@ -193,16 +193,16 @@ poetry run ruff check --fix .  # Fixes RUF100 unused-noqa
 
 ```bash
 # Check current linting status
-poetry run ruff check . --statistics
+uv run ruff check . --statistics
 
 # Run type checking (should be clean)
-poetry run mypy src
+uv run mypy src
 
 # Run test suite
 make test-fast
 
 # Apply auto-fixes
-poetry run ruff check --fix .
+uv run ruff check --fix .
 ```
 
 ## Progress Summary

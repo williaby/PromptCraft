@@ -2,7 +2,7 @@
 
 # [](#python-environment-and-dependencies)Python Environment and Dependencies
 
-*PromptCraft Pro Default Injection: **Python 3.11 with Poetry***
+*PromptCraft Pro Default Injection: **Python 3.11 with uv***
 
 This section defines the standard runtime environment for all Python projects. Prompts must instruct
 the LLM to generate code and commands that are compatible with these specifications.
@@ -10,8 +10,8 @@ the LLM to generate code and commands that are compatible with these specificati
 | Directive | Specification | PromptCraft Pro Injection |
 | --- | --- | --- |
 | **Python Version** | All code must be written for and compatible with **Python 3.11**. | When generating code or scripts, include: \<br>"The solution must be compatible with Python 3.11." |
-| **Dependency Mgmt.** | All projects use **Poetry** for dependency management and packaging. | For tasks involving dependencies, instruct the LLM to use `poetry` commands \<br>(e.g., `poetry add`, `poetry install`). |
-| **Virtual Environment** | Assume code will be run within a virtual environment managed by Poetry. | For setup instructions, include: \<br>"Ensure all commands are run within the project's Poetry shell." |
+| **Dependency Mgmt.** | All projects use **uv** for dependency management and environment handling. | For tasks involving dependencies, instruct the LLM to use `uv` commands \<br>(e.g., `uv add`, `uv sync`). |
+| **Virtual Environment** | Assume code will be run within a virtual environment managed by uv. | For setup instructions, include: \<br>"Ensure all commands are run within the project's uv-managed environment, for example via `uv run`." |
 
 ***
 

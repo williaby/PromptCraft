@@ -5,12 +5,13 @@ Consumer-driven contract tests for PromptCraft MCP integrations using Pact and l
 ## Overview
 
 These tests validate API contracts between PromptCraft (consumer) and MCP servers (providers):
+
 - **zen-mcp-server**: Query processing, health checks, knowledge retrieval
 - **heimdall-mcp-server**: Security analysis, code quality analysis (using stub)
 
 ## Architecture
 
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   PromptCraft   │    │   zen-mcp-server │    │  heimdall-stub  │
 │   (Consumer)    │◄──►│   (Provider)     │    │   (Provider)    │
@@ -30,7 +31,7 @@ These tests validate API contracts between PromptCraft (consumer) and MCP server
 
 ```bash
 # Install pact-python (already enabled in pyproject.toml)
-poetry install
+uv sync
 
 # Optional: Install pact-ruby-standalone for full Pact features
 gem install pact-mock_service
@@ -39,6 +40,7 @@ gem install pact-mock_service
 ### 2. Prepare Local Servers
 
 **zen-mcp-server**: Ensure you have it available at:
+
 - `/home/byron/dev/zen-mcp-server/server.py`
 - `/home/byron/dev/PromptCraft/zen-mcp-server/server.py`
 
@@ -47,32 +49,36 @@ gem install pact-mock_service
 ## Running Tests
 
 ### Quick Start
+
 ```bash
 # Run all contract tests
 ./run_contract_tests.py
 
-# Or with poetry directly
-poetry run pytest tests/contract/ -m contract -v
+# Or with uv directly
+uv run pytest tests/contract/ -m contract -v
 ```
 
 ### Manual Test Execution
+
 ```bash
 # Run specific test classes
-poetry run pytest tests/contract/test_mcp_contracts.py::TestZenMCPContracts -v
-poetry run pytest tests/contract/test_mcp_contracts.py::TestHeimdalMCPContracts -v
+uv run pytest tests/contract/test_mcp_contracts.py::TestZenMCPContracts -v
+uv run pytest tests/contract/test_mcp_contracts.py::TestHeimdalMCPContracts -v
 
 # Run with server requirements
-poetry run pytest tests/contract/ -m "contract and requires_servers" -v
+uv run pytest tests/contract/ -m "contract and requires_servers" -v
 ```
 
 ## Test Configuration
 
 ### Environment Variables
+
 - `PACT_TEST_MODE`: `consumer` | `provider` | `both` (default: consumer)
 - `CONTRACT_TEST`: `true` (enables contract test mode)
 - `LOG_LEVEL`: `DEBUG` | `INFO` | `WARNING` (default: INFO)
 
 ### Pact Configuration
+
 - **Consumer**: `promptcraft`
 - **Providers**: `zen-mcp-server`, `heimdall-mcp-server`
 - **Mock Ports**: 1234 (zen), 1235 (heimdall)
@@ -82,12 +88,14 @@ poetry run pytest tests/contract/ -m "contract and requires_servers" -v
 ## Test Structure
 
 ### TestZenMCPContracts
+
 - `test_query_processing_contract()`: POST /api/v1/query/process
 - `test_agent_health_check_contract()`: GET /health, /health/agents
 - `test_knowledge_retrieval_contract()`: POST /api/v1/knowledge/search
 - `test_error_handling_contract()`: Error response validation
 
 ### TestHeimdalMCPContracts
+
 - `test_security_analysis_contract()`: POST /api/v1/analyze/security
 - `test_code_quality_contract()`: POST /api/v1/analyze/quality
 
@@ -112,7 +120,7 @@ curl http://localhost:8081/health  # heimdall-stub
 
 Tests may be skipped if:
 
-- `pact-python` not installed → Install with `poetry install`
+- `pact-python` not installed → Install with `uv sync`
 - `zen-mcp-server` not found → Clone/install zen-mcp-server locally
 - Servers fail to start → Check server logs and ports
 
@@ -142,8 +150,8 @@ gem install pact-mock_service
 # Example GitHub Actions
 - name: Run Contract Tests
   run: |
-    poetry install
-    poetry run pytest tests/contract/ -m contract -v
+    uv sync
+    uv run pytest tests/contract/ -m contract -v
 
 - name: Upload Pact Files
   # Optional: Upload to Pact Broker
