@@ -35,10 +35,10 @@ class ServiceTokenUser:
         """Initialize service token user.
 
         Args:
-            token_id: Unique token identifier
-            token_name: Human-readable token name
-            metadata: Token metadata including permissions
-            usage_count: Current usage count
+            token_id (str): Unique token identifier
+            token_name (str): Human-readable token name
+            metadata (dict): Token metadata including permissions
+            usage_count (int): Current usage count
         """
         self.token_id = token_id
         self.token_name = token_name
@@ -49,10 +49,10 @@ class ServiceTokenUser:
         """Check if the service token has a specific permission.
 
         Args:
-            permission: Permission to check
+            permission (str): Permission to check
 
         Returns:
-            True if token has the permission
+            bool: True if token has the permission
         """
         return permission in self.metadata.get("permissions", [])
 

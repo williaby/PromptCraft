@@ -45,12 +45,12 @@ class AuthExceptionHandler:
         """Handle authentication failures (401 Unauthorized).
 
         Args:
-            detail: User-facing error message
-            log_message: Internal log message (optional)
-            user_identifier: User/token identifier for logging
+            detail (str): User-facing error message
+            log_message (str): Internal log message (optional)
+            user_identifier (str): User/token identifier for logging
 
         Returns:
-            HTTPException with 401 status code
+            HTTPException: HTTPException with 401 status code
         """
         log_msg = log_message or detail
         if user_identifier:
@@ -73,12 +73,12 @@ class AuthExceptionHandler:
         """Handle permission/authorization failures (403 Forbidden).
 
         Args:
-            permission_name: Name of the required permission
-            user_identifier: User/token identifier for logging
-            detail: Custom error detail (optional)
+            permission_name (str): Name of the required permission
+            user_identifier (str): User/token identifier for logging
+            detail (str): Custom error detail (optional)
 
         Returns:
-            HTTPException with 403 status code
+            HTTPException: HTTPException with 403 status code
         """
         if not detail:
             if permission_name:
@@ -106,12 +106,12 @@ class AuthExceptionHandler:
         """Handle entity not found errors (404 Not Found).
 
         Args:
-            entity_type: Type of entity (role, user, permission, etc.)
-            entity_identifier: Identifier of the entity
-            detail: Custom error detail (optional)
+            entity_type (str): Type of entity (role, user, permission, etc.)
+            entity_identifier (str): Identifier of the entity
+            detail (str): Custom error detail (optional)
 
         Returns:
-            HTTPException with 404 status code
+            HTTPException: HTTPException with 404 status code
         """
         if not detail:
             if entity_identifier:
@@ -135,12 +135,12 @@ class AuthExceptionHandler:
         """Handle input validation errors (400 Bad Request).
 
         Args:
-            detail: User-facing validation error message
-            field_name: Name of the field that failed validation
-            log_additional: Additional information for logging
+            detail (str): User-facing validation error message
+            field_name (str): Name of the field that failed validation
+            log_additional (str): Additional information for logging
 
         Returns:
-            HTTPException with 400 status code
+            HTTPException: HTTPException with 400 status code
         """
         log_msg = f"Validation error: {detail}"
         if field_name:
@@ -164,12 +164,12 @@ class AuthExceptionHandler:
         """Handle resource conflict errors (409 Conflict).
 
         Args:
-            detail: User-facing conflict error message
-            entity_type: Type of conflicting entity
-            entity_identifier: Identifier of conflicting entity
+            detail (str): User-facing conflict error message
+            entity_type (str): Type of conflicting entity
+            entity_identifier (str): Identifier of conflicting entity
 
         Returns:
-            HTTPException with 409 status code
+            HTTPException: HTTPException with 409 status code
         """
         log_msg = f"Conflict error: {detail}"
         if entity_type and entity_identifier:
@@ -191,12 +191,12 @@ class AuthExceptionHandler:
         """Handle rate limiting errors (429 Too Many Requests).
 
         Args:
-            retry_after: Seconds until client can retry
-            detail: User-facing rate limit message
-            client_identifier: Client identifier for logging
+            retry_after (int): Seconds until client can retry
+            detail (str): User-facing rate limit message
+            client_identifier (str): Client identifier for logging
 
         Returns:
-            HTTPException with 429 status code
+            HTTPException: HTTPException with 429 status code
         """
         log_msg = f"Rate limit exceeded: {detail}"
         if client_identifier:
@@ -220,13 +220,13 @@ class AuthExceptionHandler:
         """Handle internal server errors (500 Internal Server Error).
 
         Args:
-            operation_name: Name of the operation that failed
-            error: Original exception
-            detail: User-facing error message
-            expose_error: Whether to expose error details (dev only)
+            operation_name (str): Name of the operation that failed
+            error (Exception): Original exception
+            detail (str): User-facing error message
+            expose_error (bool): Whether to expose error details (dev only)
 
         Returns:
-            HTTPException with 500 status code
+            HTTPException: HTTPException with 500 status code
         """
         logger.error(f"{operation_name} failed: {error}", exc_info=True)
 
@@ -254,10 +254,10 @@ class AuthExceptionHandler:
         - Other exceptions -> 500 Internal Server Error
 
         Args:
-            error: Domain exception from role manager
+            error (Exception): Domain exception from role manager
 
         Returns:
-            HTTPException with appropriate status code
+            HTTPException: HTTPException with appropriate status code
         """
         if isinstance(error, RoleNotFoundError):
             return cls.handle_not_found_error("role", str(error).split("'")[1] if "'" in str(error) else "")
@@ -287,12 +287,12 @@ class AuthExceptionHandler:
         """Handle service unavailable errors (503 Service Unavailable).
 
         Args:
-            service_name: Name of the unavailable service
-            detail: Custom error detail
-            retry_after: Seconds until service might be available
+            service_name (str): Name of the unavailable service
+            detail (str): Custom error detail
+            retry_after (int): Seconds until service might be available
 
         Returns:
-            HTTPException with 503 status code
+            HTTPException: HTTPException with 503 status code
         """
         if not detail:
             detail = f"Service temporarily unavailable: {service_name}"

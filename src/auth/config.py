@@ -216,10 +216,10 @@ class AuthenticationConfig(BaseModel):
         """Check if an email should have admin role.
 
         Args:
-            email: Email address to check
+            email (str): Email address to check
 
         Returns:
-            True if email should have admin role, False otherwise
+            bool: True if email should have admin role, False otherwise
         """
         email_lower = email.lower()
 
