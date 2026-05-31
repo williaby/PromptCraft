@@ -1371,8 +1371,11 @@ def _validate_general_security(
 ) -> tuple[list[str], list[str]]:
     """Validate general security requirements.
 
+    Args:
+        settings (ApplicationSettings): The application settings to validate.
+
     Returns:
-        Tuple of (validation_errors, suggestions)
+        tuple[list[str], list[str]]: Tuple of (validation_errors, suggestions).
     """
     validation_errors = []
     suggestions = []
@@ -1419,10 +1422,10 @@ def validate_configuration_on_startup(settings: ApplicationSettings) -> None:
     error reporting with actionable suggestions for fixing issues.
 
     Args:
-        settings: The settings instance to validate
+        settings (ApplicationSettings): The settings instance to validate.
 
     Raises:
-        ConfigurationValidationError: If validation fails with detailed errors
+        ConfigurationValidationError: If validation fails with detailed errors.
     """
     logger = logging.getLogger(__name__)
     logger.info("Starting configuration validation...")
@@ -1472,10 +1475,10 @@ def validate_field_requirements_by_environment(environment: str) -> set[str]:
     """Get required fields for a specific environment.
 
     Args:
-        environment: The environment to get requirements for
+        environment (str): The environment to get requirements for.
 
     Returns:
-        Set of field names that are required for the environment
+        set[str]: Set of field names that are required for the environment.
     """
     base_required = {"app_name", "version", "environment", "api_host", "api_port"}
 
@@ -1506,14 +1509,13 @@ def get_settings(validate_on_startup: bool = True) -> ApplicationSettings:
     during development. It also performs comprehensive validation and logging.
 
     Args:
-        validate_on_startup: Whether to perform full startup validation (default: True)
+        validate_on_startup (bool): Whether to perform full startup validation (default: True).
 
     Returns:
-        ApplicationSettings instance configured for the current environment.
+        ApplicationSettings: ApplicationSettings instance configured for the current environment.
 
     Raises:
-        ConfigurationValidationError: If configuration validation fails
-        ValidationError: If Pydantic field validation fails
+        ConfigurationValidationError: If configuration validation fails.
 
     Example:
         >>> settings = get_settings()
@@ -1583,13 +1585,10 @@ def reload_settings(validate_on_startup: bool = True) -> ApplicationSettings:
     environment configuration has changed during runtime.
 
     Args:
-        validate_on_startup: Whether to perform full startup validation (default: True)
+        validate_on_startup (bool): Whether to perform full startup validation (default: True).
 
     Returns:
-        Fresh ApplicationSettings instance with current configuration.
-
-    Raises:
-        ConfigurationValidationError: If configuration validation fails
+        ApplicationSettings: Fresh ApplicationSettings instance with current configuration.
     """
     logger = logging.getLogger(__name__)
     logger.info("Reloading configuration...")

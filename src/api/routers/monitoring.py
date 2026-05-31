@@ -74,7 +74,7 @@ async def get_metrics() -> MetricsResponse:
     """Get current system metrics.
 
     Returns:
-        Current system metrics.
+        MetricsResponse: Current system metrics.
     """
     monitor = get_performance_monitor()
     metrics = monitor.get_all_metrics()
@@ -98,7 +98,7 @@ async def get_sla_compliance() -> SLAComplianceResponse:
     """Get SLA compliance status.
 
     Returns:
-        SLA compliance status.
+        SLAComplianceResponse: SLA compliance status.
     """
     monitor = get_performance_monitor()
     sla_monitor = get_sla_monitor()
@@ -128,10 +128,10 @@ async def get_sla_violations(
     """Get SLA violations.
 
     Args:
-        since: Optional timestamp to filter violations.
+        since (float | None): Optional timestamp to filter violations.
 
     Returns:
-        SLA violations.
+        SLAViolationResponse: SLA violations.
     """
     sla_monitor = get_sla_monitor()
     violations = sla_monitor.get_violations(since)
@@ -153,7 +153,7 @@ async def get_health() -> HealthResponse:
     """Get system health status.
 
     Returns:
-        System health status.
+        HealthResponse: System health status.
     """
     monitor = get_performance_monitor()
     sla_monitor = get_sla_monitor()
@@ -191,7 +191,7 @@ async def reset_metrics() -> dict[str, str]:
     """Reset all performance metrics.
 
     Returns:
-        Reset confirmation.
+        dict[str, str]: Reset confirmation.
     """
     monitor = get_performance_monitor()
     monitor.reset_metrics()
@@ -204,7 +204,7 @@ async def clear_sla_violations() -> dict[str, str]:
     """Clear all SLA violations.
 
     Returns:
-        Clear confirmation.
+        dict[str, str]: Clear confirmation.
     """
     sla_monitor = get_sla_monitor()
     sla_monitor.clear_violations()
@@ -221,7 +221,7 @@ async def get_system_resources() -> dict[str, Any]:
     """Get system resource usage.
 
     Returns:
-        System resource usage.
+        dict[str, Any]: System resource usage.
     """
     monitor = get_performance_monitor()
 
@@ -244,7 +244,7 @@ async def start_resource_monitoring() -> dict[str, str]:
     """Start system resource monitoring.
 
     Returns:
-        Start confirmation.
+        dict[str, str]: Start confirmation.
     """
     resource_monitor = get_resource_monitor()
     await resource_monitor.start_monitoring()

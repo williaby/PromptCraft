@@ -40,13 +40,13 @@ class TokenExpirationAlert:
         """Initialize token expiration alert.
 
         Args:
-            token_name: Name of the expiring token
-            token_id: Token identifier
-            expires_at: Token expiration timestamp
-            days_until_expiration: Days until token expires
-            usage_count: Current usage count
-            last_used: Last usage timestamp
-            metadata: Token metadata
+            token_name (str): Name of the expiring token.
+            token_id (str): Token identifier.
+            expires_at (datetime): Token expiration timestamp.
+            days_until_expiration (int): Days until token expires.
+            usage_count (int): Current usage count.
+            last_used (datetime | None): Last usage timestamp.
+            metadata (dict | None): Token metadata.
         """
         self.token_name = token_name
         self.token_id = token_id
@@ -83,7 +83,7 @@ class ServiceTokenMonitor:
         """Initialize service token monitor.
 
         Args:
-            settings: Application settings (optional)
+            settings (ApplicationSettings | None): Application settings (optional).
         """
         self.settings = settings
         self.token_manager = ServiceTokenManager()
@@ -100,10 +100,10 @@ class ServiceTokenMonitor:
         """Check for tokens expiring within threshold.
 
         Args:
-            alert_threshold_days: Alert for tokens expiring within N days
+            alert_threshold_days (int): Alert for tokens expiring within N days.
 
         Returns:
-            List of expiration alerts
+            list[TokenExpirationAlert]: List of expiration alerts.
         """
         alerts = []
 
@@ -149,7 +149,7 @@ class ServiceTokenMonitor:
         """Get comprehensive monitoring metrics for service tokens.
 
         Returns:
-            Dictionary with monitoring metrics
+            dict[str, Any]: Dictionary with monitoring metrics.
         """
         metrics: dict[str, Any] = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -251,11 +251,11 @@ class ServiceTokenMonitor:
         """Send expiration alerts via configured notification method.
 
         Args:
-            alerts: List of expiration alerts
-            notification_method: Method to send alerts (log, email, webhook)
+            alerts (list[TokenExpirationAlert]): List of expiration alerts.
+            notification_method (str): Method to send alerts (log, email, webhook).
 
         Returns:
-            Dictionary with notification statistics
+            dict[str, Any]: Dictionary with notification statistics.
         """
         if not alerts:
             return {"alerts_sent": 0, "method": notification_method}
@@ -313,10 +313,10 @@ class ServiceTokenMonitor:
         """Send email alerts for expiring tokens.
 
         Args:
-            alerts_by_severity: Alerts grouped by severity
+            alerts_by_severity (dict[str, list[TokenExpirationAlert]]): Alerts grouped by severity.
 
         Returns:
-            Number of alerts sent
+            int: Number of alerts sent.
         """
         # This would require SMTP configuration in settings
         # For now, just log that email alerts would be sent
@@ -333,10 +333,10 @@ class ServiceTokenMonitor:
         """Send webhook alerts for expiring tokens.
 
         Args:
-            alerts_by_severity: Alerts grouped by severity
+            alerts_by_severity (dict[str, list[TokenExpirationAlert]]): Alerts grouped by severity.
 
         Returns:
-            Number of alerts sent
+            int: Number of alerts sent.
         """
         # This would integrate with Slack/Teams/Discord webhooks
         # For now, just log that webhook alerts would be sent
@@ -353,7 +353,7 @@ class ServiceTokenMonitor:
         """Run scheduled monitoring tasks.
 
         Returns:
-            Summary of monitoring results
+            dict[str, Any]: Summary of monitoring results.
         """
         start_time = datetime.now(UTC)
 
@@ -393,7 +393,7 @@ class ServiceTokenMonitor:
         """Start continuous monitoring daemon.
 
         Args:
-            check_interval_minutes: Minutes between monitoring checks
+            check_interval_minutes (int): Minutes between monitoring checks.
         """
         logger.info("Starting service token monitoring daemon (interval: %d minutes)", check_interval_minutes)
 
@@ -427,7 +427,7 @@ class MonitoringHealthCheck:
         """Get comprehensive health status for monitoring systems.
 
         Returns:
-            Health status dictionary
+            dict[str, Any]: Health status dictionary.
         """
         monitor = ServiceTokenMonitor()
 
