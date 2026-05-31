@@ -57,10 +57,10 @@ class ZenMCPStdioClient:
         Initialize PromptCraft MCP client.
 
         Args:
-            server_path: Path to zen-mcp-server executable
-            env_vars: Environment variables for server process
-            fallback_config: HTTP fallback configuration
-            connection_timeout: Connection timeout in seconds
+            server_path (str): Path to zen-mcp-server executable
+            env_vars (dict[str, str] | None): Environment variables for server process
+            fallback_config (FallbackConfig | None): HTTP fallback configuration
+            connection_timeout (float): Connection timeout in seconds
         """
         # Configuration
         self.connection_config = MCPConnectionConfig(
@@ -144,7 +144,7 @@ class ZenMCPStdioClient:
         Analyze prompt complexity and get model recommendations.
 
         Args:
-            request: Route analysis request parameters
+            request (RouteAnalysisRequest): Route analysis request parameters
 
         Returns:
             AnalysisResult: Analysis results with recommendations
@@ -185,7 +185,7 @@ class ZenMCPStdioClient:
         Execute prompt with smart model routing.
 
         Args:
-            request: Smart execution request parameters
+            request (SmartExecutionRequest): Smart execution request parameters
 
         Returns:
             ExecutionResult: Execution results with response
@@ -226,7 +226,7 @@ class ZenMCPStdioClient:
         Get available models for user tier.
 
         Args:
-            request: Model list request parameters
+            request (ModelListRequest): Model list request parameters
 
         Returns:
             ModelListResult: Available models and metadata
@@ -282,11 +282,14 @@ class ZenMCPStdioClient:
         Call an MCP tool directly.
 
         Args:
-            tool_name: Name of the tool to call
-            arguments: Tool arguments
+            tool_name (str): Name of the tool to call
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Dict[str, Any]: Tool result
+            dict[str, Any]: Tool result
+
+        Raises:
+            Exception: If not connected to zen-mcp-server or tool call fails
         """
         if not self.connected or not self.current_process:
             raise Exception("Not connected to zen-mcp-server")
@@ -302,11 +305,14 @@ class ZenMCPStdioClient:
         Send MCP tool call request via stdio.
 
         Args:
-            tool_name: Name of the tool to call
-            arguments: Tool arguments
+            tool_name (str): Name of the tool to call
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Dict[str, Any]: Tool result
+            dict[str, Any]: Tool result
+
+        Raises:
+            Exception: If no active server process, stdin not available, timeout, or MCP error
         """
         if not self.current_process or not self.current_process.process:
             raise Exception("No active server process")
@@ -372,11 +378,14 @@ class ZenMCPStdioClient:
         Read MCP response from process stdout.
 
         Args:
-            process: Subprocess instance
-            request_id: Expected request ID
+            process (Any): Subprocess instance
+            request_id (str): Expected request ID
 
         Returns:
             str: Response JSON string
+
+        Raises:
+            Exception: If stdout is not available or closed, or error reading response
         """
         if not process.stdout:
             raise Exception("Process stdout not available")
@@ -464,9 +473,9 @@ async def create_client(
     Create and connect PromptCraft MCP client with sensible defaults.
 
     Args:
-        server_path: Path to zen-mcp-server executable
-        env_vars: Environment variables for server
-        http_fallback_url: HTTP API base URL for fallback
+        server_path (str): Path to zen-mcp-server executable
+        env_vars (dict[str, str] | None): Environment variables for server
+        http_fallback_url (str): HTTP API base URL for fallback
 
     Returns:
         ZenMCPStdioClient: Connected client instance

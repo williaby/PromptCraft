@@ -39,7 +39,7 @@ class MCPClient(LoggerMixin):
         """Initialize MCP client with configuration.
 
         Args:
-            config_path: Path to MCP configuration file (defaults to .mcp.json)
+            config_path (Path | None): Path to MCP configuration file (defaults to .mcp.json)
         """
         super().__init__()
         self.config_path = config_path or Path(".mcp.json")
@@ -65,10 +65,10 @@ class MCPClient(LoggerMixin):
         """Connect to a specific MCP server.
 
         Args:
-            server_name: Name of the server to connect to
+            server_name (str): Name of the server to connect to
 
         Returns:
-            True if connection successful, False otherwise
+            bool: True if connection successful, False otherwise
         """
         if server_name not in self.servers:
             self.logger.error(f"Server '{server_name}' not found in configuration")
@@ -88,10 +88,10 @@ class MCPClient(LoggerMixin):
         """Disconnect from a specific MCP server.
 
         Args:
-            server_name: Name of the server to disconnect from
+            server_name (str): Name of the server to disconnect from
 
         Returns:
-            True if disconnection successful, False otherwise
+            bool: True if disconnection successful, False otherwise
         """
         if server_name not in self.connections:
             self.logger.warning(f"Server '{server_name}' not connected")
@@ -110,11 +110,11 @@ class MCPClient(LoggerMixin):
         """Send message to MCP server and get response.
 
         Args:
-            server_name: Name of the target server
-            message: Message payload to send
+            server_name (str): Name of the target server
+            message (dict[str, Any]): Message payload to send
 
         Returns:
-            Response from the server
+            dict[str, Any]: Response from the server
 
         Raises:
             MCPClientError: If server not connected or communication fails
@@ -141,7 +141,7 @@ class MCPClient(LoggerMixin):
         """Get list of currently connected servers.
 
         Returns:
-            List of connected server names
+            list[str]: List of connected server names
         """
         return list(self.connections.keys())
 
@@ -149,10 +149,10 @@ class MCPClient(LoggerMixin):
         """Get status information for a specific server.
 
         Args:
-            server_name: Name of the server
+            server_name (str): Name of the server
 
         Returns:
-            Status information dictionary
+            dict[str, Any]: Status information dictionary
         """
         if server_name not in self.servers:
             return {"status": "not_configured"}
@@ -166,7 +166,7 @@ class MCPClient(LoggerMixin):
         """Perform health check on all configured servers.
 
         Returns:
-            Health status for all servers
+            dict[str, Any]: Health status for all servers
         """
         health_status: dict[str, Any] = {
             "overall_status": "healthy",

@@ -65,12 +65,12 @@ class RoleManager(DatabaseService):
         """Create a new role.
 
         Args:
-            name: Unique role name (lowercase, underscore-separated)
-            description: Optional human-readable description
-            parent_role_name: Optional parent role name for inheritance
+            name (str): Unique role name (lowercase, underscore-separated)
+            description (str | None): Optional human-readable description
+            parent_role_name (str | None): Optional parent role name for inheritance
 
         Returns:
-            Dictionary with role information
+            dict[str, Any]: Dictionary with role information
 
         Raises:
             RoleManagerError: If role creation fails
@@ -121,10 +121,10 @@ class RoleManager(DatabaseService):
         """Get role information by name.
 
         Args:
-            role_name: Name of the role to retrieve
+            role_name (str): Name of the role to retrieve
 
         Returns:
-            Dictionary with role information or None if not found
+            dict[str, Any] | None: Dictionary with role information or None if not found
         """
         try:
             async with self.get_session() as session:
@@ -161,10 +161,10 @@ class RoleManager(DatabaseService):
         """List all roles.
 
         Args:
-            include_inactive: Whether to include inactive roles
+            include_inactive (bool): Whether to include inactive roles
 
         Returns:
-            List of role dictionaries
+            list[dict[str, Any]]: List of role dictionaries
         """
         try:
             async with self.get_session() as session:
@@ -206,10 +206,10 @@ class RoleManager(DatabaseService):
         """Get all permissions for a role including inherited permissions.
 
         Args:
-            role_name: Name of the role
+            role_name (str): Name of the role
 
         Returns:
-            Set of permission names
+            set[str]: Set of permission names
 
         Raises:
             RoleNotFoundError: If role doesn't exist
@@ -265,13 +265,14 @@ class RoleManager(DatabaseService):
         """Assign a permission to a role.
 
         Args:
-            role_name: Name of the role
-            permission_name: Name of the permission
+            role_name (str): Name of the role
+            permission_name (str): Name of the permission
 
         Returns:
-            True if assignment was successful
+            bool: True if assignment was successful
 
         Raises:
+            RoleManagerError: If assignment fails due to a database error
             RoleNotFoundError: If role doesn't exist
             PermissionNotFoundError: If permission doesn't exist
         """
@@ -320,13 +321,14 @@ class RoleManager(DatabaseService):
         """Revoke a permission from a role.
 
         Args:
-            role_name: Name of the role
-            permission_name: Name of the permission
+            role_name (str): Name of the role
+            permission_name (str): Name of the permission
 
         Returns:
-            True if revocation was successful
+            bool: True if revocation was successful
 
         Raises:
+            RoleManagerError: If revocation fails due to a database error
             RoleNotFoundError: If role doesn't exist
             PermissionNotFoundError: If permission doesn't exist
         """
@@ -376,14 +378,15 @@ class RoleManager(DatabaseService):
         """Assign a role to a user.
 
         Args:
-            user_email: Email address of the user
-            role_name: Name of the role to assign
-            assigned_by: Email of the admin who assigned the role
+            user_email (str): Email address of the user
+            role_name (str): Name of the role to assign
+            assigned_by (str | None): Email of the admin who assigned the role
 
         Returns:
-            True if assignment was successful
+            bool: True if assignment was successful
 
         Raises:
+            RoleManagerError: If assignment fails due to a database error
             UserNotFoundError: If user doesn't exist
             RoleNotFoundError: If role doesn't exist
         """
@@ -449,13 +452,14 @@ class RoleManager(DatabaseService):
         """Revoke a role from a user.
 
         Args:
-            user_email: Email address of the user
-            role_name: Name of the role to revoke
+            user_email (str): Email address of the user
+            role_name (str): Name of the role to revoke
 
         Returns:
-            True if revocation was successful
+            bool: True if revocation was successful
 
         Raises:
+            RoleManagerError: If revocation fails due to a database error
             RoleNotFoundError: If role doesn't exist
         """
         try:
@@ -496,10 +500,10 @@ class RoleManager(DatabaseService):
         """Get all roles assigned to a user.
 
         Args:
-            user_email: Email address of the user
+            user_email (str): Email address of the user
 
         Returns:
-            List of role dictionaries with assignment information
+            list[dict[str, Any]]: List of role dictionaries with assignment information
         """
         try:
             async with self.get_session() as session:
@@ -582,10 +586,10 @@ class RoleManager(DatabaseService):
         """Get all permissions for a user through their assigned roles.
 
         Args:
-            user_email: Email address of the user
+            user_email (str): Email address of the user
 
         Returns:
-            Set of permission names
+            set[str]: Set of permission names
         """
         try:
             user_roles = await self.get_user_roles(user_email)
@@ -606,11 +610,11 @@ class RoleManager(DatabaseService):
         """Validate that adding a parent role won't create a circular dependency.
 
         Args:
-            role_name: Name of the role to modify
-            parent_role_name: Name of the proposed parent role
+            role_name (str): Name of the role to modify
+            parent_role_name (str): Name of the proposed parent role
 
         Returns:
-            True if hierarchy is valid, False if it would create a circular dependency
+            bool: True if hierarchy is valid, False if it would create a circular dependency
 
         Raises:
             RoleNotFoundError: If either role doesn't exist
@@ -668,11 +672,11 @@ class RoleManager(DatabaseService):
         """Delete a role (soft delete by setting is_active=False).
 
         Args:
-            role_name: Name of the role to delete
-            force: If True, also removes all user assignments
+            role_name (str): Name of the role to delete
+            force (bool): If True, also removes all user assignments
 
         Returns:
-            True if deletion was successful
+            bool: True if deletion was successful
 
         Raises:
             RoleNotFoundError: If role doesn't exist

@@ -72,12 +72,16 @@ class MCPConnectionManager:
         Execute MCP operation with automatic HTTP fallback.
 
         Args:
-            mcp_operation: Async function that performs MCP operation
-            endpoint: HTTP endpoint for fallback
-            request_data: Request data for fallback
+            mcp_operation (Callable[[], Any]): Async function that performs MCP operation
+            endpoint (str): HTTP endpoint for fallback
+            request_data (dict[str, Any]): Request data for fallback
 
         Returns:
-            Tuple[Any, bool]: (result, used_mcp)
+            tuple[Any, bool]: (result, used_mcp)
+
+        Raises:
+            Exception: If both MCP and HTTP fallback fail
+            mcp_error: If MCP fails and no fallback is enabled
         """
         start_time = time.time()
         self.metrics.total_requests += 1
@@ -238,7 +242,7 @@ class MCPConnectionManager:
         Perform comprehensive health check.
 
         Args:
-            mcp_client: Optional MCP client for testing
+            mcp_client (Any | None): Optional MCP client for testing
 
         Returns:
             MCPHealthCheck: Health check result
@@ -341,11 +345,15 @@ class RetryHandler:
         Execute operation with exponential backoff retry.
 
         Args:
-            operation: Async function to execute
-            operation_name: Name for logging
+            operation (Callable[[], Any]): Async function to execute
+            operation_name (str): Name for logging
 
         Returns:
-            Operation result
+            Any: Operation result
+
+        Raises:
+            Exception: If all retries fail with no exception recorded
+            last_exception: If all retries fail with a recorded exception
         """
         last_exception = None
 

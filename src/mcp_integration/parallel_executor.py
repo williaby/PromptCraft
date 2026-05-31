@@ -60,8 +60,8 @@ class ParallelSubagentExecutor(LoggerMixin):
         """Initialize parallel executor.
 
         Args:
-            config_manager: MCP configuration manager
-            mcp_client: MCP client for server communication
+            config_manager (MCPConfigurationManager): MCP configuration manager
+            mcp_client (MCPClient): MCP client for server communication
         """
         super().__init__()
         self.config_manager = config_manager
@@ -84,11 +84,11 @@ class ParallelSubagentExecutor(LoggerMixin):
         """Select optimal client (Docker vs self-hosted) for server and tool.
 
         Args:
-            server_name: Name of the MCP server
-            tool_name: Specific tool being called (for feature checking)
+            server_name (str): Name of the MCP server
+            tool_name (str): Specific tool being called (for feature checking)
 
         Returns:
-            Tuple of (client_instance, deployment_type)
+            tuple[Any, str]: Tuple of (client_instance, deployment_type)
         """
         try:
             # Check if server is available in Docker MCP Toolkit
@@ -129,12 +129,15 @@ class ParallelSubagentExecutor(LoggerMixin):
         """Execute multiple subagents in parallel.
 
         Args:
-            subagent_tasks: List of subagent task configurations
-            coordination_strategy: How to coordinate subagents ("independent", "consensus", "pipeline")
-            timeout: Timeout in seconds for entire execution
+            subagent_tasks (list[dict[str, Any]]): List of subagent task configurations
+            coordination_strategy (str): How to coordinate subagents ("independent", "consensus", "pipeline")
+            timeout (int | None): Timeout in seconds for entire execution
 
         Returns:
-            Aggregated results from all subagents
+            dict[str, Any]: Aggregated results from all subagents
+
+        Raises:
+            ValueError: If an unknown coordination strategy is provided
         """
         if not subagent_tasks:
             self.logger.warning("No subagent tasks provided")

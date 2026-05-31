@@ -69,10 +69,10 @@ class DockerMCPClient(LoggerMixin):
         """Check if server is available in Docker MCP Toolkit.
 
         Args:
-            server_name: Name of the MCP server
+            server_name (str): Name of the MCP server
 
         Returns:
-            True if server is available in Docker toolkit
+            bool: True if server is available in Docker toolkit
         """
         return server_name in self.docker_servers
 
@@ -80,11 +80,11 @@ class DockerMCPClient(LoggerMixin):
         """Check if Docker-deployed server supports specific feature.
 
         Args:
-            server_name: Name of the MCP server
-            feature: Feature to check (e.g., "bulk_operations", "caching")
+            server_name (str): Name of the MCP server
+            feature (str): Feature to check (e.g., "bulk_operations", "caching")
 
         Returns:
-            True if feature is supported in Docker deployment
+            bool: True if feature is supported in Docker deployment
         """
         if server_name not in self.docker_servers:
             return False
@@ -96,10 +96,13 @@ class DockerMCPClient(LoggerMixin):
         """Authenticate with OAuth-required services.
 
         Args:
-            server_name: Name of the service requiring authentication
+            server_name (str): Name of the service requiring authentication
 
         Returns:
-            True if authentication successful
+            bool: True if authentication successful
+
+        Raises:
+            DockerMCPError: If server not found in Docker toolkit
         """
         if server_name not in self.docker_servers:
             raise DockerMCPError(f"Server '{server_name}' not found in Docker toolkit")
@@ -121,12 +124,12 @@ class DockerMCPClient(LoggerMixin):
         """Call tool on Docker-deployed MCP server.
 
         Args:
-            server_name: Name of the MCP server
-            tool: Tool name to call
-            params: Tool parameters
+            server_name (str): Name of the MCP server
+            tool (str): Tool name to call
+            params (dict[str, Any]): Tool parameters
 
         Returns:
-            Tool response from Docker-deployed server
+            dict[str, Any]: Tool response from Docker-deployed server
 
         Raises:
             DockerMCPError: If server unavailable or call fails
@@ -161,10 +164,10 @@ class DockerMCPClient(LoggerMixin):
         """Get capabilities of Docker-deployed server.
 
         Args:
-            server_name: Name of the MCP server
+            server_name (str): Name of the MCP server
 
         Returns:
-            Server capabilities and constraints
+            dict[str, Any]: Server capabilities and constraints
         """
         if server_name not in self.docker_servers:
             return {"available": False}
@@ -183,7 +186,7 @@ class DockerMCPClient(LoggerMixin):
         """Perform health check on Docker MCP infrastructure.
 
         Returns:
-            Health status of Docker MCP Toolkit integration
+            dict[str, Any]: Health status of Docker MCP Toolkit integration
         """
         available_servers = len(self.docker_servers)
         authenticated_servers = len(

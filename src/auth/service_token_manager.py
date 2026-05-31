@@ -51,7 +51,7 @@ class ServiceTokenManager:
         """Generate a new cryptographically secure service token.
 
         Returns:
-            Service token string with 'sk_' prefix
+            str: Service token string with 'sk_' prefix
         """
         # Generate 32 bytes (256 bits) of cryptographically secure random data
         token_bytes = secrets.token_bytes(self.token_length)
@@ -63,10 +63,10 @@ class ServiceTokenManager:
         """Hash a service token for secure database storage.
 
         Args:
-            token: Raw service token string
+            token (str): Raw service token string
 
         Returns:
-            SHA-256 hash of the token
+            str: SHA-256 hash of the token
         """
         return hashlib.sha256(token.encode()).hexdigest()
 
@@ -80,13 +80,13 @@ class ServiceTokenManager:
         """Create a new service token.
 
         Args:
-            token_name: Human-readable name for the token
-            metadata: Token metadata (permissions, client info, etc.)
-            expires_at: Optional expiration datetime
-            is_active: Whether token should be active
+            token_name (str): Human-readable name for the token
+            metadata (dict | None): Token metadata (permissions, client info, etc.)
+            expires_at (datetime | None): Optional expiration datetime
+            is_active (bool): Whether token should be active
 
         Returns:
-            Tuple of (token_value, token_id) - token_value should be given to client
+            tuple[str, str] | None: Tuple of (token_value, token_id) - token_value should be given to client
 
         Raises:
             ValueError: If token_name already exists
@@ -156,11 +156,14 @@ class ServiceTokenManager:
         """Revoke a service token (emergency or planned).
 
         Args:
-            token_identifier: Token name, ID, or hash to revoke
-            revocation_reason: Reason for revocation (for audit trail)
+            token_identifier (str): Token name, ID, or hash to revoke
+            revocation_reason (str): Reason for revocation (for audit trail)
 
         Returns:
-            True if token was revoked, False if not found
+            bool | None: True if token was revoked, False if not found
+
+        Raises:
+            Exception: If a database connection error occurs
         """
         try:
             db_manager = get_database_manager()
@@ -224,10 +227,10 @@ class ServiceTokenManager:
         """Emergency revocation of ALL service tokens.
 
         Args:
-            emergency_reason: Reason for emergency revocation
+            emergency_reason (str): Reason for emergency revocation
 
         Returns:
-            Number of tokens revoked
+            int | None: Number of tokens revoked
         """
         try:
             db_manager = get_database_manager()
@@ -279,11 +282,14 @@ class ServiceTokenManager:
         """Rotate a service token (create new, revoke old).
 
         Args:
-            token_identifier: Token name, ID, or hash to rotate
-            rotation_reason: Reason for rotation
+            token_identifier (str): Token name, ID, or hash to rotate
+            rotation_reason (str): Reason for rotation
 
         Returns:
-            Tuple of (new_token_value, new_token_id) if successful, None if not found
+            tuple[str, str] | None: Tuple of (new_token_value, new_token_id) if successful, None if not found
+
+        Raises:
+            Exception: If a database connection error occurs
         """
         try:
             db_manager = get_database_manager()
@@ -374,11 +380,11 @@ class ServiceTokenManager:
         """Get usage analytics for service tokens.
 
         Args:
-            token_identifier: Specific token to analyze (None for all)
-            days: Number of days to analyze
+            token_identifier (str | None): Specific token to analyze (None for all)
+            days (int): Number of days to analyze
 
         Returns:
-            Dictionary with usage analytics
+            dict[str, Any] | None: Dictionary with usage analytics
         """
         try:
             db_manager = get_database_manager()
@@ -546,10 +552,13 @@ class ServiceTokenManager:
         """Clean up expired service tokens.
 
         Args:
-            deactivate_only: If True, deactivate expired tokens; if False, delete them
+            deactivate_only (bool): If True, deactivate expired tokens; if False, delete them
 
         Returns:
-            Dictionary with cleanup statistics
+            dict[str, Any] | None: Dictionary with cleanup statistics
+
+        Raises:
+            Exception: If an error occurs during cleanup
         """
         try:
             db_manager = get_database_manager()

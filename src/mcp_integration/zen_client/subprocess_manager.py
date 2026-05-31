@@ -187,7 +187,7 @@ class ZenMCPProcess:
         Perform health check on the server process.
 
         Returns:
-            Tuple[bool, Optional[str]]: (is_healthy, error_message)
+            tuple[bool, str | None]: (is_healthy, error_message)
         """
         try:
             # Check if process is responsive (basic check)
@@ -304,10 +304,10 @@ class ProcessPool:
         Get a process from the pool, starting one if necessary.
 
         Args:
-            process_id: Optional specific process ID, defaults to main process
+            process_id (str | None): Optional specific process ID, defaults to main process
 
         Returns:
-            ZenMCPProcess instance or None if failed to start
+            ZenMCPProcess | None: ZenMCPProcess instance or None if failed to start
         """
         process_id = process_id or self.current_process_id
 

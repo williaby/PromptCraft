@@ -36,11 +36,15 @@ class MCPProtocolBridge:
         Convert HTTP API request to MCP tool call.
 
         Args:
-            endpoint: HTTP endpoint path (e.g., "/api/promptcraft/route/analyze")
-            http_request: HTTP request body as dict
+            endpoint (str): HTTP endpoint path (e.g., "/api/promptcraft/route/analyze")
+            http_request (dict[str, Any]): HTTP request body as dict
 
         Returns:
             MCPToolCall: MCP tool call with translated parameters
+
+        Raises:
+            ValueError: If the endpoint is unsupported
+            Exception: If the translation fails
         """
         try:
             # Determine action based on endpoint
@@ -98,11 +102,11 @@ class MCPProtocolBridge:
         Convert MCP tool result to HTTP API response.
 
         Args:
-            endpoint: Original HTTP endpoint path
-            mcp_result: MCP tool result as dict
+            endpoint (str): Original HTTP endpoint path
+            mcp_result (dict[str, Any]): MCP tool result as dict
 
         Returns:
-            Dict[str, Any]: HTTP response in expected format
+            dict[str, Any]: HTTP response in expected format
         """
         try:
             # Extract the actual result from MCP response
@@ -269,11 +273,15 @@ class MCPProtocolBridge:
         Validate HTTP request data for the given endpoint.
 
         Args:
-            endpoint: HTTP endpoint path
-            request_data: Request data to validate
+            endpoint (str): HTTP endpoint path
+            request_data (dict[str, Any]): Request data to validate
 
         Returns:
             bool: True if request is valid, raises exception otherwise
+
+        Raises:
+            ValueError: If the endpoint is unknown
+            Exception: If the request data is invalid
         """
         try:
             if endpoint.endswith("/route/analyze"):

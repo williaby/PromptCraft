@@ -37,15 +37,15 @@ async def user_has_permission(user_email: str, permission_name: str, session: As
     from parent roles.
 
     Args:
-        user_email: Email address of the user
-        permission_name: Name of the permission to check (e.g., 'tokens:create')
-        session: Optional database session to use (for testing)
+        user_email (str): Email address of the user
+        permission_name (str): Name of the permission to check (e.g., 'tokens:create')
+        session (AsyncSession | None): Optional database session to use (for testing)
 
     Returns:
-        True if user has the permission, False otherwise
+        bool: True if user has the permission, False otherwise
 
     Raises:
-        Exception: If database query fails (logged but not re-raised)
+        RuntimeError: If no database session is available
     """
     try:
         if session is None:
@@ -113,10 +113,10 @@ def require_permission(permission_name: str) -> Callable[..., Any]:
     service tokens (through metadata permission checks).
 
     Args:
-        permission_name: Name of the required permission (e.g., 'tokens:create')
+        permission_name (str): Name of the required permission (e.g., 'tokens:create')
 
     Returns:
-        FastAPI dependency function that validates permission and returns authenticated user
+        Callable[..., Any]: FastAPI dependency function that validates permission and returns authenticated user
 
     Example:
         @app.post("/tokens")
@@ -133,13 +133,13 @@ def require_permission(permission_name: str) -> Callable[..., Any]:
         """Check if current user has the required permission.
 
         Args:
-            current_user: Authenticated user from middleware
+            current_user (AuthenticatedUserType): Authenticated user from middleware
 
         Returns:
-            The authenticated user if permission check passes
+            AuthenticatedUserType: The authenticated user if permission check passes
 
         Raises:
-            HTTPException: 403 if user lacks the required permission
+            AuthExceptionHandler.handle_permission_error: If user lacks the required permission
         """
         if isinstance(current_user, ServiceTokenUser):
             # Service token permission check (existing AUTH-2 logic)
@@ -174,10 +174,10 @@ def require_any_permission(*permission_names: str) -> Callable[..., Any]:
     users with different but equivalent permissions.
 
     Args:
-        *permission_names: Variable number of permission names
+        *permission_names (str): Variable number of permission names
 
     Returns:
-        FastAPI dependency function that validates any permission and returns authenticated user
+        Callable[..., Any]: FastAPI dependency function that validates any permission and returns authenticated user
 
     Example:
         @app.get("/data")
@@ -194,13 +194,13 @@ def require_any_permission(*permission_names: str) -> Callable[..., Any]:
         """Check if current user has any of the required permissions.
 
         Args:
-            current_user: Authenticated user from middleware
+            current_user (AuthenticatedUserType): Authenticated user from middleware
 
         Returns:
-            The authenticated user if any permission check passes
+            AuthenticatedUserType: The authenticated user if any permission check passes
 
         Raises:
-            HTTPException: 403 if user lacks all required permissions
+            AuthExceptionHandler.handle_permission_error: If user lacks all required permissions
         """
         has_any_permission = False
 
@@ -245,10 +245,10 @@ def require_all_permissions(*permission_names: str) -> Callable[..., Any]:
     that require multiple specific permissions.
 
     Args:
-        *permission_names: Variable number of permission names (all required)
+        *permission_names (str): Variable number of permission names (all required)
 
     Returns:
-        FastAPI dependency function that validates all permissions and returns authenticated user
+        Callable[..., Any]: FastAPI dependency function that validates all permissions and returns authenticated user
 
     Example:
         @app.delete("/system/reset")
@@ -265,13 +265,13 @@ def require_all_permissions(*permission_names: str) -> Callable[..., Any]:
         """Check if current user has all required permissions.
 
         Args:
-            current_user: Authenticated user from middleware
+            current_user (AuthenticatedUserType): Authenticated user from middleware
 
         Returns:
-            The authenticated user if all permission checks pass
+            AuthenticatedUserType: The authenticated user if all permission checks pass
 
         Raises:
-            HTTPException: 403 if user lacks any required permission
+            AuthExceptionHandler.handle_permission_error: If user lacks any required permission
         """
         missing_permissions = []
 
@@ -310,11 +310,11 @@ def has_service_token_permission(service_token_user: ServiceTokenUser, permissio
     """Utility function to check service token permissions without dependency injection.
 
     Args:
-        service_token_user: Service token user instance
-        permission_name: Name of the permission to check
+        service_token_user (ServiceTokenUser): Service token user instance
+        permission_name (str): Name of the permission to check
 
     Returns:
-        True if service token has the permission, False otherwise
+        bool: True if service token has the permission, False otherwise
     """
     return service_token_user.has_permission(permission_name)
 

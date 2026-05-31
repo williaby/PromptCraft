@@ -131,12 +131,12 @@ class OpenRouterClient(MCPClientInterface):
         Initialize OpenRouter client with configuration.
 
         Args:
-            api_key: OpenRouter API key (if None, loads from settings)
-            base_url: OpenRouter API base URL (if None, loads from settings)
-            timeout: Request timeout in seconds
-            max_retries: Maximum number of retry attempts
-            site_url: Site URL for HTTP-Referer header
-            app_name: Application name for X-Title header
+            api_key (str | None): OpenRouter API key (if None, loads from settings)
+            base_url (str | None): OpenRouter API base URL (if None, loads from settings)
+            timeout (float): Request timeout in seconds
+            max_retries (int): Maximum number of retry attempts
+            site_url (str): Site URL for HTTP-Referer header
+            app_name (str): Application name for X-Title header
         """
         settings = get_settings()
 
@@ -174,10 +174,6 @@ class OpenRouterClient(MCPClientInterface):
 
         Returns:
             bool: True if connection successful, False otherwise
-
-        Raises:
-            MCPConnectionError: If connection cannot be established
-            CircuitBreakerOpenError: If circuit breaker is open
         """
 
         async def _connect_with_protection() -> bool:
@@ -302,7 +298,7 @@ class OpenRouterClient(MCPClientInterface):
             MCPHealthStatus: Current health status and metrics
 
         Raises:
-            MCPError: If health check fails
+            MCPConnectionError: If health check fails to establish connection
         """
         start_time = time.time()
 
@@ -364,17 +360,15 @@ class OpenRouterClient(MCPClientInterface):
         Validate and sanitize user query for security.
 
         Args:
-            query: Raw user query string (can be None)
+            query (str | None): Raw user query string (can be None)
 
         Returns:
-            Dict containing validation results with keys:
-                - is_valid: bool
-                - sanitized_query: str
-                - potential_issues: List[str]
-                - error: str (if validation fails)
+            dict[str, Any]: Validation results with keys: is_valid (bool),
+                sanitized_query (str), potential_issues (list[str]),
+                error (str, if validation fails).
 
         Raises:
-            MCPError: If validation service fails
+            MCPValidationError: If validation service fails
         """
         try:
             potential_issues = []
@@ -456,15 +450,10 @@ class OpenRouterClient(MCPClientInterface):
         Orchestrate multi-agent workflow execution via OpenRouter API with circuit breaker protection.
 
         Args:
-            workflow_steps: List of workflow steps to execute
+            workflow_steps (list[WorkflowStep]): List of workflow steps to execute
 
         Returns:
-            List[Response]: Responses from all agents
-
-        Raises:
-            MCPError: If orchestration fails
-            MCPTimeoutError: If execution exceeds timeout
-            CircuitBreakerOpenError: If circuit breaker is open
+            list[Response]: Responses from all agents
         """
 
         async def _orchestrate_with_protection() -> list[Response]:
@@ -545,9 +534,10 @@ class OpenRouterClient(MCPClientInterface):
         Get list of available OpenRouter capabilities.
 
         Returns:
-            List[str]: Available capability names
+            list[str]: Available capability names
 
         Raises:
+            MCPConnectionError: If connection cannot be established
             MCPError: If capability query fails
         """
         try:
@@ -599,7 +589,7 @@ class OpenRouterClient(MCPClientInterface):
         Get OpenRouter API headers with authentication.
 
         Returns:
-            Dict[str, str]: HTTP headers for requests
+            dict[str, str]: HTTP headers for requests
         """
         headers = {
             "Content-Type": "application/json",
@@ -618,13 +608,18 @@ class OpenRouterClient(MCPClientInterface):
         Execute a single workflow step via OpenRouter API.
 
         Args:
-            step: Workflow step to execute
+            step (WorkflowStep): Workflow step to execute
 
         Returns:
             Response: AI model response
 
         Raises:
-            MCPError: If step execution fails
+            MCPConnectionError: If the session is not established
+            MCPValidationError: If no query is provided in the step input data
+            MCPTimeoutError: If the request times out
+            MCPServiceUnavailableError: If the service is unavailable
+            MCPError: If the response has no choices or other MCP error occurs
+            Exception: If an unexpected error occurs
         """
         step_start_time = time.time()
 
@@ -768,10 +763,13 @@ class OpenRouterClient(MCPClientInterface):
         Handle OpenRouter API error responses.
 
         Args:
-            response: HTTP response with error status
+            response (httpx.Response): HTTP response with error status
 
         Raises:
-            MCPError: Appropriate MCP error based on response
+            MCPAuthenticationError: If API authentication fails (HTTP 401)
+            MCPValidationError: If the request is invalid (HTTP 400)
+            MCPRateLimitError: If the rate limit is exceeded (HTTP 429)
+            MCPServiceUnavailableError: If the service is unavailable or other HTTP error
         """
         status_code = response.status_code
 
@@ -805,8 +803,8 @@ class OpenRouterClient(MCPClientInterface):
         Calculate confidence score for API response.
 
         Args:
-            api_response: Full API response data
-            content: Response content text
+            api_response (dict[str, Any]): Full API response data
+            content (str): Response content text
 
         Returns:
             float: Confidence score between 0.0 and 1.0

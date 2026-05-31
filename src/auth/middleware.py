@@ -85,13 +85,13 @@ class SecurityLogger:
         """Log an event with structured data - compatibility method for middleware.
 
         Args:
-            event_type: Type of event (SecurityEventType enum value)
-            severity: Event severity (SecurityEventSeverity enum value)
-            user_id: User identifier (email for regular users, None for service tokens)
-            ip_address: Client IP address
-            user_agent: User agent string
-            session_id: Session identifier
-            details: Additional event details as dictionary
+            event_type (str): Type of event (SecurityEventType enum value)
+            severity (str | None): Event severity (SecurityEventSeverity enum value)
+            user_id (str | None): User identifier (email for regular users, None for service tokens)
+            ip_address (str | None): Client IP address
+            user_agent (str | None): User agent string
+            session_id (str | None): Session identifier
+            details (dict | None): Additional event details as dictionary
         """
         # Convert enums to strings for logging
         # Use enum name (e.g., "LOGIN_SUCCESS") instead of value (e.g., "login_success") to match test expectations
@@ -196,10 +196,10 @@ class ServiceTokenUser:
         """Initialize service token user.
 
         Args:
-            token_id: Unique token identifier
-            token_name: Human-readable token name
-            metadata: Token metadata including permissions
-            usage_count: Current usage count
+            token_id (str): Unique token identifier
+            token_name (str): Human-readable token name
+            metadata (dict): Token metadata including permissions
+            usage_count (int): Current usage count
         """
         self.token_id = token_id
         self.token_name = token_name
@@ -213,10 +213,10 @@ class ServiceTokenUser:
         """Check if token has a specific permission.
 
         Args:
-            permission: Permission to check
+            permission (str): Permission to check
 
         Returns:
-            True if token has permission, False otherwise
+            bool: True if token has permission, False otherwise
         """
         permissions = self.metadata.get("permissions", [])
         return permission in permissions or "admin" in permissions
@@ -236,11 +236,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Initialize authentication middleware.
 
         Args:
-            app: FastAPI application instance
-            config: Authentication configuration
-            jwt_validator: JWT validator instance
-            excluded_paths: List of paths to exclude from authentication
-            database_enabled: Whether database integration is enabled
+            app (FastAPI): FastAPI application instance
+            config (AuthenticationConfig | None): Authentication configuration
+            jwt_validator (JWTValidator | None): JWT validator instance
+            excluded_paths (list[str] | None): List of paths to exclude from authentication
+            database_enabled (bool): Whether database integration is enabled
         """
         super().__init__(app)
         # Store configuration parameters
@@ -265,11 +265,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Process request through authentication middleware.
 
         Args:
-            request: Incoming HTTP request
-            call_next: Next middleware or endpoint handler
+            request (Request): Incoming HTTP request
+            call_next (Callable[[Request], Awaitable[Response]]): Next middleware or endpoint handler
 
         Returns:
-            HTTP response
+            Response: HTTP response
         """
         start_time = time.time()
 
@@ -469,10 +469,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Check if path should be excluded from authentication.
 
         Args:
-            path: Request path
+            path (str): Request path
 
         Returns:
-            True if path should be excluded, False otherwise
+            bool: True if path should be excluded, False otherwise
         """
         for excluded in self.excluded_paths:
             # Exact match or prefix match with trailing slash
@@ -484,10 +484,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Authenticate the request and return user information.
 
         Args:
-            request: HTTP request to authenticate
+            request (Request): HTTP request to authenticate
 
         Returns:
-            AuthenticatedUser or ServiceTokenUser with validated information
+            AuthenticatedUser | ServiceTokenUser: Validated user information
 
         Raises:
             AuthenticationError: If authentication fails
@@ -507,11 +507,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Validate JWT token using existing flow.
 
         Args:
-            request: HTTP request
-            token: JWT token string
+            request (Request): HTTP request
+            token (str): JWT token string
 
         Returns:
-            AuthenticatedUser with validated user information
+            AuthenticatedUser: Validated user information
 
         Raises:
             AuthenticationError: If validation fails
@@ -548,11 +548,11 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Validate service token against database.
 
         Args:
-            request: HTTP request
-            token: Service token string
+            request (Request): HTTP request
+            token (str): Service token string
 
         Returns:
-            ServiceTokenUser with validated token information
+            ServiceTokenUser: Validated token information
 
         Raises:
             AuthenticationError: If validation fails
@@ -660,10 +660,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Extract authentication token (JWT or Service Token) from headers.
 
         Args:
-            request: HTTP request
+            request (Request): HTTP request
 
         Returns:
-            Authentication token string if found, None otherwise
+            str | None: Authentication token string if found, None otherwise
         """
         # Primary: Cloudflare Access JWT header
         cf_access_jwt = request.headers.get("CF-Access-Jwt-Assertion")
@@ -698,10 +698,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Extract JWT token from Cloudflare Access headers (legacy method).
 
         Args:
-            request: HTTP request
+            request (Request): HTTP request
 
         Returns:
-            JWT token string if found, None otherwise
+            str | None: JWT token string if found, None otherwise
         """
         return self._extract_auth_token(request)
 
@@ -717,12 +717,12 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Log authentication event to database.
 
         Args:
-            request: HTTP request
-            user_email: User email (for JWT auth)
-            service_token_name: Service token name (for service token auth)
-            event_type: Type of authentication event
-            success: Whether authentication was successful
-            error_details: Error details for failed authentication
+            request (Request): HTTP request
+            user_email (str | None): User email (for JWT auth)
+            service_token_name (str | None): Service token name (for service token auth)
+            event_type (str): Type of authentication event
+            success (bool): Whether authentication was successful
+            error_details (dict | None): Error details for failed authentication
         """
         try:
             async for session in get_db():
@@ -762,10 +762,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Create JSON error response for authentication failures.
 
         Args:
-            error: Authentication error
+            error (AuthenticationError): Authentication error
 
         Returns:
-            JSON response with error details
+            JSONResponse: JSON response with error details
         """
         content = {
             "error": "Authentication failed",
@@ -781,8 +781,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Update user session in database with graceful degradation.
 
         Args:
-            authenticated_user: Authenticated user information
-            request: HTTP request for context
+            authenticated_user (AuthenticatedUser): Authenticated user information
+            request (Request): HTTP request for context
         """
         if not self.database_enabled:
             return
@@ -838,10 +838,10 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Extract client IP address from request headers.
 
         Args:
-            request: HTTP request
+            request (Request): HTTP request
 
         Returns:
-            Client IP address or None if not available
+            str | None: Client IP address or None if not available
         """
         # Check Cloudflare headers first
         cf_connecting_ip = request.headers.get("CF-Connecting-IP")
@@ -876,10 +876,10 @@ def create_rate_limiter(config: AuthenticationConfig) -> Limiter:
     """Create rate limiter for authentication endpoints.
 
     Args:
-        config: Authentication configuration
+        config (AuthenticationConfig): Authentication configuration
 
     Returns:
-        Configured Limiter instance
+        Limiter: Configured Limiter instance
     """
 
     def get_rate_limit_key(request: Request) -> str:
@@ -915,12 +915,12 @@ def setup_authentication(
     """Setup authentication middleware and rate limiting for FastAPI app.
 
     Args:
-        app: FastAPI application instance
-        config: Authentication configuration
-        database_enabled: Whether database integration is enabled
+        app (FastAPI): FastAPI application instance
+        config (AuthenticationConfig): Authentication configuration
+        database_enabled (bool): Whether database integration is enabled
 
     Returns:
-        Limiter instance
+        Limiter: Configured Limiter instance
     """
     # Create JWKS client (compatibility placeholder)
     jwks_client = None  # Placeholder for compatibility
@@ -961,10 +961,10 @@ def get_current_user(request: Request) -> AuthenticatedUser | None:
     """Get current authenticated user from request state.
 
     Args:
-        request: HTTP request
+        request (Request): HTTP request
 
     Returns:
-        AuthenticatedUser if authenticated, None otherwise
+        AuthenticatedUser | None: Authenticated user if authenticated, None otherwise
     """
     # Handle case where request.state doesn't exist
     if not hasattr(request, "state"):
@@ -976,10 +976,10 @@ def require_authentication(request: Request) -> AuthenticatedUser:
     """Require authentication and return current user.
 
     Args:
-        request: HTTP request
+        request (Request): HTTP request
 
     Returns:
-        AuthenticatedUser
+        AuthenticatedUser: The authenticated user
 
     Raises:
         HTTPException: If user is not authenticated
@@ -994,11 +994,11 @@ def require_role(request: Request, required_role: str) -> AuthenticatedUser:
     """Require specific role and return current user.
 
     Args:
-        request: HTTP request
-        required_role: Required user role
+        request (Request): HTTP request
+        required_role (str): Required user role
 
     Returns:
-        AuthenticatedUser
+        AuthenticatedUser: The authenticated user
 
     Raises:
         HTTPException: If user doesn't have required role

@@ -64,7 +64,7 @@ class Context7Client(LoggerMixin):
         """Check if Context7 server is connected and available.
 
         Returns:
-            True if connected and healthy
+            bool: True if connected and healthy
         """
         return self.server_name in self.message_router.list_connected_servers()
 
@@ -77,12 +77,15 @@ class Context7Client(LoggerMixin):
         """Search documents using Context7.
 
         Args:
-            query: Search query
-            limit: Maximum number of results
-            filters: Additional search filters
+            query (str): Search query
+            limit (int | None): Maximum number of results
+            filters (dict[str, Any] | None): Additional search filters
 
         Returns:
-            Search results from Context7
+            Context7SearchResult: Search results from Context7
+
+        Raises:
+            MCPProtocolError: If Context7 server not connected or search fails
         """
 
         start_time = time.time()
@@ -153,10 +156,13 @@ class Context7Client(LoggerMixin):
         """Retrieve a specific document by ID.
 
         Args:
-            document_id: Document identifier
+            document_id (str): Document identifier
 
         Returns:
-            Document data or None if not found
+            Context7Document | None: Document data or None if not found
+
+        Raises:
+            MCPProtocolError: If Context7 server not connected or retrieval fails
         """
         if not await self.is_connected():
             raise MCPProtocolError(
@@ -195,7 +201,10 @@ class Context7Client(LoggerMixin):
         """Get available document collections.
 
         Returns:
-            List of available collections
+            list[dict[str, Any]]: List of available collections
+
+        Raises:
+            MCPProtocolError: If Context7 server not connected
         """
         if not await self.is_connected():
             raise MCPProtocolError(
@@ -220,7 +229,7 @@ class Context7Client(LoggerMixin):
         """Perform health check on Context7 connection.
 
         Returns:
-            Health status information
+            dict[str, Any]: Health status information
         """
         try:
             connected = await self.is_connected()
@@ -278,12 +287,12 @@ class Context7Integration(LoggerMixin):
         """Enhanced document search using Context7 and local search.
 
         Args:
-            query: Search query
-            use_context7: Whether to use Context7 for search
-            limit: Maximum number of results
+            query (str): Search query
+            use_context7 (bool): Whether to use Context7 for search
+            limit (int): Maximum number of results
 
         Returns:
-            Combined search results
+            dict[str, Any]: Combined search results
         """
         results: dict[str, Any] = {
             "query": query,
@@ -386,10 +395,10 @@ class Context7Integration(LoggerMixin):
         """Get full context for a document.
 
         Args:
-            document_id: Document identifier
+            document_id (str): Document identifier
 
         Returns:
-            Document with full context
+            dict[str, Any] | None: Document with full context
         """
         try:
             if document_id.startswith(("ctx7:", "context7:")):
@@ -424,7 +433,7 @@ class Context7Integration(LoggerMixin):
         """Get Context7 integration status.
 
         Returns:
-            Status information
+            dict[str, Any]: Status information
         """
         context7_health = await self.context7_client.health_check()
 
@@ -447,7 +456,7 @@ class Context7Integration(LoggerMixin):
         """Initialize Context7 integration.
 
         Returns:
-            True if initialization successful
+            bool: True if initialization successful
         """
         try:
             # Check if Context7 server is available

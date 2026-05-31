@@ -74,11 +74,11 @@ class MCPMessageRouter(LoggerMixin):
         """Connect to an MCP server and establish protocol communication.
 
         Args:
-            server_name: Name of the server to connect
-            connection: Active connection to the server
+            server_name (str): Name of the server to connect
+            connection (ActiveConnection): Active connection to the server
 
         Returns:
-            True if connection successful, False otherwise
+            bool: True if connection successful, False otherwise
         """
         try:
             if connection.connection.type == "npx" and connection.process:
@@ -118,12 +118,12 @@ class MCPMessageRouter(LoggerMixin):
         """Initialize communication with an MCP server.
 
         Args:
-            server_name: Name of the server
-            reader: Stream reader for receiving messages
-            writer: Stream writer for sending messages
+            server_name (str): Name of the server
+            reader (asyncio.StreamReader): Stream reader for receiving messages
+            writer (asyncio.StreamWriter): Stream writer for sending messages
 
         Returns:
-            True if initialization successful
+            bool: True if initialization successful
         """
         try:
             # Send initialize request
@@ -191,13 +191,13 @@ class MCPMessageRouter(LoggerMixin):
         """Send a request and wait for response.
 
         Args:
-            writer: Stream writer
-            reader: Stream reader
-            request: Request to send
-            timeout: Request timeout in seconds
+            writer (asyncio.StreamWriter): Stream writer
+            reader (asyncio.StreamReader): Stream reader
+            request (MCPRequest): Request to send
+            timeout (float): Request timeout in seconds
 
         Returns:
-            Response result or None if failed
+            Any | None: Response result or None if failed
         """
         try:
             # Send request
@@ -248,9 +248,9 @@ class MCPMessageRouter(LoggerMixin):
         """Query server for available tools, resources, and prompts.
 
         Args:
-            server_name: Name of the server
-            writer: Stream writer
-            reader: Stream reader
+            server_name (str): Name of the server
+            writer (asyncio.StreamWriter): Stream writer
+            reader (asyncio.StreamReader): Stream reader
         """
         server_info = self.servers.get(server_name)
         if not server_info:
@@ -293,9 +293,9 @@ class MCPMessageRouter(LoggerMixin):
         """Handle incoming messages from an MCP server.
 
         Args:
-            server_name: Name of the server
-            reader: Stream reader
-            writer: Stream writer
+            server_name (str): Name of the server
+            reader (asyncio.StreamReader): Stream reader
+            writer (asyncio.StreamWriter): Stream writer
         """
         self.logger.info(f"Starting message handler for server: {server_name}")
 
@@ -570,12 +570,15 @@ class MCPMessageRouter(LoggerMixin):
         """Call a tool on a connected MCP server.
 
         Args:
-            server_name: Name of the server
-            tool_name: Name of the tool to call
-            arguments: Tool arguments
+            server_name (str): Name of the server
+            tool_name (str): Name of the tool to call
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Tool execution result
+            Any: Tool execution result
+
+        Raises:
+            MCPProtocolError: If the server is not connected or has no stream available.
         """
         if server_name not in self.servers:
             raise MCPProtocolError(
@@ -606,10 +609,10 @@ class MCPMessageRouter(LoggerMixin):
         """Get information about a connected server.
 
         Args:
-            server_name: Name of the server
+            server_name (str): Name of the server
 
         Returns:
-            Server information or None if not connected
+            MCPServerInfo | None: Server information or None if not connected
         """
         return self.servers.get(server_name)
 
@@ -617,7 +620,7 @@ class MCPMessageRouter(LoggerMixin):
         """Get list of connected server names.
 
         Returns:
-            List of server names
+            list[str]: List of server names
         """
         return list(self.servers.keys())
 
@@ -625,7 +628,7 @@ class MCPMessageRouter(LoggerMixin):
         """Get router status information.
 
         Returns:
-            Status dictionary
+            dict[str, Any]: Status dictionary
         """
         return {
             "connected_servers": len(self.servers),

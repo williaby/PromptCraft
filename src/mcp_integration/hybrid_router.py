@@ -175,10 +175,10 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Initialize HybridRouter with service clients and routing configuration.
 
         Args:
-            openrouter_client: OpenRouter client (if None, creates default)
-            mcp_client: MCP client (if None, creates ZenMCPClient)
-            strategy: Routing strategy to use
-            enable_gradual_rollout: Whether to use gradual rollout configuration
+            openrouter_client (OpenRouterClient | None): OpenRouter client (if None, creates default)
+            mcp_client (MCPClientInterface | None): MCP client (if None, creates ZenMCPClient)
+            strategy (RoutingStrategy): Routing strategy to use
+            enable_gradual_rollout (bool): Whether to use gradual rollout configuration
         """
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initializing HybridRouter with hybrid routing capabilities")
@@ -312,9 +312,6 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
 
         Returns:
             MCPHealthStatus: Aggregated health status from both services
-
-        Raises:
-            MCPError: If health check fails
         """
         start_time = time.time()
 
@@ -380,7 +377,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
                 connection_state=(
                     MCPConnectionState.CONNECTED
                     if status == "healthy"
-                    else MCPConnectionState.DEGRADED if status == "degraded" else MCPConnectionState.FAILED
+                    else MCPConnectionState.DEGRADED
+                    if status == "degraded"
+                    else MCPConnectionState.FAILED
                 ),
                 response_time_ms=response_time * 1000,  # Convert to milliseconds
                 error_count=self.error_count,
@@ -409,10 +408,10 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Validate query using the best available service.
 
         Args:
-            query: Raw user query string
+            query (str): Raw user query string
 
         Returns:
-            Dict containing validation results
+            dict[str, Any]: Validation results
 
         Raises:
             MCPError: If validation fails on all services
@@ -456,13 +455,14 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Orchestrate multi-agent workflow using intelligent routing.
 
         Args:
-            workflow_steps: List of workflow steps to execute
+            workflow_steps (list[WorkflowStep]): List of workflow steps to execute
 
         Returns:
-            List[Response]: Responses from orchestrated agents
+            list[Response]: Responses from orchestrated agents
 
         Raises:
-            MCPError: If orchestration fails on all services
+            Exception: If orchestration fails on all services and the caught error is an MCPError
+            MCPServiceUnavailableError: If orchestration fails on all services
         """
         start_time = time.time()
         # Generate unique request ID using both timestamp and counter for rapid requests
@@ -542,7 +542,7 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Get aggregated capabilities from both services.
 
         Returns:
-            List[str]: Combined capability names from both services
+            list[str]: Combined capability names from both services
 
         Raises:
             MCPError: If capability query fails on all services
@@ -591,9 +591,9 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Make intelligent routing decision based on strategy and conditions.
 
         Args:
-            request_id: Unique identifier for the request
-            operation: Type of operation (validation, orchestration, etc.)
-            workflow_steps: Optional workflow steps for analysis
+            request_id (str): Unique identifier for the request
+            operation (str): Type of operation (validation, orchestration, etc.)
+            workflow_steps (list[WorkflowStep] | None): Optional workflow steps for analysis
 
         Returns:
             RoutingDecision: Decision with service choice and reasoning
@@ -787,7 +787,10 @@ class HybridRouter(MCPClientInterface, LoggerMixin):
         Update OpenRouter traffic percentage for gradual rollout.
 
         Args:
-            percentage: New percentage (0-100)
+            percentage (int): New percentage (0-100)
+
+        Raises:
+            ValueError: If percentage is outside the valid range
         """
         if not (0 <= percentage <= CIRCUIT_BREAKER_MAX_PERCENTAGE):
             raise ValueError(f"Traffic percentage must be 0-{CIRCUIT_BREAKER_MAX_PERCENTAGE}, got {percentage}")
