@@ -96,7 +96,7 @@ class CreateProcessor:
         """Initialize the CreateProcessor.
 
         Args:
-            config: Optional configuration dictionary.
+            config (dict[str, Any] | None): Optional configuration dictionary.
         """
         self.config = config or {}
         self.logger = logger
@@ -112,10 +112,10 @@ class CreateProcessor:
         """Validate input prompt for security and basic requirements.
 
         Args:
-            input_prompt: The input prompt to validate.
+            input_prompt (str): The input prompt to validate.
 
         Returns:
-            True if input is valid, False otherwise.
+            bool: True if input is valid, False otherwise.
 
         Raises:
             ValidationError: If input fails validation.
@@ -149,10 +149,10 @@ class CreateProcessor:
         """Extract context information from the prompt.
 
         Args:
-            prompt: The input prompt.
+            prompt (str): The input prompt.
 
         Returns:
-            Dictionary containing context information.
+            dict[str, Any]: Dictionary containing context information.
         """
         context: dict[str, Any] = {
             "role": None,
@@ -206,11 +206,11 @@ class CreateProcessor:
         """Generate the Request component of C.R.E.A.T.E. framework.
 
         Args:
-            prompt: The input prompt.
-            context: Extracted context information.
+            prompt (str): The input prompt.
+            _context (dict[str, Any]): Extracted context information.
 
         Returns:
-            Dictionary containing request component.
+            dict[str, Any]: Dictionary containing request component.
         """
         request: dict[str, Any] = {
             "task": None,
@@ -249,10 +249,10 @@ class CreateProcessor:
         """Generate the Examples component of C.R.E.A.T.E. framework.
 
         Args:
-            prompt: The input prompt.
+            prompt (str): The input prompt.
 
         Returns:
-            Dictionary containing examples component.
+            dict[str, Any]: Dictionary containing examples component.
         """
         examples: dict[str, Any] = {
             "input_examples": [],
@@ -278,10 +278,10 @@ class CreateProcessor:
         """Generate the Augmentations component of C.R.E.A.T.E. framework.
 
         Args:
-            domain: The domain for augmentation.
+            domain (str | None): The domain for augmentation.
 
         Returns:
-            Dictionary containing augmentations component.
+            dict[str, Any]: Dictionary containing augmentations component.
         """
         augmentations = {
             "domain": domain or "general",
@@ -310,10 +310,10 @@ class CreateProcessor:
         """Generate the Tone & Format component of C.R.E.A.T.E. framework.
 
         Args:
-            prompt: The input prompt.
+            prompt (str): The input prompt.
 
         Returns:
-            Dictionary containing tone and format component.
+            dict[str, Any]: Dictionary containing tone and format component.
         """
         tone_format = {
             "tone": "professional",
@@ -351,7 +351,7 @@ class CreateProcessor:
         """Generate the Evaluation component of C.R.E.A.T.E. framework.
 
         Returns:
-            Dictionary containing evaluation component.
+            dict[str, Any]: Dictionary containing evaluation component.
         """
         return {
             "quality_checks": [
@@ -372,11 +372,11 @@ class CreateProcessor:
         """Apply the C.R.E.A.T.E. framework to enhance a prompt.
 
         Args:
-            prompt: The input prompt to enhance.
-            context: Additional context information.
+            prompt (str): The input prompt to enhance.
+            context (dict[str, Any]): Additional context information.
 
         Returns:
-            Dictionary containing the enhanced prompt components.
+            dict[str, Any]: Dictionary containing the enhanced prompt components.
         """
         extracted_context = self._extract_context(prompt)
         domain = context.get("domain", "general")
@@ -395,10 +395,10 @@ class CreateProcessor:
         """Build the enhanced prompt from C.R.E.A.T.E. components.
 
         Args:
-            components: Dictionary of C.R.E.A.T.E. components.
+            components (dict[str, Any]): Dictionary of C.R.E.A.T.E. components.
 
         Returns:
-            Enhanced prompt string.
+            str: Enhanced prompt string.
         """
         sections = []
 
@@ -470,11 +470,11 @@ class CreateProcessor:
         """Process a prompt using the C.R.E.A.T.E. framework.
 
         Args:
-            input_prompt: The input prompt to process.
-            domain: Optional domain for specialized processing.
+            input_prompt (str): The input prompt to process.
+            domain (str | None): Optional domain for specialized processing.
 
         Returns:
-            CreateResponse containing the enhanced prompt and metadata.
+            CreateResponse: CreateResponse containing the enhanced prompt and metadata.
         """
         start_time = time.time()
         errors: list[str] = []

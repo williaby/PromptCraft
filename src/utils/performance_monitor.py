@@ -66,7 +66,7 @@ class PerformanceMonitor:
         """Initialize performance monitor.
 
         Args:
-            max_samples: Maximum number of samples to keep in memory.
+            max_samples (int): Maximum number of samples to keep in memory.
         """
         self.max_samples = max_samples
         self.metrics: dict[str, deque] = defaultdict(lambda: deque(maxlen=max_samples))
@@ -79,7 +79,7 @@ class PerformanceMonitor:
         """Record a metric.
 
         Args:
-            metric: Metric data to record.
+            metric (MetricData): Metric data to record.
         """
         timestamp = metric.timestamp or time.time()
 
@@ -103,10 +103,10 @@ class PerformanceMonitor:
         """Get counter value.
 
         Args:
-            name: Counter name.
+            name (str): Counter name.
 
         Returns:
-            Counter value.
+            int: Counter value.
         """
         return self.counters.get(name, 0)
 
@@ -114,10 +114,10 @@ class PerformanceMonitor:
         """Get gauge value.
 
         Args:
-            name: Gauge name.
+            name (str): Gauge name.
 
         Returns:
-            Gauge value.
+            float: Gauge value.
         """
         return self.gauges.get(name, 0.0)
 
@@ -125,10 +125,10 @@ class PerformanceMonitor:
         """Get histogram statistics.
 
         Args:
-            name: Histogram name.
+            name (str): Histogram name.
 
         Returns:
-            Dictionary with histogram statistics.
+            dict[str, float]: Dictionary with histogram statistics.
         """
         values = list(self.metrics[name])
         if not values:
@@ -149,10 +149,10 @@ class PerformanceMonitor:
         """Get timer statistics.
 
         Args:
-            name: Timer name.
+            name (str): Timer name.
 
         Returns:
-            Dictionary with timer statistics.
+            dict[str, float]: Dictionary with timer statistics.
         """
         values = self.timers.get(name, [])
         if not values:
@@ -173,11 +173,11 @@ class PerformanceMonitor:
         """Calculate percentile from sorted values.
 
         Args:
-            sorted_values: Sorted list of values.
-            percentile: Percentile to calculate (0-100).
+            sorted_values (list[float]): Sorted list of values.
+            percentile (float): Percentile to calculate (0-100).
 
         Returns:
-            Percentile value.
+            float: Percentile value.
         """
         if not sorted_values:
             return 0.0
@@ -189,7 +189,7 @@ class PerformanceMonitor:
         """Get all current metrics.
 
         Returns:
-            Dictionary containing all metrics.
+            dict[str, Any]: Dictionary containing all metrics.
         """
         return {
             "counters": dict(self.counters),
@@ -216,7 +216,7 @@ class SLAMonitor:
         """Initialize SLA monitor.
 
         Args:
-            sla_targets: Dictionary of SLA targets.
+            sla_targets (dict[str, float] | None): Dictionary of SLA targets.
         """
         self.sla_targets = sla_targets or {
             "response_time_p95": 2.0,  # 95th percentile response time < 2s
@@ -231,10 +231,10 @@ class SLAMonitor:
         """Check SLA compliance against current metrics.
 
         Args:
-            metrics: Current system metrics.
+            metrics (dict[str, Any]): Current system metrics.
 
         Returns:
-            Dictionary with SLA compliance status.
+            dict[str, Any]: Dictionary with SLA compliance status.
         """
         compliance_status = {}
 
@@ -293,10 +293,10 @@ class SLAMonitor:
         """Get SLA violations.
 
         Args:
-            since: Optional timestamp to filter violations.
+            since (float | None): Optional timestamp to filter violations.
 
         Returns:
-            List of SLA violations.
+            list[dict[str, Any]]: List of SLA violations.
         """
         if since is None:
             return self.violations
@@ -316,9 +316,9 @@ class PerformanceTracker:
         """Initialize performance tracker.
 
         Args:
-            monitor: Performance monitor instance.
-            operation_name: Name of the operation being tracked.
-            labels: Optional labels for the metric.
+            monitor (PerformanceMonitor): Performance monitor instance.
+            operation_name (str): Name of the operation being tracked.
+            labels (dict[str, str] | None): Optional labels for the metric.
         """
         self.monitor = monitor
         self.operation_name = operation_name
@@ -373,7 +373,7 @@ class SystemResourceMonitor:
         """Initialize system resource monitor.
 
         Args:
-            monitor: Performance monitor instance.
+            monitor (PerformanceMonitor): Performance monitor instance.
         """
         self.monitor = monitor
         self.logger = logger
@@ -384,7 +384,7 @@ class SystemResourceMonitor:
         """Start system resource monitoring.
 
         Args:
-            interval: Monitoring interval in seconds.
+            interval (float): Monitoring interval in seconds.
         """
         if self._monitoring:
             return
@@ -410,7 +410,7 @@ class SystemResourceMonitor:
         """Main monitoring loop.
 
         Args:
-            interval: Monitoring interval in seconds.
+            interval (float): Monitoring interval in seconds.
         """
         while self._monitoring:
             try:
@@ -457,7 +457,7 @@ def get_performance_monitor() -> PerformanceMonitor:
     """Get the global performance monitor instance.
 
     Returns:
-        Global performance monitor.
+        PerformanceMonitor: Global performance monitor.
     """
     return global_monitor
 
@@ -466,7 +466,7 @@ def get_sla_monitor() -> SLAMonitor:
     """Get the global SLA monitor instance.
 
     Returns:
-        Global SLA monitor.
+        SLAMonitor: Global SLA monitor.
     """
     return global_sla_monitor
 
@@ -475,7 +475,7 @@ def get_resource_monitor() -> SystemResourceMonitor:
     """Get the global resource monitor instance.
 
     Returns:
-        Global resource monitor.
+        SystemResourceMonitor: Global resource monitor.
     """
     return global_resource_monitor
 
@@ -484,10 +484,10 @@ def track_performance(operation_name: str, labels: dict[str, str] | None = None)
     """Create a performance tracker for an operation.
 
     Args:
-        operation_name: Name of the operation.
-        labels: Optional labels for the metric.
+        operation_name (str): Name of the operation.
+        labels (dict[str, str] | None): Optional labels for the metric.
 
     Returns:
-        Performance tracker context manager.
+        PerformanceTracker: Performance tracker context manager.
     """
     return PerformanceTracker(global_monitor, operation_name, labels)

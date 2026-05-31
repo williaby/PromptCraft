@@ -122,10 +122,10 @@ class MCPError(Exception):
         """Initialize MCP error with structured information.
 
         Args:
-            message: Human-readable error message
-            error_type: Categorized error type for handling logic
-            details: Additional error context and metadata
-            retry_after: Suggested retry delay in seconds
+            message (str): Human-readable error message
+            error_type (MCPErrorType): Categorized error type for handling logic
+            details (dict[str, Any] | None): Additional error context and metadata
+            retry_after (int | None): Suggested retry delay in seconds
         """
         super().__init__(message)
         self.error_type = error_type
@@ -274,13 +274,10 @@ class MCPClientInterface(ABC):
         Validate and sanitize user query for security.
 
         Args:
-            query: Raw user query string
+            query (str): Raw user query string
 
         Returns:
-            Dict containing validation results with keys:
-                - is_valid: bool
-                - sanitized_query: str
-                - potential_issues: List[str]
+            dict[str, Any]: Validation results with keys is_valid, sanitized_query, and potential_issues.
 
         Raises:
             MCPError: If validation service fails
@@ -292,10 +289,10 @@ class MCPClientInterface(ABC):
         Orchestrate multi-agent workflow execution.
 
         Args:
-            workflow_steps: List of workflow steps to execute
+            workflow_steps (list[WorkflowStep]): List of workflow steps to execute
 
         Returns:
-            List[Response]: Responses from all agents
+            list[Response]: Responses from all agents
 
         Raises:
             MCPError: If orchestration fails
@@ -308,7 +305,7 @@ class MCPClientInterface(ABC):
         Get list of available MCP server capabilities.
 
         Returns:
-            List[str]: Available capability names
+            list[str]: Available capability names
 
         Raises:
             MCPError: If capability query fails
@@ -335,10 +332,10 @@ class MockMCPClient(MCPClientInterface):
         Initialize mock MCP client with configurable behavior.
 
         Args:
-            simulate_failures: Whether to randomly simulate failures
-            failure_rate: Probability of simulated failures (0.0-1.0)
-            response_delay: Simulated processing delay in seconds
-            max_agents: Maximum number of agents to support
+            simulate_failures (bool): Whether to randomly simulate failures
+            failure_rate (float): Probability of simulated failures (0.0-1.0)
+            response_delay (float): Simulated processing delay in seconds
+            max_agents (int): Maximum number of agents to support
         """
         self.simulate_failures = simulate_failures
         self.failure_rate = failure_rate
@@ -549,11 +546,11 @@ class ZenMCPClient(MCPClientInterface):
         Initialize Zen MCP client with connection parameters.
 
         Args:
-            server_url: Zen MCP Server endpoint URL
-            api_key: Authentication API key (if required)
-            timeout: Request timeout in seconds
-            max_retries: Maximum number of retry attempts
-            backoff_factor: Exponential backoff multiplier
+            server_url (str): Zen MCP Server endpoint URL
+            api_key (str | None): Authentication API key (if required)
+            timeout (float): Request timeout in seconds
+            max_retries (int): Maximum number of retry attempts
+            backoff_factor (float): Exponential backoff multiplier
         """
         self.server_url = server_url.rstrip("/")
         self.api_key = api_key
@@ -1007,10 +1004,10 @@ class MCPClientFactory:
         Create MCP client instance based on configuration.
 
         Args:
-            client_type: Type of client ("mock" or "zen")
-            server_url: Server URL for real clients
-            api_key: API key for authentication
-            **kwargs: Additional client-specific parameters
+            client_type (str): Type of client ("mock" or "zen")
+            server_url (str | None): Server URL for real clients
+            api_key (str | None): API key for authentication
+            **kwargs (Any): Additional client-specific parameters
 
         Returns:
             MCPClientInterface: Configured client instance
@@ -1034,7 +1031,7 @@ class MCPClientFactory:
         Create MCP client instance from application settings.
 
         Args:
-            settings: ApplicationSettings instance (optional, will load if not provided)
+            settings (Any | None): ApplicationSettings instance (optional, will load if not provided)
 
         Returns:
             MCPClientInterface: Configured client instance based on settings
@@ -1081,10 +1078,10 @@ class MCPConnectionManager:
         Initialize connection manager.
 
         Args:
-            client: MCP client instance to manage
-            health_check_interval: Health check frequency in seconds
-            max_consecutive_failures: Failures before circuit breaker opens
-            circuit_breaker_timeout: Circuit breaker reset timeout
+            client (MCPClientInterface): MCP client instance to manage
+            health_check_interval (float): Health check frequency in seconds
+            max_consecutive_failures (int): Failures before circuit breaker opens
+            circuit_breaker_timeout (float): Circuit breaker reset timeout
         """
         self.client = client
         self.health_check_interval = health_check_interval
@@ -1125,15 +1122,12 @@ class MCPConnectionManager:
         Execute MCP operation with circuit breaker and fallback.
 
         Args:
-            operation: Name of the operation to execute
-            *args: Operation arguments
-            **kwargs: Operation keyword arguments
+            operation (str): Name of the operation to execute
+            *args (Any): Operation arguments
+            **kwargs (Any): Operation keyword arguments
 
         Returns:
-            Operation result or fallback response
-
-        Raises:
-            MCPError: If operation fails and no fallback available
+            Any | dict[str, Any]: Operation result or fallback response
         """
         # Check circuit breaker
         if self.is_circuit_breaker_open:

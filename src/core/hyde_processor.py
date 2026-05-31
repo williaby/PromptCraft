@@ -258,8 +258,8 @@ class HydeProcessor:
         """Initialize HydeProcessor with optional dependencies.
 
         Args:
-            config: Configuration object with all dependencies and settings
-            **kwargs: Additional configuration parameters (for backward compatibility)
+            config (HydeProcessorConfig | None): Configuration object with all dependencies and settings
+            **kwargs (Any): Additional configuration parameters (for backward compatibility)
         """
         self.logger = logging.getLogger(__name__)
 
@@ -333,10 +333,13 @@ class HydeProcessor:
         Perform three-tier analysis and determine processing strategy.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
             EnhancedQuery: Analysis results with processing strategy
+
+        Raises:
+            ValueError: If the query is empty or contains only whitespace.
         """
         start_time = time.time()
 
@@ -410,10 +413,10 @@ class HydeProcessor:
         Generate hypothetical documents for medium-specificity queries.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
-            List[HypotheticalDocument]: Generated hypothetical documents
+            list[HypotheticalDocument]: Generated hypothetical documents
         """
         return await self._generate_hypothetical_docs(query)
 
@@ -554,7 +557,7 @@ class HydeProcessor:
         Analyze query specificity and return a score.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
             float: Specificity score between 0-100
@@ -596,7 +599,7 @@ class HydeProcessor:
         Determine processing strategy based on query analysis.
 
         Args:
-            analysis: Query analysis results
+            analysis (QueryAnalysis): Query analysis results
 
         Returns:
             str: Processing strategy to use
@@ -612,8 +615,8 @@ class HydeProcessor:
         Enhance query based on processing strategy.
 
         Args:
-            query: Original query string
-            strategy: Processing strategy to apply
+            query (str): Original query string
+            strategy (ProcessingStrategy): Processing strategy to apply
 
         Returns:
             str: Enhanced query string
@@ -633,7 +636,7 @@ class HydeProcessor:
         Create embeddings for text.
 
         Args:
-            text: Text to create embeddings for
+            text (str): Text to create embeddings for
 
         Returns:
             list[float]: Embedding vector
@@ -665,10 +668,10 @@ class HydeProcessor:
         Create search parameters for vector store query.
 
         Args:
-            enhanced_query: Enhanced query string
-            embeddings: Query embeddings
-            limit: Maximum number of results
-            collection: Collection name to search
+            enhanced_query (str): Enhanced query string
+            embeddings (list[float]): Query embeddings
+            limit (int): Maximum number of results
+            collection (str): Collection name to search
 
         Returns:
             SearchParameters: Search parameters object
@@ -686,11 +689,11 @@ class HydeProcessor:
         Create enhanced embeddings from query and hypothetical documents.
 
         Args:
-            query: Original user query
-            docs: Generated hypothetical documents
+            query (str): Original user query
+            docs (list[HypotheticalDocument]): Generated hypothetical documents
 
         Returns:
-            List[List[float]]: Enhanced embedding vectors
+            list[list[float]]: Enhanced embedding vectors
         """
         start_time = time.time()
 
@@ -716,7 +719,7 @@ class HydeProcessor:
         Rank and filter search results based on relevance and quality.
 
         Args:
-            results: Raw search results from vector database
+            results (list[VectorSearchResult]): Raw search results from vector database
 
         Returns:
             RankedResults: Ranked and filtered results
@@ -762,7 +765,7 @@ class HydeProcessor:
         Complete HyDE processing pipeline for a query.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
             RankedResults: Final processed and ranked results

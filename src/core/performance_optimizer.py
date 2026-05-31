@@ -236,8 +236,8 @@ class PerformanceMonitor:
         """Complete operation tracking.
 
         Args:
-            metric: Performance metrics object to complete
-            **kwargs: Additional parameters including:
+            metric (PerformanceMetrics): Performance metrics object to complete
+            **kwargs (Any): Additional parameters including:
                 - cache_hit: Whether cache was hit (default: False)
                 - batch_size: Size of the batch processed (default: 1)
                 - error_occurred: Whether an error occurred (default: False)

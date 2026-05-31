@@ -1105,8 +1105,8 @@ class VectorStoreFactory:
         Create vector store instance by type.
 
         Args:
-            store_type: Type of vector store to create
-            config: Optional configuration dictionary
+            store_type (VectorStoreType | str): Type of vector store to create
+            config (dict[str, Any] | None): Optional configuration dictionary
 
         Returns:
             AbstractVectorStore: Configured vector store instance
@@ -1134,7 +1134,7 @@ class VectorStoreFactory:
         Create vector store instance from configuration.
 
         Args:
-            config: Optional configuration dictionary
+            config (dict[str, Any] | None): Optional configuration dictionary
 
         Returns:
             AbstractVectorStore: Configured vector store instance
@@ -1162,7 +1162,7 @@ class VectorStoreFactory:
         Create vector store instance based on configuration.
 
         Args:
-            config: Vector store configuration containing type and connection details
+            config (dict[str, Any]): Vector store configuration containing type and connection details
 
         Returns:
             AbstractVectorStore: Configured vector store instance
@@ -1202,7 +1202,7 @@ async def vector_store_connection(config: dict[str, Any]) -> AsyncIterator[Abstr
     with automatic cleanup on exit.
 
     Args:
-        config: Vector store configuration
+        config (dict[str, Any]): Vector store configuration
 
     Yields:
         AbstractVectorStore: Connected vector store instance
@@ -1246,11 +1246,11 @@ class MockVectorStore(EnhancedMockVectorStore):
         Search method compatible with both new and legacy interfaces.
 
         Args:
-            parameters: Either SearchParameters object or list of embeddings (legacy)
-            limit: Maximum number of results (only used with legacy interface)
+            parameters (SearchParameters | list[list[float]]): Either SearchParameters object or list of embeddings (legacy)
+            limit (int): Maximum number of results (only used with legacy interface)
 
         Returns:
-            List of search results
+            list[SearchResult]: List of search results
         """
         await self._ensure_connected()
 
@@ -1273,11 +1273,11 @@ class MockVectorStore(EnhancedMockVectorStore):
         Backward compatible search method for HydeProcessor.
 
         Args:
-            embeddings: List of query embeddings
-            limit: Maximum number of results
+            embeddings (list[list[float]]): List of query embeddings
+            limit (int): Maximum number of results
 
         Returns:
-            List[SearchResult]: Search results
+            list[SearchResult]: Search results
         """
         parameters = SearchParameters(
             embeddings=embeddings,
@@ -1293,7 +1293,7 @@ class MockVectorStore(EnhancedMockVectorStore):
         Backward compatible document addition for HydeProcessor.
 
         Args:
-            docs: List of HypotheticalDocument objects from HydeProcessor
+            docs (list[Any]): List of HypotheticalDocument objects from HydeProcessor
 
         Returns:
             bool: Success status

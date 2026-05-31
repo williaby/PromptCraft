@@ -183,9 +183,9 @@ class CircuitBreaker:
         """Initialize circuit breaker.
 
         Args:
-            name: Unique identifier for this circuit breaker
-            config: Configuration object (uses defaults if None)
-            health_check_func: Optional async function for health checks
+            name (str): Unique identifier for this circuit breaker
+            config (CircuitBreakerConfig | None): Configuration object (uses defaults if None)
+            health_check_func (Callable[[], Awaitable[bool]] | None): Optional async function for health checks
         """
         self.name = name
         self.config = config or CircuitBreakerConfig()
@@ -245,7 +245,7 @@ class CircuitBreaker:
         """Transition to a new state with proper logging and metrics.
 
         Args:
-            new_state: Target state to transition to
+            new_state (CircuitBreakerState): Target state to transition to
         """
         old_state = self._metrics.current_state
         if old_state == new_state:
@@ -283,7 +283,7 @@ class CircuitBreaker:
         """Check if request should be allowed based on current state.
 
         Returns:
-            True if request should be allowed, False otherwise
+            bool: True if request should be allowed, False otherwise
         """
         current_time = utc_now()
 
@@ -394,16 +394,12 @@ class CircuitBreaker:
         """Execute an async function with circuit breaker protection.
 
         Args:
-            func: Async function to execute
-            *args: Positional arguments for the function
-            **kwargs: Keyword arguments for the function
+            func (Callable[..., Awaitable[T]]): Async function to execute
+            *args (Any): Positional arguments for the function
+            **kwargs (Any): Keyword arguments for the function
 
         Returns:
-            Function result
-
-        Raises:
-            CircuitBreakerOpenError: If circuit breaker is open
-            Exception: Original exception from the function
+            T: Function result
         """
         if self.config.enable_tracing:
             # Apply tracing decorator to the function
@@ -468,16 +464,12 @@ class CircuitBreaker:
         """Execute a synchronous function with circuit breaker protection.
 
         Args:
-            func: Synchronous function to execute
-            *args: Positional arguments for the function
-            **kwargs: Keyword arguments for the function
+            func (Callable[..., T]): Synchronous function to execute
+            *args (Any): Positional arguments for the function
+            **kwargs (Any): Keyword arguments for the function
 
         Returns:
-            Function result
-
-        Raises:
-            CircuitBreakerOpenError: If circuit breaker is open
-            Exception: Original exception from the function
+            T: Function result
         """
         with self._request_context():
             return func(*args, **kwargs)
@@ -486,10 +478,10 @@ class CircuitBreaker:
         """Decorator to apply circuit breaker protection to a function.
 
         Args:
-            func: Function to protect
+            func (Callable[..., T]): Function to protect
 
         Returns:
-            Protected function
+            Callable[..., T]: Protected function
         """
         if asyncio.iscoroutinefunction(func):
 
@@ -509,7 +501,7 @@ class CircuitBreaker:
         """Perform health check if configured.
 
         Returns:
-            True if healthy, False otherwise
+            bool: True if healthy, False otherwise
         """
         if not self.health_check_func:
             return True
@@ -603,7 +595,7 @@ class CircuitBreaker:
         """Get comprehensive health status for monitoring.
 
         Returns:
-            Dictionary containing health and operational status
+            dict[str, Any]: Dictionary containing health and operational status
         """
         metrics = self.metrics
 
@@ -643,10 +635,10 @@ def create_circuit_breaker_config_from_settings(settings: Any) -> CircuitBreaker
     """Create circuit breaker configuration from application settings.
 
     Args:
-        settings: ApplicationSettings instance
+        settings (Any): ApplicationSettings instance
 
     Returns:
-        CircuitBreakerConfig with values from settings
+        CircuitBreakerConfig: CircuitBreakerConfig with values from settings
     """
     return CircuitBreakerConfig(
         failure_threshold=settings.circuit_breaker_failure_threshold,
@@ -668,10 +660,10 @@ def create_openrouter_circuit_breaker(settings: Any) -> CircuitBreaker:
     """Create a circuit breaker specifically configured for OpenRouter integration.
 
     Args:
-        settings: ApplicationSettings instance
+        settings (Any): ApplicationSettings instance
 
     Returns:
-        CircuitBreaker configured for OpenRouter API calls
+        CircuitBreaker: CircuitBreaker configured for OpenRouter API calls
     """
     config = create_circuit_breaker_config_from_settings(settings)
 
@@ -714,11 +706,11 @@ def get_circuit_breaker(name: str, settings: Any = None) -> CircuitBreaker | Non
     """Get or create a circuit breaker instance by name.
 
     Args:
-        name: Circuit breaker identifier
-        settings: ApplicationSettings instance (required for first-time creation)
+        name (str): Circuit breaker identifier
+        settings (Any): ApplicationSettings instance (required for first-time creation)
 
     Returns:
-        CircuitBreaker instance or None if not found and no settings provided
+        CircuitBreaker | None: CircuitBreaker instance or None if not found and no settings provided
     """
     with _circuit_breaker_lock:
         if name in _circuit_breakers:
@@ -743,8 +735,8 @@ def register_circuit_breaker(name: str, circuit_breaker: CircuitBreaker) -> None
     """Register a custom circuit breaker instance.
 
     Args:
-        name: Circuit breaker identifier
-        circuit_breaker: CircuitBreaker instance to register
+        name (str): Circuit breaker identifier
+        circuit_breaker (CircuitBreaker): CircuitBreaker instance to register
     """
     with _circuit_breaker_lock:
         _circuit_breakers[name] = circuit_breaker
@@ -755,7 +747,7 @@ def get_all_circuit_breakers() -> dict[str, CircuitBreaker]:
     """Get all registered circuit breaker instances.
 
     Returns:
-        Dictionary of all circuit breakers by name
+        dict[str, CircuitBreaker]: Dictionary of all circuit breakers by name
     """
     with _circuit_breaker_lock:
         return _circuit_breakers.copy()

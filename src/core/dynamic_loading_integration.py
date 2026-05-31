@@ -409,13 +409,16 @@ class DynamicLoadingIntegration:
         workflow with all optimizations and integrations.
 
         Args:
-            query: User query to process
-            user_id: Unique user identifier
-            strategy: Loading strategy to use
-            user_commands: Optional user commands to execute
+            query (str): User query to process
+            user_id (str): Unique user identifier
+            strategy (LoadingStrategy): Loading strategy to use
+            user_commands (list[str] | None): Optional user commands to execute
 
         Returns:
             ProcessingResult: Comprehensive results of processing
+
+        Raises:
+            RuntimeError: If task detector or function loader is not initialized
         """
         start_time = time.perf_counter()
         session_id = f"{user_id}_{int(time.time() * 1000)}"
@@ -640,12 +643,15 @@ class DynamicLoadingIntegration:
         workflows while applying dynamic function loading optimizations.
 
         Args:
-            workflow_steps: Workflow steps to execute
-            user_id: User identifier
-            strategy: Loading strategy
+            workflow_steps (list[WorkflowStep]): Workflow steps to execute
+            user_id (str): User identifier
+            strategy (LoadingStrategy): Loading strategy
 
         Returns:
-            Tuple of workflow responses and optimization results
+            tuple[list[Response], ProcessingResult]: Tuple of workflow responses and optimization results
+
+        Raises:
+            ValueError: If hybrid router is not configured
         """
         if not self.hybrid_router:
             raise ValueError("Hybrid router not configured for workflow processing")

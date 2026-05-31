@@ -203,12 +203,13 @@ class QueryCounselor:
         """Initialize QueryCounselor with optional MCP client and HyDE processor.
 
         Args:
-            mcp_client: MCP client interface (if None and enable_hybrid_routing is True, creates HybridRouter)
-            hyde_processor: HyDE processor instance
-            confidence_threshold: Confidence threshold for decisions (0.0-1.0)
-            routing_strategy: Routing strategy for HybridRouter
-            enable_hybrid_routing: Whether to enable hybrid OpenRouter/MCP routing
-                                  (None = auto-detect based on mcp_client parameter)
+            mcp_client (MCPClientInterface | None): MCP client interface (if None and enable_hybrid_routing is
+                True, creates HybridRouter)
+            hyde_processor (HydeProcessor | None): HyDE processor instance
+            confidence_threshold (float): Confidence threshold for decisions (0.0-1.0)
+            routing_strategy (RoutingStrategy): Routing strategy for HybridRouter
+            enable_hybrid_routing (bool | None): Whether to enable hybrid OpenRouter/MCP routing
+                (None = auto-detect based on mcp_client parameter)
         """
         self.logger = logging.getLogger(__name__)
 
@@ -276,11 +277,11 @@ class QueryCounselor:
         """Select optimal model for query type and complexity.
 
         Args:
-            query_type: Type of query being processed
-            complexity: Query complexity level (simple, medium, complex)
+            query_type (QueryType): Type of query being processed
+            complexity (str): Query complexity level (simple, medium, complex)
 
         Returns:
-            Model ID string if hybrid routing enabled, None otherwise
+            str | None: Model ID string if hybrid routing enabled, None otherwise
         """
         if not self.hybrid_routing_enabled or not self.model_registry:
             return None
@@ -321,7 +322,7 @@ class QueryCounselor:
         Analyze query intent and classify the type of request.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
             QueryIntent: Analysis results with type, confidence, and requirements
@@ -478,7 +479,7 @@ class QueryCounselor:
         Select appropriate agents based on query intent.
 
         Args:
-            intent: QueryIntent from analyze_intent()
+            intent (QueryIntent): QueryIntent from analyze_intent()
 
         Returns:
             AgentSelection: Selected agents for processing
@@ -525,12 +526,15 @@ class QueryCounselor:
         Orchestrate multi-agent workflow for query processing.
 
         Args:
-            agents: List of selected agents
-            query: Original user query
-            intent: Optional query intent for model routing
+            agents (list[Agent]): List of selected agents
+            query (str): Original user query
+            intent (QueryIntent | None): Optional query intent for model routing
 
         Returns:
-            List[Response]: Responses from all agents
+            list[MCPResponse]: Responses from all agents
+
+        Raises:
+            ValueError: If query validation fails.
         """
         start_time = time.time()
 
@@ -634,7 +638,7 @@ class QueryCounselor:
         Synthesize final response from multiple agent outputs.
 
         Args:
-            agent_outputs: List of responses from agents
+            agent_outputs (list[MCPResponse]): List of responses from agents
 
         Returns:
             FinalResponse: Synthesized final response
@@ -713,7 +717,7 @@ class QueryCounselor:
         automatic HyDE integration, suitable for most use cases.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
             QueryResponse: Processed query response
@@ -776,14 +780,10 @@ class QueryCounselor:
         with enhanced retrieval capabilities.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
-            FinalResponse: Comprehensive response with HyDE enhancement metadata
-
-        Raises:
-            ValueError: If query is invalid
-            Exception: For processing errors
+            QueryResponse: Comprehensive response with HyDE enhancement metadata
         """
         start_time = time.time()
 
@@ -918,10 +918,10 @@ class QueryCounselor:
         planning and debugging.
 
         Args:
-            query: User query string
+            query (str): User query string
 
         Returns:
-            Dict containing processing recommendations and analysis
+            dict[str, Any]: Processing recommendations and analysis
         """
         try:
             # Analyze intent

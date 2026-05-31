@@ -62,10 +62,10 @@ def get_client_identifier(request: Request) -> str:
     back to the direct client IP.
 
     Args:
-        request: The incoming request
+        request (Request): The incoming request.
 
     Returns:
-        Client identifier string for rate limiting
+        str: Client identifier string for rate limiting.
 
     Time Complexity: O(1) - Simple header lookup and string operations
     Space Complexity: O(1) - Fixed memory for IP address strings
@@ -108,7 +108,7 @@ def create_limiter() -> Limiter:
     """Create and configure the rate limiter instance.
 
     Returns:
-        Configured Limiter instance
+        Limiter: Configured Limiter instance.
     """
     settings = get_settings(validate_on_startup=False)
 
@@ -153,11 +153,14 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     security by not exposing internal implementation details.
 
     Args:
-        request: The incoming request
-        exc: The rate limit exceeded exception
+        request (Request): The incoming request.
+        exc (RateLimitExceeded): The rate limit exceeded exception.
 
     Returns:
-        JSON response with rate limit information
+        Any: JSON response with rate limit information.
+
+    Raises:
+        AuthExceptionHandler.handle_rate_limit_error: Always raised with rate limit details.
 
     Time Complexity: O(1) - Simple error response generation
     Space Complexity: O(1) - Fixed memory for error response dictionary
@@ -209,7 +212,7 @@ def setup_rate_limiting(app: Any) -> None:
     This function sets up the rate limiter and its error handler.
 
     Args:
-        app: The FastAPI application instance
+        app (Any): The FastAPI application instance.
     """
     # Add rate limiter to app state for access in routes
     app.state.limiter = limiter
@@ -249,10 +252,10 @@ def get_rate_limit_for_endpoint(endpoint_type: str) -> str:
     """Get appropriate rate limit for endpoint type.
 
     Args:
-        endpoint_type: Type of endpoint (api, health, auth, upload, admin, public)
+        endpoint_type (str): Type of endpoint (api, health, auth, upload, admin, public).
 
     Returns:
-        Rate limit string for the endpoint type
+        str: Rate limit string for the endpoint type.
     """
     limits_map = {
         "api": RateLimits.API_DEFAULT,
@@ -271,9 +274,9 @@ def rate_limit(limit: str) -> Callable:
     """Create a rate limit decorator for endpoints.
 
     Args:
-        limit: Rate limit string (e.g., "60/minute")
+        limit (str): Rate limit string (e.g., "60/minute").
 
     Returns:
-        Decorator function for applying rate limits
+        Callable: Decorator function for applying rate limits.
     """
     return limiter.limit(limit)

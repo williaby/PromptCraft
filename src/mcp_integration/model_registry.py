@@ -94,12 +94,12 @@ class UserTierFilter:
         """Filter models based on user tier access.
 
         Args:
-            models: List of model IDs to filter
-            user_tier: User tier (admin, full, limited)
-            model_registry: Registry instance to look up model capabilities
+            models (list[str]): List of model IDs to filter
+            user_tier (str): User tier (admin, full, limited)
+            model_registry (ModelRegistry): Registry instance to look up model capabilities
 
         Returns:
-            Filtered list of models the user can access
+            list[str]: Filtered list of models the user can access
         """
         if user_tier not in cls.TIER_CATEGORY_ACCESS:
             logger.warning(f"Unknown user tier: {user_tier}, defaulting to limited")
@@ -124,12 +124,12 @@ class UserTierFilter:
         """Check if user tier can access a specific model.
 
         Args:
-            model_id: Model ID to check
-            user_tier: User tier (admin, full, limited)
-            model_registry: Registry instance to look up model capabilities
+            model_id (str): Model ID to check
+            user_tier (str): User tier (admin, full, limited)
+            model_registry (ModelRegistry): Registry instance to look up model capabilities
 
         Returns:
-            True if user can access the model, False otherwise
+            bool: True if user can access the model, False otherwise
         """
         return len(cls.filter_models_by_tier([model_id], user_tier, model_registry)) > 0
 
@@ -143,25 +143,25 @@ class ModelCapabilities:
     and extended for hybrid routing needs.
 
     Attributes:
-        model_id: Unique identifier for the model (e.g., "deepseek/deepseek-chat-v3-0324:free")
-        display_name: Human-readable model name for UI display
-        provider: Model provider (e.g., "deepseek", "google", "qwen")
-        category: Model category for fallback chains ("free_general", "premium_reasoning", etc.)
-        context_window: Maximum context length in tokens
-        max_tokens_per_request: Maximum output tokens per request
-        rate_limit_requests_per_minute: Requests per minute rate limit
-        rate_limit_tokens_per_minute: Tokens per minute rate limit (if applicable)
-        cost_per_input_token: Cost per input token in USD (None for free models)
-        cost_per_output_token: Cost per output token in USD (None for free models)
-        timeout_seconds: Request timeout in seconds
-        supports_streaming: Whether model supports streaming responses
-        supports_function_calling: Whether model supports function/tool calling
-        supports_vision: Whether model supports image inputs
-        supports_reasoning: Whether model has enhanced reasoning capabilities
-        available_regions: List of geographic regions where model is available
-        fallback_models: Ordered list of fallback model IDs
-        enabled: Whether model is currently enabled for use
-        metadata: Additional provider-specific metadata
+        model_id (str): Unique identifier for the model (e.g., "deepseek/deepseek-chat-v3-0324:free")
+        display_name (str): Human-readable model name for UI display
+        provider (str): Model provider (e.g., "deepseek", "google", "qwen")
+        category (str): Model category for fallback chains ("free_general", "premium_reasoning", etc.)
+        context_window (int): Maximum context length in tokens
+        max_tokens_per_request (int): Maximum output tokens per request
+        rate_limit_requests_per_minute (int): Requests per minute rate limit
+        rate_limit_tokens_per_minute (int | None): Tokens per minute rate limit (if applicable)
+        cost_per_input_token (float | None): Cost per input token in USD (None for free models)
+        cost_per_output_token (float | None): Cost per output token in USD (None for free models)
+        timeout_seconds (float): Request timeout in seconds
+        supports_streaming (bool): Whether model supports streaming responses
+        supports_function_calling (bool): Whether model supports function/tool calling
+        supports_vision (bool): Whether model supports image inputs
+        supports_reasoning (bool): Whether model has enhanced reasoning capabilities
+        available_regions (list[str]): List of geographic regions where model is available
+        fallback_models (list[str]): Ordered list of fallback model IDs
+        enabled (bool): Whether model is currently enabled for use
+        metadata (dict[str, Any]): Additional provider-specific metadata
     """
 
     model_id: str
@@ -270,8 +270,8 @@ class ModelRegistry:
         """Initialize ModelRegistry with configuration.
 
         Args:
-            config_path: Optional path to model configuration YAML file.
-                        Defaults to config/openrouter_models.yaml
+            config_path (str | Path | None): Optional path to model configuration YAML file.
+                Defaults to config/openrouter_models.yaml.
         """
         self.logger = logging.getLogger(__name__ + ".ModelRegistry")
         self._models: dict[str, ModelCapabilities] = {}
@@ -419,10 +419,10 @@ class ModelRegistry:
         """Get capabilities for a specific model.
 
         Args:
-            model_id: Model identifier (e.g., "deepseek/deepseek-chat-v3-0324:free")
+            model_id (str): Model identifier (e.g., "deepseek/deepseek-chat-v3-0324:free")
 
         Returns:
-            ModelCapabilities if found, None otherwise
+            ModelCapabilities | None: ModelCapabilities if found, None otherwise.
         """
         return self._models.get(model_id)
 
@@ -430,11 +430,11 @@ class ModelRegistry:
         """List available models with optional filtering.
 
         Args:
-            category: Filter by model category (e.g., "free_general")
-            provider: Filter by provider (e.g., "deepseek")
+            category (str | None): Filter by model category (e.g., "free_general")
+            provider (str | None): Filter by provider (e.g., "deepseek")
 
         Returns:
-            List of matching ModelCapabilities
+            list[ModelCapabilities]: List of matching ModelCapabilities.
         """
         models = list(self._models.values())
 
@@ -453,10 +453,10 @@ class ModelRegistry:
         with additional validation and depth limiting.
 
         Args:
-            category: Model category for fallback chain
+            category (str): Model category for fallback chain
 
         Returns:
-            Ordered list of model IDs for fallback
+            list[str]: Ordered list of model IDs for fallback.
         """
         chain = self._fallback_chains.get(category, [])
 
@@ -481,10 +481,10 @@ class ModelRegistry:
         additional validation and registry integration.
 
         Args:
-            user_input: User-provided model name or alias
+            user_input (str): User-provided model name or alias
 
         Returns:
-            Canonical model ID or fallback model
+            str: Canonical model ID or fallback model.
         """
         # Direct lookup first
         if user_input in self._models:
@@ -540,12 +540,12 @@ class ModelRegistry:
         from model_utils.sh with enhanced capability matching.
 
         Args:
-            task_type: Type of task ("reasoning", "general", "vision", etc.)
-            allow_premium: Whether to consider paid models
-            max_tokens_needed: Minimum context window required
+            task_type (str): Type of task ("reasoning", "general", "vision", etc.)
+            allow_premium (bool): Whether to consider paid models
+            max_tokens_needed (int | None): Minimum context window required
 
         Returns:
-            Best available model ID
+            str: Best available model ID.
         """
         # Map task types to categories
         task_to_category = {
@@ -598,10 +598,10 @@ class ModelRegistry:
         """Get rate limit for a specific model.
 
         Args:
-            model_id: Model identifier
+            model_id (str): Model identifier
 
         Returns:
-            Requests per minute rate limit, or default if unknown
+            int: Requests per minute rate limit, or default if unknown.
         """
         capabilities = self.get_model_capabilities(model_id)
         return capabilities.rate_limit_requests_per_minute if capabilities else 20
@@ -610,10 +610,10 @@ class ModelRegistry:
         """Check if a model is available and enabled.
 
         Args:
-            model_id: Model identifier
+            model_id (str): Model identifier
 
         Returns:
-            True if model is available and enabled
+            bool: True if model is available and enabled.
         """
         capabilities = self.get_model_capabilities(model_id)
         return capabilities is not None and capabilities.enabled
@@ -622,12 +622,12 @@ class ModelRegistry:
         """Calculate estimated cost for model usage.
 
         Args:
-            model_id: Model identifier
-            input_tokens: Number of input tokens
-            output_tokens: Number of output tokens
+            model_id (str): Model identifier
+            input_tokens (int): Number of input tokens
+            output_tokens (int): Number of output tokens
 
         Returns:
-            Estimated cost in USD, or None for free models
+            float | None: Estimated cost in USD, or None for free models.
         """
         capabilities = self.get_model_capabilities(model_id)
         if not capabilities or capabilities.is_free:
@@ -662,12 +662,12 @@ class ModelRegistry:
         """List available models filtered by user tier.
 
         Args:
-            user_tier: User tier (admin, full, limited)
-            category: Optional category filter
-            provider: Optional provider filter
+            user_tier (str): User tier (admin, full, limited)
+            category (str | None): Optional category filter
+            provider (str | None): Optional provider filter
 
         Returns:
-            List of ModelCapabilities the user can access
+            list[ModelCapabilities]: List of ModelCapabilities the user can access.
         """
         all_models = self.list_models(category=category, provider=provider)
         model_ids = [m.model_id for m in all_models]
@@ -684,12 +684,12 @@ class ModelRegistry:
         """Select the best available model for a task type and user tier.
 
         Args:
-            user_tier: User tier (admin, full, limited)
-            task_type: Type of task ("reasoning", "general", "vision", etc.)
-            max_tokens_needed: Minimum context window required
+            user_tier (str): User tier (admin, full, limited)
+            task_type (str): Type of task ("reasoning", "general", "vision", etc.)
+            max_tokens_needed (int | None): Minimum context window required
 
         Returns:
-            Model ID string for the best available model
+            str: Model ID string for the best available model.
         """
         # First, get the best model without tier restrictions
         allow_premium = user_tier in ["admin", "full"]  # Only admin and full users can access premium
@@ -723,11 +723,11 @@ class ModelRegistry:
         """Get fallback chain appropriate for user tier.
 
         Args:
-            user_tier: User tier (admin, full, limited)
-            task_type: Type of task for chain selection
+            user_tier (str): User tier (admin, full, limited)
+            task_type (str): Type of task for chain selection
 
         Returns:
-            List of model IDs in fallback order
+            list[str]: List of model IDs in fallback order.
         """
         # Determine the appropriate fallback chain category
         if user_tier == "limited":
@@ -751,11 +751,11 @@ class ModelRegistry:
         """Check if a user tier can access a specific model.
 
         Args:
-            user_tier: User tier (admin, full, limited)
-            model_id: Model ID to check
+            user_tier (str): User tier (admin, full, limited)
+            model_id (str): Model ID to check
 
         Returns:
-            True if user can access the model, False otherwise
+            bool: True if user can access the model, False otherwise.
         """
         return UserTierFilter.can_access_model(model_id, user_tier, self)
 
@@ -768,7 +768,7 @@ def get_model_registry() -> ModelRegistry:
     """Get global ModelRegistry instance.
 
     Returns:
-        Singleton ModelRegistry instance
+        ModelRegistry: Singleton ModelRegistry instance.
     """
     if _registry_ref[0] is None:
         _registry_ref[0] = ModelRegistry()

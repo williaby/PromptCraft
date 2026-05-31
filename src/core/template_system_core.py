@@ -63,7 +63,7 @@ class TemplateManager:
         """Initialize the template manager.
 
         Args:
-            templates_dir: Directory containing template files.
+            templates_dir (str): Directory containing template files.
         """
         self.templates_dir = Path(templates_dir)
         self.templates: dict[str, TemplateSchema] = {}
@@ -86,7 +86,12 @@ class TemplateManager:
         """Load a single template file.
 
         Args:
-            template_file: Path to the template file.
+            template_file (Path): Path to the template file.
+
+        Raises:
+            yaml.YAMLError: If the template file contains invalid YAML.
+            ValidationError: If the template data fails schema validation.
+            Exception: If an unexpected error occurs while loading the template.
         """
         try:
             with template_file.open(encoding="utf-8") as f:
@@ -113,10 +118,10 @@ class TemplateManager:
         """Get a template by name.
 
         Args:
-            name: Template name.
+            name (str): Template name.
 
         Returns:
-            Template schema or None if not found.
+            TemplateSchema | None: Template schema or None if not found.
         """
         return self.templates.get(name)
 
@@ -124,7 +129,7 @@ class TemplateManager:
         """List all available template names.
 
         Returns:
-            List of template names.
+            list[str]: List of template names.
         """
         return list(self.templates.keys())
 
@@ -132,10 +137,10 @@ class TemplateManager:
         """Get templates by type.
 
         Args:
-            template_type: Template type to filter by.
+            template_type (TemplateType): Template type to filter by.
 
         Returns:
-            List of template names matching the type.
+            list[str]: List of template names matching the type.
         """
         matching_templates = []
         for name, template in self.templates.items():
@@ -147,10 +152,10 @@ class TemplateManager:
         """Validate template data against schema.
 
         Args:
-            template_data: Template data to validate.
+            template_data (dict[str, Any]): Template data to validate.
 
         Returns:
-            True if valid, False otherwise.
+            bool: True if valid, False otherwise.
         """
         try:
             TemplateSchema(**template_data)
@@ -163,11 +168,11 @@ class TemplateManager:
         """Create basic template structure.
 
         Args:
-            name: Template name.
-            template_type: Template type.
+            name (str): Template name.
+            template_type (TemplateType): Template type.
 
         Returns:
-            Basic template structure.
+            dict[str, Any]: Basic template structure.
         """
         return {
             "metadata": {
@@ -224,7 +229,7 @@ class TemplateProcessor:
         """Initialize the template processor.
 
         Args:
-            template_manager: Template manager instance.
+            template_manager (TemplateManager): Template manager instance.
         """
         self.template_manager = template_manager
         self.logger = logger
@@ -233,14 +238,15 @@ class TemplateProcessor:
         """Process a template with variables.
 
         Args:
-            name: Template name.
-            variables: Variables to substitute.
+            name (str): Template name.
+            variables (dict[str, Any]): Variables to substitute.
 
         Returns:
-            Processed template content.
+            str: Processed template content.
 
         Raises:
-            ValueError: If template not found or processing fails.
+            ValueError: If template not found.
+            Exception: If template processing fails.
         """
         template = self.template_manager.get_template(name)
         if not template:
@@ -257,11 +263,11 @@ class TemplateProcessor:
         """Substitute variables in template.
 
         Args:
-            template: Template schema.
-            variables: Variables to substitute.
+            template (TemplateSchema): Template schema.
+            variables (dict[str, Any]): Variables to substitute.
 
         Returns:
-            Processed template content.
+            str: Processed template content.
         """
         # Simple implementation - build content from sections
         content_parts = []
@@ -282,11 +288,11 @@ class TemplateProcessor:
         """Validate variables against template requirements.
 
         Args:
-            template_name: Template name.
-            variables: Variables to validate.
+            template_name (str): Template name.
+            variables (dict[str, Any]): Variables to validate.
 
         Returns:
-            True if valid, False otherwise.
+            bool: True if valid, False otherwise.
         """
         template = self.template_manager.get_template(template_name)
         if not template:
@@ -304,10 +310,10 @@ class TemplateProcessor:
         """Get template information.
 
         Args:
-            name: Template name.
+            name (str): Template name.
 
         Returns:
-            Template information.
+            dict[str, Any]: Template information.
         """
         template = self.template_manager.get_template(name)
         if not template:

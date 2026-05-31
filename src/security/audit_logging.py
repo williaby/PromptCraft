@@ -164,18 +164,6 @@ class AuditEvent:
     The event supports automatic IP extraction from various header sources
     (X-Forwarded-For, X-Real-IP) to handle reverse proxy environments.
 
-    Attributes:
-        event_type: The type of audit event (from AuditEventType enum)
-        severity: The severity level (from AuditEventSeverity enum)
-        message: Human-readable description of the event
-        timestamp: ISO format timestamp of when the event occurred
-        request: FastAPI request object for context (optional)
-        user_id: Identifier of the user involved (optional)
-        resource: Resource being accessed/modified (optional)
-        action: Action being performed (optional)
-        outcome: Result of the action (success/failure/etc.)
-        additional_data: Extra contextual information (optional)
-
     Example:
         >>> event = AuditEvent(
         ...     event_type=AuditEventType.AUTH_LOGIN_SUCCESS,
@@ -205,15 +193,15 @@ class AuditEvent:
         and metadata organization for security monitoring systems.
 
         Args:
-            event_type: Type of audit event
-            severity: Event severity level
-            message: Human-readable event description
-            request: FastAPI request object (if applicable)
-            user_id: User identifier (if authenticated)
-            resource: Resource being accessed/modified
-            action: Action being performed
-            outcome: Outcome of the action (success/failure/etc.)
-            additional_data: Additional context data
+            event_type (AuditEventType): Type of audit event.
+            severity (AuditEventSeverity): Event severity level.
+            message (str): Human-readable event description.
+            request (Request | None): FastAPI request object (if applicable).
+            user_id (str | None): User identifier (if authenticated).
+            resource (str | None): Resource being accessed/modified.
+            action (str | None): Action being performed.
+            outcome (str | None): Outcome of the action (success/failure/etc.).
+            additional_data (dict[str, Any] | None): Additional context data.
 
         Time Complexity: O(1) - Simple attribute assignment and timestamp generation
         Space Complexity: O(1) - Fixed memory allocation for event attributes
@@ -253,8 +241,8 @@ class AuditEvent:
         - Additional contextual data
 
         Returns:
-            Dictionary representation of the audit event with all structured
-            metadata ready for JSON serialization
+            dict[str, Any]: Dictionary representation of the audit event with all structured
+            metadata ready for JSON serialization.
 
         Note:
             Sensitive headers are not included in the request information
@@ -315,10 +303,10 @@ class AuditEvent:
         3. Direct client IP from request object
 
         Args:
-            request: FastAPI request object containing headers and client info
+            request (Request): FastAPI request object containing headers and client info.
 
         Returns:
-            Client IP address as string, or "unknown" if cannot be determined
+            str: Client IP address as string, or "unknown" if cannot be determined.
 
         Note:
             For X-Forwarded-For, only the first IP is used as this represents
@@ -345,10 +333,6 @@ class AuditLogger:
 
     The logger automatically integrates with the application settings to
     ensure consistent behavior across environments.
-
-    Attributes:
-        settings: Application settings instance
-        logger: Structured logger instance for audit events
 
     Thread Safety:
         This class is thread-safe as it uses structlog's thread-safe logger
@@ -399,7 +383,7 @@ class AuditLogger:
         """Log an audit event, routing to the appropriate level based on severity.
 
         Args:
-            event: The audit event to log, containing all necessary metadata
+            event (AuditEvent): The audit event to log, containing all necessary metadata.
         """
         event_data = event.to_dict()
 
@@ -423,11 +407,11 @@ class AuditLogger:
         are logged at HIGH severity for security monitoring.
 
         Args:
-            event_type: Authentication event type (e.g., AUTH_LOGIN_SUCCESS)
-            request: FastAPI request object for context extraction
-            user_id: User identifier involved in authentication (optional)
-            outcome: Authentication outcome ("success" or "failure")
-            additional_data: Additional context data (e.g., failure reason)
+            event_type (AuditEventType): Authentication event type (e.g., AUTH_LOGIN_SUCCESS).
+            request (Request): FastAPI request object for context extraction.
+            user_id (str | None): User identifier involved in authentication.
+            outcome (str): Authentication outcome ("success" or "failure").
+            additional_data (dict[str, Any] | None): Additional context data (e.g., failure reason).
 
         Example:
             >>> logger.log_authentication_event(
@@ -469,11 +453,11 @@ class AuditLogger:
         activations. Defaults to HIGH severity for security monitoring.
 
         Args:
-            event_type: Security event type (e.g., SECURITY_RATE_LIMIT_EXCEEDED)
-            message: Human-readable event description
-            request: FastAPI request object for context (optional)
-            severity: Event severity level (defaults to HIGH)
-            additional_data: Additional context data (e.g., rate limit details)
+            event_type (AuditEventType): Security event type (e.g., SECURITY_RATE_LIMIT_EXCEEDED).
+            message (str): Human-readable event description.
+            request (Request | None): FastAPI request object for context.
+            severity (AuditEventSeverity): Event severity level (defaults to HIGH).
+            additional_data (dict[str, Any] | None): Additional context data (e.g., rate limit details).
 
         Example:
             >>> logger.log_security_event(
@@ -512,11 +496,11 @@ class AuditLogger:
         - 2xx/3xx status codes: LOW severity (successful)
 
         Args:
-            request: FastAPI request object containing method, path, headers
-            response_status: HTTP response status code for severity determination
-            processing_time: Request processing time in seconds
-            user_id: User identifier if authenticated (optional)
-            additional_data: Additional context data to include in the log (optional)
+            request (Request): FastAPI request object containing method, path, headers.
+            response_status (int): HTTP response status code for severity determination.
+            processing_time (float): Request processing time in seconds.
+            user_id (str | None): User identifier if authenticated.
+            additional_data (dict[str, Any] | None): Additional context data to include in the log.
 
         Side Effects:
             Automatically includes response status and processing time in
@@ -588,8 +572,8 @@ def log_authentication_success(request: Request, user_id: str) -> None:
     Automatically uses AUTH_LOGIN_SUCCESS event type and "success" outcome.
 
     Args:
-        request: FastAPI request object for context
-        user_id: Identifier of the successfully authenticated user
+        request (Request): FastAPI request object for context.
+        user_id (str): Identifier of the successfully authenticated user.
 
     Example:
         >>> log_authentication_success(request, "user123")
@@ -609,8 +593,8 @@ def log_authentication_failure(request: Request, reason: str = "invalid_credenti
     Automatically uses AUTH_LOGIN_FAILURE event type and HIGH severity.
 
     Args:
-        request: FastAPI request object for context
-        reason: Reason for authentication failure (defaults to "invalid_credentials")
+        request (Request): FastAPI request object for context.
+        reason (str): Reason for authentication failure (defaults to "invalid_credentials").
 
     Example:
         >>> log_authentication_failure(request, "account_locked")
@@ -631,8 +615,8 @@ def log_rate_limit_exceeded(request: Request, limit: str) -> None:
     Uses MEDIUM severity as rate limiting is a normal protective measure.
 
     Args:
-        request: FastAPI request object for context
-        limit: Rate limit that was exceeded (e.g., "60/minute")
+        request (Request): FastAPI request object for context.
+        limit (str): Rate limit that was exceeded (e.g., "60/minute").
 
     Example:
         >>> log_rate_limit_exceeded(request, "100/minute")
@@ -653,8 +637,8 @@ def log_validation_failure(request: Request, validation_errors: list) -> None:
     Uses MEDIUM severity as validation failures may indicate attack attempts.
 
     Args:
-        request: FastAPI request object for context
-        validation_errors: List of validation errors that occurred
+        request (Request): FastAPI request object for context.
+        validation_errors (list): List of validation errors that occurred.
 
     Example:
         >>> log_validation_failure(request, ["Invalid email format", "Password too short"])
@@ -675,9 +659,9 @@ def log_error_handler_triggered(request: Request, error_type: str, error_message
     Uses HIGH severity as error handlers indicate application issues.
 
     Args:
-        request: FastAPI request object for context
-        error_type: Type of error that occurred (e.g., "ValidationError")
-        error_message: Error message details
+        request (Request): FastAPI request object for context.
+        error_type (str): Type of error that occurred (e.g., "ValidationError").
+        error_message (str): Error message details.
 
     Example:
         >>> log_error_handler_triggered(request, "HTTPException", "Internal server error")
@@ -698,9 +682,9 @@ def log_api_request(request: Request, response_status: int, processing_time: flo
     Automatically determines severity based on HTTP status code.
 
     Args:
-        request: FastAPI request object
-        response_status: HTTP response status code
-        processing_time: Request processing time in seconds
+        request (Request): FastAPI request object.
+        response_status (int): HTTP response status code.
+        processing_time (float): Request processing time in seconds.
 
     Example:
         >>> log_api_request(request, 200, 0.245)

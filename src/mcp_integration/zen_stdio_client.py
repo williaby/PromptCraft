@@ -45,11 +45,11 @@ class ZenStdioMCPClient(MCPClientInterface):
         Initialize Zen stdio MCP client.
 
         Args:
-            server_path: Path to zen-mcp-server script
-            http_fallback_url: HTTP API URL for fallback
-            timeout: Request timeout in seconds
-            max_retries: Maximum retry attempts
-            backoff_factor: Exponential backoff multiplier
+            server_path (str): Path to zen-mcp-server script
+            http_fallback_url (str): HTTP API URL for fallback
+            timeout (float): Request timeout in seconds
+            max_retries (int): Maximum retry attempts
+            backoff_factor (float): Exponential backoff multiplier
         """
         self.server_path = server_path
         self.http_fallback_url = http_fallback_url
@@ -70,7 +70,10 @@ class ZenStdioMCPClient(MCPClientInterface):
         Connect to zen-mcp-server via stdio.
 
         Returns:
-            True if connection successful, False otherwise
+            bool: True if connection successful, False otherwise
+
+        Raises:
+            Exception: If the connection attempt raises unexpectedly.
         """
         try:
             self.connection_state = MCPConnectionState.CONNECTING
@@ -106,7 +109,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         Disconnect from zen-mcp-server.
 
         Returns:
-            True if disconnect successful, False otherwise
+            bool: True if disconnect successful, False otherwise
         """
         try:
             if self.zen_client:
@@ -126,7 +129,10 @@ class ZenStdioMCPClient(MCPClientInterface):
         Check health of zen-mcp-server connection.
 
         Returns:
-            MCPHealthStatus with current connection state
+            MCPHealthStatus: Current connection state and metrics.
+
+        Raises:
+            MCPError: If not connected or the health check fails.
         """
         if not self.zen_client:
             raise MCPError("Not connected to server")
@@ -162,10 +168,13 @@ class ZenStdioMCPClient(MCPClientInterface):
         Get model recommendations using zen's dynamic model selector.
 
         Args:
-            prompt: Input prompt for analysis
+            prompt (str): Input prompt for analysis
 
         Returns:
-            RoutingAnalysis with model recommendations
+            Any: RoutingAnalysis with model recommendations
+
+        Raises:
+            MCPError: If not connected to the server.
         """
         if not self.zen_client:
             raise MCPError("Not connected to server")
@@ -232,10 +241,13 @@ class ZenStdioMCPClient(MCPClientInterface):
         Execute prompt with zen's intelligent routing.
 
         Args:
-            prompt: Prompt to execute
+            prompt (str): Prompt to execute
 
         Returns:
-            Execution result with routing metadata
+            dict[str, Any]: Execution result with routing metadata
+
+        Raises:
+            MCPError: If not connected to the server.
         """
         if not self.zen_client:
             raise MCPError("Not connected to server")
@@ -299,7 +311,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         Get environment variables for zen-mcp-server.
 
         Returns:
-            Dictionary of environment variables
+            dict[str, str]: Dictionary of environment variables
         """
         env_vars = {}
 
@@ -331,10 +343,10 @@ class ZenStdioMCPClient(MCPClientInterface):
         Validate and sanitize user query for security.
 
         Args:
-            query: Raw user query string
+            query (str): Raw user query string
 
         Returns:
-            Dict containing validation results
+            dict[str, Any]: Dict containing validation results
         """
         if not self.zen_client:
             # Provide basic validation when not connected
@@ -385,10 +397,13 @@ class ZenStdioMCPClient(MCPClientInterface):
         Orchestrate multi-agent workflow execution.
 
         Args:
-            workflow_steps: List of workflow steps to execute
+            workflow_steps (list[Any]): List of workflow steps to execute
 
         Returns:
-            List of responses from all agents
+            list[Any]: List of responses from all agents
+
+        Raises:
+            MCPError: If not connected to the server.
         """
         # For now, delegate to execute_with_routing for single prompts
         # or return empty responses for multi-agent workflows
@@ -430,7 +445,7 @@ class ZenStdioMCPClient(MCPClientInterface):
         Get list of available MCP server capabilities.
 
         Returns:
-            List of available capability names
+            list[str]: List of available capability names
         """
         if not self.zen_client:
             return ["mcp_stdio", "zen_native", "http_fallback"]
@@ -462,11 +477,11 @@ async def create_zen_stdio_client(
     Create and connect a zen stdio MCP client.
 
     Args:
-        server_path: Path to zen-mcp-server
-        **kwargs: Additional client configuration
+        server_path (str): Path to zen-mcp-server
+        **kwargs (Any): Additional client configuration
 
     Returns:
-        Connected ZenStdioMCPClient instance
+        ZenStdioMCPClient: Connected ZenStdioMCPClient instance
     """
     client = ZenStdioMCPClient(server_path=server_path, **kwargs)
     await client.connect()

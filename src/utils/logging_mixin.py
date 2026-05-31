@@ -32,10 +32,10 @@ class LoggerMixin:
         """Initialize logger for the component.
 
         Args:
-            logger_name: Custom logger name. If None, uses class name.
-            log_level: Custom log level. If None, uses existing level.
-            *args: Additional positional arguments for parent classes.
-            **kwargs: Additional keyword arguments for parent classes.
+            logger_name (str | None): Custom logger name. If None, uses class name.
+            log_level (int | None): Custom log level. If None, uses existing level.
+            *args (Any): Additional positional arguments for parent classes.
+            **kwargs (Any): Additional keyword arguments for parent classes.
         """
         super().__init__(*args, **kwargs)
 
@@ -64,9 +64,9 @@ class LoggerMixin:
         """Log method entry with parameters (for debugging).
 
         Args:
-            method_name: Name of the method being entered.
-            *args: Method arguments.
-            **kwargs: Method keyword arguments.
+            method_name (str): Name of the method being entered.
+            *args (Any): Method arguments.
+            **kwargs (Any): Method keyword arguments.
         """
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug(
@@ -80,8 +80,8 @@ class LoggerMixin:
         """Log method exit with result (for debugging).
 
         Args:
-            method_name: Name of the method being exited.
-            result: Method return value.
+            method_name (str): Name of the method being exited.
+            result (Any): Method return value.
         """
         if self.logger.isEnabledFor(logging.DEBUG):
             if result is not None:
@@ -98,9 +98,9 @@ class LoggerMixin:
         """Log error with additional context information.
 
         Args:
-            error: The exception that occurred.
-            context: Additional context information.
-            method_name: Name of the method where error occurred.
+            error (Exception): The exception that occurred.
+            context (dict[str, Any] | None): Additional context information.
+            method_name (str | None): Name of the method where error occurred.
         """
         context = context or {}
         location = f" in {method_name}" if method_name else ""
@@ -123,10 +123,10 @@ class LoggerMixin:
         """Log performance metrics in a structured format.
 
         Args:
-            metric_name: Name of the performance metric.
-            value: Metric value.
-            unit: Unit of measurement.
-            context: Additional context information.
+            metric_name (str): Name of the performance metric.
+            value (float): Metric value.
+            unit (str): Unit of measurement.
+            context (dict[str, Any] | None): Additional context information.
         """
         context = context or {}
         self.logger.info(
@@ -147,10 +147,10 @@ class LoggerMixin:
         """Log state transitions in a structured format.
 
         Args:
-            from_state: Previous state.
-            to_state: New state.
-            reason: Reason for state change.
-            context: Additional context information.
+            from_state (str): Previous state.
+            to_state (str): New state.
+            reason (str | None): Reason for state change.
+            context (dict[str, Any] | None): Additional context information.
         """
         context = context or {}
         reason_text = f" (reason: {reason})" if reason else ""
@@ -172,9 +172,9 @@ class LoggerMixin:
         """Log business events in a structured format.
 
         Args:
-            event_name: Name of the business event.
-            event_data: Event-specific data.
-            level: Log level for the event.
+            event_name (str): Name of the business event.
+            event_data (dict[str, Any] | None): Event-specific data.
+            level (int): Log level for the event.
         """
         event_data = event_data or {}
         self.logger.log(
@@ -202,10 +202,10 @@ class StructuredLoggerMixin(LoggerMixin):
         """Initialize structured logger.
 
         Args:
-            component_id: Unique identifier for this component instance.
-            correlation_id: Correlation ID for request tracing.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
+            component_id (str | None): Unique identifier for this component instance.
+            correlation_id (str | None): Correlation ID for request tracing.
+            *args (Any): Additional positional arguments.
+            **kwargs (Any): Additional keyword arguments.
         """
         super().__init__(*args, **kwargs)
         self.component_id = component_id or f"{self.__class__.__name__}_instance"
@@ -218,10 +218,10 @@ class StructuredLoggerMixin(LoggerMixin):
         """Get base structured context for logging.
 
         Args:
-            additional_context: Additional context to merge.
+            additional_context (dict[str, Any] | None): Additional context to merge.
 
         Returns:
-            Combined context dictionary.
+            dict[str, Any]: Combined context dictionary.
         """
         context = {
             "component_id": self.component_id,
@@ -246,10 +246,10 @@ class StructuredLoggerMixin(LoggerMixin):
         """Log with structured context.
 
         Args:
-            level: Log level.
-            message: Log message.
-            event_type: Type of event (e.g., 'api_call', 'state_change').
-            **kwargs: Additional structured data.
+            level (int): Log level.
+            message (str): Log message.
+            event_type (str | None): Type of event (e.g., 'api_call', 'state_change').
+            **kwargs (Any): Additional structured data.
         """
         context = self._get_structured_context(kwargs)
 
@@ -269,11 +269,11 @@ class StructuredLoggerMixin(LoggerMixin):
         """Log API call with structured data.
 
         Args:
-            endpoint: API endpoint called.
-            method: HTTP method.
-            status_code: Response status code.
-            duration_ms: Call duration in milliseconds.
-            **kwargs: Additional context.
+            endpoint (str): API endpoint called.
+            method (str): HTTP method.
+            status_code (int | None): Response status code.
+            duration_ms (float | None): Call duration in milliseconds.
+            **kwargs (Any): Additional context.
         """
         context = {
             "endpoint": endpoint,
@@ -302,11 +302,11 @@ def get_component_logger(
     """Get a standardized logger for a component.
 
     Args:
-        component_name: Name of the component.
-        level: Log level to set.
+        component_name (str): Name of the component.
+        level (int): Log level to set.
 
     Returns:
-        Configured logger instance.
+        logging.Logger: Configured logger instance.
     """
     logger_name = f"promptcraft.{component_name}"
     logger = logging.getLogger(logger_name)

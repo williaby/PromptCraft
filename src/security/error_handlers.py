@@ -80,13 +80,13 @@ def create_secure_error_response(
     - Production: Returns minimal, safe error information
 
     Args:
-        request: The incoming FastAPI request object
-        error: The exception that occurred
-        status_code: HTTP status code to return (default: 500)
-        detail: Error detail message (production-safe)
+        request (Request): The incoming FastAPI request object.
+        error (Exception): The exception that occurred.
+        status_code (int): HTTP status code to return (default: 500).
+        detail (str): Error detail message (production-safe).
 
     Returns:
-        JSONResponse with sanitized error information and security headers
+        Response: JSONResponse with sanitized error information and security headers.
 
     Example:
         >>> response = create_secure_error_response(
@@ -153,11 +153,11 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> Respon
     security posture.
 
     Args:
-        request: The incoming FastAPI request object
-        exc: The HTTP exception that was raised
+        request (Request): The incoming FastAPI request object.
+        exc (HTTPException): The HTTP exception that was raised.
 
     Returns:
-        Secure JSON error response with appropriate status code and headers
+        Response: Secure JSON error response with appropriate status code and headers.
 
     Example:
         This handler is automatically invoked for exceptions like:
@@ -185,11 +185,11 @@ async def starlette_http_exception_handler(
     HTTP exceptions regardless of their origin.
 
     Args:
-        request: The incoming FastAPI request object
-        exc: The Starlette HTTP exception that was raised
+        request (Request): The incoming FastAPI request object.
+        exc (StarletteHTTPException): The Starlette HTTP exception that was raised.
 
     Returns:
-        Secure JSON error response with appropriate status code and headers
+        Response: Secure JSON error response with appropriate status code and headers.
 
     Example:
         Handles low-level HTTP exceptions like 404 errors from routing
@@ -221,11 +221,11 @@ async def validation_exception_handler(
     - Production: Minimal validation error information
 
     Args:
-        request: The incoming FastAPI request object
-        exc: The request validation error containing field-level details
+        request (Request): The incoming FastAPI request object.
+        exc (RequestValidationError): The request validation error containing field-level details.
 
     Returns:
-        Secure JSON error response with validation details (environment-dependent)
+        Response: Secure JSON error response with validation details (environment-dependent).
 
     Example:
         Handles validation errors from Pydantic models:
@@ -299,11 +299,11 @@ async def general_exception_handler(request: Request, exc: Exception) -> Respons
     - Adds security headers to all responses
 
     Args:
-        request: The incoming FastAPI request object
-        exc: The unhandled exception that occurred
+        request (Request): The incoming FastAPI request object.
+        exc (Exception): The unhandled exception that occurred.
 
     Returns:
-        Secure JSON error response with minimal information
+        Response: Secure JSON error response with minimal information.
 
     Example:
         Catches any exception not handled by other handlers:
@@ -335,7 +335,7 @@ def setup_secure_error_handlers(app: FastAPI) -> None:
     4. Exception -> general_exception_handler (catch-all)
 
     Args:
-        app: The FastAPI application instance to configure
+        app (FastAPI): The FastAPI application instance to configure.
 
     Side Effects:
         - Registers exception handlers with the FastAPI app
@@ -375,12 +375,12 @@ def create_secure_http_exception(
     - X-Frame-Options: DENY (prevents clickjacking)
 
     Args:
-        status_code: HTTP status code for the exception
-        detail: Error detail message (should be production-safe)
-        headers: Additional headers to include (optional)
+        status_code (int): HTTP status code for the exception.
+        detail (str): Error detail message (should be production-safe).
+        headers (dict[str, str] | None): Additional headers to include (optional).
 
     Returns:
-        HTTPException with secure headers pre-configured
+        HTTPException: HTTPException with secure headers pre-configured.
 
     Example:
         >>> raise create_secure_http_exception(
@@ -424,14 +424,14 @@ def create_auth_aware_http_exception(
     maintaining backward compatibility with create_secure_http_exception.
 
     Args:
-        status_code: HTTP status code for the exception
-        detail: Error detail message (should be production-safe)
-        headers: Additional headers to include (optional)
-        user_identifier: User identifier for logging (optional)
-        log_message: Custom log message (optional)
+        status_code (int): HTTP status code for the exception.
+        detail (str): Error detail message (should be production-safe).
+        headers (dict[str, str] | None): Additional headers to include (optional).
+        user_identifier (str): User identifier for logging (optional).
+        log_message (str): Custom log message (optional).
 
     Returns:
-        HTTPException created via AuthExceptionHandler or fallback
+        HTTPException: HTTPException created via AuthExceptionHandler or fallback.
 
     Example:
         >>> raise create_auth_aware_http_exception(

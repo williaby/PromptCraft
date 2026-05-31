@@ -353,13 +353,13 @@ class UserSegmentation:
         Assign a user to an experiment variant based on configuration.
 
         Args:
-            user_id: Unique user identifier
-            experiment_id: Experiment identifier
-            config: Experiment configuration
-            user_characteristics: User characteristics for segmentation
+            user_id (str): Unique user identifier
+            experiment_id (str): Experiment identifier
+            config (ExperimentConfig): Experiment configuration
+            user_characteristics (UserCharacteristics | None): User characteristics for segmentation
 
         Returns:
-            Tuple of (variant, segment)
+            tuple[str, UserSegment]: Tuple of (variant, segment)
         """
         try:
             # Check if user already assigned

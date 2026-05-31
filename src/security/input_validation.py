@@ -45,9 +45,6 @@ class SecureStringField(str):
         Provides backward compatibility with Pydantic v1 validation system.
         Yields the validate method for use in Pydantic model validation.
 
-        Returns:
-            Generator yielding the validate method
-
         Note:
             This method maintains compatibility with older Pydantic versions
             while allowing the security validation to work seamlessly.
@@ -76,10 +73,10 @@ class SecureStringField(str):
         - Event handler injection
 
         Args:
-            value: Input value to validate (any type, converted to string)
+            value (Any): Input value to validate (any type, converted to string)
 
         Returns:
-            Sanitized string value with HTML entities escaped
+            str: Sanitized string value with HTML entities escaped
 
         Raises:
             ValueError: If input contains dangerous content or exceeds limits
@@ -162,9 +159,6 @@ class SecurePathField(str):
 
         Provides backward compatibility with Pydantic v1 validation system.
         Yields the validate method for use in Pydantic model validation.
-
-        Returns:
-            Generator yielding the validate method
         """
         yield cls.validate
 
@@ -183,10 +177,10 @@ class SecurePathField(str):
         5. Return original value if validation passes
 
         Args:
-            value: Path value to validate (any type, converted to string)
+            value (Any): Path value to validate (any type, converted to string)
 
         Returns:
-            Original path value if validation passes
+            str: Original path value if validation passes
 
         Raises:
             ValueError: If path contains dangerous patterns or characters
@@ -247,10 +241,10 @@ class SecureEmailField(str):
         """Validate email input.
 
         Args:
-            value: Email value to validate
+            value (Any): Email value to validate
 
         Returns:
-            Validated email value
+            str: Validated email value
 
         Raises:
             ValueError: If email format is invalid
@@ -308,10 +302,10 @@ class SecureTextInput(BaseSecureModel):
         """Validate and sanitize text content.
 
         Args:
-            value: Text value to validate
+            value (str): Text value to validate
 
         Returns:
-            Sanitized text value
+            str: Sanitized text value
         """
         return SecureStringField.validate(value)
 
@@ -340,10 +334,13 @@ class SecureFileUpload(BaseSecureModel):
         """Validate filename for security.
 
         Args:
-            value: Filename to validate
+            value (str): Filename to validate
 
         Returns:
-            Validated filename
+            str: Validated filename
+
+        Raises:
+            ValueError: If filename is invalid or contains dangerous content
         """
         # Check for leading/trailing whitespace before processing
         if value != value.strip():
@@ -416,10 +413,13 @@ class SecureFileUpload(BaseSecureModel):
         """Validate MIME content type.
 
         Args:
-            value: Content type to validate
+            value (str): Content type to validate
 
         Returns:
-            Validated content type
+            str: Validated content type
+
+        Raises:
+            ValueError: If content type format is invalid or not allowed
         """
         # Basic MIME type validation - allow dots, hyphens, and other valid MIME characters
         if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^.]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^.]*$", value):
@@ -484,10 +484,10 @@ class SecureQueryParams(BaseSecureModel):
         """Validate search query.
 
         Args:
-            value: Search query to validate
+            value (str | None): Search query to validate
 
         Returns:
-            Sanitized search query
+            str | None: Sanitized search query
         """
         if value is None:
             return None
@@ -499,7 +499,7 @@ def create_input_sanitizer() -> dict[str, Any]:
     """Create input sanitization configuration.
 
     Returns:
-        Dictionary of sanitization functions
+        dict[str, Any]: Dictionary of sanitization functions
     """
     return {
         "string": SecureStringField.validate,
@@ -512,12 +512,12 @@ def _sanitize_list(lst: list[Any], sanitizer: Any, sanitizer_type: str) -> list[
     """Recursively sanitize a list, handling nested lists and dictionaries.
 
     Args:
-        lst: List to sanitize
-        sanitizer: Sanitizer function to apply to strings
-        sanitizer_type: Type of sanitization to apply
+        lst (list[Any]): List to sanitize
+        sanitizer (Any): Sanitizer function to apply to strings
+        sanitizer_type (str): Type of sanitization to apply
 
     Returns:
-        Sanitized list
+        list[Any]: Sanitized list
     """
     sanitized_list = []
     for item in lst:
@@ -536,11 +536,11 @@ def sanitize_dict_values(data: dict[str, Any], sanitizer_type: str = "string") -
     """Sanitize all string values in a dictionary.
 
     Args:
-        data: Dictionary to sanitize
-        sanitizer_type: Type of sanitization to apply
+        data (dict[str, Any]): Dictionary to sanitize
+        sanitizer_type (str): Type of sanitization to apply
 
     Returns:
-        Dictionary with sanitized values
+        dict[str, Any]: Dictionary with sanitized values
     """
     sanitizers = create_input_sanitizer()
     sanitizer = sanitizers.get(sanitizer_type, sanitizers["string"])

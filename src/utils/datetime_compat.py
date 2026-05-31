@@ -65,10 +65,10 @@ def utc_from_timestamp(timestamp: float) -> datetime:
     Replaces deprecated datetime.utcfromtimestamp().
 
     Args:
-        timestamp: Unix timestamp
+        timestamp (float): Unix timestamp
 
     Returns:
-        Timezone-aware datetime in UTC
+        datetime: Timezone-aware datetime in UTC
     """
     return datetime.fromtimestamp(timestamp, UTC)
 
@@ -78,7 +78,7 @@ def local_now() -> datetime:
     Get current time in the system's local timezone.
 
     Returns:
-        Timezone-aware datetime in local timezone
+        datetime: Timezone-aware datetime in local timezone
     """
     return datetime.now().astimezone()
 
@@ -89,7 +89,7 @@ def timestamp_now() -> float:
     Useful for caching, TTL calculations, and performance measurements.
 
     Returns:
-        Unix timestamp (seconds since epoch)
+        float: Unix timestamp (seconds since epoch)
     """
     if _mock_now_time is not None:
         return _mock_now_time.timestamp()
@@ -101,11 +101,11 @@ def parse_iso(iso_string: str, assume_utc: bool = True) -> datetime:
     Parse ISO format datetime string with timezone handling.
 
     Args:
-        iso_string: ISO format datetime string (e.g., "2023-01-01T12:00:00Z")
-        assume_utc: If True, assume UTC for naive datetimes (default: True)
+        iso_string (str): ISO format datetime string (e.g., "2023-01-01T12:00:00Z")
+        assume_utc (bool): If True, assume UTC for naive datetimes (default: True)
 
     Returns:
-        Timezone-aware datetime
+        datetime: Timezone-aware datetime
 
     Raises:
         ValueError: If string cannot be parsed
@@ -134,11 +134,11 @@ def to_iso(dt: datetime, include_timezone: bool = True) -> str:
     Convert datetime to ISO format string.
 
     Args:
-        dt: Datetime to convert
-        include_timezone: Include timezone info in output (default: True)
+        dt (datetime): Datetime to convert
+        include_timezone (bool): Include timezone info in output (default: True)
 
     Returns:
-        ISO format string
+        str: ISO format string
     """
     if is_naive(dt):
         dt = ensure_aware(dt, UTC)
@@ -158,10 +158,10 @@ def is_aware(dt: datetime) -> bool:
     Check if datetime is timezone-aware.
 
     Args:
-        dt: Datetime object to check
+        dt (datetime): Datetime object to check
 
     Returns:
-        True if datetime has timezone information
+        bool: True if datetime has timezone information
     """
     return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
@@ -171,10 +171,10 @@ def is_naive(dt: datetime) -> bool:
     Check if datetime is naive (no timezone).
 
     Args:
-        dt: Datetime object to check
+        dt (datetime): Datetime object to check
 
     Returns:
-        True if datetime has no timezone information
+        bool: True if datetime has no timezone information
     """
     return not is_aware(dt)
 
@@ -185,11 +185,11 @@ def ensure_aware(dt: datetime, tz: timezone | None = None) -> datetime:
     If naive, assumes UTC unless another timezone specified.
 
     Args:
-        dt: Datetime object
-        tz: Timezone to apply if datetime is naive (defaults to UTC)
+        dt (datetime): Datetime object
+        tz (timezone | None): Timezone to apply if datetime is naive (defaults to UTC)
 
     Returns:
-        Timezone-aware datetime
+        datetime: Timezone-aware datetime
     """
     if is_aware(dt):
         return dt
@@ -201,11 +201,11 @@ def naive_to_aware(dt: datetime, tz: timezone | None = None) -> datetime:
     Convert naive datetime to aware.
 
     Args:
-        dt: Naive datetime object
-        tz: Target timezone (defaults to UTC)
+        dt (datetime): Naive datetime object
+        tz (timezone | None): Target timezone (defaults to UTC)
 
     Returns:
-        Timezone-aware datetime
+        datetime: Timezone-aware datetime
 
     Raises:
         ValueError: If datetime is already timezone-aware
@@ -222,11 +222,11 @@ def aware_to_naive(dt: datetime, preserve_utc: bool = True) -> datetime:
     Convert aware datetime to naive.
 
     Args:
-        dt: Timezone-aware datetime
-        preserve_utc: If True, converts to UTC first (recommended for storage)
+        dt (datetime): Timezone-aware datetime
+        preserve_utc (bool): If True, converts to UTC first (recommended for storage)
 
     Returns:
-        Naive datetime
+        datetime: Naive datetime
 
     Raises:
         ValueError: If datetime is already naive
@@ -248,10 +248,10 @@ def _normalize_for_comparison(dt: datetime) -> datetime:
     Normalize datetime for comparison (cached for performance).
 
     Args:
-        dt: Datetime to normalize
+        dt (datetime): Datetime to normalize
 
     Returns:
-        Timezone-aware datetime in UTC
+        datetime: Timezone-aware datetime in UTC
     """
     if is_aware(dt):
         return dt.astimezone(UTC)
@@ -263,11 +263,11 @@ def safe_compare(dt1: datetime, dt2: datetime) -> int:
     Safely compare datetimes regardless of timezone awareness.
 
     Args:
-        dt1: First datetime
-        dt2: Second datetime
+        dt1 (datetime): First datetime
+        dt2 (datetime): Second datetime
 
     Returns:
-        -1 if dt1 < dt2, 0 if equal, 1 if dt1 > dt2
+        int: -1 if dt1 < dt2, 0 if equal, 1 if dt1 > dt2
     """
     norm1 = _normalize_for_comparison(dt1)
     norm2 = _normalize_for_comparison(dt2)
@@ -285,11 +285,11 @@ def assert_datetime_aware(dt: datetime, context: str = "") -> datetime:
     Temporary helper to catch naive datetime bugs during migration.
 
     Args:
-        dt: Datetime to check
-        context: Context string for debugging
+        dt (datetime): Datetime to check
+        context (str): Context string for debugging
 
     Returns:
-        The same datetime object
+        datetime: The same datetime object
 
     Warns:
         If datetime is naive (during migration period)
@@ -338,7 +338,7 @@ class MockDatetime:
         Initialize mock datetime context.
 
         Args:
-            mock_time: Time to mock (ISO string or datetime object)
+            mock_time (str | datetime): Time to mock (ISO string or datetime object)
         """
         if isinstance(mock_time, str):
             self.mock_time = parse_iso(mock_time)
@@ -373,11 +373,11 @@ def mock_now(mock_time: str | datetime | None = None) -> datetime:
     Get mocked current time for testing, or real time if not mocking.
 
     Args:
-        mock_time: Time to mock (ISO string or datetime object).
+        mock_time (str | datetime | None): Time to mock (ISO string or datetime object).
                   If None, uses global mock time or real time.
 
     Returns:
-        Mocked or real current UTC time
+        datetime: Mocked or real current UTC time
     """
     if mock_time is not None:
         if isinstance(mock_time, str):
@@ -404,7 +404,7 @@ def utc_now() -> datetime:
     In tests, will return mocked time if MockDatetime context is active.
 
     Returns:
-        Timezone-aware datetime in UTC
+        datetime: Timezone-aware datetime in UTC
     """
     if _mock_now_time is not None:
         return _mock_now_time

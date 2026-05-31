@@ -30,12 +30,12 @@ class ResilienceStrategy(Generic[T], ABC):
         """Execute function with resilience strategy applied.
 
         Args:
-            func: Async function to execute.
-            *args: Function arguments.
-            **kwargs: Function keyword arguments.
+            func (Callable[..., Awaitable[T]]): Async function to execute.
+            *args (Any): Function arguments.
+            **kwargs (Any): Function keyword arguments.
 
         Returns:
-            Function result.
+            T: Function result.
 
         Raises:
             Exception: Strategy-specific exceptions.
@@ -46,11 +46,11 @@ class ResilienceStrategy(Generic[T], ABC):
         """Determine if operation should continue after failure.
 
         Args:
-            exception: The exception that occurred.
-            attempt: Current attempt number (0-based).
+            exception (Exception): The exception that occurred.
+            attempt (int): Current attempt number (0-based).
 
         Returns:
-            True if operation should continue, False otherwise.
+            bool: True if operation should continue, False otherwise.
         """
 
     @abstractmethod
@@ -58,7 +58,7 @@ class ResilienceStrategy(Generic[T], ABC):
         """Get current health status of the strategy.
 
         Returns:
-            Dictionary containing health metrics.
+            dict[str, Any]: Dictionary containing health metrics.
         """
 
 
@@ -136,8 +136,8 @@ class CompositeResilienceHandler(Generic[T]):
         """Initialize composite handler.
 
         Args:
-            strategies: List of resilience strategies to apply.
-            logger: Optional logger instance.
+            strategies (list[ResilienceStrategy[T]]): List of resilience strategies to apply.
+            logger (logging.Logger | None): Optional logger instance.
         """
         self.strategies = strategies
         self.logger = logger or logging.getLogger(__name__)
@@ -152,13 +152,13 @@ class CompositeResilienceHandler(Generic[T]):
         """Execute function with all resilience strategies applied.
 
         Args:
-            func: Primary function to execute.
-            fallback_func: Optional fallback function.
-            *args: Function arguments.
-            **kwargs: Function keyword arguments.
+            func (Callable[..., Awaitable[T]]): Primary function to execute.
+            fallback_func (Callable[..., Awaitable[T]] | None): Optional fallback function.
+            *args (Any): Function arguments.
+            **kwargs (Any): Function keyword arguments.
 
         Returns:
-            Function result.
+            T: Function result.
 
         Raises:
             ResilienceError: If all strategies fail and no fallback.
@@ -194,11 +194,11 @@ class CompositeResilienceHandler(Generic[T]):
         """Wrap function with a resilience strategy.
 
         Args:
-            func: Function to wrap.
-            strategy: Strategy to apply.
+            func (Callable[..., Awaitable[T]]): Function to wrap.
+            strategy (ResilienceStrategy[T]): Strategy to apply.
 
         Returns:
-            Wrapped function.
+            Callable[..., Awaitable[T]]: Wrapped function.
         """
 
         @wraps(func)
@@ -211,7 +211,7 @@ class CompositeResilienceHandler(Generic[T]):
         """Get health status of all strategies.
 
         Returns:
-            Combined health status from all strategies.
+            dict[str, Any]: Combined health status from all strategies.
         """
         status: dict[str, Any] = {"strategies": {}, "overall_healthy": True}
         strategies_dict: dict[str, Any] = {}
@@ -236,11 +236,11 @@ def resilience_decorator(
     """Decorator to apply resilience strategies to a function.
 
     Args:
-        strategies: List of resilience strategies.
-        fallback_func: Optional fallback function.
+        strategies (list[ResilienceStrategy[T]]): List of resilience strategies.
+        fallback_func (Callable[..., Awaitable[T]] | None): Optional fallback function.
 
     Returns:
-        Decorated function with resilience applied.
+        Callable[[Callable[..., Awaitable[T]]], Callable[..., Awaitable[T]]]: Decorated function with resilience applied.
     """
 
     def decorator(

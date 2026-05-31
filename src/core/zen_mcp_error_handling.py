@@ -104,11 +104,11 @@ class ErrorContext:
         """Initialize error context.
 
         Args:
-            error_type: Type of error
-            severity: Error severity level
-            category: Error category
-            recovery_strategy: Recovery strategy to use
-            metadata: Additional metadata
+            error_type (str): Type of error
+            severity (str): Error severity level
+            category (str): Error category
+            recovery_strategy (str): Recovery strategy to use
+            metadata (dict[str, Any] | None): Additional metadata
         """
         self.error_type = error_type
         self.severity = severity
@@ -156,8 +156,8 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Initialize circuit breaker strategy.
 
         Args:
-            config: Circuit breaker configuration.
-            logger_name: Custom logger name.
+            config (CircuitBreakerConfig | None): Circuit breaker configuration.
+            logger_name (str): Custom logger name.
         """
         super().__init__(logger_name=logger_name)
         self.config = config or CircuitBreakerConfig()
@@ -178,12 +178,12 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         and failure tracking to provide fault tolerance for external service calls.
 
         Args:
-            func: Async function to execute.
-            *args: Function arguments.
-            **kwargs: Function keyword arguments.
+            func (Callable[..., Awaitable[Any]]): Async function to execute.
+            *args (Any): Function arguments.
+            **kwargs (Any): Function keyword arguments.
 
         Returns:
-            Function result.
+            Any: Function result.
 
         Raises:
             CircuitBreakerOpenError: If circuit breaker is open.
@@ -226,11 +226,11 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Determine if operation should continue after failure.
 
         Args:
-            exception: The exception that occurred.
-            attempt: Current attempt number.
+            exception (Exception): The exception that occurred.
+            attempt (int): Current attempt number.
 
         Returns:
-            True if circuit breaker allows continuation.
+            bool: True if circuit breaker allows continuation.
         """
         # Circuit breaker strategy is stateful - parameters not directly used
         # but kept for interface compliance
@@ -241,7 +241,7 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Get current health status of circuit breaker.
 
         Returns:
-            Health status information.
+            dict[str, Any]: Health status information.
         """
         return {
             "healthy": self.state == CircuitBreakerState.CLOSED,
@@ -259,7 +259,7 @@ class CircuitBreakerStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Check if circuit breaker should attempt reset.
 
         Returns:
-            True if should attempt reset, False otherwise.
+            bool: True if should attempt reset, False otherwise.
         """
         if self.state != CircuitBreakerState.OPEN:
             return False
@@ -323,9 +323,9 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Initialize retry strategy.
 
         Args:
-            config: Retry configuration.
-            secure_rng: Secure random number generator.
-            logger_name: Custom logger name.
+            config (RetryConfig | None): Retry configuration.
+            secure_rng (SecureRandom | None): Secure random number generator.
+            logger_name (str): Custom logger name.
         """
         super().__init__(logger_name=logger_name)
         self.config = config or RetryConfig()
@@ -343,14 +343,15 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         to provide resilience against transient failures in distributed systems.
 
         Args:
-            func: Async function to execute.
-            *args: Function arguments.
-            **kwargs: Function keyword arguments.
+            func (Callable[..., Awaitable[Any]]): Async function to execute.
+            *args (Any): Function arguments.
+            **kwargs (Any): Function keyword arguments.
 
         Returns:
-            Function result.
+            Any: Function result.
 
         Raises:
+            Exception: If a non-retryable exception is raised.
             RetryExhaustedError: If all retries fail.
 
         Time Complexity: O(n) where n is max_retries (worst case)
@@ -415,11 +416,11 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Determine if operation should continue after failure.
 
         Args:
-            exception: The exception that occurred.
-            attempt: Current attempt number.
+            exception (Exception): The exception that occurred.
+            attempt (int): Current attempt number.
 
         Returns:
-            True if should retry, False otherwise.
+            bool: True if should retry, False otherwise.
         """
         if attempt >= self.config.max_retries:
             return False
@@ -430,7 +431,7 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Get current health status of retry strategy.
 
         Returns:
-            Health status information.
+            dict[str, Any]: Health status information.
         """
         return {
             "healthy": True,
@@ -444,10 +445,10 @@ class RetryStrategy(ResilienceStrategy[Any], LoggerMixin):
         """Calculate delay for retry attempt with secure jitter.
 
         Args:
-            attempt: Retry attempt number (0-based).
+            attempt (int): Retry attempt number (0-based).
 
         Returns:
-            Delay in seconds.
+            float: Delay in seconds.
         """
         # Use secure exponential backoff with jitter
         return self.secure_rng.exponential_backoff_jitter(
@@ -469,9 +470,12 @@ class MockZenMCPClient(LoggerMixin):
         """Initialize mock client.
 
         Args:
-            failure_rate: Probability of simulated failure (0.0-1.0).
-            secure_rng: Secure random number generator.
-            logger_name: Custom logger name.
+            failure_rate (float): Probability of simulated failure (0.0-1.0).
+            secure_rng (SecureRandom | None): Secure random number generator.
+            logger_name (str): Custom logger name.
+
+        Raises:
+            ValueError: If failure_rate is not between 0.0 and 1.0.
         """
         super().__init__(logger_name=logger_name)
         if not 0.0 <= failure_rate <= 1.0:
@@ -485,10 +489,10 @@ class MockZenMCPClient(LoggerMixin):
         """Process prompt with optional failure simulation.
 
         Args:
-            prompt: Input prompt to process.
+            prompt (str): Input prompt to process.
 
         Returns:
-            Mock response dictionary.
+            dict[str, Any]: Mock response dictionary.
 
         Raises:
             ZenMCPConnectionError: If failure is simulated.
@@ -521,9 +525,9 @@ class ZenMCPIntegration(LoggerMixin):
         """Initialize Zen MCP integration.
 
         Args:
-            client: Zen MCP client instance.
-            resilience_handler: Composite resilience handler.
-            logger_name: Custom logger name.
+            client (Any | None): Zen MCP client instance.
+            resilience_handler (CompositeResilienceHandler | None): Composite resilience handler.
+            logger_name (str): Custom logger name.
         """
         super().__init__(logger_name=logger_name)
         self.client = client or MockZenMCPClient()
@@ -543,10 +547,10 @@ class ZenMCPIntegration(LoggerMixin):
         """Enhance prompt using Zen MCP with comprehensive error handling.
 
         Args:
-            prompt: Input prompt to enhance.
+            prompt (str): Input prompt to enhance.
 
         Returns:
-            Enhanced prompt response.
+            dict[str, Any]: Enhanced prompt response.
 
         Raises:
             ZenMCPError: If enhancement fails completely.
@@ -579,7 +583,7 @@ class ZenMCPIntegration(LoggerMixin):
         """Get current circuit breaker state.
 
         Returns:
-            Current circuit breaker state.
+            CircuitBreakerState: Current circuit breaker state.
         """
         for strategy in self.resilience_handler.strategies:
             if isinstance(strategy, CircuitBreakerStrategy):
@@ -590,7 +594,7 @@ class ZenMCPIntegration(LoggerMixin):
         """Get current failure count from circuit breaker.
 
         Returns:
-            Number of failures.
+            int: Number of failures.
         """
         for strategy in self.resilience_handler.strategies:
             if isinstance(strategy, CircuitBreakerStrategy):
@@ -601,7 +605,7 @@ class ZenMCPIntegration(LoggerMixin):
         """Get comprehensive health status.
 
         Returns:
-            Health status from all resilience strategies.
+            dict[str, Any]: Health status from all resilience strategies.
         """
         return self.resilience_handler.get_health_status()
 
@@ -615,12 +619,12 @@ def create_default_zen_mcp_integration(
     """Create Zen MCP integration with default resilience configuration.
 
     Args:
-        client: Optional Zen MCP client.
-        circuit_breaker_config: Optional circuit breaker configuration.
-        retry_config: Optional retry configuration.
+        client (Any | None): Optional Zen MCP client.
+        circuit_breaker_config (CircuitBreakerConfig | None): Optional circuit breaker configuration.
+        retry_config (RetryConfig | None): Optional retry configuration.
 
     Returns:
-        Configured ZenMCPIntegration instance.
+        ZenMCPIntegration: Configured ZenMCPIntegration instance.
     """
     circuit_breaker = CircuitBreakerStrategy(circuit_breaker_config)
     retry_strategy = RetryStrategy(retry_config)
@@ -636,10 +640,10 @@ def create_high_availability_zen_mcp_integration(
     """Create Zen MCP integration optimized for high availability.
 
     Args:
-        client: Optional Zen MCP client.
+        client (Any | None): Optional Zen MCP client.
 
     Returns:
-        High-availability configured ZenMCPIntegration instance.
+        ZenMCPIntegration: High-availability configured ZenMCPIntegration instance.
     """
     # More aggressive circuit breaker for faster failure detection
     circuit_breaker_config = CircuitBreakerConfig(
@@ -665,10 +669,10 @@ def create_fast_fail_zen_mcp_integration(
     """Create Zen MCP integration optimized for fast failure detection.
 
     Args:
-        client: Optional Zen MCP client.
+        client (Any | None): Optional Zen MCP client.
 
     Returns:
-        Fast-fail configured ZenMCPIntegration instance.
+        ZenMCPIntegration: Fast-fail configured ZenMCPIntegration instance.
     """
     # Quick failure detection
     circuit_breaker_config = CircuitBreakerConfig(
@@ -704,8 +708,8 @@ class ZenMCPErrorHandler:
         """Initialize error handler.
 
         Args:
-            circuit_breaker: Circuit breaker strategy
-            retry_policy: Retry policy strategy
+            circuit_breaker (CircuitBreakerStrategy | None): Circuit breaker strategy
+            retry_policy (RetryStrategy | None): Retry policy strategy
         """
         self.circuit_breaker = circuit_breaker or CircuitBreakerStrategy()
         self.retry_policy = retry_policy or RetryStrategy()
@@ -715,11 +719,11 @@ class ZenMCPErrorHandler:
         """Handle an error with the appropriate strategy.
 
         Args:
-            error: The error that occurred
-            context: Error context information
+            error (Exception): The error that occurred.
+            context (ErrorContext): Error context information.
 
         Returns:
-            True if error was handled successfully, False otherwise
+            bool: True if error was handled successfully, False otherwise.
         """
         try:
             if context.recovery_strategy == RecoveryStrategy.CIRCUIT_BREAKER:
@@ -745,14 +749,13 @@ class ZenMCPErrorHandler:
 
 
 def create_error_handler(config: dict[str, Any] | None = None) -> ZenMCPIntegration:
-    """
-    Create a configured error handler instance.
+    """Create a configured error handler instance.
 
     Args:
-        config: Optional configuration dictionary
+        config (dict[str, Any] | None): Optional configuration dictionary.
 
     Returns:
-        ZenMCPIntegration: Configured error handler
+        ZenMCPIntegration: Configured error handler.
     """
     if config is None:
         config = {}
@@ -775,12 +778,11 @@ def create_error_handler(config: dict[str, Any] | None = None) -> ZenMCPIntegrat
 
 
 def log_error_with_context(error: Exception, context: dict[str, Any]) -> None:
-    """
-    Log error with additional context information.
+    """Log error with additional context information.
 
     Args:
-        error: Exception to log
-        context: Additional context for the error
+        error (Exception): Exception to log.
+        context (dict[str, Any]): Additional context for the error.
     """
     logger = logging.getLogger("zen_mcp_error_handling")
     context_str = " ".join(f"{k}={v}" for k, v in context.items())

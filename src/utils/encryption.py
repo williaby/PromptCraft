@@ -76,11 +76,11 @@ def encrypt_env_file(content: str, recipient: str | None = None) -> str:
     Encrypt .env file content using GPG.
 
     Args:
-        content: The .env file content to encrypt
-        recipient: GPG key identifier (if None, uses default key)
+        content (str): The .env file content to encrypt
+        recipient (str | None): GPG key identifier (if None, uses default key)
 
     Returns:
-        Encrypted content as string
+        str: Encrypted content as string
 
     Raises:
         GPGError: If encryption fails
@@ -111,11 +111,11 @@ def decrypt_env_file(encrypted_content: str, passphrase: str | None = None) -> s
     Decrypt .env file content using GPG.
 
     Args:
-        encrypted_content: The encrypted content to decrypt
-        passphrase: GPG key passphrase (if None, assumes agent or no passphrase)
+        encrypted_content (str): The encrypted content to decrypt
+        passphrase (str | None): GPG key passphrase (if None, assumes agent or no passphrase)
 
     Returns:
-        Decrypted content as string
+        str: Decrypted content as string
 
     Raises:
         GPGError: If decryption fails
@@ -138,14 +138,13 @@ def load_encrypted_env(env_file_path: str = ".env.gpg") -> dict[str, str]:
     Load and decrypt environment variables from encrypted file.
 
     Args:
-        env_file_path: Path to encrypted .env file
+        env_file_path (str): Path to encrypted .env file
 
     Returns:
-        Dictionary of environment variables
+        dict[str, str]: Dictionary of environment variables
 
     Raises:
         FileNotFoundError: If env file doesn't exist
-        GPGError: If decryption fails
     """
     env_path = Path(env_file_path)
 

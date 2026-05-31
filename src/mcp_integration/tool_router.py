@@ -53,12 +53,12 @@ class PromptCraftToolExecutor:
         """Execute PromptCraft Read tool functionality.
 
         Args:
-            file_path: Path to file to read
-            offset: Line offset to start reading from
-            limit: Maximum number of lines to read
+            file_path (str): Path to file to read
+            offset (int | None): Line offset to start reading from
+            limit (int | None): Maximum number of lines to read
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
         """
         try:
             path = Path(file_path)
@@ -109,11 +109,11 @@ class PromptCraftToolExecutor:
         """Execute PromptCraft Write tool functionality.
 
         Args:
-            file_path: Path to file to write
-            content: Content to write
+            file_path (str): Path to file to write
+            content (str): Content to write
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
         """
         try:
             path = Path(file_path)
@@ -139,11 +139,11 @@ class PromptCraftToolExecutor:
         """Execute PromptCraft Bash tool functionality.
 
         Args:
-            command: Shell command to execute
-            timeout: Command timeout in seconds
+            command (str): Shell command to execute
+            timeout (float): Command timeout in seconds
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
         """
         try:
             # Security check - limit dangerous commands
@@ -202,11 +202,11 @@ class PromptCraftToolExecutor:
         """Execute document search functionality.
 
         Args:
-            query: Search query
-            limit: Maximum number of results
+            query (str): Search query
+            limit (int): Maximum number of results
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
         """
         try:
             # This would integrate with PromptCraft's vector search system
@@ -364,11 +364,11 @@ class MCPToolRouter(LoggerMixin):
         """Execute a tool by name.
 
         Args:
-            tool_name: Name of the tool to execute
-            arguments: Tool arguments
+            tool_name (str): Name of the tool to execute
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Tool execution result
+            ToolExecutionResult: Tool execution result
         """
         start_time = time.time()
 
@@ -418,11 +418,14 @@ class MCPToolRouter(LoggerMixin):
         """Execute a PromptCraft native tool.
 
         Args:
-            tool_name: Name of the PromptCraft tool
-            arguments: Tool arguments
+            tool_name (str): Name of the PromptCraft tool
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
+
+        Raises:
+            MCPProtocolError: If the tool name is unknown or required arguments are invalid.
         """
         if tool_name == "read_file":
             file_path = arguments.get("file_path")
@@ -484,12 +487,12 @@ class MCPToolRouter(LoggerMixin):
         """Execute a tool on an MCP server.
 
         Args:
-            server_name: Name of the MCP server
-            tool_name: Name of the tool
-            arguments: Tool arguments
+            server_name (str): Name of the MCP server
+            tool_name (str): Name of the tool
+            arguments (dict[str, Any]): Tool arguments
 
         Returns:
-            Tool execution result
+            dict[str, Any]: Tool execution result
         """
         try:
             result = await self.message_router.call_server_tool(server_name, tool_name, arguments)
@@ -506,7 +509,7 @@ class MCPToolRouter(LoggerMixin):
         """Get list of all available tools.
 
         Returns:
-            List of tool definitions
+            list[dict[str, Any]]: List of tool definitions
         """
         tools = []
         for tool_name, tool_def in self.available_tools.items():
@@ -525,10 +528,10 @@ class MCPToolRouter(LoggerMixin):
         """Get tools available from a specific server.
 
         Args:
-            server_name: Name of the server
+            server_name (str): Name of the server
 
         Returns:
-            List of tools from that server
+            list[dict[str, Any]]: List of tools from that server
         """
         tools = []
         for tool_name, tool_def in self.available_tools.items():
@@ -547,7 +550,7 @@ class MCPToolRouter(LoggerMixin):
         """Get tool router status.
 
         Returns:
-            Status information
+            dict[str, Any]: Status information
         """
         tools_by_server = {}
         for tool_def in self.available_tools.values():

@@ -34,7 +34,7 @@ class SecureRandom:
         """Generate cryptographically secure random float between 0.0 and 1.0.
 
         Returns:
-            Random float in range [0.0, 1.0).
+            float: Random float in range [0.0, 1.0).
         """
         return self._rng.random()
 
@@ -42,11 +42,11 @@ class SecureRandom:
         """Generate cryptographically secure uniform random float.
 
         Args:
-            low: Lower bound (inclusive).
-            high: Upper bound (exclusive).
+            low (float): Lower bound (inclusive).
+            high (float): Upper bound (exclusive).
 
         Returns:
-            Random float in range [low, high).
+            float: Random float in range [low, high).
 
         Raises:
             ValueError: If low >= high.
@@ -59,11 +59,11 @@ class SecureRandom:
         """Generate cryptographically secure random integer.
 
         Args:
-            low: Lower bound (inclusive).
-            high: Upper bound (inclusive).
+            low (int): Lower bound (inclusive).
+            high (int): Upper bound (inclusive).
 
         Returns:
-            Random integer in range [low, high].
+            int: Random integer in range [low, high].
 
         Raises:
             ValueError: If low > high.
@@ -76,10 +76,10 @@ class SecureRandom:
         """Choose cryptographically secure random element from sequence.
 
         Args:
-            sequence: Non-empty sequence to choose from.
+            sequence (Sequence[T]): Non-empty sequence to choose from.
 
         Returns:
-            Random element from sequence.
+            T: Random element from sequence.
 
         Raises:
             IndexError: If sequence is empty.
@@ -92,11 +92,11 @@ class SecureRandom:
         """Choose k unique cryptographically secure random elements.
 
         Args:
-            population: Sequence to sample from.
-            k: Number of elements to sample.
+            population (Sequence[T]): Sequence to sample from.
+            k (int): Number of elements to sample.
 
         Returns:
-            List of k unique random elements.
+            list[T]: List of k unique random elements.
 
         Raises:
             ValueError: If k > len(population).
@@ -109,7 +109,7 @@ class SecureRandom:
         """Shuffle list in place using cryptographically secure randomness.
 
         Args:
-            sequence: List to shuffle in place.
+            sequence (list[Any]): List to shuffle in place.
         """
         self._rng.shuffle(sequence)
 
@@ -117,10 +117,10 @@ class SecureRandom:
         """Generate n cryptographically secure random bytes.
 
         Args:
-            n: Number of bytes to generate.
+            n (int): Number of bytes to generate.
 
         Returns:
-            Random bytes.
+            bytes: Random bytes.
 
         Raises:
             ValueError: If n < 0.
@@ -133,10 +133,10 @@ class SecureRandom:
         """Generate cryptographically secure random hex string.
 
         Args:
-            n: Number of bytes to use for hex generation.
+            n (int): Number of bytes to use for hex generation.
 
         Returns:
-            Random hex string of length 2*n.
+            str: Random hex string of length 2*n.
 
         Raises:
             ValueError: If n < 0.
@@ -149,11 +149,11 @@ class SecureRandom:
         """Apply cryptographically secure jitter to a value.
 
         Args:
-            value: Base value to apply jitter to.
-            factor: Jitter factor (0.1 means ±10% jitter).
+            value (float): Base value to apply jitter to.
+            factor (float): Jitter factor (0.1 means ±10% jitter).
 
         Returns:
-            Value with jitter applied.
+            float: Value with jitter applied.
 
         Raises:
             ValueError: If factor < 0 or factor > 1.
@@ -180,12 +180,12 @@ class SecureRandom:
         """Calculate exponential backoff delay with secure jitter.
 
         Args:
-            base_delay: Base delay in seconds.
-            attempt: Attempt number (0-based).
-            max_delay: Maximum delay in seconds.
+            base_delay (float): Base delay in seconds.
+            attempt (int): Attempt number (0-based).
+            max_delay (float): Maximum delay in seconds.
 
         Returns:
-            Delay with exponential backoff and jitter applied.
+            float: Delay with exponential backoff and jitter applied.
 
         Raises:
             ValueError: If parameters are invalid.
@@ -216,7 +216,7 @@ def get_secure_random() -> SecureRandom:
     """Get the global secure random instance.
 
     Returns:
-        Global SecureRandom instance.
+        SecureRandom: Global SecureRandom instance.
     """
     return secure_random
 
@@ -226,11 +226,11 @@ def secure_jitter(value: float, factor: float = 0.1) -> float:
     """Apply secure jitter to a value using global instance.
 
     Args:
-        value: Base value to apply jitter to.
-        factor: Jitter factor (0.1 means ±10% jitter).
+        value (float): Base value to apply jitter to.
+        factor (float): Jitter factor (0.1 means ±10% jitter).
 
     Returns:
-        Value with jitter applied.
+        float: Value with jitter applied.
     """
     return secure_random.jitter(value, factor)
 
@@ -239,11 +239,11 @@ def secure_uniform(low: float, high: float) -> float:
     """Generate secure uniform random float using global instance.
 
     Args:
-        low: Lower bound (inclusive).
-        high: Upper bound (exclusive).
+        low (float): Lower bound (inclusive).
+        high (float): Upper bound (exclusive).
 
     Returns:
-        Random float in range [low, high).
+        float: Random float in range [low, high).
     """
     return secure_random.uniform(low, high)
 
@@ -252,9 +252,9 @@ def secure_choice(sequence: Sequence[T]) -> T:
     """Choose secure random element using global instance.
 
     Args:
-        sequence: Non-empty sequence to choose from.
+        sequence (Sequence[T]): Non-empty sequence to choose from.
 
     Returns:
-        Random element from sequence.
+        T: Random element from sequence.
     """
     return secure_random.choice(sequence)

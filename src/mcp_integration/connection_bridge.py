@@ -55,11 +55,11 @@ class NPXProcessManager(LoggerMixin):
         """Spawn an NPX MCP server process.
 
         Args:
-            server_name: Name of the server to spawn
-            connection: ServerConnection with NPX details
+            server_name (str): Name of the server to spawn
+            connection (ServerConnection): ServerConnection with NPX details
 
         Returns:
-            Process if successful, None otherwise
+            subprocess.Popen | None: Process if successful, None otherwise.
         """
         if server_name in self.processes:
             process = self.processes[server_name]
@@ -113,10 +113,10 @@ class NPXProcessManager(LoggerMixin):
         """Stop an NPX server process.
 
         Args:
-            server_name: Name of the server to stop
+            server_name (str): Name of the server to stop
 
         Returns:
-            True if stopped successfully, False otherwise
+            bool: True if stopped successfully, False otherwise.
         """
         if server_name not in self.processes:
             return False
@@ -144,10 +144,10 @@ class NPXProcessManager(LoggerMixin):
         """Get status of an NPX process.
 
         Args:
-            server_name: Name of the server
+            server_name (str): Name of the server
 
         Returns:
-            Dictionary with process status information
+            dict[str, Any]: Dictionary with process status information.
         """
         if server_name not in self.processes:
             return {"status": "not_running", "pid": None}
@@ -177,10 +177,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Discover and establish connection to an MCP server.
 
         Args:
-            server_name: Name of the server to connect to
+            server_name (str): Name of the server to connect to
 
         Returns:
-            ActiveConnection if successful, None otherwise
+            ActiveConnection | None: ActiveConnection if successful, None otherwise.
         """
         # Check if we already have a healthy connection
         if server_name in self.active_connections:
@@ -236,10 +236,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Establish connection to NPX-based MCP server.
 
         Args:
-            active_conn: ActiveConnection to NPX server
+            active_conn (ActiveConnection): ActiveConnection to NPX server
 
         Returns:
-            True if connection established successfully
+            bool: True if connection established successfully.
         """
         try:
             # Spawn NPX process
@@ -279,10 +279,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Establish connection to embedded MCP server (like zen-mcp).
 
         Args:
-            active_conn: ActiveConnection to embedded server
+            active_conn (ActiveConnection): ActiveConnection to embedded server
 
         Returns:
-            True if connection established successfully
+            bool: True if connection established successfully.
         """
         try:
             # For embedded servers, the URL should be an HTTP endpoint
@@ -309,10 +309,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Establish connection to external MCP server.
 
         Args:
-            active_conn: ActiveConnection to external server
+            active_conn (ActiveConnection): ActiveConnection to external server
 
         Returns:
-            True if connection established successfully
+            bool: True if connection established successfully.
         """
         try:
             # Similar to embedded, but may have different authentication/config
@@ -333,10 +333,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Establish connection to Docker-based MCP server.
 
         Args:
-            active_conn: ActiveConnection to Docker server
+            active_conn (ActiveConnection): ActiveConnection to Docker server
 
         Returns:
-            True if connection established successfully
+            bool: True if connection established successfully.
         """
         try:
             # Docker servers should expose HTTP endpoints
@@ -357,10 +357,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Check if a connection is healthy.
 
         Args:
-            active_conn: ActiveConnection to check
+            active_conn (ActiveConnection): ActiveConnection to check
 
         Returns:
-            True if connection is healthy
+            bool: True if connection is healthy.
         """
         # Skip health check if done recently
         if active_conn.last_health_check and utc_now() - active_conn.last_health_check < self.health_check_interval:
@@ -403,7 +403,7 @@ class MCPConnectionBridge(LoggerMixin):
         """Clean up a connection and its resources.
 
         Args:
-            server_name: Name of the server to clean up
+            server_name (str): Name of the server to clean up
         """
         if server_name not in self.active_connections:
             return
@@ -432,10 +432,10 @@ class MCPConnectionBridge(LoggerMixin):
         """Disconnect from an MCP server and clean up resources.
 
         Args:
-            server_name: Name of the server to disconnect from
+            server_name (str): Name of the server to disconnect from
 
         Returns:
-            True if disconnected successfully
+            bool: True if disconnected successfully.
         """
         if server_name not in self.active_connections:
             self.logger.warning(f"No active connection to {server_name}")
@@ -452,7 +452,7 @@ class MCPConnectionBridge(LoggerMixin):
         """Get status of all active connections.
 
         Returns:
-            Dictionary with connection status information
+            dict[str, Any]: Dictionary with connection status information.
         """
         status: dict[str, Any] = {
             "total_connections": len(self.active_connections),
@@ -482,7 +482,7 @@ class MCPConnectionBridge(LoggerMixin):
         """Perform comprehensive health check of the connection bridge.
 
         Returns:
-            Dictionary with health check results
+            dict[str, Any]: Dictionary with health check results.
         """
         try:
             status = await self.get_connection_status()

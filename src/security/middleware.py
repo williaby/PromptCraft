@@ -62,8 +62,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """Initialize security headers middleware.
 
         Args:
-            app: The ASGI application
-            csp_policy: Custom Content Security Policy (optional)
+            app (Any): The ASGI application.
+            csp_policy (str | None): Custom Content Security Policy (optional).
         """
         super().__init__(app)
         self.csp_policy = csp_policy or self._default_csp_policy()
@@ -72,7 +72,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """Generate default Content Security Policy.
 
         Returns:
-            CSP policy string appropriate for the current environment
+            str: CSP policy string appropriate for the current environment.
         """
         settings = get_settings(validate_on_startup=False)
 
@@ -113,11 +113,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         headers to protect against common web vulnerabilities.
 
         Args:
-            request: The incoming request
-            call_next: The next middleware/endpoint in the chain
+            request (Request): The incoming request.
+            call_next (Callable): The next middleware/endpoint in the chain.
 
         Returns:
-            Response with security headers added
+            Response: Response with security headers added.
 
         Time Complexity: O(1) - Fixed number of header operations
         Space Complexity: O(1) - Fixed memory for header dictionary
@@ -149,7 +149,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         """Get security headers based on environment.
 
         Returns:
-            Dictionary of security headers to add
+            dict[str, str]: Dictionary of security headers to add.
         """
         settings = get_settings(validate_on_startup=False)
 
@@ -194,10 +194,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         to ensure credentials and secrets are not exposed in audit logs.
 
         Args:
-            headers: Original headers dictionary
+            headers (dict[str, str]): Original headers dictionary.
 
         Returns:
-            Headers dictionary with sensitive values masked
+            dict[str, str]: Headers dictionary with sensitive values masked.
 
         Time Complexity: O(n) where n is the number of headers
         Space Complexity: O(n) for the new masked headers dictionary
@@ -225,9 +225,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Initialize request logging middleware.
 
         Args:
-            app: The ASGI application
-            log_body: Whether to log request bodies (be careful with sensitive data)
-            slow_request_threshold: Threshold in seconds for slow request logging
+            app (Any): The ASGI application.
+            log_body (bool): Whether to log request bodies (be careful with sensitive data).
+            slow_request_threshold (float): Threshold in seconds for slow request logging.
         """
         super().__init__(app)
         self.log_body = log_body
@@ -237,11 +237,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Process request with security logging.
 
         Args:
-            request: The incoming request
-            call_next: The next middleware/endpoint in the chain
+            request (Request): The incoming request.
+            call_next (Callable): The next middleware/endpoint in the chain.
 
         Returns:
-            Response with timing information logged
+            Response: Response with timing information logged.
         """
         start_time = time.time()
 
@@ -278,7 +278,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Log incoming request details for security monitoring.
 
         Args:
-            request: The incoming request
+            request (Request): The incoming request.
         """
         client_ip = self._get_client_ip(request)
         user_agent = request.headers.get("user-agent", "unknown")
@@ -304,9 +304,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Log response details for security monitoring.
 
         Args:
-            request: The original request
-            response: The response
-            process_time: Time taken to process the request
+            request (Request): The original request.
+            response (Response): The response.
+            process_time (float): Time taken to process the request.
         """
         client_ip = self._get_client_ip(request)
 
@@ -342,10 +342,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         """Extract client IP address from request.
 
         Args:
-            request: The incoming request
+            request (Request): The incoming request.
 
         Returns:
-            Client IP address
+            str: Client IP address.
         """
         # Check for forwarded headers (common in reverse proxy setups)
         forwarded_for = request.headers.get("x-forwarded-for")
@@ -371,9 +371,9 @@ def setup_security_middleware(
     This function adds all necessary security middleware in the correct order.
 
     Args:
-        app: The FastAPI application instance
-        csp_policy: Optional custom CSP policy for SecurityHeadersMiddleware
-        slow_request_threshold: Optional custom threshold for slow request logging
+        app (Any): The FastAPI application instance.
+        csp_policy (str | None): Optional custom CSP policy for SecurityHeadersMiddleware.
+        slow_request_threshold (float | None): Optional custom threshold for slow request logging.
     """
     settings = get_settings(validate_on_startup=False)
 

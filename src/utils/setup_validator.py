@@ -37,7 +37,7 @@ def validate_system_requirements() -> tuple[bool, list[str]]:
     """Validate system-level requirements for the application.
 
     Returns:
-        Tuple of (success: bool, errors: list[str])
+        tuple[bool, list[str]]: Tuple of (success: bool, errors: list[str])
     """
     errors = []
 
@@ -51,7 +51,7 @@ def validate_environment_setup() -> tuple[bool, list[str], list[str]]:
     """Validate environment setup including keys and secrets.
 
     Returns:
-        Tuple of (success: bool, errors: list[str], warnings: list[str])
+        tuple[bool, list[str], list[str]]: Tuple of (success: bool, errors: list[str], warnings: list[str])
     """
     errors = []
     warnings = []
@@ -83,10 +83,10 @@ def validate_startup_configuration(
     """Perform complete startup validation with detailed reporting.
 
     Args:
-        settings: Optional settings instance (will load if not provided)
+        settings (ApplicationSettings | None): Optional settings instance (will load if not provided)
 
     Returns:
-        True if validation passes, False otherwise (errors are logged)
+        bool: True if validation passes, False otherwise (errors are logged)
     """
     logger.info("Starting comprehensive application validation...")
 

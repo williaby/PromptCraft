@@ -180,12 +180,12 @@ class ANCHORQREvaluator(LoggerMixin):
         Execute complete ANCHOR-QR-8 evaluation protocol on a CREATE framework prompt.
 
         Args:
-            prompt: The CREATE framework prompt to evaluate
-            context: Context information including query, analysis, preferences
-            rigor_level: Evaluation rigor level (Basic/Standard/Advanced)
+            prompt (str): The CREATE framework prompt to evaluate
+            context (dict[str, Any]): Context information including query, analysis, preferences
+            rigor_level (RigorLevel): Evaluation rigor level (Basic/Standard/Advanced)
 
         Returns:
-            Comprehensive evaluation results with scores, flags, and recommendations
+            ComprehensiveEvaluation: Comprehensive evaluation results with scores, flags, and recommendations
 
         Time Complexity: O(n*k) where n is prompt length and k is rigor level factor
         Space Complexity: O(n) for evaluation data structures

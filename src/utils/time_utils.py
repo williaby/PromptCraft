@@ -54,13 +54,13 @@ def to_utc_datetime(
     """Create UTC datetime from components.
 
     Args:
-        year: Year component
-        month: Month component (1-12)
-        day: Day component (1-31)
-        hour: Hour component (0-23), defaults to 0
-        minute: Minute component (0-59), defaults to 0
-        second: Second component (0-59), defaults to 0
-        microsecond: Microsecond component (0-999999), defaults to 0
+        year (int): Year component
+        month (int): Month component (1-12)
+        day (int): Day component (1-31)
+        hour (int): Hour component (0-23), defaults to 0
+        minute (int): Minute component (0-59), defaults to 0
+        second (int): Second component (0-59), defaults to 0
+        microsecond (int): Microsecond component (0-999999), defaults to 0
 
     Returns:
         datetime: UTC datetime with timezone info
@@ -77,7 +77,7 @@ def from_timestamp(timestamp: float) -> datetime:
     """Create UTC datetime from Unix timestamp.
 
     Args:
-        timestamp: Unix timestamp (seconds since epoch)
+        timestamp (float): Unix timestamp (seconds since epoch)
 
     Returns:
         datetime: UTC datetime with timezone info
@@ -94,7 +94,7 @@ def to_timestamp(dt: datetime) -> float:
     """Convert datetime to Unix timestamp.
 
     Args:
-        dt: Datetime object (timezone-aware or naive)
+        dt (datetime): Datetime object (timezone-aware or naive)
 
     Returns:
         float: Unix timestamp (seconds since epoch)
@@ -111,8 +111,8 @@ def format_datetime(dt: datetime, fmt: str = "%Y-%m-%d %H:%M:%S UTC") -> str:
     """Format datetime for display.
 
     Args:
-        dt: Datetime object
-        fmt: Format string, defaults to "%Y-%m-%d %H:%M:%S UTC"
+        dt (datetime): Datetime object
+        fmt (str): Format string, defaults to "%Y-%m-%d %H:%M:%S UTC"
 
     Returns:
         str: Formatted datetime string
@@ -135,7 +135,7 @@ def parse_iso_datetime(iso_string: str) -> datetime:
     """Parse ISO format datetime string to UTC datetime.
 
     Args:
-        iso_string: ISO format datetime string
+        iso_string (str): ISO format datetime string
 
     Returns:
         datetime: UTC datetime with timezone info

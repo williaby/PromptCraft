@@ -119,11 +119,11 @@ class MCPProtocolHandler(LoggerMixin):
         """Create a new MCP request message.
 
         Args:
-            method: MCP method name
-            params: Request parameters
+            method (str): MCP method name
+            params (dict[str, Any] | None): Request parameters
 
         Returns:
-            MCPRequest object with unique ID
+            MCPRequest: MCPRequest object with unique ID
         """
         return MCPRequest(
             method=method,
@@ -135,11 +135,11 @@ class MCPProtocolHandler(LoggerMixin):
         """Create a response to an MCP request.
 
         Args:
-            request_id: ID of the original request
-            result: Response data
+            request_id (str): ID of the original request
+            result (Any): Response data
 
         Returns:
-            MCPResponse object
+            MCPResponse: MCPResponse object
         """
         return MCPResponse(id=request_id, result=result)
 
@@ -147,13 +147,13 @@ class MCPProtocolHandler(LoggerMixin):
         """Create an MCP error response.
 
         Args:
-            request_id: ID of the original request (None for notifications)
-            code: Error code
-            message: Error message
-            data: Additional error data
+            request_id (str | None): ID of the original request (None for notifications)
+            code (int): Error code
+            message (str): Error message
+            data (Any): Additional error data
 
         Returns:
-            MCPError object
+            MCPError: MCPError object
         """
         return MCPError(
             id=request_id,
@@ -168,11 +168,11 @@ class MCPProtocolHandler(LoggerMixin):
         """Create an MCP notification message.
 
         Args:
-            method: Notification method name
-            params: Notification parameters
+            method (str): Notification method name
+            params (dict[str, Any] | None): Notification parameters
 
         Returns:
-            MCPNotification object
+            MCPNotification: MCPNotification object
         """
         return MCPNotification(method=method, params=params or {})
 
@@ -180,10 +180,14 @@ class MCPProtocolHandler(LoggerMixin):
         """Serialize an MCP message to JSON string.
 
         Args:
-            message: Message object to serialize
+            message (MCPRequest | MCPResponse | MCPError | MCPNotification): Message object to serialize
 
         Returns:
-            JSON string representation
+            str: JSON string representation
+
+        Raises:
+            MCPProtocolError: If message serialization fails.
+            ValueError: If an unknown message type is provided.
         """
         try:
             if isinstance(message, MCPRequest):
@@ -217,10 +221,14 @@ class MCPProtocolHandler(LoggerMixin):
         """Deserialize JSON string to MCP message object.
 
         Args:
-            message_str: JSON string to deserialize
+            message_str (str): JSON string to deserialize
 
         Returns:
-            Appropriate message object
+            MCPRequest | MCPResponse | MCPError | MCPNotification: Appropriate message object
+
+        Raises:
+            MCPProtocolError: If deserialization fails or message format is invalid.
+            Exception: If an unexpected error occurs during deserialization.
         """
         try:
             data = json.loads(message_str)
@@ -280,11 +288,15 @@ class MCPProtocolHandler(LoggerMixin):
         """Send an MCP request and wait for response.
 
         Args:
-            writer: AsyncIO stream writer
-            request: MCP request to send
+            writer (asyncio.StreamWriter): AsyncIO stream writer
+            request (MCPRequest): MCP request to send
 
         Returns:
-            Response result data
+            Any: Response result data
+
+        Raises:
+            MCPProtocolError: If the request times out.
+            Exception: If an unexpected error occurs while sending the request.
         """
         # Create future for response
         future: asyncio.Future[Any] = asyncio.Future()
@@ -317,8 +329,11 @@ class MCPProtocolHandler(LoggerMixin):
         """Send an MCP notification (no response expected).
 
         Args:
-            writer: AsyncIO stream writer
-            notification: MCP notification to send
+            writer (asyncio.StreamWriter): AsyncIO stream writer
+            notification (MCPNotification): MCP notification to send
+
+        Raises:
+            Exception: If an unexpected error occurs while sending the notification.
         """
         try:
             message_str = self.serialize_message(notification)
@@ -335,8 +350,11 @@ class MCPProtocolHandler(LoggerMixin):
         """Send an MCP response or error.
 
         Args:
-            writer: AsyncIO stream writer
-            response: MCP response or error to send
+            writer (asyncio.StreamWriter): AsyncIO stream writer
+            response (MCPResponse | MCPError): MCP response or error to send
+
+        Raises:
+            Exception: If an unexpected error occurs while sending the response.
         """
         try:
             message_str = self.serialize_message(response)
@@ -354,7 +372,7 @@ class MCPProtocolHandler(LoggerMixin):
         """Handle incoming response or error message.
 
         Args:
-            response: Response or error message
+            response (MCPResponse | MCPError): Response or error message
         """
         request_id = response.id
         if request_id in self.pending_requests:
@@ -378,10 +396,13 @@ class MCPProtocolHandler(LoggerMixin):
         """Get the type of an MCP message.
 
         Args:
-            message: Message to classify
+            message (MCPRequest | MCPResponse | MCPError | MCPNotification): Message to classify
 
         Returns:
-            Message type enum
+            MCPMessageType: Message type enum
+
+        Raises:
+            ValueError: If the message type is unknown.
         """
         if isinstance(message, MCPRequest):
             return MCPMessageType.REQUEST
@@ -405,8 +426,8 @@ class MCPMethodRegistry:
         """Register a handler for an MCP method.
 
         Args:
-            method: MCP method name
-            handler: Async callable to handle the method
+            method (str): MCP method name
+            handler (Callable): Async callable to handle the method
         """
         self.handlers[method] = handler
         self.logger.debug(f"Registered handler for method: {method}")
@@ -415,10 +436,10 @@ class MCPMethodRegistry:
         """Get handler for an MCP method.
 
         Args:
-            method: MCP method name
+            method (str): MCP method name
 
         Returns:
-            Handler function or None if not found
+            Callable | None: Handler function or None if not found
         """
         return self.handlers.get(method)
 
@@ -426,7 +447,7 @@ class MCPMethodRegistry:
         """Get list of registered method names.
 
         Returns:
-            List of method names
+            list[str]: List of method names
         """
         return list(self.handlers.keys())
 
@@ -434,10 +455,10 @@ class MCPMethodRegistry:
         """Handle an MCP request using registered handlers.
 
         Args:
-            request: MCP request to handle
+            request (MCPRequest): MCP request to handle
 
         Returns:
-            Response or error message
+            MCPResponse | MCPError: Response or error message
         """
         handler = self.get_handler(request.method)
 

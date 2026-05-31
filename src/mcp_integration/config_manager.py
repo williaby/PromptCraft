@@ -74,8 +74,8 @@ class MCPConfigurationManager(LoggerMixin):
         """Initialize configuration manager.
 
         Args:
-            config_path: Path to MCP configuration file
-            enable_discovery: Whether to enable intelligent server discovery
+            config_path (Path | None): Path to MCP configuration file
+            enable_discovery (bool): Whether to enable intelligent server discovery
         """
         super().__init__()
         self.config_path = config_path or Path(".mcp.json")
@@ -148,10 +148,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Save current configuration to file.
 
         Args:
-            backup_current: Whether to backup current config before saving
+            backup_current (bool): Whether to backup current config before saving
 
         Returns:
-            True if save successful, False otherwise
+            bool: True if save successful, False otherwise
         """
         if not self.configuration:
             self.logger.error("No configuration to save")
@@ -178,10 +178,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Get configuration for a specific server.
 
         Args:
-            server_name: Name of the server
+            server_name (str): Name of the server
 
         Returns:
-            Server configuration or None if not found
+            MCPServerConfig | None: Server configuration or None if not found
         """
         if not self.configuration:
             return None
@@ -192,11 +192,11 @@ class MCPConfigurationManager(LoggerMixin):
         """Add or update server configuration.
 
         Args:
-            server_name: Name of the server
-            config: Server configuration
+            server_name (str): Name of the server
+            config (MCPServerConfig): Server configuration
 
         Returns:
-            True if configuration added/updated successfully
+            bool: True if configuration added/updated successfully
         """
         if not self.configuration:
             self.configuration = MCPConfigurationBundle(mcpServers={})
@@ -213,10 +213,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Remove server configuration.
 
         Args:
-            server_name: Name of the server to remove
+            server_name (str): Name of the server to remove
 
         Returns:
-            True if server removed successfully
+            bool: True if server removed successfully
         """
         if not self.configuration or server_name not in self.configuration.mcp_servers:
             self.logger.warning(f"Server '{server_name}' not found in configuration")
@@ -234,7 +234,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Get list of enabled server names.
 
         Returns:
-            List of enabled server names sorted by priority
+            list[str]: List of enabled server names sorted by priority
         """
         if not self.configuration:
             return []
@@ -251,7 +251,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Get parallel execution configuration.
 
         Returns:
-            Parallel execution settings
+            dict[str, Any]: Parallel execution settings
         """
         if not self.configuration:
             return {"enabled": False, "max_concurrent": 1}
@@ -266,7 +266,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Validate current configuration.
 
         Returns:
-            Validation results with errors and warnings
+            dict[str, Any]: Validation results with errors and warnings
         """
         validation_result: dict[str, Any] = {
             "valid": True,
@@ -323,7 +323,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Get configuration health status.
 
         Returns:
-            Health status information
+            dict[str, Any]: Health status information
         """
         validation = self.validate_configuration()
 
@@ -341,10 +341,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Merge multiple configuration sources.
 
         Args:
-            configs: List of (source_name, config_dict) tuples
+            configs (list[tuple[str, dict[str, Any]]]): List of (source_name, config_dict) tuples
 
         Returns:
-            Merged configuration dictionary
+            dict[str, Any]: Merged configuration dictionary
         """
         merged_config: dict[str, Any] = {"mcpServers": {}}
 
@@ -368,10 +368,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Connect to an MCP server using discovery and connection bridge.
 
         Args:
-            server_name: Name of the server to connect to
+            server_name (str): Name of the server to connect to
 
         Returns:
-            ActiveConnection if successful, None otherwise
+            Any | None: ActiveConnection if successful, None otherwise
         """
         if not self.connection_bridge:
             self.logger.warning("Connection bridge not available")
@@ -387,10 +387,10 @@ class MCPConfigurationManager(LoggerMixin):
         """Disconnect from an MCP server.
 
         Args:
-            server_name: Name of the server to disconnect from
+            server_name (str): Name of the server to disconnect from
 
         Returns:
-            True if disconnected successfully
+            bool: True if disconnected successfully
         """
         if not self.connection_bridge:
             return False
@@ -401,7 +401,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Get status of all MCP server connections.
 
         Returns:
-            Dictionary with connection status information
+            dict[str, Any]: Dictionary with connection status information
         """
         if not self.connection_bridge:
             return {
@@ -418,7 +418,7 @@ class MCPConfigurationManager(LoggerMixin):
         """Perform comprehensive health check of MCP system.
 
         Returns:
-            Dictionary with health check results
+            dict[str, Any]: Dictionary with health check results
         """
         config_validation = self.validate_configuration()
 

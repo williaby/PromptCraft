@@ -42,8 +42,8 @@ class StructuredLogger:
         """Initialize structured logger.
 
         Args:
-            name: Logger name
-            correlation_id: Optional correlation ID for request tracking
+            name (str): Logger name
+            correlation_id (str | None): Optional correlation ID for request tracking
         """
         self.logger = logging.getLogger(name)
         self.correlation_id = correlation_id
@@ -139,7 +139,7 @@ class OpenTelemetryInstrumentor:
         """Initialize OpenTelemetry instrumentation.
 
         Args:
-            service_name: Name of the service for tracing
+            service_name (str): Name of the service for tracing
         """
         self.service_name = service_name
         self.tracer: Any = None
@@ -185,11 +185,11 @@ class OpenTelemetryInstrumentor:
         """Start a new span.
 
         Args:
-            name: Span name
-            attributes: Optional span attributes
+            name (str): Span name
+            attributes (dict[str, Any] | None): Optional span attributes
 
         Returns:
-            Span context manager
+            Any: Span context manager
         """
         if not self.initialized or not self.tracer:
             return NoOpSpan()
@@ -207,8 +207,11 @@ class OpenTelemetryInstrumentor:
         """Context manager for tracing operations.
 
         Args:
-            operation_name: Name of the operation
-            **attributes: Additional span attributes
+            operation_name (str): Name of the operation
+            **attributes (Any): Additional span attributes
+
+        Raises:
+            Exception: If the traced operation raises an exception.
         """
         if not self.initialized or not self.tracer:
             yield
@@ -390,7 +393,10 @@ def trace_agent_operation(operation_name: str) -> Callable:
     """Decorator for tracing agent operations.
 
     Args:
-        operation_name: Name of the operation to trace
+        operation_name (str): Name of the operation to trace
+
+    Returns:
+        Callable: Decorator that wraps the function with tracing.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -502,11 +508,11 @@ def create_structured_logger(name: str, correlation_id: str | None = None) -> St
     """Create a structured logger instance.
 
     Args:
-        name: Logger name
-        correlation_id: Optional correlation ID
+        name (str): Logger name
+        correlation_id (str | None): Optional correlation ID
 
     Returns:
-        StructuredLogger instance
+        StructuredLogger: StructuredLogger instance
     """
     return StructuredLogger(name, correlation_id)
 
@@ -515,11 +521,11 @@ def log_agent_event(event_type: str, agent_id: str, message: str, level: str = "
     """Log an agent system event with structured data.
 
     Args:
-        event_type: Type of event (registration, execution, error, etc.)
-        agent_id: Agent identifier
-        message: Log message
-        level: Log level (info, warning, error, debug)
-        **additional_data: Additional structured data
+        event_type (str): Type of event (registration, execution, error, etc.)
+        agent_id (str): Agent identifier
+        message (str): Log message
+        level (str): Log level (info, warning, error, debug)
+        **additional_data (Any): Additional structured data
     """
     logger = create_structured_logger("agent_system")
 

@@ -58,7 +58,7 @@ class MCPOrchestrator(LoggerMixin):
         """Initialize the MCP orchestrator and all components.
 
         Returns:
-            True if initialization successful
+            bool: True if initialization successful
         """
         try:
             self.logger.info("Initializing MCP Orchestrator...")
@@ -85,11 +85,11 @@ class MCPOrchestrator(LoggerMixin):
         """Discover and connect to an MCP server.
 
         Args:
-            server_name: Name of the server to connect to
-            force_reconnect: Whether to force reconnection if already connected
+            server_name (str): Name of the server to connect to
+            force_reconnect (bool): Whether to force reconnection if already connected
 
         Returns:
-            True if connection successful
+            bool: True if connection successful
         """
 
         start_time = time.time()
@@ -150,11 +150,11 @@ class MCPOrchestrator(LoggerMixin):
         """Execute a complete MCP workflow.
 
         Args:
-            workflow_type: Type of workflow to execute
-            parameters: Workflow parameters
+            workflow_type (str): Type of workflow to execute
+            parameters (dict[str, Any]): Workflow parameters
 
         Returns:
-            Workflow execution result
+            MCPWorkflowResult: Workflow execution result
         """
 
         start_time = time.time()
@@ -191,11 +191,14 @@ class MCPOrchestrator(LoggerMixin):
         """Execute document search workflow with Context7 integration.
 
         Args:
-            parameters: Search parameters (query, limit, etc.)
-            workflow_steps: List to track workflow steps
+            parameters (dict[str, Any]): Search parameters (query, limit, etc.)
+            workflow_steps (list[str]): List to track workflow steps
 
         Returns:
-            Search workflow result
+            MCPWorkflowResult: Search workflow result
+
+        Raises:
+            Exception: If the search operation fails unexpectedly.
         """
 
         start_time = time.time()
@@ -253,11 +256,14 @@ class MCPOrchestrator(LoggerMixin):
         """Execute tool execution workflow.
 
         Args:
-            parameters: Tool execution parameters
-            workflow_steps: List to track workflow steps
+            parameters (dict[str, Any]): Tool execution parameters
+            workflow_steps (list[str]): List to track workflow steps
 
         Returns:
-            Tool execution workflow result
+            MCPWorkflowResult: Tool execution workflow result
+
+        Raises:
+            Exception: If the tool execution fails unexpectedly.
         """
 
         start_time = time.time()
@@ -316,11 +322,14 @@ class MCPOrchestrator(LoggerMixin):
         """Execute Context7-specific search workflow.
 
         Args:
-            parameters: Context7 search parameters
-            workflow_steps: List to track workflow steps
+            parameters (dict[str, Any]): Context7 search parameters
+            workflow_steps (list[str]): List to track workflow steps
 
         Returns:
-            Context7 search workflow result
+            MCPWorkflowResult: Context7 search workflow result
+
+        Raises:
+            Exception: If the Context7 search fails unexpectedly.
         """
 
         start_time = time.time()
@@ -387,7 +396,7 @@ class MCPOrchestrator(LoggerMixin):
         """Get comprehensive status of the MCP orchestrator and all components.
 
         Returns:
-            Complete status information
+            dict[str, Any]: Complete status information
         """
         try:
             # Connection bridge status
@@ -459,11 +468,11 @@ class MCPOrchestrator(LoggerMixin):
         """Convenience method for document search.
 
         Args:
-            query: Search query
-            limit: Maximum number of results
+            query (str): Search query
+            limit (int): Maximum number of results
 
         Returns:
-            Search results
+            MCPWorkflowResult: Search results
         """
         return await self.execute_workflow(
             "document_search",
@@ -483,12 +492,12 @@ class MCPOrchestrator(LoggerMixin):
         """Convenience method for tool execution.
 
         Args:
-            tool_name: Name of tool to execute
-            arguments: Tool arguments
-            server_name: Optional specific server to use
+            tool_name (str): Name of tool to execute
+            arguments (dict[str, Any]): Tool arguments
+            server_name (str | None): Optional specific server to use
 
         Returns:
-            Tool execution result
+            MCPWorkflowResult: Tool execution result
         """
         return await self.execute_workflow(
             "tool_execution",
@@ -503,11 +512,11 @@ class MCPOrchestrator(LoggerMixin):
         """Convenience method for Context7 search.
 
         Args:
-            query: Search query
-            limit: Maximum number of results
+            query (str): Search query
+            limit (int): Maximum number of results
 
         Returns:
-            Context7 search results
+            MCPWorkflowResult: Context7 search results
         """
         return await self.execute_workflow(
             "context7_search",
