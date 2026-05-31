@@ -31,7 +31,7 @@ class SimpleSessionManager:
         """Initialize session manager.
 
         Args:
-            session_timeout: Session timeout in seconds (default: 1 hour)
+            session_timeout (int): Session timeout in seconds (default: 1 hour)
         """
         self.sessions: dict[str, dict] = {}
         self.session_timeout = session_timeout
@@ -47,13 +47,13 @@ class SimpleSessionManager:
         """Create a new session for the user.
 
         Args:
-            email: User email address
-            is_admin: Whether user has admin privileges
-            user_tier: User tier (admin, full, limited)
-            cf_context: Additional Cloudflare context
+            email (str): User email address
+            is_admin (bool): Whether user has admin privileges
+            user_tier (str): User tier (admin, full, limited)
+            cf_context (dict[str, Any] | None): Additional Cloudflare context
 
         Returns:
-            Session ID
+            str: Session ID
         """
         session_id = secrets.token_urlsafe(32)
         self.sessions[session_id] = {
@@ -72,10 +72,10 @@ class SimpleSessionManager:
         """Get session if valid, clean up if expired.
 
         Args:
-            session_id: Session identifier
+            session_id (str): Session identifier
 
         Returns:
-            Session data if valid, None if expired or not found
+            dict | None: Session data if valid, None if expired or not found
         """
         if not session_id:
             return None
@@ -98,10 +98,10 @@ class SimpleSessionManager:
         """Invalidate a session.
 
         Args:
-            session_id: Session to invalidate
+            session_id (str): Session to invalidate
 
         Returns:
-            True if session was found and removed
+            bool: True if session was found and removed
         """
         if session_id in self.sessions:
             del self.sessions[session_id]
@@ -150,12 +150,12 @@ class CloudflareAccessMiddleware:
         """Initialize the middleware.
 
         Args:
-            app: ASGI application
-            whitelist_validator: Email whitelist validator
-            session_manager: Session manager (creates default if None)
-            public_paths: Paths that don't require authentication
-            health_check_paths: Health check paths (always public)
-            enable_session_cookies: Whether to use session cookies
+            app (ASGIApp): ASGI application
+            whitelist_validator (EmailWhitelistValidator): Email whitelist validator
+            session_manager (SimpleSessionManager | None): Session manager (creates default if None)
+            public_paths (set[str] | None): Paths that don't require authentication
+            health_check_paths (set[str] | None): Health check paths (always public)
+            enable_session_cookies (bool): Whether to use session cookies
         """
         self.app = app
         self.validator = whitelist_validator
@@ -227,9 +227,9 @@ class CloudflareAccessMiddleware:
         """ASGI middleware implementation.
 
         Args:
-            scope: ASGI scope dict
-            receive: ASGI receive callable
-            send: ASGI send callable
+            scope (Scope): ASGI scope dict
+            receive (Receive): ASGI receive callable
+            send (Send): ASGI send callable
         """
         if scope["type"] != "http":
             await self.app(scope, receive, send)
@@ -276,10 +276,11 @@ class CloudflareAccessMiddleware:
         """Authenticate the request and set user context.
 
         Args:
-            request: Request to authenticate
+            request (Request): Request to authenticate
 
         Raises:
             HTTPException: If authentication fails
+            Exception: If session creation encounters an unexpected error
         """
         # Extract user from Cloudflare headers
         try:
@@ -352,8 +353,8 @@ class CloudflareAccessMiddleware:
         """Set session cookie in response.
 
         Args:
-            response: Response to modify
-            session_id: Session ID to set
+            response (Response): Response to modify
+            session_id (str): Session ID to set
         """
         response.set_cookie(
             key="session_id",
@@ -368,11 +369,11 @@ class CloudflareAccessMiddleware:
         """Wrap the ASGI send callable to add session cookie to response.
 
         Args:
-            send: Original ASGI send callable
-            session_id: Session ID to set in cookie
+            send (Send): Original ASGI send callable
+            session_id (str): Session ID to set in cookie
 
         Returns:
-            Wrapped send callable that adds session cookie
+            Send: Wrapped send callable that adds session cookie
         """
 
         async def wrapped_send(message: Any) -> None:
@@ -402,7 +403,7 @@ class AuthenticationDependency:
         """Initialize authentication dependency.
 
         Args:
-            require_admin: Whether to require admin privileges
+            require_admin (bool): Whether to require admin privileges
         """
         self.require_admin = require_admin
 
@@ -410,10 +411,10 @@ class AuthenticationDependency:
         """Extract and validate user from request state.
 
         Args:
-            request: FastAPI request
+            request (Request): FastAPI request
 
         Returns:
-            User context dictionary
+            dict[str, Any]: User context dictionary
 
         Raises:
             HTTPException: If authentication fails or insufficient privileges
@@ -445,15 +446,15 @@ def create_auth_middleware(
     """Factory function to create authentication middleware from configuration.
 
     Args:
-        whitelist_str: Comma-separated whitelist emails/domains
-        admin_emails_str: Comma-separated admin emails
-        full_users_str: Comma-separated full tier users
-        limited_users_str: Comma-separated limited tier users
-        session_timeout: Session timeout in seconds
-        public_paths: Additional public paths (optional)
+        whitelist_str (str): Comma-separated whitelist emails/domains
+        admin_emails_str (str): Comma-separated admin emails
+        full_users_str (str): Comma-separated full tier users
+        limited_users_str (str): Comma-separated limited tier users
+        session_timeout (int): Session timeout in seconds
+        public_paths (set[str] | None): Additional public paths (optional)
 
     Returns:
-        Configured CloudflareAccessMiddleware
+        CloudflareAccessMiddleware: Configured CloudflareAccessMiddleware
     """
     # Create whitelist validator with tier support
     validator = create_validator_from_env(whitelist_str, admin_emails_str, full_users_str, limited_users_str)

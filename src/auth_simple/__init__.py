@@ -117,11 +117,11 @@ def setup_auth_middleware(app: Any, config_manager: ConfigManager | None = None)
     """Convenience function to setup authentication middleware.
 
     Args:
-        app: FastAPI application instance
-        config_manager: Optional configuration manager (creates from env if None)
+        app (Any): FastAPI application instance
+        config_manager (ConfigManager | None): Optional configuration manager (creates from env if None)
 
     Returns:
-        The configured middleware instance or None if auth is disabled
+        Any: The configured middleware instance or None if auth is disabled
     """
     if config_manager is None:
         config_manager = get_config_manager()
@@ -151,10 +151,10 @@ def get_current_user(request: Any) -> dict[str, Any] | None:
     """Get current user from request state.
 
     Args:
-        request: FastAPI request object
+        request (Any): FastAPI request object
 
     Returns:
-        User context dictionary or None if not authenticated
+        dict[str, Any] | None: User context dictionary or None if not authenticated
     """
     return getattr(request.state, "user", None)
 
@@ -163,10 +163,10 @@ def is_admin_user(request: Any) -> bool:
     """Check if current user is an admin.
 
     Args:
-        request: FastAPI request object
+        request (Any): FastAPI request object
 
     Returns:
-        True if user is admin, False otherwise
+        bool: True if user is admin, False otherwise
     """
     user = get_current_user(request)
     return user.get("is_admin", False) if user else False
@@ -177,7 +177,7 @@ def get_version_info() -> dict:
     """Get version and configuration information.
 
     Returns:
-        Dictionary with version and configuration details
+        dict: Dictionary with version and configuration details
     """
     config_manager = get_config_manager()
 
@@ -195,10 +195,10 @@ def create_test_config(**overrides: Any) -> AuthConfig:
     """Create test configuration with overrides.
 
     Args:
-        **overrides: Configuration values to override
+        **overrides (Any): Configuration values to override
 
     Returns:
-        AuthConfig for testing
+        AuthConfig: AuthConfig for testing
     """
     # Use type: ignore for the constructor call as we're dealing with dynamic overrides
     defaults = {
@@ -218,10 +218,10 @@ def create_test_middleware(**config_overrides: Any) -> Any:
     """Create test middleware with custom configuration.
 
     Args:
-        **config_overrides: Configuration overrides
+        **config_overrides (Any): Configuration overrides
 
     Returns:
-        Configured middleware for testing
+        Any: Configured middleware for testing
     """
     config = create_test_config(**config_overrides)
     config_manager = ConfigManager(config)

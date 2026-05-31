@@ -154,7 +154,7 @@ class AuthConfig(BaseModel):
         """Validate the configuration and return warnings.
 
         Returns:
-            List of warning messages
+            list[str]: List of warning messages
         """
         warnings = []
 
@@ -198,10 +198,13 @@ class ConfigLoader:
         """Load configuration from environment variables.
 
         Args:
-            prefix: Environment variable prefix (default: PROMPTCRAFT_)
+            prefix (str | None): Environment variable prefix (default: PROMPTCRAFT_)
 
         Returns:
-            AuthConfig instance
+            AuthConfig: AuthConfig instance
+
+        Raises:
+            Exception: If configuration loading fails due to invalid values
         """
         prefix = prefix or cls.ENV_PREFIX
 
@@ -287,7 +290,7 @@ class ConfigManager:
         """Initialize configuration manager.
 
         Args:
-            config: AuthConfig instance (loads from env if None)
+            config (AuthConfig | None): AuthConfig instance (loads from env if None)
         """
         self.config = config or ConfigLoader.load_from_env()
         self._setup_logging()
@@ -342,7 +345,7 @@ class ConfigManager:
         """Get configuration summary for logging/debugging.
 
         Returns:
-            Dictionary with configuration summary (safe for logging)
+            dict[str, Any]: Dictionary with configuration summary (safe for logging)
         """
         return {
             "auth_mode": self.config.auth_mode.value,

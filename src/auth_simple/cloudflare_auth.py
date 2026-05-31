@@ -51,8 +51,8 @@ class CloudflareAuthHandler:
         """Initialize the Cloudflare auth handler.
 
         Args:
-            validate_headers: Whether to validate Cloudflare-specific headers
-            log_events: Whether to log authentication events
+            validate_headers (bool): Whether to validate Cloudflare-specific headers
+            log_events (bool): Whether to log authentication events
         """
         self.validate_headers = validate_headers
         self.log_events = log_events
@@ -62,10 +62,10 @@ class CloudflareAuthHandler:
         """Extract user information from Cloudflare Access headers.
 
         Args:
-            request: FastAPI request object
+            request (Request): FastAPI request object
 
         Returns:
-            CloudflareUser object with extracted information
+            CloudflareUser: CloudflareUser object with extracted information
 
         Raises:
             CloudflareAuthError: If authentication headers are missing or invalid
@@ -169,10 +169,10 @@ class CloudflareAuthHandler:
         """Create user context dictionary for use in application.
 
         Args:
-            user: CloudflareUser object
+            user (CloudflareUser): CloudflareUser object
 
         Returns:
-            Dictionary containing user context for downstream use
+            dict[str, Any]: Dictionary containing user context for downstream use
         """
         return {
             "email": user.email,
@@ -189,10 +189,10 @@ def extract_user_from_cloudflare_headers(request: Request) -> CloudflareUser:
     """Convenience function to extract user from Cloudflare headers.
 
     Args:
-        request: FastAPI request object
+        request (Request): FastAPI request object
 
     Returns:
-        CloudflareUser object
+        CloudflareUser: CloudflareUser object
 
     Raises:
         HTTPException: If authentication fails (401)
@@ -208,10 +208,10 @@ def validate_cloudflare_request(request: Request) -> bool:
     """Validate that request came through Cloudflare Access.
 
     Args:
-        request: FastAPI request object
+        request (Request): FastAPI request object
 
     Returns:
-        True if validation passes, False otherwise
+        bool: True if validation passes, False otherwise
     """
     try:
         handler = CloudflareAuthHandler()
