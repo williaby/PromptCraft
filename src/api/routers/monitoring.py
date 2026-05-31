@@ -261,7 +261,7 @@ async def stop_resource_monitoring() -> dict[str, str]:
     """Stop system resource monitoring.
 
     Returns:
-        Stop confirmation.
+        dict[str, str]: Stop confirmation.
     """
     resource_monitor = get_resource_monitor()
     await resource_monitor.stop_monitoring()

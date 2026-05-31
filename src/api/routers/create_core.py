@@ -44,13 +44,14 @@ async def process_prompt(request: CreateRequestModel) -> CreateResponseModel:
     """Process a prompt using the C.R.E.A.T.E. framework.
 
     Args:
-        request: The create request containing prompt and options.
+        request (CreateRequestModel): The create request containing prompt and options.
 
     Returns:
-        CreateResponseModel containing the enhanced prompt and metadata.
+        CreateResponseModel: The enhanced prompt and metadata.
 
     Raises:
-        HTTPException: If processing fails or validation errors occur.
+        AuthExceptionHandler.handle_validation_error: If validation errors occur.
+        AuthExceptionHandler.handle_internal_error: If processing fails.
     """
     try:
         # Process the prompt
@@ -96,7 +97,7 @@ async def health_check() -> HealthResponseModel:
     """Health check endpoint for the C.R.E.A.T.E. framework service.
 
     Returns:
-        HealthResponseModel containing service health information.
+        HealthResponseModel: Service health information.
     """
     return HealthResponseModel(
         status="healthy",
@@ -119,7 +120,7 @@ async def get_domains() -> DomainResponseModel:
     """Get available processing domains.
 
     Returns:
-        DomainResponseModel containing available domains.
+        DomainResponseModel: Available domains.
     """
     return DomainResponseModel(
         domains=["general", "technical", "legal", "business", "academic"],
@@ -138,7 +139,7 @@ async def get_framework_info() -> FrameworkInfoResponseModel:
     """Get C.R.E.A.T.E. framework information.
 
     Returns:
-        FrameworkInfoResponseModel containing framework details.
+        FrameworkInfoResponseModel: Framework details.
     """
     return FrameworkInfoResponseModel(
         framework="C.R.E.A.T.E.",
