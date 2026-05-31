@@ -21,10 +21,7 @@ def validate_configuration_on_startup(settings: "ApplicationSettings") -> None:
     settings.py and health.py modules.
 
     Args:
-        settings: The application settings to validate
-
-    Raises:
-        ConfigurationValidationError: If validation fails
+        settings (ApplicationSettings): The application settings to validate.
     """
     # Import here to avoid circular dependency at module level
     from .settings import validate_configuration_on_startup as _validate

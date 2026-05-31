@@ -56,13 +56,6 @@ class AgentError(Exception):
     including error codes, context information, and logging integration.
     All other agent exceptions should inherit from this class.
 
-    Attributes:
-        message (str): Human-readable error message
-        error_code (str): Machine-readable error code
-        context (Dict[str, Any]): Additional context information
-        agent_id (Optional[str]): ID of the agent that caused the error
-        request_id (Optional[str]): ID of the request that caused the error
-
     Example:
         ```python
         raise AgentError(
@@ -87,11 +80,11 @@ class AgentError(Exception):
         Initialize the AgentError.
 
         Args:
-            message: Human-readable error message
-            error_code: Machine-readable error code
-            context: Additional context information
-            agent_id: ID of the agent that caused the error
-            request_id: ID of the request that caused the error
+            message (str): Human-readable error message
+            error_code (str): Machine-readable error code
+            context (dict[str, Any] | None): Additional context information
+            agent_id (str | None): ID of the agent that caused the error
+            request_id (str | None): ID of the request that caused the error
         """
         super().__init__(message)
         self.message = message
@@ -327,11 +320,11 @@ class AgentTimeoutError(AgentExecutionError):
         Initialize the AgentTimeoutError.
 
         Args:
-            message: Human-readable error message
-            timeout: Timeout value in seconds
-            processing_time: Actual processing time in seconds
-            agent_id: ID of the agent that timed out
-            request_id: ID of the request that timed out
+            message (str): Human-readable error message
+            timeout (float | None): Timeout value in seconds
+            processing_time (float | None): Actual processing time in seconds
+            agent_id (str | None): ID of the agent that timed out
+            request_id (str | None): ID of the request that timed out
         """
         context = {}
         if timeout is not None:
@@ -368,9 +361,9 @@ def create_agent_error(
     Factory function to create agent errors based on error type.
 
     Args:
-        error_type: Type of error (configuration, execution, registration, validation)
-        message: Human-readable error message
-        **kwargs: Additional parameters including:
+        error_type (str): Type of error (configuration, execution, registration, validation)
+        message (str): Human-readable error message
+        **kwargs (Any): Additional parameters including:
             - error_code: Machine-readable error code (default: "UNKNOWN_ERROR")
             - context: Additional context information
             - agent_id: ID of the agent that caused the error
@@ -435,9 +428,9 @@ def handle_agent_error(
     consistent error handling throughout the agent system.
 
     Args:
-        error: The original exception
-        agent_id: ID of the agent that caused the error
-        request_id: ID of the request that caused the error
+        error (Exception): The original exception
+        agent_id (str | None): ID of the agent that caused the error
+        request_id (str | None): ID of the request that caused the error
 
     Returns:
         AgentError: Wrapped exception

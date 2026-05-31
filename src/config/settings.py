@@ -40,7 +40,7 @@ def _get_project_root() -> Path:
     """Get the project root directory.
 
     Returns:
-        Path object pointing to the project root directory.
+        Path: Path object pointing to the project root directory.
     """
     current_file = Path(__file__).resolve()
     # Navigate up from src/config/settings.py to project root
@@ -51,8 +51,8 @@ def _detect_environment() -> str:
     """Detect the current environment from environment variables or .env files.
 
     Returns:
-        The detected environment string (dev, staging, or prod).
-        Defaults to 'dev' if no environment is detected.
+        str: The detected environment string (dev, staging, or prod).
+            Defaults to 'dev' if no environment is detected.
     """
     # First check environment variable
     env_from_var = os.getenv("PROMPTCRAFT_ENVIRONMENT")
@@ -84,10 +84,10 @@ def _load_env_file(file_path: Path) -> dict[str, Any]:
     """Load environment variables from a .env file.
 
     Args:
-        file_path: Path to the .env file to load.
+        file_path (Path): Path to the .env file to load.
 
     Returns:
-        Dictionary of environment variables from the file.
+        dict[str, Any]: Dictionary of environment variables from the file.
     """
     env_vars: dict[str, Any] = {}
 
@@ -127,10 +127,10 @@ def _load_encrypted_env_file(file_path: Path) -> dict[str, Any]:
     """Load environment variables from an encrypted .env file.
 
     Args:
-        file_path: Path to the encrypted .env file to load.
+        file_path (Path): Path to the encrypted .env file to load.
 
     Returns:
-        Dictionary of environment variables from the encrypted file.
+        dict[str, Any]: Dictionary of environment variables from the encrypted file.
     """
     env_vars: dict[str, Any] = {}
 
@@ -166,7 +166,7 @@ def _env_file_settings() -> dict[str, Any]:
     4. .env file (fallback base file)
 
     Returns:
-        Dictionary of configuration values from .env files.
+        dict[str, Any]: Dictionary of configuration values from .env files.
     """
     project_root = _get_project_root()
     env_vars: dict[str, Any] = {}
@@ -205,9 +205,9 @@ class ConfigurationValidationError(Exception):
         """Initialize configuration validation error.
 
         Args:
-            message: The main error message
-            field_errors: List of specific field validation errors
-            suggestions: List of suggested fixes or valid values
+            message (str): The main error message
+            field_errors (list[str] | None): List of specific field validation errors
+            suggestions (list[str] | None): List of suggested fixes or valid values
         """
         super().__init__(message)
         self.field_errors = field_errors or []
@@ -238,12 +238,77 @@ class ApplicationSettings(BaseSettings):
     and validation with environment-specific .env file support.
 
     Attributes:
-        app_name: The application name for logging and identification.
-        version: The application version string.
-        environment: The deployment environment (dev, staging, prod).
-        debug: Whether debug mode is enabled.
-        api_host: The host address for the API server.
-        api_port: The port number for the API server.
+        app_name (str): The application name for logging and identification.
+        version (str): The application version string.
+        environment (Literal["dev", "staging", "prod"]): The deployment environment.
+        debug (bool): Whether debug mode is enabled.
+        api_host (str): The host address for the API server.
+        api_port (int): The port number for the API server.
+        database_host (str): Database host address.
+        database_port (int): Database port number.
+        database_name (str): Database name.
+        database_username (str): Database username.
+        database_timeout (float): Database connection timeout in seconds.
+        database_password (SecretStr | None): Database password (sensitive).
+        database_url (SecretStr | None): Complete database connection URL (sensitive).
+        db_host (str): PostgreSQL database host address.
+        db_port (int): PostgreSQL database port number.
+        db_name (str): PostgreSQL database name.
+        db_user (str): PostgreSQL database user.
+        db_password (SecretStr | None): PostgreSQL database password (sensitive).
+        db_pool_size (int): Database connection pool size.
+        db_pool_max_overflow (int): Maximum overflow connections beyond pool size.
+        db_pool_timeout (float): Database connection pool timeout in seconds.
+        db_pool_recycle (int): Database connection recycle time in seconds.
+        db_echo (bool): Whether to echo SQL queries for debugging.
+        api_key (SecretStr | None): Primary API key for external services (sensitive).
+        secret_key (SecretStr | None): Application secret key for encryption/signing (sensitive).
+        azure_openai_api_key (SecretStr | None): Azure OpenAI API key (sensitive).
+        jwt_secret_key (SecretStr | None): JWT signing secret key (sensitive).
+        qdrant_api_key (SecretStr | None): Qdrant vector database API key (sensitive).
+        encryption_key (SecretStr | None): Encryption key for data at rest (sensitive).
+        mcp_server_url (str): Zen MCP Server endpoint URL.
+        mcp_api_key (SecretStr | None): MCP server API key for authentication (sensitive).
+        mcp_timeout (float): MCP request timeout in seconds.
+        mcp_max_retries (int): Maximum number of MCP request retries.
+        mcp_enabled (bool): Whether MCP integration is enabled.
+        mcp_health_check_interval (float): MCP health check interval in seconds.
+        openrouter_api_key (SecretStr | None): OpenRouter API key (sensitive).
+        openrouter_base_url (str): OpenRouter API base URL.
+        openrouter_timeout (float): OpenRouter request timeout in seconds.
+        openrouter_max_retries (int): Maximum number of OpenRouter request retries.
+        openrouter_enabled (bool): Whether OpenRouter integration is enabled.
+        openrouter_traffic_percentage (int): Percentage of traffic routed to OpenRouter (0-100).
+        qdrant_host (str): Qdrant vector database host address.
+        qdrant_port (int): Qdrant vector database port number.
+        qdrant_timeout (float): Qdrant request timeout in seconds.
+        qdrant_enabled (bool): Whether Qdrant vector database integration is enabled.
+        vector_store_type (str): Vector store type: 'auto', 'qdrant', or 'mock'.
+        vector_dimensions (int): Default vector embedding dimensions.
+        trusted_proxy_1 (str | None): IP address of the first trusted proxy server.
+        trusted_proxy_2 (str | None): IP address of the second trusted proxy server.
+        performance_monitoring_enabled (bool): Whether performance monitoring is enabled.
+        max_concurrent_queries (int): Maximum number of concurrent queries.
+        query_timeout (float): Query timeout in seconds.
+        max_files (int): Maximum number of files that can be uploaded at once.
+        max_file_size (int): Maximum file size in bytes.
+        supported_file_types (list[str]): List of supported file extensions for upload.
+        health_check_enabled (bool): Whether health checks are enabled.
+        health_check_interval (float): Health check interval in seconds.
+        error_recovery_enabled (bool): Whether error recovery is enabled.
+        circuit_breaker_enabled (bool): Whether circuit breaker is enabled.
+        retry_enabled (bool): Whether retry logic is enabled.
+        circuit_breaker_failure_threshold (int): Number of failures before opening circuit breaker.
+        circuit_breaker_success_threshold (int): Number of successes to close circuit breaker from half-open.
+        circuit_breaker_recovery_timeout (int): Seconds before attempting recovery from open state.
+        circuit_breaker_max_retries (int): Maximum retry attempts before circuit breaker action.
+        circuit_breaker_base_delay (float): Base delay in seconds for exponential backoff.
+        circuit_breaker_max_delay (float): Maximum delay in seconds between retries.
+        circuit_breaker_backoff_multiplier (float): Multiplier for exponential backoff calculation.
+        circuit_breaker_jitter_enabled (bool): Enable jitter to prevent thundering herd effect.
+        circuit_breaker_health_check_interval (int): Seconds between automated health checks.
+        circuit_breaker_health_check_timeout (float): Timeout in seconds for health check operations.
+        model_config: Pydantic settings configuration.
     """
 
     app_name: str = Field(
@@ -750,10 +815,10 @@ class ApplicationSettings(BaseSettings):
         """Validate the API host address with detailed error messages.
 
         Args:
-            v: The host address to validate.
+            v (str): The host address to validate.
 
         Returns:
-            The validated host address.
+            str: The validated host address.
 
         Raises:
             ValueError: If the host address is invalid with detailed guidance.
@@ -807,10 +872,10 @@ class ApplicationSettings(BaseSettings):
         """Validate the version string with semantic version checking.
 
         Args:
-            v: The version string to validate.
+            v (str): The version string to validate.
 
         Returns:
-            The validated version string.
+            str: The validated version string.
 
         Raises:
             ValueError: If the version string is invalid with guidance.
@@ -844,10 +909,10 @@ class ApplicationSettings(BaseSettings):
         """Validate the application name with format requirements.
 
         Args:
-            v: The application name to validate.
+            v (str): The application name to validate.
 
         Returns:
-            The validated application name.
+            str: The validated application name.
 
         Raises:
             ValueError: If the application name is invalid with guidance.
@@ -883,10 +948,10 @@ class ApplicationSettings(BaseSettings):
         """Enhanced port validation with detailed error messages.
 
         Args:
-            v: The port number to validate.
+            v (int): The port number to validate.
 
         Returns:
-            The validated port number.
+            int: The validated port number.
 
         Raises:
             ValueError: If the port is invalid with suggested alternatives.
@@ -918,10 +983,10 @@ class ApplicationSettings(BaseSettings):
         """Validate environment with specific requirements per environment.
 
         Args:
-            v: The environment value to validate.
+            v (str): The environment value to validate.
 
         Returns:
-            The validated environment value.
+            str: The validated environment value.
 
         Raises:
             ValueError: If environment-specific requirements are not met.
@@ -945,10 +1010,10 @@ class ApplicationSettings(BaseSettings):
         """Validate database host address.
 
         Args:
-            v: The database host to validate.
+            v (str): The database host to validate.
 
         Returns:
-            The validated database host.
+            str: The validated database host.
 
         Raises:
             ValueError: If the database host is invalid.
@@ -988,10 +1053,10 @@ class ApplicationSettings(BaseSettings):
         """Validate database port number.
 
         Args:
-            v: The database port to validate.
+            v (int): The database port to validate.
 
         Returns:
-            The validated database port.
+            int: The validated database port.
 
         Raises:
             ValueError: If the database port is invalid.
@@ -1009,10 +1074,10 @@ class ApplicationSettings(BaseSettings):
         """Validate database name and username identifiers.
 
         Args:
-            v: The database identifier to validate.
+            v (str): The database identifier to validate.
 
         Returns:
-            The validated database identifier.
+            str: The validated database identifier.
 
         Raises:
             ValueError: If the database identifier is invalid.
@@ -1045,10 +1110,10 @@ class ApplicationSettings(BaseSettings):
         """Validate database timeout value.
 
         Args:
-            v: The database timeout to validate.
+            v (float): The database timeout to validate.
 
         Returns:
-            The validated database timeout.
+            float: The validated database timeout.
 
         Raises:
             ValueError: If the database timeout is invalid.
@@ -1072,11 +1137,11 @@ class ApplicationSettings(BaseSettings):
         """Validate that secret values are not empty strings.
 
         Args:
-            v: The secret value to validate.
-            info: Field validation info.
+            v (SecretStr | None): The secret value to validate.
+            info (Any): Field validation info.
 
         Returns:
-            The validated secret value.
+            SecretStr | None: The validated secret value.
 
         Raises:
             ValueError: If the secret is an empty string (except for OpenRouter API key in test environment).
@@ -1109,7 +1174,7 @@ def validate_encryption_available() -> bool:
     """Check if encryption is available and properly configured.
 
     Returns:
-        True if encryption is available, False otherwise.
+        bool: True if encryption is available, False otherwise.
     """
     try:
         validate_environment_keys()
@@ -1126,9 +1191,9 @@ def _log_encryption_status(
     """Log encryption status with appropriate levels based on environment.
 
     Args:
-        current_env: Current environment (dev, staging, prod)
-        encryption_available: Whether encryption is available
-        logger: Logger instance to use
+        current_env (str): Current environment (dev, staging, prod).
+        encryption_available (bool): Whether encryption is available.
+        logger (Any): Logger instance to use.
     """
     if current_env == "prod" and not encryption_available:
         logger.warning(
@@ -1149,10 +1214,10 @@ def _process_validation_errors(
     """Process Pydantic validation errors into field errors and suggestions.
 
     Args:
-        errors: List of Pydantic validation errors (ErrorDetails objects)
+        errors (list[Any]): List of Pydantic validation errors (ErrorDetails objects).
 
     Returns:
-        Tuple of (field_errors, suggestions)
+        tuple[list[str], list[str]]: Tuple of (field_errors, suggestions).
     """
     field_errors = []
     suggestions = []
@@ -1183,11 +1248,11 @@ def _mask_secret_value(value: str, show_chars: int = 4) -> str:
     """Mask a secret value for safe logging.
 
     Args:
-        value: The secret value to mask
-        show_chars: Number of characters to show at the end
+        value (str): The secret value to mask.
+        show_chars (int): Number of characters to show at the end.
 
     Returns:
-        Masked value safe for logging
+        str: Masked value safe for logging.
     """
     if len(value) <= show_chars:
         return "*" * len(value)
@@ -1198,7 +1263,7 @@ def _log_configuration_status(settings: ApplicationSettings) -> None:
     """Log configuration loading status without exposing sensitive data.
 
     Args:
-        settings: The loaded settings instance to log
+        settings (ApplicationSettings): The loaded settings instance to log.
     """
     logger = logging.getLogger(__name__)
 
@@ -1241,8 +1306,11 @@ def _validate_production_requirements(
 ) -> tuple[list[str], list[str]]:
     """Validate production-specific requirements.
 
+    Args:
+        settings (ApplicationSettings): The application settings to validate.
+
     Returns:
-        Tuple of (validation_errors, suggestions)
+        tuple[list[str], list[str]]: Tuple of (validation_errors, suggestions).
     """
     validation_errors = []
     suggestions = []
@@ -1280,8 +1348,11 @@ def _validate_staging_requirements(
 ) -> tuple[list[str], list[str]]:
     """Validate staging-specific requirements.
 
+    Args:
+        settings (ApplicationSettings): The application settings to validate.
+
     Returns:
-        Tuple of (validation_errors, suggestions)
+        tuple[list[str], list[str]]: Tuple of (validation_errors, suggestions).
     """
     validation_errors = []
     suggestions = []

@@ -31,7 +31,10 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan management.
 
     Args:
-        _app: The FastAPI application instance.
+        _app (FastAPI): The FastAPI application instance.
+
+    Yields:
+        None: During application lifetime.
     """
     # Startup
     logger.info("Starting C.R.E.A.T.E. framework API")
@@ -70,11 +73,11 @@ async def log_requests(request: Request, call_next: Callable) -> Any:
     """Log all HTTP requests.
 
     Args:
-        request: The incoming request.
-        call_next: The next middleware or endpoint.
+        request (Request): The incoming request.
+        call_next (Callable): The next middleware or endpoint.
 
     Returns:
-        The response from the next middleware or endpoint.
+        Any: The response from the next middleware or endpoint.
     """
     start_time = time.time()
 
@@ -121,7 +124,7 @@ async def root() -> dict[str, Any]:
     """Root endpoint providing API information.
 
     Returns:
-        Dict containing API information.
+        dict[str, Any]: Dict containing API information.
     """
     return {
         "message": "PromptCraft-Hybrid C.R.E.A.T.E. Framework API",
@@ -146,7 +149,7 @@ async def health_check() -> dict[str, Any]:
     """Application health check endpoint.
 
     Returns:
-        Dict containing health status.
+        dict[str, Any]: Dict containing health status.
     """
     return {
         "status": "healthy",
@@ -164,11 +167,11 @@ async def not_found_handler(request: Request, _exc: Exception) -> JSONResponse:
     """Handle 404 errors.
 
     Args:
-        request: The request that caused the error.
-        exc: The exception.
+        request (Request): The request that caused the error.
+        _exc (Exception): The exception.
 
     Returns:
-        JSONResponse with error details.
+        JSONResponse: JSONResponse with error details.
     """
     return JSONResponse(
         status_code=404,
@@ -185,11 +188,11 @@ async def internal_error_handler(_request: Request, exc: Exception) -> JSONRespo
     """Handle 500 errors.
 
     Args:
-        request: The request that caused the error.
-        exc: The exception.
+        _request (Request): The request that caused the error.
+        exc (Exception): The exception.
 
     Returns:
-        JSONResponse with error details.
+        JSONResponse: JSONResponse with error details.
     """
     logger.error("Internal server error: %s", exc, exc_info=True)
     return JSONResponse(

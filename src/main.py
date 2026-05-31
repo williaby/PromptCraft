@@ -67,10 +67,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     including configuration validation, security setup, and resource cleanup.
 
     Args:
-        app: The FastAPI application instance
+        app (FastAPI): The FastAPI application instance.
 
     Yields:
-        None during application lifetime
+        None: During application lifetime.
+
+    Raises:
+        ConfigurationValidationError: If configuration validation fails during startup.
+        Exception: If an unexpected error occurs during startup.
     """
     logger.info("Starting PromptCraft-Hybrid application...")
 
@@ -175,7 +179,7 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application.
 
     Returns:
-        Configured FastAPI application instance with security hardening
+        FastAPI: Configured FastAPI application instance with security hardening.
     """
     # Get settings for app metadata
     try:
@@ -276,11 +280,16 @@ async def health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     configuration information. It's suitable for load balancers
     and simple monitoring systems.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        Basic health status information
+        dict[str, Any]: Basic health status information.
 
     Raises:
-        HTTPException: If health check fails
+        HTTPException: If health check fails.
+        AuthExceptionHandler.handle_service_unavailable: If configuration is unhealthy.
+        AuthExceptionHandler.handle_internal_error: If an unexpected error occurs.
     """
     try:
         health_summary = get_configuration_health_summary()
@@ -326,11 +335,14 @@ async def configuration_health(request: Request) -> ConfigurationStatusModel:  #
     configuration sources, and secret field counts without exposing
     sensitive values.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        Detailed configuration status information
+        ConfigurationStatusModel: Detailed configuration status information.
 
     Raises:
-        HTTPException: If configuration status cannot be determined
+        HTTPException: If configuration status cannot be determined.
     """
     try:
         settings = get_settings(validate_on_startup=False)
@@ -379,11 +391,16 @@ async def mcp_health_check(request: Request) -> dict[str, Any]:  # noqa: ARG001
     client connections, and parallel subagent execution capabilities.
     Designed for monitoring MCP integration health and performance.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        MCP integration health status information
+        dict[str, Any]: MCP integration health status information.
 
     Raises:
-        HTTPException: If MCP health check fails
+        HTTPException: If MCP health check fails.
+        AuthExceptionHandler.handle_service_unavailable: If MCP integration is unhealthy or unavailable.
+        AuthExceptionHandler.handle_internal_error: If an unexpected error occurs.
     """
     try:
         mcp_health = await get_mcp_configuration_health()
@@ -429,11 +446,14 @@ async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # n
     circuit breakers, including state, metrics, and configuration details.
     Useful for monitoring service resilience and failure patterns.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        Circuit breaker health status information
+        dict[str, Any]: Circuit breaker health status information.
 
     Raises:
-        HTTPException: If circuit breaker status cannot be determined
+        HTTPException: If circuit breaker status cannot be determined.
     """
     try:
         circuit_breakers = get_all_circuit_breakers()
@@ -478,8 +498,11 @@ async def circuit_breaker_health_check(request: Request) -> dict[str, Any]:  # n
 async def root(request: Request) -> dict[str, str]:  # noqa: ARG001
     """Root endpoint providing basic application information.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        Basic application information
+        dict[str, str]: Basic application information.
     """
     try:
         settings: ApplicationSettings = app.state.settings
@@ -505,8 +528,11 @@ async def root(request: Request) -> dict[str, str]:  # noqa: ARG001
 async def ping(request: Request) -> dict[str, str]:  # noqa: ARG001
     """Simple ping endpoint for load balancer checks.
 
+    Args:
+        request (Request): The incoming HTTP request.
+
     Returns:
-        Simple pong response
+        dict[str, str]: Simple pong response.
     """
     return {"message": "pong"}
 
@@ -520,11 +546,11 @@ async def validate_input(request: Request, data: SecureTextInput) -> dict[str, A
     by accepting text input and returning the sanitized version.
 
     Args:
-        request: The incoming request
-        data: Input data to validate and sanitize
+        request (Request): The incoming request.
+        data (SecureTextInput): Input data to validate and sanitize.
 
     Returns:
-        Sanitized input data with validation results
+        dict[str, Any]: Sanitized input data with validation results.
     """
     # Log the API request
     audit_logger_instance.log_api_event(
@@ -551,11 +577,11 @@ async def search_endpoint(request: Request, params: SecureQueryParams = Depends(
     with automatic validation and sanitization.
 
     Args:
-        request: The incoming request
-        params: Query parameters to validate
+        request (Request): The incoming request.
+        params (SecureQueryParams): Query parameters to validate.
 
     Returns:
-        Validated query parameters
+        dict[str, Any]: Validated query parameters.
     """
     return {
         "status": "success",

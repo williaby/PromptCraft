@@ -79,12 +79,6 @@ class BaseAgent(ABC):
     and lifecycle management while requiring concrete implementations to define
     the core execute() method.
 
-    Attributes:
-        agent_id (str): Unique identifier for the agent
-        config (Dict[str, Any]): Agent configuration parameters
-        logger (logging.Logger): Logger instance for the agent
-        _initialized (bool): Whether the agent has been initialized
-
     Example:
         ```python
         class MyAgent(BaseAgent):
@@ -108,7 +102,7 @@ class BaseAgent(ABC):
         Initialize the BaseAgent.
 
         Args:
-            config: Configuration dictionary containing agent parameters
+            config (dict[str, Any]): Configuration dictionary containing agent parameters
 
         Raises:
             AgentConfigurationError: If required configuration is missing
@@ -135,7 +129,7 @@ class BaseAgent(ABC):
         Validate the agent ID from configuration.
 
         Args:
-            agent_id: Agent ID from configuration
+            agent_id (str | None): Agent ID from configuration
 
         Returns:
             str: Validated agent ID
@@ -228,10 +222,10 @@ class BaseAgent(ABC):
         Merge configuration overrides with base configuration.
 
         Args:
-            config_overrides: Runtime configuration overrides
+            config_overrides (dict[str, Any] | None): Runtime configuration overrides
 
         Returns:
-            Dict[str, Any]: Merged configuration
+            dict[str, Any]: Merged configuration
         """
         if not config_overrides:
             return self.config
@@ -254,11 +248,11 @@ class BaseAgent(ABC):
         Create an AgentOutput instance with standard fields.
 
         Args:
-            content: The response content
-            metadata: Additional metadata
-            confidence: Confidence score (0.0 to 1.0)
-            processing_time: Processing time in seconds
-            request_id: Request ID from the input
+            content (str): The response content
+            metadata (dict[str, Any] | None): Additional metadata
+            confidence (float): Confidence score (0.0 to 1.0)
+            processing_time (float): Processing time in seconds
+            request_id (str | None): Request ID from the input
 
         Returns:
             AgentOutput: Standardized output object
@@ -277,15 +271,15 @@ class BaseAgent(ABC):
         Execute the agent with timeout handling.
 
         Args:
-            agent_input: Input for the agent
-            timeout: Timeout in seconds (optional)
+            agent_input (AgentInput): Input for the agent
+            timeout (float | None): Timeout in seconds (optional)
 
         Returns:
             AgentOutput: Agent response
 
         Raises:
             AgentTimeoutError: If execution times out
-            AgentExecutionError: If execution fails
+            error: If execution fails
         """
         if timeout is None:
             timeout = self.config.get("timeout", 30.0)
@@ -314,13 +308,14 @@ class BaseAgent(ABC):
         handling configuration merging, error handling, and performance tracking.
 
         Args:
-            agent_input: Input data for the agent
+            agent_input (AgentInput): Input data for the agent
 
         Returns:
             AgentOutput: Agent response
 
         Raises:
-            AgentError: If processing fails
+            AgentExecutionError: If agent is not initialized
+            error: If processing fails
         """
         if not self._initialized:
             raise AgentExecutionError(
@@ -425,7 +420,7 @@ class BaseAgent(ABC):
         classes. It defines the agent's specific behavior and processing logic.
 
         Args:
-            agent_input: Input data for the agent
+            agent_input (AgentInput): Input data for the agent
 
         Returns:
             AgentOutput: Agent response
@@ -457,7 +452,7 @@ class BaseAgent(ABC):
         which is used by the registry for capability matching.
 
         Returns:
-            Dict[str, Any]: Capabilities dictionary
+            dict[str, Any]: Capabilities dictionary
 
         Example:
             ```python
@@ -486,7 +481,7 @@ class BaseAgent(ABC):
         Get the agent's current status.
 
         Returns:
-            Dict[str, Any]: Status information
+            dict[str, Any]: Status information
         """
         return {
             "agent_id": self.agent_id,

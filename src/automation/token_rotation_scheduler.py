@@ -41,12 +41,12 @@ class TokenRotationPlan:
         """Initialize token rotation plan.
 
         Args:
-            token_name: Name of token to rotate
-            token_id: Token identifier
-            rotation_reason: Reason for rotation
-            scheduled_time: When rotation should occur
-            rotation_type: Type of rotation (scheduled, age_based, usage_based)
-            metadata: Additional rotation metadata
+            token_name (str): Name of token to rotate.
+            token_id (str): Token identifier.
+            rotation_reason (str): Reason for rotation.
+            scheduled_time (datetime): When rotation should occur.
+            rotation_type (str): Type of rotation (scheduled, age_based, usage_based).
+            metadata (dict | None): Additional rotation metadata.
         """
         self.token_name = token_name
         self.token_id = token_id
@@ -69,8 +69,8 @@ class TokenRotationScheduler:
         """Initialize token rotation scheduler.
 
         Args:
-            settings: Application settings (optional)
-            token_manager: Service token manager instance (optional, creates default if None)
+            settings (Any | None): Application settings (optional).
+            token_manager (ServiceTokenManager | None): Service token manager instance (optional, creates default if None).
         """
         self.settings = settings
         self.token_manager = token_manager or ServiceTokenManager()
@@ -98,7 +98,7 @@ class TokenRotationScheduler:
         """Analyze tokens and create rotation plans for those needing rotation.
 
         Returns:
-            List of rotation plans
+            list[TokenRotationPlan]: List of rotation plans.
         """
         rotation_plans = []
 
@@ -199,7 +199,7 @@ class TokenRotationScheduler:
         """Calculate next maintenance window for token rotation.
 
         Returns:
-            Next maintenance window datetime
+            datetime: Next maintenance window datetime.
         """
         # Schedule for 2 AM UTC tomorrow (or today if it's before 2 AM)
         now = datetime.now(UTC)
@@ -216,10 +216,10 @@ class TokenRotationScheduler:
         """Schedule a token rotation plan.
 
         Args:
-            plan: Token rotation plan
+            plan (TokenRotationPlan): Token rotation plan.
 
         Returns:
-            True if scheduled successfully, False otherwise
+            bool: True if scheduled successfully, False otherwise.
         """
         try:
             # Validate the plan
@@ -263,10 +263,10 @@ class TokenRotationScheduler:
         """Execute a token rotation plan.
 
         Args:
-            plan: Token rotation plan to execute
+            plan (TokenRotationPlan): Token rotation plan to execute.
 
         Returns:
-            True if rotation successful, False otherwise
+            bool: True if rotation successful, False otherwise.
         """
         plan.status = "in_progress"
 
@@ -362,8 +362,8 @@ class TokenRotationScheduler:
         """Send notification about token rotation event.
 
         Args:
-            plan: Token rotation plan
-            event_type: Type of event (scheduled, starting, completed, failed)
+            plan (TokenRotationPlan): Token rotation plan.
+            event_type (str): Type of event (scheduled, starting, completed, failed).
         """
         try:
             # Sanitize token name to prevent credential disclosure
@@ -442,7 +442,7 @@ class TokenRotationScheduler:
         """Add a notification callback for rotation events.
 
         Args:
-            callback: Async function to call with notification data
+            callback (Callable): Async function to call with notification data.
         """
         self._notification_callbacks.append(callback)
 
@@ -450,7 +450,7 @@ class TokenRotationScheduler:
         """Run all scheduled token rotations that are due.
 
         Returns:
-            Summary of rotation results
+            dict[str, Any]: Summary of rotation results.
         """
         now = datetime.now(UTC)
 
@@ -508,7 +508,7 @@ class TokenRotationScheduler:
         """Run the complete rotation scheduler cycle.
 
         Returns:
-            Summary of scheduler results
+            dict[str, Any]: Summary of scheduler results.
         """
         start_time = datetime.now(UTC)
 
@@ -551,8 +551,8 @@ class TokenRotationScheduler:
         """Start continuous rotation scheduler daemon with graceful shutdown support.
 
         Args:
-            check_interval_hours: Hours between scheduler checks
-            shutdown_event: Event to signal graceful shutdown (optional)
+            check_interval_hours (int): Hours between scheduler checks.
+            shutdown_event (asyncio.Event | None): Event to signal graceful shutdown (optional).
         """
         if shutdown_event is None:
             shutdown_event = asyncio.Event()
@@ -593,7 +593,7 @@ class TokenRotationScheduler:
         """Get current rotation scheduler status.
 
         Returns:
-            Status information
+            dict[str, Any]: Status information.
         """
         now = datetime.now(UTC)
 

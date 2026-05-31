@@ -29,12 +29,12 @@ class MarkdownAgent(BaseAgent):
         """Initialize markdown-based agent.
 
         Args:
-            agent_id: Unique identifier for the agent
-            definition: Markdown content defining agent behavior
-            model: AI model to use (opus, sonnet, haiku)
-            tools: List of available tools
-            context: Combined context from various sources
-            config: Agent configuration
+            agent_id (str): Unique identifier for the agent
+            definition (str): Markdown content defining agent behavior
+            model (str): AI model to use (opus, sonnet, haiku)
+            tools (list[str]): List of available tools
+            context (str): Combined context from various sources
+            config (dict[str, Any]): Agent configuration
         """
         # Prepare config dict for BaseAgent
         agent_config = {
@@ -56,10 +56,10 @@ class MarkdownAgent(BaseAgent):
         """Execute the agent using the BaseAgent interface.
 
         Args:
-            agent_input: Standard agent input
+            agent_input (AgentInput): Standard agent input
 
         Returns:
-            Standard agent output
+            AgentOutput: Standard agent output
         """
         try:
             # Convert AgentInput to Dict format for internal processing
@@ -103,10 +103,10 @@ class MarkdownAgent(BaseAgent):
         """Process input using the markdown-defined behavior.
 
         Args:
-            input_data: Input data containing the task/query
+            input_data (dict[str, Any]): Input data containing the task/query
 
         Returns:
-            Dict containing the agent's response
+            dict[str, Any]: Dictionary containing the agent's response
         """
         try:
             # Construct the prompt from the definition and context

@@ -41,11 +41,6 @@ class CreateAgent:
 
     This agent handles the generation and optimization of prompts using the
     C.R.E.A.T.E. framework (Context, Request, Examples, Augmentations, Tone & Format, Evaluation).
-
-    Attributes:
-        agent_id: The unique identifier for this agent (create_agent)
-        knowledge_base_path: Path to the agent's knowledge base
-        qdrant_collection: Name of the Qdrant collection for this agent
     """
 
     def __init__(self) -> None:
@@ -70,7 +65,7 @@ class CreateAgent:
         """Return the agent ID following naming conventions.
 
         Returns:
-            The agent ID in snake_case format: 'create_agent'
+            str: The agent ID in snake_case format: 'create_agent'
 
         Time Complexity: O(1) - Simple attribute access
         Space Complexity: O(1) - Returns existing string reference
@@ -86,7 +81,7 @@ class CreateAgent:
         """Return the knowledge base path following development.md conventions.
 
         Returns:
-            Path in format: /knowledge/{agent_id}/
+            str: Path in format: /knowledge/{agent_id}/
 
         Time Complexity: O(1) - Simple attribute access
         Space Complexity: O(1) - Returns existing string reference
@@ -102,7 +97,7 @@ class CreateAgent:
         """Return the Qdrant collection name following naming conventions.
 
         Returns:
-            Collection name matching agent_id: 'create_agent'
+            str: Collection name matching agent_id: 'create_agent'
 
         Time Complexity: O(1) - Simple attribute access
         Space Complexity: O(1) - Returns existing string reference
@@ -125,17 +120,17 @@ class CreateAgent:
         prompts using the C.R.E.A.T.E. framework methodology for optimal AI interaction.
 
         Args:
-            context: Context information for prompt generation including:
+            context (dict[str, Any]): Context information for prompt generation including:
                 - User query/request
                 - Domain-specific context
                 - Task requirements
-            preferences: Optional user preferences for customization including:
+            preferences (dict[str, Any] | None): Optional user preferences for customization including:
                 - Output format preferences
                 - Tone and style requirements
                 - Specific constraints or guidelines
 
         Returns:
-            A formatted prompt following C.R.E.A.T.E. framework structure
+            str: A formatted prompt following C.R.E.A.T.E. framework structure
 
         Time Complexity: O(n) where n is the size of context and preferences dicts
         Space Complexity: O(n) for string concatenation and formatting

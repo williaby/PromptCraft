@@ -28,7 +28,7 @@ class UserTierManager:
         """Initialize the user tier manager.
 
         Args:
-            config_manager: Optional config manager instance
+            config_manager (ConfigManager | None): Optional config manager instance
         """
         self.config_manager = config_manager or get_config_manager()
         self.validator = self.config_manager.create_whitelist_validator()
@@ -38,10 +38,10 @@ class UserTierManager:
         """Validate email address format.
 
         Args:
-            email: Email address to validate
+            email (str): Email address to validate
 
         Returns:
-            True if email format is valid
+            bool: True if email format is valid
         """
         if not email or not isinstance(email, str):
             return False
@@ -61,7 +61,10 @@ class UserTierManager:
         """Get all users organized by tier.
 
         Returns:
-            Dictionary with tier names as keys and user lists as values
+            dict[str, list[dict[str, Any]]]: Dictionary with tier names as keys and user lists as values
+
+        Raises:
+            UserTierManagerError: If users cannot be retrieved
         """
         try:
             # Get all emails from whitelist
@@ -112,12 +115,12 @@ class UserTierManager:
         """Assign a user to a specific tier.
 
         Args:
-            email: Email address to assign
-            tier: Target tier (admin, full, limited)
-            admin_email: Email of admin making the change
+            email (str): Email address to assign
+            tier (str): Target tier (admin, full, limited)
+            admin_email (str): Email of admin making the change
 
         Returns:
-            Tuple of (success, message)
+            tuple[bool, str]: Tuple of (success, message)
         """
         try:
             # Validate inputs
@@ -166,11 +169,11 @@ class UserTierManager:
         """Remove a user from all tiers.
 
         Args:
-            email: Email address to remove
-            admin_email: Email of admin making the change
+            email (str): Email address to remove
+            admin_email (str): Email of admin making the change
 
         Returns:
-            Tuple of (success, message)
+            tuple[bool, str]: Tuple of (success, message)
         """
         try:
             success, msg = self._remove_from_all_tiers(email)
@@ -196,10 +199,10 @@ class UserTierManager:
         """Remove user from all tier lists.
 
         Args:
-            email: Email address to remove
+            email (str): Email address to remove
 
         Returns:
-            Tuple of (success, message)
+            tuple[bool, str]: Tuple of (success, message)
         """
         removed_from = []
 
@@ -223,10 +226,10 @@ class UserTierManager:
         """Get detailed tier information for a specific user.
 
         Args:
-            email: Email address to check
+            email (str): Email address to check.
 
         Returns:
-            User tier information or None if not authorized
+            dict[str, Any] | None: User tier information or None if not authorized.
         """
         try:
             if not self.validator.is_authorized(email):
@@ -250,7 +253,7 @@ class UserTierManager:
         """Validate current tier configuration and return warnings.
 
         Returns:
-            List of warning messages
+            list[str]: List of warning messages.
         """
         try:
             result = self.validator.validate_whitelist_config()
@@ -263,7 +266,7 @@ class UserTierManager:
         """Get statistics about current tier assignments.
 
         Returns:
-            Dictionary with tier statistics
+            dict[str, Any]: Dictionary with tier statistics.
         """
         try:
             stats = self.validator.get_whitelist_stats()
@@ -289,12 +292,12 @@ class UserTierManager:
         """Assign multiple users to a tier.
 
         Args:
-            emails: List of email addresses
-            tier: Target tier
-            admin_email: Admin making the changes
+            emails (list[str]): List of email addresses.
+            tier (str): Target tier.
+            admin_email (str): Admin making the changes.
 
         Returns:
-            Dictionary with results
+            dict[str, Any]: Dictionary with results.
         """
         results: dict[str, Any] = {"successful": [], "failed": [], "total": len(emails)}
 
@@ -311,7 +314,7 @@ class UserTierManager:
         """Export current tier configuration as JSON.
 
         Returns:
-            JSON string with configuration
+            str: JSON string with configuration.
         """
         try:
             config_export = {
@@ -334,10 +337,10 @@ class UserTierManager:
         """Search users by email pattern.
 
         Args:
-            query: Search query (email pattern)
+            query (str): Search query (email pattern).
 
         Returns:
-            List of matching users
+            list[dict[str, Any]]: List of matching users.
         """
         try:
             all_users = self.get_all_users()
@@ -363,10 +366,10 @@ class UserTierManager:
         """Get recent changes log.
 
         Args:
-            limit: Maximum number of changes to return
+            limit (int): Maximum number of changes to return.
 
         Returns:
-            List of recent changes
+            list[dict[str, Any]]: List of recent changes.
         """
         return self.changes_log[-limit:] if self.changes_log else []
 
@@ -377,7 +380,7 @@ class UserTierManager:
         Note: Environment variable changes require application restart to take full effect.
 
         Returns:
-            Tuple of (success, message)
+            tuple[bool, str]: Tuple of (success, message).
         """
         try:
             # Update the configuration manager's internal config
@@ -417,7 +420,7 @@ class UserTierManager:
         """Reload configuration from environment/config files.
 
         Returns:
-            Tuple of (success, message)
+            tuple[bool, str]: Tuple of (success, message).
         """
         try:
             # Recreate config manager to reload from environment
@@ -441,7 +444,7 @@ class UserTierManager:
         """Generate environment file updates that can be applied.
 
         Returns:
-            String with environment variable updates
+            str: String with environment variable updates.
         """
         try:
             return f"""# User Tier Configuration - Updated {datetime.now(UTC).isoformat()}

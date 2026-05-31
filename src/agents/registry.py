@@ -62,13 +62,6 @@ class AgentRegistry:
     throughout the PromptCraft system. It provides a decorator-based registration
     pattern and supports capability matching for agent selection.
 
-    Attributes:
-        _registry (Dict[str, Type]): Registered agent classes by ID
-        _instances (Dict[str, Any]): Cached agent instances by ID
-        _capabilities (Dict[str, Dict[str, Any]]): Agent capabilities by ID
-        _config (Dict[str, Dict[str, Any]]): Agent configurations by ID
-        logger (logging.Logger): Logger instance
-
     Example:
         ```python
         registry = AgentRegistry()
@@ -94,13 +87,10 @@ class AgentRegistry:
         Decorator to register an agent class.
 
         Args:
-            agent_id: Unique identifier for the agent
+            agent_id (str): Unique identifier for the agent
 
         Returns:
             Callable: Decorator function
-
-        Raises:
-            AgentRegistrationError: If agent ID already exists or class is invalid
 
         Example:
             ```python
@@ -121,8 +111,8 @@ class AgentRegistry:
         Register an agent class with validation.
 
         Args:
-            agent_id: Unique identifier for the agent
-            agent_class: Agent class to register
+            agent_id (str): Unique identifier for the agent
+            agent_class (type): Agent class to register
 
         Raises:
             AgentRegistrationError: If registration fails
@@ -174,8 +164,8 @@ class AgentRegistry:
         Validate that an agent class implements the BaseAgent interface.
 
         Args:
-            agent_id: Agent identifier
-            agent_class: Agent class to validate
+            agent_id (str): Agent identifier
+            agent_class (type): Agent class to validate
 
         Raises:
             AgentRegistrationError: If agent class is invalid
@@ -228,10 +218,10 @@ class AgentRegistry:
         Get a registered agent class by ID.
 
         Args:
-            agent_id: Agent identifier
+            agent_id (str): Agent identifier
 
         Returns:
-            Type: Agent class
+            type: Agent class
 
         Raises:
             AgentRegistrationError: If agent not found
@@ -251,8 +241,8 @@ class AgentRegistry:
         Get or create an agent instance.
 
         Args:
-            agent_id: Agent identifier
-            config: Agent configuration
+            agent_id (str): Agent identifier
+            config (dict[str, Any]): Agent configuration
 
         Returns:
             Any: Agent instance
@@ -291,8 +281,8 @@ class AgentRegistry:
         Get a cached agent instance or create a new one.
 
         Args:
-            agent_id: Agent identifier
-            config: Agent configuration
+            agent_id (str): Agent identifier
+            config (dict[str, Any]): Agent configuration
 
         Returns:
             Any: Agent instance
@@ -317,7 +307,7 @@ class AgentRegistry:
         List all registered agent IDs.
 
         Returns:
-            List[str]: List of agent IDs
+            list[str]: List of agent IDs
         """
         return list(self._registry.keys())
 
@@ -326,7 +316,7 @@ class AgentRegistry:
         List all registered agent classes.
 
         Returns:
-            Dict[str, Type]: Dictionary of agent ID to class mappings
+            dict[str, type]: Dictionary of agent ID to class mappings
         """
         return self._registry.copy()
 
@@ -335,10 +325,10 @@ class AgentRegistry:
         Get information about a registered agent.
 
         Args:
-            agent_id: Agent identifier
+            agent_id (str): Agent identifier
 
         Returns:
-            Dict[str, Any]: Agent information
+            dict[str, Any]: Agent information
 
         Raises:
             AgentRegistrationError: If agent not found
@@ -369,11 +359,11 @@ class AgentRegistry:
         Find agents that have a specific capability.
 
         Args:
-            capability: Capability name to search for
-            value: Optional specific value to match
+            capability (str): Capability name to search for
+            value (Any): Optional specific value to match
 
         Returns:
-            List[str]: List of agent IDs that match the capability
+            list[str]: List of agent IDs that match the capability
         """
         matching_agents = []
 
@@ -388,11 +378,11 @@ class AgentRegistry:
         Find agents by input/output type capability.
 
         Args:
-            input_type: Required input type
-            output_type: Optional required output type
+            input_type (str): Required input type
+            output_type (str | None): Optional required output type
 
         Returns:
-            List[str]: List of matching agent IDs
+            list[str]: List of matching agent IDs
         """
         matching_agents = []
 
@@ -410,7 +400,7 @@ class AgentRegistry:
         Unregister an agent.
 
         Args:
-            agent_id: Agent identifier
+            agent_id (str): Agent identifier
 
         Raises:
             AgentRegistrationError: If agent not found
@@ -450,7 +440,7 @@ class AgentRegistry:
         Get the current status of the registry.
 
         Returns:
-            Dict[str, Any]: Registry status information
+            dict[str, Any]: Registry status information
         """
         return {
             "total_agents": len(self._registry),

@@ -53,7 +53,7 @@ class HealthChecker:
         """Initialize health checker with settings.
 
         Args:
-            settings: Application settings instance
+            settings (ApplicationSettings): Application settings instance.
         """
         self.settings = settings
         self.logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class HealthChecker:
         """Perform comprehensive health check.
 
         Returns:
-            Dictionary with health status information
+            dict[str, Any]: Dictionary with health status information.
         """
         try:
             status = get_configuration_status(self.settings)
@@ -93,16 +93,19 @@ class ConfigurationStatusModel(BaseModel):
     information that is useful for debugging and system health monitoring.
 
     Attributes:
-        environment: Current deployment environment (dev/staging/prod)
-        version: Application version string
-        debug: Whether debug mode is enabled
-        config_loaded: Whether configuration loaded successfully
-        encryption_enabled: Whether encryption is available and working
-        config_source: Primary source of configuration (env_vars, files, defaults)
-        validation_status: Whether configuration validation passed
-        validation_errors: Non-sensitive validation error summaries
-        secrets_configured: Count of configured secret fields (not values)
-        timestamp: When this status was generated
+        environment (str): Current deployment environment (dev/staging/prod).
+        version (str): Application version string.
+        debug (bool): Whether debug mode is enabled.
+        config_loaded (bool): Whether configuration loaded successfully.
+        encryption_enabled (bool): Whether encryption is available and working.
+        config_source (str): Primary source of configuration (env_vars, files, defaults).
+        validation_status (str): Whether configuration validation passed.
+        validation_errors (list[str]): Non-sensitive validation error summaries.
+        secrets_configured (int): Count of configured secret fields (not values).
+        api_host (str): API host address (safe to expose for operational monitoring).
+        api_port (int): API port number.
+        timestamp (datetime): When this status was generated.
+        model_config: Pydantic model configuration with JSON encoders.
     """
 
     environment: str = Field(
@@ -152,7 +155,7 @@ class ConfigurationStatusModel(BaseModel):
         """Computed field indicating overall configuration health.
 
         Returns:
-            True if configuration is healthy (loaded and validated successfully)
+            bool: True if configuration is healthy (loaded and validated successfully).
         """
         return self.config_loaded and self.validation_status in ("passed", "warning")
 
@@ -163,10 +166,10 @@ def _count_configured_secrets(settings: ApplicationSettings) -> int:
     """Count the number of configured secret fields without exposing values.
 
     Args:
-        settings: The settings instance to analyze
+        settings (ApplicationSettings): The settings instance to analyze.
 
     Returns:
-        Number of secret fields that have non-empty values
+        int: Number of secret fields that have non-empty values.
     """
     configured_count = 0
     for field_name in SECRET_FIELD_NAMES:
@@ -184,10 +187,10 @@ def _determine_config_source(settings: ApplicationSettings) -> str:
     Since Pydantic doesn't track sources directly, we use heuristics.
 
     Args:
-        settings: The settings instance to analyze
+        settings (ApplicationSettings): The settings instance to analyze.
 
     Returns:
-        Primary configuration source identifier
+        str: Primary configuration source identifier.
     """
     # Check if key environment variables are set
     env_vars_set = any(
@@ -223,10 +226,10 @@ def _sanitize_validation_errors(errors: list[str]) -> list[str]:
     preserving debugging context for general validation errors.
 
     Args:
-        errors: List of validation error messages
+        errors (list[str]): List of validation error messages.
 
     Returns:
-        Sanitized error messages safe for health check exposure
+        list[str]: Sanitized error messages safe for health check exposure.
     """
     sanitized = []
 
@@ -337,10 +340,13 @@ def get_configuration_status(settings: ApplicationSettings) -> ConfigurationStat
     no sensitive data.
 
     Args:
-        settings: The application settings instance to analyze
+        settings (ApplicationSettings): The application settings instance to analyze.
 
     Returns:
-        ConfigurationStatusModel with current status information
+        ConfigurationStatusModel: ConfigurationStatusModel with current status information.
+
+    Raises:
+        Exception: If an unexpected error occurs during validation.
 
     Example:
         >>> settings = get_settings()
@@ -414,7 +420,7 @@ def get_configuration_health_summary() -> dict[str, Any]:
     is working properly.
 
     Returns:
-        Dictionary with basic health information
+        dict[str, Any]: Dictionary with basic health information.
 
     Example:
         >>> summary = get_configuration_health_summary()
@@ -453,7 +459,10 @@ async def get_mcp_configuration_health() -> dict[str, Any]:
     """Get MCP configuration health status.
 
     Returns:
-        Dictionary with MCP configuration health information
+        dict[str, Any]: Dictionary with MCP configuration health information.
+
+    Raises:
+        ImportError: If MCP integration components are not available.
     """
     try:
         # Check if MCP components are available

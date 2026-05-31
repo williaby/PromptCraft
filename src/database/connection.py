@@ -35,8 +35,8 @@ class DatabaseError(Exception):
         """Initialize database error.
 
         Args:
-            message: Error message
-            original_error: Original exception if available
+            message (str): Error message
+            original_error (Exception | None): Original exception if available
         """
         super().__init__(message)
         self.original_error = original_error
@@ -62,9 +62,9 @@ class DatabaseManager:
         """Initialize database manager with optional dependency injection.
 
         Args:
-            settings: Application settings (defaults to get_settings())
-            engine: Pre-configured async engine for testing
-            session_factory: Pre-configured session factory for testing
+            settings (ApplicationSettings | None): Application settings (defaults to get_settings())
+            engine (AsyncEngine | None): Pre-configured async engine for testing
+            session_factory (async_sessionmaker[AsyncSession] | None): Pre-configured session factory for testing
         """
         self._engine: AsyncEngine | None = engine
         self._session_factory: async_sessionmaker[AsyncSession] | None = session_factory
@@ -78,7 +78,7 @@ class DatabaseManager:
         """Initialize database engine and connection pool.
 
         Raises:
-            ConnectionError: If database connection cannot be established
+            DatabaseConnectionError: If database connection cannot be established
         """
         async with self._connection_lock:
             if self._engine is not None:
@@ -192,7 +192,7 @@ class DatabaseManager:
         """Build PostgreSQL connection string from settings (alternative method).
 
         Returns:
-            Database connection URL
+            str: Database connection URL
         """
         # Use asyncpg driver for async operations - supporting AUTH-1 pattern
         pwd_val: str | None
@@ -216,7 +216,7 @@ class DatabaseManager:
         """Test database connection and basic functionality.
 
         Raises:
-            ConnectionError: If connection test fails
+            DatabaseConnectionError: If connection test fails
         """
         if not self._engine:
             raise DatabaseConnectionError("Database engine not initialized")
@@ -247,7 +247,7 @@ class DatabaseManager:
         """Perform comprehensive database health check.
 
         Returns:
-            Health check results with status and metrics
+            dict[str, Any]: Health check results with status and metrics
         """
         # Check cache first
         now = time.time()
@@ -329,10 +329,11 @@ class DatabaseManager:
         """Get database session with automatic cleanup.
 
         Yields:
-            AsyncSession for database operations
+            AsyncSession: An active database session.
 
         Raises:
-            ConnectionError: If session cannot be created
+            DatabaseConnectionError: If session cannot be created
+            Exception: If a database error occurs during session use
         """
         if not self._session_factory:
             await self.initialize()
@@ -358,12 +359,12 @@ class DatabaseManager:
         """Execute database operation with retry logic.
 
         Args:
-            operation: Async callable to execute
-            max_retries: Maximum number of retry attempts
-            retry_delay: Delay between retries in seconds
+            operation (Callable[[], Any]): Async callable to execute
+            max_retries (int): Maximum number of retry attempts
+            retry_delay (float): Delay between retries in seconds
 
         Returns:
-            Result of the operation
+            Any: Result of the operation
 
         Raises:
             DatabaseError: If all retry attempts fail
@@ -442,7 +443,7 @@ async def get_database_manager_async() -> DatabaseManager:
     """Get global database manager instance with initialization.
 
     Returns:
-        DatabaseManager instance
+        DatabaseManager: DatabaseManager instance
     """
     if _db_manager_ref[0] is None:
         _db_manager_ref[0] = DatabaseManager()
@@ -462,7 +463,7 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """Get database session for dependency injection.
 
     Yields:
-        AsyncSession for database operations
+        AsyncSession: An active database session.
     """
     db_manager = get_database_manager()
     async with db_manager.get_session() as session:

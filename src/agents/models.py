@@ -66,10 +66,11 @@ class AgentInput(BaseModel):
 
     Attributes:
         content (str): The primary content/query for the agent to process
-        context (Optional[Dict[str, Any]]): Additional context information
-        config_overrides (Optional[Dict[str, Any]]): Runtime configuration overrides
+        context (dict[str, Any] | None): Additional context information
+        config_overrides (dict[str, Any] | None): Runtime configuration overrides
         request_id (str): Unique identifier for this request
         timestamp (datetime): When the request was created
+        model_config: Pydantic model configuration settings
 
     Example:
         ```python
@@ -174,12 +175,13 @@ class AgentOutput(BaseModel):
 
     Attributes:
         content (str): The primary response content from the agent
-        metadata (Dict[str, Any]): Additional metadata about the response
+        metadata (dict[str, Any]): Additional metadata about the response
         confidence (float): Confidence score for the response (0.0 to 1.0)
         processing_time (float): Time taken to process the request in seconds
-        request_id (str): Unique identifier linking to the original request
+        request_id (str | None): Unique identifier linking to the original request
         agent_id (str): Identifier of the agent that produced this output
         timestamp (datetime): When the response was generated
+        model_config: Pydantic model configuration settings
 
     Example:
         ```python
@@ -302,8 +304,9 @@ class AgentConfig(BaseModel):
         agent_id (str): Unique identifier for the agent
         name (str): Human-readable name for the agent
         description (str): Description of the agent's capabilities
-        config (Dict[str, Any]): Agent-specific configuration parameters
+        config (dict[str, Any]): Agent-specific configuration parameters
         enabled (bool): Whether the agent is enabled for execution
+        model_config: Pydantic model configuration settings
 
     Example:
         ```python
