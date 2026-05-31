@@ -55,7 +55,8 @@ class DatabaseService:
             AsyncSession: Database session
 
         Raises:
-            DatabaseError: If session creation fails
+            DatabaseError: If a SQLAlchemy error occurs during the operation.
+            Exception: If an unexpected error occurs during the operation.
         """
         async with self._db_manager.get_session() as session:
             try:
@@ -76,15 +77,12 @@ class DatabaseService:
         with proper error handling and logging.
 
         Args:
-            operation: Callable that takes session as first parameter
-            *args: Additional positional arguments for operation
-            **kwargs: Additional keyword arguments for operation
+            operation (Callable[..., Any]): Callable that takes session as first parameter.
+            *args (Any): Additional positional arguments for operation.
+            **kwargs (Any): Additional keyword arguments for operation.
 
         Returns:
-            Result of the operation
-
-        Raises:
-            DatabaseError: If operation fails
+            Any: Result of the operation.
         """
         async with self.get_session() as session:
             return await operation(session, *args, **kwargs)
@@ -99,16 +97,13 @@ class DatabaseService:
         """Execute raw SQL query with parameter binding.
 
         Args:
-            query: SQL query string
-            parameters: Query parameters for binding
-            fetch_one: Whether to fetch only one result
-            fetch_scalar: Whether to fetch scalar value
+            query (str): SQL query string.
+            parameters (dict[str, Any] | None): Query parameters for binding.
+            fetch_one (bool): Whether to fetch only one result.
+            fetch_scalar (bool): Whether to fetch scalar value.
 
         Returns:
-            Query results based on fetch parameters
-
-        Raises:
-            DatabaseError: If query execution fails
+            Any: Query results based on fetch parameters.
         """
         async with self.get_session() as session:
             result = await session.execute(text(query), parameters or {})
@@ -131,12 +126,12 @@ class DatabaseService:
         unique constraint violations, foreign key violations, etc.
 
         Args:
-            error: SQLAlchemy IntegrityError
-            operation_name: Name of the operation that failed
-            entity_name: Name of the entity being operated on
+            error (IntegrityError): SQLAlchemy IntegrityError.
+            operation_name (str): Name of the operation that failed.
+            entity_name (str): Name of the entity being operated on.
 
         Raises:
-            DatabaseError: Standardized database error with helpful message
+            DatabaseError: Standardized database error with helpful message.
         """
         error_msg = str(error).lower()
 
@@ -161,10 +156,10 @@ class DatabaseService:
         """Log successful database operation with consistent formatting.
 
         Args:
-            operation_name: Name of the operation
-            entity_id: ID of the entity operated on
-            entity_name: Name of the entity operated on
-            additional_info: Additional information to log
+            operation_name (str): Name of the operation.
+            entity_id (Any): ID of the entity operated on.
+            entity_name (str): Name of the entity operated on.
+            additional_info (str): Additional information to log.
         """
         id_part = f" with ID {entity_id}" if entity_id else ""
         name_part = f" '{entity_name}'" if entity_name else ""
@@ -181,9 +176,9 @@ class DatabaseService:
         """Log database operation error with consistent formatting.
 
         Args:
-            operation_name: Name of the operation
-            error: Exception that occurred
-            entity_name: Name of the entity being operated on
+            operation_name (str): Name of the operation.
+            error (Exception): Exception that occurred.
+            entity_name (str): Name of the entity being operated on.
         """
         entity_part = f" for {entity_name}" if entity_name else ""
         logger.error("%s failed%s: %s", operation_name, entity_part, error)
@@ -198,13 +193,13 @@ class DatabaseService:
         """Check if entity exists with given conditions.
 
         Args:
-            session: Database session
-            model_class: SQLAlchemy model class
-            filter_conditions: Dictionary of field->value conditions
-            entity_name: Name for error messages
+            session (AsyncSession): Database session.
+            model_class (type[Any]): SQLAlchemy model class.
+            filter_conditions (dict[str, Any]): Dictionary of field->value conditions.
+            entity_name (str): Name for error messages.
 
         Returns:
-            True if entity exists, False otherwise
+            bool: True if entity exists, False otherwise.
         """
         query: Select[Any] = select(model_class.id)
         for field, value in filter_conditions.items():
@@ -226,13 +221,13 @@ class DatabaseService:
         """Get entity by filter conditions.
 
         Args:
-            session: Database session
-            model_class: SQLAlchemy model class
-            filter_conditions: Dictionary of field->value conditions
-            entity_name: Name for logging
+            session (AsyncSession): Database session.
+            model_class (type[Any]): SQLAlchemy model class.
+            filter_conditions (dict[str, Any]): Dictionary of field->value conditions.
+            entity_name (str): Name for logging.
 
         Returns:
-            Entity if found, None otherwise
+            Any | None: Entity if found, None otherwise.
         """
         query: Select[Any] = select(model_class)
         for field, value in filter_conditions.items():
