@@ -117,10 +117,10 @@ class RateLimiter:
         Check if request is within rate limits and record the request.
 
         Args:
-            session_id: Unique session identifier
+            session_id (str): Unique session identifier
 
         Returns:
-            True if request is allowed, False if rate limited
+            bool: True if request is allowed, False if rate limited
         """
         self._cleanup_old_entries()
 
@@ -151,10 +151,10 @@ class RateLimiter:
         Check if file upload is within rate limits and record the upload.
 
         Args:
-            session_id: Unique session identifier
+            session_id (str): Unique session identifier
 
         Returns:
-            True if upload is allowed, False if rate limited
+            bool: True if upload is allowed, False if rate limited
         """
         self._cleanup_old_entries()
 
@@ -491,7 +491,7 @@ class MultiJourneyInterface(LoggerMixin):
         Controlled by environment variables for security.
 
         Returns:
-            True if local admin mode is enabled
+            bool: True if local admin mode is enabled
         """
         # Check for development mode flags
         dev_mode = os.getenv("PROMPTCRAFT_DEV_MODE", "false").lower() in ("true", "1", "yes", "on")
@@ -517,10 +517,10 @@ class MultiJourneyInterface(LoggerMixin):
         """Extract user context from request state.
 
         Args:
-            request: Gradio request object
+            request (gr.Request): Gradio request object
 
         Returns:
-            Dictionary with user tier and email information
+            dict: Dictionary with user tier and email information
         """
         # Check for authenticated user first
         if request and hasattr(request, "state") and hasattr(request.state, "user"):
@@ -555,8 +555,8 @@ class MultiJourneyInterface(LoggerMixin):
         """Setup admin tab visibility based on user context.
 
         Args:
-            admin_tab: The admin tab component
-            user_context: User context containing tier information
+            admin_tab (gr.Tab): The admin tab component
+            user_context (dict): User context containing tier information
         """
         is_admin = user_context.get("is_admin", False)
         user_tier = user_context.get("tier", "limited")
@@ -573,7 +573,10 @@ class MultiJourneyInterface(LoggerMixin):
         """Create the main Gradio interface with all journeys.
 
         Args:
-            user_context: User context with tier information
+            user_context (dict | None): User context with tier information
+
+        Returns:
+            gr.Blocks: The configured Gradio Blocks interface
         """
         # Use default user context if none provided
         if user_context is None:
@@ -1892,7 +1895,7 @@ class MultiJourneyInterface(LoggerMixin):
         Validate uploaded files for security and limits.
 
         Args:
-            files: List of uploaded file objects
+            files (list[Any]): List of uploaded file objects
 
         Raises:
             gr.Error: If files exceed limits or contain security risks
@@ -1934,7 +1937,7 @@ class MultiJourneyInterface(LoggerMixin):
         Validate text input for length and security.
 
         Args:
-            text_input: User text input
+            text_input (str): User text input
 
         Raises:
             gr.Error: If text input exceeds limits
@@ -1950,11 +1953,11 @@ class MultiJourneyInterface(LoggerMixin):
         Validate that the MIME type matches the expected file extension.
 
         Args:
-            mime_type: MIME type detected from file
-            file_ext: File extension (with dot)
+            mime_type (str): MIME type detected from file
+            file_ext (str): File extension (with dot)
 
         Returns:
-            True if MIME type is safe and matches extension
+            bool: True if MIME type is safe and matches extension
         """
         # Define safe MIME type mappings for supported file types
         safe_mime_mappings = {
@@ -1974,11 +1977,11 @@ class MultiJourneyInterface(LoggerMixin):
         Validate file content using both magic number detection and MIME guessing.
 
         Args:
-            file_path: Path to the file to validate
-            file_ext: File extension for validation
+            file_path (str): Path to the file to validate
+            file_ext (str): File extension for validation
 
         Returns:
-            Tuple of (detected_mime_from_content, guessed_mime_from_extension)
+            tuple[str, str]: Tuple of (detected_mime_from_content, guessed_mime_from_extension)
 
         Raises:
             gr.Error: If content validation fails
@@ -2022,9 +2025,9 @@ class MultiJourneyInterface(LoggerMixin):
         Check for content anomalies that might indicate malicious files.
 
         Args:
-            file_path: Path to the file
-            detected_mime: MIME type detected from content
-            file_ext: File extension
+            file_path (str): Path to the file
+            detected_mime (str): MIME type detected from content
+            file_ext (str): File extension
 
         Raises:
             gr.Error: If anomalies are detected
@@ -2060,8 +2063,8 @@ class MultiJourneyInterface(LoggerMixin):
         potentially exhausting system resources when decompressed.
 
         Args:
-            file_path: Path to the file to check
-            detected_mime: MIME type detected from file content
+            file_path (str): Path to the file to check
+            detected_mime (str): MIME type detected from file content
 
         Raises:
             gr.Error: If archive bomb characteristics are detected
@@ -2103,9 +2106,9 @@ class MultiJourneyInterface(LoggerMixin):
         Apply heuristics to detect potential archive bombs.
 
         Args:
-            file_path: Path to the archive file
-            file_size: Size of the compressed file
-            detected_mime: MIME type of the file
+            file_path (str): Path to the archive file
+            file_size (int): Size of the compressed file
+            detected_mime (str): MIME type of the file
 
         Raises:
             gr.Error: If archive bomb characteristics are detected
@@ -2129,8 +2132,8 @@ class MultiJourneyInterface(LoggerMixin):
         Check for ZIP bomb characteristics using safe heuristics.
 
         Args:
-            file_path: Path to the ZIP file
-            file_size: Size of the ZIP file
+            file_path (str): Path to the ZIP file
+            file_size (int): Size of the ZIP file
 
         Raises:
             gr.Error: If ZIP bomb characteristics are detected
@@ -2196,8 +2199,8 @@ class MultiJourneyInterface(LoggerMixin):
         Check for TAR/GZIP bomb characteristics using safe heuristics.
 
         Args:
-            file_path: Path to the TAR/GZIP file
-            file_size: Size of the compressed file
+            file_path (str): Path to the TAR/GZIP file
+            file_size (int): Size of the compressed file
 
         Raises:
             gr.Error: If archive bomb characteristics are detected
@@ -2272,12 +2275,12 @@ class MultiJourneyInterface(LoggerMixin):
         Process file content with memory bounds and streaming to prevent memory exhaustion.
 
         Args:
-            file_path: Path to the file to process
-            file_size: Size of the file in bytes
-            chunk_size: Size of chunks to read (default 8KB)
+            file_path (str): Path to the file to process
+            file_size (int): Size of the file in bytes
+            chunk_size (int): Size of chunks to read (default 8KB)
 
         Returns:
-            Processed file content as string
+            str: Processed file content as string
 
         Raises:
             gr.Error: If file processing fails or memory limits exceeded

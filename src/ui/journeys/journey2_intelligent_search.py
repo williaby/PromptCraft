@@ -54,12 +54,15 @@ class Journey2IntelligentSearch(LoggerMixin):
         Execute with intelligent routing: zen MCP first, OpenRouter fallback.
 
         Args:
-            enhanced_prompt: The prompt to execute
-            user_tier: User access tier
-            workflow_step: Workflow step configuration
+            enhanced_prompt (str): The prompt to execute.
+            user_tier (str): User access tier.
+            workflow_step (dict[str, Any]): Workflow step configuration.
 
         Returns:
-            Tuple of (responses, routing_metadata)
+            tuple[list[Any], dict[str, Any]]: Tuple of (responses, routing_metadata).
+
+        Raises:
+            Exception: If both zen MCP routing and OpenRouter fallback fail.
         """
         routing_metadata = {
             "routing_method": "unknown",
@@ -192,15 +195,15 @@ class Journey2IntelligentSearch(LoggerMixin):
         Execute enhanced prompt through OpenRouter API.
 
         Args:
-            enhanced_prompt: Enhanced prompt to execute
-            model_mode: Model selection mode
-            custom_model: Custom model selection
-            temperature: Response creativity
-            max_tokens: Maximum tokens for response
-            user_tier: User access tier
+            enhanced_prompt (str): Enhanced prompt to execute.
+            model_mode (str): Model selection mode.
+            custom_model (str): Custom model selection.
+            temperature (float): Response creativity.
+            max_tokens (int): Maximum tokens for response.
+            user_tier (str): User access tier.
 
         Returns:
-            Tuple of (response_content, model_attribution, execution_stats, error_message)
+            tuple[str, str, str, str]: Tuple of (response_content, model_attribution, execution_stats, error_message).
         """
         start_time = time.time()
 
@@ -379,11 +382,11 @@ class Journey2IntelligentSearch(LoggerMixin):
         Create a transfer object from Journey 1 data.
 
         Args:
-            enhanced_prompt: Enhanced prompt from Journey 1
-            create_breakdown: C.R.E.A.T.E. framework breakdown
+            enhanced_prompt (str): Enhanced prompt from Journey 1.
+            create_breakdown (dict): C.R.E.A.T.E. framework breakdown.
 
         Returns:
-            Dictionary with transfer data
+            dict[str, str]: Dictionary with transfer data.
         """
         return {
             "enhanced_prompt": enhanced_prompt,
@@ -402,10 +405,10 @@ class Journey2IntelligentSearch(LoggerMixin):
         Format response content for better display.
 
         Args:
-            response_content: Raw response from AI model
+            response_content (str): Raw response from AI model.
 
         Returns:
-            Formatted response content
+            str: Formatted response content.
         """
         if not response_content:
             return "No response content available."
@@ -422,10 +425,10 @@ class Journey2IntelligentSearch(LoggerMixin):
         Extract key insights from the response for quick overview.
 
         Args:
-            response_content: AI model response
+            response_content (str): AI model response.
 
         Returns:
-            Key insights summary
+            str: Key insights summary.
         """
         if not response_content or len(response_content) < 100:
             return "Response too short for insight extraction."
@@ -458,10 +461,10 @@ class Journey2IntelligentSearch(LoggerMixin):
         Validate prompt before execution.
 
         Args:
-            prompt: Prompt to validate
+            prompt (str): Prompt to validate.
 
         Returns:
-            Tuple of (is_valid, message)
+            tuple[bool, str]: Tuple of (is_valid, message).
         """
         if not prompt or not prompt.strip():
             return False, "Prompt is empty. Please provide a valid prompt."
@@ -479,10 +482,10 @@ class Journey2IntelligentSearch(LoggerMixin):
         Get available models for the user's tier.
 
         Args:
-            user_tier: User access tier
+            user_tier (str): User access tier.
 
         Returns:
-            List of (display_name, model_id) tuples
+            list[tuple[str, str]]: List of (display_name, model_id) tuples.
         """
         if user_tier == "limited":
             return [
@@ -514,11 +517,11 @@ class Journey2IntelligentSearch(LoggerMixin):
         Create the Journey 2 execution interface components.
 
         Args:
-            user_tier: User access tier
-            transfer_data: Optional data transferred from Journey 1
+            user_tier (str): User access tier.
+            transfer_data (dict[str, Any] | None): Optional data transferred from Journey 1.
 
         Returns:
-            Dictionary of Gradio components
+            dict[str, Any]: Dictionary of Gradio components.
         """
         # Pre-fill with transfer data if available
         initial_prompt = transfer_data.get("enhanced_prompt", "") if transfer_data else ""

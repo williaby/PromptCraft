@@ -45,15 +45,15 @@ class ExportUtils:
         Export Journey 1 content with full metadata.
 
         Args:
-            enhanced_prompt: The enhanced prompt content
-            create_breakdown: C.R.E.A.T.E. framework breakdown
-            model_info: Model attribution information
-            file_sources: List of source files used
-            session_data: Session information
-            format_type: Export format (text, markdown, json)
+            enhanced_prompt (str): The enhanced prompt content.
+            create_breakdown (dict[str, str]): C.R.E.A.T.E. framework breakdown.
+            model_info (dict[str, Any]): Model attribution information.
+            file_sources (list[dict[str, Any]]): List of source files used.
+            session_data (dict[str, Any]): Session information.
+            format_type (str): Export format (text, markdown, json).
 
         Returns:
-            Formatted export content
+            str: Formatted export content.
         """
         timestamp = datetime.now(UTC).isoformat()
 
@@ -253,10 +253,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Extract code blocks from content with enhanced detection.
 
         Args:
-            content: Content to extract code blocks from
+            content (str): Content to extract code blocks from.
 
         Returns:
-            List of code block dictionaries with language and content
+            list[dict[str, Any]]: List of code block dictionaries with language and content.
         """
         # Use string operations instead of regex to prevent ReDoS attacks completely
         # Find all ``` positions and pair them as opening/closing delimiters
@@ -440,10 +440,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Format code blocks for export with enhanced metadata.
 
         Args:
-            code_blocks: List of code block dictionaries
+            code_blocks (list[dict[str, Any]]): List of code block dictionaries.
 
         Returns:
-            Formatted code blocks for export
+            str: Formatted code blocks for export.
         """
         if not code_blocks:
             return "No code blocks found."
@@ -508,10 +508,10 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Format code blocks as markdown for copying with enhanced metadata.
 
         Args:
-            code_blocks: List of code block dictionaries
+            code_blocks (list[dict[str, Any]]): List of code block dictionaries.
 
         Returns:
-            Markdown formatted code blocks
+            str: Markdown formatted code blocks.
         """
         if not code_blocks:
             return "No code blocks found."
@@ -576,12 +576,12 @@ Exported from PromptCraft-Hybrid | Generated with AI assistance
         Prepare content for download.
 
         Args:
-            content: Content to prepare for download
-            filename: Base filename (without extension)
-            format_type: File format (txt, md, json)
+            content (str): Content to prepare for download.
+            filename (str): Base filename (without extension).
+            format_type (str): File format (txt, md, json).
 
         Returns:
-            Formatted filename for download
+            str: Formatted filename for download.
         """
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         clean_filename = "".join(c for c in filename if c.isalnum() or c in (" ", "-", "_")).rstrip()

@@ -66,10 +66,10 @@ class Journey1SmartTemplates(LoggerMixin):
         Extract content from uploaded file with enhanced processing.
 
         Args:
-            file_path: Path to the uploaded file
+            file_path (str): Path to the uploaded file.
 
         Returns:
-            Tuple of (content, file_type)
+            tuple[str, str]: Tuple of (content, file_type).
         """
         # Handle empty file path case
         if not file_path or not file_path.strip():
@@ -165,10 +165,10 @@ Please check file format and try again""",
         Process uploaded files and extract content with enhanced integration.
 
         Args:
-            files: List of uploaded file objects
+            files (list[Any]): List of uploaded file objects.
 
         Returns:
-            Dictionary with file information and extracted content
+            dict[str, Any]: Dictionary with file information and extracted content.
         """
         if not files:
             return {
@@ -276,16 +276,16 @@ Please check file format and try again""",
         Enhance the prompt using the C.R.E.A.T.E. framework with HyDE integration.
 
         Args:
-            text_input: User's text input
-            files: Uploaded files
-            model_mode: Model selection mode
-            custom_model: Custom model selection
-            reasoning_depth: Analysis depth
-            search_tier: Search strategy
-            temperature: Response creativity
+            text_input (str): User's text input
+            files (list[Any]): Uploaded files
+            model_mode (str): Model selection mode
+            custom_model (str): Custom model selection
+            reasoning_depth (str): Analysis depth
+            search_tier (str): Search strategy
+            temperature (float): Response creativity
 
         Returns:
-            Tuple of enhanced content and C.R.E.A.T.E. components
+            tuple[str, str, str, str, str, str, str, str, str, str]: Tuple of enhanced content and C.R.E.A.T.E. components
         """
         start_time = time.time()
 
@@ -455,12 +455,12 @@ Please check file format and try again""",
         Enhanced prompt method that works with breakdown data (compatibility method).
 
         Args:
-            original_prompt: The original prompt text
-            breakdown: C.R.E.A.T.E. breakdown dictionary
-            file_sources: Optional file sources
+            original_prompt (str): The original prompt text
+            breakdown (dict[str, str]): C.R.E.A.T.E. breakdown dictionary
+            file_sources (list[dict[str, Any]] | None): Optional file sources
 
         Returns:
-            Enhanced prompt string
+            str: Enhanced prompt string
         """
         # Create a basic enhanced prompt based on the breakdown
         enhanced = f"""# Enhanced Prompt
@@ -922,14 +922,14 @@ Please provide a comprehensive response that addresses:
         Phase 1 implementation using CREATE framework knowledge files directly.
 
         Args:
-            input_text: The user's input text to enhance
-            reasoning_depth: Depth of analysis (basic, intermediate, comprehensive)
-            selected_model: The model to use for processing
-            search_tier: HyDE search tier for query processing
-            temperature: Model temperature for creativity control
+            input_text (str): The user's input text to enhance
+            reasoning_depth (str): Depth of analysis (basic, intermediate, comprehensive)
+            selected_model (str): The model to use for processing
+            search_tier (str): HyDE search tier for query processing
+            temperature (float): Model temperature for creativity control
 
         Returns:
-            Tuple of (enhanced_prompt, create_breakdown_dict)
+            tuple[str, dict[str, str]]: Tuple of (enhanced_prompt, create_breakdown_dict)
         """
         try:
             # Step 1: Load CREATE framework knowledge from filesystem
@@ -1633,10 +1633,10 @@ Raw Content:
         Validate file size against maximum allowed size.
 
         Args:
-            file_path: Path to the file to validate
+            file_path (str): Path to the file to validate
 
         Returns:
-            Tuple of (is_valid, message)
+            tuple[bool, str]: Tuple of (is_valid, message)
         """
         try:
             file_size = Path(file_path).stat().st_size
@@ -1661,10 +1661,10 @@ Raw Content:
         Analyze the structure and type of content.
 
         Args:
-            content: Content to analyze
+            content (str): Content to analyze
 
         Returns:
-            Dictionary with analysis results
+            dict[str, Any]: Dictionary with analysis results
         """
         if not content or not content.strip():
             return {
@@ -1774,10 +1774,10 @@ Raw Content:
         Get comprehensive metadata for a file.
 
         Args:
-            file_path: Path to the file
+            file_path (str): Path to the file
 
         Returns:
-            Dictionary with file metadata
+            dict[str, Any]: Dictionary with file metadata
         """
         try:
             path_obj = Path(file_path)
@@ -1826,11 +1826,11 @@ Raw Content:
         Create a comprehensive breakdown of the input for processing using C.R.E.A.T.E. framework.
 
         Args:
-            input_text: Text input to break down
-            file_sources: Optional file sources for context
+            input_text (str): Text input to break down
+            file_sources (list[dict[str, Any]] | None): Optional file sources for context
 
         Returns:
-            Dictionary with C.R.E.A.T.E. framework breakdown
+            dict[str, str]: Dictionary with C.R.E.A.T.E. framework breakdown
         """
         if not input_text or not input_text.strip():
             return {
@@ -1933,7 +1933,7 @@ Raw Content:
         Get list of supported file formats.
 
         Returns:
-            List of supported file extensions
+            list[str]: List of supported file extensions
         """
         return self.supported_file_types.copy()
 
@@ -1942,10 +1942,10 @@ Raw Content:
         Estimate processing time based on content length and complexity.
 
         Args:
-            content: Content to analyze
+            content (str): Content to analyze
 
         Returns:
-            Estimated processing time in seconds
+            float: Estimated processing time in seconds
         """
         if not content:
             return 0.1
@@ -1977,10 +1977,10 @@ Raw Content:
         Validate input content for processing.
 
         Args:
-            content: Content to validate
+            content (str): Content to validate
 
         Returns:
-            Tuple of (is_valid, message)
+            tuple[bool, str]: Tuple of (is_valid, message)
         """
         if not content or not content.strip():
             return False, "Content is empty. Please provide input text or upload files."
@@ -2019,16 +2019,18 @@ Raw Content:
         Enhance the prompt using the C.R.E.A.T.E. framework (full version).
 
         Args:
-            text_input: User's text input
-            files: Uploaded files
-            model_mode: Model selection mode
-            custom_model: Custom model selection
-            reasoning_depth: Analysis depth
-            search_tier: Search strategy
-            temperature: Response creativity
+            text_input (str): User's text input
+            files (list[Any]): Uploaded files
+            model_mode (str): Model selection mode
+            custom_model (str): Custom model selection
+            reasoning_depth (str): Analysis depth
+            search_tier (str): Search strategy
+            temperature (float): Response creativity
 
         Returns:
-            Tuple of (enhanced_prompt_with_analysis, clean_enhanced_prompt, context, request, examples, augmentations, tone_format, evaluation, model_attribution, file_sources)
+            tuple[str, str, str, str, str, str, str, str, str, str]: Tuple of (enhanced_prompt_with_analysis,
+                clean_enhanced_prompt, context, request, examples, augmentations, tone_format, evaluation,
+                model_attribution, file_sources)
         """
         start_time = time.time()
 

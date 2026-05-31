@@ -27,7 +27,7 @@ class TierManagementInterface:
         """Create the admin tab for user tier management.
 
         Returns:
-            Gradio Tab component with admin interface
+            Any: Gradio Tab component with admin interface.
         """
         with gr.Tab("👑 Admin: User Management", visible=False, elem_id="admin-tab") as admin_tab:
             gr.HTML(
