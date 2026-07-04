@@ -3386,9 +3386,9 @@ tqdm==4.67.1 ; python_version >= "3.11" and python_version < "3.13" \
 traitlets==5.14.3 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7 \
     --hash=sha256:b74e89e397b1ed28cc831db7aea759ba6640cb3de13090ca145426688ff1ac4f
-transformers==5.0.0rc3 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:097e3c2e2c0c9681db3da9d748d8f9d6a724c644514673d0030e8c5a1109f1f1 \
-    --hash=sha256:a45ec60c03474fd67adbce5c434685051b7608b3f4f167c25aa6aeb1cad16d4f
+transformers==5.3.0; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:009555b364029da9e2946d41f1c5de9f15e6b1df46b189b7293f33a161b9c557 \
+    --hash=sha256:50ac8c89c3c7033444fb3f9f53138096b997ebb70d4b5e50a2e810bf12d3d29a
 triton==3.4.0 ; python_version >= "3.11" and python_version < "3.13" and platform_system == "Linux" and platform_machine == "x86_64" \
     --hash=sha256:00be2964616f4c619193cb0d1b29a99bd4b001d7dc333816073f92cf2a8ccdeb \
     --hash=sha256:31c1d84a5c0ec2c0f8e8a072d7fd150cab84a9c239eaddc6706c081bfae4eb04 \
