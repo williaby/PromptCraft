@@ -127,13 +127,22 @@ class TestPromptCraftToolExecutor:
         assert "line 6" not in content_text
 
     @pytest.mark.asyncio
-    async def test_execute_read_file_not_found(self, executor):
-        """Test reading non-existent file."""
-        result = await executor.execute_read("/path/that/does/not/exist.txt")
+    async def test_execute_read_file_not_found(self, executor, tmp_path):
+        """Test reading non-existent file inside an allowed root."""
+        missing = tmp_path / "does-not-exist.txt"
+        result = await executor.execute_read(str(missing))
 
         assert "isError" in result
         assert result["isError"] is True
         assert "File not found" in result["content"][0]["text"]
+
+    @pytest.mark.asyncio
+    async def test_execute_read_denied_path(self, executor):
+        """Reading sensitive system paths is blocked even if they exist."""
+        result = await executor.execute_read("/etc/passwd")
+
+        assert result.get("isError") is True
+        assert "denied" in result["content"][0]["text"].lower()
 
     @pytest.mark.asyncio
     async def test_execute_read_path_is_directory(self, executor, tmp_path):
@@ -183,14 +192,24 @@ class TestPromptCraftToolExecutor:
         assert test_file.read_text() == content
 
     @pytest.mark.asyncio
-    async def test_execute_bash_success(self, executor):
-        """Test successful bash execution."""
-        # Mock subprocess execution
+    async def test_execute_bash_disabled_by_default(self, executor, monkeypatch):
+        """Bash execution must be opt-in via the env flag."""
+        monkeypatch.delenv("PROMPTCRAFT_MCP_ENABLE_BASH", raising=False)
+
+        result = await executor.execute_bash("echo hi")
+
+        assert result.get("isError") is True
+        assert "disabled" in result["content"][0]["text"].lower()
+
+    @pytest.mark.asyncio
+    async def test_execute_bash_success(self, executor, monkeypatch):
+        """Test successful bash execution when explicitly enabled."""
+        monkeypatch.setenv("PROMPTCRAFT_MCP_ENABLE_BASH", "1")
         mock_process = AsyncMock()
-        mock_process.communicate.return_value = ("Hello World\n", "")
+        mock_process.communicate.return_value = (b"Hello World\n", b"")
         mock_process.returncode = 0
 
-        with patch("asyncio.create_subprocess_shell", return_value=mock_process):
+        with patch("asyncio.create_subprocess_exec", return_value=mock_process):
             result = await executor.execute_bash("echo 'Hello World'")
 
         assert "content" in result
@@ -200,44 +219,39 @@ class TestPromptCraftToolExecutor:
         assert "Hello World" in result["content"][0]["text"]
 
     @pytest.mark.asyncio
-    async def test_execute_bash_with_stderr(self, executor):
-        """Test bash execution with stderr output."""
-        # Mock subprocess execution with stderr
-        mock_process = AsyncMock()
-        mock_process.communicate.return_value = ("", "error\n")
-        mock_process.returncode = 0
+    async def test_execute_bash_rejects_shell_metacharacters(self, executor, monkeypatch):
+        """Shell redirects and pipes must be rejected even when enabled."""
+        monkeypatch.setenv("PROMPTCRAFT_MCP_ENABLE_BASH", "1")
 
-        with patch("asyncio.create_subprocess_shell", return_value=mock_process):
-            result = await executor.execute_bash("echo 'error' >&2")
+        result = await executor.execute_bash("echo 'error' >&2")
 
-        assert "STDERR:" in result["content"][0]["text"]
-        assert "error" in result["content"][0]["text"]
+        assert result.get("isError") is True
+        assert "metacharacters" in result["content"][0]["text"].lower()
 
     @pytest.mark.asyncio
-    async def test_execute_bash_dangerous_command(self, executor):
-        """Test blocking dangerous commands."""
+    async def test_execute_bash_dangerous_command(self, executor, monkeypatch):
+        """Test blocking dangerous commands when bash is enabled."""
+        monkeypatch.setenv("PROMPTCRAFT_MCP_ENABLE_BASH", "1")
+
         result = await executor.execute_bash("rm -rf /")
 
-        assert "isError" in result
-        assert result["isError"] is True
-        assert "Command blocked for security reasons" in result["content"][0]["text"]
+        assert result.get("isError") is True
+        assert "blocked" in result["content"][0]["text"].lower()
 
     @pytest.mark.asyncio
-    async def test_execute_bash_timeout(self, executor):
+    async def test_execute_bash_timeout(self, executor, monkeypatch):
         """Test bash command timeout."""
-        # Mock subprocess that will timeout
+        monkeypatch.setenv("PROMPTCRAFT_MCP_ENABLE_BASH", "1")
         mock_process = AsyncMock()
-        mock_process.communicate = AsyncMock(return_value=("", ""))
+        mock_process.communicate = AsyncMock(return_value=(b"", b""))
         mock_process.kill = MagicMock()
 
-        # Patch wait_for in the tool_router module specifically to raise TimeoutError
         with (
-            patch("asyncio.create_subprocess_shell", return_value=mock_process),
+            patch("asyncio.create_subprocess_exec", return_value=mock_process),
             patch("src.mcp_integration.tool_router.asyncio.wait_for", side_effect=TimeoutError()),
         ):
             result = await executor.execute_bash("sleep 60", timeout=0.1)
-        assert "isError" in result
-        assert result["isError"] is True
+        assert result.get("isError") is True
         assert "Command timed out" in result["content"][0]["text"]
 
     @pytest.mark.asyncio
@@ -403,14 +417,14 @@ class TestMCPToolRouter:
         assert test_file.read_text() == "test content"
 
     @pytest.mark.asyncio
-    async def test_execute_tool_promptcraft_bash(self, tool_router):
-        """Test executing PromptCraft bash tool."""
-        # Mock subprocess execution
+    async def test_execute_tool_promptcraft_bash(self, tool_router, monkeypatch):
+        """Test executing PromptCraft bash tool when explicitly enabled."""
+        monkeypatch.setenv("PROMPTCRAFT_MCP_ENABLE_BASH", "1")
         mock_process = AsyncMock()
-        mock_process.communicate.return_value = ("hello\n", "")
+        mock_process.communicate.return_value = (b"hello\n", b"")
         mock_process.returncode = 0
 
-        with patch("asyncio.create_subprocess_shell", return_value=mock_process):
+        with patch("asyncio.create_subprocess_exec", return_value=mock_process):
             result = await tool_router.execute_tool("execute_bash", {"command": "echo hello"})
 
         assert result.success is True

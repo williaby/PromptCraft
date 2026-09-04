@@ -40,13 +40,20 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
       - name: Checkout ${{ matrix.branch }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ matrix.branch }}
 
       - name: Prebuild dev container
-        uses: devcontainers/ci@v0.3
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate. Third-party
+        # action interacts with Docker; SHA pinning is critical.
+        uses: devcontainers/ci@v0.3  # zizmor: ignore[unpinned-uses]
         with:
           subFolder: .devcontainer
           configFile: .devcontainer/devcontainer.json

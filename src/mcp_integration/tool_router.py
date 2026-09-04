@@ -8,7 +8,11 @@ a unified interface for tool invocation across the hybrid infrastructure.
 import asyncio
 from dataclasses import dataclass
 import logging
+import os
 from pathlib import Path
+import re
+import shlex
+import tempfile
 import time
 from typing import Any
 
@@ -19,6 +23,147 @@ from .protocol_handler import MCPProtocolError, MCPStandardErrors
 
 
 logger = logging.getLogger(__name__)
+
+# LLM08: Excessive Agency hardening. Tool inputs from an LLM are never trusted.
+# Bash execution is gated behind an explicit opt-in env flag; file paths must
+# resolve under one of the allowed roots; writes must use an allowed extension.
+_BASH_EXEC_ENV = "PROMPTCRAFT_MCP_ENABLE_BASH"
+_FILE_ALLOWLIST_ENV = "PROMPTCRAFT_MCP_ALLOWED_PATHS"
+_WRITE_EXTENSIONS_ENV = "PROMPTCRAFT_MCP_WRITE_EXTENSIONS"
+
+# Hard caps protect against resource exhaustion when an LLM picks pathological
+# offset/limit values.
+_MAX_READ_LIMIT = 50000
+_MAX_OFFSET = 10_000_000
+_MAX_PATH_LEN = 4096
+_MAX_FILE_BYTES = 20 * 1024 * 1024  # 20 MiB
+_MAX_BASH_TIMEOUT = 300.0
+_MAX_SEARCH_LIMIT = 100
+
+# Always-denied prefixes regardless of the configured allowlist. Resolving to
+# any of these (or descendants) blocks the operation. Matched against the
+# resolved absolute path with a trailing separator to avoid prefix-only
+# collisions (e.g. /etc-foo not matching /etc).
+_DENY_PATH_PREFIXES = (
+    "/etc/",
+    "/root/",
+    "/proc/",
+    "/sys/",
+    "/var/log/",
+    "/var/run/",
+    "/boot/",
+    "/dev/",
+)
+
+_DENY_PATH_SUFFIXES = (
+    "/.ssh",
+    "/.aws",
+    "/.gnupg",
+    "/.env",
+    "/.netrc",
+    "/id_rsa",
+    "/id_ed25519",
+    "/credentials",
+    "/authorized_keys",
+)
+
+# Default write extension allowlist. Override via env.
+_DEFAULT_WRITE_EXTENSIONS = frozenset(
+    {".txt", ".md", ".json", ".yaml", ".yml", ".csv", ".log", ".html", ".py"},
+)
+
+# Shell metacharacters that allow chaining, substitution, or redirection. If
+# any appear in a bash command we refuse to run it under shell=True semantics.
+_SHELL_METACHARS = re.compile(r"[;&|`$><(){}\[\]\\\n\r]")
+
+# Known-dangerous tokens. Substring match is intentional: even partial appearance
+# (e.g. "sudo " inside a pipeline) is grounds for rejection.
+_DANGEROUS_BASH_TOKENS = (
+    "rm -rf",
+    "sudo ",
+    " su ",
+    "chmod 777",
+    "mkfs",
+    "fdisk",
+    "dd if=",
+    "curl ",
+    "wget ",
+    "nc ",
+    ":(){",  # fork bomb
+    "/etc/passwd",
+    "/etc/shadow",
+)
+
+
+def _allowed_roots() -> list[Path]:
+    """Return the set of resolved directories under which file ops are allowed.
+
+    Defaults cover the project working directory and the system temp dir so
+    pytest fixtures (tmp_path) continue to work. Override with a colon-separated
+    list in PROMPTCRAFT_MCP_ALLOWED_PATHS.
+    """
+    env_value = os.environ.get(_FILE_ALLOWLIST_ENV)
+    if env_value:
+        roots = [Path(p).expanduser().resolve() for p in env_value.split(os.pathsep) if p.strip()]
+    else:
+        roots = [Path.cwd().resolve(), Path(tempfile.gettempdir()).resolve()]
+    return roots
+
+
+def _allowed_write_extensions() -> frozenset[str]:
+    env_value = os.environ.get(_WRITE_EXTENSIONS_ENV)
+    if env_value:
+        return frozenset(ext.strip().lower() for ext in env_value.split(",") if ext.strip())
+    return _DEFAULT_WRITE_EXTENSIONS
+
+
+def _validate_file_path(raw_path: str, *, for_write: bool) -> Path:
+    """Resolve ``raw_path`` and ensure it lives under an allowed root.
+
+    Raises ``ValueError`` for any path that fails the safety checks. Callers
+    surface the error as an isError tool result so the LLM cannot retry into
+    sensitive locations.
+    """
+    if not isinstance(raw_path, str) or not raw_path:
+        raise ValueError("file_path must be a non-empty string")
+    if len(raw_path) > _MAX_PATH_LEN:
+        raise ValueError("file_path exceeds maximum length")
+    if "\x00" in raw_path:
+        raise ValueError("file_path contains a null byte")
+
+    candidate = Path(raw_path).expanduser()
+    # Resolve to absolute even when the file does not yet exist (for writes).
+    try:
+        resolved = candidate.resolve(strict=False)
+    except (OSError, RuntimeError) as exc:
+        raise ValueError(f"file_path cannot be resolved: {exc}") from exc
+
+    resolved_str = str(resolved)
+    deny_prefix_match = any((resolved_str + "/").startswith(prefix) for prefix in _DENY_PATH_PREFIXES)
+    if deny_prefix_match or any(resolved_str.endswith(suffix) for suffix in _DENY_PATH_SUFFIXES):
+        raise ValueError("file_path is in a denied location")
+
+    allowed = _allowed_roots()
+    if not any(resolved == root or root in resolved.parents for root in allowed):
+        raise ValueError("file_path is outside the configured allowlist")
+
+    # Reject symlinks that point outside the allowlist. Existing entries only.
+    if candidate.is_symlink() or (candidate.exists() and candidate.is_symlink()):
+        target = candidate.resolve(strict=False)
+        if not any(target == root or root in target.parents for root in allowed):
+            raise ValueError("symlink target is outside the allowlist")
+
+    if for_write:
+        suffix = resolved.suffix.lower()
+        allowed_exts = _allowed_write_extensions()
+        if suffix and suffix not in allowed_exts:
+            raise ValueError(f"write extension '{suffix}' is not allowed")
+
+    return resolved
+
+
+def _bash_exec_enabled() -> bool:
+    return os.environ.get(_BASH_EXEC_ENV, "").lower() in {"1", "true", "yes", "on"}
 
 
 @dataclass
@@ -49,7 +194,12 @@ class PromptCraftToolExecutor:
     def __init__(self) -> None:
         self.logger = logging.getLogger(f"{__name__}.PromptCraftToolExecutor")
 
-    async def execute_read(self, file_path: str, offset: int | None = None, limit: int | None = None) -> dict[str, Any]:
+    async def execute_read(  # noqa: PLR0911 - security guard clauses; combining hurts readability
+        self,
+        file_path: str,
+        offset: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
         """Execute PromptCraft Read tool functionality.
 
         Args:
@@ -61,7 +211,28 @@ class PromptCraftToolExecutor:
             Tool execution result
         """
         try:
-            path = Path(file_path)
+            try:
+                path = _validate_file_path(file_path, for_write=False)
+            except ValueError as exc:
+                return {
+                    "content": [{"type": "text", "text": f"Access denied: {exc}"}],
+                    "isError": True,
+                }
+
+            if offset is not None:
+                if not isinstance(offset, int) or offset < 0 or offset > _MAX_OFFSET:
+                    return {
+                        "content": [{"type": "text", "text": "offset out of range"}],
+                        "isError": True,
+                    }
+            if limit is not None:
+                if not isinstance(limit, int) or limit < 1 or limit > _MAX_READ_LIMIT:
+                    return {
+                        "content": [
+                            {"type": "text", "text": f"limit must be between 1 and {_MAX_READ_LIMIT}"},
+                        ],
+                        "isError": True,
+                    }
 
             if not path.exists():
                 return {
@@ -72,6 +243,12 @@ class PromptCraftToolExecutor:
             if not path.is_file():
                 return {
                     "content": [{"type": "text", "text": f"Path is not a file: {file_path}"}],
+                    "isError": True,
+                }
+
+            if path.stat().st_size > _MAX_FILE_BYTES:
+                return {
+                    "content": [{"type": "text", "text": "File exceeds maximum readable size"}],
                     "isError": True,
                 }
 
@@ -116,7 +293,21 @@ class PromptCraftToolExecutor:
             Tool execution result
         """
         try:
-            path = Path(file_path)
+            try:
+                path = _validate_file_path(file_path, for_write=True)
+            except ValueError as exc:
+                return {
+                    "content": [{"type": "text", "text": f"Write denied: {exc}"}],
+                    "isError": True,
+                }
+
+            if len(content.encode("utf-8")) > _MAX_FILE_BYTES:
+                return {
+                    "content": [{"type": "text", "text": "content exceeds maximum allowed size"}],
+                    "isError": True,
+                }
+
+            self.logger.info("MCP tool write: %s (%d bytes)", path, len(content))
 
             # Create parent directories if they don't exist
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,7 +326,11 @@ class PromptCraftToolExecutor:
                 "isError": True,
             }
 
-    async def execute_bash(self, command: str, timeout: float = 30.0) -> dict[str, Any]:
+    async def execute_bash(  # noqa: PLR0911 - security guard clauses; combining hurts readability
+        self,
+        command: str,
+        timeout: float = 30.0,
+    ) -> dict[str, Any]:
         """Execute PromptCraft Bash tool functionality.
 
         Args:
@@ -146,20 +341,77 @@ class PromptCraftToolExecutor:
             Tool execution result
         """
         try:
-            # Security check - limit dangerous commands
-            dangerous_commands = ["rm -rf", "sudo", "su", "chmod 777", "mkfs", "fdisk"]
-            if any(dangerous in command.lower() for dangerous in dangerous_commands):
+            if not _bash_exec_enabled():
                 return {
-                    "content": [{"type": "text", "text": f"Command blocked for security reasons: {command}"}],
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                "Bash execution is disabled. Set "
+                                f"{_BASH_EXEC_ENV}=1 to opt in, and review the command before enabling."
+                            ),
+                        },
+                    ],
                     "isError": True,
                 }
 
-            # Execute command
-            process = await asyncio.create_subprocess_shell(
-                command,
+            if not isinstance(command, str) or not command.strip():
+                return {
+                    "content": [{"type": "text", "text": "command must be a non-empty string"}],
+                    "isError": True,
+                }
+            if len(command) > 2000:
+                return {
+                    "content": [{"type": "text", "text": "command exceeds maximum length"}],
+                    "isError": True,
+                }
+            try:
+                bounded_timeout = float(timeout)
+            except (TypeError, ValueError):
+                bounded_timeout = 30.0
+            bounded_timeout = max(0.1, min(bounded_timeout, _MAX_BASH_TIMEOUT))
+
+            lowered = command.lower()
+            if any(token in lowered for token in _DANGEROUS_BASH_TOKENS):
+                return {
+                    "content": [{"type": "text", "text": "Command blocked: contains a dangerous token"}],
+                    "isError": True,
+                }
+            if _SHELL_METACHARS.search(command):
+                return {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Command blocked: shell metacharacters (pipes, redirects, substitution) are not allowed",
+                        },
+                    ],
+                    "isError": True,
+                }
+
+            # Parse safely instead of relying on the shell. This rejects unparseable
+            # input and avoids shell=True command injection.
+            try:
+                argv = shlex.split(command, posix=True)
+            except ValueError as exc:
+                return {
+                    "content": [{"type": "text", "text": f"Command not parseable: {exc}"}],
+                    "isError": True,
+                }
+            if not argv:
+                return {
+                    "content": [{"type": "text", "text": "command is empty after parsing"}],
+                    "isError": True,
+                }
+
+            self.logger.info("MCP bash exec (opt-in): %s", argv[0])
+
+            # Execute command without invoking a shell.
+            process = await asyncio.create_subprocess_exec(
+                *argv,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
+            timeout = bounded_timeout
 
             try:
                 stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
@@ -209,13 +461,29 @@ class PromptCraftToolExecutor:
             Tool execution result
         """
         try:
-            # This would integrate with PromptCraft's vector search system
-            # For now, implement a basic file search as a placeholder
+            if not isinstance(query, str) or not query.strip():
+                return {
+                    "content": [{"type": "text", "text": "query must be a non-empty string"}],
+                    "isError": True,
+                }
+            if len(query) > 1000:
+                return {
+                    "content": [{"type": "text", "text": "query exceeds maximum length"}],
+                    "isError": True,
+                }
+            if not isinstance(limit, int) or limit < 1:
+                limit = 10
+            limit = min(limit, _MAX_SEARCH_LIMIT)
 
+            # This would integrate with PromptCraft's vector search system
+            # For now, implement a basic file search as a placeholder. Only
+            # search within explicitly allowed roots, never the whole tree.
             search_results = []
-            search_paths = [Path()]
+            search_paths = _allowed_roots()
 
             for search_path in search_paths:
+                if not search_path.exists() or not search_path.is_dir():
+                    continue
                 for file_path in search_path.rglob("*.md"):
                     try:
                         content = file_path.read_text(encoding="utf-8")
@@ -426,15 +694,27 @@ class MCPToolRouter(LoggerMixin):
         """
         if tool_name == "read_file":
             file_path = arguments.get("file_path")
+            offset = arguments.get("offset")
+            limit = arguments.get("limit")
             if not isinstance(file_path, str):
                 raise MCPProtocolError(
                     MCPStandardErrors.INVALID_PARAMS,
                     "file_path must be a string",
                 )
+            if offset is not None and not isinstance(offset, int):
+                raise MCPProtocolError(
+                    MCPStandardErrors.INVALID_PARAMS,
+                    "offset must be an integer",
+                )
+            if limit is not None and not isinstance(limit, int):
+                raise MCPProtocolError(
+                    MCPStandardErrors.INVALID_PARAMS,
+                    "limit must be an integer",
+                )
             return await self.promptcraft_executor.execute_read(
                 file_path,
-                arguments.get("offset"),
-                arguments.get("limit"),
+                offset,
+                limit,
             )
         if tool_name == "write_file":
             file_path = arguments.get("file_path")
