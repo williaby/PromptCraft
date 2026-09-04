@@ -47,7 +47,7 @@ jobs:
       poetry-hash: ${{ steps.cache-key.outputs.poetry-hash }}
       requirements-hash: ${{ steps.cache-key.outputs.requirements-hash }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Generate cache keys
         id: cache-key
@@ -56,7 +56,7 @@ jobs:
           echo "requirements-hash=${{ hashFiles('requirements*.txt') }}" >> $GITHUB_OUTPUT
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.11'
 
@@ -74,7 +74,7 @@ jobs:
 
       # Optimized caching strategy - cache only .venv to prevent disk space exhaustion
       - name: Cache Poetry and dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .venv
@@ -116,10 +116,10 @@ jobs:
         python-version: ["3.11", "3.12"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -134,7 +134,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .venv
@@ -177,7 +177,7 @@ jobs:
           PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238  # v4.6.0
         if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
         with:
           file: ./coverage.xml
@@ -192,7 +192,7 @@ jobs:
 
       - name: Upload test artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: test-results-${{ matrix.python-version }}
           path: |
@@ -207,10 +207,10 @@ jobs:
     timeout-minutes: 8  # Increased to account for retry logic
     needs: setup-optimized
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.11'
 
@@ -225,7 +225,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .venv
@@ -299,10 +299,10 @@ jobs:
     needs: setup-optimized
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.11'
 
@@ -317,7 +317,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: |
             .venv
