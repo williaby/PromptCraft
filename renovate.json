@@ -1,227 +1,239 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-        "config:best-practices",
-        ":dependencyDashboard",
-        ":semanticCommits",
-        "helpers:pinGitHubActionDigests",
-        "docker:pinDigests"
-    ],
-    "pip_requirements": {
-        "managerFilePatterns": [
-            "/(^|/)requirements.*\\.txt$/"
-        ]
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "pip_requirements": {
+    "managerFilePatterns": [
+      "/(^|/)requirements.*\\.txt$/"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Security-critical packages - immediate individual PRs (ADR-009)",
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "major"
+      ],
+      "groupName": null,
+      "automerge": false,
+      "labels": [
+        "security-critical",
+        "automerge",
+        "priority:high"
+      ],
+      "prPriority": 10,
+      "schedule": [
+        "at any time"
+      ],
+      "minimumReleaseAge": "0 days",
+      "matchPackageNames": [
+        "/^cryptography/",
+        "/^pyjwt/",
+        "/^passlib/",
+        "/^bcrypt/",
+        "/^pyotp/",
+        "/^fastapi/",
+        "/^uvicorn/",
+        "/^gradio/",
+        "/^pydantic/",
+        "/^httpx/",
+        "/^azure-/",
+        "/^anthropic/",
+        "/^openai/",
+        "/^qdrant-client/"
+      ]
     },
-    "packageRules": [
-        {
-            "description": "Security-critical packages - immediate individual PRs (ADR-009)",
-            "matchUpdateTypes": [
-                "patch",
-                "minor",
-                "major"
-            ],
-            "groupName": null,
-            "automerge": false,
-            "labels": [
-                "security-critical",
-                "automerge",
-                "priority:high"
-            ],
-            "prPriority": 10,
-            "schedule": [
-                "at any time"
-            ],
-            "minimumReleaseAge": "0 days",
-            "matchPackageNames": [
-                "/^cryptography/",
-                "/^pyjwt/",
-                "/^passlib/",
-                "/^bcrypt/",
-                "/^pyotp/",
-                "/^fastapi/",
-                "/^uvicorn/",
-                "/^gradio/",
-                "/^pydantic/",
-                "/^httpx/",
-                "/^azure-/",
-                "/^anthropic/",
-                "/^openai/",
-                "/^qdrant-client/"
-            ]
-        },
-        {
-            "description": "CVE and vulnerability updates - immediate individual PRs (ADR-009)",
-            "vulnerabilityAlerts": {
-                "enabled": true
-            },
-            "osvVulnerabilityAlerts": true,
-            "groupName": null,
-            "automerge": false,
-            "labels": [
-                "vulnerability",
-                "automerge",
-                "priority:critical"
-            ],
-            "prPriority": 15,
-            "schedule": [
-                "at any time"
-            ],
-            "minimumReleaseAge": "0 days",
-            "matchJsonata": [
-                "isVulnerabilityAlert = true"
-            ]
-        },
-        {
-            "description": "Monthly batch: routine dependency updates (ADR-009)",
-            "matchUpdateTypes": [
-                "patch",
-                "minor"
-            ],
-            "groupName": "routine-updates",
-            "automerge": false,
-            "labels": [
-                "automerge",
-                "batched-updates"
-            ],
-            "prPriority": 3,
-            "schedule": [
-                "on the first day of the month"
-            ],
-            "matchPackageNames": [
-                "!/^cryptography/",
-                "!/^pyjwt/",
-                "!/^passlib/",
-                "!/^bcrypt/",
-                "!/^pyotp/",
-                "!/^fastapi/",
-                "!/^uvicorn/",
-                "!/^gradio/",
-                "!/^pydantic/",
-                "!/^httpx/",
-                "!/^azure-/",
-                "!/^anthropic/",
-                "!/^openai/",
-                "!/^qdrant-client/"
-            ]
-        },
-        {
-            "description": "Major version updates always require manual review",
-            "matchUpdateTypes": [
-                "major"
-            ],
-            "groupName": "major-updates",
-            "automerge": false,
-            "labels": [
-                "requires-review",
-                "scope:major"
-            ],
-            "reviewers": [
-                "@williaby"
-            ],
-            "prPriority": 1,
-            "schedule": [
-                "on the first day of the month"
-            ],
-            "matchPackageNames": [
-                "!/^cryptography/",
-                "!/^pyjwt/",
-                "!/^passlib/",
-                "!/^bcrypt/",
-                "!/^pyotp/",
-                "!/^fastapi/",
-                "!/^uvicorn/",
-                "!/^gradio/",
-                "!/^pydantic/",
-                "!/^httpx/",
-                "!/^azure-/",
-                "!/^anthropic/",
-                "!/^openai/",
-                "!/^qdrant-client/"
-            ]
-        },
-        {
-            "description": "Development dependencies - monthly batch",
-            "matchDepTypes": [
-                "devDependencies"
-            ],
-            "matchUpdateTypes": [
-                "patch",
-                "minor"
-            ],
-            "groupName": "dev-dependencies",
-            "automerge": false,
-            "labels": [
-                "automerge",
-                "dev-deps",
-                "batched-updates"
-            ],
-            "prPriority": 2,
-            "schedule": [
-                "on the first day of the month"
-            ]
-        },
-        {
-            "description": "GitHub Actions - pin to commit hashes with monthly updates",
-            "matchManagers": [
-                "github-actions"
-            ],
-            "matchUpdateTypes": [
-                "patch",
-                "minor",
-                "major"
-            ],
-            "groupName": "github-actions",
-            "automerge": false,
-            "labels": [
-                "automerge",
-                "github-actions"
-            ],
-            "prPriority": 4,
-            "schedule": [
-                "on the first day of the month"
-            ],
-            "pinDigests": true
-        }
-    ],
-    "poetry": {
+    {
+      "description": "CVE and vulnerability updates - immediate individual PRs (ADR-009)",
+      "vulnerabilityAlerts": {
         "enabled": true
+      },
+      "osvVulnerabilityAlerts": true,
+      "groupName": null,
+      "automerge": false,
+      "labels": [
+        "vulnerability",
+        "automerge",
+        "priority:critical"
+      ],
+      "prPriority": 15,
+      "schedule": [
+        "at any time"
+      ],
+      "minimumReleaseAge": "0 days",
+      "matchJsonata": [
+        "isVulnerabilityAlert = true"
+      ]
     },
-    "postUpdateOptions": [
-        "gomodTidy",
-        "npmDedupe",
-        "yarnDedupeHighest"
-    ],
-    "prConcurrentLimit": 3,
-    "prCreation": "immediate",
-    "rangeStrategy": "bump",
-    "semanticCommits": "enabled",
-    "timezone": "UTC",
-    "schedule": [
-        "after 3am and before 5am every weekday",
-        "every weekend"
-    ],
-    "vulnerabilityAlerts": {
-        "labels": [
-            "security",
-            "automerge"
-        ],
-        "assignees": [
-            "@williaby"
-        ],
-        "prPriority": 10
+    {
+      "description": "Monthly batch: routine dependency updates (ADR-009)",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "routine-updates",
+      "automerge": false,
+      "labels": [
+        "automerge",
+        "batched-updates"
+      ],
+      "prPriority": 3,
+      "schedule": [
+        "on the first day of the month"
+      ],
+      "matchPackageNames": [
+        "!/^cryptography/",
+        "!/^pyjwt/",
+        "!/^passlib/",
+        "!/^bcrypt/",
+        "!/^pyotp/",
+        "!/^fastapi/",
+        "!/^uvicorn/",
+        "!/^gradio/",
+        "!/^pydantic/",
+        "!/^httpx/",
+        "!/^azure-/",
+        "!/^anthropic/",
+        "!/^openai/",
+        "!/^qdrant-client/"
+      ]
     },
-    "osvVulnerabilityAlerts": true,
-    "platformAutomerge": false,
-    "postUpgradeTasks": {
-        "commands": [
-            "poetry lock --no-update",
-            "chmod +x scripts/generate_requirements.sh",
-            "./scripts/generate_requirements.sh || echo 'Requirements generation failed'"
-        ],
-        "fileFilters": [
-            "requirements*.txt",
-            "poetry.lock"
-        ],
-        "executionMode": "update"
+    {
+      "description": "Major version updates always require manual review",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "groupName": "major-updates",
+      "automerge": false,
+      "labels": [
+        "requires-review",
+        "scope:major"
+      ],
+      "reviewers": [
+        "@williaby"
+      ],
+      "prPriority": 1,
+      "schedule": [
+        "on the first day of the month"
+      ],
+      "matchPackageNames": [
+        "!/^cryptography/",
+        "!/^pyjwt/",
+        "!/^passlib/",
+        "!/^bcrypt/",
+        "!/^pyotp/",
+        "!/^fastapi/",
+        "!/^uvicorn/",
+        "!/^gradio/",
+        "!/^pydantic/",
+        "!/^httpx/",
+        "!/^azure-/",
+        "!/^anthropic/",
+        "!/^openai/",
+        "!/^qdrant-client/"
+      ]
+    },
+    {
+      "description": "Development dependencies - monthly batch",
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "dev-dependencies",
+      "automerge": false,
+      "labels": [
+        "automerge",
+        "dev-deps",
+        "batched-updates"
+      ],
+      "prPriority": 2,
+      "schedule": [
+        "on the first day of the month"
+      ]
+    },
+    {
+      "description": "GitHub Actions - pin to commit hashes with monthly updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "major"
+      ],
+      "groupName": "github-actions",
+      "automerge": false,
+      "labels": [
+        "automerge",
+        "github-actions"
+      ],
+      "prPriority": 4,
+      "schedule": [
+        "on the first day of the month"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "Track org workflow floating v1 tag for SHA pin updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackagePatterns": [
+        "ByronWilliamsCPA/.github",
+        "williaby/.github"
+      ],
+      "versioning": "semver",
+      "followTag": "v1"
     }
+  ],
+  "poetry": {
+    "enabled": true
+  },
+  "postUpdateOptions": [
+    "gomodTidy",
+    "npmDedupe",
+    "yarnDedupeHighest"
+  ],
+  "prConcurrentLimit": 3,
+  "prCreation": "immediate",
+  "rangeStrategy": "bump",
+  "semanticCommits": "enabled",
+  "timezone": "UTC",
+  "schedule": [
+    "after 3am and before 5am every weekday",
+    "every weekend"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security",
+      "automerge"
+    ],
+    "assignees": [
+      "@williaby"
+    ],
+    "prPriority": 10
+  },
+  "osvVulnerabilityAlerts": true,
+  "platformAutomerge": false,
+  "postUpgradeTasks": {
+    "commands": [
+      "poetry lock --no-update",
+      "chmod +x scripts/generate_requirements.sh",
+      "./scripts/generate_requirements.sh || echo 'Requirements generation failed'"
+    ],
+    "fileFilters": [
+      "requirements*.txt",
+      "poetry.lock"
+    ],
+    "executionMode": "update"
+  }
 }
