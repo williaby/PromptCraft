@@ -2195,9 +2195,9 @@ pip-audit==2.9.0 ; python_version >= "3.11" and python_version < "3.13" \
 pip-requirements-parser==32.0.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:4659bc2a667783e7a15d190f6fccf8b2486685b6dba4c19c3876314769c57526 \
     --hash=sha256:b4fa3a7a0be38243123cf9d1f3518da10c51bdb165a2b2985566247f9155a7d3
-pip==26.1 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:578283f006390f85bb6282dffb876454593d637f5d1be494b5202ce4877e71f2 \
-    --hash=sha256:6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717
+pip==26.1.2; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:382ff9f685ee3bc25864f820aa50505825f10f5458ffff07e30a6d96e5715cab \
+    --hash=sha256:f49cd134c61cf2fd75e0ce2676db03e4054504a5a4986d00f8299ae632dc4605
 platformdirs==4.3.8 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:3d512d96e16bcb959a814c9f348431070822a6496326a4be0911c40b5a74c2bc \
     --hash=sha256:ff7059bb7eb1179e2685604f4aaf157cfd9535242bd23742eadc3c13542139b4
