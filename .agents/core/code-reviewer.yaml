@@ -54,7 +54,7 @@ implementation:
     - PyProject.toml configuration for linting and formatting standards
     - CLAUDE.md for project-specific requirements and conventions
     - Pre-commit hooks for automated quality gates
-    - Security scanning tools (bandit, safety)
+    - Security scanning tools (bandit)
     - Performance profiling and optimization tools
 
     ## Review Criteria
