@@ -103,9 +103,9 @@ annotated-types==0.7.0 ; python_version >= "3.11" and python_version < "3.13" \
 anthropic==0.57.1 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:33afc1f395af207d07ff1bffc0a3d1caac53c371793792569c5d2f09283ea306 \
     --hash=sha256:7815dd92245a70d21f65f356f33fc80c5072eada87fb49437767ea2918b2c4b0
-anyio==4.10.0 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:3f3fae35c96039744587aa5b8371e7e8e603c0702999535961dd336026973ba6 \
-    --hash=sha256:60e474ac86736bbfd6f210f7a61218939c318f43f9972497381f1c5e930ed3d1
+anyio==4.14.2; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494 \
+    --hash=sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f
 argcomplete==3.6.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:65b3133a29ad53fb42c48cf5114752c7ab66c1c38544fdf6460f450c09b42591 \
     --hash=sha256:d0519b1bc867f5f4f4713c41ad0aba73a4a5f007449716b16f385f2166dc6adf
