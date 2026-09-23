@@ -1857,9 +1857,9 @@ python-gnupg==0.5.5 ; python_version >= "3.11" and python_version < "3.13" \
 python-magic==0.4.27 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b \
     --hash=sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3
-python-multipart==0.0.27 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:7a68db60c8bfb82e460637fa4750727b45af1d5e2ed215593f917f64694d34fe \
-    --hash=sha256:efe91480f485f6a361427a541db4796f9e1591afc0fb8e7a4ba06bfbc6708996
+python-multipart==0.0.31; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:8408153d68a9773291fc1da39a8b85a50044bddbabd2dd72e9229776b7b15e28 \
+    --hash=sha256:fc631183bb13e56db3158a4909908dfb2e23565286744e798241e63750e5d680
 pytz==2025.2 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3 \
     --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
