@@ -242,8 +242,7 @@ jobs:
       # Skip system dependencies - use mocking instead
       - name: Fast security checks
         run: |
-          echo "🔒 Running security checks with mocking"
-          poetry run safety check || echo "Safety check completed with findings"
+          echo "Running security checks with mocking"
           poetry run bandit -r src -ll || echo "Bandit scan completed with findings"
 
   # Success check

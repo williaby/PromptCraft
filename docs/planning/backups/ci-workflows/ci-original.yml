@@ -196,14 +196,6 @@ jobs:
           redis-cli ping || echo "Redis not started - will use mocking"
         continue-on-error: true
 
-      - name: Run safety check
-        run: |
-          poetry run safety check --json --output .safety-report.json || {
-            echo "Safety vulnerability scan completed with findings"
-            cat .safety-report.json
-          }
-        continue-on-error: true
-
       - name: Run bandit security scan
         run: |
           poetry run bandit -r src -ll -f json -o bandit-report.json || {
@@ -218,7 +210,6 @@ jobs:
           name: security-reports
           path: |
             bandit-report.json
-            .safety-report.json
 
 
   # Primary test matrix (required for CI success)

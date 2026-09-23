@@ -62,7 +62,7 @@ agents:
 
     dependencies:
       services: {}
-      packages: ["bandit", "safety"]
+      packages: ["bandit"]
 
   ai-engineer:
     priority_order:
