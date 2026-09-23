@@ -57,7 +57,7 @@ jobs:
 
       - name: Set up Python
         id: setup_python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: '3.11'
 
@@ -164,7 +164,7 @@ jobs:
           echo "✅ Poetry configured for Assured-OSS authentication"
 
       - name: Cache Poetry dependencies
-        uses: actions/cache@v4.1
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -290,7 +290,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload security artifacts
-        uses: actions/upload-artifact@v4.4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         if: always()
         with:
           name: security-reports-${{ github.event.number }}
