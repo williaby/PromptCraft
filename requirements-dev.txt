@@ -1521,9 +1521,9 @@ marshmallow==4.1.2 ; python_version >= "3.11" and python_version < "3.13" \
 matplotlib-inline==0.1.7 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90 \
     --hash=sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca
-mcp==1.23.0 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:70452f56f74662a94eb72ac5feb93997b35995e389b3a3a574e078bed2aa9ab3 \
-    --hash=sha256:8b1a002ebe6e17e894ec74d1943cc09aa9d23cb931bf58d49ab2e9fa6bb17e4b
+mcp==1.28.1; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:2726bca5e7193f61c5dde8b12500a6de2d9acf6d1a1c0be9e8c2e706437991df \
+    --hash=sha256:d51e36a5f5644faea4f85ea649bfffa6bc6c26770d42798ad6a3de3d2ba69683
 mdit-py-plugins==0.5.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:07a08422fc1936a5d26d146759e9155ea466e842f5ab2f7d2266dd084c8dab1f \
     --hash=sha256:f4918cb50119f50446560513a8e311d574ff6aaed72606ddae6d35716fe809c6
