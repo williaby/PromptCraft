@@ -3519,9 +3519,9 @@ uvloop==0.21.0 ; python_version >= "3.11" and python_version < "3.13" and sys_pl
     --hash=sha256:f38b2e090258d051d68a5b14d1da7203a3c3677321cf32a95a6f4db4dd8b6f26 \
     --hash=sha256:f3df876acd7ec037a3d005b3ab85a7e4110422e4d9c1571d4fc89b0fc41b6816 \
     --hash=sha256:f7089d2dc73179ce5ac255bdf37c236a9f914b264825fdaacaded6990a7fb4c2
-virtualenv==20.36.1 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:341f5afa7eee943e4984a9207c025feedd768baff6753cd660c857ceb3e36026 \
-    --hash=sha256:44815b2c9dee7ed86e387b842a84f20b93f7f417f95886ca1996a72a4138eb1a
+virtualenv==21.7.13; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:0355558b6f33619aab31347e43643b0ebc97f61ea3acf617b2b69e1f8a843d11 \
+    --hash=sha256:1bea5af7463f59c4719db48fe739579a2a4f569c96f26c086edda85c96da9f59
 watchfiles==1.1.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:00645eb79a3faa70d9cb15c8d4187bb72970b2470e938670240c7998dad9f13a \
     --hash=sha256:04e4ed5d1cd3eae68c89bcc1a485a109f39f2fd8de05f705e98af6b5f1861f1f \
