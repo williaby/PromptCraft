@@ -23,25 +23,31 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0  # Full history for git-based features
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate.
+        uses: actions/setup-python@v6  # zizmor: ignore[unpinned-uses]
         with:
           python-version: '3.11'
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
         with:
           version: 2.1.2
           virtualenvs-create: true
           virtualenvs-in-project: true
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: .venv
           key: docs-dev-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -96,7 +102,8 @@ jobs:
           echo "✅ Development documentation built successfully"
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate.
+        uses: actions/upload-pages-artifact@v3  # zizmor: ignore[unpinned-uses]
         with:
           path: ./site
 
@@ -107,9 +114,15 @@ jobs:
       name: development
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate.
+        uses: actions/deploy-pages@v5  # zizmor: ignore[unpinned-uses]
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 

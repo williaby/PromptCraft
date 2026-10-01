@@ -47,7 +47,12 @@ jobs:
       poetry-hash: ${{ steps.cache-key.outputs.poetry-hash }}
       requirements-hash: ${{ steps.cache-key.outputs.requirements-hash }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Generate cache keys
         id: cache-key
@@ -56,7 +61,9 @@ jobs:
           echo "requirements-hash=${{ hashFiles('requirements*.txt') }}" >> $GITHUB_OUTPUT
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate once a verified
+        # v6 SHA is available.
+        uses: actions/setup-python@v6  # zizmor: ignore[unpinned-uses]
         with:
           python-version: '3.11'
 
@@ -74,7 +81,7 @@ jobs:
 
       # Optimized caching strategy - cache only .venv to prevent disk space exhaustion
       - name: Cache Poetry and dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             .venv
@@ -116,10 +123,17 @@ jobs:
         python-version: ["3.11", "3.12"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate once a verified
+        # v6 SHA is available.
+        uses: actions/setup-python@v6  # zizmor: ignore[unpinned-uses]
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -134,7 +148,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             .venv
@@ -177,7 +191,8 @@ jobs:
           PROMPTCRAFT_ENABLE_SERVICE_MOCKING: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate.
+        uses: codecov/codecov-action@v4  # zizmor: ignore[unpinned-uses]
         if: ${{ env.CODECOV_TOKEN != '' }} && !cancelled()
         with:
           file: ./coverage.xml
@@ -192,7 +207,7 @@ jobs:
 
       - name: Upload test artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: test-results-${{ matrix.python-version }}
           path: |
@@ -207,10 +222,17 @@ jobs:
     timeout-minutes: 8  # Increased to account for retry logic
     needs: setup-optimized
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate once a verified
+        # v6 SHA is available.
+        uses: actions/setup-python@v6  # zizmor: ignore[unpinned-uses]
         with:
           python-version: '3.11'
 
@@ -225,7 +247,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             .venv
@@ -299,10 +321,17 @@ jobs:
     needs: setup-optimized
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden the runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+        # SECURITY-FINDINGS.md item: pin to commit SHA via Renovate once a verified
+        # v6 SHA is available.
+        uses: actions/setup-python@v6  # zizmor: ignore[unpinned-uses]
         with:
           python-version: '3.11'
 
@@ -317,7 +346,7 @@ jobs:
 
       # Restore dependency cache (optional - helps with speed)
       - name: Restore dependency cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: |
             .venv
