@@ -3160,9 +3160,9 @@ scipy==1.16.1 ; python_version >= "3.11" and python_version < "3.13" \
 semantic-version==2.10.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c \
     --hash=sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177
-sentence-transformers==5.1.0 ; python_version >= "3.11" and python_version < "3.13" \
-    --hash=sha256:70c7630697cc1c64ffca328d6e8688430ebd134b3c2df03dc07cb3a016b04739 \
-    --hash=sha256:fc803929f6a3ce82e2b2c06e0efed7a36de535c633d5ce55efac0b710ea5643e
+sentence-transformers==5.6.0; python_version >= "3.11" and python_version < "3.13" \
+    --hash=sha256:0e7164d051e416c1853ade7c274ff52af3f9da0f4be7f0b83d734c27699e1057 \
+    --hash=sha256:d2075b5e687a1611005e20ab04a6846994d51adfcf39610aed066af3c0c0b81f
 sentry-sdk==2.35.0 ; python_version >= "3.11" and python_version < "3.13" \
     --hash=sha256:5ea58d352779ce45d17bc2fa71ec7185205295b83a9dbb5707273deb64720092 \
     --hash=sha256:6e0c29b9a5d34de8575ffb04d289a987ff3053cf2c98ede445bea995e3830263
