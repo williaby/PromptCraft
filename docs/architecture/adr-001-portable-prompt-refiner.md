@@ -24,7 +24,7 @@ The goal is now narrower: refine a user's rough prompt into a standard, robust f
 results than the unrefined prompt. The refiner must work across environments:
 
 - Claude (Claude Code, claude.ai, Claude Desktop), where most interactive work happens.
-- The family office portal (Python), which runs Qwen 3.6 35B on llama.cpp. Portal prompts must stay on-prem.
+- The family office portal (Python), which runs Qwen3.6-35B-A3B on llama.cpp. Portal prompts must stay on-prem.
 - Other MCP-capable clients, as a secondary target.
 
 Two usage modes were part of the original intent and remain required: a user-visible mode and a user-invisible mode,
@@ -73,7 +73,7 @@ Engine backends:
 - Model IDs live in config, never in code.
 
 Engine tiers: `strict` (small or local models: slot filling only, tight schema) and `open` (frontier models: may
-rewrite phrasing). Qwen 3.6 35B starts in `strict`; evals decide whether it can move to `open`.
+rewrite phrasing). Qwen3.6-35B-A3B starts in `strict`; evals decide whether it can move to `open`.
 
 `RefinementResult` carries: refined prompt, original prompt, slot-level provenance (`from_user` or `assumed`), a list
 of assumptions, clarifying questions, a skipped flag with reason, engine and spec versions, and timing.
@@ -113,6 +113,35 @@ tool the local model may or may not choose to call.
 - The library has no telemetry and makes no network calls other than to the configured engine.
 - A test asserts that the portal profile cannot resolve to a remote engine.
 - Portal prompts never enter the golden set or any judge call.
+
+### Local stack (family office portal)
+
+| Component | Model | Runtime |
+| --- | --- | --- |
+| Chat and refiner | [Qwen3.6-35B-A3B](https://huggingface.co/Qwen/Qwen3.6-35B-A3B), file `Qwen3.6-35B-A3B-UD-Q4_K_S.gguf` from [unsloth/Qwen3.6-35B-A3B-GGUF](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF) | llama.cpp on a Tesla P40 (24 GB) |
+| Vision projector | Q8_0 mmproj from [ggml-org/Qwen3.6-35B-A3B-GGUF](https://huggingface.co/ggml-org/Qwen3.6-35B-A3B-GGUF) | llama.cpp |
+| Embeddings | [Qwen3-Embedding-0.6B](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF), Q8_0 | llama.cpp on CPU |
+
+Implications:
+
+- **Same model refines and answers.** In invisible mode each portal request makes at least two calls to one GPU. The
+  `already_good` short-circuit and a latency budget matter more than they would with a hosted engine. The A3B
+  mixture-of-experts design (about 3B active parameters per token) should keep per-call latency workable on the P40;
+  Phase 3 measures it.
+- **Evaluate the deployed artifact.** Golden-set results are keyed to the exact GGUF file and quantization. Results from
+  a full-precision or hosted Qwen do not transfer to the Q4_K_S build. Engine config records the model file name and
+  its SHA-256.
+- **Target profile `qwen3_local`.** The portal's target model is the same Qwen build, so it gets its own rendering
+  profile, tuned by evals rather than by vendor guidance written for frontier models.
+- **Thinking mode.** The analyze step is slot filling, which may not need reasoning. Phase 2's spike compares thinking
+  on and off for quality, latency, and compatibility with llama.cpp schema-constrained output.
+- **Vision.** The refiner is text-only in v1. Image attachments pass through untouched; the `inputs` slot records that
+  attachments exist so the refined prompt can reference them.
+- **Embeddings.** No vector database on the refine path. The embedding model has one optional use: selecting the few
+  most similar few-shot examples for each prompt from an in-memory index of the spec's examples (around a hundred
+  vectors, built at startup). This keeps the prompt short on a mid-size local model while keeping examples relevant.
+  Static examples ship first; dynamic selection is adopted only if the golden set shows a gain. Embeddings may also
+  serve a refinement cache for repeated prompts.
 
 ### Evaluation
 
@@ -157,9 +186,10 @@ tool the local model may or may not choose to call.
 
 **Risks to verify early**
 
-- Qwen 3.6 35B quality as a refiner in `strict` tier. If the golden-set results are weak, the portal keeps invisible
-  mode off and offers visible mode only.
+- Qwen3.6-35B-A3B (UD-Q4_K_S) quality as a refiner in `strict` tier. If the golden-set results are weak, the portal
+  keeps invisible mode off and offers visible mode only.
 - Interaction between Qwen thinking mode and llama.cpp schema-constrained output. Spike before building the engine.
+- GPU contention on the single P40 when refinement and answering share it. Measure end-to-end latency in Phase 3.
 - Judge bias toward longer prompts. Calibrate the judge on a small human-labeled subset.
 
 ## Phased Plan
@@ -169,7 +199,7 @@ tool the local model may or may not choose to call.
 | 0. Archive | Tag `legacy-hybrid-v0`; strip legacy code and deps; lean `pyproject.toml` | CI green on the slim tree |
 | 1. Spec and evals | Spec format; distilled checklist, tiers, examples; golden set; eval CLI with a pass-through baseline | Baseline scores recorded |
 | 2. Engine | Analyze, render, self-check; both backends; both modes; on-prem guard | Beats baseline on judge score; intent threshold met |
-| 3. Local model validation | Qwen 3.6 35B via llama.cpp in `strict` tier; latency budget | Decision recorded on invisible mode for the portal |
+| 3. Local model validation | Qwen3.6-35B-A3B (UD-Q4_K_S) on the P40 in `strict` tier; latency budget; optional embedding-based example selection | Decision recorded on invisible mode for the portal |
 | 4. Adapters | Generated Claude skill with drift check; MCP server; portal integration guide | Skill and engine agree on the golden set |
 | 5. Optimize | DSPy GEPA tuning of refiner prompts per engine tier | Measured gain over Phase 2 |
 
