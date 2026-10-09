@@ -1,0 +1,29 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sonarcloud-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonarcloud:
+    uses: ByronWilliamsCPA/.github/.github/workflows/python-sonarcloud.yml@74cfc8e9d1ea1f6babc40bea102b3071af620942  # v11.0.1
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      sonar-organization: williaby
+      sonar-project-key: williaby_PromptCraft
+      python-version: '3.12'
+      coverage-paths: coverage.xml
+      no-build: false
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

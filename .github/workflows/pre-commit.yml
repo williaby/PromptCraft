@@ -1,0 +1,22 @@
+name: Pre-Commit
+
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pre-commit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    uses: ByronWilliamsCPA/.github/.github/workflows/python-precommit.yml@74cfc8e9d1ea1f6babc40bea102b3071af620942  # v11.0.1
+    permissions:
+      contents: read
+    with:
+      python-version: '3.12'
+      no-build: false

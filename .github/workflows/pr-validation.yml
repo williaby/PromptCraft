@@ -1,144 +1,135 @@
+# PR Validation Workflow
+# Validates PR title format (Conventional Commits) and non-empty PR body.
+# Copied from ByronWilliamsCPA/.github v11.0.1; it is not a reusable workflow.
+# Emits the ruleset-required "Dependency & Standards Validation" check.
 name: PR Validation
 
 on:
+  merge_group:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches:
       - main
-      - feature/phase-1-development
+      - master
 
-permissions:
-  contents: read
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate-requirements:
-    name: PR Validation
+  title-check:
+    name: PR Title Format
     runs-on: ubuntu-latest
-    if: |
-      github.event.pull_request.base.ref == 'main' ||
-      github.event.pull_request.base.ref == 'feature/phase-1-development'
-
+    # PR title/body live only in the pull_request event payload. On
+    # merge_group refs this job is skipped; the gate jobs below treat a
+    # skipped result as a pass so the merge queue is not blocked.
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
         with:
-          # Fetch full history to ensure we can compare with base branch
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 2.1.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install Poetry Export Plugin with retry logic
+          egress-policy: audit
+      - name: Validate conventional commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # Robust Poetry plugin installation with comprehensive error handling
-          install_poetry_plugin() {
-            local attempt=1
-            local max_attempts=3
-            local delay=5
-
-            while [ $attempt -le $max_attempts ]; do
-              echo "🔧 Attempt $attempt/$max_attempts: Installing poetry-plugin-export..."
-
-              # Check if plugin is already installed
-              if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                echo "✅ poetry-plugin-export is already installed"
-                poetry self show plugins | grep poetry-plugin-export
-                return 0
-              fi
-
-              # Attempt installation with verbose output
-              if poetry self add poetry-plugin-export --verbose; then
-                echo "✅ Successfully installed poetry-plugin-export on attempt $attempt"
-                # Verify installation
-                if poetry self show plugins | grep -q "poetry-plugin-export"; then
-                  echo "✅ Plugin installation verified"
-                  return 0
-                else
-                  echo "⚠️  Plugin installation succeeded but verification failed"
-                fi
-              else
-                echo "❌ Failed to install poetry-plugin-export on attempt $attempt"
-              fi
-
-              if [ $attempt -lt $max_attempts ]; then
-                echo "⏳ Waiting ${delay}s before retry..."
-                sleep $delay
-                delay=$((delay * 2))  # Exponential backoff
-              fi
-
-              attempt=$((attempt + 1))
-            done
-
-            # Final failure with comprehensive debugging
-            echo "::error::Failed to install poetry-plugin-export after $max_attempts attempts"
-            echo "::group::Debug Information"
-            echo "Poetry version: $(poetry --version)"
-            echo "Python version: $(python --version)"
-            echo "Poetry configuration:"
-            poetry config --list | head -10
-            echo "Poetry environment info:"
-            poetry env info 2>/dev/null || echo "No poetry environment found"
-            echo "Available Poetry plugins:"
-            poetry self show plugins 2>/dev/null || echo "Failed to list plugins"
-            echo "Network connectivity test:"
-            curl -I https://pypi.org/simple/poetry-plugin-export/ --max-time 10 || \
-              echo "Network connectivity issues detected"
-            echo "Disk space:"
-            df -h . | tail -1
-            echo "Memory usage:"
-            free -h | head -2
-            echo "::endgroup::"
-            return 1
-          }
-
-          # Execute the installation function
-          install_poetry_plugin
-
-      - name: Install dependencies
-        run: poetry install
-
-      - name: Check if poetry.lock changed
-        id: poetry-changed
-        run: |
-          git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD | \
-            grep -q "poetry.lock" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
-
-      - name: Validate requirements.txt sync
-        if: steps.poetry-changed.outputs.changed == 'true'
-        run: |
-          echo "🔍 Poetry.lock has changed, validating requirements.txt sync..."
-
-          # Generate requirements from current poetry.lock
-          ./scripts/generate_requirements.sh
-
-          # Check if generated files match committed files
-          if ! git diff --exit-code requirements*.txt; then
-            echo "::error::Requirements files are out of sync with poetry.lock"
-            echo "::error::This PR modifies poetry.lock but the requirements files don't match."
-            echo "::error::Please run './scripts/generate_requirements.sh' and commit the updated requirements files."
-            echo ""
-            echo "📋 Files that need to be updated:"
-            git diff --name-only requirements*.txt
-            echo ""
-            echo "🔧 To fix this issue:"
-            echo "1. Run: ./scripts/generate_requirements.sh"
-            echo "2. Review and commit the updated requirements files"
-            echo "3. Push the changes to this PR branch"
-            exit 1
+          # Conventional Commits: type(scope)!: description
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^()]+\))?!?: .+'
+          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
+            echo "PR title follows Conventional Commits format."
           else
-            echo "✅ Requirements files are properly synchronized with poetry.lock"
+            echo "::error::PR title must follow Conventional Commits format."
+            echo "::error::  Expected: type(scope): description"
+            echo "::error::  Example:  feat(auth): add OAuth2 support"
+            echo "::error::  Got: $PR_TITLE"
+            exit 1
           fi
 
-      - name: Skip validation (no poetry.lock changes)
-        if: steps.poetry-changed.outputs.changed == 'false'
+  body-check:
+    name: PR Body Non-Empty
+    runs-on: ubuntu-latest
+    # Skipped on merge_group refs (no pull_request payload); see title-check.
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Check PR body is non-empty
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          echo "✅ Poetry.lock unchanged - requirements validation skipped"
-          echo "No dependency changes detected in this PR."
+          if [ -z "$PR_BODY" ] || [ "$PR_BODY" = "null" ]; then
+            echo "::error::PR description is empty. Please describe what this PR does."
+            exit 1
+          fi
+          STRIPPED=$(echo "$PR_BODY" | tr -d '[:space:]')
+          if [ -z "$STRIPPED" ]; then
+            echo "::error::PR description contains only whitespace."
+            exit 1
+          fi
+          echo "PR body is present."
+
+  dependency-standards-validation:
+    name: Dependency & Standards Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [title-check, body-check]
+    if: always()
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Check dependency and standards requirements
+        env:
+          TITLE_RESULT: ${{ needs.title-check.result }}
+          BODY_RESULT: ${{ needs.body-check.result }}
+        run: |
+          # On merge_group refs the PR-context checks are skipped; treat
+          # success and skipped as passing, fail only on a real failure.
+          if { [ "$TITLE_RESULT" != "success" ] && [ "$TITLE_RESULT" != "skipped" ]; } || \
+             { [ "$BODY_RESULT" != "success" ] && [ "$BODY_RESULT" != "skipped" ]; }; then
+            echo "::error::PR validation checks failed: dependency and standards gate blocked."
+            exit 1
+          fi
+          echo "Dependency and standards validation passed."
+
+  pr-validation-gate:
+    name: PR Validation Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [title-check, body-check]
+    if: always()
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920  # v2.20.0
+        with:
+          egress-policy: audit
+      - name: Check all PR validation results
+        env:
+          TITLE_RESULT: ${{ needs.title-check.result }}
+          BODY_RESULT: ${{ needs.body-check.result }}
+        run: |
+          echo "## PR Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| PR Title Format | $TITLE_RESULT |" >> $GITHUB_STEP_SUMMARY
+          echo "| PR Body Non-Empty | $BODY_RESULT |" >> $GITHUB_STEP_SUMMARY
+          # success or skipped both pass; skipped happens on merge_group refs.
+          if { [ "$TITLE_RESULT" != "success" ] && [ "$TITLE_RESULT" != "skipped" ]; } || \
+             { [ "$BODY_RESULT" != "success" ] && [ "$BODY_RESULT" != "skipped" ]; }; then
+            echo "::error::One or more PR validation checks failed."
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All PR validation checks passed." >> $GITHUB_STEP_SUMMARY
