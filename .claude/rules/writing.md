@@ -16,9 +16,8 @@ descriptions, CHANGELOG, rule files, standards.
 
 ## Project Specifics
 
-- Knowledge-base files under `knowledge/**` have their own structure
-  (see `.claude/rules/knowledge-base.md`); this rule still applies to
-  their prose content.
+- Spec files and legacy source material under `knowledge/**` follow
+  this rule for any prose that is added or edited.
 - Commit messages follow conventional commits (see
   `.claude/rules/git-workflow.md`).
 

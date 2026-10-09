@@ -4,28 +4,19 @@
 
 ## Gate Checklist
 
-- [ ] `pre-commit run --all-files` passes.
-- [ ] GPG key present (`gpg --list-secret-keys`) for `.env` encryption.
-- [ ] SSH signing key present (`ssh-add -l`) and
-      `git config user.signingkey` set.
-- [ ] Configured Python hooks clean: Black, Ruff check, Ruff datetime check,
-      MyPy, Bandit. The Bandit suppressions in `pyproject.toml` (B101, B601)
-      are the only acceptable exceptions.
-- [ ] Markdown and YAML lint clean (`markdownlint`, `yamllint`).
-- [ ] Type checker (MyPy today, BasedPyright strict once migrated) passes.
-- [ ] Test coverage at or above 80% line.
-- [ ] No em-dashes introduced in any text file.
-- [ ] No new `mcp__zen__*` tool references in project-owned files.
+- [ ] `make pre-commit` (all hooks on all files) passes.
+- [ ] Commit is signed (`git config user.signingkey` set).
+- [ ] Commit message follows Conventional Commits; the commitizen commit-msg hook checks it.
+- [ ] Test coverage stays at or above 80% line.
+- [ ] No em-dashes in any text file; the `no-em-dash` hook enforces this.
 
 ## What Not To Do
 
 - Do not bypass hooks with `--no-verify`.
-- Do not suppress Semgrep, Bandit, or SonarQube findings with inline
-  ignores as the fix. Address the finding. If genuinely false-positive,
-  suppress with a linked reason.
-- Do not commit `.env` files or any file containing secrets.
+- Do not suppress Semgrep, Bandit, SonarCloud, Qlty, or detect-secrets findings inline as the fix. If a finding is a
+  genuine false positive, suppress it with a linked reason.
+- Do not commit `.env` files or anything containing secrets.
 
 ## Deep Reference
 
-`pyproject.toml` and `.pre-commit-config.yaml` are the sources of truth for
-what the gate actually runs.
+`.pre-commit-config.yaml` and `pyproject.toml` are the sources of truth for what the gate runs.
