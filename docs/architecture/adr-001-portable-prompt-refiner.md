@@ -228,7 +228,7 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 
 ## Consequences
 
-**Positive**
+### Positive
 
 - Value ships in Phase 1 (the Claude skill) instead of after the engine and adapters.
 - One spec drives the skill and the engine, so Claude and the portal refine the same way.
@@ -236,14 +236,14 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 - Quality is measured with stated statistical limits, so improvements are real or not claimed.
 - The repo matches org tooling and CI, so shared workflows and Renovate maintain it.
 
-**Negative**
+### Negative
 
 - The legacy UI and API stop working on `main`. Nobody uses them in practice, and the tag preserves them.
 - The hand-written skill and the engine can drift until generation is built. Mitigated by shared golden-set runs.
 - Target profiles need re-verification with each model release.
 - Invisible mode adds GPU load to every portal request.
 
-**Risks to verify early**
+### Risks to verify early
 
 - Qwen3.6-35B-A3B (UD-Q4_K_S) quality as a `strict`-tier refiner. If weak, the portal offers visible mode only.
 - The 1.5-second p95 budget under concurrent chat load on one P40.

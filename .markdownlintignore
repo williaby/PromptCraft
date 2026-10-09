@@ -1,6 +1,5 @@
-# Ignore knowledge files with long lines for examples
-knowledge/create_agent/10_few-shot-gallery.md
-# Ignore example documentation with formatting issues
-examples/README.md
-# Ignore knowledge files with complex formatting
-knowledge/create_agent/00_quick-reference.md
+# Legacy C.R.E.A.T.E. source material; converted to the spec format in ADR-001 Phase 1
+knowledge/
+.venv/
+.nox/
+site/
