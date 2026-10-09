@@ -16,9 +16,5 @@ jobs:
     permissions:
       contents: read
       actions: read
-      security-events: write
-      id-token: write
-    with:
-      publish-results: true
     secrets:
       SCORECARD_TOKEN: ${{ secrets.SCORECARD_TOKEN }}
