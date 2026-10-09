@@ -21,7 +21,8 @@ jobs:
       contents: read
     with:
       python-version: '3.12'
-      python-versions-comprehensive: '["3.11", "3.12", "3.13"]'
+      enable-matrix-testing: true
+      python-versions-comprehensive: '["3.11", "3.12", "3.13", "3.14"]'
       coverage-threshold: 80
       no-build: false
       # No integration or security marker suites exist yet (ADR-001 Phase 0).
