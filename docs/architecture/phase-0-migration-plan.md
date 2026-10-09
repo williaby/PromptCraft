@@ -28,7 +28,6 @@ written in this phase.
     tests collected, is tolerated).
   - `[tool.bandit]` (run as `bandit -c pyproject.toml -lll`).
   - Optional `[tool.pip-audit] ignore-vuln`.
-  - `[tool.semantic_release]` if `python-release.yml` is adopted (python-semantic-release v10).
 - **Dev tools reachable via uv:** ruff, basedpyright (not mypy), pytest, pytest-cov, coverage, bandit, pip-audit,
   pre-commit; mkdocs and interrogate if docs are built.
 - **Layout:** `src/` and `tests/`.
@@ -36,7 +35,7 @@ written in this phase.
 - **Python versions:** org supports 3.10 to 3.14, primary 3.12, PR tier 3.11 and 3.12. Set `requires-python` to match
   whatever matrix is enabled (current `>=3.11,<3.13` excludes 3.13).
 - **Other files:** `.pre-commit-config.yaml`, `REUSE.toml` with `LICENSES/MIT.txt`, `mkdocs.yml` if docs are built,
-  `qlty.toml` if Qlty is adopted, SonarCloud project if Sonar is adopted.
+  `qlty.toml` (Qlty is required), and a SonarCloud project (required).
 - **nox:** no org workflow invokes nox. It is local developer tooling only.
 
 ## Steps
@@ -100,12 +99,12 @@ per-job permissions, and include `merge_group:` if the merge queue is enabled.
 | `dependency-standards-validation.yml` | Delete after real check exists | Stub |
 | `pr-validation.yml` | Replace with a copy of org `pr-validation.yml` | Poetry-based; org version is not `workflow_call`, so copy it |
 | `security-analysis.yml` | Keep, re-pin to v11, re-enable bandit and osv, drop removed inputs | Pinned to an old SHA labeled `main` |
-| `coverage.yml` | Re-pin, or delete if Qlty is not adopted | Uses `@main` |
+| `coverage.yml` | Replace with caller of `python-qlty-coverage.yml`, pinned | Uses `@main`; Qlty is required |
 | `python-compatibility.yml` | Delete | `python-ci.yml` matrix covers it |
 | `container-security.yml` | Delete | Calls `williaby/.github@main`; no container after strip |
 | `reuse.yml` | Replace with caller of `python-reuse.yml` | Bespoke |
 | `scorecard.yml` | Replace with caller of `python-scorecard.yml` | Bespoke, unpinned harden-runner |
-| `docs.yml` | Replace with caller of `python-docs.yml`, or delete | Decide if a docs site is kept |
+| `docs.yml` | Replace with caller of `python-docs.yml` | Docs site is kept |
 | `deploy-docs.yml`, `deploy-docs-production.yml` | Delete | Poetry; duplicates docs |
 | `codeql.yml`, `dependency-review.yml` | Delete | Removed org-wide |
 | `fips-compatibility.yml` | Delete | Not needed for this library |
@@ -126,7 +125,10 @@ per-job permissions, and include `merge_group:` if the merge queue is enabled.
 | `reuse.yml` | `python-reuse.yml` | `reuse / REUSE Compliance Check` |
 | `scorecard.yml` | `python-scorecard.yml` | Scorecard |
 | `codecov.yml` | `python-codecov.yml` (on `workflow_run` of `CI`) | Codecov upload |
-| Optional | `python-sonarcloud.yml`, `python-qlty-gate.yml`, `python-release.yml`, `python-docs.yml`, `claude-baseline-review.yml` | Per workflow |
+| `sonarcloud.yml` (required) | `python-sonarcloud.yml` | SonarCloud analysis |
+| `qlty.yml` (required) | `python-qlty-gate.yml`, job id `qlty-gate` | `qlty-gate / Qlty Gate` |
+| `coverage.yml` | `python-qlty-coverage.yml` with `coverage-artifact-name: coverage-reports` | Qlty coverage upload |
+| `docs.yml` | `python-docs.yml` | Docs build and Pages deploy |
 
 The ruleset requires bare check names. Reusable workflow checks are named `<caller-job> / <job>`, so `ci.yml` adds a
 wrapper job named `CI Gate` (`needs: [ci]`, `if: always()`, fails unless `needs.ci.result == 'success'`), following
@@ -141,7 +143,6 @@ Starting a library with no tests trips the 80% coverage gate. Phase 0 sets `run-
 - Reset Codecov and SonarCloud baselines after the strip; the first PR will otherwise fail project-coverage deltas.
 - Confirm secrets on `williaby/PromptCraft`: `CODECOV_TOKEN` (required for codecov), and as adopted `SONAR_TOKEN`,
   `QLTY_COVERAGE_TOKEN`, `SCORECARD_TOKEN`, `SNYK_TOKEN`, `ANTHROPIC_API_KEY`.
-- Confirm `williaby` repos can call `ByronWilliamsCPA/.github` workflows (public repo or shared Actions access).
 
 ### Step 6: Compliance audit, remediate
 
@@ -155,13 +156,20 @@ exceptions in this file.
 - `repo-compliance` audit clean or with documented exceptions.
 - No Poetry artifacts remain (`poetry.lock`, `[tool.poetry...]`, `poetry run`).
 
+## Decisions
+
+- **Org placement:** the repo stays under `williaby`. Both `williaby` and `ByronWilliamsCPA` repos can call the
+  org reusable workflows; `williaby` does not enforce org-level rulesets. SonarCloud org and key stay as configured.
+- **Required quality services:** Qlty and SonarCloud.
+- **Docs site:** kept, built and deployed by `python-docs.yml`.
+- **Releases:** no semantic-release. Adopt `python-release.yml` only if another system needs guaranteed versioning;
+  the portal pins git tags, which are created manually.
+
 ## Risks and Open Items
 
 - **Ruleset contexts unverified.** `williaby-default-branch-baseline` is not documented in the org repo. Confirm the
   exact required contexts (bare names or `ci / CI Gate`, and any others such as `Security Gate Validation` or
   `qlty-gate / Qlty Gate`) with `gh api repos/williaby/PromptCraft/rulesets` before deleting the stubs.
-- **Org placement.** The repo is under `williaby`; the org standard references `ByronWilliamsCPA`. Decide whether to
-  transfer, which changes SonarCloud org and key (`williaby_PromptCraft`) and REUSE metadata.
 - **No org migration guide** exists for Poetry to uv or bespoke CI to the org stack; this plan serves as one and could
   be upstreamed.
 - **Old pin** `c22009cc...` in current callers could not be verified against a release.

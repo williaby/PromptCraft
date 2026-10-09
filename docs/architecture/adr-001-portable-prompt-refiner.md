@@ -264,8 +264,6 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 ## Open Questions
 
 - Package name for the new library.
-- Whether `williaby/PromptCraft` moves into the `ByronWilliamsCPA` org, which affects SonarCloud keys and REUSE
-  metadata.
 - Exact required-check contexts in ruleset `williaby-default-branch-baseline` (bare `CI Gate` or `ci / CI Gate`, and
   whether other checks are required). Confirm before deleting the stubs.
 - Golden-set rubric thresholds for invisible mode.
