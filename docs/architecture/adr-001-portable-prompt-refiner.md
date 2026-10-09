@@ -197,9 +197,11 @@ Implications:
   judge from a different family, chosen in Phase 1. Judges run only on synthetic data.
 - **Intent preservation:** separate judge check that the refined prompt entails the original and adds only labeled
   assumptions.
-- **Statistics:** report win rate with a 95% confidence interval. At n=50 the interval is about plus or minus 14
-  points, so no "beats baseline" claim is made unless the lower bound of the interval exceeds 50%. Judge agreement is
-  calibrated on 20 human-labeled pairs before the judge gates anything.
+- **Statistics:** the unit of analysis is the prompt pair, so n counts prompt pairs, not judge samples. Each pair's
+  three judge samples are combined by majority vote into one outcome (win, loss, or tie); ties count as half a win.
+  Report the pair-level win rate with a 95% Wilson score interval. At n=50 the interval is about plus or minus 14
+  points, so no "beats baseline" claim is made unless the lower bound of that pair-level interval exceeds 50%. Judge
+  agreement is calibrated on 20 human-labeled pairs before the judge gates anything.
 - **Cost:** each eval run's judge cost is logged; judge runs happen on demand and nightly, not on every commit.
 
 ### Observability

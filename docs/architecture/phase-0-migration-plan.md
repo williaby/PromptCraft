@@ -18,10 +18,12 @@ written in this phase.
 
 ## Consumer Contract (what the org workflows expect)
 
-- **uv only.** Every Python reusable workflow fails if `poetry.lock` or a `[tool.poetry...]` table exists
-  (`python-ci.yml` around line 196).
-- **`uv.lock` committed.** Workflows run `uv sync --all-extras --frozen` and `uv run --frozen ...`; dev tools must
-  install through `uv sync --all-extras`.
+- **uv only.** The Python workflows that install the project (`python-ci.yml`, `python-precommit.yml`,
+  `python-docs.yml`, `python-security-analysis.yml`, `python-sonarcloud.yml`) fail if `poetry.lock` or a
+  `[tool.poetry...]` table exists (`python-ci.yml` around line 196). `python-reuse.yml` only checks licensing.
+- **`uv.lock` committed.** `python-ci.yml` and `python-docs.yml` run `uv sync --all-extras --frozen`;
+  `python-precommit.yml` runs `uv sync --frozen`. Dev tools must therefore install through the default dependency
+  groups, which both commands include.
 - **`pyproject.toml`**, PEP 621 `[project]`, plus:
   - `[tool.pytest.ini_options]` with `testpaths` and markers `unit`, `integration`, `security`, `slow`. CI selects
     `-m "unit or not (integration or security or slow)"`, then `-m integration` and `-m security` (exit code 5, no
@@ -104,7 +106,7 @@ per-job permissions, and include `merge_group:` if the merge queue is enabled.
 | `pr-validation.yml` | Replace with a copy of org `pr-validation.yml` | Poetry-based; org version is not `workflow_call`, so copy it |
 | `security-analysis.yml` | Keep, re-pin to v11, re-enable bandit and osv, drop removed inputs | Pinned to an old SHA labeled `main` |
 | `coverage.yml` | Replace with caller of `python-qlty-coverage.yml`, pinned | Uses `@main`; Qlty is required |
-| `python-compatibility.yml` | Delete | `python-ci.yml` matrix covers it |
+| `python-compatibility.yml` | Delete | `ci.yml` sets `enable-matrix-testing: true` with 3.11 to 3.14 |
 | `container-security.yml` | Delete | Calls `williaby/.github@main`; no container after strip |
 | `reuse.yml` | Replace with caller of `python-reuse.yml` | Bespoke |
 | `scorecard.yml` | Replace with caller of `python-scorecard.yml` | Bespoke, unpinned harden-runner |
@@ -122,7 +124,7 @@ per-job permissions, and include `merge_group:` if the merge queue is enabled.
 
 | Caller | Calls | Check names produced |
 | --- | --- | --- |
-| `ci.yml` (`name: CI`) | `python-ci.yml` with `python-version: '3.12'`, `no-build: false`, `coverage-threshold` | `ci / CI Gate`, plus wrapper job **`CI Gate`** |
+| `ci.yml` (`name: CI`) | `python-ci.yml` with `python-version: '3.12'`, `enable-matrix-testing: true`, `python-versions-comprehensive` 3.11 to 3.14, `no-build: false`, `coverage-threshold` | `ci / CI Gate`, plus wrapper job **`CI Gate`** |
 | `pr-validation.yml` | Copied from org | **`Dependency & Standards Validation`**, `PR Title Format`, `PR Body Non-Empty`, `PR Validation Gate` |
 | `security-analysis.yml` | `python-security-analysis.yml` | `security / Security Gate Validation`, wrapper `Security Gate Validation` |
 | `pre-commit.yml` | `python-precommit.yml` | `<job> / Pre-Commit Hooks` |
