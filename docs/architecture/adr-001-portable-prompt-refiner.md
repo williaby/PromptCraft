@@ -1,7 +1,7 @@
 # ADR-001: Portable Prompt Refiner
 
 > **Status:** Proposed | **Date:** 2026-10-09 | **Supersedes:** no prior ADR; replaces the undocumented four-journey
-> hybrid workbench design (tagged `legacy-hybrid-v0` in Phase 0)
+> hybrid workbench design (archived as branch `archive/legacy-hybrid-v0` in Phase 0)
 
 ## Context
 
@@ -212,7 +212,7 @@ latency histogram through a pluggable hook. The portal wires them to its local m
 Phase 0 makes the repo a clean, standards-compliant base before any new code. Detailed steps, the workflow-by-workflow
 map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 
-1. Tag `main` as `legacy-hybrid-v0`.
+1. Archive `main` as `legacy-hybrid-v0` (branch `archive/legacy-hybrid-v0`; tag pending).
 2. Run `repo-compliance` in report-only mode to scope standards gaps. Ignore findings in code about to be removed.
 3. Strip legacy code, tests, configs, and tracked artifacts. Keep `knowledge/create_agent/`, docs needed for history,
    and OpenSSF root files.
@@ -220,7 +220,7 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
    uv, pre-commit on `uv run` with mypy replaced by basedpyright, Renovate rules for uv and org workflow pins.
 5. Replace bespoke CI with callers of `ByronWilliamsCPA/.github` reusable workflows pinned to
    `74cfc8e9d1ea1f6babc40bea102b3071af620942 # v11.0.1`. Replace the two stub workflows with real checks that emit the
-   ruleset-required names `CI Gate` and `Dependency & Standards Validation`. Reset Codecov and SonarCloud baselines.
+   ruleset-required names `CI Gate` and `Dependency & Standards Validation`. Reset SonarCloud and Qlty baselines.
 6. Run `repo-compliance` in interactive mode on the slim tree and apply approved remediations.
 
 **Exit criteria:** org reusable workflows green on a PR; ruleset-required checks produced by real jobs;

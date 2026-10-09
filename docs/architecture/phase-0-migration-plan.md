@@ -44,6 +44,10 @@ written in this phase.
 
 Tag `main` as `legacy-hybrid-v0` and push the tag. All history and the working legacy tree stay reachable.
 
+**Done (2026-10-09):** the session's git proxy rejected tag pushes (HTTP 403), so commit `fccc4eb` is preserved as
+branch `archive/legacy-hybrid-v0`. Add the tag from a maintainer machine:
+`git tag -a legacy-hybrid-v0 fccc4eb && git push origin legacy-hybrid-v0`.
+
 ### Step 2: Compliance audit, report only
 
 Run the `repo-compliance` skill in scheduled (report-only) mode. Record findings in this file's appendix. Triage each
@@ -83,7 +87,7 @@ references.
   `poetry-check` and `poetry-lock` hooks, and mypy; add basedpyright and `uv-lock`.
 - **`renovate.json`:** remove the Poetry manager; enable uv lock maintenance; copy the org rule (org `renovate.json`
   around line 70) that advances `ByronWilliamsCPA/.github` workflow pins.
-- **`codecov.yaml`:** `after_n_builds: 2` assumes two uploads; set it to match the single `coverage-reports` upload.
+- **Codecov:** dropped. Qlty and SonarCloud are the required coverage and quality services; `codecov.yaml` is removed.
 
 ### Step 5: CI on org reusable workflows
 
@@ -124,7 +128,6 @@ per-job permissions, and include `merge_group:` if the merge queue is enabled.
 | `pre-commit.yml` | `python-precommit.yml` | `<job> / Pre-Commit Hooks` |
 | `reuse.yml` | `python-reuse.yml` | `reuse / REUSE Compliance Check` |
 | `scorecard.yml` | `python-scorecard.yml` | Scorecard |
-| `codecov.yml` | `python-codecov.yml` (on `workflow_run` of `CI`) | Codecov upload |
 | `sonarcloud.yml` (required) | `python-sonarcloud.yml` | SonarCloud analysis |
 | `qlty.yml` (required) | `python-qlty-gate.yml`, job id `qlty-gate` | `qlty-gate / Qlty Gate` |
 | `coverage.yml` | `python-qlty-coverage.yml` with `coverage-artifact-name: coverage-reports` | Qlty coverage upload |
@@ -140,8 +143,8 @@ Starting a library with no tests trips the 80% coverage gate. Phase 0 sets `run-
 
 #### Baselines and secrets
 
-- Reset Codecov and SonarCloud baselines after the strip; the first PR will otherwise fail project-coverage deltas.
-- Confirm secrets on `williaby/PromptCraft`: `CODECOV_TOKEN` (required for codecov), and as adopted `SONAR_TOKEN`,
+- Reset the SonarCloud and Qlty baselines after the strip; the first PR will otherwise compare against the legacy tree.
+- Confirm secrets on `williaby/PromptCraft`: `SONAR_TOKEN`,
   `QLTY_COVERAGE_TOKEN`, `SCORECARD_TOKEN`, `SNYK_TOKEN`, `ANTHROPIC_API_KEY`.
 
 ### Step 6: Compliance audit, remediate
@@ -176,4 +179,53 @@ exceptions in this file.
 
 ## Appendix: Compliance Audit Findings
 
-To be filled in Step 2.
+Step 2 ran `repo-compliance` in report-only mode on 2026-10-09 against the legacy tree. The standards manifest and repo
+catalog were not available in the audit environment, so domain agents evaluated from first principles and IDs below are
+provisional. Domains run: foundations, toolchain, pre-commit, CI, Claude docs, OpenSSF, MkDocs. Skipped as UNKNOWN
+(catalog flags unavailable): API and operations.
+
+### Resolved in Phase 0
+
+| Finding | Domain | Resolution |
+| --- | --- | --- |
+| Tracked `.env.prod`, `.env.staging` | Foundations | Inspected: only non-secret app settings. Removed; `.env.*` ignored |
+| Tracked `lint_env/`, `*.db`, Playwright artifacts | Foundations | Removed in the strip; ignore rules added |
+| `.worktrees/` not ignored | Foundations | Added to `.gitignore` |
+| Stale pyproject metadata, wiki docs URL | Foundations | Rewritten in PEP 621 `pyproject.toml` |
+| Legacy root files, stale docs, CODEOWNERS | Foundations | Removed or rewritten |
+| Poetry build, no `uv.lock`, mypy, black, isort | Toolchain | uv, hatchling, basedpyright strict, ruff only |
+| Ruff rule set missing 11 PyStrict codes | Toolchain | All added; tree passes |
+| No Qlty config | Toolchain, CI | `.qlty/qlty.toml` added |
+| `requires-python` excluded 3.13 | Toolchain, CI | `>=3.11`; CI matrix 3.11 to 3.13 |
+| No ruff-format, basedpyright, TruffleHog, detect-secrets, pydoclint, interrogate, commitizen, no-em-dash hooks | Pre-commit | Added, SHA-pinned |
+| Tag-pinned hook revs | Pre-commit | All revs pinned to commit SHAs |
+| Bespoke and unpinned workflows, `@main` refs, broad permissions | CI | Replaced by pinned org callers with `permissions: {}` |
+| Script injection in `security-scan-summary`, `renovate-auto-merge`, `fips-compatibility` | CI | Workflows removed |
+| Scorecard caller triggers | CI | Schedule, push, branch protection, dispatch triggers set |
+| Stub required checks | CI | Real `CI Gate` wrapper and copied org `pr-validation.yml` |
+| Codecov double upload config | CI | Codecov dropped; Qlty and SonarCloud required |
+| CLAUDE.md legacy content, no Model Selection H2, RAD as H3 | Claude docs | Rewritten |
+| `.claude/settings.json` Poetry permissions, no `$schema` | Claude docs | Rewritten |
+| Legacy slash commands, scripts, AGENTS.md, GEMINI.md | Claude docs | Removed |
+| SECURITY.md lacks private channel, 14-day commitment, security surface | OpenSSF | Added |
+| 60 unpinned `uses:` refs | OpenSSF | Legacy workflows removed; org callers SHA-pinned |
+| mkdocs dead nav, unused plugins and extensions, broken links, Poetry-only docs deps | MkDocs | Rebuilt; strict build passes |
+
+### Owner Actions (settings this session could not change or verify)
+
+| Item | Action |
+| --- | --- |
+| Private vulnerability reporting (OSSF-002) | Enable under Settings, Code security, so the SECURITY.md link works |
+| Secret scanning and push protection (OSSF-008/009) | Verify enabled under Settings, Code security |
+| `allow_auto_merge`, `delete_branch_on_merge` (REPO-001/002) | Verify in repository settings |
+| OpenSSF Best Practices badge (OSSF-001) | Apply or update at bestpractices.dev |
+| Ruleset required contexts | Confirm they match the new check names after the Phase 0 PR runs |
+| `legacy-hybrid-v0` tag | Push from a maintainer machine (see Step 1) |
+| Secrets | Confirm `SONAR_TOKEN`, `QLTY_COVERAGE_TOKEN`, `SCORECARD_TOKEN` |
+
+### Deferred
+
+| Finding | Reason |
+| --- | --- |
+| OSSF-005 API reference docs | No public API until Phase 2; add `mkdocstrings` reference pages then |
+| Signed releases | No releases planned until the library ships; git tags are cut manually |
