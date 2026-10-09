@@ -61,11 +61,11 @@ mode = "comment"
 name = "default"
 default = true
 
-[[plugin]]
-name = "ruff"
+# bandit is not enabled here: CI runs it with the [tool.bandit] config in
+# pyproject.toml (skips B101, excludes tests), which qlty's plugin ignores.
 
 [[plugin]]
-name = "bandit"
+name = "ruff"
 
 [[plugin]]
 name = "ripgrep"
