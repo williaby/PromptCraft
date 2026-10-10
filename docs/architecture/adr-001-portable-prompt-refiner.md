@@ -1,7 +1,8 @@
 # ADR-001: Portable Prompt Refiner
 
-> **Status:** Proposed | **Date:** 2026-10-09 | **Supersedes:** no prior ADR; replaces the undocumented four-journey
-> hybrid workbench design (tagged `legacy-hybrid-v0` in Phase 0)
+> **Status:** Proposed | **Date:** 2026-10-09 | **Supersedes:** the legacy `docs/planning/ADR.md` series and the
+> four-journey hybrid workbench design it recorded (archived as branch `archive/legacy-hybrid-v0` in Phase 0); see
+> Supersedes and Numbering
 
 ## Context
 
@@ -22,16 +23,40 @@ in September 2025 after Phase 1. A survey of the codebase in October 2026 found:
 - The most valuable asset is `knowledge/create_agent/`: the C.R.E.A.T.E. guide, depth tiers, error-prevention
   checklists, and a 2,009-line raw-to-refined few-shot gallery. The code never uses its content.
 - Tooling has drifted from org standards. The repo uses Poetry; the org reusable workflows in `ByronWilliamsCPA/.github`
-  are uv-only and reject Poetry repos outright. Two required status checks are satisfied only by stub workflows.
+  are uv-only and reject Poetry repos outright. Ruleset `williaby-default-branch-baseline` requires four bare status
+  check contexts: `Security Gate Validation`, `Dependency & Standards Validation`, `Check REUSE Compliance`, and
+  `CI Gate`. Two of them, `CI Gate` and `Dependency & Standards Validation`, are satisfied only by stub workflows.
 
-The goal is now narrower: refine a user's rough prompt into a standard, robust form that produces higher quality
-results than the unrefined prompt. The refiner must work across environments:
+The goal is now narrower: refine a user's rough prompt into a standard form that states the task, inputs, constraints,
+and output format, and that produces better results than the unrefined prompt (measured by the pairwise evaluation
+below). The refiner must work across environments:
 
 - Claude (Claude Code, claude.ai, Claude Desktop), where most interactive work happens.
 - The family office portal (Python), which runs Qwen3.6-35B-A3B on llama.cpp. Portal prompts must stay on-prem.
 - Other MCP-capable clients, as a secondary target.
 
 Two usage modes are required: a user-visible mode and a user-invisible mode, selected by which endpoint the caller uses.
+
+## Supersedes and Numbering
+
+This ADR starts a new series under `docs/architecture/`. The legacy series in `docs/planning/ADR.md` (v1.0, June 2025,
+ADR-001 to ADR-010, later extended) is superseded. That file was removed in #160 (commit `ac4acde`) and stays
+recoverable with `git show ac4acde^:docs/planning/ADR.md`; the history is reachable from branch
+`archive/legacy-hybrid-v0`. The file keeps the number ADR-001 even though the legacy series also has an ADR-001 (Zen MCP
+Server Orchestration). Cite legacy records as "legacy ADR-NNN".
+
+| Legacy decision | Disposition |
+| --- | --- |
+| ADR-001 Zen MCP server orchestration | Superseded: Zen MCP is retired for this project |
+| ADR-002 Tiered search, ADR-003 RAG over fine-tuning | Superseded: no vector database; examples come from the spec |
+| ADR-004 Gradio over custom UI | Superseded: the portal owns the UI; the library supplies data |
+| ADR-005 Simplified HyDE | Superseded: no retrieval step in the refiner |
+| ADR-006 to ADR-008 Agent rollout, sequential thinking, Journey 3 | Superseded with the agent registry and journeys |
+| ADR-009 Poetry lock and requirements-hash strategy | Superseded: uv with `uv.lock`; `requirements*.txt` removed |
+| ADR-010 Conditional CI requirements verification | Superseded: org reusable workflows replace it |
+| Azure AI as the LLM service (project `CLAUDE.md`) | Dropped: the engine is llama.cpp; hosted backends are deferred |
+
+The Phase 0 migration plan lists the architecture records it supersedes.
 
 ## Decision
 
@@ -125,7 +150,8 @@ two-pass call (free-text reasoning, then constrained extraction) and adopts it o
 | Audit | Returned to caller | Original and refined pair logged locally |
 
 Invisible mode carries the higher risk because nobody reviews the rewrite. It ships in Phase 4 only after the runtime
-guards above exist and its golden-set intent-preservation score clears the threshold set in Phase 1.
+guards above exist and its golden-set intent-preservation score clears the threshold set before Phase 4 begins (see
+Open Questions).
 
 **Portal UI for visible mode.** The portal shows the original, the refined prompt, and a diff, with assumptions
 highlighted and per-addition accept or reject. The portal owns this UI; the library supplies the data in
@@ -137,7 +163,7 @@ highlighted and per-addition accept or reject. The portal owns this UI; the libr
 | --- | --- | --- | --- |
 | Claude Code, claude.ai, Desktop | Hand-written skill distilled from the spec | Claude itself; no engine call | 1 |
 | Family office portal | Library import (in-process) | Local Qwen via llama.cpp | 2 |
-| Evals, scripting | CLI | Engine | 1 to 2 |
+| Evals, scripting | CLI | Pass-through baseline in Phase 1; engine from Phase 2 | 1 to 2 |
 | Other MCP clients | MCP server | Engine set in server config | Deferred |
 
 For the portal, refinement is a deterministic pre-processing step in code, not a tool the local model may or may not
@@ -189,7 +215,8 @@ Implications:
 - **Golden set, Phase 1:** 30 synthetic rough prompts covering coding, analysis, writing, and family office finance and
   administration, plus injection and already-good cases. Grows to 100 by Phase 4.
 - **Portal pattern set:** 20 hand-written, PII-free paraphrases of real portal request patterns, kept in the portal's
-  private repo and run only against the local engine.
+  private repo and run only against the local engine. No judge model sees them. Deterministic checks and owner review
+  score them; a local judge is an open question for Phase 3.
 - **Deterministic checks first:** schema validity, required slots present, length ratio, original text retained (light
   tier), no unlabeled assumptions. These run in CI on every change and cost nothing.
 - **Pairwise judge:** compares the target model's output for the original versus the refined prompt. Positions swapped,
@@ -202,6 +229,10 @@ Implications:
   Report the pair-level win rate with a 95% Wilson score interval. At n=50 the interval is about plus or minus 14
   points, so no "beats baseline" claim is made unless the lower bound of that pair-level interval exceeds 50%. Judge
   agreement is calibrated on 20 human-labeled pairs before the judge gates anything.
+- **Sample size for the Phase 2 gate:** injection and already-good cases are not win/loss pairs and do not count toward
+  n. With 30 scored pairs the interval is about plus or minus 17 points, and the lower bound clears 50% only at a win
+  rate of at least 70% (21 of 30, ties as half). Growing the scored set to 50 pairs before Phase 2 lowers the bar to
+  64% (32 of 50). Fewer than 30 scored pairs raise the bar further.
 - **Cost:** each eval run's judge cost is logged; judge runs happen on demand and nightly, not on every commit.
 
 ### Observability
@@ -214,23 +245,25 @@ latency histogram through a pluggable hook. The portal wires them to its local m
 Phase 0 makes the repo a clean, standards-compliant base before any new code. Detailed steps, the workflow-by-workflow
 map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 
-1. Tag `main` as `legacy-hybrid-v0`.
+1. Archive `main` as `legacy-hybrid-v0` (branch `archive/legacy-hybrid-v0`; tag pending).
 2. Run `repo-compliance` in report-only mode to scope standards gaps. Ignore findings in code about to be removed.
 3. Strip legacy code, tests, configs, and tracked artifacts. Keep `knowledge/create_agent/`, docs needed for history,
    and OpenSSF root files.
 4. Migrate Poetry to uv: PEP 621 `pyproject.toml` with hatchling and `[dependency-groups]`, `uv.lock`, nox sessions on
    uv, pre-commit on `uv run` with mypy replaced by basedpyright, Renovate rules for uv and org workflow pins.
 5. Replace bespoke CI with callers of `ByronWilliamsCPA/.github` reusable workflows pinned to
-   `74cfc8e9d1ea1f6babc40bea102b3071af620942 # v11.0.1`. Replace the two stub workflows with real checks that emit the
-   ruleset-required names `CI Gate` and `Dependency & Standards Validation`. Reset Codecov and SonarCloud baselines.
+   `74cfc8e9d1ea1f6babc40bea102b3071af620942 # v11.0.1`. Replace the two stub workflows with real checks and add
+   wrapper jobs where a reusable workflow's check name differs, so all four ruleset-required contexts are emitted by
+   real jobs: `Security Gate Validation`, `Dependency & Standards Validation`, `Check REUSE Compliance`, `CI Gate`.
+   Reset Codecov and SonarCloud baselines.
 6. Run `repo-compliance` in interactive mode on the slim tree and apply approved remediations.
 
-**Exit criteria:** org reusable workflows green on a PR; ruleset-required checks produced by real jobs;
+**Exit criteria:** org reusable workflows green on a PR; all four ruleset-required checks produced by real jobs;
 `repo-compliance` audit clean or with documented exceptions.
 
 ## Consequences
 
-**Positive**
+### Positive
 
 - Value ships in Phase 1 (the Claude skill) instead of after the engine and adapters.
 - One spec drives the skill and the engine, so Claude and the portal refine the same way.
@@ -238,25 +271,30 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 - Quality is measured with stated statistical limits, so improvements are real or not claimed.
 - The repo matches org tooling and CI, so shared workflows and Renovate maintain it.
 
-**Negative**
+### Negative
 
-- The legacy UI and API stop working on `main`. Nobody uses them in practice, and the tag preserves them.
+- The legacy UI and API stop working on `main`. Nobody uses them in practice, and the `legacy-hybrid-v0` archive
+  preserves them.
 - The hand-written skill and the engine can drift until generation is built. Mitigated by shared golden-set runs.
 - Target profiles need re-verification with each model release.
 - Invisible mode adds GPU load to every portal request.
 
-**Risks to verify early**
+### Risks to verify early
 
 - Qwen3.6-35B-A3B (UD-Q4_K_S) quality as a `strict`-tier refiner. If weak, the portal offers visible mode only.
 - The 1.5-second p95 budget under concurrent chat load on one P40.
 - Judge bias toward longer prompts. The calibration set and length-ratio check address this.
-- Org workflow friction for a small library: forced bandit, pip-audit, vulture, and an 80% coverage gate from day one.
+- Org workflow friction for a small library: bandit and pip-audit gates, advisory vulture, and an 80% coverage gate from
+  day one.
+- GPU memory headroom: the UD-Q4_K_S weights are about 20.9 GB and the vision projector about 0.6 GB on a 24 GB P40,
+  leaving roughly 2 to 2.5 GB for KV cache and compute buffers. The Phase 3 test covers context length and parallel
+  slots, not only latency.
 
 ## Phased Plan
 
 | Phase | Deliverable | Exit criteria |
 | --- | --- | --- |
-| 0. Archive and align | Legacy tag; strip; uv and nox; org reusable workflows; compliance audit | See Phase 0 exit criteria |
+| 0. Archive and align | Legacy archive; strip; uv and nox; org reusable workflows; compliance audit | See Phase 0 exit criteria |
 | 1. Skill and baseline | Spec v0.1 (checklist, tiers, converted examples); hand-written Claude skill; 30-prompt golden set; deterministic checks; eval CLI; judge calibration | Skill in daily use; pass-through baseline recorded; judge agreement measured |
 | 2. Engine, visible mode | Thinking-mode spike; `refine()` with analyze, clarify, render, self-check; `openai_compatible` backend; on-prem guard; `qwen3_local` profile | Deterministic checks pass; judge win rate lower CI bound above 50% vs baseline on golden set; on-prem tests pass |
 | 3. P40 validation | Latency and quality on the P40 under concurrent chat; portal pattern set; embedding example-selection experiment | p95 budget met or revised; decision recorded on embeddings |
@@ -266,6 +304,5 @@ map, and risks live in `docs/architecture/phase-0-migration-plan.md`. Summary:
 ## Open Questions
 
 - Package name for the new library.
-- Exact required-check contexts in ruleset `williaby-default-branch-baseline` (bare `CI Gate` or `ci / CI Gate`, and
-  whether other checks are required). Confirm before deleting the stubs.
-- Golden-set rubric thresholds for invisible mode.
+- Golden-set rubric thresholds for invisible mode; set before Phase 4 begins.
+- Whether a local judge model scores the portal pattern set, or deterministic checks plus owner review suffice.
