@@ -1,39 +1,26 @@
 {
-  "project": {
-    "name": "PromptCraft",
-    "type": "python",
-    "languages": ["python", "javascript"]
-  },
-  "tools": {
-    "enabled": ["basic_commands"],
-    "disabled": []
-  },
-  "subagentModels": {
-    "Explore": "haiku",
-    "Plan": "inherit",
-    "general-purpose": "sonnet",
-    "code-reviewer": "sonnet",
-    "security-auditor": "sonnet",
-    "documentation-writer": "sonnet",
-    "test-engineer": "sonnet",
-    "_comment": "Preference for built-in and common subagents per global standards. Opus is used only for complex reasoning, planning, and architecture decisions."
-  },
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Bash(make test*:*)",
       "Bash(make lint)",
       "Bash(make format)",
-      "Bash(make pre-commit)",
+      "Bash(make typecheck)",
+      "Bash(make test)",
       "Bash(make security)",
-      "Bash(poetry run pytest*:*)",
-      "Bash(poetry run ruff*:*)",
-      "Bash(poetry run mypy*:*)",
-      "Bash(poetry run pre-commit*:*)",
-      "Bash(poetry show*:*)",
-      "Bash(git status*:*)",
-      "Bash(git diff*:*)",
-      "Bash(git log*:*)",
-      "Bash(git branch*:*)",
+      "Bash(make docs)",
+      "Bash(make check)",
+      "Bash(make pre-commit)",
+      "Bash(uv sync:*)",
+      "Bash(uv lock:*)",
+      "Bash(uv run --frozen pytest:*)",
+      "Bash(uv run --frozen ruff:*)",
+      "Bash(uv run --frozen basedpyright:*)",
+      "Bash(uv run --frozen pre-commit:*)",
+      "Bash(uv run --frozen nox:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
       "Bash(git worktree list)"
     ]
   }

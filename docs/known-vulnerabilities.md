@@ -19,14 +19,13 @@
 
 ## Active Entries
 
-_None._ Last `pip-audit` sweep on **2026-04-20** against the Poetry venv
-(Python 3.11) reported: **No known vulnerabilities found**.
+_None._ Last `pip-audit` sweep on **2026-10-09** against the uv environment
+(Python 3.13) after the Phase 0 strip reported: **No known vulnerabilities found**.
 
 When you add or update dependencies, re-run:
 
 ```bash
-PIPAPI_PYTHON_LOCATION="$(poetry env info --path)/bin/python" \
-  poetry run pip-audit --format=columns
+uv run --frozen pip-audit --skip-editable --format=columns
 ```
 
 If findings appear, add entries using the template below.
@@ -61,4 +60,4 @@ Any active entry with `first seen` older than 60 days (regardless of
 
 - Global standard: `~/.claude/CLAUDE.md` section "Unfixed CVEs".
 - Scanner config: `pyproject.toml`, `.semgrep.yml`, `.pre-commit-config.yaml`.
-- Security policy: [`SECURITY.md`](../SECURITY.md).
+- Security policy: [`SECURITY.md`](https://github.com/williaby/PromptCraft/blob/main/SECURITY.md).

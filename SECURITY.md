@@ -2,60 +2,41 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities. Which versions are eligible for receiving such patches
-depends on the CVSS v3.0 Rating:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 0.1.x   | Yes       |
+| < 0.1   | No        |
 
 ## Reporting a Vulnerability
 
-Please report (suspected) security vulnerabilities to **<security@promptcraft.io>**. You will receive a response
-from us within 48 hours. If the issue is confirmed, we will release a patch as soon as possible depending on
-complexity but historically within a few days.
+To report a vulnerability privately, use
+[Private Vulnerability Reporting](https://github.com/williaby/PromptCraft/security/advisories/new). Do not open a
+public issue.
 
-Please include the following in your report:
+We commit to acknowledging all vulnerability reports within 14 days of submission. Confirmed issues are fixed and
+released as soon as practical, with credit to the reporter unless they ask otherwise.
 
-1. Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
-2. Full paths of source file(s) related to the manifestation of the issue
-3. The location of the affected source code (tag/branch/commit or direct URL)
-4. Any special configuration required to reproduce the issue
-5. Step-by-step instructions to reproduce the issue
-6. Proof-of-concept or exploit code (if possible)
-7. Impact of the issue, including how an attacker might exploit the issue
+Please include:
 
-## Security Best Practices
+1. The type of issue and its impact.
+2. The affected file, tag, branch, or commit.
+3. Steps to reproduce, and proof-of-concept code if available.
+4. Any configuration needed to reproduce it.
 
-### Dependencies
+## Security Surface
 
-- All dependencies are locked with specific versions in `poetry.lock`
-- Requirements are exported with cryptographic hashes for pip verification
-- Automated dependency updates via Renovate bot
-- Daily security scanning in CI/CD pipeline
+| Surface | Risk | Mitigation |
+| --- | --- | --- |
+| User prompt text passed to the refiner | Prompt injection that changes refiner behavior | User content is passed in delimited data blocks; the golden set includes injection cases (ADR-001) |
+| Engine endpoint configuration | Sending on-prem prompts to a remote service | `data_boundary: on_prem` restricts engines to loopback or allowlisted LAN hosts, pins resolved IPs, disables proxies and redirects (ADR-001) |
+| Audit logs of original and refined prompts | Leaking sensitive prompt content | Logs are written to local sinks only; no telemetry |
+| Dependencies | Vulnerable third-party packages | `uv.lock` pins versions; Renovate and pip-audit run continuously; see [known vulnerabilities](docs/known-vulnerabilities.md) |
+| CI workflows | Supply-chain or script injection | Org reusable workflows pinned to commit SHAs; least-privilege permissions per job |
 
-### Code Security
+## Practices
 
-- All code is scanned with Bandit for common security issues
-- Secrets detection prevents accidental credential commits
-- Type checking with mypy reduces runtime errors
-- Comprehensive test coverage (>80%) for all critical paths
-
-### Infrastructure
-
-- All containers run as non-root users
-- Minimal base images to reduce attack surface
-- Network isolation between services
-- Secrets managed via environment variables (never in code)
-
-## Security Checklist for Contributors
-
-Before submitting a PR:
-
-- [ ] Run `nox -s security` to check for vulnerabilities
-- [ ] Ensure no secrets are exposed in code or configuration
-- [ ] Verify all user inputs are validated and sanitized
-- [ ] Check that error messages don't leak sensitive information
-- [ ] Confirm logging doesn't include PII or credentials
-- [ ] Test with `pip install --require-hashes` to verify dependency integrity
+- Dependencies are locked in `uv.lock` and updated by Renovate.
+- Bandit, pip-audit, TruffleHog, and detect-secrets run in pre-commit and CI.
+- basedpyright runs in strict mode.
+- Unfixed vulnerabilities older than 60 days block a release; each is recorded in
+  [docs/known-vulnerabilities.md](docs/known-vulnerabilities.md).

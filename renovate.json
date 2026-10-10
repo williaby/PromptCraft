@@ -4,195 +4,100 @@
         "config:best-practices",
         ":dependencyDashboard",
         ":semanticCommits",
-        "helpers:pinGitHubActionDigests",
-        "docker:pinDigests"
+        "helpers:pinGitHubActionDigests"
     ],
-    "pip_requirements": {
-        "managerFilePatterns": [
-            "/(^|/)requirements.*\\.txt$/"
+    "enabledManagers": [
+        "pep621",
+        "github-actions",
+        "pre-commit"
+    ],
+    "pre-commit": {
+        "enabled": true
+    },
+    "lockFileMaintenance": {
+        "enabled": true,
+        "schedule": [
+            "before 5am on monday"
         ]
     },
     "packageRules": [
         {
-            "description": "Security-critical packages - immediate individual PRs (ADR-009)",
-            "matchUpdateTypes": [
-                "patch",
-                "minor",
-                "major"
+            "description": "Advance org reusable-workflow SHA pins to the latest semver release tag (mirrors ByronWilliamsCPA/.github renovate.json). No followTag: org vX.Y.Z tags are immutable and there is no floating major tag.",
+            "matchManagers": [
+                "github-actions"
             ],
-            "groupName": null,
-            "automerge": false,
-            "labels": [
-                "security-critical",
-                "automerge",
-                "priority:high"
-            ],
-            "prPriority": 10,
-            "schedule": [
-                "at any time"
-            ],
-            "minimumReleaseAge": "0 days",
             "matchPackageNames": [
-                "/^cryptography/",
-                "/^pyjwt/",
-                "/^passlib/",
-                "/^bcrypt/",
-                "/^pyotp/",
-                "/^fastapi/",
-                "/^uvicorn/",
-                "/^gradio/",
-                "/^pydantic/",
-                "/^httpx/",
-                "/^azure-/",
-                "/^anthropic/",
-                "/^openai/",
-                "/^qdrant-client/"
-            ]
+                "/^ByronWilliamsCPA\\/\\.github/",
+                "/^williaby\\/\\.github/"
+            ],
+            "versioning": "semver"
         },
         {
-            "description": "CVE and vulnerability updates - immediate individual PRs (ADR-009)",
-            "vulnerabilityAlerts": {
-                "enabled": true
-            },
-            "osvVulnerabilityAlerts": true,
+            "description": "Vulnerability fixes: immediate individual PRs",
+            "matchJsonata": [
+                "isVulnerabilityAlert = true"
+            ],
             "groupName": null,
-            "automerge": false,
             "labels": [
                 "vulnerability",
-                "automerge",
                 "priority:critical"
             ],
             "prPriority": 15,
             "schedule": [
                 "at any time"
             ],
-            "minimumReleaseAge": "0 days",
-            "matchJsonata": [
-                "isVulnerabilityAlert = true"
-            ]
+            "minimumReleaseAge": "0 days"
         },
         {
-            "description": "Monthly batch: routine dependency updates (ADR-009)",
+            "description": "Routine Python patch and minor updates: monthly batch",
+            "matchManagers": [
+                "pep621"
+            ],
             "matchUpdateTypes": [
                 "patch",
                 "minor"
             ],
-            "groupName": "routine-updates",
-            "automerge": false,
+            "groupName": "python-routine-updates",
             "labels": [
-                "automerge",
                 "batched-updates"
             ],
-            "prPriority": 3,
             "schedule": [
                 "on the first day of the month"
-            ],
-            "matchPackageNames": [
-                "!/^cryptography/",
-                "!/^pyjwt/",
-                "!/^passlib/",
-                "!/^bcrypt/",
-                "!/^pyotp/",
-                "!/^fastapi/",
-                "!/^uvicorn/",
-                "!/^gradio/",
-                "!/^pydantic/",
-                "!/^httpx/",
-                "!/^azure-/",
-                "!/^anthropic/",
-                "!/^openai/",
-                "!/^qdrant-client/"
             ]
         },
         {
-            "description": "Major version updates always require manual review",
+            "description": "Major updates always require manual review",
             "matchUpdateTypes": [
                 "major"
             ],
-            "groupName": "major-updates",
-            "automerge": false,
             "labels": [
                 "requires-review",
                 "scope:major"
             ],
             "reviewers": [
-                "@williaby"
-            ],
-            "prPriority": 1,
-            "schedule": [
-                "on the first day of the month"
+                "williaby"
+            ]
+        },
+        {
+            "description": "GitHub Actions and pre-commit hooks: pinned digests, monthly batch",
+            "matchManagers": [
+                "github-actions",
+                "pre-commit"
             ],
             "matchPackageNames": [
-                "!/^cryptography/",
-                "!/^pyjwt/",
-                "!/^passlib/",
-                "!/^bcrypt/",
-                "!/^pyotp/",
-                "!/^fastapi/",
-                "!/^uvicorn/",
-                "!/^gradio/",
-                "!/^pydantic/",
-                "!/^httpx/",
-                "!/^azure-/",
-                "!/^anthropic/",
-                "!/^openai/",
-                "!/^qdrant-client/"
-            ]
-        },
-        {
-            "description": "Development dependencies - monthly batch",
-            "matchDepTypes": [
-                "devDependencies"
+                "!/^ByronWilliamsCPA\\/\\.github/",
+                "!/^williaby\\/\\.github/"
             ],
-            "matchUpdateTypes": [
-                "patch",
-                "minor"
-            ],
-            "groupName": "dev-dependencies",
-            "automerge": false,
+            "groupName": "ci-tooling",
             "labels": [
-                "automerge",
-                "dev-deps",
-                "batched-updates"
+                "github-actions"
             ],
-            "prPriority": 2,
             "schedule": [
                 "on the first day of the month"
             ]
-        },
-        {
-            "description": "GitHub Actions - pin to commit hashes with monthly updates",
-            "matchManagers": [
-                "github-actions"
-            ],
-            "matchUpdateTypes": [
-                "patch",
-                "minor",
-                "major"
-            ],
-            "groupName": "github-actions",
-            "automerge": false,
-            "labels": [
-                "automerge",
-                "github-actions"
-            ],
-            "prPriority": 4,
-            "schedule": [
-                "on the first day of the month"
-            ],
-            "pinDigests": true
         }
     ],
-    "poetry": {
-        "enabled": true
-    },
-    "postUpdateOptions": [
-        "gomodTidy",
-        "npmDedupe",
-        "yarnDedupeHighest"
-    ],
     "prConcurrentLimit": 3,
-    "prCreation": "immediate",
     "rangeStrategy": "bump",
     "semanticCommits": "enabled",
     "timezone": "UTC",
@@ -201,27 +106,14 @@
         "every weekend"
     ],
     "vulnerabilityAlerts": {
+        "enabled": true,
         "labels": [
-            "security",
-            "automerge"
+            "security"
         ],
         "assignees": [
-            "@williaby"
-        ],
-        "prPriority": 10
+            "williaby"
+        ]
     },
     "osvVulnerabilityAlerts": true,
-    "platformAutomerge": false,
-    "postUpgradeTasks": {
-        "commands": [
-            "poetry lock --no-update",
-            "chmod +x scripts/generate_requirements.sh",
-            "./scripts/generate_requirements.sh || echo 'Requirements generation failed'"
-        ],
-        "fileFilters": [
-            "requirements*.txt",
-            "poetry.lock"
-        ],
-        "executionMode": "update"
-    }
+    "platformAutomerge": false
 }

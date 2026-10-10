@@ -1,8 +1,24 @@
-# Configuration System Changelog
+# Changelog
 
-All notable changes to the PromptCraft Configuration System are documented here.
+All notable changes to PromptCraft are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+
+### Changed
+
+- Re-scope the project to a portable prompt refiner (ADR-001). The legacy
+  four-journey workbench is archived on branch `archive/legacy-hybrid-v0`.
+- Migrate from Poetry to uv, nox, hatchling, and basedpyright.
+- Move CI onto `ByronWilliamsCPA/.github` reusable workflows pinned to
+  v11.0.1, with real jobs for the ruleset-required checks.
+
+### Removed
+
+- Legacy `src/`, tests, Gradio UI, FastAPI service, Docker deployment,
+  Qdrant and Zen MCP integrations, and their workflows and docs.
+
+## Legacy Workbench History
 
 ### Fixed
 
