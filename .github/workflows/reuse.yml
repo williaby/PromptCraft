@@ -15,3 +15,23 @@ jobs:
     uses: ByronWilliamsCPA/.github/.github/workflows/python-reuse.yml@74cfc8e9d1ea1f6babc40bea102b3071af620942  # v11.0.1
     permissions:
       contents: read
+
+  # The branch ruleset requires the bare context "Check REUSE Compliance";
+  # reusable-workflow checks report as "reuse / REUSE Compliance Check".
+  reuse-gate:
+    name: Check REUSE Compliance
+    needs: [reuse]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    timeout-minutes: 5
+    steps:
+      - name: Require REUSE compliance
+        env:
+          REUSE_RESULT: ${{ needs.reuse.result }}
+        run: |
+          if [ "$REUSE_RESULT" != "success" ]; then
+            echo "::error::REUSE compliance result was $REUSE_RESULT"
+            exit 1
+          fi
+          echo "REUSE compliance passed."

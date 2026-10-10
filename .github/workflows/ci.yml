@@ -22,6 +22,7 @@ jobs:
     with:
       python-version: '3.12'
       enable-matrix-testing: true
+      python-versions-pr: '["3.11", "3.12", "3.13", "3.14"]'
       python-versions-comprehensive: '["3.11", "3.12", "3.13", "3.14"]'
       coverage-threshold: 80
       no-build: false
