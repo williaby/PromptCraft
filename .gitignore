@@ -167,7 +167,6 @@ agents-backup/
 *.env.zen-vm.template
 .env.zen-mcp-server
 *.env.zen-*
-.secrets.baseline
 
 # Services
 *.service
@@ -267,3 +266,13 @@ postgresql_performance_spike.py
 *_performance_spike.py
 *_spike.py
 *.spike.*
+
+# Project worktrees (see .claude/rules/git-workflow.md)
+.worktrees/
+
+# Legacy artifacts that must not return
+lint_env/
+playwright-report/
+test-results/
+.env.*
+!.env.example

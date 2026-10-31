@@ -1,33 +1,22 @@
-# Coverage Upload Workflow
-# Downloads coverage artifacts from CI and uploads to Qlty for quality tracking.
-# Triggers after the CI workflow succeeds so coverage is always in sync with CI.
-name: Coverage (Qlty)
+name: Qlty Coverage
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: [CI]
     types: [completed]
-    branches: [main, master]
-  workflow_dispatch:
-    inputs:
-      run-id:
-        description: 'CI workflow run ID to download coverage from'
-        required: false
-        type: string
 
-permissions:
-  contents: read
-  actions: read
+permissions: {}
 
 jobs:
-  upload-coverage:
-    name: Upload Coverage to Qlty
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    uses: ByronWilliamsCPA/.github/.github/workflows/python-qlty-coverage.yml@main
+  qlty-coverage:
+    if: github.event.workflow_run.conclusion == 'success'
+    uses: ByronWilliamsCPA/.github/.github/workflows/python-qlty-coverage.yml@74cfc8e9d1ea1f6babc40bea102b3071af620942  # v11.0.1
+    permissions:
+      contents: read
+      actions: read
     with:
       coverage-artifact-name: coverage-reports
       coverage-file-path: coverage.xml
-      workflow-run-id: ${{ github.event.workflow_run.id != null && github.event.workflow_run.id || '' }}
-      skip-if-no-token: true
+      workflow-run-id: ${{ github.event.workflow_run.id }}
     secrets:
       QLTY_COVERAGE_TOKEN: ${{ secrets.QLTY_COVERAGE_TOKEN }}

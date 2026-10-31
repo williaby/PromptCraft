@@ -1,89 +1,43 @@
-.PHONY: help install setup test test-fast test-pre-commit test-pr test-performance test-smoke test-with-timing lint format security clean
+# Thin wrappers over uv and nox. CI uses the ByronWilliamsCPA/.github
+# reusable workflows; these targets mirror them locally.
 
-# Default target
-.DEFAULT_GOAL := help
+.PHONY: help setup sync test lint format typecheck security docs pre-commit check clean
 
-# Python interpreter
-PYTHON := python3.11
-POETRY := poetry
+help:  ## Show available targets
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
 
-help: ## Show this help message
-	@echo "Usage: make [target]"
-	@echo ""
-	@echo "Targets:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+setup:  ## Install dependencies and git hooks
+	uv sync --frozen
+	uv run --frozen pre-commit install --hook-type pre-commit --hook-type commit-msg
 
-install: ## Install dependencies with Poetry
-	$(POETRY) install --sync
+sync:  ## Sync the environment from uv.lock
+	uv sync --frozen
 
-setup: install ## Complete development setup
-	$(POETRY) run pre-commit install
-	./scripts/generate_requirements.sh
-	$(POETRY) run python src/utils/encryption.py
-	@echo "Development environment ready!"
+test:  ## Run tests with coverage
+	uv run --frozen pytest --cov --cov-report=term-missing
 
-test: ## Run tests with coverage
-	$(POETRY) run pytest -v --cov=src --cov-report=html --cov-report=term-missing
+lint:  ## Check formatting and lint rules
+	uv run --frozen ruff format --check .
+	uv run --frozen ruff check .
 
-test-fast: ## Run fast tests for development (< 1 minute)
-	$(POETRY) run pytest tests/unit/ tests/auth/ -m "not slow and not performance and not stress" --maxfail=3 --tb=short
+format:  ## Apply formatting and autofixes
+	uv run --frozen ruff format .
+	uv run --frozen ruff check --fix .
 
-test-pre-commit: ## Run pre-commit validation tests (< 2 minutes)
-	$(POETRY) run pytest tests/unit/ tests/auth/ tests/integration/ -m "not performance and not stress and not contract" --maxfail=5
+typecheck:  ## Run basedpyright (strict)
+	uv run --frozen basedpyright
 
-test-pr: ## Run PR validation tests (< 5 minutes)
-	$(POETRY) run pytest -m "not performance and not stress" --maxfail=10
+security:  ## Run bandit and pip-audit
+	uv run --frozen bandit -c pyproject.toml -lll -r src
+	uv run --frozen pip-audit --skip-editable
 
-test-performance: ## Run performance tests only
-	$(POETRY) run pytest tests/performance/ -m "performance or stress" --tb=line
+docs:  ## Build the docs site in strict mode
+	uv run --frozen mkdocs build --strict
 
-test-smoke: ## Run smoke tests for basic functionality
-	$(POETRY) run pytest tests/unit/ -m "smoke or fast" --maxfail=1 -x
+pre-commit:  ## Run all pre-commit hooks on all files
+	uv run --frozen pre-commit run --all-files
 
-test-with-timing: ## Run tests with detailed timing analysis
-	$(POETRY) run pytest --durations=20 --tb=short
+check: lint typecheck test security  ## Run every local gate
 
-lint: ## Run linting checks
-	$(POETRY) run black --check .
-	$(POETRY) run ruff check .
-	$(POETRY) run mypy src
-	markdownlint **/*.md
-	yamllint .
-
-format: ## Format code
-	$(POETRY) run black .
-	$(POETRY) run ruff check --fix .
-
-security: ## Run security checks
-	$(POETRY) run safety check
-	$(POETRY) run bandit -r src
-
-dev: ## Start development environment with all services (including integrated Zen MCP Server)
-	docker-compose -f docker-compose.zen-vm.yaml up -d
-	@echo "Development environment started!"
-	@echo "- Gradio UI: http://127.0.0.1:7860 (Journeys 1, 2, 4)"
-	@echo "- FastAPI Backend: http://127.0.0.1:8000 (API endpoints)"
-	@echo "- Zen MCP Server: http://127.0.0.1:3000 (AI Agent Orchestration)"
-	@echo "- Code-Server IDE: http://127.0.0.1:8080 (Journey 3)"
-	@echo "- External Qdrant Dashboard: http://192.168.1.16:6333/dashboard"
-	@echo ""
-	@echo "✅ Zen MCP Server is now integrated and managed by Docker Compose!"
-	@echo "⚡ All services start with a single 'make dev' command"
-
-pre-commit: ## Run all pre-commit hooks manually
-	$(POETRY) run pre-commit run --all-files
-
-lint-docs: ## Lint documentation files with Claude Code commands
-	@echo "Use Claude Code slash commands for document linting:"
-	@echo "  /project:lint-doc docs/planning/exec.md"
-	@echo "  /project:fix-links docs/planning/exec.md"
-	@echo "  /project:validate-frontmatter docs/planning/exec.md"
-
-clean: ## Clean build artifacts
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name "*.coverage" -delete
-	rm -rf .coverage htmlcov coverage.xml
-	rm -rf .pytest_cache .mypy_cache .ruff_cache
-	rm -rf dist build *.egg-info
+clean:  ## Remove build and cache artifacts
+	rm -rf .nox .pytest_cache .ruff_cache build dist site coverage.xml .coverage
